@@ -7,6 +7,12 @@
 // Under scratch/ the workspace packages resolve by name (@efsim/data, @efsim/engine, @efsim/cli), from this checkout
 // (in a worktree after `node scripts/setup-worktree.ts`). The game data loads from the cache in about a second.
 //
+// Time: the engine runs at FPS = 30 frames a second. A fight length goes through `withSeconds(scenario, s)`, any
+// other time through `framesOf(s)` / `secondsOf(f)` (@efsim/engine), never a literal `* 60` or `* 30`.
+//
+// Long runs: start them with the Bash tool's background mode (never `&`), under the shared lock when they take
+// minutes of CPU: `node scripts/with-lock.ts node scratch/x.ts`.
+//
 // Logs: list development logs with `logFixtureFiles` or `listLogs` (never a hold-out; fixtures/holdout/ is never
 // opened by hand: docs/accuracy-plan.md, "Choosing logs"). Per-hit numbers of the log check: `efsim zmdlogs hits`.
 

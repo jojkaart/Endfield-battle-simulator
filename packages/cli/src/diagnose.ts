@@ -9,7 +9,7 @@ import {
   distributionCritMode,
   critTriggers,
   ELEMENT_DAMAGE_INCREASE,
-  FPS,
+  framesOf,
   policyDistribution,
   POLICY_REACTION_SECONDS,
   resolveRuleList,
@@ -123,7 +123,7 @@ export interface PlaySettings {
 /** Jobs for seeds first…first + n − 1 (default 1…n) of a list on a scenario (the fight at the settings' length). */
 export function seedJobs(scenario: Omit<TimelineScenario, "rotation">, list: RuleList, s: PlaySettings, seeds: number, extra: Partial<RulesJob> = {}, first = 1): RulesJob[] {
   return Array.from({ length: seeds }, (_, i) => ({
-    scenario: { ...scenario, durationFrames: Math.round(s.seconds * FPS), options: { ...scenario.options, crit: s.crit, seed: first + i } },
+    scenario: { ...scenario, durationFrames: framesOf(s.seconds), options: { ...scenario.options, crit: s.crit, seed: first + i } },
     list,
     options: { reactionSeconds: s.reaction, seed: first + i },
     ...extra,

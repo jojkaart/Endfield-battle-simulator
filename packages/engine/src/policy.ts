@@ -402,8 +402,26 @@ export interface PolicyFrameView {
   readonly queued: boolean;
 }
 
+/**
+ * Watches a rule run; never changes it. Each hook is optional: `frame` sees every frame visited (the diagnosis:
+ * policydiag.ts), `check` every start check the driver makes and its answer (why a press started where it did, or
+ * didn't: a disagreement between the shortcut and the reference shows without instrumenting the engine), `press`
+ * every press made.
+ */
 export interface PolicyObserver {
-  readonly frame: (view: PolicyFrameView) => void;
+  readonly frame?: (view: PolicyFrameView) => void;
+  readonly check?: (check: PolicyStartCheck) => void;
+  readonly press?: (action: RotationAction, frame: number, step: PolicyStep | null, rule: number | null) => void;
+}
+
+/** One start check of the rule driver (PolicyObserver.check). */
+export interface PolicyStartCheck {
+  readonly action: RotationAction;
+  readonly frame: number;
+  /** startsNow on the read state; canStartAt from the last press (the `frames` stepping); earliestStart for a basic attack's option. */
+  readonly how: "startsNow" | "canStartAt" | "earliestStart";
+  /** startsNow / canStartAt: whether it can start at `frame`; earliestStart: the earliest frame, or "error". */
+  readonly result: boolean | number | "error";
 }
 
 /** mulberry32's output function on one 32-bit state: a uniform value in [0, 1). */
@@ -616,8 +634,14 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
   let queue: { step: PolicyStep; rule: number | null; since: number }[] = list.opener.map((step) => ({ step, rule: null, since: 0 }));
   let openerEnd = list.opener.length === 0 ? 0 : -1;
 
-  const canPress = (a: RotationAction): boolean => (everyFrame ? canStartAt(ctx, pressed, a, st.frame) : startsNow(ctx, st, a));
+  const checkHook = observer?.check;
+  const canPress = (a: RotationAction): boolean => {
+    const ok = everyFrame ? canStartAt(ctx, pressed, a, st.frame) : startsNow(ctx, st, a);
+    if (checkHook) checkHook({ action: a, frame: st.frame, how: everyFrame ? "canStartAt" : "startsNow", result: ok });
+    return ok;
+  };
   const press = (action: RotationAction, frame: number, step: PolicyStep | null, rule: number | null) => {
+    observer?.press?.(action, frame, step, rule);
     st = apply(ctx, pressed, { ...action, at: frame });
     pressed = st;
     basicCache = null;
@@ -679,6 +703,7 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
         if (!skillAvailable(ctx, st, controlled, skill, frame)) continue;
         const r = earliestStart(ctx, st, a);
         cache.earliest.set(skill, (e = "error" in r ? "error" : r.frame));
+        if (checkHook) checkHook({ action: a, frame, how: "earliestStart", result: e });
       }
       // Can't start from here as things stand (its error may pass later as events happen): judged at each frame visited.
       if (e === "error") {
@@ -716,7 +741,7 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
     return w;
   };
   const observe = (f: number) => {
-    if (!observer) return;
+    if (!observer?.frame) return;
     const view = f === st.frame ? st : stateAt(f);
     observer.frame({
       ctx,

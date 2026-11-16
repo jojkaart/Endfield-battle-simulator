@@ -35,7 +35,8 @@ describe("inflictions", () => {
   it("the same element stacks to 4, bursts every time after the first, and resets the duration", () => {
     const apps = Array.from({ length: 6 }, (_, i): [number, HitApplication] => [i * 10, { kind: "infliction", element: "fire" }]);
     const { s, events } = run(apps);
-    expect(s.infliction).toEqual({ element: "fire", stacks: 4, expiresAt: 50 + INFLICTION_FRAMES, by: ["op", "op", "op", "op"] });
+    // Behaviour tests match the fields they mean; record-only fields (by, inflictionBy) are pinned in one test below.
+    expect(s.infliction).toMatchObject({ element: "fire", stacks: 4, expiresAt: 50 + INFLICTION_FRAMES });
     expect(events.filter((e) => e.kind === "burst")).toHaveLength(5);
     expect(events.filter((e) => e.kind === "inflicted").map((e) => (e.kind === "inflicted" ? e.stacks : 0))).toEqual([1, 2, 3, 4, 4, 4]);
     expect(statusEventKey(events.find((e) => e.kind === "burst") as StatusEvent)).toBe("buff_common_fire_fire_triggered");
@@ -60,7 +61,7 @@ describe("inflictions", () => {
     ]);
     expect(s.infliction).toBeNull();
     const r = events.at(-1);
-    expect(r).toEqual({ kind: "reaction", frame: 3, operator: "op", status: "combustion", element: "fire", level: 3, consumed: "natural", initialHit: true, inflictionBy: ["op", "op", "op"] });
+    expect(r).toMatchObject({ kind: "reaction", frame: 3, operator: "op", status: "combustion", element: "fire", level: 3, consumed: "natural", initialHit: true });
     expect(statusEventKey(r as StatusEvent)).toBe("buff_common_fire_natural_triggered");
     expect(s.statuses.map((x) => [x.status, x.level])).toEqual([["combustion", 3]]);
   });
@@ -70,7 +71,7 @@ describe("inflictions", () => {
     expect(applyToEnemy(base, { kind: "consumeInfliction", elements: ["cryst"] }, 2, "op", 0).events).toEqual([]);
     const r = applyToEnemy(base, { kind: "consumeInfliction" }, 2, "op", 0);
     expect(r.state.infliction).toBeNull();
-    expect(r.events).toEqual([{ kind: "consumed", frame: 2, operator: "op", element: "fire", stacks: 2 }]);
+    expect(r.events).toMatchObject([{ kind: "consumed", frame: 2, operator: "op", element: "fire", stacks: 2 }]);
   });
 });
 
@@ -79,7 +80,7 @@ describe("statuses", () => {
     const { s, events: all } = run([[0, { kind: "infliction", element: "pulse" }], [5, { kind: "forcedReaction", status: "corrosion" }]]);
     const events = all.filter((e) => e.kind !== "inflicted");
     expect(s.infliction?.element).toBe("pulse");
-    expect(events).toEqual([{ kind: "reaction", frame: 5, operator: "op", status: "corrosion", element: "natural", level: 1, consumed: null, initialHit: false }]);
+    expect(events).toMatchObject([{ kind: "reaction", frame: 5, operator: "op", status: "corrosion", element: "natural", level: 1, consumed: null, initialHit: false }]);
     expect(statusEventKey(events[0] as StatusEvent)).toBeNull();
   });
 
@@ -148,6 +149,14 @@ describe("arts state: applications kits need (batch 1, A1–A5)", () => {
     expect(r.events.map((e) => e.kind)).toEqual(["inflicted", "burst"]);
   });
 
+  it("pins the record-only fields' exact shapes (the one test that does: behaviour tests match their own fields)", () => {
+    const fire = Array.from({ length: 6 }, (_, i): [number, HitApplication] => [i * 10, { kind: "infliction", element: "fire" }]);
+    expect(run(fire).s.infliction).toEqual({ element: "fire", stacks: 4, expiresAt: 50 + INFLICTION_FRAMES, by: ["op", "op", "op", "op"] });
+    const reacted = run([0, 1, 2].map((f): [number, HitApplication] => [f, { kind: "infliction", element: "natural" }]).concat([[3, { kind: "infliction", element: "fire" }]])).events.at(-1);
+    expect(reacted).toEqual({ kind: "reaction", frame: 3, operator: "op", status: "combustion", element: "fire", level: 3, consumed: "natural", initialHit: true, inflictionBy: ["op", "op", "op"] });
+    expect(applyToEnemy(nature2, { kind: "consumeInfliction", stacks: 1 }, 5, "a", 0).state.infliction).toEqual({ ...nature2.infliction, stacks: 1, by: ["a"] });
+  });
+
   it("records who applied each stack, and carries it into the reaction and the burst (a record: damage doesn't read it)", () => {
     const ab = applyToEnemy(applyToEnemy(NO_STATUS, { kind: "infliction", element: "natural" }, 0, "a", 0).state, { kind: "infliction", element: "natural" }, 1, "b", 0);
     expect(ab.state.infliction?.by).toEqual(["a", "b"]);
@@ -162,8 +171,8 @@ describe("arts state: applications kits need (batch 1, A1–A5)", () => {
 
   it("consuming a number of stacks leaves the rest with its timer", () => {
     const r = applyToEnemy(nature2, { kind: "consumeInfliction", stacks: 1 }, 5, "a", 0);
-    expect(r.state.infliction).toEqual({ ...nature2.infliction, stacks: 1, by: ["a"] });
-    expect(r.events).toEqual([{ kind: "consumed", frame: 5, operator: "a", element: "natural", stacks: 1 }]);
+    expect(r.state.infliction).toMatchObject({ element: "natural", expiresAt: nature2.infliction?.expiresAt, stacks: 1 });
+    expect(r.events).toMatchObject([{ kind: "consumed", frame: 5, operator: "a", element: "natural", stacks: 1 }]);
     expect(applyToEnemy(nature2, { kind: "consumeInfliction", stacks: 9 }, 5, "a", 0).state.infliction).toBeNull();
   });
 
@@ -172,7 +181,7 @@ describe("arts state: applications kits need (batch 1, A1–A5)", () => {
     expect(corroded.statuses.map((x) => x.status)).toEqual(["corrosion"]);
     const r = applyToEnemy(corroded, { kind: "consumeStatus", statuses: ["corrosion"] }, 10, "b", 0);
     expect(r.state.statuses).toEqual([]);
-    expect(r.events).toEqual([{ kind: "statusConsumed", frame: 10, operator: "b", status: "corrosion", level: 2 }]);
+    expect(r.events).toMatchObject([{ kind: "statusConsumed", frame: 10, operator: "b", status: "corrosion", level: 2 }]);
     expect(applyToEnemy(corroded, { kind: "consumeStatus", statuses: ["solidification"] }, 10, "b", 0).events).toEqual([]);
   });
 
@@ -191,7 +200,7 @@ describe("physical state (Vulnerable, Lift, Knock Down, Crush, Breach, Shatter)"
 
   it("without Vulnerable, a status only adds a stack, unless it's a forced Lift", () => {
     const r = phys(NO_STATUS, "crush", 0);
-    expect(r.events).toEqual([{ kind: "vulnerable", frame: 0, operator: "a", stacks: 1, before: 0 }]);
+    expect(r.events).toMatchObject([{ kind: "vulnerable", frame: 0, operator: "a", stacks: 1, before: 0 }]);
     expect(r.state.vulnerable).toEqual({ stacks: 1, expiresAt: 600 });
     const f = phys(NO_STATUS, "lift", 0, true);
     expect(f.events.map((e) => e.kind)).toEqual(["vulnerable", "physical"]);
@@ -206,7 +215,7 @@ describe("physical state (Vulnerable, Lift, Knock Down, Crush, Breach, Shatter)"
     expect(s.vulnerable?.stacks).toBe(3);
     const crush = phys(s, "crush", 90);
     expect(crush.state.vulnerable).toBeNull();
-    expect(crush.events).toEqual([{ kind: "physical", frame: 90, operator: "a", status: "crush", level: 3, forced: false }]);
+    expect(crush.events).toMatchObject([{ kind: "physical", frame: 90, operator: "a", status: "crush", level: 3, forced: false }]);
     const breach = phys(s, "breach", 90);
     expect(breach.state.physical.find((x) => x.status === "breach")).toMatchObject({ level: 3, expiresAt: 90 + 24 * 30 });
     // Breach: Physical DMG taken +20% at level III (AI 0).

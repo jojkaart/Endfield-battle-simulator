@@ -18,6 +18,8 @@ import {
   resolveRuleList,
   SKILL_BUTTONS,
   startsNow,
+  withSeconds,
+  type PolicyStartCheck,
   type RotationAction,
   type TimelineScenario,
 } from "@efsim/engine";
@@ -71,4 +73,21 @@ describe("one start check (canStartAt)", () => {
     const r = playRules(data, { ...sc, durationFrames: 20 * 30 }, l, { seed: 3 });
     expect(agree(sc, r.rotation, 20)).toBeGreaterThan(50);
   }, 120_000);
+});
+
+describe("the observer's start-check and press hooks", () => {
+  it("see every press with the check that let it start, and never change the run", () => {
+    const { sc, list: l } = example("ink-melt");
+    const fight = withSeconds(sc, 20);
+    const checks: PolicyStartCheck[] = [];
+    const pressed: RotationAction[] = [];
+    const watched = playRules(data, fight, l, { seed: 3, observer: { check: (c) => checks.push(c), press: (a, frame) => pressed.push({ ...a, at: frame }) } });
+    const plain = playRules(data, fight, l, { seed: 3 });
+    expect(watched.rotation).toEqual(plain.rotation);
+    expect(watched.total).toBe(plain.total);
+    expect(pressed).toEqual(watched.rotation);
+    expect(checks.length).toBeGreaterThan(pressed.length);
+    // Each press (but the dives and finishers judged elsewhere) follows a passing check of that action at its frame.
+    for (const p of pressed) expect(checks.some((c) => c.frame === p.at && c.action.skill === p.skill && c.result === true) || checks.some((c) => c.how === "earliestStart" && c.action.skill === p.skill)).toBe(true);
+  }, 60_000);
 });

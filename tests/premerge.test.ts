@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { slowest, STEPS, table, timeoutOnlyFiles, type VitestReport } from "../scripts/premerge.ts";
+import { GATES, slowest, STEPS, table, timeoutOnlyFiles, type VitestReport } from "../scripts/premerge.ts";
 
 const file = (name: string, results: { status: string; failureMessages?: string[] }[], status = results.some((r) => r.status === "failed") ? "failed" : "passed", message = ""): VitestReport["testResults"][number] => ({
   name,
@@ -48,6 +48,14 @@ describe("premerge's steps", () => {
       expect(check).toContain(script);
       expect(STEPS.map((s) => s.name)).toContain(step);
     }
+  });
+
+  it("stops after a failed typecheck or lint (they come first): the long steps show as skipped", () => {
+    expect([...GATES].sort()).toEqual(["lint", "typecheck"]);
+    const names = STEPS.map((s) => s.name);
+    expect(names.indexOf("typecheck")).toBeLessThan(names.indexOf("test"));
+    expect(names.indexOf("lint")).toBeLessThan(names.indexOf("test"));
+    expect(table([{ step: "lint", ok: false, seconds: 9, note: "" }, { step: "test", ok: false, seconds: 0, note: "skipped: lint failed (--keep-going runs it anyway)" }])).toContain("test  skip      0 s  skipped: lint failed");
   });
 
   it("prints a table with a line per step and the verdict", () => {

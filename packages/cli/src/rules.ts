@@ -8,6 +8,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import {
   EngineError,
   FPS,
+  withSeconds,
   POLICY_CUE_RANKS,
   POLICY_JITTER,
   POLICY_REACTION_SECONDS,
@@ -207,7 +208,7 @@ export async function rulesCommand(data: GameData, scenario: TimelineScenario, r
   const workers = options.workers ?? defaultWorkers();
   const team = scenario.team.map((b) => b.operator);
   const list = resolveRuleList(data, team, rawList);
-  const fight: TimelineScenario = { ...scenario, durationFrames: Math.round(seconds * FPS), rotation: [] };
+  const fight: TimelineScenario = { ...withSeconds(scenario, seconds), rotation: [] };
   // The scenario's own rotation as the reference, when it can be played (other gear may not play a timeline made for the old: Si without her Ultimate Gain gloves).
   let reference: { total: number; seconds: number } | null = null;
   let noReference = "";
@@ -275,7 +276,7 @@ export async function rulesCommand(data: GameData, scenario: TimelineScenario, r
 
   const searchSeconds = options.searchSeconds ?? 180;
   const t0 = performance.now();
-  const result = searchRules(data, { ...fight, durationFrames: Math.round(searchSeconds * FPS) }, list, {
+  const result = searchRules(data, withSeconds(fight, searchSeconds), list, {
     reactionSeconds: reaction,
     ...(options.iterations !== undefined ? { iterations: options.iterations } : {}),
     ...(options.searchSeeds !== undefined ? { seeds: options.searchSeeds } : {}),

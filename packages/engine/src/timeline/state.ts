@@ -11,6 +11,7 @@ import type { ActiveBuff } from "../buffs.ts";
 import type { StatPanel } from "../stats.ts";
 import type { EnemyStatus, StatusEvent } from "../status.ts";
 import type { ArtsElement, ReactionKind } from "../reactions.ts";
+import { framesOf } from "../units.ts";
 
 export interface RotationAction {
   readonly operator: string;
@@ -93,6 +94,11 @@ export interface TimelineScenario {
    * `level` stacks of it, whatever the replay's enemy holds, so the reaction (its hit and its status) is of that level.
    */
   readonly loggedReactionLevels?: readonly { readonly operator: string; readonly element: ArtsElement; readonly frame: number; readonly level: number }[];
+}
+
+/** The scenario with a fight `seconds` long (whole frames at FPS, rounded): the one way to set a length in seconds. */
+export function withSeconds<S extends TimelineScenario>(scenario: S, seconds: number): S {
+  return { ...scenario, durationFrames: framesOf(seconds) };
 }
 
 /**
@@ -290,6 +296,11 @@ export interface LandedHit extends HitDamage {
   readonly fixed?: true;
   /** A replayed landing's reference (replayCast `landings` ref), and what its values read as it landed. */
   readonly ref?: string;
+  /**
+   * What a kit hit's values read as it landed: on a replay's kit-hit landings only (a pinned one, or one a trigger
+   * lands under loggedCrits). Status events' landings (bursts, reactions, Combustion ticks, Lift, Shatter) never have
+   * them (landing.ts eventDamage).
+   */
   readonly facts?: LandingFacts;
   /** With TimelineScenario.loggedCrits: the crit the log gives this kit hit's landing, or null when the log doesn't say (not set otherwise). */
   readonly loggedCrit?: boolean | null;

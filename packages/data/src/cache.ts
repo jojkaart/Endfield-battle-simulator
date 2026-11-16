@@ -3,10 +3,12 @@
 // everything the build reads, so it is either the build's exact result or a miss:
 //   - the data sources' commits, and the size and time of each table file and of rmxlinux's Json/ folders (a sparse
 //     fetch that adds files changes a folder's time);
-//   - the contents of the kit files, the schemas, packages/data/tables.json, the data package's sources, and the
+//   - the contents of the kit files, the schemas, packages/data/tables.json, the data package's sources the build
+//     runs (dataSources: gameData.ts and its run-time imports, not the log importer or other tooling), and the
 //     engine modules those sources import at run time (engineSources: not the planning code, which edits often);
 //   - CACHE_FORMAT and the V8 version (the serialisation format).
-// Any error reading it means a full build. Writes go to a temporary file renamed into place, so parallel test and
+// A rebuild prints one line on stderr saying which inputs changed since the last entry written (last-inputs.json in
+// the cache folder). Any error reading it means a full build. Writes go to a temporary file renamed into place, so parallel test and
 // rules workers never see half a file. EFSIM_NO_CACHE=1 turns it off; `efsim cache clear` empties it. It lives in the
 // main checkout's node_modules/.cache/efsim (git-ignored; EFSIM_CACHE_DIR overrides), shared by its worktrees.
 
@@ -50,16 +52,51 @@ const RELATIVE_TS = /["'](\.\.?\/[^"']+?\.ts)["']/g;
 const NAMED_ENGINE_IMPORT = /import\s+(type\s+)?\{([^}]*)\}\s*from\s*["']@efsim\/engine["']/g;
 const ESCAPE = /[.*+?^${}()|[\]\\]/g;
 
+/** Every relative .ts module a file runs, transitively, from `entry` (type-only imports left out), within `within`. */
+function runTimeGraph(entries: readonly string[], within: string): { files: string[]; traced: boolean } {
+  const seen = new Set<string>();
+  const queue = [...entries];
+  while (queue.length) {
+    const file = queue.pop() as string;
+    if (seen.has(file)) continue;
+    seen.add(file);
+    if (!existsSync(file)) return { files: [], traced: false };
+    const text = readFileSync(file, "utf8").replace(TYPE_ONLY, "");
+    for (const [, spec] of text.matchAll(RELATIVE_TS)) {
+      const target = resolve(dirname(file), spec as string);
+      if (!relative(within, target).startsWith("..")) queue.push(target);
+    }
+  }
+  return { files: [...seen].sort(), traced: true };
+}
+
+/** The data package's module that builds the GameData (`build()`, `loadGameData`): where the trace starts. */
+const BUILD_ENTRY = ["packages", "data", "src", "gameData.ts"] as const;
+
 /**
- * The engine source files the data package's code runs: the modules that export the names it imports from
- * @efsim/engine, and every module those import (type-only imports left out). The whole engine when an import or an
- * export can't be traced, so a miss here can only make the cache rebuild more often, never go stale.
+ * The data package's source files the build runs: gameData.ts and every module it imports at run time (type-only
+ * imports left out), cache.ts included. Not the log importer (zmdlogs.ts) or other tooling the build never calls, so
+ * editing those keeps the cache. Every file of the package when the trace fails (never stale, only slower).
+ */
+export function dataSources(root: string = REPO_ROOT): { files: string[]; traced: boolean } {
+  const src = join(root, "packages", "data", "src");
+  const g = runTimeGraph([join(root, ...BUILD_ENTRY)], src);
+  return g.traced ? g : { files: filesUnder(src, ".ts"), traced: false };
+}
+
+/**
+ * The engine source files the data package's code runs: the modules that export the names the build's own sources
+ * (dataSources) import from @efsim/engine, and every module those import (type-only imports left out). The whole
+ * engine when an import or an export can't be traced, so a miss here can only make the cache rebuild more often,
+ * never go stale.
  */
 export function engineSources(root: string = REPO_ROOT): { files: string[]; traced: boolean } {
   const engine = join(root, "packages", "engine", "src");
   const whole = { files: filesUnder(engine, ".ts"), traced: false };
   const names = new Set<string>();
-  for (const file of filesUnder(join(root, "packages", "data", "src"), ".ts")) {
+  const data = dataSources(root);
+  if (!data.traced) return whole;
+  for (const file of data.files) {
     const text = readFileSync(file, "utf8");
     const mentions = text.split(/["']@efsim\/engine["']/).length - 1;
     const imports = [...text.matchAll(NAMED_ENGINE_IMPORT)];
@@ -90,19 +127,8 @@ export function engineSources(root: string = REPO_ROOT): { files: string[]; trac
     if (!home) return whole;
     queue.push(home);
   }
-  const seen = new Set<string>();
-  while (queue.length) {
-    const file = queue.pop() as string;
-    if (seen.has(file)) continue;
-    seen.add(file);
-    if (!existsSync(file)) return whole;
-    const text = readFileSync(file, "utf8").replace(TYPE_ONLY, "");
-    for (const [, spec] of text.matchAll(RELATIVE_TS)) {
-      const target = resolve(dirname(file), spec as string);
-      if (!relative(engine, target).startsWith("..")) queue.push(target);
-    }
-  }
-  return { files: [...seen].sort(), traced: true };
+  const g = runTimeGraph(queue, engine);
+  return g.traced ? g : whole;
 }
 
 export interface CacheKeyOptions {
@@ -112,43 +138,98 @@ export interface CacheKeyOptions {
   readonly kitsDir?: string;
 }
 
-/** The cache key: a hash of everything the build reads (see the top of this file). Throws if the data isn't there. */
-export function gameDataCacheKey(options: CacheKeyOptions = {}): string {
+/** One input of the key: a label (a file's path, a kit, a data source) and a digest of its content. */
+export interface CacheInput {
+  readonly label: string;
+  readonly digest: string;
+}
+
+const digestOf = (data: string | Buffer) => createHash("sha256").update(data).digest("hex").slice(0, 16);
+
+/** Everything the key hashes, one entry per input (see the top of this file). Throws if the data isn't there. */
+export function gameDataCacheInputs(options: CacheKeyOptions = {}): CacheInput[] {
   const root = options.root ?? REPO_ROOT;
   const kitsDir = options.kitsDir ?? join(root, "packages", "data", "kits");
-  const h = createHash("sha256");
-  const add = (...parts: (string | number)[]) => {
-    for (const p of parts) h.update(`${p}\0`);
-  };
-  add("efsim-gamedata", CACHE_FORMAT, process.versions.v8);
+  const inputs: CacheInput[] = [{ label: "format", digest: `${CACHE_FORMAT} v8 ${process.versions.v8}` }];
   for (const source of SOURCES) {
-    add("source", source, sourceCommit(source));
+    const parts: (string | number)[] = [sourceCommit(source)];
     const tables = tablesDir(source);
     for (const table of TABLES) {
       const file = join(tables, `${table}.json`);
-      if (!existsSync(file)) add(table, "missing");
+      if (!existsSync(file)) parts.push(table, "missing");
       else {
         const s = statSync(file);
-        add(table, s.size, s.mtimeMs);
+        parts.push(table, s.size, s.mtimeMs);
       }
     }
     const json = join(sourceDir(source), "Json");
-    if (existsSync(json)) for (const d of readdirSync(json).sort()) add("Json", d, statSync(join(json, d)).mtimeMs);
+    if (existsSync(json)) for (const d of readdirSync(json).sort()) parts.push("Json", d, statSync(join(json, d)).mtimeMs);
+    inputs.push({ label: `data:${source}`, digest: digestOf(parts.join("\0")) });
   }
-  const hashFile = (label: string, file: string) => {
-    add(label);
-    h.update(readFileSync(file));
-    add("");
-  };
-  for (const file of filesUnder(kitsDir, ".json")) hashFile(`kit:${relative(kitsDir, file)}`, file);
+  for (const file of filesUnder(kitsDir, ".json")) inputs.push({ label: `kit:${relative(kitsDir, file)}`, digest: digestOf(readFileSync(file)) });
   const sources = [
     join(root, "packages", "data", "tables.json"),
     ...filesUnder(join(root, "schemas"), ".json"),
-    ...filesUnder(join(root, "packages", "data", "src"), ".ts"),
+    ...dataSources(root).files,
     ...engineSources(root).files,
   ];
-  for (const file of sources) hashFile(relative(root, file), file);
+  for (const file of sources) inputs.push({ label: relative(root, file), digest: digestOf(readFileSync(file)) });
+  return inputs;
+}
+
+/** The cache key of a list of inputs. */
+export function cacheKeyOf(inputs: readonly CacheInput[]): string {
+  const h = createHash("sha256");
+  h.update("efsim-gamedata\0");
+  for (const i of inputs) h.update(`${i.label}\0${i.digest}\0`);
   return h.digest("hex").slice(0, 40);
+}
+
+/** The cache key: a hash of everything the build reads (see the top of this file). Throws if the data isn't there. */
+export function gameDataCacheKey(options: CacheKeyOptions = {}): string {
+  return cacheKeyOf(gameDataCacheInputs(options));
+}
+
+/** The inputs of the last entry written (any checkout sharing the cache), to say why a load rebuilds. */
+const LAST_INPUTS = "last-inputs.json";
+
+/** The inputs that differ between two lists: changed, added and removed labels. */
+export function changedInputs(before: readonly CacheInput[], now: readonly CacheInput[]): string[] {
+  const a = new Map(before.map((i) => [i.label, i.digest]));
+  const b = new Map(now.map((i) => [i.label, i.digest]));
+  const out: string[] = [];
+  for (const [label, digest] of b) {
+    if (!a.has(label)) out.push(`${label} (new)`);
+    else if (a.get(label) !== digest) out.push(label);
+  }
+  for (const label of a.keys()) if (!b.has(label)) out.push(`${label} (gone)`);
+  return out;
+}
+
+/** Why a load rebuilds, in one line: the inputs changed since the last entry written, or that there is none. */
+export function rebuildReason(inputs: readonly CacheInput[], dir: string = cacheDir()): string {
+  let last: { inputs?: CacheInput[] } | undefined;
+  try {
+    last = JSON.parse(readFileSync(join(dir, LAST_INPUTS), "utf8")) as { inputs?: CacheInput[] };
+  } catch {
+    last = undefined;
+  }
+  if (!last?.inputs) return "no earlier entry to compare with";
+  const changed = changedInputs(last.inputs, inputs);
+  if (!changed.length) return "the last entry written has the same inputs (removed or unreadable since)";
+  const shown = changed.slice(0, 6).join(", ");
+  return `inputs changed since the last entry written (in any checkout sharing the cache): ${shown}${changed.length > 6 ? `, and ${changed.length - 6} more` : ""}`;
+}
+
+function writeLastInputs(inputs: readonly CacheInput[], dir: string): void {
+  const file = join(dir, LAST_INPUTS);
+  const tmp = `${file}.${process.pid}-${threadId}.tmp`;
+  try {
+    writeFileSync(tmp, JSON.stringify({ inputs }));
+    renameSync(tmp, file);
+  } catch {
+    // only the next rebuild's explanation is lost
+  }
 }
 
 const entryFile = (dir: string, key: string) => join(dir, `gamedata-${key}.v8`);
@@ -171,8 +252,11 @@ export function readGameDataCache(key: string, dir: string = cacheDir()): GameDa
   }
 }
 
-/** Writes the entry atomically (temporary file, then rename) and prunes old entries. Failures only warn. */
-export function writeGameDataCache(key: string, data: GameData, dir: string = cacheDir()): void {
+/**
+ * Writes the entry atomically (temporary file, then rename) and prunes old entries. Failures only warn. With its
+ * inputs, they're kept as the last entry's, so the next rebuild can say what changed.
+ */
+export function writeGameDataCache(key: string, data: GameData, dir: string = cacheDir(), inputs?: readonly CacheInput[]): void {
   const file = entryFile(dir, key);
   const tmp = `${file}.${process.pid}-${threadId}.tmp`;
   try {
@@ -188,6 +272,7 @@ export function writeGameDataCache(key: string, data: GameData, dir: string = ca
     process.emitWarning(`efsim: couldn't write the game-data cache in ${dir}: ${(e as Error).message}`);
     return;
   }
+  if (inputs) writeLastInputs(inputs, dir);
   prune(dir);
 }
 
@@ -234,18 +319,24 @@ export function listGameDataCache(dir: string = cacheDir()): { file: string; byt
     .sort((a, b) => b.used.getTime() - a.used.getTime());
 }
 
-/** `build()`'s result through the cache: read when the key's entry is there, else built and written. */
+/**
+ * `build()`'s result through the cache: read when the key's entry is there, else built and written. A rebuild says
+ * why on stderr, in one line (which inputs changed since the last entry written), so a slow start is explained.
+ */
 export function loadCachedGameData(build: () => GameData): GameData {
   if (cacheDisabled()) return build();
-  let key: string;
+  let inputs: CacheInput[];
   try {
-    key = gameDataCacheKey();
+    inputs = gameDataCacheInputs();
   } catch {
     return build(); // e.g. no data: the build's own error says what's missing
   }
+  const key = cacheKeyOf(inputs);
   const hit = readGameDataCache(key);
   if (hit) return hit;
+  const dir = cacheDir();
+  process.stderr.write(`efsim: game-data cache: building (about 10 s): ${rebuildReason(inputs, dir)}\n`);
   const data = build();
-  writeGameDataCache(key, data);
+  writeGameDataCache(key, data, dir, inputs);
   return data;
 }

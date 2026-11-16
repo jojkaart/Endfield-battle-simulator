@@ -6,7 +6,7 @@ import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cacheDir, cacheDisabled, clearGameDataCache, gameDataCacheKey, listGameDataCache, loadGameData, withKitFiles } from "@efsim/data";
-import { EngineError, FPS, simulate as simulateScenario, type CritMode, type TimelineScenario } from "@efsim/engine";
+import { EngineError, FPS, simulate as simulateScenario, withSeconds, type CritMode, type TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, loopCommand, readScenario, searchCommand } from "./simulate.ts";
@@ -367,7 +367,7 @@ async function main(argv: string[]): Promise<number> {
     return {
       ...scenario,
       options: { ...scenario.options, ...(seed !== undefined ? { seed } : {}), ...(chance !== undefined ? { dodge: { chance } } : {}) },
-      ...(every !== undefined ? { enemyActions: [...(scenario.enemyActions ?? []), { kind: "attack" as const, every: every * 30 }] } : {}),
+      ...(every !== undefined ? { enemyActions: [...(scenario.enemyActions ?? []), { kind: "attack" as const, every: every * FPS }] } : {}),
     };
   };
   // Loaded on first use, after the arguments and input files are checked (a mistake is reported without the load's wait).
@@ -380,7 +380,7 @@ async function main(argv: string[]): Promise<number> {
     if (values.duration === undefined) return scenario;
     const s = Number(values.duration);
     if (!(s > 0)) throw new Error("--duration must be a number of seconds > 0");
-    return { ...scenario, durationFrames: Math.round(s * FPS) };
+    return withSeconds(scenario, s);
   };
   let text: string;
   switch (command) {

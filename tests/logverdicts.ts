@@ -3,7 +3,7 @@
 // mismatch, unvalued, unquantified, uncovered). A regression baseline like the example snapshot, not values with
 // provenance (docs/design.md principle 11).
 
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { VERDICT_COUNTS, type VerdictCount } from "@efsim/cli";
@@ -19,18 +19,29 @@ export function logFixtures(sub: string): string[] {
 }
 
 /**
- * Shard `i` of `n` of log fixtures, balanced by hit count (the largest first, each to the lightest shard), so slow
- * checks spread over test files that run in parallel.
+ * Shard `i` of `n` of log fixtures, balanced by cost (the largest first, each to the lightest shard), so slow checks
+ * spread over test files that run in parallel. A log's cost is its check time in the last snapshot update
+ * (tests/slow/pending-costs.json, scripts/pending-costs.ts); a log without one costs its hit count times the
+ * measured logs' mean seconds per hit (or just its hit count when nothing is measured).
  */
-export function shard(files: readonly string[], n: number, i: number): string[] {
+export function shard(files: readonly string[], n: number, i: number, costs: Readonly<Record<string, number>> = readPendingCosts()): string[] {
   const hits = new Map(files.map((f) => [f, (JSON.parse(readFileSync(join(ROOT, "fixtures", f), "utf8")) as { hits: unknown[] }).hits.length]));
+  const measured = files.filter((f) => costs[f] !== undefined);
+  const perHit = measured.length ? measured.reduce((s, f) => s + (costs[f] as number), 0) / Math.max(1, measured.reduce((s, f) => s + (hits.get(f) as number), 0)) : 1;
+  const cost = new Map(files.map((f) => [f, costs[f] ?? (hits.get(f) as number) * perHit]));
   const shards = Array.from({ length: n }, () => ({ load: 0, files: [] as string[] }));
-  for (const f of [...files].sort((a, b) => (hits.get(b) as number) - (hits.get(a) as number) || a.localeCompare(b))) {
+  for (const f of [...files].sort((a, b) => (cost.get(b) as number) - (cost.get(a) as number) || a.localeCompare(b))) {
     const s = shards.reduce((m, x) => (x.load < m.load ? x : m));
     s.files.push(f);
-    s.load += hits.get(f) as number;
+    s.load += cost.get(f) as number;
   }
   return (shards[i] as { files: string[] }).files.sort();
+}
+
+/** tests/slow/pending-costs.json (seconds per log), or none. */
+export function readPendingCosts(): Record<string, number> {
+  const file = join(ROOT, "tests", "slow", "pending-costs.json");
+  return existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as Record<string, number>) : {};
 }
 
 export type Counts = Readonly<Record<VerdictCount, number>>;

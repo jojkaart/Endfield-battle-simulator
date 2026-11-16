@@ -2635,7 +2635,21 @@ exactly and additively across the operators whose effects contributed.
 - **Snapshot files** that don't parse (merge conflict markers) are read as
   empty by an update run and fail otherwise with the fix (tests/snapshot.ts
   `readStored`); snapshot tests record their entry before any assertion
-  that can fail, so an update never keeps a stale entry.
+  that can fail, so an update never keeps a stale entry. One writer
+  (`formatSnapshot` / `writeSnapshotFile`) lays out every snapshot file;
+  `node scripts/snapshot-keys.ts <file> --rename <regex> <to>` renames
+  keys after a file move without running the tests, printing counts only.
+- **Record fields and exact shapes** (2026-11-16): fields the engine keeps
+  only as records for analyses (an infliction's `by`, a reaction's
+  `inflictionBy`, a landing's `facts`) aren't part of behaviour. Behaviour
+  tests match the fields they mean with `toMatchObject` (element, stacks,
+  expiresAt; kind, level, consumed); one test per record pins its exact
+  shape (packages/engine/test/status.test.ts "pins the record-only
+  fields"). Adding a record then touches that one test.
+- **The pending shards** (tests/slow/logs-pending-*.test.ts) are balanced
+  by each log's check time in the last snapshot update
+  (tests/slow/pending-costs.json, written by scripts/pending-costs.ts from
+  snapshots.sh's vitest report; a new log falls back to its hit count).
 
 ## Code layout (proposed)
 

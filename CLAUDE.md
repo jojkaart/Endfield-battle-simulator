@@ -47,7 +47,10 @@ pending logs, negative control, single tests of tens of seconds) and
 `npm run check` (both, plus types and lint) run before a merge. While
 working, run only what a change touches: `npx vitest run tests/<file>.test.ts`
 (one file; `-t "<name>"` for one test) or `npx vitest related --run
-<changed source files>` (every test file that imports them). A test file
+<changed source files>` (every test file that imports them), and `npm run
+lint:changed` (ESLint on the files changed since `main`, seconds). A
+background test run: add `--reporter=default
+--reporter=./scripts/vitest-progress.ts` (a line per finished file). A test file
 that takes over ~40 s gets split, and a single test of tens of seconds goes
 to `tests/slow/`. Shared test builders live in `tests/helpers/` (synthetic
 kits and logs, buff history); after a split, `npm run prune-unused --
@@ -61,6 +64,8 @@ snapshots:update` regenerates them all from the current code (it prints
 the scoreboard's change and which logs got better or worse). On a merge
 conflict in any of them, take either side and run it; never merge them by
 hand. Quote the scoreboard's numbers, not scratch sums, in the journal.
+After a fixture move, `node scripts/snapshot-keys.ts <file> --rename
+<regex> <to>` renames snapshot keys (counts only, no values shown).
 
 The owner plays daily and may run simple in-game tests. Keep
 [docs/in-game-tests.md](docs/in-game-tests.md) current and tell the owner
@@ -88,24 +93,38 @@ links the worktree's own packages, which the CLI refuses to run without.
 Vitest does it itself; the game data is found in the main checkout. Before
 merging a branch into `main`, run `scripts/premerge.sh`: about 15–20 min
 (more under load), so run it in the background with a limit of 40 min. It
-runs every step, re-runs files that only timed out, waits for other
-worktrees' suites (a shared lock) and ends with a pass/fail table.
+runs every step (but skips the test suites when typecheck or lint
+fails), re-runs files that only timed out, waits for other worktrees'
+suites (a shared lock) and ends with a pass/fail table. A game-data
+rebuild (~10 s) prints why on stderr (which inputs changed).
 
 Command shapes the worktree sandbox accepts (others are refused as "too
 complex to verify"):
 
 - One plain command per Bash call, run from the worktree, absolute paths.
-  No `source`, no heredocs, no `cd … && git …` chains, no loops or pipes
-  around `git`, no `git -C`. `git show <ref>:<path> > scratch/x`, then
-  process the file.
-- File edits with the Write/Edit tools, not `sed`/`python -c` pipelines.
+  No `source`, no `cd … && git …` chains, no loops or pipes around `git`,
+  no `git -C`. `git show <ref>:<path> > scratch/x`, then process the file.
+- Never a heredoc or a multi-line `python3 -c`, even where one has worked
+  before: the guard judges the whole text, so the same form passes once
+  and is refused the next time. Write the file with the Write tool, then
+  run it with one plain command. File edits with the Write/Edit tools.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
-  `scripts/scratch-template.ts`, run `node scratch/x.ts`.
-- Long runs: start them in the background with progress to a file, then
-  wait with Monitor on that file (a foreground `sleep` is refused).
+  `scripts/scratch-template.ts`, run `node scratch/x.ts`. Times go through
+  `FPS` (30 frames a second): `withSeconds(scenario, s)` for a fight's
+  length, `framesOf(s)` / `secondsOf(f)` otherwise, never a literal `* 60`.
+- Long runs: start them with the Bash tool's background mode (never `&` or
+  `nohup`: such a job can't be stopped, and `pkill` is off limits), with
+  progress to a file, then wait with Monitor on that file (a foreground
+  `sleep` is refused). Minutes of CPU (measurements, seed tables,
+  `gear --rules`): `node scripts/with-lock.ts <command>` queues it behind
+  other worktrees' test suites and heavy jobs (premerge's lock).
 - Timing claims: `npm run bench -- "<cmd A>" "<cmd B>"` (alternating runs,
-  CPU seconds and load), never two runs at different times.
+  CPU seconds and load), never two runs at different times. Another
+  commit's code beside this one: `node scripts/at-commit.ts <ref>
+  [--patch f]` (a worktree under scratch/at/ with its own packages linked;
+  `--remove <dir>` after), then bench both CLIs or both test runs
+  (`"cd scratch/at/<hash> && npx vitest run <file>"`).
 
 Hold-out logs live in `fixtures/holdout/`: never open, list or grep it.
 `efsim zmdlogs list [--with <operator>]` lists the development logs.

@@ -8,9 +8,14 @@ import { describe, expect, it } from "vitest";
 import type { GameData } from "@efsim/engine";
 import {
   buildGameData,
+  cacheKeyOf,
+  changedInputs,
   clearGameDataCache,
+  dataSources,
   engineSources,
+  gameDataCacheInputs,
   gameDataCacheKey,
+  rebuildReason,
   listGameDataCache,
   loadCachedGameData,
   loadGameData,
@@ -104,6 +109,8 @@ describe("game-data cache", () => {
     // The planning code isn't a build input: editing it keeps the cache. (If the data package comes to import it, this
     // flips, and engineSources' trace says so.)
     expect(edit("packages/engine/src/policy.ts", (t) => `${t}\n`)).toBe(base);
+    // Nor is the data package's tooling the build never runs (the log importer).
+    expect(edit("packages/data/src/zmdlogs.ts", (t) => `${t}\n`)).toBe(base);
 
     mkdirSync(join(root, "packages/data/kits/equipment"), { recursive: true });
     writeFileSync(join(root, "packages/data/kits/equipment/zz-new.json"), "{}\n");
@@ -151,6 +158,25 @@ describe("game-data cache", () => {
     expect(efsim("cache")).toContain(`key: ${key} (cached)`);
     expect(efsim("cache", "clear")).toContain("Removed 1 file");
     expect(efsim("cache")).toContain("(not cached");
+  });
+
+  it("says why it rebuilds: the inputs changed since the last entry written", () => {
+    const dir = temp("cache");
+    const inputs = gameDataCacheInputs();
+    expect(rebuildReason(inputs, dir)).toBe("no earlier entry to compare with");
+    writeGameDataCache(cacheKeyOf(inputs), { marker: 1 } as unknown as GameData, dir, inputs);
+    const edited = inputs.map((i) => (i.label === "packages/data/src/kits.ts" ? { ...i, digest: "x" } : i)).filter((i) => i.label !== "packages/data/src/foods.ts");
+    expect(changedInputs(inputs, [...edited, { label: "kit:operators/new.json", digest: "y" }])).toEqual(["packages/data/src/kits.ts", "kit:operators/new.json (new)", "packages/data/src/foods.ts (gone)"]);
+    expect(rebuildReason(edited, dir)).toContain("inputs changed since the last entry written (in any checkout sharing the cache): packages/data/src/kits.ts, packages/data/src/foods.ts (gone)");
+    expect(cacheKeyOf(inputs)).toBe(gameDataCacheKey());
+  });
+
+  it("traces the data modules the build runs", () => {
+    const { files, traced } = dataSources();
+    expect(traced).toBe(true);
+    const names = files.map((f) => basename(f));
+    expect(names).toContain("kits.ts");
+    expect(names).not.toContain("zmdlogs.ts");
   });
 
   it("traces the engine modules the data package runs", () => {

@@ -13,6 +13,7 @@
 // the stepping API and its types, as @efsim/engine exports them.
 
 export type { RotationAction, TimelineOptions, TimelineScenario, EnemyActionSpec, EnemyAction, Cast, LandedHit, LandingFacts, LandingInputs, ReactionRecord, TimelineState, TimelineContext, Acting, ChainStep, PendingBurst } from "./timeline/state.ts";
+export { withSeconds } from "./timeline/state.ts";
 export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, diveFrames, linkValue } from "./timeline/rules.ts";
 export { createContext, kitAssumptions, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";

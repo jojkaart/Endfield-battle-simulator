@@ -47,3 +47,17 @@ export function secondsToFrames(s: Seconds): Frames {
 export function framesToSeconds(f: Frames): Seconds {
   return seconds(f / FPS);
 }
+
+/**
+ * A length in seconds as whole frames (rounded), unbranded: for fight lengths, delays and times in scenarios, tests
+ * and scratch scripts. Never write `s * 60` or `s * 30` by hand: a wrong frame rate gives plausible numbers for a
+ * fight twice as long (a 15-minute baseline was lost that way).
+ */
+export function framesOf(s: number): number {
+  return Math.round(s * FPS);
+}
+
+/** Frames as seconds (unbranded). */
+export function secondsOf(f: number): number {
+  return f / FPS;
+}
