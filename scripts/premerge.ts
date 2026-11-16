@@ -41,7 +41,9 @@ export interface VitestReport {
     readonly name: string;
     readonly status: string;
     readonly message?: string;
-    readonly assertionResults: readonly { readonly status: string; readonly fullName: string; readonly failureMessages: readonly string[] }[];
+    readonly startTime?: number;
+    readonly endTime?: number;
+    readonly assertionResults: readonly { readonly status: string; readonly fullName: string; readonly failureMessages: readonly string[]; readonly duration?: number | null }[];
   }[];
 }
 
@@ -63,6 +65,16 @@ export function timeoutOnlyFiles(report: VitestReport): string[] | null {
     files.add(f.name);
   }
   return files.size ? [...files] : null;
+}
+
+/** The slowest files and single tests of a report, for spotting tests to split or move to tests/slow/. */
+export function slowest(report: VitestReport, root: string, n = 8): string {
+  const files = report.testResults.map((f) => ({ name: relative(root, f.name), s: ((f.endTime ?? 0) - (f.startTime ?? 0)) / 1000 })).sort((a, b) => b.s - a.s).slice(0, n);
+  const tests = report.testResults
+    .flatMap((f) => f.assertionResults.map((a) => ({ name: `${relative(root, f.name)} > ${a.fullName}`, s: (a.duration ?? 0) / 1000 })))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, n);
+  return [`slowest files: ${files.map((f) => `${f.name} ${f.s.toFixed(0)} s`).join(", ")}`, `slowest tests: ${tests.map((t) => `${t.name} ${t.s.toFixed(0)} s`).join("; ")}`].join("\n");
 }
 
 export interface Outcome {
@@ -109,6 +121,7 @@ function runStep(step: Step, scratch: string): Outcome {
     const out = join(scratch, `${step.name}.json`);
     const status = run(locked([...step.command, "--reporter=default", "--reporter=json", `--outputFile.json=${out}`]));
     ok = status === 0;
+    if (existsSync(out)) process.stdout.write(`\npremerge: ${step.name}: ${slowest(JSON.parse(readFileSync(out, "utf8")) as VitestReport, ROOT)}\n`);
     if (!ok && existsSync(out)) {
       const files = timeoutOnlyFiles(JSON.parse(readFileSync(out, "utf8")) as VitestReport);
       if (files) {

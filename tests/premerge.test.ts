@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STEPS, table, timeoutOnlyFiles, type VitestReport } from "../scripts/premerge.ts";
+import { slowest, STEPS, table, timeoutOnlyFiles, type VitestReport } from "../scripts/premerge.ts";
 
 const file = (name: string, results: { status: string; failureMessages?: string[] }[], status = results.some((r) => r.status === "failed") ? "failed" : "passed", message = ""): VitestReport["testResults"][number] => ({
   name,
@@ -26,6 +26,16 @@ describe("premerge's timeout re-run", () => {
 
   it("re-runs nothing when nothing failed", () => {
     expect(timeoutOnlyFiles({ testResults: [file("/a.test.ts", [{ status: "passed" }])] })).toBeNull();
+  });
+});
+
+describe("premerge's slowest list", () => {
+  it("names the slowest files and tests", () => {
+    const report: VitestReport = { testResults: [
+      { name: "/r/tests/a.test.ts", status: "passed", startTime: 0, endTime: 50_000, assertionResults: [{ status: "passed", fullName: "big", failureMessages: [], duration: 45_000 }] },
+      { name: "/r/tests/b.test.ts", status: "passed", startTime: 0, endTime: 2_000, assertionResults: [{ status: "passed", fullName: "small", failureMessages: [], duration: 1_000 }] },
+    ] };
+    expect(slowest(report, "/r", 1)).toBe("slowest files: tests/a.test.ts 50 s\nslowest tests: tests/a.test.ts > big 45 s");
   });
 });
 
