@@ -82,6 +82,16 @@ links the worktree's own packages, which the CLI refuses to run without.
 Vitest does it itself; the game data is found in the main checkout. Before
 merging a branch into `main`, run `scripts/premerge.sh`.
 
+## Friction reports
+
+When a sub-agent finishes a task, resume it once more and ask for a friction
+report: structural problems in the code design, repository, docs or tools
+that slowed it down, and how to make future agents' work easier, written to
+[docs/friction/](docs/friction/README.md) (format and the request to send
+are there). When about five unprocessed reports have collected, launch one
+sub-agent to read them, deduce the overall improvements and implement them,
+then move the reports to `docs/friction/processed/`.
+
 ## Data and reference code
 
 - Game data comes from the submodules under `data/`; see

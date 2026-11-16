@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-16: Friction reports after every sub-agent task](2026-11-16-12-friction-reports-after-every-sub-agent-task.md)
 - [2026-11-16: Game-data cache; worktrees without `source`](2026-11-16-11-game-data-cache-worktrees-without-source.md)
 - [2026-11-16: Faster tests, snapshot regeneration, accuracy scoreboard](2026-11-16-10-faster-tests-snapshot-regeneration-accuracy-scoreboard.md)
 - [2026-11-16: Journal entries as files; a one-screen roadmap](2026-11-16-09-journal-entries-as-files-a-one-screen-roadmap.md)

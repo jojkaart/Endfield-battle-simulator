@@ -4,9 +4,22 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 86 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 87 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-16: Friction reports after every sub-agent task
+
+The owner, after the architecture review: make that kind of analysis part
+of the default workflow. Every finished sub-agent is resumed once to write a
+friction report (structural problems in code, repository, docs or tools
+that slowed it, with suggestions complete enough to act on alone) into
+[docs/friction/](friction/README.md); when about five unprocessed
+reports collect, one sub-agent reads them, implements the common
+improvements and moves them to `processed/`. Rule in CLAUDE.md "Friction
+reports". First reports requested from the agents that finished today
+(rules phase 1 and 2, Si's Haste, Arts Intensity, docs workflow, test
+speed, data cache).
 
 ## 2026-11-16: Game-data cache; worktrees without `source`
 
@@ -256,21 +269,3 @@ owner's team, Initial Stroke right after the battle skill is +3.0%
 (56,423 against 54,760, 10 seeds) with the data's reading and −3.0%
 (55,883 against 57,630) if every burst gave Haste. In-game test 109
 asks the owner to look for the icon.
-
-## 2026-11-16: Si's Artful Intent runs its full length in the owner's rules
-
-The owner noticed rule 9 of their team's rules (Si's battle skill at every
-100 SP) ends Artful Intent early, which wastes SP (they recalled Initial
-Stroke as 25 SP; SkillPatchTable has 15 at every level, as the kit has).
-Measured: the early end ran 35 times in 300 s; the record itself loses
-little (the next Artful Intent records again soon), and the gain came from
-spending SP (Si's hit, Heat inflictions feeding reactions, team energy for
-more ultimates). Letting it run and wasting the spare SP loses ~20%; spare
-SP into Akekuri's battle skill (new rule 10) plays 56,423 (sd 2,039)
-against 55,462 (sd 2,929), 10 seeds, from zero 56,156 against 56,370; the
-earlier list is better in the first minute from zero. Into Estella's
-battle skill costs her combo's trigger; into Arcane's is worse. The new
-list is the example (examples/estella-si-akekuri-arcane.rules.json) and on
-the team page. Lesson for the rule search: it never tried the "button
-shows the plain battle skill" condition on Si, so a cue-gated variant of
-each repeated press is worth adding to its moves.
