@@ -27,6 +27,7 @@ import { formatGuided, guidedSearch, writeGuided } from "./guided.ts";
 import { formatLogList, logDirs } from "./logtools.ts";
 import { exportHits, exportHitsParallel, formatRecord, type HitRecord } from "./hitexport.ts";
 import { battleIdOf, cacheRawDetail, formatRaw, rawDetail, rawDir } from "./zmdraw.ts";
+import { formatMentions, gamedataTree, whoMentions } from "./gamedata.ts";
 import { diagnose, formatDiagnosis } from "./diagnose.ts";
 import { formatRuleGear, gearOnRules } from "./gearrules.ts";
 
@@ -187,6 +188,12 @@ const USAGE = `Usage:
                                           import lacks: casts without damage, each hit's Stagger
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
+  efsim gamedata tree <id>                A BuffData or SkillData file as an event → action → condition tree:
+                                          presentation and defaults left out, value fields as "key k (default v)",
+                                          known enums named (docs/game-data-format.md)
+                [--grep <regex>] [--depth n]  Only matching lines (with their ancestors and subtrees); levels shown
+  efsim gamedata who <id>                 Every BuffData / SkillData file that names a buff or skill id: the action
+                                          around it (who creates, finishes or checks it), its buff event or frame
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
   efsim kit-census                        Kit features per operator, for the review after each new kit
   efsim kit-trim [--write]                Kit values the loader takes from the data anyway (--write removes them)
@@ -291,6 +298,7 @@ async function main(argv: string[]): Promise<number> {
       with: { type: "string", multiple: true, default: [] },
       kind: { type: "string" },
       buffs: { type: "string" },
+      grep: { type: "string" },
       events: { type: "string" },
       dir: { type: "string", multiple: true, default: [] },
       help: { type: "boolean", short: "h", default: false },
@@ -647,6 +655,17 @@ async function main(argv: string[]): Promise<number> {
         }
       }
       break;
+    case "gamedata": {
+      const [sub, id] = args;
+      if (args.length !== 2 || !id || (sub !== "tree" && sub !== "who")) throw new Error(`gamedata takes tree <id> or who <id>\n\n${USAGE}`);
+      if (sub === "who") text = formatMentions(id, whoMentions(id));
+      else {
+        const depth = values.depth === undefined ? undefined : Number(values.depth);
+        if (depth !== undefined && !(Number.isInteger(depth) && depth >= 0)) throw new Error("--depth must be a whole number ≥ 0");
+        text = gamedataTree(id, { ...(values.grep !== undefined ? { grep: values.grep } : {}), ...(depth !== undefined ? { depth } : {}) });
+      }
+      break;
+    }
     case "kit-census":
       text = formatCensus(kitCensus());
       break;
