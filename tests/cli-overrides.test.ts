@@ -6,7 +6,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData, withKitFiles } from "@efsim/data";
+import { resolveRuleList } from "@efsim/engine";
+import { readScenario } from "@efsim/cli";
 import { ROOT } from "./logverdicts.ts";
+import { readRuleList } from "../packages/cli/src/rules.ts";
+import { openRulesPool, runRulesJob, setWorkerKitFiles } from "../packages/cli/src/rulespool.ts";
 
 const data = loadGameData();
 const dir = mkdtempSync(join(tmpdir(), "efsim-kit-"));
@@ -35,9 +39,25 @@ describe("--kit", () => {
     expect(() => withKitFiles(data, [invalid])).toThrow(/chr_0004_pelica/);
   });
 
-  it("is refused by commands whose worker threads would load the real kits", () => {
-    expect(() => cli("diagnose", "a.json", "b.json", "--kit", kitFile)).toThrow(/worker threads/);
-  });
+  it("reaches the worker threads of the commands that play rules in them (diagnose, gear --rules, --guided, rules)", async () => {
+    // Perlica without her kit's triggers: a what-if that changes how Typhoeus's team plays.
+    const whatIf = join(dir, "perlica-no-triggers.json");
+    writeFileSync(whatIf, JSON.stringify({ ...JSON.parse(readFileSync(kitFile, "utf8")), triggers: [] }));
+    const sc = readScenario(join(ROOT, "examples/typhoeus-arcane-liino-perlica.scenario.json"));
+    const list = readRuleList(join(ROOT, "examples/typhoeus-arcane-liino-perlica.rules.json"));
+    const jobs = (d: typeof data) => [1, 2].map((seed) => ({ scenario: { ...sc, durationFrames: 20 * 30 }, list: resolveRuleList(d, sc.team.map((b) => b.operator), list), options: { seed } }));
+    const local = (d: typeof data) => jobs(d).map((j) => runRulesJob(d, j).sustainedDps);
+    setWorkerKitFiles([whatIf]);
+    const pool = openRulesPool(data, 2);
+    try {
+      const inWorkers = (await pool.run(jobs(withKitFiles(data, [whatIf])))).map((r) => r.sustainedDps);
+      expect(inWorkers).toEqual(local(withKitFiles(data, [whatIf])));
+      expect(inWorkers).not.toEqual(local(data));
+    } finally {
+      await pool.close();
+      setWorkerKitFiles([]);
+    }
+  }, 120_000);
 });
 
 describe("--duration", () => {
