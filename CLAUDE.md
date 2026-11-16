@@ -90,7 +90,8 @@ that slowed it down, and how to make future agents' work easier, written to
 [docs/friction/](docs/friction/README.md) (format and the request to send
 are there). When about five unprocessed reports have collected, launch one
 sub-agent to read them, deduce the overall improvements and implement them,
-then move the reports to `docs/friction/processed/`.
+then move the reports to [docs/friction-done/](docs/friction-done/README.md)
+(docs/friction/ only holds what still needs doing).
 
 ## Data and reference code
 

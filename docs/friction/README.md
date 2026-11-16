@@ -10,12 +10,13 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    asks for a friction report (the request below). The agent writes one file
    here, `docs/friction/YYYY-MM-DD-<slug>.md`, and commits it on its branch;
    the lead merges it with the rest of the branch.
-2. **When about five unprocessed reports are here** (files directly in this
-   folder, not in `processed/`), the lead launches one sub-agent to read them
-   all, work out the common causes, and implement the improvements
+2. **When about five reports are here**, the lead launches one sub-agent to
+   read them all, work out the common causes, and implement the improvements
    (architecture, docs, tools, process). It moves each report it handled to
-   `processed/`, adding a line at the end saying what was done about each of
-   its points (or why not), and writes its own journal entry.
+   [docs/friction-done/](../friction-done/README.md), adding a line per point
+   saying what was done (or why not), leaves a summary of the round there,
+   and writes its own journal entry. This folder only holds what still needs
+   doing.
 3. Accuracy rules still apply to improvement rounds: tests stay green,
    snapshots only move with a reason, `scripts/premerge.sh` before merging.
 
