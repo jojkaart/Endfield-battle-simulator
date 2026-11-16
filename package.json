@@ -22,6 +22,7 @@
     "accuracy": "node scripts/accuracy.ts --write",
     "bench": "node scripts/bench.ts",
     "merge": "node scripts/merge.ts",
+    "prune-unused": "node scripts/prune-unused.ts",
     "check": "npm run journal:check && npm run typecheck && npm run lint && npm test && npm run test:logs && npm run test:tools",
     "efsim": "node packages/cli/src/main.ts",
     "setup-worktree": "node scripts/setup-worktree.ts"

@@ -49,7 +49,9 @@ working, run only what a change touches: `npx vitest run tests/<file>.test.ts`
 (one file; `-t "<name>"` for one test) or `npx vitest related --run
 <changed source files>` (every test file that imports them). A test file
 that takes over ~40 s gets split, and a single test of tens of seconds goes
-to `tests/slow/`. Vitest shows a passing file's `console.*` output only
+to `tests/slow/`. Shared test builders live in `tests/helpers/` (synthetic
+kits and logs, buff history); after a split, `npm run prune-unused --
+<files>` drops the imports and helpers each half no longer uses. Vitest shows a passing file's `console.*` output only
 with `--silent=false`: a line every run must show goes through
 `process.stdout.write`.
 
