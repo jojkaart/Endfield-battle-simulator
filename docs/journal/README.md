@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-16: Older development fixtures refreshed from fresh battle details](2026-11-16-18-older-development-fixtures-refreshed-from-fresh-battle.md)
 - [2026-11-16: Improvement round 2: package boundaries, CLI commands, design.md split](2026-11-16-17-improvement-round-2-package-boundaries-cli-commands-design.md)
 - [2026-11-16: Rule numbers refreshed for the fixed driver; Ink Melt re-tuning finds nothing](2026-11-16-16-rule-numbers-refreshed-for-the-fixed-driver-ink-melt-re.md)
 - [2026-11-16: Rule driver phase 2: button model, one start check, event stepping, run checks, assumption switches](2026-11-16-15-rule-driver-phase-2-button-model-one-start-check-event.md)

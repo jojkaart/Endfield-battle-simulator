@@ -40,7 +40,7 @@ point is complete on its own; the originals are in docs/friction-done/.
   verdicts must not move.
 - **Why it helps:** "which statuses were on the enemy when this burst landed" becomes one field read. Cost: small.
 
-## 3. Older fixtures lack the fields new imports keep
+## 3. Older fixtures lack the fields new imports keep: **done** (2026-11-16)
 
 - **What happened:** since round 1 the importer keeps each effect's giver and start (`LogEffect.source`, `since`) and a
   Stagger's credited skill (`LogHit.poise.origin`), and caches the raw detail (git-ignored). The 79 older development
@@ -52,6 +52,11 @@ point is complete on its own; the originals are in docs/friction-done/.
   when `--detail` is omitted and to add the effects' `source` / `since`. Re-run the pending suite after each refresh:
   verdicts must stay identical. Or ask the owner whether a slow one-off fetch (3 s apart) is acceptable.
 - **Why it helps:** "debuff strength against applier" and "which path ended this Inksoul" become direct on every log.
+- **Done:** `efsim zmdlogs refresh <fixture>` reads the cached detail (else fetches it once), rebuilds the hits as an
+  import would and adds every field the fixture lacks (casts, poise, poise.origin, effects' source / since), one
+  note per kind; it writes nothing when the hits differ otherwise. The owner approved a one-off fetch: 77 of the 79
+  older development fixtures refreshed, no verdict or scoreboard number moved; 40d9 and 4e5e refused (their details
+  changed since import). Journal: docs/journal/2026-11-16-18-older-development-fixtures-refreshed-from-fresh-battle.md.
 
 ## 4. Status and Stagger modifiers are identified by their `source` text
 

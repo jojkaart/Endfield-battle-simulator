@@ -4,9 +4,52 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 92 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 93 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-16: Older development fixtures refreshed from fresh battle details
+
+Goal (the lead; backlog after round 2, point 3): give the 79 development
+fixtures imported before 2026-11-16 what newer imports keep, from a
+one-off fetch of their raw details the owner approved.
+
+Done:
+- `efsim zmdlogs refresh <fixture>` reads the cached detail when
+  `--detail` is omitted, else fetches it once (`refreshFromDetail`,
+  zmdraw.ts). `refreshFixture` now rebuilds the hits as an import would
+  (`zmdlogsHits`, factored out of `zmdlogsToFixture`) and adds every
+  field the fixture lacks: casts, poise, poise.origin and, new, effects'
+  and boundaryEffects' `source` / `since`, one provenance note per kind.
+  The rebuilt hits must equal the fixture's but for those fields, and
+  logged casts the detail's; otherwise `RefreshMismatch` and nothing is
+  written. Tests on synthetic details (tests/zmdrefresh.test.ts,
+  tests/helpers/zmdlogs.ts).
+- Import against refresh, compared: everything an import records from
+  the detail is now covered. Not refreshed, as they come from elsewhere
+  or feed the computation: the team (the export, a second request), the
+  enemy level (stage or total damage; where the stage names the boss,
+  its level is every fixture's), the import's notes, `verifiedAgainst`.
+- The fetch: 79 details, one request each, 3.5 s apart, all found, no
+  parser version changed. 77 fixtures refreshed (6 multi-target ones also
+  got casts and Stagger); every other field is as it was (checked against
+  HEAD), and no string other than game keys and the notes was added.
+- `npm run snapshots:update`: no snapshot and no scoreboard number moved
+  (the fields are record-only).
+
+Skipped: 40d9 and 4e5e (verified). Each detail now lacks a zero-length
+buff lane at one hit that the fixture lists as unquantified (40d9's lane
+is still there, with its dynamic effects emptied; 4e5e's is gone).
+Damage and hit counts match, but the brief said not to overwrite a
+detail that differs. ZMDLogs can change a stored detail
+(data-sources.md).
+
+What the new fields answered (open-problems.md): Electrification's
+logged giver is the replay's applier at 3,497 of 3,505 kit hits (the 8
+others in 3aa6), and the level readings that differ are in 3aa6 and
+d774. Breach can't be checked from the hit export (it lists no physical
+statuses). Of 79 Artful Intent bursts, 39 are credited to Final Stroke
+and 33 to an Inksoul expiry; 7 deal no Stagger and record no path.
 
 ## 2026-11-16: Improvement round 2: package boundaries, CLI commands, design.md split
 
@@ -314,17 +357,3 @@ roadmap is one screen; its old text, unchanged, is in roadmap-details.md.
 Session-start reading (CLAUDE.md, README, journal, roadmap): 21.2k words
 → about 4.6k. The built files still conflict when two branches add
 entries; that's resolved by rebuilding, never by hand.
-
-## 2026-11-16: Architecture review
-
-The owner asked for an analysis of the whole architecture and how it
-could help development: [architecture-review.md](architecture-review.md)
-(read-only; prioritised table at the top). Measured: `npm test` 308 s
-under load (two files make 45% of the summed time), every CLI call or
-worker spends 9–11 s building the game data (42% of a profile of three
-300 s rule runs; `efsim find` 9.1 s), and most of a rule run is asking
-whether a press can start (frame-by-frame stepping, state copies).
-Top items: a cached GameData, test rebalancing, rule-run invariants, a
-button model in the engine (the End Stance class of bug), event-driven
-rule stepping, assumption toggles and an accuracy scoreboard. No code
-changed.
