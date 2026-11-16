@@ -2,3 +2,6 @@ endfield-capture/
 node_modules/
 .proto/
 .claude/worktrees/
+# Scratch scripts (scratch/README.md): yours for the session, never committed, ignored by lint and typecheck.
+scratch/*
+!scratch/README.md

@@ -31,6 +31,8 @@ After that milestone, a `dev` branch takes over the role `main` has now.
   Never edit docs/journal.md by hand; on a merge conflict in it or the
   index, run `npm run journal`. An entry written the old way (at the top of
   docs/journal.md): `npm run journal:adopt` (or `-- --from MERGE_HEAD`).
+  Cite an entry by its file (`docs/journal/2026-11-16-03-….md`), never by a
+  line of docs/journal.md.
 - Update the roadmap's next steps: a line or two each, the rest in
   roadmap-details.md.
 
@@ -47,7 +49,9 @@ working, run only what a change touches: `npx vitest run tests/<file>.test.ts`
 (one file; `-t "<name>"` for one test) or `npx vitest related --run
 <changed source files>` (every test file that imports them). A test file
 that takes over ~40 s gets split, and a single test of tens of seconds goes
-to `tests/slow/`.
+to `tests/slow/`. Vitest shows a passing file's `console.*` output only
+with `--silent=false`: a line every run must show goes through
+`process.stdout.write`.
 
 Snapshots (`tests/snapshots/*.json`) and the accuracy scoreboard
 ([docs/accuracy.md](docs/accuracy.md)) are generated: `npm run
@@ -80,7 +84,33 @@ In a git worktree (sub-agents' `.claude/worktrees/…`), run
 `node scripts/setup-worktree.ts` once (no `source`, no `EFSIM_DATA_DIR`): it
 links the worktree's own packages, which the CLI refuses to run without.
 Vitest does it itself; the game data is found in the main checkout. Before
-merging a branch into `main`, run `scripts/premerge.sh`.
+merging a branch into `main`, run `scripts/premerge.sh`: about 15–20 min
+(more under load), so run it in the background with a limit of 40 min. It
+runs every step, re-runs files that only timed out, waits for other
+worktrees' suites (a shared lock) and ends with a pass/fail table.
+
+Command shapes the worktree sandbox accepts (others are refused as "too
+complex to verify"):
+
+- One plain command per Bash call, run from the worktree, absolute paths.
+  No `source`, no heredocs, no `cd … && git …` chains, no loops or pipes
+  around `git`, no `git -C`. `git show <ref>:<path> > scratch/x`, then
+  process the file.
+- File edits with the Write/Edit tools, not `sed`/`python -c` pipelines.
+- Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
+  and premerge; `@efsim/*` resolve there): start from
+  `scripts/scratch-template.ts`, run `node scratch/x.ts`.
+- Long runs: start them in the background with progress to a file, then
+  wait with Monitor on that file (a foreground `sleep` is refused).
+- Timing claims: `npm run bench -- "<cmd A>" "<cmd B>"` (alternating runs,
+  CPU seconds and load), never two runs at different times.
+
+Hold-out logs live in `fixtures/holdout/`: never open, list or grep it.
+`efsim zmdlogs list [--with <operator>]` lists the development logs.
+
+The lead: name the base commit (or branch) in a sub-agent's brief, and
+merge with `npm run merge -- <branch>` (rebuilds the journal; says when
+snapshots need `npm run snapshots:update`).
 
 ## Friction reports
 
