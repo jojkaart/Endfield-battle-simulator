@@ -16,7 +16,7 @@ import {
   rawDetail,
   rawDir,
   readDevFixture,
-  refreshFixture,
+  refreshFromDetail,
   scalesReport,
   timingReport,
 } from "@efsim/logs";
@@ -62,9 +62,11 @@ export default command({
                 [--singles]               No pairs of toggles
                 [--top n] [--verbose]     Patterns shown (default 20); every run, and each hit's best fit
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
-  efsim zmdlogs refresh <fixture.json> --detail <file>
-                                          Add what a downloaded battle detail records that an older
-                                          import lacks: casts without damage, each hit's Stagger
+  efsim zmdlogs refresh <fixture.json>    Add what the battle's detail records that an older import lacks
+                                          (casts without damage, each hit's Stagger and its credited skill,
+                                          buff effects' giver and start): from the raw cache, else fetched
+                                          once; writes nothing when the detail's hits differ from the fixture's
+                [--detail file]           Use an already downloaded /api/battles/<id> response
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
 `,
@@ -113,11 +115,12 @@ export default command({
       const fx = readDevFixture(arg);
       return sub === "scales" ? scalesReport(data(), fx, op) : findScalesReport(data(), fx, op);
     }
-    if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions" && sub !== "refresh")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, refresh <file> --detail <file>, scales <file> <op> or find-scales <file> <op>\n\n${ctx.usage}`);
+    if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions" && sub !== "refresh")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, refresh <file>, scales <file> <op> or find-scales <file> <op>\n\n${ctx.usage}`);
     if (sub === "refresh") {
-      if (!values.detail) throw new Error("zmdlogs refresh needs --detail <file> (an already downloaded /api/battles/<id> response)");
-      const r = refreshFixture(arg, values.detail, (d) => cacheRawDetail(readDevFixture(arg).provenance.battleId, d));
-      return `${arg}: ${r.casts} cast(s), ${r.poise} hit(s) with Stagger`;
+      const r = await refreshFromDetail(arg, values.detail !== undefined ? { detailFile: values.detail } : {});
+      if (r.fetched) process.stderr.write(`fetched the detail once from zmdlogs.com; cached in ${rawDir()}\n`);
+      const parser = r.parserVersion !== undefined ? `; ZMDLogs now parses it with ${r.parserVersion}` : "";
+      return `${arg}: ${r.casts} cast(s), ${r.poise} hit(s) with Stagger; added ${r.added.length ? r.added.join(", ") : "nothing"}${parser}`;
     }
     if (sub === "reactions") {
       const fx = readDevFixture(arg);

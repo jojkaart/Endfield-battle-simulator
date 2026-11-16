@@ -272,16 +272,14 @@ export function enemiesHit(detail: unknown): string[] {
   return [...new Set(ids)].sort();
 }
 
-export function zmdlogsToFixture(battleId: string, detail: unknown, exported: unknown, lookups: BuildLookups, enemyLevel: number): LogFixture {
+/**
+ * A detail's damage events as fixture hits (LogFixture.hits), each with the buff effects active at it, as an import
+ * writes them (zmdlogsToFixture) and a refresh compares and fills them (refreshFixture).
+ */
+export function zmdlogsHits(detail: unknown): LogHit[] {
   const d = o(detail, "detail");
-  const battle = o(d["battle"], "battle");
-  if (battle["id"] !== battleId) throw new Error(`ZMDLogs: detail is for ${String(battle["id"])}, not ${battleId}`);
-  const ex = o(exported, "export");
-  const rosterNotes: string[] = [];
-  const team = a(ex["roster"], "roster").map((r) => rosterBuild(r, lookups, rosterNotes));
-  const boss = s(battle["bossKey"], "bossKey");
+  const boss = s(o(d["battle"], "battle")["bossKey"], "bossKey");
   const enemies = enemiesHit(detail);
-
   const events = a(d["timelineEvents"], "timelineEvents").map((e) => o(e, "event"));
   const buffs = events.filter((e) => e["laneType"] === "buff");
   const effectsOf = (b: Json): LogEffect[] =>
@@ -336,6 +334,18 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
       ...(poise ? { poise } : {}),
     });
   }
+  return hits;
+}
+
+export function zmdlogsToFixture(battleId: string, detail: unknown, exported: unknown, lookups: BuildLookups, enemyLevel: number): LogFixture {
+  const d = o(detail, "detail");
+  const battle = o(d["battle"], "battle");
+  if (battle["id"] !== battleId) throw new Error(`ZMDLogs: detail is for ${String(battle["id"])}, not ${battleId}`);
+  const ex = o(exported, "export");
+  const rosterNotes: string[] = [];
+  const team = a(ex["roster"], "roster").map((r) => rosterBuild(r, lookups, rosterNotes));
+  const boss = s(battle["bossKey"], "bossKey");
+  const hits = zmdlogsHits(detail);
 
   return {
     $schema: "../schemas/log-fixture.schema.json",
