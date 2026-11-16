@@ -31,13 +31,13 @@ Name: the batch brief named this operator Xaihi. CharacterTable `engName` and do
   The talent `resilient_defense` also adds DEF (attr 3), so its DEF feeds the same term.
 - **Kit has:** the formula with no caveat about food DEF%.
 - **Expected:** combat-mechanics §1.5: "A food's 'DEF +x%' uses formula item 1, whose formula isn't known. It is
-  kept out of DEF, and readers of DEF refuse it. [OPEN] (test 98)". docs/journal.md (around lines 1108–1112)
+  kept out of DEF, and readers of DEF refuse it. [OPEN] (test 98)". docs/journal/2026-10-22-02-food-buffs-as-a-build-option.md
   records that the DEF foods are refused "where DEF is read (kit values, Catcher's P1 strike)".
 - **Why it may matter:** with a DEF food worn, the P1 strike's base is refused rather than computed, so the
   P1 strike is either missing or wrong for that build. The size is 5 × the DEF change from the food.
-- **Evidence:** docs/combat-mechanics.md §1.5; docs/journal.md around lines 1108–1112; kit `p1_strike` note.
+- **Evidence:** docs/combat-mechanics.md §1.5; docs/journal/2026-10-22-02-food-buffs-as-a-build-option.md; kit `p1_strike` note.
 - **Confidence it's a real problem:** medium (the build-specific gap is real; the kit does not mention it).
-- **Verdict:** UNCERTAIN — a documented, deliberate refusal (combat-mechanics §1.5, journal 1108–1112): with a DEF +x% food worn, the P1 strike is refused rather than computed wrongly, and 8 foods are affected. The kit is not wrong; the formula item 1 is unknown. No log wears a DEF food (the Catcher log's gear gives DEF 160 with no food and its P1 hits are ×1.0274, see F3), and the size is 5 × the DEF change.
+- **Verdict:** UNCERTAIN — a documented, deliberate refusal (combat-mechanics §1.5, journal 2026-10-22): with a DEF +x% food worn, the P1 strike is refused rather than computed wrongly, and 8 foods are affected. The kit is not wrong; the formula item 1 is unknown. No log wears a DEF food (the Catcher log's gear gives DEF 160 with no food and its P1 hits are ×1.0274, see F3), and the size is 5 × the DEF change.
   - **Decides it (if UNCERTAIN):** in-game test 98 (Bottled Milk: DEF 140 → 167 or unchanged).
 
 ### F3. The only Catcher log (04d401ad257e, pending) matches none of her 252 hits, with no entry in open-problems
@@ -55,7 +55,7 @@ Name: the batch brief named this operator Xaihi. CharacterTable `engName` and do
   (combat-mechanics §9 lists fixture 04d4 as the open duplicate-piece question, where "the duplicate fits neither
   one copy nor two"), or her level (80, where a build offset would be about ×0.94, not ×0.47). Not identified
   here, and the kit's hit data is not implicated by what was checked.
-- **Evidence:** the check output above; docs/journal.md around line 1045 ("Pending 04d401ad257e Catcher
+- **Evidence:** the check output above; docs/journal/2026-10-24-01-a-safety-net-for-numbers-a-stricter-log-check.md ("Pending 04d401ad257e Catcher
   mismatch 243 → 252 (unmodelled 9 → 0)"); docs/combat-mechanics.md §9. No entry for this fixture in
   docs/open-problems.md (grep found none for Catcher).
 - **Confidence it's a real problem:** medium that the engine's Catcher prediction is wrong for this log; low

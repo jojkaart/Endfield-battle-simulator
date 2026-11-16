@@ -93,6 +93,7 @@ Node 22 or newer.
 ./scripts/fetch-data.sh
 npm install
 npm run check                 # typecheck, lint, all tests
+npm run journal:new -- "Title" # a journal entry (docs/journal/), then: npm run journal
 scripts/premerge.sh           # before merging a branch: clean tree, journal entry, check
 ```
 

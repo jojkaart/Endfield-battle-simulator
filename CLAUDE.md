@@ -15,14 +15,24 @@ After that milestone, a `dev` branch takes over the role `main` has now.
 
 ## Journal and roadmap
 
-- Read [docs/journal.md](docs/journal.md) and [docs/roadmap.md](docs/roadmap.md)
-  at the start of a session.
+- At the start of a session read [docs/journal.md](docs/journal.md) (the
+  last 10 entries; all of them: [docs/journal/](docs/journal/README.md)) and
+  [docs/roadmap.md](docs/roadmap.md) (one screen; details in
+  [docs/roadmap-details.md](docs/roadmap-details.md)).
 - Keep [docs/open-problems.md](docs/open-problems.md) current: for each
   unexplained accuracy problem, what is ruled out and what is still possible.
   Diagnosis briefs ask for both.
-- Before a session ends (or after a significant milestone), add a short entry
-  at the top of the journal: goal, what was done, decisions and why, dead ends
-  or problems, and update the roadmap's next steps.
+- Before a session ends (or after a significant milestone), add a short
+  journal entry: goal, what was done, decisions and why, dead ends or
+  problems. Each entry is its own file: `npm run journal:new -- "Title"`
+  writes `docs/journal/YYYY-MM-DD-NN-slug.md` (first line
+  `## YYYY-MM-DD: Title`); write it, then `npm run journal` rebuilds
+  docs/journal.md and the index (`npm run check` fails if they're stale).
+  Never edit docs/journal.md by hand; on a merge conflict in it or the
+  index, run `npm run journal`. An entry written the old way (at the top of
+  docs/journal.md): `npm run journal:adopt` (or `-- --from MERGE_HEAD`).
+- Update the roadmap's next steps: a line or two each, the rest in
+  roadmap-details.md.
 
 ## Correctness
 

@@ -6,7 +6,8 @@
 #   - in a worktree, its own packages are linked (scripts/setup-worktree.sh),
 #     or the check runs the main checkout's code;
 #   - a branch that changes code, kits or examples also adds a journal entry
-#     (docs/journal.md: CLAUDE.md "Journal and roadmap").
+#     (a file under docs/journal/: CLAUDE.md "Journal and roadmap"); `npm run
+#     check` then checks that docs/journal.md is rebuilt from the entries.
 # Usage: scripts/premerge.sh [base]   (base: main by default)
 set -euo pipefail
 base="${1:-main}"
@@ -26,8 +27,8 @@ if [ "$root" != "$main" ] && [ "$(readlink -f node_modules/@efsim/engine 2>/dev/
 fi
 
 changed="$(git diff --name-only "$(git merge-base "$base" HEAD)" HEAD)"
-if echo "$changed" | grep -qE '^(packages/|examples/|schemas/)' && ! echo "$changed" | grep -qx 'docs/journal.md'; then
-  echo "premerge: the branch changes code, kits or examples but not docs/journal.md (add an entry)" >&2
+if echo "$changed" | grep -qE '^(packages/|examples/|schemas/)' && ! echo "$changed" | grep -qE '^docs/journal/[0-9]{4}-'; then
+  echo "premerge: the branch changes code, kits or examples but adds no journal entry (npm run journal:new -- \"Title\")" >&2
   exit 1
 fi
 

@@ -1,0 +1,202 @@
+# Roadmap details
+
+The detail behind [roadmap.md](roadmap.md)'s next steps, one section per
+step, and the longer-term list. Keep the roadmap itself to about one
+screen: a step's leads, numbers and open questions go here; done work goes
+to the [journal](journal.md) and the docs it produced. Moved here from the
+roadmap on 2026-11-16 unchanged; the dates are when each item was last
+updated.
+
+## Rule-based rotations
+
+**Rule-based rotations (2026-11-16, phases 1 and 2 done: design.md
+"Rule-based rotations", `efsim rules`, `efsim diagnose`, `efsim gear
+--rules`, examples/*.rules.json, each team page's "Rules" and "Gear"):**
+next, the owner's call on the owner's team's gear (Estella's Grizzled
+Edge loadout, Si's LYNX Slab loadout, Akekuri's Fiber Gloves: +8.0% ±
+0.9 together, played by the rules) and on Arcane in INT mode for
+Typhoeus's team (Hot Work loadout, +5.9% ± 0.7: a rule search for INT
+mode first, docs/teams/typhoeus-arcane-liino-perlica.md "Gear played by
+the rules"); timeline-moving stats (Ultimate
+Gain Efficiency, mode-flipping attributes) are noisy even on common
+seeds (±1–2% a line at 4 seeds, ±0.6–1.3% at 16): a cheaper estimate of
+their worth (energy held / wasted against the ultimate's value per
+cast, or many short fights) would let the ascent decide those without
+16–24 seeds; the ascent is path-dependent where gains are within the
+noise (a first run took Akekuri's change, a second Si's): a joint check
+of the top changes on fresh seeds; the diagnosis report as a reason
+list for the rules' gap to the timeline (which presses come late, which
+windows are missed); the rule search re-run on the new gear (a first
+60-list search: see the journal); Typhoeus's team is the furthest from
+its timeline (hover upkeep and SP sharing are hard to say as cues);
+in-game test 108 (the Finisher input) decides the filler's assumption.
+The rule search should also try gating a repeated press on the
+button's visible state (Si's battle skill only while her button shows
+it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
+Likewise conditions that line up buffs across operators (Si's
+ultimate held for Laevatain's Twilight: +4.1% on Ink Melt, found by
+hand from the damage graph; Liino's stance rule needed `shows`).
+Whether Initial Stroke is worth pressing hangs on Si's talent Haste
+(in-game test 109: the data gives it only on the Inksoul path; ±3% for
+the owner's team either way). The Arts Intensity effects behind
+Estella's Grizzled Edge advice are log-verified (2026-11-16,
+combat-mechanics §3.7); left from that review: Pogranichnik's Breach
+strength one Fervent Morale layer off in 12 of 21 instances
+(open-problems "Arts Intensity").
+
+## Typhoeus, Arcane, Liino, Perlica
+
+**Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
+docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
+is the least converged of the three teams (+27% at beam 48 alone): a
+beam 96 run, or the search seeded with the found rotations; the log
+check's casts placed across others' time stops (open-problems.md,
+Typhoeus's hover: 1cd1's combo, 9090's, dbae's battle skill start up to
+3 s late) and Typhoeus's 4th shot anchored to her 5th's cast (fc63);
+9090's Liino / Perlica totals (volleys, the replay's Stagger); gear
+chosen jointly with the rotation (a search per candidate set, not a
+replay).
+
+## Gear
+
+**Gear (2026-11-15, `efsim gear` done for all three teams):** the
+search is chaotic: a small build change sends the beam to other
+rotations (the owner's team with Estella's +0.7% loadout: −15% / −9% by
+the search that reproduces the examples), so searches can't confirm
+gear gains of a few percent: a search seeded with the current rotation
+(its moves as the guide's first line) would make "re-search with the
+new gear" meaningful; then the owner's team with Si on the logs' LYNX
+Slab loadout (4–5% better on every rotation found for it, but none of
+those reaches the owner's 3.99M rotation, which needs her Rift Trekker
+Gloves' Ultimate Gain). Owner told about Estella's logs loadout (Type 50
+Yinglung Heavy Armor, Gloves T1, Radar + LYNX Slab) +0.6–0.7%.
+
+## Planning from the payoffs, after phase 3
+
+**First (2026-11-15):** after phase 3 (journal 2026-11-15, design.md
+"Payoffs and chains": macros are `efsim search`'s default, skeletons and
+the setup value opt-in): make macros cheaper (the macros played at every
+node: 145 ms a state against 57 on Ink Melt; from zero energy they lose
+at equal run time), the setup value without its overvaluing of held
+pieces (worse on both teams; its extra-share variant `--setup share`
+unmeasured at 60 s), skeletons that aren't greedy (a schedule over the
+fight with slack, the merges' setups placed by their leads), macros in
+the loop's rounds; search the owner's opener and loop again with Arcane in WILL mode
+(docs/teams/rotations/ are still the INT build's, with Estella in slot 1); simulate Ink Melt (EndfieldHub's top team)
+next to the owner's team under the same assumptions; the buff timing
+report's leads (`efsim zmdlogs timing`, done 2026-11-15; open-problems
+"Buff timing leads": Yvonne's MI Security on unlogged crits in 5082,
+Si's hitless ultimate in 9c0b, Hot Work on Combustion ticks); the loop's long openers and a 2-round loop; in-game tests 106
+(Yinglung's Edge) and 107 (Si's Amp across ultimates).
+
+## Engine accuracy
+
+**Engine accuracy first** (the owner, 2026-10-26: above the search's
+scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
+and B0 (teammates' own basic attacks, in-game test 101 to confirm the
+pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
+(SP stop: 0.5 s since 2026-11-12, regen through time stops; test 102
+pins it) and B4 (Solidification) wait on in-game tests 102 and 71; the
+SP the replay still lacks (open-problems "Team SP": teammates' unlanded
+basic attacks, Purrchena's blocks; Liino's beats done 2026-11-13, 1d91's
+extra heal left);
+next the screened logs' leads ([open-problems.md](open-problems.md):
+what each has ruled out and what still stands; Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
+27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
+eny_0134 logs' food in 0c14 and de6a; Yvonne −23% in 5082 and
+Ardelia's sheep ×1.407 in 791, both unmasked 2026-11-14), diagnosed in parallel (small
+models first, the owner's call 2026-11-11); then the favourites' kit
+leads (B8: the build offsets the log check
+reports without an explanation (04d4's Snowshine ×0.96,
+92b4's Liino ×1.031), and those it can't see (flat ATK buffs spread the
+ratio: 4e36 / c3c7's Ardelia, set by hand; a replay per candidate build,
+bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
+(d774: 8 strikes where the log has 3); Si's build in 9555 (every hit
+×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
+there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
+3aa6's Stagger at 145.6 s (the replay has none), Xaihi's ultimate Amp in
+b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), whether Bosses
+ignore freezes (assumed since 2026-10-31; test 104), bdf2's Si combo
+finisher ×1.456 (no stack count fits), 7e19's Crush landings unmatched (Endministrator
++46%),
+bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss
+boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and
+Pogranichnik's ultimates ignore others' time stops: small), B9, B10.
+
+## The tool's purpose: the favourites' rotations
+
+**The tool's purpose: team rotations for the owner's favourites**
+(Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain, Rossi
+(the owner, 2026-11-08); 6-stars P0,
+4- and 5-stars P5 unless the owner's account says otherwise; no swaps by
+default, the owner's call 2026-10-25). The search's beams still disagree
+by 4–14%: a score closer to the final damage (a cheap rollout, or a value
+for what a state holds), then searches of the favourites' teams and a
+report of the best rotations found. Ask the owner for their roster.
+Damage distributions are in (design.md "Damage distributions"); next
+there: the mean of crit-triggered teams from one deterministic battle
+with those buffs at their expected state (so the search ranks by it
+and stays one battle), then `--percentile` from the distribution.
+
+## Log check leads
+
+**Log check leads** (design.md "The log check's rule"; the report names
+them, largest first): Stagger the log has that no logged hit explains
+(4e5e: 24 at 53.2 s), Rossi's Wolven Blood layers, Typhoeus's hover through
+her combo, Arcane's Solemn Phalanx WILL buffs, Camille's weapon ATK the
+log stops listing, the replay's inflictions against the log's reactions
+(one enemy replay instead of reactioncheck.ts's own; reaction levels
+already come from the log where it shows them, and 4a64's Xaihi
+battle-skill casts without logged hits still add inflictions), statuses and
+landings the replay misses (Arcane's Final Strike in b6aa, 9555's casts);
+458b's ×1.3 on Laevatain's `normal_skill_during_ult`; then tighten the
+totals' bound (45%). The fallbacks in verified fixtures (~300) are the
+work queue; a build fitter with structured `buildOverrides` instead of
+hand fits in notes; the negative control on the unscaled replay; d9e5
+(×1.7–2.0 after Arcane's ultimate); whether mostly-assumed matches (Rossi
+in 4e5e) hold hit by hit.
+
+## Kit values from the data
+
+**Kit values from the data** (design.md "Kits and the game data"): fill
+launch frames, applications and bonuses; SP of hitless skills as cast
+triggers; the Typhoeus arrowrain `dataOverride` that hides dbae's
+verified hits; Mi Fu's per-fixture factor (2fd9 / 99fb / de6a).
+
+## Engine
+
+**Engine:** slow-downs don't shift what's created between their cast and
+their start (`shiftClock`'s caller in clock.ts); buffs' expiry and ticks
+as scheduled items; `Modifier` with an attacker / defender side instead
+of `SNAPSHOT_ZONES`; Solidification durations (in-game test 71);
+Corrosion's time dilation and carry-over (test 4).
+
+## Food
+
+**Food:** a search over foods per operator; the importer setting a food
+the log lists; in-game test 98 (DEF +x%'s formula item 1).
+
+## Process
+
+**Process:** a generated table of which mechanics are verified against
+real data and which only against the engine's own reading (the in-game
+tests' queue is at the top of in-game-tests.md: keep it current); shared
+test helpers. Still open from setup: a `Result` schema,
+`NOTICE` when MIT code is first copied.
+
+## Later
+
+- Interactive search: drivers on the engine's stepping API that generate
+  the action list on the fly, with a battle policy / evaluator exploring the
+  tree of choices ([design.md](design.md#stepping-api)).
+- **Account import** from the SKPORT capture extension
+  ([player-data.md](player-data.md)), only once the system is verified and
+  can find useful new team rotations (owner's call, 2026-10-18). Until then,
+  fixtures use published, fully specified setups.
+- Team-composition search with constraints (must-include / always-exclude
+  operators, available weapons and gear).
+- Web interface for browsing and comparing results.
+- Rust implementation of the engine, validated against the same fixtures.
+- **Patch update routine:** bump data submodule pins, re-run the data
+  cross-check, review every fixture whose result changed (balance change vs
+  bug), and record it in the journal. Document once the first update is done.
