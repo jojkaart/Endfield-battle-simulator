@@ -1,0 +1,20 @@
+{
+  "$schema": "../schemas/rules.schema.json",
+  "description": "Typhoeus, Arcane, Liino, Perlica, hand-written (2026-11-16) from its best rotations (docs/teams/typhoeus-arcane-liino-perlica.md): Typhoeus hovers as much as she can (her battle skill whenever she's on the ground, her aerial attacks while up) and dives while grounded; ultimates when ready, every combo when it lights up, Liino's stance and the others' battle skills with SP to spare.",
+  "opener": [{ "operator": "Typhoeus", "cast": "battle" }],
+  "rules": [
+    { "when": { "ultimate": "Liino" }, "do": { "operator": "Liino", "cast": "ultimate" } },
+    { "when": { "ultimate": "Arcane" }, "do": { "operator": "Arcane", "cast": "ultimate" } },
+    { "when": { "ultimate": "Perlica" }, "do": { "operator": "Perlica", "cast": "ultimate" } },
+    { "when": { "ultimate": "Typhoeus" }, "do": { "operator": "Typhoeus", "cast": "ultimate" } },
+    { "when": { "combo": "Typhoeus" }, "do": { "operator": "Typhoeus", "cast": "combo" } },
+    { "when": { "combo": "Perlica" }, "do": { "operator": "Perlica", "cast": "combo" } },
+    { "when": { "combo": "Arcane" }, "do": { "operator": "Arcane", "cast": "combo" } },
+    { "when": { "combo": "Liino" }, "do": { "operator": "Liino", "cast": "combo" } },
+    { "when": { "not": { "buff": { "operator": "Typhoeus", "buff": "hovering" } } }, "do": { "operator": "Typhoeus", "cast": "battle" } },
+    { "when": { "all": [{ "sp": { "atLeast": 200 } }, { "not": { "buff": { "operator": "Liino", "buff": "vocalist_stance" } } }] }, "do": { "operator": "Liino", "cast": "battle" } },
+    { "when": { "sp": { "atLeast": 200 } }, "do": { "operator": "Arcane", "cast": "battle" } },
+    { "when": { "sp": { "atLeast": 200 } }, "do": { "operator": "Perlica", "cast": "battle" } },
+    { "when": { "not": { "buff": { "operator": "Typhoeus", "buff": "hovering" } } }, "do": { "operator": "Typhoeus", "cast": "dive" } }
+  ]
+}

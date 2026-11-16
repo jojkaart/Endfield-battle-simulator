@@ -1,0 +1,16 @@
+{
+  "$schema": "../schemas/rules.schema.json",
+  "description": "The owner's team, hand-written (2026-11-16) from its best rotations (docs/teams/estella-si-akekuri-arcane.md): Si's Heat battle skill opens Arcane's combo, Estella's Cryo battle skill after it opens Si's and Estella's combos; ultimates when ready; Si's battle skill whenever a battle skill's SP is there.",
+  "opener": [{ "operator": "Si", "cast": "battle" }],
+  "rules": [
+    { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },
+    { "when": { "ultimate": "Estella" }, "do": { "operator": "Estella", "cast": "ultimate" } },
+    { "when": { "ultimate": "Arcane" }, "do": { "operator": "Arcane", "cast": "ultimate" } },
+    { "when": { "ultimate": "Akekuri" }, "do": { "operator": "Akekuri", "cast": "ultimate" } },
+    { "when": { "combo": "Si" }, "do": { "operator": "Si", "cast": "combo" } },
+    { "when": { "combo": "Estella" }, "do": { "operator": "Estella", "cast": "combo" } },
+    { "when": { "combo": "Arcane" }, "do": [{ "operator": "Arcane", "cast": "combo" }, { "operator": "Estella", "cast": "battle" }] },
+    { "when": { "combo": "Akekuri" }, "do": { "operator": "Akekuri", "cast": "combo" } },
+    { "when": { "sp": { "atLeast": 100 } }, "do": { "operator": "Si", "cast": "battle" } }
+  ]
+}

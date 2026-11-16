@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/rules.schema.json",
+  "title": "Rule list",
+  "description": "A rule-based rotation (packages/engine/src/policy.ts; docs/design.md \"Rule-based rotations\"): an opener and an ordered list of rules \"when cue X is visible, do Y\", played by a simulated player with a reaction delay. Operators by ID or by the name the game shows.",
+  "type": "object",
+  "required": ["opener", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "filler": { "enum": ["basic", "dive"], "description": "What the controlled operator does when no rule fires (default basic attacks)." },
+    "opener": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/step" } },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["when", "do"],
+        "additionalProperties": false,
+        "properties": {
+          "when": { "$ref": "#/$defs/cue" },
+          "do": { "oneOf": [{ "$ref": "#/$defs/step" }, { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/step" } }] },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": ["operator", "cast"],
+      "additionalProperties": false,
+      "properties": {
+        "operator": { "type": "string" },
+        "cast": { "enum": ["battle", "combo", "ultimate", "dive", "basic", "finisher"] }
+      }
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": { "atLeast": { "type": "number", "minimum": 0 }, "below": { "type": "number", "minimum": 0 } }
+    },
+    "cue": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "combo": { "type": "string", "description": "Rank 1: the operator's combo lights up." },
+        "stacks": {
+          "type": "object",
+          "required": ["operator", "stack"],
+          "additionalProperties": false,
+          "description": "Rank 2: a kit stack the HUD shows (Typhoeus's arrows and signs).",
+          "properties": { "operator": { "type": "string" }, "stack": { "type": "string" }, "atLeast": { "type": "number" }, "below": { "type": "number" } }
+        },
+        "sp": { "$ref": "#/$defs/range", "description": "Rank 2: team SP." },
+        "infliction": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Rank 3: an Arts infliction on the enemy.",
+          "properties": { "element": { "enum": ["heat", "electric", "cryo", "nature", "fire", "pulse", "cryst", "natural"] }, "atLeast": { "type": "number" }, "below": { "type": "number" } }
+        },
+        "status": { "enum": ["solidification", "corrosion", "combustion", "electrification", "lift", "knockdown", "crush", "breach"], "description": "Rank 3: a status on the enemy." },
+        "vulnerable": { "$ref": "#/$defs/range", "description": "Rank 3: the enemy's Vulnerable stacks." },
+        "staggered": { "type": "boolean", "description": "Rank 3: the enemy is Staggered." },
+        "buff": {
+          "type": "object",
+          "required": ["operator", "buff"],
+          "additionalProperties": false,
+          "description": "Rank 3: an operator state shown on the character or its skill button (Typhoeus hovering, …).",
+          "properties": { "operator": { "type": "string" }, "buff": { "type": "string" } }
+        },
+        "ultimate": { "type": "string", "description": "Rank 4: the operator's ultimate is ready." },
+        "finalStrikes": {
+          "type": "object",
+          "required": ["atLeast"],
+          "additionalProperties": false,
+          "description": "Rank 5: the controlled operator's Final Strikes since the rule last fired.",
+          "properties": { "atLeast": { "type": "integer", "minimum": 1 } }
+        },
+        "comboCooldown": { "type": "string", "description": "Rank 6: the operator's combo is off cooldown." },
+        "since": {
+          "type": "object",
+          "required": ["operator", "cast", "atLeast"],
+          "additionalProperties": false,
+          "description": "Rank 7: seconds since the operator's last press of that button (a timer in the head).",
+          "properties": { "operator": { "type": "string" }, "cast": { "enum": ["battle", "combo", "ultimate", "dive", "basic", "finisher"] }, "atLeast": { "type": "number", "minimum": 0 } }
+        },
+        "all": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/cue" } },
+        "any": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/cue" } },
+        "not": { "$ref": "#/$defs/cue" }
+      }
+    }
+  }
+}

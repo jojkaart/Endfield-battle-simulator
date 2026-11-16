@@ -21,6 +21,7 @@ import { knifeEdge, type EdgePool } from "./edge.ts";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { formatPayoffs, runPayoffs } from "./payoffs.ts";
 import { formatGear, gearAscent, gearCandidates, logFixtureFiles, type GearCandidatesFile } from "./gear.ts";
+import { readRuleList, rulesCommand } from "./rules.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -65,6 +66,21 @@ const USAGE = `Usage:
                 [--percentile p]          Rank by that percentile (0–100) of them instead of the mean
                 [--runs n]                Battles for the found rotation's distribution (default 50; 0: none)
                 [--seed n] [--dodge p] [--attack-every s]  As for simulate
+  efsim rules <scenario.json> <rules.json> A rule-based rotation (opener, then "when cue X is visible, do Y";
+                                          schemas/rules.schema.json) played by a simulated player with a
+                                          reaction delay over a long fight: sustained DPS after the opener,
+                                          its spread over seeds, robustness to the delay, rules fired,
+                                          learnability; the scenario's own rotation as the 60 s reference
+                [--duration s]            Fight length (default 300)
+                [--reaction s]            Reaction delay (default 0.3, jittered ±50%, seeded; 0: a bot)
+                [--seeds k]               Delay seeds (default 5)
+                [--search] [--out file]   Local search over rule lists from this one: the Pareto front of DPS
+                                          against complexity, the best (less --penalty a complexity point,
+                                          default 0.002) saved to --out
+                [--iterations n]          Lists scored (default 150)
+                [--search-seconds s]      Searched fights' length (default 180)
+                [--search-seeds k]        Seeds per list in the search (default 2)
+                [--front n]               Front lists scored again over the whole fight (default 8)
   efsim payoffs <scenario.json>           The team's payoff table (engine probes): what each step produces and
                                           which combo windows it opens, each damaging step's ceiling under the
                                           best bundle of what the team achieves (and who achieves each piece),
@@ -183,6 +199,14 @@ async function main(argv: string[]): Promise<number> {
       "search-beam": { type: "string" },
       repairs: { type: "string" },
       passes: { type: "string" },
+      duration: { type: "string" },
+      search: { type: "boolean", default: false },
+      reaction: { type: "string" },
+      iterations: { type: "string" },
+      "search-seconds": { type: "string" },
+      "search-seeds": { type: "string" },
+      penalty: { type: "string" },
+      front: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -345,6 +369,35 @@ async function main(argv: string[]): Promise<number> {
           macros: values.macros,
           skeletons: values.skeletons,
           ...(values.setup !== undefined ? { setup: setupMode(values.setup) } : {}),
+        });
+      }
+      break;
+    case "rules":
+      need(2);
+      {
+        const positive = (v: string | undefined, name: string, whole = false) => {
+          if (v === undefined) return undefined;
+          const x = Number(v);
+          if (!(x > 0) || (whole && !Number.isInteger(x))) throw new Error(`--${name} must be a ${whole ? "whole " : ""}number > 0`);
+          return x;
+        };
+        const reaction = values.reaction === undefined ? undefined : Number(values.reaction);
+        if (reaction !== undefined && !(reaction >= 0)) throw new Error("--reaction must be a number of seconds ≥ 0");
+        const penalty = values.penalty === undefined ? undefined : Number(values.penalty);
+        if (penalty !== undefined && !(penalty >= 0)) throw new Error("--penalty must be ≥ 0");
+        const opt = (k: string, v: number | undefined) => (v === undefined ? {} : { [k]: v });
+        text = rulesCommand(data(), withBattleOptions(readScenario(args[0] as string)), readRuleList(args[1] as string), args[1] as string, {
+          ...opt("seconds", positive(values.duration, "duration")),
+          ...opt("reactionSeconds", reaction),
+          ...opt("seeds", positive(values.seeds, "seeds", true)),
+          search: values.search,
+          ...opt("iterations", positive(values.iterations, "iterations", true)),
+          ...opt("searchSeconds", positive(values["search-seconds"], "search-seconds")),
+          ...opt("searchSeeds", positive(values["search-seeds"], "search-seeds", true)),
+          ...opt("penalty", penalty),
+          ...opt("front", positive(values.front, "front", true)),
+          ...(values.out ? { out: values.out } : {}),
+          progress: (line) => process.stderr.write(line + "\n"),
         });
       }
       break;

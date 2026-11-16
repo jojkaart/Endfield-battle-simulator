@@ -57,6 +57,7 @@ what you saw, in a line; the formats below are only suggestions.
 | 11 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
 | 12 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
 | 13 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
+| 14 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -2185,6 +2186,27 @@ buffs; 1–2 s more than the engine's figure means they hold for longer
 than the time stop (as the log's listing has it).
 **Reply, e.g.:** `107: A 12 s, B (all three) 18 s` or
 `107: A 12 s, B 20 s`.
+
+### 108. Is a Finisher what the basic-attack button does on a Staggered enemy? (ready, any operator; for the rule-based rotations)
+
+**Why:** the rule-based rotations (design.md "Rule-based rotations",
+2026-11-16) assume that while you keep pressing basic attack, the game
+turns the next attack into the Finisher by itself once the enemy is
+Staggered, so the simulated player does it with no reaction delay. If the
+Finisher needs its own input (a different button, a hold, a prompt you
+must react to), the rules need an explicit "when the enemy is Staggered:
+finisher" with a reaction delay, and teams whose controlled operator
+dives between skills (Typhoeus on the ground) lose it unless they stop
+diving.
+**How:** any operator, any enemy you can Stagger. Keep tapping basic
+attack (nothing else) until the Stagger bar breaks; watch whether the
+big Finisher animation comes from the next tap. Then once more while
+jump-attacking (dives) instead of tapping: does a dive on a Staggered
+enemy become the Finisher, or only a basic-attack tap?
+**Predictions:** the engine assumes the next basic-attack tap is the
+Finisher, and a dive isn't.
+**Reply, e.g.:** `108: the next tap is the Finisher; dives aren't` or
+`108: a prompt appears, I have to press E`.
 
 ## Results
 
