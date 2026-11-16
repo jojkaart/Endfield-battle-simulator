@@ -37,28 +37,24 @@ must be something a person can do by hand while playing:
 
 ## The queue: the tests that decide the most now
 
-Ranked by how much of the simulation each answer moves (every fight first,
-then the owner's favourites), as of 2026-11-11 (91 answered by the logs; 77 on 2026-11-01; 104 from 2026-10-31, 103 from 2026-10-30; 101 and 102
+Ranked by how much of the simulation each answer moves for the teams in
+work (the owner's team, Ink Melt, Typhoeus's team) first, then every fight, as of 2026-11-16 (18, 19, 101, 102 not testable by hand and 103, 104 answered by the owner on 2026-11-16; 91 answered by the logs; 77 on 2026-11-01; 104 from 2026-10-31, 103 from 2026-10-30; 101 and 102
 from 2026-10-28; 99 answered by the logs). Reply with the number and
 what you saw, in a line; the formats below are only suggestions.
 
 | # | test | needs | reply, e.g. |
 |---|---|---|---|
-| 1 | [101](#101-how-often-a-teammate-attacks-on-its-own-ready-any-team-higher-priority-every-team-since-2026-10-28) a teammate's own attacks | anyone | `101: 3 chains in 20 s, ~4 s pauses; same when I attack` |
-| 2 | [102](#102-how-fast-sp-refills-and-how-long-it-stops-after-spending-ready-any-operator-higher-priority-every-sp-bound-team) SP refill and its stop after spending | anyone | `102: A 39 s, B 42 s` |
-| 3 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
-| 4 | [104](#104-do-bosses-ignore-freezes-ready-if-you-have-si-or-tangtang-higher-priority-every-boss-fight-with-a-freeze) bosses and freezes | Si or Tangtang, vs a boss | `104: Rhodagn keeps moving; small enemies freeze` |
-| 5 | [103](#103-what-liinos-battle-skill-presses-do-in-vocalist-stance-ready-if-you-have-liino-higher-priority-every-liino-log) Liino's presses in her stance | Liino | `103: ends stance, ATK stays ~5 s; restarts with projectiles` |
-| 6 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
-| 7 | [18](#18-what-an-ultimates-time-stop-freezes-ready) what a time stop freezes | any two | `18: cooldown same / ~2 s longer; SP bar unchanged / higher` |
-| 8 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
-| 9 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
-| 10 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
-| 11 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
-| 12 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-higher-priority-it-decides-how-sis-battle-skill-is-played) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
-| 13 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
-| 14 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
-| 15 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
+| 1 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-higher-priority-it-decides-how-sis-battle-skill-is-played) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
+| 2 | [106](#106-type-50-yinglungs-edge-which-battle-skills-give-a-stack-and-how-long-it-lasts-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge stacks | Estella and Si with 3 pieces each | `106: anyone's battle skill +1 to every wearer; no expiry` |
+| 3 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
+| 4 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
+| 5 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
+| 6 | [107](#107-sis-amp-across-teammates-ultimates-ready-if-you-have-si-lower-priority) Si's Amp across ultimates | Si and two others' ultimates | `107: A 12 s, B 18 s` |
+| 7 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
+| 8 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
+| 9 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
+| 10 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
+| 11 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -449,7 +445,9 @@ shot's flight), without **about 4.7 s**. A second sign: with skips he
 attacks again about 2.4 s after the cast (test 61's Combusted run),
 without about 5.3 s.
 
-### 18. What an ultimate's time stop freezes (ready)
+### 18. What an ultimate's time stop freezes (not testable by hand; to the logs)
+
+**Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
 
 **Why:** the engine now freezes everyone but the caster for an ultimate's
 time stop (Laevatain's first 2 s, Gilberta's 1.7 s): the enemy's statuses
@@ -491,7 +489,9 @@ from the press.) It decides up to 2 s of Twilight per ultimate and up to
   means her own time stop doesn't freeze it, about 10.8 s means it does
   (1.8 s apart: a video is safer than a stopwatch).
 
-### 19. What Haste speeds up (ready, if you have Si)
+### 19. What Haste speeds up (not testable by hand; to the logs)
+
+**Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
 
 **Why:** Si's talent gives the team Haste (`ratio_speed` 15% / 30%) for
 5 s after her Inksoul ends. The data says only "speed +x" (attribute 92);
@@ -2075,7 +2075,9 @@ ends there.
 1. Engine (now): the bar never refills except at a Stagger's end.
 2. Logs: around 30–45 s and 69–75% HP, maybe tied to a move of his.
 
-### 101. How often a teammate attacks on its own (ready, any team; higher priority: every team since 2026-10-28)
+### 101. How often a teammate attacks on its own (not testable by hand; to the logs)
+
+**Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
 
 **Why:** the engine now has teammates basic-attack on their own
 (accuracy plan B0): each runs its full chain, then pauses about 3.5 s
@@ -2094,7 +2096,9 @@ whether the teammate's pace changes.
 2. If the teammate attacks nonstop, or only now and then (say one chain
    in 10 s), or only when you attack, note it: the pause is then wrong.
 
-### 102. How fast SP refills, and how long it stops after spending (ready, any operator; higher priority: every SP-bound team)
+### 102. How fast SP refills, and how long it stops after spending (not testable by hand)
+
+**Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
 
 **Why:** the engine regenerates team SP at 8/s and, since 2026-11-12,
 stops it for 0.5 s after every spend (666bj's in-game test, and the game's
@@ -2116,7 +2120,7 @@ of the SP bar.
 B − A is twice the stop, whatever the rate; A minus the stop gives the
 rate (300 SP over that time).
 
-### 103. What Liino's battle-skill presses do in Vocalist Stance (ready, if you have Liino; higher priority: every Liino log)
+### 103. What Liino's battle-skill presses do in Vocalist Stance (answered, 2026-11-16)
 
 **Why:** every log with Liino shows her battle skill pressed every 3–4 s
 while her Vocalist Stance runs, and her team's ATK buff never drops. Only
@@ -2142,8 +2146,9 @@ is rare; the logged "presses" are most likely the stance's beats (every
 Still useful: (a). Since 2026-11-13 the log check replays them as beats
 (no cast, no SP); a real End Stance press in the stance would be read as
 a beat too.
+**Answered (the owner, 2026-11-16):** (a) pressing the battle skill again ends the stance early, as the engine reads it (End Stance).
 
-### 104. Do bosses ignore freezes? (ready, if you have Si or Tangtang; higher priority: every boss fight with a freeze)
+### 104. Do bosses ignore freezes? (answered, 2026-11-16: most don't)
 
 **Why:** some control statuses freeze the enemy, which holds its timers:
 Si's battle-skill Immobilization (1 s, 1.5 s at P1), Tangtang's OLDEN
@@ -2169,6 +2174,8 @@ small ones) should freeze it.
 
 **Reply, e.g.:** `104: Rhodagn keeps moving; small enemies freeze` or
 `104: Rhodagn freezes ~1 s too`.
+
+**Answered (the owner, 2026-11-16, from play):** most bosses do get frozen by Imprisonment; only some rare bosses ignore it. The engine's assumption that every Boss is control-immune (2026-10-31) is therefore wrong in general: control immunity belongs to particular enemies, set where a log shows it (b7b3's Rhodagn, c3c7's Chiliarch are the candidates).
 
 ### 107. Si's Amp across teammates' ultimates (ready, if you have Si; lower priority)
 
@@ -2242,4 +2249,4 @@ whether a conclusion flips under it with `--assumptions`.)
 
 ## Results
 
-None yet.
+- 2026-11-16 (the owner): 103 (a) a press in Vocalist Stance ends it early (the engine's reading). 104: most bosses are frozen by Imprisonment; some rare ones ignore it. 18, 19, 101, 102: too hard to record by hand; to the logs where they can decide.

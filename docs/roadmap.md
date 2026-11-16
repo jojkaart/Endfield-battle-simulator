@@ -34,8 +34,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   overvalue held pieces, skeletons that aren't greedy; the owner's opener
   and loop with Arcane in WILL; Ink Melt next to the owner's team.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
-  2026-10-26: above the search's scoring): B2 and B4 wait on in-game tests
-  102 and 71; then the screened logs' leads
+  2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
+  testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
+  test 71; Bosses frozen by default (test 104 answered) and tests 18, 19,
+  101 from the logs; then the screened logs' leads
   ([open-problems.md](open-problems.md)), diagnosed in parallel; then B8,
   B6, B9, B10.
 - **The tool's purpose:** rotations for the owner's favourites (Typhoeus,
