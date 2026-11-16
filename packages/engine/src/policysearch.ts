@@ -69,14 +69,14 @@ function stream(seed: number): () => number {
 }
 
 /** The cues and presses edits draw from, for a team (each operator's buttons; cues the UI shows; no timers). */
-interface Pool {
+export interface Pool {
   readonly team: readonly string[];
   readonly controlled: string;
   readonly cues: readonly PolicyCue[];
   readonly steps: readonly PolicyStep[];
 }
 
-function poolOf(data: GameData, team: readonly string[], controlled: string): Pool {
+export function rulePool(data: GameData, team: readonly string[], controlled: string): Pool {
   const has = (op: string, kind: string) => (data.kits.operators[op]?.skills ?? []).some((s) => s.kind === kind && !s.followUpOnly);
   const cues: PolicyCue[] = [];
   const steps: PolicyStep[] = [];
@@ -231,7 +231,7 @@ export function editRuleList(rng: () => number, pool: Pool, list: RuleList, maxR
 export function searchRules(data: GameData, scenario: Omit<TimelineScenario, "rotation">, start: RuleList, options: RuleSearchOptions = {}): RuleSearchResult {
   const team = scenario.team.map((b) => b.operator);
   const controlled = scenario.controlled ?? (team[0] as string);
-  const pool = poolOf(data, team, controlled);
+  const pool = rulePool(data, team, controlled);
   const seeds = options.seeds ?? 2;
   const penalty = options.penalty ?? RULE_SEARCH_PENALTY;
   const maxRules = options.maxRules ?? 12;
