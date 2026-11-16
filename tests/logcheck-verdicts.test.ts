@@ -6,7 +6,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { computeHit, computeStats, corrosionShred, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit } from "@efsim/engine";
-import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogFixture, type LogHit } from "@efsim/logs";
 import { checkLog, formatLogCheck, verdictCounts, verificationProblems } from "@efsim/cli";
 
 const data = loadGameData();

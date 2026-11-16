@@ -379,7 +379,7 @@ Fixtures: zmdlogs-40d9a3c1da37, -0eef2474a26f, -bdf223db8e49,
 - **Feature:** `zmdlogs check` evaluates hits that read `{eventCount:true}`
   for each count 1–4 (as it already tries reaction stack counts) and
   reports the one that matches.
-- **Evidence:** packages/cli/src/logcheck.ts computes kit hits with
+- **Evidence:** packages/logs/src/logcheck.ts computes kit hits with
   `situation: {team}` only. `expr.ts` throws on `eventCount` without a
   count, and the checker catches that as "doesn't happen".
 - **Impact:** the combo's final hit (599622 in 40d9a3c1da37, 379860 in
@@ -846,7 +846,7 @@ freezes after the damage).
 - `examples/si-laevatain.scenario.json`: its two `wpn_claym_0018.*`
   conditions are dropped.
 - Tooling, so the logs can check the kit:
-  - `zmdlogs check` (packages/cli/src/logcheck.ts) also tries the hitter's
+  - `zmdlogs check` (packages/logs/src/logcheck.ts) also tries the hitter's
     kit buffs that a cast consumes (`consumedBy` its kind, 0 to max
     layers), which ZMDLogs never logs, and counts a boundary buff listed
     twice with the same effects once (an instance ending as its refresh

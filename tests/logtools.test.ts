@@ -1,6 +1,6 @@
-// The safe development-log lister (`efsim zmdlogs list`, packages/cli/src/logs.ts listLogs) and the hold-out guard.
+// The safe development-log lister (`efsim zmdlogs list`, packages/logs/src/logs.ts listLogs) and the hold-out guard.
 import { describe, expect, it } from "vitest";
-import { listLogs, logFixtureFiles, readLogSplit, refuseHoldout } from "../packages/cli/src/logs.ts";
+import { listLogs, logFixtureFiles, readLogSplit, refuseHoldout } from "../packages/logs/src/logs.ts";
 
 describe("the development-log lister", () => {
   it("lists every development log and never a hold-out", () => {

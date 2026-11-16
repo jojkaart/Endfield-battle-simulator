@@ -3,7 +3,8 @@
 // log check (logcheck.ts) takes from these only what the engine doesn't model, and compares the rest with the engine.
 
 import { allActions, applyBuff, attrModifier, computeStats, DEFAULT_STAT_OPTIONS, effectiveKit, foodOf, readingDoesNotApply, triggerSkillId, type Build, type GameData, type Modifier, type OperatorKit, type ReactionKind, type SkillType, type StatPanel } from "@efsim/engine";
-import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit, type RawBuffFile } from "@efsim/data";
+import { isBuffFileListed, readBuffFile, type RawBuffFile } from "@efsim/data";
+import { type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 
 const skillTypeCache = new Map<string, SkillType | null>();
 

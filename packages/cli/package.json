@@ -8,6 +8,7 @@
   "dependencies": {
     "@efsim/data": "*",
     "@efsim/engine": "*",
+    "@efsim/logs": "*",
     "ajv": "^8.20.0"
   }
 }

@@ -8,7 +8,7 @@
 import { apply, attrLabel, computeStats, createContext, EngineError, init, searchBeams, simulate, type Build, type GameData, type TimelineScenario } from "@efsim/engine";
 import { modePair } from "./edge.ts";
 import { num, table } from "./format.ts";
-import { readLogFixture } from "./logs.ts";
+import { readLogFixture } from "@efsim/logs";
 
 /** Where a candidate loadout comes from. */
 export interface GearSource {

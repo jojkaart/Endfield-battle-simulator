@@ -251,7 +251,7 @@ Clannibal and Artzy Tyrannical fit any Cryo or reaction-consuming wielder.
 ### G4. `zmdlogs reactions` and a hit split into a first landing and the rest
 
 - **family:** log tooling.
-- **feature:** the replay (packages/cli/src/reactioncheck.ts) takes the
+- **feature:** the replay (packages/logs/src/reactioncheck.ts) takes the
   first kit hit whose `events` contain a logged key. When a skill's
   landings of one key are split into a first-landing hit (with `applies`)
   and the rest, the replay should apply the first one's applications only

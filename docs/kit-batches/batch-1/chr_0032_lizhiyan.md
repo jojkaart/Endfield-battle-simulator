@@ -1271,7 +1271,7 @@ round's F (talent-2 Corrosion duration) is optional: the data sets it.
   `energyBlockSeconds` 1.567 against the compiled 21.567 (the array's 20 s
   block is `gloompurger_array`'s `blocksEnergy`, which two Cluster Strikes
   end early).
-- `packages/cli/src/reactioncheck.ts`: the reaction replay now leaves out an
+- `packages/logs/src/reactioncheck.ts`: the reaction replay now leaves out an
   application whose own `if` is false for the build (it ignored it, so the
   WILL logs got the INT forced Corrosion once the ultimate's two effects
   became one hit).

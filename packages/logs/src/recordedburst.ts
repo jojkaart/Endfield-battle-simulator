@@ -3,7 +3,7 @@
 // gives, but the log's own hits in the buff's window do (docs/design.md, "What a log check verifies").
 
 import { effectiveKit, evalContext, evaluate, kitHitEntries, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type LandedHit, type StatPanel } from "@efsim/engine";
-import type { LogFixture, LogHit } from "@efsim/data";
+import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /**
  * How long before its burst a record may have stopped, in ms. The log doesn't have the record's end: Final Stroke

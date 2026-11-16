@@ -4,7 +4,7 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { command } from "../command.ts";
 import { kitDraft } from "../kitdraft.ts";
-import { readLogFixture } from "../logs.ts";
+import { readLogFixture } from "@efsim/logs";
 import { ROOT } from "./shared.ts";
 
 export default command({

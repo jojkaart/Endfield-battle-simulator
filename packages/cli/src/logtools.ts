@@ -2,7 +2,7 @@
 
 import type { GameData } from "@efsim/engine";
 import { table } from "./format.ts";
-import { LOG_DIRS, listLogs, type LogDir, type LogSummary } from "./logs.ts";
+import { LOG_DIRS, listLogs, type LogDir, type LogSummary } from "@efsim/logs";
 
 /** --dir's values: a LOG_DIRS key. */
 export function logDirs(values: readonly string[]): LogDir[] | undefined {

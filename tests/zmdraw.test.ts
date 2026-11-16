@@ -1,11 +1,11 @@
-// The raw ZMDLogs detail cache and `efsim zmdlogs raw` (packages/cli/src/zmdraw.ts), on a synthetic detail, with the
+// The raw ZMDLogs detail cache and `efsim zmdlogs raw` (packages/logs/src/zmdraw.ts), on a synthetic detail, with the
 // cache in a temporary folder and no network.
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { readLogSplit } from "../packages/cli/src/logs.ts";
-import { battleIdOf, formatRaw, rawDetail, rawDir } from "../packages/cli/src/zmdraw.ts";
+import { readLogSplit } from "../packages/logs/src/logs.ts";
+import { battleIdOf, formatRaw, rawDetail, rawDir } from "../packages/logs/src/zmdraw.ts";
 
 const dir = mkdtempSync(join(tmpdir(), "efsim-raw-"));
 const before = process.env["EFSIM_CACHE_DIR"];

@@ -20,7 +20,6 @@ export * from "./tables/useItems.ts";
 export * from "./foods.ts";
 export * from "./kits.ts";
 export * from "./buffData.ts";
-export * from "./zmdlogs.ts";
 export * from "./skillGraph.ts";
 export * from "./skillCompile.ts";
 export * from "./buffTags.ts";

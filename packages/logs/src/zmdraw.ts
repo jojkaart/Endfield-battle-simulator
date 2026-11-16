@@ -5,7 +5,8 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { cacheDir, fetchDetail } from "@efsim/data";
+import { cacheDir } from "@efsim/data";
+import { fetchDetail } from "./zmdlogs.ts";
 import { refuseHoldout } from "./logs.ts";
 
 export function rawDir(): string {

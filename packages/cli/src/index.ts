@@ -1,12 +1,9 @@
 export * from "./commands.ts";
 export * from "./format.ts";
-export * from "./logcheck.ts";
-export * from "./logeffects.ts";
-export * from "./recordedburst.ts";
-export * from "./logs.ts";
 export * from "./kitdraft.ts";
 export * from "./simulate.ts";
-export * from "./buffreplay.ts";
 export * from "./jsonEdit.ts";
 export * from "./kittrim.ts";
 export * from "./gear.ts";
+// The log tooling moved to @efsim/logs (2026-11-16); re-exported here for older imports.
+export * from "@efsim/logs";

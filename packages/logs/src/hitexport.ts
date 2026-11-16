@@ -5,7 +5,7 @@
 // The same computations as `zmdlogs check` (logBuffReplay, engineHits, checkLog, readingBasis), not a copy of them.
 
 import { landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
-import type { LogFixture } from "@efsim/data";
+import type { LogFixture } from "./zmdlogs.ts";
 import { engineCheck, readingBasis } from "./enginecheck.ts";
 import { placeHits } from "./logcasts.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";

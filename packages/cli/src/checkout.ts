@@ -12,7 +12,7 @@ const ROOT = realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), "../.
 /** The @efsim packages that resolve outside this checkout, with where they resolve to. */
 export function foreignPackages(): { name: string; resolved: string }[] {
   const out: { name: string; resolved: string }[] = [];
-  for (const p of ["cli", "data", "engine"]) {
+  for (const p of ["cli", "data", "engine", "logs"]) {
     const name = `@efsim/${p}`;
     let resolved: string;
     try {

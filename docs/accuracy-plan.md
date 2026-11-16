@@ -42,9 +42,9 @@ kit.
 
 | # | problem | evidence | fix |
 |---|---|---|---|
-| A1 | Casts closer than `CAST_SLACK_MS` (1 s, packages/cli/src/logcasts.ts:17) merge into one: Typhoeus's hover shots (0.6 s apart, one event name) and Zhuang Fangyi's empowered battle skill lose every second cast | unlanded 34% of 92b4, 51% of dbae, 22% of bdf2, 20% of d9e5, 21–29% of 3aa6 / 4bfc / c6d8 / d774 | place repeated casts by their landings' count per cast (shot index), not a time gap |
+| A1 | Casts closer than `CAST_SLACK_MS` (1 s, packages/logs/src/logcasts.ts:17) merge into one: Typhoeus's hover shots (0.6 s apart, one event name) and Zhuang Fangyi's empowered battle skill lose every second cast | unlanded 34% of 92b4, 51% of dbae, 22% of bdf2, 20% of d9e5, 21–29% of 3aa6 / 4bfc / c6d8 / d774 | place repeated casts by their landings' count per cast (shot index), not a time gap |
 | A2 | Si's second battle-skill press (Final Stroke, logged under the same ID) isn't replayed, so Artful Intent's burst (Fixed DMG) never lands where the log has it | 19 hits in 12 fixtures; 0eef −16%, e82d −12%, b6aa a 971k hit | map a second press during Artful Intent to Final Stroke; add `casts` to the 8 Si fixtures without them |
-| A3 | A hit whose crit the log doesn't give counts as a non-crit (packages/cli/src/enginecheck.ts:193), in the totals too | e82d −31%, 0c14 −24%, 99fb −16%, 0eef −11% | expected crit for unknown, or the crit the ratio implies |
+| A3 | A hit whose crit the log doesn't give counts as a non-crit (packages/logs/src/enginecheck.ts:193), in the totals too | e82d −31%, 0c14 −24%, 99fb −16%, 0eef −11% | expected crit for unknown, or the crit the ratio implies |
 | A4 | The replay deals damage past the kill (`fightTotals` has no HP cap) | b7b3 +25% after Rhodagn's 2.29M HP | stop at the log's last hit (the kill), both sides; time to kill on its own (2026-10-30) |
 | A5 | The Endministrator logged under `chr_0002_endminm_*` events | d4fb 286 hits unplaced (18%); the replay's own ultimates +11–18% in d4fb, 7e19, 0c14 | map the event prefix like the operator ID |
 | A6 | Casts without damage (Xaihi's ultimate) aren't inferred, so their Amp is missing | e82d all 20 Si combo / ultimate hits ×2.04 (−47%); 90 hits ×1.73 in abfd / b6aa / 9555; 26 Typhoeus hits in dbae | infer a hitless cast from its buff's lane (as `castsFromBuffLanes` does for others) |

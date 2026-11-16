@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { advance, apply, createContext, init, type Build, type LandedHit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { affixesAsChild, loadGameData } from "@efsim/data";
 import { readScenario } from "@efsim/cli";
-import { loggedNames } from "../packages/cli/src/enginecheck.ts";
+import { loggedNames } from "../packages/logs/src/enginecheck.ts";
 
 const data = loadGameData();
 const A = "chr_0025_ardelia";

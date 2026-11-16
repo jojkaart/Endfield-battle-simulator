@@ -1,0 +1,12 @@
+{
+  "name": "@efsim/logs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@efsim/data": "*",
+    "@efsim/engine": "*",
+    "ajv": "^8.20.0"
+  }
+}

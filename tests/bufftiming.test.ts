@@ -1,12 +1,13 @@
-// The buff timing report (packages/cli/src/bufftiming.ts, `efsim zmdlogs timing`): a diagnostic, never scored. A
+// The buff timing report (packages/logs/src/bufftiming.ts, `efsim zmdlogs timing`): a diagnostic, never scored. A
 // synthetic log whose numbers the engine computes itself has a team ATK buff act ~3 s longer than the kit's 10 s; the
 // report recovers the shifted end from the damage alone, and reading it changes no verdict.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { computeHit, computeStats, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit } from "@efsim/engine";
-import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogEffect, type LogFixture, type LogHit } from "@efsim/logs";
 import { checkLog, readLogFixture, verdictCount } from "@efsim/cli";
-import { fixtureTiming, formatTimingReport, placeToggle, timingSummaries } from "../packages/cli/src/bufftiming.ts";
+import { fixtureTiming, formatTimingReport, placeToggle, timingSummaries } from "../packages/logs/src/bufftiming.ts";
 
 const data = loadGameData();
 const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;

@@ -234,7 +234,7 @@ operators, Ember and Snowshine (`healKind combo`) have one.
 ### G5. `zmdlogs check` can't layer Æthertech's buff
 
 - **family:** log tooling (L1's follow-up).
-- **feature:** `layerVariants` (packages/cli/src/logcheck.ts) tries a
+- **feature:** `layerVariants` (packages/logs/src/logcheck.ts) tries a
   stackingType 8 buff listed once at 1 to its maximum layers. For a
   maximum set by a key (`maxStackCntKey`) it asks `teamStackCaps`. That
   function matches the buff to its applying skill by ID prefix, which
@@ -256,7 +256,7 @@ operators, Ember and Snowshine (`healKind combo`) have one.
 ### G6. `zmdlogs reactions` takes the first kit hit with a logged key
 
 - **family:** log tooling.
-- **feature:** `kitHit` (packages/cli/src/reactioncheck.ts) returns the
+- **feature:** `kitHit` (packages/logs/src/reactioncheck.ts) returns the
   first kit hit whose `events` include the logged key. When a skill has
   several hits with one key (Ember's leap and slam are both
   `chr_0009_azrila_normal_skill`), map the n-th logged hit of that key in

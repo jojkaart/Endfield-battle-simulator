@@ -11,9 +11,10 @@ import {
   Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
-import { affixesAsChild, type AbsentLanding, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
+import { affixesAsChild } from "@efsim/data";
+import { type AbsentLanding, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import type { BuffReplay, Fact, ReplayCastFacts } from "./buffreplay.ts";
-import type { Assumption } from "./logcheck.ts";
+import type { Assumption } from "./assumptions.ts";
 import { isRecordedBurst, recordedBurst, replayRecord } from "./recordedburst.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 

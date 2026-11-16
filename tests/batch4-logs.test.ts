@@ -24,11 +24,12 @@ import {
   type Modifier,
   type OperatorKit,
 } from "@efsim/engine";
-import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogFixture, type LogHit } from "@efsim/logs";
 import { calc, checkLog, eventCounts, kitStackCaps, layerVariants, linkVariants, logBuffReplay, readLogFixture, simulateLog, teamStackCaps, type CalcOptions, type HitVerdict } from "@efsim/cli";
-import { assumeValues, statedCounts, valueAssumptions, valueReads } from "../packages/cli/src/hitvalues.ts";
-import { placeHits, type LoggedCast } from "../packages/cli/src/logcasts.ts";
-import { checkReactions, enemyClockDue } from "../packages/cli/src/reactioncheck.ts";
+import { assumeValues, statedCounts, valueAssumptions, valueReads } from "../packages/logs/src/hitvalues.ts";
+import { placeHits, type LoggedCast } from "../packages/logs/src/logcasts.ts";
+import { checkReactions, enemyClockDue } from "../packages/logs/src/reactioncheck.ts";
 
 const data = loadGameData();
 const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;

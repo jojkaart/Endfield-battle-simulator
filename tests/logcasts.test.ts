@@ -1,11 +1,12 @@
-// How logged hits are grouped into casts (packages/cli/src/logcasts.ts), on real logs: the accuracy plan's A1
+// How logged hits are grouped into casts (packages/logs/src/logcasts.ts), on real logs: the accuracy plan's A1
 // (docs/accuracy-plan.md), where casts of one key less than CAST_SLACK_MS apart were merged.
 
 import { describe, expect, it } from "vitest";
-import { loadGameData, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogHit } from "@efsim/logs";
 import type { Build } from "@efsim/engine";
 import { readLogFixture } from "@efsim/cli";
-import { distinctCasts, placeHits } from "../packages/cli/src/logcasts.ts";
+import { distinctCasts, placeHits } from "../packages/logs/src/logcasts.ts";
 
 const data = loadGameData();
 const T = "chr_0034_typhoea";
@@ -64,7 +65,7 @@ describe("the replay casts the basic-attack step the engine's state allows (accu
 
 describe("the fight's totals (accuracy plan A3, A4)", () => {
   it("a kill: both totals end at the log's kill, the replay's past the enemy's HP; its time to kill is when it reached the HP (b7b3: Rhodagn dies at the log's time in the replay, within 1.5%, its absent slash left out; ~0.4 s sooner while unlogged crits counted at expected rates)", async () => {
-    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
     const replay = logBuffReplay(data, fx);
     const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
@@ -77,7 +78,7 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
   });
 
   it("a logged hit's landing counts even past the log's end, and the killing hit is capped at the log's value (a27b: Mi Fu's Crush 65 ms late, 161,507 of 332,879)", async () => {
-    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-a27bc3527682.json", import.meta.url).pathname);
     const replay = logBuffReplay(data, fx);
     const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
@@ -93,7 +94,7 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
   });
 
   it("a hit whose crit the log doesn't give counts as the reading its value equals, crit or not (40d9: Si's killing combo finish, 599,622 = ×1.5 the non-crit 399,748)", async () => {
-    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
     const replay = logBuffReplay(data, fx);
     const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
@@ -102,7 +103,7 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
   });
 
   it("a landing the fixture marks absent from the log is left out of the replay's totals (b7b3: Last Rite's third ultimate slash)", async () => {
-    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
     const replay = logBuffReplay(data, fx);
     const LR = "chr_0026_lastrite";
@@ -255,7 +256,7 @@ describe("an Arts Burst's delay (1 s) on its operator's clock", () => {
 
 describe("build offsets: one factor on all of an operator's hits (a build input the export doesn't give)", () => {
   it("names the weapon level or attribute nodes that give it (d774's Liino: weapon 80; 458b's Si: 2 nodes)", async () => {
-    const { buildOffsets, engineHits, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const { buildOffsets, engineHits, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
     const offsetOf = (file: string, operator: string, build: (b: Build) => Build) => {
       const fx = readLogFixture(new URL(file, import.meta.url).pathname);
       const asAssumed = { ...fx, team: fx.team.map((b) => (b.operator === operator ? build(b) : b)) };
@@ -273,7 +274,7 @@ describe("build offsets: one factor on all of an operator's hits (a build input 
   });
 
   it("isn't one factor where ATK buffs move the ratio from hit to hit: Ardelia's weapon in 4e36 (level 1, no node) and c3c7 (level 60, no node), set in the fixtures", async () => {
-    const { engineHits, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const { engineHits, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
     const A = "chr_0025_ardelia";
     const exact = (file: string, build: (b: Build) => Build) => {
       const fx = readLogFixture(new URL(file, import.meta.url).pathname);

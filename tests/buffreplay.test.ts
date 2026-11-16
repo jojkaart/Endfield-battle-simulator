@@ -1,4 +1,4 @@
-// The log check's kit-buff replay (2026-10-22, packages/cli/src/buffreplay.ts):
+// The log check's kit-buff replay (2026-10-22, packages/logs/src/buffreplay.ts):
 // the logged casts are cast again on the timeline and the kits' triggers
 // decide which kit buffs are on at each logged hit, not the log's listing.
 // Shown with a small hand-made change to Laevatain's kit and a synthetic log
@@ -7,9 +7,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type ActiveBuff, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
-import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogEffect, type LogFixture, type LogHit } from "@efsim/logs";
 import { castsFromBuffLanes, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, readLogFixture, replayedCasts, withLoggedCasts, type HitVerdict } from "@efsim/cli";
-import { placeHits } from "../packages/cli/src/logcasts.ts";
+import { placeHits } from "../packages/logs/src/logcasts.ts";
 
 const data = loadGameData();
 const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;

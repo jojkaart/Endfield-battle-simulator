@@ -143,7 +143,7 @@ Catcher; the talent branch is Estella's C4 pattern.
   with `buff_common_poise_break_damage_taken_scale` ×1.3 that her combo hit
   didn't have); Arcane's report (batch 1,
   "~1.0–1.5 s after her WILL touch, never at the touch itself", its test
-  A); 40d9a3c1da37 +893 / +912 ms (packages/cli/src/reactioncheck.ts).
+  A); 40d9a3c1da37 +893 / +912 ms (packages/logs/src/reactioncheck.ts).
 - **impact:** wrong modifiers on bursts whose 1 s straddles a change: in
   the 103478 example the engine deals the burst unstaggered (×1/1.3 =
   −23% for that burst); burst triggers fire 1 s early (a buff they give

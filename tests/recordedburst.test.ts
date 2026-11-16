@@ -1,10 +1,11 @@
-// Si's Artful Intent burst valued from the logged hits it recorded (packages/cli/src/recordedburst.ts; docs/design.md
+// Si's Artful Intent burst valued from the logged hits it recorded (packages/logs/src/recordedburst.ts; docs/design.md
 // "What a log check verifies"): ink_damage_rate × every logged hit on the target from the battle-skill hit
 // (inclusive) to the record's end, which the log doesn't have (each logged time up to RECORD_END_LAG_MS before the
 // burst is a reading). Synthetic logs with Si's build from zmdlogs-0eef2474a26f (P5, battle skill 12: rate 0.20),
 // and that log's own burst.
 import { describe, expect, it } from "vitest";
-import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogFixture, type LogHit } from "@efsim/logs";
 import { checkLog, readLogFixture, RECORD_END_LAG_MS, recordedBurst, replayRecord } from "@efsim/cli";
 import { computeStats, type Build, type LandedHit } from "@efsim/engine";
 

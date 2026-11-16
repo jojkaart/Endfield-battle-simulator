@@ -258,7 +258,7 @@ the hit that forms the Corrosion, not on its own: 3f78, 4a64).
 **Kit buffs in the log check** (2026-10-22, owner: the engine activates
 buffs from the events that trigger them, not from the log's listing).
 `efsim zmdlogs check` replays the logged casts on the timeline
-(`packages/cli/src/buffreplay.ts`, engine `replayCast`): each placed cast
+(`packages/logs/src/buffreplay.ts`, engine `replayCast`): each placed cast
 (logcasts.ts) starts at its logged frame without a rotation's checks, its
 logged landings land at their logged frames (pinned: later time stops
 don't move them, the log's time has them in), an operator's earlier cast
@@ -289,7 +289,7 @@ consumed buffs, crit-independent damage, timing), the check computes it
 with the engine and compares the result with the log; the log supplies
 only inputs the engine can't produce, and is otherwise what's compared
 against. A logged hit's reading is the engine's damage path at its
-landing in the replay of the logged casts (`packages/cli/src/enginecheck.ts`
+landing in the replay of the logged casts (`packages/logs/src/enginecheck.ts`
 `engineReadings`: engine `landingDamage` with the timeline's own
 `damageOptions` there, which the replay records per landing as
 `LandedHit.inputs`), so the check and a simulation share every rule; a
@@ -451,7 +451,7 @@ damage with the least and the most shred Corrosion can give brackets
 killing blow, Fixed DMG a fight computes (where the log can't value it:
 below), a status hit of an operator without a kit; and **uncovered**.
 A recording buff's burst (Si's Artful Intent, `KitBuff.records`; since
-2026-11-14, `packages/cli/src/recordedburst.ts`) is Fixed DMG of what the
+2026-11-14, `packages/logs/src/recordedburst.ts`) is Fixed DMG of what the
 buff recorded, which the log's own hits give: the buff's rate for the
 hitter's build (ink_damage_rate: 0.13 at P0, +0.07 from P1, less below
 battle skill 12) × the sum of every logged hit on the target, by anyone
@@ -505,7 +505,7 @@ tightening it is the measure of those fixes. The negative control gives
 4e5e 3 of 345 at ×0.97 (two through the fallback), every other 0.
 
 **The buff timing report** (2026-11-15, `efsim zmdlogs timing [fixture…]`,
-`packages/cli/src/bufftiming.ts`; a diagnostic, never scored: it changes
+`packages/logs/src/bufftiming.ts`; a diagnostic, never scored: it changes
 no verdict, snapshot or accuracy number). The check toggles a kit buff
 only where its replayed instances change within REPLAY_EDGE_MS of a hit;
 a timing error of seconds (a time stop held another length, a trigger the

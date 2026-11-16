@@ -1,11 +1,11 @@
-// `efsim zmdlogs hits` (packages/cli/src/hitexport.ts): one record per logged hit, with the same verdicts and primary
+// `efsim zmdlogs hits` (packages/logs/src/hitexport.ts): one record per logged hit, with the same verdicts and primary
 // readings as the log check, and the reading's parts that analyses across logs need.
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, engineHits, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
-import { filterRecords, formatRecord, hitRecords } from "../packages/cli/src/hitexport.ts";
-import { readDevFixture } from "../packages/cli/src/logs.ts";
+import { filterRecords, formatRecord, hitRecords } from "../packages/logs/src/hitexport.ts";
+import { readDevFixture } from "../packages/logs/src/logs.ts";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();

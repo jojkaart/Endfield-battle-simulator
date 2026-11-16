@@ -4,7 +4,7 @@
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
 import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, readingDoesNotApply, resolveApplication, statusEventKey, type EnemyStatus, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
-import type { LogFixture, LogHit } from "@efsim/data";
+import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { castTimeStops, placeHits, type Placement, type TimeStop } from "./logcasts.ts";
 
 /**

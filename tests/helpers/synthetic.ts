@@ -2,7 +2,7 @@
 // in two is one import line, not copied helpers (docs/friction-done round 1).
 
 import type { Build, GameData, KitBuff, KitHit, KitSkill, KitTrigger, OperatorKit } from "@efsim/engine";
-import type { LogFixture, LogHit } from "@efsim/data";
+import type { LogFixture, LogHit } from "@efsim/logs";
 
 /** The game data with one operator's kit changed: its skills replaced (when given), buffs, stacks and triggers added. */
 export function withOperatorKit(data: GameData, operator: string, k: { readonly skills?: KitSkill[]; readonly stacks?: OperatorKit["stacks"]; readonly buffs?: KitBuff[]; readonly triggers?: KitTrigger[] }): GameData {

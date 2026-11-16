@@ -6,7 +6,7 @@
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
 import { computeStats, effectiveKit, FPS, hitAvailable, hitDecorations, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
-import type { LogFixture, LogHit } from "@efsim/data";
+import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /**
  * A logged cast whose next landing comes later than the key's landings span

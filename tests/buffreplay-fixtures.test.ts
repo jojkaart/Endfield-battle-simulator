@@ -3,9 +3,10 @@
 // A separate file so the default suite's workers balance.
 import { describe, expect, it } from "vitest";
 import { effectiveKit, FPS, type OperatorKit } from "@efsim/engine";
-import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogFixture, type LogHit } from "@efsim/logs";
 import { castsFromTriggerHits, checkLog, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, simulateLog } from "@efsim/cli";
-import { placeHits } from "../packages/cli/src/logcasts.ts";
+import { placeHits } from "../packages/logs/src/logcasts.ts";
 
 const data = loadGameData();
 

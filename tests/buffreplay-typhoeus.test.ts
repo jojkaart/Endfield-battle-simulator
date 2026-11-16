@@ -4,7 +4,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { activeAt, advance, createContext, FPS, init, replayCast, type Build, type TimelineState } from "@efsim/engine";
-import { loadGameData, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogHit } from "@efsim/logs";
 import { checkLog, formatBuffReplay, logBuffReplay, readLogFixture, type HitVerdict } from "@efsim/cli";
 
 const data = loadGameData();

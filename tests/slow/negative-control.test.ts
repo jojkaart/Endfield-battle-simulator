@@ -4,7 +4,7 @@
 // the readings behind each chance match are printed. In `npm run test:logs`.
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { LogFixture } from "@efsim/data";
+import type { LogFixture } from "@efsim/logs";
 import { loadGameData } from "@efsim/data";
 import { checkLog, readLogFixture } from "@efsim/cli";
 import { logFixtures, ROOT } from "../logverdicts.ts";

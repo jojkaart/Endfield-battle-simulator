@@ -14,7 +14,8 @@ import {
   activeAt, advance, allActions, earliestStart, applyBuff, Attr, setPoise, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
-import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
+import { isBuffFileListed, readBuffFile } from "@efsim/data";
+import { type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { castTimeStops, distinctCasts, loggedFrames, mergeMs, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /**

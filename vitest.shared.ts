@@ -13,5 +13,5 @@ setupWorktree(root);
 
 export const efsimAlias = [
   { find: /^@efsim\/engine\/core$/, replacement: resolve(root, "packages/engine/src/core.ts") },
-  { find: /^@efsim\/(cli|data|engine)$/, replacement: resolve(root, "packages/$1/src/index.ts") },
+  { find: /^@efsim\/(cli|data|engine|logs)$/, replacement: resolve(root, "packages/$1/src/index.ts") },
 ];

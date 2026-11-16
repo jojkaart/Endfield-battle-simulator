@@ -41,6 +41,7 @@
   "dependencies": {
     "@efsim/data": "*",
     "@efsim/engine": "*",
-    "@efsim/cli": "*"
+    "@efsim/cli": "*",
+    "@efsim/logs": "*"
   }
 }

@@ -14,10 +14,10 @@
 // minutes of CPU: `node scripts/with-lock.ts node scratch/x.ts`.
 //
 // Logs: list development logs with `logFixtureFiles` or `listLogs` (never a hold-out; fixtures/holdout/ is never
-// opened by hand: docs/accuracy-plan.md, "Choosing logs"). Per-hit numbers of the log check: `efsim zmdlogs hits`.
+// opened by hand: docs/accuracy-plan.md, "Choosing logs"). Per-hit numbers of the log check: `efsim zmdlogs hits`. The log tooling is @efsim/logs (packages/logs).
 
 import { loadGameData } from "@efsim/data";
-import { checkLog, engineHits, listLogs, logBuffReplay, readLogFixture } from "@efsim/cli";
+import { checkLog, engineHits, listLogs, logBuffReplay, readLogFixture } from "@efsim/logs";
 
 const data = loadGameData();
 const operator = process.argv[2] ?? "chr_0036_jsspsi";

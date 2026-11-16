@@ -9,7 +9,7 @@
 // create or end the buff. A fit is a hint, not a fix: a change needs a mechanism.
 
 import { allActions, effectiveKit, FPS, kitBuffModifiers, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, STATUS_EVENTS, type GameData, type KitBuff, type KitTrigger, type Modifier, type OperatorKit } from "@efsim/engine";
-import type { LogFixture, LogHit } from "@efsim/data";
+import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { engineCheck, loggedEntries, readingBasis, type Alternative, type EngineCheck, type Reading, type ReadingBasis } from "./enginecheck.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
 import { castTimeStops, placeHits, type Placement } from "./logcasts.ts";

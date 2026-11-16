@@ -3,7 +3,8 @@
 // example scenario's builds (examples/camille-gilberta.scenario.json; Golden Age on Liino's).
 import { describe, expect, it } from "vitest";
 import { advance, apply, computeStats, createContext, earliestStart, init, skillParam, type Build, type LandedHit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
-import { loadGameData, type LogFixture } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogFixture } from "@efsim/logs";
 import { checkLog, readLogFixture, readScenario } from "@efsim/cli";
 
 const data = loadGameData();

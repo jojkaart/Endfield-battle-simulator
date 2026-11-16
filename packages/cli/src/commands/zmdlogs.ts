@@ -1,30 +1,27 @@
 // efsim zmdlogs: the log tooling (list, per-hit numbers, raw details, import, the check, buff timing, reactions,
 // refresh, scales).
 
-import { basename, join } from "node:path";
-import { command } from "../command.ts";
-import { fixtureTiming, formatTimingReport } from "../bufftiming.ts";
-import { exportHits, exportHitsParallel, formatRecord, type HitRecord } from "../hitexport.ts";
-import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "../logcheck.ts";
-import { importBattle, LOG_DIRS, logFixtureFiles, readDevFixture, readLogFixture, readLogSplit, refreshFixture, refuseHoldoutFile } from "../logs.ts";
-import { formatLogList, logDirs } from "../logtools.ts";
-import { checkReactions, formatReactionCheck } from "../reactioncheck.ts";
-import { battleIdOf, cacheRawDetail, formatRaw, rawDetail, rawDir } from "../zmdraw.ts";
-import { ROOT } from "./shared.ts";
+// The logic is @efsim/logs' (reports.ts and the modules it calls); this module checks the arguments and calls it.
 
-/**
- * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
- * log of the split (fixtures/holdout/holdout.json). Hold-out logs are never read (only counted as skipped): they're
- * measured, never debugged (docs/accuracy-plan.md, "Choosing logs").
- */
-function timingFixtures(named: readonly string[]): { files: string[]; skipped: number } {
-  const split = readLogSplit(ROOT);
-  const holdout = split.holdout;
-  const idOf = (f: string) => basename(f).replace(/\.json$/, "");
-  const wanted = named.length ? named : split.development;
-  const files = wanted.filter((f) => !holdout.has(idOf(f))).map((f) => (f.endsWith(".json") ? f : join(ROOT, "fixtures/pending", `${f.startsWith("zmdlogs-") ? f : `zmdlogs-${f}`}.json`)));
-  return { files, skipped: wanted.length - files.length };
-}
+import {
+  battleIdOf,
+  cacheRawDetail,
+  checkReactions,
+  checkReport,
+  findScalesReport,
+  formatRaw,
+  formatReactionCheck,
+  hitsReport,
+  importBattle,
+  rawDetail,
+  rawDir,
+  readDevFixture,
+  refreshFixture,
+  scalesReport,
+  timingReport,
+} from "@efsim/logs";
+import { command } from "../command.ts";
+import { formatLogList, logDirs } from "../logtools.ts";
 
 export default command({
   name: "zmdlogs",
@@ -105,44 +102,16 @@ export default command({
       if (fetched) process.stderr.write(`fetched ${battleId} once from zmdlogs.com; cached in ${rawDir()}\n`);
       return formatRaw(detail, { ...(values.buffs !== undefined ? { buffs: values.buffs } : {}), ...(values.events !== undefined ? { events: values.events } : {}) });
     }
+    const progress = (l: string) => process.stderr.write(l + "\n");
     if (sub === "hits") {
-      const named = args.slice(1);
-      for (const f of named) refuseHoldoutFile(f);
-      const files = named.length ? named : logFixtureFiles(ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
-      const workers = values.workers === undefined ? 1 : Number(values.workers);
-      if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
-      const lines: string[] = [];
-      const filter = { ...(values.kind !== undefined ? { kind: values.kind } : {}), operators: values.operator, progress: (l: string) => process.stderr.write(l + "\n") };
-      const out = (r: HitRecord) => lines.push(formatRecord(r, values.json));
-      if (workers > 1) await exportHitsParallel(files, workers, out, filter);
-      else exportHits(data(), files, readLogFixture, out, filter);
-      return lines.join("\n");
+      return hitsReport(data, args.slice(1), { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators: values.operator, json: values.json, progress });
     }
     if (sub === "timing") {
-      const start = performance.now();
-      const sel = timingFixtures(args.slice(1));
-      const reports = sel.files.map((f) => {
-        process.stderr.write(`timing ${basename(f)}\n`);
-        return fixtureTiming(data(), readLogFixture(f), { assumed: values.assumed, pairs: !values.singles });
-      });
-      return formatTimingReport(data(), reports, { verbose: values.verbose, skipped: sel.skipped, seconds: (performance.now() - start) / 1000, ...(values.top !== undefined ? { top: Number(values.top) } : {}) });
+      return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
     }
     if ((sub === "scales" || sub === "find-scales") && arg && op) {
       const fx = readDevFixture(arg);
-      const lines: string[] = [];
-      if (sub === "scales") {
-        for (const r of impliedScales(data(), fx, op)) {
-          const s = r.bySkillType;
-          lines.push(`${r.event} t=${r.t}${r.unquantified.length ? ` [${r.unquantified.join(",")}]` : ""} crit=${r.crit} value=${r.value}` +
-            ` basic=${s.basic.toFixed(4)} battle=${s.battle.toFixed(4)} combo=${s.combo.toFixed(4)} ultimate=${s.ultimate.toFixed(4)}`);
-        }
-      } else {
-        for (const m of findScales(data(), fx, op)) {
-          lines.push(`${m.event} (${m.hits} hits)`);
-          for (const x of m.matches) lines.push(`   ${x.agree}/${m.hits}  ${x.skillId} ${x.keys.join(" * ")} ${x.damageType}${x.corrosion ? ` corrosion L${x.corrosion}` : ""}`);
-        }
-      }
-      return lines.join("\n");
+      return sub === "scales" ? scalesReport(data(), fx, op) : findScalesReport(data(), fx, op);
     }
     if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions" && sub !== "refresh")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, refresh <file> --detail <file>, scales <file> <op> or find-scales <file> <op>\n\n${ctx.usage}`);
     if (sub === "refresh") {
@@ -156,11 +125,7 @@ export default command({
     }
     if (sub === "check") {
       const fx = readDevFixture(arg);
-      if (values.simulate) return formatSimulatedLog(data(), fx, simulateLog(data(), fx));
-      const replay = values["log-buffs"] ? null : logBuffReplay(data(), fx);
-      const byHit = replay ? engineHits(data(), fx, replay) : undefined;
-      const verdicts = checkLog(data(), fx, replay ? { replay, ...(byHit ? { engineHits: byHit } : {}) } : { buffs: "log" });
-      return formatLogCheck(data(), fx, verdicts, replay ?? undefined, replay && byHit ? engineReport(data(), fx, replay, byHit, verdicts) : undefined);
+      return checkReport(data(), fx, { logBuffs: values["log-buffs"], simulate: values.simulate });
     }
     const file = await importBattle(data(), arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail, (d) => cacheRawDetail(arg, d));
     return `wrote ${file}`;

@@ -6,11 +6,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { computeHit, computeStats, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier } from "@efsim/engine";
-import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
+import { loadGameData } from "@efsim/data";
+import { type LogEffect, type LogFixture, type LogHit } from "@efsim/logs";
 import { boundarySubsets, checkLog, readLogFixture, type HitVerdict } from "@efsim/cli";
-import { placeHits, worldMs } from "../packages/cli/src/logcasts.ts";
+import { placeHits, worldMs } from "../packages/logs/src/logcasts.ts";
 import { kitHit, logHitOf, syntheticFixture, withOperatorKit } from "./helpers/synthetic.ts";
-import { checkReactions } from "../packages/cli/src/reactioncheck.ts";
+import { checkReactions } from "../packages/logs/src/reactioncheck.ts";
 
 const data = loadGameData();
 const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;

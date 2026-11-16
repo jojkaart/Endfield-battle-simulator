@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { simulate, type Build } from "@efsim/engine";
 import { describeGear, formatGear, gearAscent, gearCandidates, logLoadouts } from "../packages/cli/src/gear.ts";
-import { logFixtureFiles } from "../packages/cli/src/logs.ts";
+import { logFixtureFiles } from "../packages/logs/src/logs.ts";
 import { readScenario } from "../packages/cli/src/simulate.ts";
 
 const data = loadGameData();

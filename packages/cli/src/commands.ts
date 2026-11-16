@@ -24,7 +24,7 @@ import {
   kitBuffModifiers,
 } from "@efsim/engine";
 import { num, pct, signedPct, table } from "./format.ts";
-import { assumeValues, readsAnything, statedCounts, valueReads } from "./hitvalues.ts";
+import { assumeValues, readsAnything, statedCounts, valueReads } from "@efsim/logs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 

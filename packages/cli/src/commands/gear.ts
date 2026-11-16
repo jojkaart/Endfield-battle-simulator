@@ -6,7 +6,7 @@ import { command } from "../command.ts";
 import { parseAssume, underAssume, zeroCompanion } from "../assume.ts";
 import { formatGear, gearAscent, gearCandidates, type GearCandidatesFile } from "../gear.ts";
 import { formatRuleGear, gearOnRules } from "../gearrules.ts";
-import { logFixtureFiles } from "../logs.ts";
+import { logFixtureFiles } from "@efsim/logs";
 import { readRuleList } from "../rules.ts";
 import { readScenario } from "../simulate.ts";
 import { opt, ROOT, teamOperators, wholeAtLeast } from "./shared.ts";

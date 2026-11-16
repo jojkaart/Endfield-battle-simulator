@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/log-fixture.schema.json",
   "title": "Log fixture",
-  "description": "A battle log reduced to what tests need: each operator's build and each damage hit with the buff effects the log says were active (packages/data/src/zmdlogs.ts). No player names or account IDs.",
+  "description": "A battle log reduced to what tests need: each operator's build and each damage hit with the buff effects the log says were active (packages/logs/src/zmdlogs.ts). No player names or account IDs.",
   "type": "object",
   "required": ["id", "description", "provenance", "enemy", "team", "hits"],
   "additionalProperties": false,

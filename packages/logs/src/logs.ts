@@ -5,7 +5,8 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { GameData } from "@efsim/engine";
-import { enemiesHit, fetchBattle, sourceCommit, SOURCES, zmdlogsCasts, zmdlogsPoise, zmdlogsToFixture, type LogFixture } from "@efsim/data";
+import { sourceCommit, SOURCES } from "@efsim/data";
+import { enemiesHit, fetchBattle, zmdlogsCasts, zmdlogsPoise, zmdlogsToFixture, type LogFixture } from "./zmdlogs.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
