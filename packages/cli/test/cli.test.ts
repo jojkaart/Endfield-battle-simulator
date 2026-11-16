@@ -11,6 +11,9 @@ import { checkReactions } from "../src/reactioncheck.ts";
 import { computeStats, type StatPanel } from "@efsim/engine";
 import { formatCensus, kitCensus } from "../src/census.ts";
 import { readScenario, searchCommand, searchWidths } from "../src/simulate.ts";
+import { command, mergedOptions, usageText } from "../src/command.ts";
+import { COMMANDS } from "../src/commands/index.ts";
+import { GLOBAL_NOTES, GLOBAL_OPTIONS } from "../src/commands/shared.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const data = loadGameData();
@@ -69,6 +72,25 @@ describe("cli commands", () => {
 
   it("rejects invalid build files", () => {
     expect(() => readBuild(join(ROOT, "package.json"))).toThrow(/must have required property/);
+  });
+});
+
+describe("cli command registry (one module per command)", () => {
+  it("lists each command once, its usage lines first in the usage text's order", () => {
+    const names = COMMANDS.map((c) => c.name);
+    expect(new Set(names).size).toBe(names.length);
+    for (const c of COMMANDS) expect(c.usage.startsWith(`  efsim ${c.name}`), c.name).toBe(true);
+    const text = usageText(COMMANDS, GLOBAL_NOTES);
+    expect(text.startsWith("Usage:\n  efsim find ")).toBe(true);
+    expect(text).toContain("Options for calc and compare:");
+    expect(text.split("Options for calc and compare:")).toHaveLength(2);
+  });
+
+  it("refuses an option two commands declare differently (the parse is shared)", () => {
+    expect(() => mergedOptions(COMMANDS, GLOBAL_OPTIONS)).not.toThrow();
+    const a = command({ name: "a", usage: "  efsim a\n", options: { top: { type: "string" } }, run: () => "" });
+    const b = command({ name: "b", usage: "  efsim b\n", options: { top: { type: "boolean", default: false } }, run: () => "" });
+    expect(() => mergedOptions([a, b], {})).toThrow(/option --top: b declares it unlike a/);
   });
 });
 
