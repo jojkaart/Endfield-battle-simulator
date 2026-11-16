@@ -30,6 +30,22 @@ The tool is only useful if its numbers are right. Keep tests up to date and
 passing with every change. Follow the architectural principles in
 [docs/design.md](docs/design.md#architectural-principles).
 
+Tests: `npm test` is the default suite; `npm run test:logs` (`tests/slow/`:
+pending logs, negative control, single tests of tens of seconds) and
+`npm run check` (both, plus types and lint) run before a merge. While
+working, run only what a change touches: `npx vitest run tests/<file>.test.ts`
+(one file; `-t "<name>"` for one test) or `npx vitest related --run
+<changed source files>` (every test file that imports them). A test file
+that takes over ~40 s gets split, and a single test of tens of seconds goes
+to `tests/slow/`.
+
+Snapshots (`tests/snapshots/*.json`) and the accuracy scoreboard
+([docs/accuracy.md](docs/accuracy.md)) are generated: `npm run
+snapshots:update` regenerates them all from the current code (it prints
+the scoreboard's change and which logs got better or worse). On a merge
+conflict in any of them, take either side and run it; never merge them by
+hand. Quote the scoreboard's numbers, not scratch sums, in the journal.
+
 The owner plays daily and may run simple in-game tests. Keep
 [docs/in-game-tests.md](docs/in-game-tests.md) current and tell the owner
 when a new test becomes ready.

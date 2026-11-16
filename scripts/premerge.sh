@@ -32,4 +32,6 @@ if echo "$changed" | grep -qE '^(packages/|examples/|schemas/)' && ! echo "$chan
 fi
 
 npm run check
+# The branch's accuracy change (docs/accuracy.md, from the verdict snapshots) for the reviewer.
+node scripts/accuracy.ts --compare "$(git merge-base "$base" HEAD)"
 echo "premerge: ready to merge into $base"

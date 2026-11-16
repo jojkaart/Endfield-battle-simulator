@@ -68,17 +68,7 @@ describe("unquantified buffs valued from the kit buff that stands for them", () 
     expect(checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: unq, effects: [listed] })]), { engine: false })[0]?.kind).toBe("mismatch");
   });
 
-  it("4e5e: Lustrous Carmine's ATK (once hand-annotated as unquantified), valued from Camille's weapon kit, matches all 85 of her hits", () => {
-    // The fixture no longer lists it after 49418 ms (the kit-buff replay keeps it on: tests/buffreplay.test.ts); written back in as
-    // the old annotation had it, the kit values it.
-    const fx = fixtureFile("4e5e1390085e");
-    const unq = { buff: "buff_wpn_lance_0015_atkup", since: 49418, source: "chr_0033_camille" };
-    const annotated = { ...fx, hits: fx.hits.map((h) => (h.t >= 49418 ? { ...h, unquantified: [...h.unquantified, unq] } : h)) };
-    const v = checkLog(data, annotated, { buffs: "log" }).filter((x) => x.hit.operator === "chr_0033_camille");
-    expect(v.filter((x) => x.kind === "match")).toHaveLength(85);
-    expect(v.some((x) => x.kind === "match" && x.assumed.includes("unquantified buff_wpn_lance_0015_atkup from kit wpn_lance_0015.atk"))).toBe(true);
-    // ~23 s on its own (2026-11-14), over the default 60 s under the full suite's load.
-  }, 180_000);
+  // 4e5e: Lustrous Carmine's ATK valued from Camille's weapon kit (a whole log check): tests/slow/log-cases.test.ts.
 });
 
 describe("repeated boundary buffs: 1 up to all of their instances", () => {
