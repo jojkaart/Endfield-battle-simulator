@@ -29,12 +29,23 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   60-list search: see the journal); Typhoeus's team is the furthest from
   its timeline (hover upkeep and SP sharing are hard to say as cues);
   in-game test 108 (the Finisher input) decides the filler's assumption.
-  The rule search should also try gating a repeated press on the
-  button's visible state (Si's battle skill only while her button shows
-  it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
-  Likewise conditions that line up buffs across operators (Si's
-  ultimate held for Laevatain's Twilight: +4.1% on Ink Melt, found by
-  hand from the damage graph; Liino's stance rule needed `shows`).
+  The guided rule search (`efsim rules --guided`, 2026-11-16: ideal
+  combos per window, losses per missing multiplier, directed edits:
+  `shows`, holds for a window's visible cue, chains) now makes the moves
+  found by hand; its limit is the noise (a paired difference's standard
+  error 0.5–1.2% at 32 seeds, most structured edits gain 0–2%). Next
+  there: cheaper variance (more, shorter fights; or a control variate
+  from the ideal-combo losses: a run's achievement explains much of its
+  DPS spread), the ideal combos with uptimes and cooldowns (Stagger on
+  every hit can't happen), inflictions a hit consumes and SP for
+  empowered skills as multipliers (they sit in a hit's scale, not its
+  modifiers), the guided search re-run with `--also <zero scenario>`
+  on the three teams, and the owner's call on two full-energy options
+  that lose from zero (the owner's team: Estella's ultimate only while
+  Staggered, +1.2–1.7% / −0.9%; Ink Melt: rule 7 only when Si's button
+  shows her battle skill, +2.5–3.9% / −3.3%); Ink Melt's Twilight hold
+  measured −0.11% ± 0.71 on 64 fresh seeds (keep or drop: the owner's
+  call).
   Whether Initial Stroke is worth pressing hangs on Si's talent Haste
   (in-game test 109: the data gives it only on the Inksoul path; ±3% for
   the owner's team either way).

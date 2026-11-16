@@ -238,6 +238,30 @@ same seeds); also holding Wulfgard's adds nothing (68,723) and makes
 loses (60,142); saving SP for Twilight battle skills changes nothing
 (65,909) or loses (61,860). The previous list: 65,922 / 61,962.
 
+**The guided search (2026-11-16; `efsim rules --guided`, design.md "The
+guided rule search").** Its ideal combos: Laevatain's Twilight attacks
+are the biggest window (14,377 DPS of 67,357, always in Twilight), at 55%
+of their ideal; they miss Stagger (on 29% of their damage: −3,052 DPS if
+on all) and Si's Amp (on 74% with the Twilight hold: −1,363); Si's
+combos miss her own Amp (on 38%: −1,619). The team gets 53% of its
+windows' ideal combos. On the example, 38 edits over two rounds (12 min)
+kept nothing. Checked further by hand:
+
+- **Rule 7 with "only if Si's button shows her battle skill"** (so
+  Ardelia's combo waits while Artful Intent is up, as the owner's team's
+  rule 9 does for Si): +1.52% ± 1.42 on the search's seeds 1–32, but
+  +3.93% ± 0.77 and +2.54% ± 0.86 on 64 fresh seeds each, and from zero
+  energy −3.27% ± 1.26 (32 seeds): a full-energy option, not taken (from
+  zero the skipped combos' energy is missed early). From the list before
+  the Twilight hold the search found it and kept it (+3.10% ± 1.02).
+- **The Twilight hold (rule 3) measures about nothing**: the example
+  against the list without it on 64 fresh seeds, −0.11% ± 0.71; the
+  +4.1% above was measured on 10 seeds, within their noise. Kept (it
+  costs nothing), but it isn't the gain it looked like.
+- Holding Si's ultimate for her combo, Ardelia's battle skill for
+  Twilight or Combustion, Laevatain's ultimate for a Stagger: all lose
+  (−2% to −20%).
+
 - **Found by the rule search**, from a hand-written list (ultimates when
   ready, every combo when it lights up, Laevatain's battle skill in
   Twilight and from 100 SP, Si's from 200): 51,674 → 66,058 (old delay draws; +28%, well

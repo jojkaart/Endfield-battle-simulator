@@ -96,6 +96,9 @@ const USAGE = `Usage:
                 [--screen-seeds k] [--confirm-seeds k] [--extend n]  Seeds each edit is screened on (default 6),
                                           the best n (default 4) are played on (default 32)
                 [--max-seeds k]           Seeds a close call (1.2 to 2 standard errors) is taken to (default 64)
+                [--also <scenario.json>]  A second start of the fight (the zero-energy scenario): the best edits are
+                                          played on it too, and one is kept only if it isn't worse there (by more
+                                          than one standard error)
                 [--check-seeds k] [--workers n]  The final list against the start on k fresh seeds (default the
                                           confirm seeds; 0: none); worker threads (default: cores less one)
   efsim payoffs <scenario.json>           The team's payoff table (engine probes): what each step produces and
@@ -246,6 +249,7 @@ async function main(argv: string[]): Promise<number> {
       "confirm-seeds": { type: "string" },
       "check-seeds": { type: "string" },
       "max-seeds": { type: "string" },
+      also: { type: "string" },
       extend: { type: "string" },
       edits: { type: "string" },
       random: { type: "string" },
@@ -456,6 +460,7 @@ async function main(argv: string[]): Promise<number> {
             ...opt("confirmSeeds", count(values["confirm-seeds"], "confirm-seeds", 2)),
             ...opt("checkSeeds", count(values["check-seeds"], "check-seeds", 0)),
             ...opt("maxSeeds", count(values["max-seeds"], "max-seeds", 2)),
+            ...(values.also ? { also: { scenario: withBattleOptions(readScenario(values.also)), label: values.also } } : {}),
             ...opt("extend", count(values.extend, "extend", 1)),
             ...opt("rounds", count(values.rounds, "rounds", 1)),
             ...opt("candidates", count(values.edits, "edits", 1)),

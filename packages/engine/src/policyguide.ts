@@ -692,17 +692,20 @@ export function guidedEdits(data: GameData, list: RuleList, s: GuideSummary, opt
     if (idx.length === 0) continue;
     push({ list: withRules(list.rules.map((r, i) => (idx.includes(i) ? { ...r, when: andCue(r.when, { not: c }) } : r))), kind: "save-sp", text: `Other operators' battle skills wait while ${cueWords(c)} (SP saved for ${w.label})` });
   }
-  // A press whose button changes, only when it shows its first skill.
+  // A press whose button changes, only when it shows the skill it's meant for: its first, or for the n-th press of the
+  // same button in a sequence its n-th (Si's battle skill, then Initial Stroke).
   list.rules.forEach((r, i) => {
     const st = stepsOf(r);
     st.forEach((x, j) => {
       if (x.shows !== undefined || !(x.cast === "battle" || x.cast === "combo" || x.cast === "ultimate")) return;
       const labels = (data.kits.operators[x.operator]?.skills ?? []).filter((k) => k.kind === x.cast && !k.followUpOnly).map((k) => k.label ?? k.skillId);
       if (labels.length < 2) return;
-      const label = labels[0] as string;
+      const nth = st.slice(0, j).filter((y) => y.operator === x.operator && y.cast === x.cast).length;
+      const label = labels[nth];
+      if (label === undefined) return;
       const rules = [...list.rules];
       rules[i] = { ...r, do: st.map((y, k) => (k === j ? { ...y, shows: label } : y)) };
-      push({ list: withRules(rules), kind: "shows", text: `Rule ${i + 1}: ${describeStep(data, x)} only if its button shows ${label}` });
+      push({ list: withRules(rules), kind: "shows", text: `Rule ${i + 1}${st.length > 1 ? `, press ${j + 1}` : ""}: ${describeStep(data, x)} only if its button shows ${label}` });
     });
   });
   // Spare SP at the cap: a last rule spends it.

@@ -1980,8 +1980,13 @@ a list, as `--search` does):
    biases those six up); among several, the best by gain less 0.2% a
    complexity point (the others are reported as Pareto alternatives).
    Then the analysis again on the kept list's runs, and the next round,
-   until nothing clears the bar; finally the start and final lists on 32
-   fresh seeds (1001…).
+   until nothing clears the bar (a round that keeps nothing is followed
+   by one aimed at 14 losses, with pairs of the best screened edits that
+   change different rules merged); finally the start and final lists on
+   32 fresh seeds (1001…). With `--also <scenario>` (the team's
+   zero-energy start, added after the results below) the edits played on
+   the confirm seeds are played there too, and one is kept only if it
+   isn't worse there by more than one standard error.
 
 The report: the ideal combos (each window's DPS, its ideal's gain,
 achievement, the multipliers it misses most with presence, factor, loss
@@ -1990,6 +1995,40 @@ gains on 6 / 32 / 64 seeds, the fresh seeds' gain, complexity and
 hardest cue; the kept edits; the path of kept lists (DPS against
 complexity); achievement per window before and after; the final list in
 the player's words (`--out` saves it).
+
+**Results** (2026-11-16, full energy, 300 s, 3 workers on 4 cores; each
+team page's "Rules"):
+
+| Team | Achieved (start) | Biggest misses (window: multiplier, DPS if on every hit) | Edits / rounds / time | Kept | On fresh seeds | From zero |
+|---|---|---|---|---|---|---|
+| Ink Melt, the list before the Twilight hold | 50% | Twilight attacks: Si's Amp −3,704, Stagger −3,100 | 42 / 2 / 7 min | Si's battle skill before Ardelia's combo only when her button shows it, +3.10% ± 1.02 | +2.18% ± 0.87 | |
+| Ink Melt, the example | 53% | Twilight attacks: Stagger −3,052, Si's Amp −1,363 | 38 / 2 / 12 min | none (the same `shows` edit +1.52% ± 1.42 on seeds 1–32) | the `shows` edit by hand: +3.93% ± 0.77 (1001–1064), +2.54% ± 0.86 (2001–2064) | −3.27% ± 1.26 |
+| The owner's | 71% | Si's combo: Si's Amp −2,433, Stagger −2,107 | 70 / 4 / 20 min | Estella's ultimate only while Staggered, +1.70% ± 0.80 | +1.20% ± 0.66 | −0.94% ± 0.47 |
+| Typhoeus's | 39% | hover shots: Liino's Cosmovoice Amp −13,411, Stagger −8,059 | 65 / 3 / 25 min | Arcane's ultimate only while Typhoeus hovers (or her ultimate is ready), +1.40% ± 0.52 | +0.57% ± 0.79 | +0.11% ± 0.51 |
+
+No example changed. The two full-energy gains beyond noise (the
+owner's team's Estella-on-Stagger, Ink Melt's `shows` on Si's battle
+skill before Ardelia's combo, which skips that combo while Artful
+Intent is up) both lose from zero energy, and Typhoeus's doesn't hold
+on fresh seeds; hence `--also <zero scenario>` (below). From the list
+before it, the search put the hand-found Twilight hold among its best
+screened edits (+4.35% on seeds 1–6), but on 32 seeds it is +1.49% ±
+0.87, and on 64 fresh seeds (1001–1064) the example with it against the
+list without it is −0.11% ± 0.71: the +4.1% measured by hand on 10
+seeds was those seeds. The Ink Melt example misses its `shows` edit on
+seeds 1–32 (+1.52% ± 1.42), which 128 fresh seeds put at +2.5–3.9%: a
+false negative of the 32-seed bar.
+**The bar is the noise**: a paired difference's standard error is
+0.5–1.2% at 32 seeds (the fight is chaotic: a held ultimate moves every
+later event), so gains under ~1.5% can't be told from noise without 64
+seeds or more, and most single structured edits gain 0–2%. The screening
+seeds' gains shrink by half or more on the confirm seeds (the best of
+20–30 noisy screens). What the search does give: the ideal combos and
+their misses explain where damage is lost, the candidates are the moves
+a player would think of, and the dead ends are measured (holding a
+window's own trigger for a multiplier loses 7–57% on every team; holding
+Liino's ultimate for Typhoeus's hover, the obvious move for the biggest
+miss of all, gains nothing).
 
 ### Time
 

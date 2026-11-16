@@ -234,6 +234,24 @@ against 52,561 (+4.2%, same seeds); 0.6 s reactions now cost almost
 nothing more than 0.3 s. One Arcane battle skill at 0.3 s is still spent
 for nothing (Liino's stance shows only once her first projectile lands).
 
+**The guided search (2026-11-16; `efsim rules --guided`, design.md "The
+guided rule search").** Its ideal combos: Typhoeus's hover shots are 63%
+of the team's damage (34,481 DPS of 54,604, 4.4 hovers a minute) and get
+35% of what they would with every multiplier the team puts on them; the
+largest misses are Liino's Cosmovoice Amp (×1.50, on 23% of the shots'
+damage: −13,411 DPS if it were on all), Stagger (on 22%: −8,059) and
+Arcane's combo Susceptibility. The shots always come while she hovers
+(66% of the fight), so "Typhoeus is hovering" is the window's cue. 65
+edits over three rounds (24 min): one passed on its seeds, **Arcane's
+ultimate only while Typhoeus hovers (or her ultimate is ready)**,
++1.40% ± 0.52 on seeds 1–32, but on 32 fresh seeds only +0.57% ± 0.79
+(from zero energy +0.11% ± 0.51), and it costs 8 complexity points: not
+taken. Holding Liino's ultimate
+for the hover (the obvious move for the largest miss) gains nothing
+(+0.36% ± 0.40): her ultimate already lands in a hover most of the time,
+and waiting costs Cosmovoice time; holding Typhoeus's flight for
+Cosmovoice, a Stagger or Electrification loses 8–57%. The list stays.
+
 - **Found by the rule search**, from hand-written lists (Typhoeus's
   battle skill whenever she's on the ground and dives while she is,
   ultimates when ready, every combo when it lights up, Liino's stance and

@@ -98,6 +98,23 @@ from zero (+4.2% against the timeline): ending Artful Intent early spends
 SP sooner, and the extra battle skills' team energy brings the first
 ultimates sooner. Over a long fight the two are level.
 
+**The guided search (2026-11-16; `efsim rules --guided`, design.md "The
+guided rule search").** Its ideal combos: Si's combo is the biggest
+window (11,393 DPS of 57,102, 2.5 a minute, always on Solidification)
+at 62% of its ideal; it misses Si's own ultimate Amp (on 41% of its
+damage, ×1.36: −2,433 DPS if on all), Stagger (on 38%: −2,107) and
+Akekuri's ultimate ATK. Over the fight the team gets 71% of its windows'
+ideal combos, the best of the three teams. 70 edits over four rounds
+(20 min): one passed, **Estella's ultimate only while the enemy is
+Staggered**: +1.70% ± 0.80 on seeds 1–32, +1.20% ± 0.66 on 32 fresh
+seeds, but from zero energy −0.94% ± 0.47 (32 seeds): the example keeps
+the list (a full-energy option: rule 2 "when Estella's ultimate is ready
+and the enemy is Staggered", complexity 47). Holding Si's ultimate for
+her combo or Solidification loses 2–5% (her Amp lasts long enough as
+it is; waiting costs casts); every hold of a combo for a Stagger loses
+7–12%; Si's battle skill with `shows` changes nothing here (+0.10% ±
+0.45: rule 9 already reads Artful Intent).
+
 - **The references:** the 60 s timeline is the upper reference for a
   60 s window (planned to the frame, every bar spent by 60 s); it isn't
   sustained DPS. For a long fight, the fixed 300 s search (`efsim search`

@@ -57,6 +57,11 @@ export interface GuidedOptions {
   readonly checkSeeds?: number;
   readonly workers?: number;
   readonly out?: string;
+  /**
+   * A second start of the same fight (the team's zero-energy scenario): the best screened edits are played on it too
+   * (the confirm seeds, paired), and an edit is kept only if it isn't worse there by more than one standard error.
+   */
+  readonly also?: { readonly scenario: Omit<TimelineScenario, "rotation">; readonly label: string };
   readonly progress?: (line: string) => void;
 }
 
@@ -69,7 +74,10 @@ interface Tried {
   readonly screen: { readonly gain: number; readonly se: number };
   /** On the confirm seeds, when extended. */
   readonly judged?: EditJudgement;
+  /** On the second start (GuidedOptions.also), paired on the confirm seeds. */
+  readonly also?: { readonly gain: number; readonly se: number };
   readonly runs?: readonly RulesResult[];
+  readonly alsoRuns?: readonly number[];
 }
 
 export interface GuidedRound {
@@ -88,6 +96,8 @@ export interface GuidedResult {
   readonly start: { readonly list: RuleList; readonly dps: readonly number[]; readonly summary: GuideSummary; readonly learn: Learnability };
   readonly final: { readonly list: RuleList; readonly dps: readonly number[]; readonly summary: GuideSummary; readonly learn: Learnability };
   readonly rounds: readonly GuidedRound[];
+  /** The second start's label (GuidedOptions.also), if any. */
+  readonly also?: string;
   /** Final against start on fresh seeds (1001…), paired. */
   readonly check: { readonly seeds: number; readonly gain: number; readonly se: number; readonly start: number; readonly final: number } | null;
   readonly runs: number;
@@ -137,6 +147,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
     const tried = new Set<string>([JSON.stringify(cur)]);
     const rounds: GuidedRound[] = [];
     let widen = false;
+    let alsoBase: number[] | null = null;
     for (let round = 1; round <= (o.rounds ?? 6); round++) {
       let curDps = curRuns.map((r) => r.sustainedDps);
       const summary = summariseGuide(guidesOf(curRuns.slice(0, C)));
@@ -222,6 +233,17 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
         }
       };
       if (top.length && C > S) await extendTo(top, C);
+      if (o.also && top.length) {
+        const also = o.also;
+        alsoBase ??= (await pool.run(seedJobs(also.scenario, cur, settings, C))).map((r) => r.sustainedDps);
+        const res = await pool.run(top.flatMap((t) => seedJobs(also.scenario, t.list, settings, C)));
+        runs += res.length;
+        top.forEach((t0, i) => {
+          const t = triedRound.find((x) => x.list === t0.list) as Tried;
+          const a = res.slice(i * C, (i + 1) * C).map((r) => r.sustainedDps);
+          triedRound[triedRound.indexOf(t)] = { ...t, also: pairedGain(alsoBase as number[], a), alsoRuns: a };
+        });
+      }
       // Close calls (over 1.2 standard errors but not 2) get the max seeds, the base too.
       const close = triedRound.filter((t) => t.judged && !t.judged.pass && t.judged.gain > 1.2 * t.judged.se && t.judged.gain >= 0.002);
       if (close.length && M > C) {
@@ -232,7 +254,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
         }
         await extendTo(close, M);
       }
-      const passed = triedRound.filter((t) => t.judged?.pass);
+      const passed = triedRound.filter((t) => t.judged?.pass && (!o.also || (t.also !== undefined && t.also.gain > -t.also.se)));
       const score = (t: Tried) => (t.judged as EditJudgement).gain - penalty * (t.learn.complexity - learnability(cur).complexity);
       const kept = passed.length ? passed.reduce((a, b) => (score(b) > score(a) ? b : a)) : null;
       rounds.push({ round, base: mean(curDps), tried: triedRound.map(({ runs: _r, ...t }) => t), kept: kept ? { ...kept, runs: [] } : null, alternatives: passed.filter((t) => t !== kept).map(({ runs: _r, ...t }) => t) });
@@ -247,6 +269,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
       o.progress?.(`round ${round}: kept "${kept.text}" ${signed((kept.judged as EditJudgement).gain)} ± ${((kept.judged as EditJudgement).se * 100).toFixed(2)} (${elapsed()})`);
       cur = kept.list;
       curRuns = kept.runs as RulesResult[];
+      alsoBase = kept.alsoRuns ? [...kept.alsoRuns] : null;
     }
     const final = { list: cur, dps: curRuns.slice(0, C).map((r) => r.sustainedDps), summary: summariseGuide(guidesOf(curRuns)), learn: learnability(cur) };
     let check: GuidedResult["check"] = null;
@@ -257,7 +280,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
       const b = (await play(cur, K, 1001, false)).map((r) => r.sustainedDps);
       check = { seeds: K, ...pairedGain(a, b), start: mean(a), final: mean(b) };
     }
-    return { settings, screenSeeds: S, confirmSeeds: C, start, final, rounds, check, runs, secondsTaken: (performance.now() - t0) / 1000 };
+    return { settings, screenSeeds: S, confirmSeeds: C, start, final, rounds, check, runs, secondsTaken: (performance.now() - t0) / 1000, ...(o.also ? { also: o.also.label } : {}) };
   } finally {
     await pool.close();
   }
@@ -318,6 +341,7 @@ export function formatGuided(data: GameData, r: GuidedResult, title: string, fil
   const lines = [
     title,
     `${r.settings.seconds} s fights, reaction ${r.settings.reaction} s ± 50%; common random numbers: candidates screened on seeds 1–${r.screenSeeds}, the best few played on 1–${r.confirmSeeds} (close calls on more); kept when the paired gain is over twice its standard error (and 0.2%) and positive on seeds ${r.screenSeeds + 1}–${r.confirmSeeds} alone; ${r.runs} runs in ${r.secondsTaken.toFixed(0)} s on ${r.settings.workers} worker${r.settings.workers === 1 ? "" : "s"}.`,
+    ...(r.also ? [`Second start ${r.also}: the edits played on the confirm seeds are played there too (paired), and one is kept only if it isn't worse there by more than one standard error.`] : []),
     "",
     `Start (${file}): ${n0(mean(r.start.dps))} sustained DPS over ${r.confirmSeeds} seeds; ${learnWords(r.start.learn)}.`,
     "",
@@ -329,17 +353,18 @@ export function formatGuided(data: GameData, r: GuidedResult, title: string, fil
     const sorted = [...rd.tried].sort((a, b) => b.screen.gain - a.screen.gain);
     lines.push(
       table(
-        ["edit", "kind", `gain (${r.screenSeeds} seeds)`, `gain (${r.confirmSeeds} seeds)`, "fresh seeds", "complexity", "hardest"],
+        ["edit", "kind", `gain (${r.screenSeeds} seeds)`, `gain (${r.confirmSeeds} seeds)`, "fresh seeds", ...(r.also ? ["second start"] : []), "complexity", "hardest"],
         sorted.map((t) => [
           t.text.length > 110 ? `${t.text.slice(0, 107)}...` : t.text,
           t.kind,
           pm(t.screen),
-          t.judged ? `${pm(t.judged)}${t.judged.seeds !== r.confirmSeeds ? ` [${t.judged.seeds} seeds]` : ""}${t.judged.pass ? (t === rd.kept || (rd.kept && t.text === rd.kept.text) ? " kept" : " passed") : ""}` : "",
+          t.judged ? `${pm(t.judged)}${t.judged.seeds !== r.confirmSeeds ? ` [${t.judged.seeds} seeds]` : ""}${t.judged.pass ? (t === rd.kept || (rd.kept && t.text === rd.kept.text) ? " kept" : r.also && !(t.also && t.also.gain > -t.also.se) ? " (not on the second start)" : " passed") : ""}` : "",
           t.judged ? signed(t.judged.freshGain) : "",
+          ...(r.also ? [t.also ? pm(t.also) : ""] : []),
           String(t.learn.complexity),
           String(t.learn.hardestRank),
         ]),
-        ["l", "l", "r", "r", "r", "r", "r"],
+        ["l", "l", "r", "r", "r", ...(r.also ? ["r" as const] : []), "r", "r"],
       ),
     );
     if (rd.kept) lines.push(`Kept: ${rd.kept.text}: ${pm(rd.kept.judged as EditJudgement)} over ${(rd.kept.judged as EditJudgement).seeds} seeds (${signed((rd.kept.judged as EditJudgement).freshGain)} on the fresh ones); ${learnWords(rd.kept.learn)}.`);
