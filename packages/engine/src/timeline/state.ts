@@ -78,6 +78,11 @@ export interface TimelineScenario {
    */
   readonly loggedModifiers?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly modifiers: readonly Modifier[] }[];
   /**
+   * Every landing keeps what its damage was computed from (LandedHit.inputs), so analyses can compute it again with other
+   * modifiers (landing.ts recomputeHit). Costs memory per hit; off unless asked (a replayed fight keeps them anyway).
+   */
+  readonly keepInputs?: boolean;
+  /**
    * A logged fight's arts reaction levels (the log check's replay only, where the log shows a level its replay doesn't
    * have): an infliction of `element` by `operator` at `frame` (±1) that meets another element's infliction consumes
    * `level` stacks of it, whatever the replay's enemy holds, so the reaction (its hit and its status) is of that level.
@@ -274,6 +279,8 @@ export interface Cast {
 export interface LandedHit extends HitDamage {
   readonly frame: number;
   readonly operator: string;
+  /** The cast it belongs to (an index into TimelineState.casts), when a cast made it (not a trigger's own hit). */
+  readonly cast?: number;
   /** Fixed DMG (KitHit.fixedDamage): recording buffs don't record it. */
   readonly fixed?: true;
   /** A replayed landing's reference (replayCast `landings` ref), and what its values read as it landed. */
@@ -281,7 +288,10 @@ export interface LandedHit extends HitDamage {
   readonly facts?: LandingFacts;
   /** With TimelineScenario.loggedCrits: the crit the log gives this kit hit's landing, or null when the log doesn't say (not set otherwise). */
   readonly loggedCrit?: boolean | null;
-  /** With TimelineScenario.loggedCrits (a replayed fight): what its damage was computed from (landing.ts landingDamage), so the log check computes it again, with a change, through the same path. */
+  /**
+   * With TimelineScenario.loggedCrits (a replayed fight) or keepInputs: what its damage was computed from (landing.ts
+   * landingDamage), so the log check (or recomputeHit) computes it again, with a change, through the same path.
+   */
   readonly inputs?: LandingInputs;
   /**
    * A landing of a random landed count at its expected count (PendingHit.landedOf): its cast, the cast's planned
@@ -456,6 +466,8 @@ export interface TimelineContext {
   readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean; readonly ref?: string }[]>;
   /** TimelineScenario.loggedModifiers by `operator|event`. */
   readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
+  /** Landings keep their inputs (TimelineScenario.keepInputs, or a replayed fight's loggedCrits). */
+  readonly keepInputs?: true;
   /** The team's kit triggers on crits (`on: {event: hit, crit}`) with their owners: with crit `distribution`, the hits they could fire on roll their crit (landing.ts). */
   readonly critListeners?: readonly { readonly owner: string; readonly trigger: KitTrigger }[];
 }

@@ -147,6 +147,11 @@ export interface Infliction {
   readonly element: ArtsElement;
   readonly stacks: number;
   readonly expiresAt: number;
+  /**
+   * Who applied each stack, oldest first (one entry per stack; consumed from the front). A record: damage never reads it
+   * (a reaction uses the trigger's Arts Intensity, combat-mechanics §3.7), and the search's state key leaves it out.
+   */
+  readonly by?: readonly string[];
 }
 
 export interface ActiveStatus {
@@ -207,7 +212,8 @@ export const NO_STATUS: EnemyStatus = { infliction: null, statuses: [], vulnerab
 export type StatusEvent =
   /** An infliction landed without a reaction (fresh, or stacking with a burst); `stacks` is the count after it. */
   | { readonly kind: "inflicted"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly stacks: number }
-  | { readonly kind: "burst"; readonly frame: number; readonly operator: string; readonly element: ArtsElement }
+  /** `inflictionBy`: who applied the infliction stacks it bursts on (Infliction.by, before the new stacks). */
+  | { readonly kind: "burst"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly inflictionBy?: readonly string[] }
   | {
       readonly kind: "reaction";
       readonly frame: number;
@@ -219,6 +225,8 @@ export type StatusEvent =
       readonly consumed: ArtsElement | null;
       /** Forced reactions have no initial hit. */
       readonly initialHit: boolean;
+      /** Who applied the consumed infliction's stacks (Infliction.by); absent for a forced reaction. */
+      readonly inflictionBy?: readonly string[];
     }
   | { readonly kind: "consumed"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly stacks: number }
   /** A reaction status was removed by a hit before it ran out. */
@@ -409,25 +417,26 @@ export function applyToEnemy(
     const element = app.element;
     const stacks = app.stacks ?? 1;
     if (!Number.isInteger(stacks) || stacks < 1) throw new EngineError(`infliction stacks ${stacks}`);
+    const by = (old: readonly string[], n: number) => [...old, ...Array<string>(stacks).fill(operator)].slice(0, n);
     if (!cur) {
       const n = Math.min(MAX_INFLICTION_STACKS, stacks);
       return {
-        state: { ...s, infliction: { element: element, stacks: n, expiresAt: frame + INFLICTION_FRAMES } },
+        state: { ...s, infliction: { element: element, stacks: n, expiresAt: frame + INFLICTION_FRAMES, by: by([], n) } },
         events: [{ kind: "inflicted", frame, operator, element: element, stacks: n }],
       };
     }
     if (cur.element === element) {
       const n = Math.min(MAX_INFLICTION_STACKS, cur.stacks + stacks);
       return {
-        state: { ...s, infliction: { element: cur.element, stacks: n, expiresAt: frame + INFLICTION_FRAMES } },
-        events: [{ kind: "inflicted", frame, operator, element: element, stacks: n }, { kind: "burst", frame, operator, element: element }],
+        state: { ...s, infliction: { element: cur.element, stacks: n, expiresAt: frame + INFLICTION_FRAMES, by: by(cur.by ?? [], n) } },
+        events: [{ kind: "inflicted", frame, operator, element: element, stacks: n }, { kind: "burst", frame, operator, element: element, inflictionBy: cur.by ?? [] }],
       };
     }
     const status = REACTION_OF[element];
     const level = Math.min(MAX_INFLICTION_STACKS, cur.stacks);
     return {
       state: withStatus({ ...s, infliction: null }, status, level, frame, operator, artsIntensity, snapshot ? { snapshot } : {}, tweaks),
-      events: [{ kind: "reaction", frame, operator, status, element: element, level, consumed: cur.element, initialHit: true }],
+      events: [{ kind: "reaction", frame, operator, status, element: element, level, consumed: cur.element, initialHit: true, inflictionBy: cur.by ?? [] }],
     };
   }
   if (app.kind === "forcedReaction") {
@@ -483,7 +492,7 @@ export function applyToEnemy(
   const n = app.stacks === undefined ? cur.stacks : Math.min(cur.stacks, Math.max(0, Math.floor(app.stacks)));
   if (n <= 0) return { state: s, events: [] };
   const left = cur.stacks - n;
-  return { state: { ...s, infliction: left > 0 ? { ...cur, stacks: left } : null }, events: [{ kind: "consumed", frame, operator, element: cur.element, stacks: n }] };
+  return { state: { ...s, infliction: left > 0 ? { ...cur, stacks: left, ...(cur.by ? { by: cur.by.slice(n) } : {}) } : null }, events: [{ kind: "consumed", frame, operator, element: cur.element, stacks: n }] };
 }
 
 /** Adds Vulnerable stacks (refreshing it to at least 20 s); a new stack on a Solidified enemy shatters it, unless `shatters` is false. */

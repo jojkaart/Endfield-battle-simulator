@@ -57,6 +57,9 @@ export function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, 
     b = cur && index >= 0 && end > frame ? { ...b, expiresAt: Math.min(b.expiresAt, end), endsWithCast: index } : null;
   }
   if (!b) return { state: st, applied: false, buff: null };
+  // What made it (ActiveBuff.createdBy): the skill, and its owner's latest cast of it.
+  const made = st.casts.findLastIndex((c) => c.operator === owner && c.skill === skillId);
+  b = { ...b, createdBy: { skill: skillId, ...(made >= 0 ? { cast: made } : {}) } };
   // A ticking buff whose tick hits keep an ATK snapshot (KitHit.atkSnapshot) takes its owner's attacker side now.
   if (b.every !== undefined && snapshotTicks(ctx, owner, def.id)) b = { ...b, snapshot: attackerSide(st, owner, frame) };
   const buffs = withBuff(st.buffs, b);

@@ -18,7 +18,7 @@ export { createContext, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/co
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { setPoise, refillPoise, staggerFrames } from "./timeline/resources.ts";
 export { exclusiveUntil, earliestStart, skillAvailable } from "./timeline/timing.ts";
-export { landingDamage, nextRandom } from "./timeline/landing.ts";
+export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
 export { init, apply, replayCast, replayWindowCount, simulate, simulateRuns, startsNow } from "./timeline/drivers.ts";

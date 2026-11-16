@@ -67,6 +67,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
     ...(foodEnds.size ? { foodEnds } : {}),
     ...(critListeners.length ? { critListeners } : {}),
     ...(scenario.loggedCrits ? { loggedCrits: loggedCritsByKey(scenario.loggedCrits) } : {}),
+    ...(scenario.loggedCrits || scenario.keepInputs ? { keepInputs: true as const } : {}),
     ...(scenario.loggedModifiers ? { loggedModifiers: byOperatorEvent(scenario.loggedModifiers) } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
     ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
