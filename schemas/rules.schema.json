@@ -32,7 +32,8 @@
       "additionalProperties": false,
       "properties": {
         "operator": { "type": "string" },
-        "cast": { "enum": ["battle", "combo", "ultimate", "dive", "basic", "finisher"] }
+        "cast": { "enum": ["battle", "combo", "ultimate", "dive", "basic", "finisher"] },
+        "shows": { "type": "string", "description": "Only if the button shows this skill (its kit label, e.g. \"Battle skill\", not \"End Stance\"); otherwise the press is skipped." }
       }
     },
     "range": {

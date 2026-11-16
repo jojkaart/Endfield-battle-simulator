@@ -221,6 +221,34 @@ describe("the rule search", () => {
   });
 });
 
+describe("a press that names what its button shows", () => {
+  const sc = readScenario(join(ROOT, "examples/typhoeus-arcane-liino-perlica.scenario.json"));
+  const ops = sc.team.map((b) => b.operator);
+  const LIINO = "chr_0035_liino";
+  const notInStance = { all: [{ not: { buff: { operator: "Liino", buff: "vocalist_stance" } } }, { not: { buff: { operator: "Liino", buff: "cosmovoice_amp" } } }] };
+  const run = (shows: boolean) =>
+    playRules(data, { ...sc, durationFrames: 40 * 30 }, resolveRuleList(data, ops, {
+      opener: [{ operator: "Liino", cast: "battle" }],
+      rules: [
+        { when: { ultimate: "Liino" }, do: { operator: "Liino", cast: "ultimate" } },
+        { when: { not: { buff: { operator: "Liino", buff: "vocalist_stance" } } }, do: [{ operator: "Arcane", cast: "battle" }, shows ? { operator: "Liino", cast: "battle", shows: "Battle skill" } : { operator: "Liino", cast: "battle" }] },
+      ],
+    }), { seed: 1 });
+  it("without it, a queued press of Liino's battle-skill button can land on End Stance (the button changed under it)", () => {
+    expect(run(false).rotation.some((a) => a.operator === LIINO && a.skill === "chr_0035_liino_normal_skill_end")).toBe(true);
+  });
+  it("with it, the press is given up instead, never End Stance", () => {
+    const r = run(true);
+    expect(r.rotation.some((a) => a.operator === LIINO && a.skill === "chr_0035_liino_normal_skill_end")).toBe(false);
+    expect(r.givenUp.some((g) => g.step.operator === LIINO && g.step.shows === "Battle skill")).toBe(true);
+  });
+  it("a label the button never shows is refused; the cue for her ultimate's stance resolves and reads in words", () => {
+    expect(() => resolveRuleList(data, ops, { opener: [], rules: [{ when: { combo: "Liino" }, do: { operator: "Liino", cast: "battle", shows: "Nope" } }] })).toThrow(/never shows/);
+    const l = resolveRuleList(data, ops, { opener: [], rules: [{ when: notInStance, do: { operator: "Liino", cast: "battle", shows: "Battle skill" } }] });
+    expect(describeRule(data, l.rules[0] as PolicyRule)).toBe("When Liino isn't in Vocalist Stance and Liino isn't in Cosmovoice: Liino's battle skill (only if it shows Battle skill)");
+  });
+});
+
 describe("example rule lists", () => {
   const files = readdirSync(join(ROOT, "examples")).filter((f) => f.endsWith(".rules.json"));
   it("there are some", () => expect(files.length).toBeGreaterThan(0));

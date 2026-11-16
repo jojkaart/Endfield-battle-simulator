@@ -29,6 +29,12 @@ export interface PolicyStep {
   /** Operator ID or name (as the game shows it), from the scenario's team. */
   readonly operator: string;
   readonly cast: "battle" | "combo" | "ultimate" | "dive" | "basic" | "finisher";
+  /**
+   * Only if the button shows this skill (its kit label, e.g. "Battle skill" rather than Liino's "End Stance"): when the
+   * button shows another of its skills, the press is skipped (a rule's first press: the rule doesn't fire; a later
+   * press: given up at once). The player planned that skill and doesn't press a button that changed under them.
+   */
+  readonly shows?: string;
 }
 
 export const POLICY_CASTS: readonly PolicyStep["cast"][] = ["battle", "combo", "ultimate", "dive", "basic", "finisher"];
@@ -103,13 +109,13 @@ export const POLICY_VISIBLE_STACKS: Readonly<Record<string, readonly string[]>> 
 /**
  * Kit buffs a player sees without reading buff icons, each for a reason (others are refused): Typhoeus `hovering` (she
  * is in the air), Laevatain `twilight` (her ultimate's form; the battle-skill button changes), Liino `vocalist_stance`
- * (the battle-skill button becomes End Stance), Si `artful_intent` / `inksoul` (the battle-skill button becomes
+ * (the battle-skill button becomes End Stance) and `cosmovoice_amp` (her ultimate's stance: the same), Si `artful_intent` / `inksoul` (the battle-skill button becomes
  * Initial / Final Stroke).
  */
 export const POLICY_VISIBLE_BUFFS: Readonly<Record<string, readonly string[]>> = {
   chr_0034_typhoea: ["hovering"],
   chr_0016_laevat: ["twilight"],
-  chr_0035_liino: ["vocalist_stance"],
+  chr_0035_liino: ["vocalist_stance", "cosmovoice_amp"],
   chr_0036_jsspsi: ["artful_intent", "inksoul"],
 };
 
@@ -166,7 +172,8 @@ function rangeWords(r: { readonly atLeast?: number; readonly below?: number }): 
 
 /** A step as the player would say it ("Estella's battle skill"). */
 export function describeStep(data: GameData, s: PolicyStep): string {
-  return `${data.operators[s.operator]?.name ?? s.operator}'s ${CAST_NAMES[s.cast]}`;
+  const base = `${data.operators[s.operator]?.name ?? s.operator}'s ${CAST_NAMES[s.cast]}`;
+  return s.shows === undefined ? base : `${base} (only if it shows ${s.shows})`;
 }
 
 /** The visible states (POLICY_VISIBLE_BUFFS) in words: [while it's on, while it's off]. */
@@ -174,6 +181,7 @@ const BUFF_WORDS: Readonly<Record<string, readonly [string, string]>> = {
   hovering: ["is hovering", "is on the ground"],
   twilight: ["is in Twilight", "isn't in Twilight"],
   vocalist_stance: ["is in Vocalist Stance", "isn't in Vocalist Stance"],
+  cosmovoice_amp: ["is in Cosmovoice (her ultimate's stance)", "isn't in Cosmovoice"],
   artful_intent: ["has Artful Intent up", "hasn't Artful Intent up"],
   inksoul: ["has Inksoul up", "hasn't Inksoul up"],
 };
@@ -229,7 +237,14 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
   };
   const step = (s: PolicyStep, where: string): PolicyStep => {
     if (!POLICY_CASTS.includes(s.cast)) throw new EngineError(`${where}: cast must be one of ${POLICY_CASTS.join(", ")}, not ${String(s.cast)}`);
-    return { operator: opId(s.operator, where), cast: s.cast };
+    const operator = opId(s.operator, where);
+    if (s.shows !== undefined) {
+      const kinds: Record<string, string> = { battle: "battle", combo: "combo", ultimate: "ultimate" };
+      const labels = (data.kits.operators[operator]?.skills ?? []).filter((k) => k.kind === kinds[s.cast] && !k.followUpOnly).map((k) => k.label ?? k.skillId);
+      if (!labels.includes(s.shows)) throw new EngineError(`${where}: ${operator}'s ${s.cast} button never shows "${s.shows}" (it shows: ${labels.join(", ") || "nothing"})`);
+      return { operator, cast: s.cast, shows: s.shows };
+    }
+    return { operator, cast: s.cast };
   };
   const range = (r: { readonly atLeast?: number; readonly below?: number }, where: string) => {
     if (r.atLeast === undefined && r.below === undefined) throw new EngineError(`${where}: give atLeast and/or below`);
@@ -563,14 +578,21 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
     rotation.push({ ...action, at: frame });
     if (action.operator === controlled && strikeSkills.has(action.skill)) for (let i = 0; i < strikesSince.length; i++) strikesSince[i] = (strikesSince[i] as number) + 1;
   };
-  /** The press of a button that can start now (the first of its skills that can), or null. */
-  const startable = (s: PolicyStep): RotationAction | null => {
+  const labelOf = (op: string, skill: string) => ctx.kits.get(op)?.skills.find((k) => k.skillId === skill)?.label ?? skill;
+  /** The press of a button that can start now (the first of its skills that can), null, or "skip" (it shows another skill than `shows`). */
+  const startable = (s: PolicyStep): RotationAction | null | "skip" => {
     // A dive (a jump) only once the current skill is past its exclusive frames, as the search dives: the timeline lets a
     // jump cut anything, which the game doesn't check.
     if (s.cast === "dive" && exclusiveUntil(ctx, st, s.operator) > st.frame) return null;
     if (s.cast === "basic") return basicAttack(st.frame);
     if (s.cast === "finisher" && (!isStaggered(st, st.frame) || st.stagger.finisherUsed)) return null;
-    for (const skill of buttons(s)) {
+    let skills = buttons(s);
+    if (s.shows !== undefined) {
+      const showing = skills.filter((id) => skillAvailable(ctx, st, s.operator, id, st.frame));
+      skills = skills.filter((id) => labelOf(s.operator, id) === s.shows);
+      if (showing.length > 0 && !showing.some((id) => skills.includes(id))) return "skip";
+    }
+    for (const skill of skills) {
       const a = { operator: s.operator, skill };
       if (canPress(a)) return a;
     }
@@ -633,9 +655,10 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
       // The queue's head: pressed when it can start, given up after waiting too long; the next one waits from then.
       while (queue.length > 0 && action === null) {
         const head = queue[0] as (typeof queue)[number];
-        action = startable(head.step);
+        const next = startable(head.step);
+        action = next === "skip" ? null : next;
         if (action) record(head.step, frame);
-        else if (frame - head.since >= wait) givenUp.push({ frame, step: head.step, rule: head.rule });
+        else if (next === "skip" || frame - head.since >= wait) givenUp.push({ frame, step: head.step, rule: head.rule });
         else break;
         queue = queue.slice(1).map((q, i) => (i === 0 ? { ...q, since: Math.max(q.since, frame) } : q));
       }
@@ -645,7 +668,8 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
           if (onset[i] === null || frame < (readyAt[i] as number)) continue;
           const rule = list.rules[i] as PolicyRule;
           const [first, ...rest] = stepsOf(rule);
-          action = startable(first as PolicyStep);
+          const next = startable(first as PolicyStep);
+          action = next === "skip" ? null : next;
           if (action) {
             record(first as PolicyStep, frame);
             fired[i] = (fired[i] as number) + 1;
@@ -656,7 +680,10 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
           }
         }
       }
-      action ??= list.filler === "dive" ? startable({ operator: controlled, cast: "dive" }) : basicAttack(frame);
+      if (action === null) {
+        const fill = list.filler === "dive" ? startable({ operator: controlled, cast: "dive" }) : basicAttack(frame);
+        action = fill === "skip" ? null : fill;
+      }
       if (!action) break;
       press(action, frame);
     }
