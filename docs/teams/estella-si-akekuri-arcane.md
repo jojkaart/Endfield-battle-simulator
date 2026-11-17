@@ -62,12 +62,12 @@ skill**; then at every moment do the first of these that applies:
 8. When Akekuri's combo lights up: Akekuri's combo.
 9. When Si's battle-skill button shows her battle skill (not Initial
    Stroke: Artful Intent isn't up) and SP is at least 115: Si's battle
-   skill, then Initial Stroke right away. Don't press Final Stroke: let
-   Artful Intent run its 20 s and burst by itself.
+   skill. Don't press Initial Stroke or Final Stroke: let Artful Intent
+   run its 20 s and burst by itself.
 10. When SP is at least 200: Akekuri's battle skill.
 
 Otherwise Estella's basic attacks. Learnability: 1 opener press, 10 rules
-(12 presses), cue cost 31, complexity 44; the hardest cues are the four
+(11 presses), cue cost 31, complexity 43; the hardest cues are the four
 "ultimate ready" ones (rank 4).
 
 **Why rule 9 changed (2026-11-16).** The first list pressed Si's battle
@@ -86,12 +86,16 @@ Arcane's (45,486) isn't worth it. Pressing Initial Stroke right away (for
 the Inksoul's haste when it ends) was +4% over leaving it with the old
 driver; with the fixed one, leaving it is +0.35% ± 0.83 on 32 fresh seeds
 (noise) under the data's reading and +2.84% ± 0.62 under in-game test
-109's alternative (`efsim rules … --compare … --assumptions`): test 109
-decides it.
+109's alternative (`efsim rules … --compare … --assumptions`).
+**Dropped (2026-11-17):** Haste is movement speed only (the game's
+glossary: "Temporarily raises the movement speed of a target"; the logs,
+in-game test 19; the owner has never noticed it in play), so Initial
+Stroke buys nothing. Leaving it out: +1.37% ± 0.58 on 64 fresh seeds at
+full energy, +0.66% ± 0.52 from zero (noise), and one press fewer.
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **52,382** (1,685) | **52,716** (1,182) |
+| Sustained DPS over 300 s (sd over seeds) | **53,781** (1,194) | **52,740** (1,539) |
 | As a bot (0 s) / at 0.6 s | 57,835 / 55,713 | 56,552 / 55,928 |
 | First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
@@ -100,7 +104,9 @@ decides it.
 freeze (Rhodagn: Si's freezes hold every debuff) 56,493 → 56,716 / 56,055
 → 56,141; Haste no longer speeds casts → 55,278 / 55,598 (−2.5% / −1.0%);
 teammates' pause 6.5 s instead of 3.5 s → **52,382 / 52,716** (−5.2% /
-−5.2%; Akekuri, Si and Arcane basic-attack less, as the logs show). The
+−5.2%; Akekuri, Si and Arcane basic-attack less, as the logs show);
+without Initial Stroke (2026-11-17) → **53,781 / 52,740** (as a bot /
+at 0.6 s 56,335 / 53,824, full energy). The
 other rows are from before; the 60 s timelines were searched with hasted
 casts and no longer play: the full-energy one is repaired (3,472,929,
 2 steps later, 2 dropped), the zero-energy one re-searched at beam 24

@@ -4,9 +4,35 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 94 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 95 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-17: Haste is movement speed; the owner's team drops Initial Stroke
+
+**Goal:** settle what Si's talent Haste does after the logs found it doesn't
+speed up attacks (docs/journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md),
+and whether the owner's team should still press Initial Stroke.
+
+**Done:**
+- The owner (2026-11-17) has never noticed Haste in play and would notice
+  faster attacks. The game's own glossary entry for Haste (I18nTextTable_EN,
+  the `ba.speedup` term) reads "Temporarily raises the movement speed of a
+  target … Effects of the same type can stack until hitting the speed cap";
+  Slow is its opposite ("movement speed reduction"). So Haste is movement
+  speed, which the simulator doesn't model: settled by the data's text, the
+  logs (test 19) and the owner.
+- In-game test 109 (does the Haste need Initial Stroke) moved to the bottom
+  of the queue: it matters only if Haste shortened cooldowns, which nothing
+  suggests.
+- The owner's team's rule 9 now presses only Si's battle skill (no Initial
+  Stroke). `efsim rules … --compare` against the old list: +1.37% ± 0.58 on
+  64 fresh seeds at full energy, +0.66% ± 0.52 from zero (noise), one press
+  fewer. On seeds 1001–1032: 53,781 (sd 1,194) / 52,740 (sd 1,539), against
+  52,382 / 52,716 with Initial Stroke (docs/teams/estella-si-akekuri-arcane.md).
+
+**Left:** the `hasteFrames` plumbing in the engine is now inert (a cleanup
+for a later round). No other rule list in examples/ presses Initial Stroke.
 
 ## 2026-11-17: Tests 18, 19, 101, 104 from the logs: bosses freeze, Haste isn't attack speed, teammates' pause
 
@@ -378,26 +404,3 @@ empty; the CLI exits with a clear message when an @efsim package
 resolves outside its checkout. Limit: when the other checkout lacks an
 export the CLI imports, Node fails at link time (a SyntaxError naming
 the export) before the check runs; loud, but less clear.
-
-## 2026-11-16: Faster tests, snapshot regeneration, accuracy scoreboard
-
-Architecture review items 2, 5 and 11. **Tests:** buffreplay.test.ts was
-split into three files and search.test.ts into two. The six single tests
-of 25–60 s (whole log checks on 3f78, 4a64 and 4e5e, and `efsim search
---loop` output) moved to tests/slow/log-cases and search-loop-cli. No
-assertion was dropped. test:logs now runs 3 workers and the pending logs
-in 4 shards, because a log's check time doesn't follow its hit count
-(340 hits can take 59 s). `npm test`, base and branch back to back at
-load 11–12: 629 s with 2 timeouts (exactly the moved tests) against 380 s
-passing. At load 3–5 the base took 383 s. **Snapshots:** `npm run
-snapshots:update` (scripts/snapshots.sh) empties every snapshot and writes
-it again, so the result doesn't depend on which side of a conflict was
-taken. It restores the files if a run fails. **Scoreboard:**
-[accuracy.md](accuracy.md) comes from the verdict snapshots and
-holdout.json (scripts/accuracy.ts; a test keeps it in step). First
-numbers: development 31 fights, plain 47.2%, mismatch 19.8%, mean |damage
-error| 15.8%; hold-out 13 fights, 62.1%, 7.6%, 13.5%; verified 6 fights,
-71.0%, 0 mismatches, 1.7%. The fit measure for "better/worse": plain
-matches, mismatches and |total damage error|. Hold-outs count only in
-totals. It is used in the pending check's failures and shard summaries,
-in `--compare <ref>`, and at the end of premerge.
