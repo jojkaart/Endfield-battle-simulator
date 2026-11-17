@@ -3,10 +3,11 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { GameData } from "@efsim/engine";
 import { sourceCommit, SOURCES } from "@efsim/data";
-import { enemiesHit, fetchBattle, zmdlogsCasts, zmdlogsPoise, zmdlogsToFixture, type LogFixture } from "./zmdlogs.ts";
+import { enemiesHit, fetchBattle, zmdlogsCasts, zmdlogsHits, zmdlogsToFixture, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -203,32 +204,98 @@ export async function importBattle(data: GameData, battleId: string, enemyLevel?
 }
 
 /**
- * Adds what a battle's detail records that older imports of it lack, from an already downloaded /api/battles/<id>
- * response (no network), with a provenance note: the casts without damage (zmdlogsCasts, 2026-10-25) and each hit's
- * Stagger (LogHit.poise, zmdlogsPoise, 2026-10-26; with the skill it's credited to since 2026-11-16). Returns how many casts and Stagger-dealing hits it has.
+ * The fields a refresh adds to a fixture that lacks them (refreshFixture), each with its provenance note: one note per
+ * kind. Record-only: the log check reads none of them for a verdict.
  */
-export function refreshFixture(file: string, detailFile: string, keepDetail?: (detail: unknown) => void): { casts: number; poise: number } {
+const REFRESH_NOTES = {
+  casts: "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+  poise: "Each hit's Stagger (poise) added from the same battle detail (efsim zmdlogs refresh).",
+  "poise.origin": "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
+  source: "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
+  since: "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+} as const;
+export type RefreshedField = keyof typeof REFRESH_NOTES;
+
+/** A refresh refused: the detail isn't what the fixture was imported from (or the importer reads it differently now). */
+export class RefreshMismatch extends Error {}
+
+export interface RefreshResult {
+  readonly casts: number;
+  /** Hits that dealt Stagger. */
+  readonly poise: number;
+  /** The kinds of field the fixture lacked and now has. */
+  readonly added: readonly RefreshedField[];
+  /** The detail's parserVersion when it isn't the fixture's (ZMDLogs re-parsed the upload; the hits still matched). */
+  readonly parserVersion?: string;
+}
+
+type EffectLike = { readonly source?: string; readonly since?: number };
+const effectsOfHit = (h: LogHit): readonly EffectLike[] => [...h.effects, ...h.boundaryEffects];
+
+/** A hit without the fields in `drop` (a fixture lacks them, so they aren't compared), for the refresh's comparison. */
+function comparable(h: LogHit, drop: ReadonlySet<RefreshedField>): unknown {
+  const effect = (e: LogEffect): LogEffect => {
+    const { source, since, ...rest } = e;
+    return { ...rest, ...(source !== undefined && !drop.has("source") ? { source } : {}), ...(since !== undefined && !drop.has("since") ? { since } : {}) };
+  };
+  const { poise, ...rest } = h;
+  const kept = drop.has("poise") || !poise ? undefined : drop.has("poise.origin") ? { dealt: poise.dealt, bar: poise.bar } : poise;
+  return { ...rest, effects: h.effects.map(effect), boundaryEffects: h.boundaryEffects.map(effect), ...(kept ? { poise: kept } : {}) };
+}
+
+/**
+ * Adds what a battle's detail records that an older import of it lacks, from the /api/battles/<id> response (no
+ * network here: the CLI reads it from --detail or the raw cache, zmdraw.ts), with one provenance note per added kind
+ * (REFRESH_NOTES): the casts without damage (zmdlogsCasts, 2026-10-25), each hit's Stagger (LogHit.poise, 2026-10-26)
+ * and the skill it's credited to (poise.origin), each buff effect's giver and start (LogEffect.source / since,
+ * 2026-11-16). The hits are rebuilt as an import would (zmdlogsHits) and must equal the fixture's but for the fields
+ * it lacks, and logged casts it has must equal the detail's: otherwise it throws RefreshMismatch and writes nothing.
+ * The team (from the export, a second request), the enemy level and the notes an import writes aren't touched.
+ */
+export function refreshFixture(file: string, detail: unknown, keepDetail?: (detail: unknown) => void): RefreshResult {
   const fx = readLogFixture(file);
-  const detail: unknown = JSON.parse(readFileSync(detailFile, "utf8"));
-  const id = (detail as { battle?: { id?: string } }).battle?.id;
-  if (id !== fx.provenance.battleId) throw new Error(`${detailFile} is battle ${String(id)}, not ${fx.provenance.battleId}`);
+  const battle = (detail as { battle?: { id?: string; parserVersion?: string } }).battle;
+  if (battle?.id !== fx.provenance.battleId) throw new Error(`the detail is battle ${String(battle?.id)}, not ${fx.provenance.battleId}`);
   keepDetail?.(detail);
-  const casts = zmdlogsCasts(detail, fx.team.map((b) => b.operator));
-  const poise = zmdlogsPoise(detail, fx.hits);
-  const hits = fx.hits.map((h, i) => {
-    const { poise: _, ...rest } = h;
-    const p = poise[i];
-    return p ? { ...rest, poise: p } : rest;
+  const fresh = zmdlogsHits(detail);
+  const total = (hs: readonly LogHit[]) => hs.reduce((s, h) => s + h.value, 0);
+  if (fresh.length !== fx.hits.length) {
+    throw new RefreshMismatch(`the detail has ${fresh.length} damage events (total ${total(fresh)}), the fixture ${fx.hits.length} hits (total ${total(fx.hits)})`);
+  }
+  const has = (f: RefreshedField, hs: readonly LogHit[]): boolean => {
+    if (f === "source" || f === "since") return hs.some((h) => effectsOfHit(h).some((e) => e[f] !== undefined));
+    if (f === "poise") return hs.some((h) => h.poise);
+    if (f === "poise.origin") return hs.some((h) => h.poise?.origin);
+    return false;
+  };
+  const hitFields = ["poise", "poise.origin", "source", "since"] as const;
+  const lacking = new Set<RefreshedField>(hitFields.filter((f) => !has(f, fx.hits)));
+  const differing = new Map<string, number>();
+  const examples: string[] = [];
+  fx.hits.forEach((h, i) => {
+    const a = comparable(h, lacking) as Record<string, unknown>;
+    const b = comparable(fresh[i] as LogHit, lacking) as Record<string, unknown>;
+    if (isDeepStrictEqual(a, b)) return;
+    const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((k) => !isDeepStrictEqual(a[k], b[k]));
+    for (const k of keys) differing.set(k, (differing.get(k) ?? 0) + 1);
+    if (examples.length < 3) examples.push(`hit ${i} (${h.t} ms ${h.event}): ${keys.join(", ")}`);
   });
-  const added = [
-    ...(fx.casts ? [] : ["Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh)."]),
-    ...(fx.hits.some((h) => h.poise) ? [] : ["Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."]),
-    ...(fx.hits.some((h) => h.poise?.origin) || !poise.some((p) => p?.origin) ? [] : ["The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh)."]),
-  ];
-  const notes = [...fx.provenance.notes, ...added.filter((n) => !fx.provenance.notes.includes(n))];
-  const out: LogFixture = { ...fx, provenance: { ...fx.provenance, notes }, hits, casts };
+  if (differing.size > 0) {
+    throw new RefreshMismatch(`the detail's hits differ from the fixture's: ${[...differing].map(([k, n]) => `${k} on ${n} hit(s)`).join(", ")}; e.g. ${examples.join("; ")}`);
+  }
+  const casts = zmdlogsCasts(detail, fx.team.map((b) => b.operator));
+  if (fx.casts && !isDeepStrictEqual(fx.casts, casts)) throw new RefreshMismatch(`the detail has ${casts.length} casts, the fixture ${fx.casts.length}, or they differ`);
+  const added: RefreshedField[] = [...(fx.casts ? [] : (["casts"] as const)), ...[...lacking].filter((f) => has(f, fresh))];
+  const notes = [...fx.provenance.notes, ...added.map((f) => REFRESH_NOTES[f]).filter((n) => !fx.provenance.notes.includes(n))];
+  const out: LogFixture = { ...fx, provenance: { ...fx.provenance, notes }, hits: fresh, casts };
   const { ajv, validate } = validator();
   if (!validate(out)) throw new Error(`refreshed fixture is invalid: ${ajv.errorsText(validate.errors)}`);
   writeFileSync(file, JSON.stringify(out, null, 1) + "\n");
-  return { casts: casts.length, poise: poise.filter(Boolean).length };
+  return {
+    casts: casts.length,
+    poise: fresh.filter((h) => h.poise).length,
+    added,
+    ...(battle.parserVersion !== undefined && battle.parserVersion !== fx.provenance.parserVersion ? { parserVersion: battle.parserVersion } : {}),
+  };
 }
+

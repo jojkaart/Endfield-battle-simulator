@@ -532,7 +532,11 @@ nothing on a server. API documented in
     projectiles; their time can precede the skill's first effect (0eef:
     Liino's battle skill at 760 ms, its buffs at 1314 ms). The importer
     keeps them as `casts` (2026-10-25; `efsim zmdlogs refresh` adds them to
-    an older fixture from a downloaded detail).
+    an older fixture from the cached detail, else fetching it once). Each
+    effect also keeps its buff lane's giver and start (`source`, `since`;
+    2026-11-16; the older development fixtures refreshed the same day, all
+    but 40d9 and 4e5e: ZMDLogs had since emptied or dropped a zero-length
+    buff lane at one hit in each, so a stored detail can change).
   - Stagger: a damage event's `poiseDamage` ({type "PoiseDamage", value
     −dealt, current_value: the bar after the hit, source, orig_source}),
     on damage events only. The importer keeps it as the hit's `poise`

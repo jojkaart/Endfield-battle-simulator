@@ -18,7 +18,10 @@
    "Enemy level 90 is assumed, not logged.",
    "Hand annotation (not from the importer; 2026-10-21, as a build field since 2026-10-22): Si's build has \"food\": \"item_corp3_animal_1\", Ginseng Meat Stew (UseItemTable: ATK +180 flat, Crit Rate +11.44%, 300 s, one operator), which the log doesn't record or list (as on the Endministrator in zmdlogs-7e19489ae503), so the field is set by hand. It is the ×1.139 on her battle skill and first ultimate hits; with it 21 of her 22 hits match (0 without). No other food fits Perlica's two hits. (2026-10-21 to 2026-10-22 this was an atk effect of 0.222497 = 180 / 809 hand-added to each of her hits.)",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -262,13 +265,16 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 275
+    "bar": 275,
+    "origin": "chr_0036_jsspsi_normal_skill"
    }
   },
   {
@@ -283,25 +289,33 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     }
    ],
    "boundaryEffects": [
@@ -309,25 +323,32 @@
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 270
+    "bar": 270,
+    "origin": "chr_0032_lizhiyan_combo_skill"
    }
   },
   {
@@ -342,50 +363,65 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 260
+    "bar": 260,
+    "origin": "chr_0032_lizhiyan_ultimate_skill"
    }
   },
   {
@@ -400,61 +436,81 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     }
    ],
    "boundaryEffects": [
@@ -462,13 +518,17 @@
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     }
    ],
    "unquantified": []
@@ -485,73 +545,97 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     }
    ],
    "boundaryEffects": [],
@@ -569,73 +653,97 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     }
    ],
    "boundaryEffects": [],
@@ -653,73 +761,97 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     }
    ],
    "boundaryEffects": [],
@@ -737,73 +869,97 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     }
    ],
    "boundaryEffects": [
@@ -811,25 +967,32 @@
      "buff": "buff_equipsuit_cpinflict_01_elecdamageadd",
      "zone": "damageBonus",
      "element": "pulse",
-     "value": 0.5
+     "value": 0.5,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0004_pelica_potential_3_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 250
+    "bar": 250,
+    "origin": "chr_0004_pelica_normal_skill"
    }
   },
   {
@@ -844,73 +1007,97 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     }
    ],
    "boundaryEffects": [
@@ -918,7 +1105,9 @@
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "unquantified": []
@@ -935,73 +1124,97 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     }
    ],
    "boundaryEffects": [
@@ -1009,25 +1222,32 @@
      "buff": "buff_equipsuit_cpinflict_01_elecdamageadd",
      "zone": "damageBonus",
      "element": "pulse",
-     "value": 0.5
+     "value": 0.5,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0004_pelica_potential_3_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 250
+    "bar": 250,
+    "origin": "chr_0004_pelica_normal_skill"
    }
   },
   {
@@ -1042,79 +1262,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1122,7 +1368,9 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": []
@@ -1139,79 +1387,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1219,7 +1493,9 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": []
@@ -1236,79 +1512,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1316,7 +1618,9 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": []
@@ -1333,79 +1637,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1413,7 +1743,9 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": []
@@ -1430,79 +1762,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1510,13 +1868,16 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 20,
-    "bar": 230
+    "bar": 230,
+    "origin": "chr_0036_jsspsi_ultimate_skill"
    }
   },
   {
@@ -1531,79 +1892,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1611,13 +1998,16 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 20,
-    "bar": 230
+    "bar": 230,
+    "origin": "chr_0036_jsspsi_ultimate_skill"
    }
   },
   {
@@ -1632,79 +2022,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1712,13 +2128,16 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 20,
-    "bar": 230
+    "bar": 230,
+    "origin": "chr_0036_jsspsi_ultimate_skill"
    }
   },
   {
@@ -1733,79 +2152,105 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1813,13 +2258,16 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 20,
-    "bar": 230
+    "bar": 230,
+    "origin": "chr_0036_jsspsi_ultimate_skill"
    }
   },
   {
@@ -1834,85 +2282,113 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "boundaryEffects": [],
@@ -1930,61 +2406,81 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     }
    ],
    "boundaryEffects": [
@@ -1992,37 +2488,49 @@
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     }
    ],
    "unquantified": []
@@ -2039,67 +2547,89 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     }
    ],
    "boundaryEffects": [
@@ -2107,55 +2637,73 @@
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     }
    ],
    "unquantified": []
@@ -2172,85 +2720,113 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     }
    ],
    "boundaryEffects": [
@@ -2258,7 +2834,9 @@
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "unquantified": []
@@ -2275,97 +2853,129 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     }
    ],
    "boundaryEffects": [
@@ -2373,7 +2983,9 @@
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "unquantified": []
@@ -2390,98 +3002,129 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 225
+    "bar": 225,
+    "origin": "chr_0032_lizhiyan_combo_skill"
    }
   },
   {
@@ -2496,103 +3139,137 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "boundaryEffects": [],
@@ -2610,103 +3287,137 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "boundaryEffects": [],
@@ -2724,91 +3435,121 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "boundaryEffects": [
@@ -2816,13 +3557,17 @@
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.179399
+     "value": 0.179399,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     }
    ],
    "unquantified": []
@@ -2839,98 +3584,129 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 215
+    "bar": 215,
+    "origin": "chr_0036_jsspsi_combo_skill"
    }
   },
   {
@@ -2946,91 +3722,121 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 2315
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 3983
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.197039
+     "value": 0.197039,
+     "source": "chr_0032_lizhiyan",
+     "since": 7021
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_fire",
      "zone": "amp",
      "element": "fire",
-     "value": 0.432
+     "value": 0.432,
+     "source": "chr_0036_jsspsi",
+     "since": 7110
     },
     {
      "buff": "buff_common_affixes_enhance_crystal",
      "zone": "amp",
      "element": "cryst",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_affixes_enhance_natural",
      "zone": "amp",
      "element": "natural",
-     "value": 0.606625
+     "value": 0.606625,
+     "source": "chr_0011_seraph",
+     "since": 7196
     },
     {
      "buff": "buff_common_pulse_cryst_triggered",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.39571
+     "value": 0.39571,
+     "source": "chr_0004_pelica",
+     "since": 7544
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.2
+     "value": 0.2,
+     "source": "chr_0036_jsspsi",
+     "since": 8370
     },
     {
      "buff": "buff_equipsuit_usp_02_AddAttack",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8561
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.168
+     "value": 0.168,
+     "source": "chr_0032_lizhiyan",
+     "since": 8647
     }
    ],
    "boundaryEffects": [],

@@ -44,6 +44,20 @@ combat-mechanics §3.7.
 too high; no Breach hit had a plain match). Now it sees no Breach: plain
 0 → 7, assumed 0 → 4, fallback 17 → 6 (combat-mechanics §4).
 
+**Checked with the logged givers (2026-11-16):** since the refresh every
+development fixture's effects but 40d9's and 4e5e's carry their giver
+(`source`). Of 3,505 kit hits listing an Electrification where the
+replay has one, the log's giver is the replay's applier in 3,497; the 8 others
+are all 3aa6 (log Perlica 7, Zhuang Fangyi 1, the replay Arclight).
+At an agreeing giver each (level, AI) the replay has gives one logged
+strength, but for its level III at AI 0: 0.16 (3aa6, d774) and 0.24
+(3aa6) besides 0.20, so the replay's level differs there: probably
+§3.7's 6 instances off the curve (levels or appliers). The replay has no
+Electrification at 237 hits that list one (4d60 96, 9090 41, 4bfc 37, fc63 26,
+00ae 16, others ≤ 7). Breach can't be checked this way: the hit export's
+enemy facts list reaction statuses, not physical ones (scratch check,
+`hitRecords` landing.enemy).
+
 **Still possible:**
 - Pogranichnik's Breach strength: 12 of 21 logged instances carry his AI
   ± one Fervent Morale layer (+8) against the replay's (c4f3, a9d7, de6a,
@@ -1324,6 +1338,12 @@ From the kit check before simulating the team
   none. **Ruled out:** a log check: ZMDLogs records no Haste (no speed-up
   buff in four raw details with 2 Final Stroke, 4 Inksoul-expiry and 3
   no-Inksoul ends), and fixtures keep only buffs with damage effects.
+  **Shows (2026-11-16, refreshed fixtures):** `poise.origin` tells the
+  path of each Artful Intent burst that dealt Stagger: of the 79 bursts
+  in the development logs (multi-target included), 39 are credited to
+  Final Stroke (`normal_skill_2`), 33 to an Inksoul expiry
+  (`normal_skill_inkmove_2`); 7 deal no Stagger (40d9, 3f78, a7a7, db87,
+  e82d, 064b, 4f7e: one each), so their path isn't recorded.
   **Still possible:** the game acting otherwise than its data reads (no
   sign of it). It flips the owner's team's rule comparison (Initial
   Stroke right away +3.0% now, −3.0% with Haste on every burst).
