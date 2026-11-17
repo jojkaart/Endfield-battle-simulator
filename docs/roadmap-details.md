@@ -47,9 +47,10 @@ Staggered, +1.2–1.7% / −0.9%; Ink Melt: rule 7 only when Si's button
 shows her battle skill, +2.5–3.9% / −3.3%); Ink Melt's Twilight hold
 measured −0.11% ± 0.71 on 64 fresh seeds (keep or drop: the owner's
 call).
-Whether Initial Stroke is worth pressing hangs on Si's talent Haste
-(in-game test 109: the data gives it only on the Inksoul path; ±3% for
-the owner's team either way). The Arts Intensity effects behind
+Whether Initial Stroke is worth pressing no longer hangs on Si's talent
+Haste: the logs and the owner (2026-11-17) agree it doesn't speed up
+attacks, so it's movement only (test 109 kept, lower priority, in case
+it shortens cooldowns); re-measure Initial Stroke's worth without it. The Arts Intensity effects behind
 Estella's Grizzled Edge advice are log-verified (2026-11-16,
 combat-mechanics §3.7); left from that review: Pogranichnik's Breach
 strength one Fervent Morale layer off in 12 of 21 instances

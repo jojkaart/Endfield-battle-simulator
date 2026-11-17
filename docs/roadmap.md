@@ -25,7 +25,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   owner's team's gear (+8.0%) and on Arcane in INT mode for Typhoeus's team
   (+5.9%, a rule search for INT first); a cheaper worth for timeline-moving
   stats; the guided rule search's limit is noise (cheaper variance next),
-  and the owner's call on its full-energy options; in-game tests 108, 109.
+  and the owner's call on its full-energy options; in-game tests 106, 108.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); the log check's casts across others' time stops.
 - **Gear:** a search seeded with the current rotation, so a re-search with

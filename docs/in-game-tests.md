@@ -44,17 +44,17 @@ what you saw, in a line; the formats below are only suggestions.
 
 | # | test | needs | reply, e.g. |
 |---|---|---|---|
-| 1 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-higher-priority-it-decides-how-sis-battle-skill-is-played) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
-| 2 | [106](#106-type-50-yinglungs-edge-which-battle-skills-give-a-stack-and-how-long-it-lasts-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge stacks | Estella and Si with 3 pieces each | `106: anyone's battle skill +1 to every wearer; no expiry` |
-| 3 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
-| 4 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
-| 5 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
-| 6 | [107](#107-sis-amp-across-teammates-ultimates-ready-if-you-have-si-lower-priority) Si's Amp across ultimates | Si and two others' ultimates | `107: A 12 s, B 18 s` |
-| 7 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
-| 8 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
-| 9 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
-| 10 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
-| 11 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
+| 1 | [106](#106-type-50-yinglungs-edge-which-battle-skills-give-a-stack-and-how-long-it-lasts-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge stacks | Estella and Si with 3 pieces each | `106: anyone's battle skill +1 to every wearer; no expiry` |
+| 2 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
+| 3 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
+| 4 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
+| 5 | [107](#107-sis-amp-across-teammates-ultimates-ready-if-you-have-si-lower-priority) Si's Amp across ultimates | Si and two others' ultimates | `107: A 12 s, B 18 s` |
+| 6 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
+| 7 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
+| 8 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
+| 9 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
+| 10 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
+| 11 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -525,6 +525,8 @@ earlier gives 0.997. Multi-hit casts' hit spreads under it: 1.07× (34
 casts). So the engine no longer plays hasted casts faster (2026-11-16);
 Haste is taken as movement speed, which isn't modelled. Cooldowns: too few
 combos inside a 5 s window to tell; the engine leaves them unchanged.
+**The owner (2026-11-17):** has never noticed Haste in play and would
+notice if it made attacks faster, which agrees with the logs.
 
 **Why:** Si's talent gives the team Haste (`ratio_speed` 15% / 30%) for
 5 s after her Inksoul ends. The data says only "speed +x" (attribute 92);
@@ -2283,14 +2285,14 @@ Finisher, and a dive isn't.
 **Reply, e.g.:** `108: the next tap is the Finisher; dives aren't` or
 `108: a prompt appears, I have to press E`.
 
-### 109. Does Si's Haste need Initial Stroke? (ready, if you have Si with talent Unsoiled Brush; higher priority: it decides how Si's battle skill is played)
+### 109. Does Si's Haste need Initial Stroke? (ready, if you have Si with talent Unsoiled Brush; lower priority since 2026-11-17: Haste doesn't speed up attacks)
 
 **Why:** her talent says the team gains Haste "when the Inksoul
 disappears". In the game data only the Inksoul's end and Final Stroke
 create the Haste; Artful Intent bursting by itself with no Inksoul (you
 never pressed Initial Stroke) creates none, and the simulator follows
 that. ZMDLogs doesn't record the Haste at all, so no log can check it
-(2026-11-16). It decides whether Initial Stroke is worth its 15 SP: for
+(2026-11-16). Since Haste turned out not to speed up attacks (test 19, 2026-11-16/17), this matters only if Haste shortens cooldowns, which no one has seen; before that, it decided whether Initial Stroke is worth its 15 SP: for
 your team (Estella, Si, Akekuri, Arcane), pressing Initial Stroke right
 after the battle skill is about 3% more DPS than not pressing it with
 the data's reading, and about 3% less if the burst gives Haste anyway.
