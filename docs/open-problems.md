@@ -842,6 +842,54 @@ holding her own debuffs (b7b3 doesn't tell).
 
 **Next check:** in-game test 104 (does a boss visibly freeze?) and 37.
 
+**Changed (2026-11-16, test 104 answered by the owner: most bosses freeze,
+a few rare ones don't):** an enemy freezes unless it's listed as
+control-immune (packages/data/src/enemyFacts.ts), the freezer's own
+debuffs held on a listed one as before. Each boss with a freezer in the
+logs, checked frozen against immune (Si's own debuffs held under both, so
+her Artful Intent ends don't tell them apart):
+- Rhodagn (40d9, b7b3, abfd, c7790, e82d): every verdict the same; frozen
+  (the default). b7b3: one Tangtang assumed match becomes a fallback.
+- Chiliarch (c3c7): frozen holds Ardelia's Arts Susceptibility past where
+  the log's hits fit without it (48.3–54.5 s): Ardelia 139 → 122 plain, Si
+  120 → 110 (assumed or fallback, no new mismatch). Listed immune.
+- The enemy Si, eny_0134 (4a64, 3f78, 0c14, e989): 4a64 frozen holds
+  Arcane's will_atk past its logged end (54.7 s; 56.9 s frozen): Arcane 64
+  → 32 plain, Si 37 → 25; 3f78 leans frozen (Si 20 → 23); 0c14, e989 don't
+  tell. Listed immune.
+Scoreboard unchanged in every group (no hold-out moved).
+
+**Still possible (now):** Chiliarch and eny_0134 being frozen after all,
+with something else holding teammates' debuffs less than a freeze would
+(their evidence is one log each, 4a64 against 3f78 for eny_0134); the tag
+being a buff the enemy carries only at times (the data checks the enemy's
+buffs for tag 188749032 at each freeze, CheckBuffStackNumAdvanced, so a
+boss could be immune in some phases only: 4a64's freezes at 51–53 s
+against 3f78's); why an immune enemy still holds the freezer's own debuffs
+(no data mechanism found: Artful Intent and Arcane's will_atk have the same
+time-dilation flags).
+
+## Laevatain's Twilight runs longer than its model (tests 17, 18, 21)
+
+**Shows (2026-11-16):** bracketed by her last enhanced hit and her first
+plain hit after each ultimate (fx casts' ultimate events), Twilight lasts
+2.5–7 s past 15 s plus her enhanced battle skills' pauses (115 frames each,
+counted from the placed casts) plus the stops between: 458b 82333 ms
+(bracket 26.3–28.7 s, model 21.9 s), 158314 (28.7–29.2, 24.4), 9c0b 2929
+(31.8–34.1, 25.1), c83c 44548 (28.2–29.0, 22.3), f879 47479 (27.6–28.6,
+25.2), 99845 (25.7–26.2, 23.2).
+
+**Ruled out:** nothing yet.
+
+**Still possible:** her combo's hold (the kit's twilight extend triggers,
+not in this simple model); more enhanced battle skills than placed; her
+own ultimate's stop holding Twilight (+2.03 s: kit assumption
+`laevatain-twilight-own-stop`, reading `held`), which alone doesn't cover
+the gap.
+
+**Next check:** the replay's own Twilight end (`kitWindows`) against these
+brackets.
+
 ## Arcane's Array Arcana on a knife edge (0206, b6aa): closed 2026-11-13
 
 **Shows:** 0206's Arcane (Intellect 472.44, Will 473.50) had a 12.15 s

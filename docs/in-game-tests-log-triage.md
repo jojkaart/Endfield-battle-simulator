@@ -212,3 +212,10 @@ claims to check before they change the engine.
 - **37 Timers while Imprisoned or Immobilized: in part.** Si's: Artful
   Intent = 20 s + freeze + stops on every enemy, Jade Vessel stretched by
   her freeze too. Arcane's, Last Rite's and Tangtang's parts: no data.
+
+## Worked on (2026-11-16, tests the owner can't record by hand)
+
+- **104 Bosses and freezes: answered by the owner** (most bosses freeze); immunity per enemy from the logs (Chiliarch, the enemy Si; in-game-tests.md 104).
+- **18 What a time stop freezes: cooldowns run through others' ultimate stops (decided, 58 combo pairs)**; Estella's Physical Susceptibility held by her own stop fits c4f3; Laevatain's Twilight open (kit assumption `laevatain-twilight-own-stop`).
+- **19 Haste: decided, it doesn't speed attacks** (steps 0.995× as far apart under Si's 30%, 95% 0.95–1.02).
+- **101 Teammates' pace: the pause isn't one timer**; the share of free time attacking (0.43) set the engine's pause to 6.5 s.

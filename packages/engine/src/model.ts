@@ -258,6 +258,12 @@ export interface EnemyData {
    * entry for it.
    */
   readonly rank?: number;
+  /**
+   * Control-immune: a freezing control status (Si's Immobilization, Tangtang's OLDEN STARE) doesn't stop its clock
+   * (the game's tag 188749032, which no table gives per enemy). Set from the logs (packages/data/src/enemyFacts.ts,
+   * with the evidence); absent: it freezes (in-game test 104: most bosses do). timeline/clock.ts controlImmune.
+   */
+  readonly controlImmune?: boolean;
 }
 
 export interface BattleConstants {

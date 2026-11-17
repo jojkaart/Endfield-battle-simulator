@@ -223,8 +223,8 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && activeAt(b, frame)).length,
   };
   const castIndex = s.casts.length;
-  // Haste (attribute 92, KeywordSpeedUpScalar, default 1, at most 1.3): the cast plays faster (assumed; in-game test 19).
-  const speed = actionSpeed(ctx, s, operator, frame);
+  // Haste (attribute 92) doesn't play casts faster (the logs, in-game test 19: clock.ts actionSpeed).
+  const speed = actionSpeed();
   const scaled = (f: number) => hasteFrames(f, speed);
   // A combo's window (its own, or its operator's; none for one cast without it): what opened it, and it's used up.
   const windowOf = costs.kind === "combo" && skill.comboWindow !== false ? windowKey(ctx, operator, skillId) : undefined;

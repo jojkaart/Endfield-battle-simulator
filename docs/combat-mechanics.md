@@ -539,10 +539,18 @@ reaction has no initial hit.
     included);
   - other operators' hits on the way, delayed actions and current action.
 
-  [ASSUMED] for buffs and SP (test 18). Rossi's crit-DMG window running
+  [ASSUMED] for buffs (test 18); SP regen runs through them (K2, the logs).
+  The caster's own buff in its own ultimate's stop: Estella's Physical
+  Susceptibility held fits c4f3's listing (5 of 6 combos with her ultimate
+  after); Laevatain's Twilight runs through hers (kit; the held reading is
+  assumption `laevatain-twilight-own-stop`). [OPEN] Rossi's crit-DMG window running
   about 3 s longer in the log than the replay: [OPEN] (open-problems
   "Rossi's ultimate").
-- **Cooldowns run on raw time** through stops. [ASSUMED] (test 18)
+- **Cooldowns run on raw time** through stops. [SETTLED] by the logs (test
+  18, 2026-11-16): 58 combo pairs come back between their cooldown and their
+  cooldown plus the others' ultimate stops between, the tightest 0.1–0.2 s
+  past the cooldown across 4.8–4.9 s of stops (9c6e Typhoeus, fc63
+  Gilberta).
 - An operator whose **own ultimate stop** covers a frame isn't held there by
   another's stop or slow-down. It is held only from its own stop's end.
   [SETTLED] for e82d, dbae and 9a80. How far this reaches (every scheduled
@@ -570,8 +578,12 @@ reaction has no initial hit.
   (accuracy plan B8)
 - **Freezes** (a `control` with `freezes`: Si's Immobilization, Tangtang's
   OLDEN STARE) stop the enemy's own clock, unless it is control-immune (tag
-  188749032, in no table). The engine takes every Boss (rank 2) as immune.
-  [OPEN] (test 104; b7b3 and c3c7 fit it)
+  188749032, in no table). Bosses freeze too [SETTLED] (test 104, the owner
+  2026-11-16: most bosses do, a few rare ones don't); control-immune per
+  enemy from the logs (packages/data/src/enemyFacts.ts: Chiliarch, c3c7;
+  the enemy Si, eny_0134, 4a64) [OPEN]. An immune enemy still holds the
+  freezing operator's own debuffs (Si's Artful Intent ends). Rhodagn's five
+  logs with a freezer check the same either way.
 - **Perfect dodge:** the world is slowed by the data's curve (about 15
   frames lost) and the dodger is exempt. +7 SP and a `perfectDodge` event.
   It ends the current action, unless that is an ultimate before its
@@ -619,9 +631,14 @@ reaction has no initial hit.
   [ASSUMED] (`CHAIN_CACHE_FRAMES`)
 - **Teammates basic-attack on their own:** at the chain's windows (step
   intervals about 0.82× exclusive time), with a pause after a full chain
-  (median 3.5 s, quartiles 2.1–6.8 s), about 39% of their free time. Their
-  own skills cut it. [SETTLED] for the existence and the measured pace (28
-  logs; accuracy plan B0); the fixed 3.5 s pause is [ASSUMED] (test 101).
+  of 6.5 s, so they attack about 43% of their free time while the
+  controlled operator attacks (the logs' median per operator-fight,
+  quartiles 32–54%; in-game test 101, 2026-11-16). Their own skills cut it.
+  [SETTLED] for the existence, the steps' pace and the share (accuracy plan
+  B0; test 101). The one fixed pause is [ASSUMED]: in the logs two thirds of
+  full chains run straight into the next, the rest wait a heavy-tailed pause
+  (median 3.7 s, mean 5.4 s), and the share depends on the fight (the enemy)
+  and the operator (ranged ones higher), not on Stagger or the parser.
   Some skills stop only their own operator's attacks (Liino's stance and
   ultimate). [SETTLED] (the owner)
 - What only the controlled operator gets: Final Strikes' Stagger, and SP or

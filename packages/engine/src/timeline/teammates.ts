@@ -11,12 +11,16 @@ import { castSkill } from "./casting.ts";
 import { schedule } from "./schedule.ts";
 
 /**
- * A teammate's pause after a chain it finished (frames): the median gap between the runs of teammates' basic casts in
- * 28 logged fights (3.5 s; quartiles 2.1 and 6.8 s, 235 gaps; 2026-10-28). With it a teammate attacks about 40% of its
- * free time, as the logs' median (39%, 64 operator-fights) against the controlled operator's 60–80%. The steps themselves
- * come at the chain's windows (the logs: 0.82× the steps' exclusive time, the windows' pace).
+ * A teammate's pause after a chain it finished (frames): 6.5 s, set so a teammate attacks the share of its free time
+ * the logs show while the controlled operator attacks (in-game test 101, 2026-11-16; 54 development logs, 0.5 s bins of
+ * a teammate's time outside its own skills: a median 0.43 per operator-fight, quartiles 0.32–0.54, against the engine's
+ * 0.59–0.66 at the old 3.5 s in the three teams' rule runs, 0.41–0.45 at 6.5 s). The logs' pauses aren't one timer:
+ * after a full chain about two thirds of the next runs start within 1.5 s, the rest after a heavy-tailed wait (median
+ * 3.7 s, mean 5.4 s); the share depends on the fight (the enemy: R² 0.41) and the operator (R² 0.41; ranged ones
+ * higher), not on Stagger, parser version or time into the fight. 3.5 s (2026-10-28) was the median of the gaps over
+ * 1.5 s alone. The steps themselves come at the chain's windows (the logs: 0.82× the steps' exclusive time).
  */
-export const TEAMMATE_PAUSE_FRAMES = 105;
+export const TEAMMATE_PAUSE_FRAMES = 195;
 
 /** A teammate's chain starting at `frame` (its first step, or a pause's end). */
 export function teammateStart(operator: string, frame: number): PendingAuto {

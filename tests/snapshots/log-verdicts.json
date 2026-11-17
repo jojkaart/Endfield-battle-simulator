@@ -23,7 +23,7 @@
  "zmdlogs-b7b3762d5da8.json": {
   "chr_0032_lizhiyan": {"plain":10,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0026_lastrite": {"plain":4,"assumed":0,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0027_tangtang": {"plain":22,"assumed":2,"fallback":22,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0027_tangtang": {"plain":22,"assumed":1,"fallback":23,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":7,"assumed":14,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "totals": {"damage":1.1,"operator chr_0036_jsspsi":-3.1,"operator chr_0032_lizhiyan":-1.3,"operator chr_0027_tangtang":4.9,"operator chr_0026_lastrite":0.4,"kind basic":0,"kind battle":7.9,"kind combo":-1.1,"kind status":-2.3,"kind ultimate":-0.3,"hits":1.2,"status hits":0,"staggered hits":0,"last hit":0.1,"time to kill":-1.2,"crit share (points)":0}
  },

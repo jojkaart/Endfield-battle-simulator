@@ -106,7 +106,8 @@ everyone but the caster. The world (enemy statuses, inflictions, DoT ticks,
 every buff including the caster's, combo windows, energy blocks)
 and the other operators (their hits on the way, delayed actions, current
 action) lose the frames the slow-down takes; skill cooldowns run on raw
-time, and so do team SP's regen and its pause after a spend (the logs:
+time (the logs, in-game test 18: 58 combo pairs come back within their
+cooldown plus less than the stops between), and so do team SP's regen and its pause after a spend (the logs:
 the replay's SP shortfalls drop from 20 to 13 of 38 logs). Overlapping slow-downs: the lowest scale counts. The engine shifts
 what comes after the slow-down's start by the lost frames, which is exact
 for a stop and, for a partial slow-down, for everything after it ends;
@@ -122,10 +123,14 @@ linear) and `RESETto1` are known. Not modelled yet: entity-layer
 dilation (Si's hit-stop on the enemy), hit-stop (attacker pauses of
 0.03–0.4 s on most basic attacks) and jumps (Ti3): their curves and
 target enums aren't in the data, or need in-game tests (18).
-**Haste** (attribute 92, `KeywordSpeedUpScalar`, default 1, within
-0.1–1.3): a cast plays at that speed (its hits, windows and locked part
-come sooner; cooldowns don't change). Assumed: Endaxis parses but doesn't
-use it; in-game test 19.
+**Haste** (attribute 92, `KeywordSpeedUpScalar`, which the data's
+SpeedupAction raises: Si's talent, Tangtang's water) doesn't play casts
+faster (clock.ts `actionSpeed` is 1): in the logs (in-game test 19,
+2026-11-16) basic-attack steps in the 5 s after Si's Inksoul ends (30%)
+are 0.995× as far apart as the same steps elsewhere (95% 0.95–1.02; 0.77
+if sped). Taken as movement speed, which isn't modelled; the speed
+plumbing (rules.ts `hasteFrames`) stays for an effect that does speed
+casts. Until 2026-11-16 a hasted cast played faster.
 **Waiting on the enemy's clock**: what a buff on the enemy does after its
 `triggerInterval` (`waitFirstTriggerInterval`) is held by every time stop,
 the caster's own included. An Arts Burst lands `burstDelayFrames` (1 s)
@@ -150,13 +155,17 @@ data's tag 188749032, skipping the freeze). On a control-immune enemy it
 still holds the freezing operator's own debuffs (each buff's `owner`:
 Si's Artful Intent, Jade Vessel and her weapon's; Tangtang's for her
 stare), not the others'. No table gives the tag; the scenario's
-`target.controlImmune` says, else a Boss (rank 2) is (clock.ts
-`controlImmune`, actions.ts `runTriggers`). The logs: on non-bosses
-others' debuffs are held (b6aa: Xaihi's cryo_fragility under Si's freeze;
-489c: Arcane's will_burst under Rossi's), on bosses they aren't (4a64:
-holding Arcane's halves her plain matches), while Si's Artful Intent ends
-on bosses fit only with hers held (abfd, c3c7, 0c14); in-game tests 37
-and 104.
+`target.controlImmune` says, else the enemy's `controlImmune`, set per
+enemy from the logs with the evidence (packages/data/src/enemyFacts.ts:
+Chiliarch, the enemy Si); every other enemy freezes, bosses too (in-game
+test 104, the owner 2026-11-16: most bosses do; until then every Boss was
+immune) (clock.ts `controlImmune`, actions.ts `runTriggers`). The logs: on
+frozen enemies others' debuffs are held (b6aa: Xaihi's cryo_fragility under
+Si's freeze; 489c: Arcane's will_burst), on the two immune ones they aren't
+(4a64: holding Arcane's halves her plain matches; c3c7: Ardelia's Arts
+Susceptibility), while Si's Artful Intent ends fit only with hers held
+(abfd, c3c7, 0c14); Rhodagn's five logs with a freezer check the same
+either way; in-game tests 37 and 104.
 
 ## Skill timing
 

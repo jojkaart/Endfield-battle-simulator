@@ -445,9 +445,31 @@ shot's flight), without **about 4.7 s**. A second sign: with skips he
 attacks again about 2.4 s after the cast (test 61's Combusted run),
 without about 5.3 s.
 
-### 18. What an ultimate's time stop freezes (not testable by hand; to the logs)
+### 18. What an ultimate's time stop freezes (not testable by hand; the logs: cooldowns run, Estella's buff held, Twilight open)
 
 **Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
+
+**What the logs decided (2026-11-16, 54 development logs):**
+- *Cooldowns run during others' ultimate time stops* (the engine's rule):
+  58 pairs of an operator's combos come back between their cooldown (less
+  0.3 s) and their cooldown plus the others' ultimate stops between, and
+  none needs the stops added: Typhoeus 17.1 s apart with a 17 s cooldown
+  across 4.9 s of stops (9c6e), Gilberta 19.2 / 19 s across 4.8 s (fc63),
+  Chen 12.2 / 12 s across 3.3 s (d4fb). Settled.
+- *SP regen runs through them:* settled by the logs earlier (2026-11-12).
+- *The caster's own buffs in its own time stop:* Estella's Physical
+  Susceptibility fits being held by her own ultimate's stop (the engine's
+  rule) in c4f3, whose listing is exact without an ultimate (6416 ms: 10.26
+  s logged, 10.29 s predicted): with her ultimate after the combo, 5 of 6
+  listings end at the held end (81311 ms to 6 ms), none at the unheld one
+  (1.1–1.8 s short). a9d7 and 4e5e are noisier (another source of the same
+  common buff). Laevatain's Twilight isn't decided: its logged ends (last
+  enhanced hit, first plain one) sit 2.5–7 s past 15 s plus her battle-skill
+  pauses and the stops in 458b, 9c0b, c83c, f879, more than the 2 s the two
+  readings differ by (other holds, test 21). Registered as kit assumption
+  `laevatain-twilight-own-stop` (reading `held`: +2.03 s per ultimate;
+  `efsim rules … --assumptions`).
+- Still open, the overlapping-ultimates question above.
 
 **Why:** the engine now freezes everyone but the caster for an ultimate's
 time stop (Laevatain's first 2 s, Gilberta's 1.7 s): the enemy's statuses
@@ -489,9 +511,20 @@ from the press.) It decides up to 2 s of Twilight per ultimate and up to
   means her own time stop doesn't freeze it, about 10.8 s means it does
   (1.8 s apart: a video is safer than a stopwatch).
 
-### 19. What Haste speeds up (not testable by hand; to the logs)
+### 19. What Haste speeds up (not testable by hand; decided by the logs, 2026-11-16: not attacks)
 
 **Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
+
+**What the logs decided (2026-11-16): Haste doesn't speed up attacks.** In
+the 12 Si fights with an Inksoul-path burst (34 bursts; Si at full
+promotion, so 30%), the 111 basic-attack steps (attack k to k+1) of 12
+operators that fall in the 5 s after a burst are 0.995× as far apart as
+the same operator's same steps elsewhere in that fight (bootstrap 95%
+0.95–1.02; at 30% they'd be 0.77×, at 15% 0.87×); the window shifted 1 s
+earlier gives 0.997. Multi-hit casts' hit spreads under it: 1.07× (34
+casts). So the engine no longer plays hasted casts faster (2026-11-16);
+Haste is taken as movement speed, which isn't modelled. Cooldowns: too few
+combos inside a 5 s window to tell; the engine leaves them unchanged.
 
 **Why:** Si's talent gives the team Haste (`ratio_speed` 15% / 30%) for
 5 s after her Inksoul ends. The data says only "speed +x" (attribute 92);
@@ -2075,9 +2108,29 @@ ends there.
 1. Engine (now): the bar never refills except at a Stagger's end.
 2. Logs: around 30–45 s and 69–75% HP, maybe tied to a move of his.
 
-### 101. How often a teammate attacks on its own (not testable by hand; to the logs)
+### 101. How often a teammate attacks on its own (not testable by hand; the logs, 2026-11-16: about 43% of free time)
 
 **Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
+
+**What the logs decided (2026-11-16, 54 development logs):** the pause isn't
+one timer. After a full chain about two thirds of a teammate's next runs
+start within 1.5 s (most 0.5–1 s: straight on), the rest after a
+heavy-tailed wait (median 3.7 s, mean 5.4 s, sd 5.3 s). What sets the
+share of its free time a teammate attacks (0.5 s bins outside its own
+skills; median 0.43 per operator-fight while the controlled operator
+attacks, quartiles 0.32–0.54): the fight (R² 0.41; the enemy Si and the
+slug lowest, the tower Blightshade highest) and the operator (R² 0.41;
+ranged ones, Arts units and handcannons, about 0.1 higher than melee),
+together 0.76. It's 0.40 while the controlled operator basic-attacks
+against 0.22 while it's idle (partly the fight: idle moments are often
+when the enemy is away), and doesn't depend on Stagger (0.37 / 0.34), the
+parser version or the time into the fight. Gaps over 1.5 s don't depend on
+how fast the controlled operator hits (median 3.9 vs 3.7 s). The engine's
+teammates attacked 0.59–0.66 of their free time in the three teams' rule
+runs (the old 3.5 s pause was the median of the gaps over 1.5 s alone), so
+the pause is now 6.5 s (0.41–0.45, the logs' level). Not modelled: the
+per-operator and per-fight spread, partial chains (half of the logged runs
+end before the Final Strike).
 
 **Why:** the engine now has teammates basic-attack on their own
 (accuracy plan B0): each runs its full chain, then pauses about 3.5 s
@@ -2176,6 +2229,16 @@ small ones) should freeze it.
 `104: Rhodagn freezes ~1 s too`.
 
 **Answered (the owner, 2026-11-16, from play):** most bosses do get frozen by Imprisonment; only some rare bosses ignore it. The engine's assumption that every Boss is control-immune (2026-10-31) is therefore wrong in general: control immunity belongs to particular enemies, set where a log shows it (b7b3's Rhodagn, c3c7's Chiliarch are the candidates).
+
+**Done (2026-11-16):** bosses freeze by default now; control immunity is per
+enemy, from the logs (packages/data/src/enemyFacts.ts). Rhodagn's five logs
+with a freezer (40d9, b7b3, abfd, c7790, e82d) check the same frozen or
+immune, so he freezes. Chiliarch (c3c7: frozen, Ardelia's Arts
+Susceptibility is held past the log's: Ardelia 139 → 122 plain) and the
+enemy Si (eny_0134; 4a64: frozen, Arcane's WILL debuff outlives its logged
+end: Arcane 64 → 32 plain; 3f78 leans frozen, Si 20 → 23) are marked
+immune. The scoreboard is unchanged. Under both readings Si's own debuffs
+are held, so her Artful Intent ends don't tell them apart.
 
 ### 107. Si's Amp across teammates' ultimates (ready, if you have Si; lower priority)
 

@@ -37,6 +37,7 @@ import { loadSkills } from "./tables/skills.ts";
 import { loadWeaponCurves, loadWeapons } from "./tables/weapons.ts";
 import { loadUseItems } from "./tables/useItems.ts";
 import { loadFoods } from "./foods.ts";
+import { CONTROL_IMMUNE_ENEMIES } from "./enemyFacts.ts";
 
 // CharGrowthTable skillGroupType → the build's skill level that applies.
 const SKILL_GROUP_TYPES: Record<number, SkillType> = { 0: "basic", 1: "battle", 2: "ultimate", 3: "combo" };
@@ -240,8 +241,10 @@ function build(): GameData {
     enemies[e.id] = {
       id: e.id, name, levels: e.levels, staticAttrs: e.staticAttrs, resistance: e.resistance, finisherSp: e.finisherSp, staggerNodes: e.staggerNodes, superArmor: e.superArmor,
       ...(displayType !== undefined ? { rank: displayType as number } : {}),
+      ...(e.id in CONTROL_IMMUNE_ENEMIES ? { controlImmune: true } : {}),
     };
   }
+  for (const id of Object.keys(CONTROL_IMMUNE_ENEMIES)) if (!enemies[id]) throw new DataError(PRIMARY, `enemyFacts.ts CONTROL_IMMUNE_ENEMIES.${id}`, "no such enemy template");
 
   // Stage variants (EnemyTable: `eny_0120_klbear_tower015` → template `eny_0120_klbear`), with their stat modifiers.
   for (const alias of Object.values(loadEnemyAliases(PRIMARY))) {
