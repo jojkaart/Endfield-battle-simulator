@@ -391,6 +391,7 @@ describe("timeline: kit triggers", () => {
     // Kit order (chr_0016_laevat.json, batch-1 pass-3 plan); the pauses, the cooldown at show_weapon's end and Scorching Heart are triggered now.
     expect(kit.triggers.map((t) => [t.id, t.on.event, t.by])).toEqual([
       ["ultimate_state", "cast", "self"],
+      ["twilight_own_stop", "cast", "self"],
       ["ultimate_cooldown", "buffEnded", "self"],
       ["twilight_paused_by_battle_skill", "cast", "self"],
       ["twilight_pause_cut", "buffEnded", "self"],
@@ -1022,7 +1023,7 @@ describe("timeline: control statuses", () => {
 });
 
 describe("timeline: haste", () => {
-  it("a cast while hasted plays faster: its hits come sooner", () => {
+  it("Haste (attribute 92) doesn't play a cast faster: its hits come at their frames (in-game test 19, the logs)", () => {
     const kit = data.kits.operators[op] as OperatorKit;
     const haste: KitBuff = { id: "haste", label: "haste", target: "self", duration: 10, modifiers: [{ attr: 92, value: 0.25 }] };
     const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, haste], triggers: [...kit.triggers, { id: "h", on: { event: "cast", kinds: ["battle"] }, by: "self", maxCount: 1, do: [{ kind: "buff", buff: "haste" }] }] } } },
@@ -1030,10 +1031,11 @@ describe("timeline: haste", () => {
     const rot: RotationAction[] = [{ operator: op, skill: L + "normal_skill" }, { operator: op, skill: L + "attack1" }];
     const plain = simulate(data, scenario(rot));
     const fast = simulate(d, scenario(rot));
-    // The battle skill was cast before the haste; attack1 after it, at speed 1.25: its hit at frame 6 / 1.25 → 5.
+    // The battle skill was cast before the haste; attack1 after it still lands at its frame 6 (until 2026-11-16 the
+    // engine played it at 1.25×: frame 5; the logs' steps under Si's 30% Haste are 0.995× as far apart).
     const delay = (r: typeof plain) => (r.hits.find((h) => h.skillId === L + "attack1")?.frame ?? NaN) - (r.casts[1]?.frame ?? NaN);
     expect(delay(plain)).toBe(6);
-    expect(delay(fast)).toBe(5);
+    expect(delay(fast)).toBe(6);
   });
 });
 
@@ -1360,7 +1362,7 @@ describe("kit buffs in static checks", () => {
 
 describe("timeline: delays under Haste, freezes with before-damage triggers", () => {
   const kit = data.kits.operators[op] as OperatorKit;
-  it("a delayed cast trigger plays at the cast's speed", () => {
+  it("a delayed cast trigger keeps its delay under Haste (which doesn't speed casts: in-game test 19)", () => {
     const haste: KitBuff = { id: "haste", label: "haste", target: "self", duration: 10, modifiers: [{ attr: 92, value: 0.25 }] };
     const mark: KitBuff = { id: "mark", label: "mark", target: "self", duration: 10, modifiers: [] };
     const triggers: KitTrigger[] = [
@@ -1372,7 +1374,7 @@ describe("timeline: delays under Haste, freezes with before-damage triggers", ()
     let s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
     s = apply(ctx, s, { operator: op, skill: L + "attack1" });
     const at = s.casts[1]?.frame ?? NaN;
-    expect(s.scheduled.filter((x) => x.kind === "action").find((x) => x.trigger === "m")?.frame).toBe(at + 8);
+    expect(s.scheduled.filter((x) => x.kind === "action").find((x) => x.trigger === "m")?.frame).toBe(at + 10);
   });
 
   it("a freeze from a hit's control status still freezes the buffs that hit applies when a kit has before-damage triggers", () => {
