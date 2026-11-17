@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "A full team of the owner's favourites at the owner's default potentials (6-stars P0): Si (Team Position 01, the controlled operator; the build of si-jade-vessel.json at P0), Laevatain (laevatain-forgeborn.json at P0), Liino (liino-heal-usp.json) and Gilberta (gilberta-usp02.json) vs Rhodagn, every ultimate charged, 20 s. The rotation is the one efsim search found without swaps (the owner doesn't swap; 2026-10-25, --beam 12: beams 6 / 12 / 24 gave 2,434,451 / 2,650,070 / 2,691,389, the best kept), so it's a search result, not a hand-written plan: Si does every basic attack and dive, the others cast their skills. With swaps the search found 3,464,381 (in-game tests 15 and 97 decide how real that is).",
+  "description": "A full team of the owner's favourites at the owner's default potentials (6-stars P0): Si (Team Position 01, the controlled operator; the build of si-jade-vessel.json at P0), Laevatain (laevatain-forgeborn.json at P0), Liino (liino-heal-usp.json) and Gilberta (gilberta-usp02.json) vs Rhodagn, every ultimate charged, 20 s. The rotation is the one efsim search found without swaps (the owner doesn't swap; 2026-10-25, --beam 12: beams 6 / 12 / 24 gave 2,434,451 / 2,650,070 / 2,691,389, the best kept), so it's a search result, not a hand-written plan: Si does every basic attack and dive, the others cast their skills. With swaps the search found 3,464,381 (in-game tests 15 and 97 decide how real that is). Re-searched 2026-11-16 after Haste stopped speeding casts (in-game test 19, the logs) and teammates' pause went to 6.5 s: --beam 12, beams 6 / 12 / 24 gave 2,570,407 / 2,570,407 / 2,603,570, the best kept.",
   "team": [
     {
       "operator": "chr_0036_jsspsi",
@@ -132,46 +132,195 @@
   "durationSeconds": 20,
   "crit": "expected",
   "rotation": [
-    { "operator": "chr_0035_liino", "skill": "chr_0035_liino_ultimate_skill", "at": 0 },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_ultimate_skill", "at": 0 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill", "at": 0 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_ultimate_skill", "at": 0 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ultimate_skill", "at": 0 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_combo_skill", "at": 2.1333333333333333 },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_combo_skill", "at": 2.2333333333333334 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1", "at": 2.533333333333333 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill_1", "at": 2.8666666666666667 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2", "at": 3.1 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill_2", "at": 3.6 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3", "at": 4 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4", "at": 4.366666666666666 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1", "at": 5.266666666666667 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill", "at": 5.266666666666667 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2", "at": 5.7 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3", "at": 6.4 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill_1", "at": 6.4 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4", "at": 6.766666666666667 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1", "at": 7.666666666666667 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2", "at": 8.1 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill_2", "at": 8.1 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3", "at": 8.8 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4", "at": 9.166666666666666 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1", "at": 10.066666666666666 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2", "at": 10.5 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3", "at": 11.2 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4", "at": 11.566666666666666 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1", "at": 12.466666666666667 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill", "at": 12.466666666666667 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2", "at": 12.9 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3", "at": 13.6 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4", "at": 14.066666666666666 },
-    { "operator": "chr_0035_liino", "skill": "chr_0035_liino_combo_skill", "at": 14.066666666666666 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_plunging_attack_end", "at": 16.233333333333334 },
-    { "operator": "chr_0035_liino", "skill": "chr_0035_liino_normal_skill_end", "at": 16.233333333333334 },
-    { "operator": "chr_0035_liino", "skill": "chr_0035_liino_normal_skill", "at": 16.233333333333334 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill_1", "at": 16.233333333333334 },
-    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill_2", "at": 16.966666666666665 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_combo_skill", "at": 17.4 },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_plunging_attack_end", "at": 18.866666666666667 }
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_ultimate_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_ultimate_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_ultimate_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_normal_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ultimate_skill",
+      "at": 0.13333333333333333
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_combo_skill",
+      "at": 2.1333333333333333
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_combo_skill",
+      "at": 2.2333333333333334
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1",
+      "at": 2.6666666666666665
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_1",
+      "at": 2.8666666666666667
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2",
+      "at": 3.2333333333333334
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack3",
+      "at": 4.133333333333334
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4",
+      "at": 4.6
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_2",
+      "at": 4.6
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1",
+      "at": 5.766666666666667
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2",
+      "at": 6.333333333333333
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_combo_skill",
+      "at": 6.333333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack3",
+      "at": 7.833333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4",
+      "at": 8.3
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1",
+      "at": 9.466666666666667
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2",
+      "at": 10.033333333333333
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill",
+      "at": 10.033333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack3",
+      "at": 10.933333333333334
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4",
+      "at": 11.4
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1",
+      "at": 12.566666666666666
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2",
+      "at": 13.133333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack3",
+      "at": 14.033333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4",
+      "at": 14.5
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill_end",
+      "at": 14.5
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill",
+      "at": 14.5
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_1",
+      "at": 14.5
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_2",
+      "at": 15.233333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_combo_skill",
+      "at": 15.366666666666667
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1",
+      "at": 17.266666666666666
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2",
+      "at": 17.833333333333332
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill_end",
+      "at": 17.9
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack1",
+      "at": 19.333333333333332
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack2",
+      "at": 19.666666666666668
+    }
   ]
 }
