@@ -219,10 +219,23 @@ complexity 46; the hardest cues are the three "ultimate ready" ones
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **69,668** (2,657) | **61,716** (2,408) |
+| Sustained DPS over 300 s (sd over seeds) | **63,347** (3,405) | **56,123** (2,662) |
 | As a bot (0 s) / at 0.6 s | 70,347 / 66,655 | 66,705 / 60,522 |
 | First 60 s against the 60 s timeline (the examples) | 3,454,357 against 4,732,088 (−27.0%) | 2,506,673 against 4,642,409 (−46.0%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 20,900,414 against 16,406,168 (**+27.4%**) | |
+
+**The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** bosses
+freeze 69,668 → 69,698 / 61,716 → 62,331; Haste no longer speeds casts
+→ 61,255 / 57,302 (−12.1% / −8.1%: Laevatain's Twilight chain lost Si's
+Haste, which the logs say never sped it: her steps under it 1.009× as far
+apart); teammates' pause 6.5 s → **63,347 / 56,123** (+3.4% / −2.1%). The
+other rows are from before; the 60 s timelines no longer play: the
+full-energy one repaired (3,953,129, 8 steps dropped; a beam-24 search
+found 3,798,722), the zero-energy one re-searched at beam 24 (2,838,088):
+lower bounds until a full re-search. As a bot / at 0.6 s now 65,484 /
+62,233. Under test 18's alternative (`--assume
+laevatain-twilight-own-stop=held`: her own stop holds Twilight, +2 s)
+61,928 (−2.2%: a longer Twilight also blocks her energy longer).
 
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 

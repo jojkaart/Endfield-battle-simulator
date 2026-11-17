@@ -219,10 +219,17 @@ character and the skill button (rank 3).
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **54,607** (1,566) | **51,076** (1,602) |
+| Sustained DPS over 300 s (sd over seeds) | **52,369** (1,568) | **48,967** (1,568) |
 | As a bot (0 s) / at 0.6 s | 61,698 / 53,558 | 56,993 / 50,683 |
 | First 60 s against the 60 s timeline (the examples) | 4,226,194 against 5,774,076 (−26.8%) | 2,858,065 against 5,019,331 (−43.1%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,382,151 against 16,925,847 (−3.2%) | |
+
+**The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** no
+freezer on this team and no Haste, so only the teammates' pause (6.5 s
+instead of 3.5 s) moves it: 54,607 → **52,369** / 51,076 → **48,967**
+(−4.1% / −4.1%; Arcane, Liino and Perlica basic-attack less, as the logs
+show). The other rows are from before. As a bot / at 0.6 s now 59,379 /
+51,427.
 
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 

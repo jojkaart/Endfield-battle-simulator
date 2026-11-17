@@ -102,10 +102,23 @@ Si's hitless ultimate in 9c0b, Hot Work on Combustion ticks); the loop's long op
 
 ## Engine accuracy
 
+**Tests 18, 19, 101, 104 from the logs (2026-11-16,
+[journal](journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md)):** bosses freeze by default, control immunity per enemy
+(Chiliarch, the enemy Si; packages/data/src/enemyFacts.ts); cooldowns run
+through others' ultimate stops (settled); Haste doesn't speed attacks (the
+engine no longer plays hasted casts faster); teammates' pause 6.5 s. Left:
+Laevatain's Twilight runs 2.5–7 s past its model (open-problems; kit
+assumption `laevatain-twilight-own-stop`); re-search the five Si example
+timelines with the full beams (after Haste's change they hold the old
+timeline repaired or a single-beam search: lower bounds);
+per-operator and per-fight teammate pace (the logs' R² 0.41 each) if a
+favourite's numbers lean on teammates' attacks; why an immune enemy holds
+the freezer's own debuffs (test 37).
+
 **Engine accuracy first** (the owner, 2026-10-26: above the search's
 scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
-and B0 (teammates' own basic attacks, in-game test 101 to confirm the
-pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
+and B0 (teammates' own basic attacks; the pause set to 6.5 s from the
+logs' attack share, in-game test 101, 2026-11-16) are done, and B3 / B5 / B7 as far as the data and logs go; B2
 (SP stop: 0.5 s since 2026-11-12, regen through time stops; test 102
 pins it) and B4 (Solidification) wait on in-game tests 102 and 71; the
 SP the replay still lacks (open-problems "Team SP": teammates' unlanded
@@ -126,8 +139,7 @@ bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fa
 ×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
 there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
 3aa6's Stagger at 145.6 s (the replay has none), Xaihi's ultimate Amp in
-b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), whether Bosses
-ignore freezes (assumed since 2026-10-31; test 104), bdf2's Si combo
+b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), bdf2's Si combo
 finisher ×1.456 (no stack count fits), 7e19's Crush landings unmatched (Endministrator
 +46%),
 bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss

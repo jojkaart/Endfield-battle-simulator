@@ -91,10 +91,21 @@ decides it.
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **56,493** (1,913) | **56,055** (1,309) |
+| Sustained DPS over 300 s (sd over seeds) | **52,382** (1,685) | **52,716** (1,182) |
 | As a bot (0 s) / at 0.6 s | 57,835 / 55,713 | 56,552 / 55,928 |
 | First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
+
+**The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** bosses
+freeze (Rhodagn: Si's freezes hold every debuff) 56,493 → 56,716 / 56,055
+→ 56,141; Haste no longer speeds casts → 55,278 / 55,598 (−2.5% / −1.0%);
+teammates' pause 6.5 s instead of 3.5 s → **52,382 / 52,716** (−5.2% /
+−5.2%; Akekuri, Si and Arcane basic-attack less, as the logs show). The
+other rows are from before; the 60 s timelines were searched with hasted
+casts and no longer play: the full-energy one is repaired (3,472,929,
+2 steps later, 2 dropped), the zero-energy one re-searched at beam 24
+(2,291,586): lower bounds until a full re-search. As a bot / at 0.6 s now
+52,983 / 52,771 (full energy).
 
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
