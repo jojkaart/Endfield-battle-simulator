@@ -72,14 +72,14 @@ describe("the ascent", () => {
 
 describe("a repaired replay", () => {
   it("moves later or drops the steps a loadout can't play and scores the rest against the current loadout's replay", () => {
-    // The owner's team: with this Akekuri loadout a few steps fail (where the default allows 20): Estella's battle skill
-    // at 58.5 s finds too little SP before the fight ends (until 2026-11-16, judged on the state before the step, without
-    // what came due on the way to its `at`, her finisher at 42.7 s failed first).
+    // The owner's team: with this Akekuri loadout a few steps fail (where the default allows 20): with the timeline
+    // repaired for Haste's change (2026-11-16) Estella's ultimate at 53.8 s finds too little energy (before it, her
+    // battle skill at 58.5 s found too little SP; earlier still, her finisher at 42.7 s failed first).
     const scenario = readScenario(new URL("../examples/estella-si-akekuri-arcane.scenario.json", import.meta.url).pathname);
     const akekuri = "chr_0019_karin";
     const yinglung = [`${E}atk02_body_02`, `${E}atk02_hand_01`, `${E}atk02_edc_02`, `${E}atb01_edc_01`];
     const swapped = scenario.team.map((b) => (b.operator === akekuri ? { ...b, gear: yinglung.map((id) => ({ id, artifice: [3, 3, 3] as const })) } : b));
-    expect(() => simulate(data, { ...scenario, team: swapped })).toThrow(/can.t start before the fight ends/);
+    expect(() => simulate(data, { ...scenario, team: swapped })).toThrow(/needs [\d.]+ ultimate energy/);
     const c = gearCandidates(data, scenario, { files: [], extra: { candidates: [{ operator: akekuri, gear: yinglung, source: "site" }] } });
     const keep = new Set(scenario.team.map((b) => b.operator).filter((op) => op !== akekuri));
     const r = gearAscent(data, scenario, c, { keep, passes: 1 });
