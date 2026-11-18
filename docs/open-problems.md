@@ -343,6 +343,21 @@ mismatch against teammates' mismatches within 1.5 s at the same ratio
    → 100 plain, 4e36 plain 117 → 239. Development plain 47.3 → 47.7%,
    mismatch 19.8 → 19.6%; hold-out plain 62.1 → 63.3%, mismatch 7.6 →
    7.7%, mean |damage error| 13.5 → 13.4%.
+3. (Tests 51 and 7, 2026-11-18.) Her Corrosion's own hit has Solemn
+   Phalanx's INT Arts DMG, which the same infliction creates (abilityEvent
+   126 comes before the game resolves the infliction into a reaction; Hot
+   Work, on the reaction, stays off it): before-damage triggers on the
+   infliction now run ahead of those on the reaction (timeline/landing.ts).
+   a7a7 3.86 s and 8915 6.79 / 31.01 / 85.61 s now plain or exactly on the
+   stage factor. And her second ultimate's Amp: the cast replaces
+   Gloompurge Arcana's Amp with its own, gone by her next basic attack
+   (00ae, 8915; was up to 10 s more), kit `int_amp_ult2`. 8915's basics at
+   99–104 s ×0.84 → ×0.986 (the residue left).
+
+The 8915 share of the stage logs (323) is the stage's own factor on her
+hits (test 7: 238 of her 278 hits in its windows within 1% of it, as
+Si's and Wulfgard's); after the stage, a ×0.986 on her hits at 92–103 s
+and ×0.81–0.84 / ×1.10–1.21 steps at 104–112 s remain (not looked at).
 
 **Ruled out:** her own buffs' timing as a group (`zmdlogs timing`: her
 only patterns are funnel_0008 in 9c6e, 7 hits, and int_amp in 8915, a
@@ -758,7 +773,9 @@ f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
   reaction or physical status removes): every operator's hits ×0.5 to
   37.7 s, ×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s, ×1 from 86.8 s;
   nothing in the log's buffs marks it. Not modelled; the log is mostly
-  not checkable until it is.
+  not checkable until it is. It is all of Arcane's ×1.85 there (in-game
+  test 7, 2026-11-18: 238 of her 278 hits in the windows within 1% of the
+  factor).
 - **c83c Si's combo from ~55 s**: the engine adds Jade Vessel's next-combo
   bonus (0.7), Yinglung's Edge (0.2 ×2) and P2 ATK that the log doesn't
   list (combo +21%): buff lifetimes, maybe with "Consumed buffs end at the
