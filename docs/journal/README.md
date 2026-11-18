@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-18: Liino's and Perlica's in-game tests from the logs](2026-11-18-04-liino-s-and-perlica-s-in-game-tests-from-the-logs.md)
 - [2026-11-18: Si's misfit logs and Ardelia's build: build overrides and fit-build](2026-11-18-03-si-s-misfit-logs-and-ardelia-s-build-build-overrides-and-fit.md)
 - [2026-11-18: Liino's volley is a timer; Perlica's runs aren't her kit](2026-11-18-03-liino-s-volley-is-a-timer-perlica-s-runs-aren-t-her-kit.md)
 - [2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings](2026-11-18-02-improvement-round-3-measuring-views-a-fair-lock-engine.md)

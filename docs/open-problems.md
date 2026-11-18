@@ -1222,15 +1222,25 @@ cosmovoice_amp`, 35 log-only hits, 5 mismatches).
 **Cause: not known.** Logged gaps between consecutive beats (scratch over
 the 16 single-target Liino logs, gaps under 1.9 s): 1.17–1.89 s, most
 1.35–1.55; 4d60 a steady 1.36, c6d8 1.52, 9847 1.44–1.55. Not every beat
-is logged (gaps of 3–7 s with no stop that long), so the count per
-Cosmovoice (the kit's 9, ending at the clip's frame 477) isn't read off.
+is logged (gaps of 3–7 s with no stop that long, e.g. d774's second
+Cosmovoice: 2 beats).
+**Fixed: ten beats, not nine.** The three Cosmovoices logged with every
+beat (4bfc 55.3 s, 4d60 82.6 s, 9847 53.5 s; scratch count over every
+Liino log) have ten each and none has eleven; the kit ended the beats'
+buff with its creating clip (77–477: 9). Now it ticks at 482 too and ends
+at its 15 s duration (527) without a tick there (measure 2026-11-18:
+development plain 51.4 → 51.5%, 4d60, 9847, 9c6e better; 8915 worse, its
+stage factor; d774 worse, its replay-only beats; hold-out 2 better, 0
+worse). The finale is logged at 3 × a beat (4d60 13043 / 4348, 9090 7294
+/ 2431), as the kit.
 **Ruled out:** the values (test 6); the beats' damage where they land
-(plain or team-wide).
+(plain or team-wide); nine beats.
 **Still possible:** the beats on a clock of their own, as her volleys'
-(which runs ~5% slower, "Liino's volleys" above), here sometimes faster;
-other operators' stops placed differently from the game's (7910); a 10th
-beat (the data's clip ends at 477, the buff's own duration later); beats
-that miss an enemy out of reach going unlogged. **Next check:** pinning
+(which runs ~5% slower, "Liino's volleys" above), here sometimes faster
+(4d60 a steady 1.36 s, which would also fit ten ticks inside the 477
+clip); other operators' stops placed differently from the game's (7910,
+4bfc 152–155 s); beats that miss an enemy out of reach going unlogged.
+**Next check:** pinning
 the beats to their logged landings as the volley ticks are
 (`ticksShownByHits` needs the beats as a ticking buff, not fixed frames),
 then the finale from the last pinned beat.

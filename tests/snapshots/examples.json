@@ -344,18 +344,18 @@
   ]
  },
  "liino-laevatain.scenario.json": {
-  "total": 584043.195,
-  "hits": 61,
+  "total": 586910.232,
+  "hits": 62,
   "casts": 15,
   "perOperator": {
    "chr_0016_laevat": 478939.477,
-   "chr_0035_liino": 105103.718
+   "chr_0035_liino": 107970.755
   },
-  "digest": "4678844e1e9b",
+  "digest": "75083df84bd4",
   "windows": [
    "2a348ebd483e",
    "a79396b47fb1",
-   "44e694a06457"
+   "93fb5afc82c1"
   ]
  },
  "mifu-dapan.scenario.json": {
@@ -513,20 +513,20 @@
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5649021.106,
-  "hits": 439,
+  "total": 5654190.735,
+  "hits": 440,
   "casts": 164,
   "perOperator": {
    "chr_0034_typhoea": 4239378.223,
    "chr_0032_lizhiyan": 382783.024,
-   "chr_0035_liino": 315374.737,
+   "chr_0035_liino": 320544.366,
    "chr_0004_pelica": 711485.122
   },
-  "digest": "29fe3d80c538",
+  "digest": "9521cd6a56db",
   "windows": [
    "23c29201ecab",
    "ebaab50911e0",
-   "ad06a0dd314c",
+   "a3cd533a394f",
    "14238fe211e5",
    "45a2109beb98",
    "f66a764d253e"

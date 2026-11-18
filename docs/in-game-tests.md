@@ -150,10 +150,12 @@ every operator), 9847 23 of 28 team-wide (Avywenna and Perlica at the same
 the rest beats the replay lands at another moment. Her own ultimate buffs
 are listed now: Cosmovoice's Electric and Nature Amp in 11 logs (dbae
 0.410537 = 0.0004 × Will, the kit's formula) and its ATK (one buff with
-the stance's). Left for the replay, not the owner: 21 beats without a
-landing (logged 1.35–1.55 s apart, the kit's 1.5 s; Cosmovoice ending
-later than the replay's after time stops; open-problems.md, "Liino's
-Cosmovoice beats").
+the stance's). One kit fix from it: ten beats per Cosmovoice, not nine
+(the three Cosmovoices logged with every beat, 4bfc 55.3 s, 4d60 82.6 s,
+9847 53.5 s, have ten each, never eleven), and the finale is logged at 3
+× a beat. Left for the replay, not the owner: beats it lands at other
+moments (logged 1.35–1.55 s apart, the kit's 1.5 s; other operators'
+stops; open-problems.md, "Liino's Cosmovoice beats").
 
 **Why (2026-10):** the only log of it (ZMDLogs parser v58) implies each of the 20
 small projectiles deals 2 × the ultimate's `atk_scale`, which the data
