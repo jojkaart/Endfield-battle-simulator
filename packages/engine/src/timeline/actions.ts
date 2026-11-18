@@ -222,9 +222,10 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) break;
         const until = frame + (a.seconds === undefined ? (a.whileBuff ? Infinity : COMBO_WINDOW_FRAMES) : Math.round(evaluate(a.seconds, ec()) * FPS));
         for (const key of a.skills ? a.skills.map((id) => `${owner}>${id}`) : [owner]) {
-          // The window keeps the largest count of the events that opened it (Si's finisher reads it).
+          // The window keeps the largest count of the events that opened it (Si's finisher reads it; the engine
+          // assumption `combo-window-count`, test 10: or the latest).
           const open = st.comboWindow[key];
-          const count = Math.max(eventCountOf(e), open && open.until >= frame ? open.count : 0);
+          const count = engineReading(ctx.scenario, "combo-window-count") === "latest" ? eventCountOf(e) : Math.max(eventCountOf(e), open && open.until >= frame ? open.count : 0);
           // …and what the latest event that opened or refreshed it was (Antal's combo repeats it: assumed, the data overwrites it).
           const source = eventSourceOf(e) ?? (open && open.until >= frame ? open.source : undefined);
           st = { ...st, comboWindow: { ...st.comboWindow, [key]: { from: frame, until, count, ...(source ? { source } : {}), ...(a.whileBuff ? { whileBuff: a.whileBuff } : {}) } } };

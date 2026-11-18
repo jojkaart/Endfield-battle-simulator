@@ -48,6 +48,16 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "combo-window-count",
+    test: "10",
+    question: "When several events open (or refresh) a combo window, which count does the combo read (ValueExpr eventCount; Si's final hit: the infliction stacks consumed): the highest or the latest (timeline/actions.ts openCombo)?",
+    default: "highest",
+    readings: {
+      highest: "the highest count of the events that opened it (Si's description: \"highest stacks\")",
+      latest: "the latest event's count",
+    },
+  },
+  {
     id: "stagger-freeze",
     test: "110",
     question: "Does a freezing control status (Si's Immobilization, Tangtang's OLDEN STARE, Rossi's ultimate) hold a running Stagger's end (timeline/actions.ts runTriggers)?",

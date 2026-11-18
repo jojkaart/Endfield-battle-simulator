@@ -308,10 +308,11 @@ describe("the log's Stagger state (loggedStaggerSteps): the replay follows its l
   it("9090afbacec9: the log's two Stagger windows (53.0–69.2 s, 129.0–142.5 s), past the engine's own end", () => {
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9090afbacec9.json", import.meta.url).pathname);
     const r = logBuffReplay(data, fx).replay;
-    // The damage confirms the listing: the replay used to end the first at 64.3 s and break the bar again at 67.7 s.
+    // The damage confirms the listing: the replay used to end the first at 64.3 s and break the bar again at 67.7 s
+    // (the engine's own now ends 2 s later, at 66.7 s: the recovery, engine assumption stagger-recovery, test 110).
     expect(r.staggerSpans.length).toBe(2);
     const own = r.staggerHolds.filter((h) => h.engineUntil !== null).map((h) => Math.round(((h.engineUntil as number) * 1000) / FPS / 100) / 10);
-    expect(own[0]).toBeLessThan(65);
+    expect(own[0]).toBeLessThan(67);
     expect(own[1]).toBeLessThan(141);
     let differ = 0;
     for (const h of fx.hits) {
