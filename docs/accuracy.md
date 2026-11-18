@@ -24,7 +24,7 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 71.0% | 94.5% | 0.0% | 1.7% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 49.5% | 73.1% | 19.3% | 13.0% | 12 |
+| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 49.6% | 73.1% | 19.2% | 13.1% | 12 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 65.0% | 86.2% | 7.4% | 12.5% | 7 |
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 47.2% | 70.4% | 26.1% | 8.2% | 9 |
 | All but the hold-outs | 60 | 28693 | 49.2% | 72.6% | 21.5% | 10.1% | 27 |
@@ -58,7 +58,7 @@ commit, and how many logs got better or worse.
 | chr_0029_pograni | 5 | 649 | 29.7% | 19.3% | 2.6% |
 | chr_0030_zhuangfy | 5 | 1392 | 35.8% | 29.7% | 16.6% |
 | chr_0031_mifu | 5 | 471 | 24.8% | 37.8% | 10.2% |
-| chr_0032_lizhiyan | 39 | 5575 | 60.9% | 15.5% | 14.2% |
+| chr_0032_lizhiyan | 39 | 5575 | 61.1% | 15.4% | 14.3% |
 | chr_0033_camille | 10 | 1004 | 71.3% | 6.1% | 14.4% |
 | chr_0034_typhoea | 12 | 2081 | 60.2% | 11.6% | 4.9% |
 | chr_0035_liino | 19 | 1469 | 36.1% | 21.9% | 17.7% |

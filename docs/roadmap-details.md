@@ -200,7 +200,13 @@ the seal buff's abilityEvent 8 / 1403 / 1601 early ends, then take the end
 from the log; a7a7's INT lasers 0.4–1.1 s early; the rest is teammates'
 buffs (Liino's Medicant in 1d91, Camille's talent ATK in db87, Ardelia's
 Susceptibility in af7b), Stagger and placement (db87's Laevatain ultimate
-stop, fc63's shot count).
+stop, fc63's shot count). In-game tests 4, 7, 30, 31, 51, 57 and
+Akekuri's part of 62 decided by the logs (2026-11-18): the Corrosion
+ramp, her talent-1 Susceptibility's 10 s, the finisher's Cluster Strike and
+Akekuri's Link and P1 timer were already the engine's; two fixes
+(Solemn Phalanx's INT Arts DMG on the Corrosion its infliction forms; her
+second ultimate's own Amp, gone by her next basic attack). Left in 8915
+after its stage: ×0.986 at 92–103 s and ×0.81–1.21 steps at 104–112 s.
 
 ## Kit values from the data
 
