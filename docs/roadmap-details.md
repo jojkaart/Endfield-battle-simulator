@@ -61,10 +61,10 @@ strength one Fervent Morale layer off in 12 of 21 instances
 **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
 docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
 is the least converged of the three teams (+27% at beam 48 alone): a
-beam 96 run, or the search seeded with the found rotations; the log
-check's casts placed across others' time stops (open-problems.md,
-Typhoeus's hover: 1cd1's combo, 9090's, dbae's battle skill start up to
-3 s late) and Typhoeus's 4th shot anchored to her 5th's cast (fc63);
+beam 96 run, or the search seeded with the found rotations; casts
+across others' time stops are placed from their cast events since
+2026-11-18 (open-problems.md, Typhoeus's hover); left: Typhoeus's 4th
+shot anchored to her 5th's cast (fc63), 9c6e as a multi-target fixture;
 9090's Liino / Perlica totals (volleys, the replay's Stagger); gear
 chosen jointly with the rotation (a search per candidate set, not a
 replay).

@@ -35,7 +35,7 @@
   "totals": {"damage":-0.1,"operator chr_0035_liino":-12.8,"operator chr_0034_typhoea":0.2,"operator chr_0036_jsspsi":0,"operator chr_0032_lizhiyan":-1.5,"kind basic":0.2,"kind battle":-1.3,"kind combo":-0.1,"kind status":-4.2,"hits":-3.6,"status hits":0,"staggered hits":0,"last hit":0.1,"crit share (points)":-0.3}
  },
  "zmdlogs-dbaee23b801d.json": {
-  "chr_0034_typhoea": {"plain":33,"assumed":4,"fallback":6,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0034_typhoea": {"plain":33,"assumed":5,"fallback":5,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":3,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":25,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0011_seraph": {"plain":6,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
