@@ -6,7 +6,7 @@ import { computeHit, computeReaction, decide, finisherModifier, type DamageOptio
 import type { Modifier } from "../effects.ts";
 import { EngineError } from "../errors.ts";
 import { type EventSource, type GameData, type KitHit, type KitSkill, landedCountsAt, resolveApplication } from "../model.ts";
-import { type BattleEvent, causeMatches, eventMatches, triggerActionAt } from "../events.ts";
+import { type BattleEvent, causeMatches, eventMatches, type KitTrigger, triggerActionAt } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
 import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_INFLICTION_STACKS, NO_STATUS, ownHitEnemy, type StatusEvent } from "../status.ts";
@@ -369,8 +369,19 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // A hit computed as a burst is one for triggers too (its damage is the hit's own).
   const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" && withDamage ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
-  const beforeTriggers = st;
-  if ((statusEvents.length || burst.length) && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents([...statusEvents, ...burst], kind, castIndex), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
+  // Those on the infliction itself (inflictionApplied: the game's abilityEvent 126, sent before it resolves the
+  // infliction into a reaction) run first, so a reaction's own hit sees what they give; those on the reaction or status
+  // come after it (beforeTriggers, recordStatus). pending/zmdlogs-a7a7a40c97ed.json at 3859 ms and
+  // pending/zmdlogs-891566c224f8.json at 6787 and 31010 ms: Arcane's Corrosion hit has Solemn Phalanx's INT Arts DMG,
+  // which her battle skill's infliction creates, and not Hot Work's Nature DMG, which the Corrosion creates (test 51).
+  let beforeTriggers = st;
+  if ((statusEvents.length || burst.length) && ctx.beforeDamage) {
+    const own = asEvents([...statusEvents, ...burst], kind, castIndex);
+    const onInfliction = (t: KitTrigger) => t.on.event === "inflictionApplied";
+    st = runTriggers(ctx, st, own, { operator: hit.operator, kind }, (t) => t.beforeDamage === true && onInfliction(t), false);
+    beforeTriggers = st;
+    st = runTriggers(ctx, st, own, { operator: hit.operator, kind }, (t) => t.beforeDamage === true && !onInfliction(t), false);
+  }
   let stacksChanged: string[] = [];
   const events: BattleEvent[] = [];
   if (kitHit.gains?.length && !late) {

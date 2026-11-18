@@ -109,7 +109,28 @@ compare another operator's hit with and without Breach.
 instances, and each of the other 12 at his AI ± one Fervent Morale layer
 (combat-mechanics §3.7). No need to test by hand.
 
-### 4. Corrosion ramp (later)
+### 4. Corrosion ramp (decided by the logs, 2026-11-18: the engine's ramp; don't ask)
+
+**Decided by the logs (2026-11-18):** the engine's ramp holds: the level's
+start (3.6 / 4.8 / 6 / 7.2 points), + its step (0.84 / 1.12 / 1.4 / 1.68)
+at each full second, to the cap (12 / 16 / 20 / 24), all × the applier's
+Arts Intensity effect (reactions.ts `corrosionShred`). Every non-crit hit
+the log check compares (plain or mismatch) under a Corrosion, from
+`efsim zmdlogs hits --json`, gives the shred the log implies (the engine's
+shred plus the ratio's gap in resistance points). Of 1,897 such hits in
+27 logs under a Corrosion the plain formula describes (8915 left out: its
+stage factor), 1,156 are within 0.3 points of the engine's shred (899 of
+the 1,571 at 1 s or later); the alternatives reach at most 281 (no ramp
+267, the cap at once 84, a continuous ramp 261, the first step at 0 s 104,
+steps every 2 s 279, Arts Intensity not on the shred 281). Of 936 hits
+under a Corrosion with Arcane's raised cap, a forced Corrosion's scale or
+a carried shred, 743 are within 0.3 points. The median gap is 0 at every
+elapsed second from 0 to 15+. The misfits gather in logs with known other
+causes (8915's stage, fc63's shot placement, 9c6e's Corrosion levels,
+9847's Liino misses, 7910 and 4d60 Stagger windows, d9e5's fight-wide
+factor: [open-problems.md](open-problems.md)). The evidence below (0eef,
+bdf2) is from before the replay's fixes: their hits under Corrosion are
+now plain.
 
 **Why:** how the resistance reduction grows over time.
 **How (planned):** read the same hit's damage at 0, 5 and 15 s into
@@ -140,7 +161,37 @@ doesn't explain, and it doesn't record her own ultimate buffs.
 Arts reactions): her stat panel (ATK, Will), ultimate level, and the
 damage numbers of one ultimate, ideally recorded with the ZMDLogs client.
 
-### 7. Arcane's INT damage under her own Corrosion (ready, if you have Arcane)
+### 7. Arcane's INT damage under her own Corrosion (decided by the logs, 2026-11-18: no doubling; the Amp's length fixed; don't ask)
+
+**Decided by the logs (2026-11-18):** 1.6 INT Arcane does not deal twice
+the model. Her hits in the 1.6 INT logs (base 9fa151b): 00ae 149 plain,
+28 assumed, 0 mismatch; a7a7 229 plain, 20 assumed, 19 mismatch. 8915's
+opposite miss (the engine ×1.85 the log) is that log's stage
+([open-problems.md](open-problems.md) "8915's stage"): of her 278 hits in
+its windows, 238 are within 1% of the window's factor (×0.5 to 37.7 s,
+×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s), as are Si's, Liino's and
+Wulfgard's in the same windows (Si 114 of 138, Wulfgard 59 of 71); after
+86.8 s (×1) her hits fit but for the Amp below. d9e5 (the old game-1.5
+log) keeps its fight-wide ×1.12–1.20 on every operator.
+
+**The Amp (the second question), from the listing:** her talent-1 Amp
+(`buff_common_affixes_enhance_spell` from her) lasts the array: listed on
+her hits until it ends (00ae 66.32 s, gone by 66.71; the replay's array
+ends 66.70; a7a7 53.00 / 53.96 against 53.97; 8915 94.37 / 95.37 against
+95.37). Gloompurge Arcana relists it (00ae from 66.71 s) until her second
+ultimate's cast replaces it with the ultimate's own (00ae 68.61 s, 8915
+97.85 s, a7a7 54.22 s; the game buff has one instance), which is on the
+ultimate's hit and the lasers around it and gone by her next basic attack
+(00ae 70.83 s, 8915 99.40 s): the data's CreateBuffAction on ultimate 2
+with autoFinishByAction and finishWithNextSkillIfNotInherited. The engine
+kept the Gloompurge Amp up to 10 s after the second ultimate: 8915's basic
+attacks at 99.4–104 s were ×0.84 the log's (0.24 of 1.54 Amp). Arcane's
+kit now ends it at the second ultimate's cast and gives the ultimate its
+own (`int_amp_ult2`, ended by her next basic attack, at most the skill's
+287 frames); those hits are plain or at the 8915 residue of ×0.986. In
+a7a7 her battle skill right after the second ultimate (56.34 s) still has
+it, so only a basic attack is written to end it; whether a combo or
+battle skill does is open (no log has one before a basic attack there).
 
 **Why:** in the only INT log (btl_upload_d9e59d0fb737, possibly still game
 1.5) all damage after her ultimate is about twice the model; WILL logs from
@@ -728,7 +779,20 @@ ultimate; see test 8), and Liino's talent-2 SP.
   right after Cloudtrapper, which would use the Link itself): is Link used
   up? Engine: yes.
 
-### 30. Arcane's talent-1 Susceptibility duration (ready, if you have Arcane)
+### 30. Arcane's talent-1 Susceptibility duration (decided by the logs, 2026-11-18: 10 s; don't ask)
+
+**Decided by the logs (2026-11-18):** 10 s from the ultimate's hit (the
+ultimate's own stop comes before the hit), as the engine has it, not 20 s.
+Her listed Nature and Cryo Susceptibility whose `since` is an ultimate's
+hit (55 windows in the 29 verified and pending logs that list it): of the windows
+neither a refresh nor the fight's end cuts, the tightly bracketed ones end
+10.4–10.6 s (9090 at 131.6 s; the replay 10.4 s), 10.8–10.9 s (3aa6 at
+87.2 s), 11.2–11.6 s (c6d8), 11.7–11.8 s (9c0b at 16.9 s) and 14.9–15.1 s
+(f978, with ultimates' stops in it; the replay 14.97 s) after the hit; none
+lasts 20 s plus its stops. The engine's end and the log's differ by −1.1
+to +3 s in some windows (c83c at 32.3 s +2.9 s, fc63 at 84.1 s ≥ +2.5 s,
+9c0b at 31.5 s −0.7 to −1.1 s): what holds an enemy's timers (her
+Imprisonment, combos' slow-downs; tests 37 and 110), not the duration.
 
 **Why (optional confirmation):** in WILL mode her ultimates give the
 enemy Nature and Cryo Susceptibility (up to 12.8%, +7% at P5). A closer
@@ -739,7 +803,23 @@ after the hit, which fits 10 s plus the time stop.
 Susceptibility icon from the ultimate's hit. About 10 s or 20 s, plus the
 ultimate's 1.6 s time stop if it's frozen.
 
-### 31. Finishers inside Arcane's array (ready, if you have Arcane)
+### 31. Finishers inside Arcane's array (decided by the logs, 2026-11-18: yes; don't ask)
+
+**Decided by the logs (2026-11-18):** a finisher by the controlled
+operator inside the array is a Cluster Strike: four lasers (and the
+energy). Five laser clusters follow a finisher with no Final Strike near
+(pending 00ae 61.60 → 62.02 s, 4d60 57.21 → 57.59, a7a7 49.92 → 50.35,
+multi-target 2b01 110.36 → 110.79 and c516 49.68 → 50.10), each four
+lasers about 0.4 s after the finisher's first hit, the finisher path's
+frames 12/16/20/24 (4d60: logged 57.59 / 57.70 / 57.89 / 57.98, the
+replay 57.60 / 57.73 / 57.87 / 58.00). The engine already had this half
+(trigger `cluster_strike_finisher`, Arcane's kit; the text below was
+stale): its replay lands all four lasers of all five clusters. A finisher
+and a Final Strike at the same moment give one strike, not two (b6aa
+46.63 s: Arcane's attack 5 and Si's finisher, four lasers at 47.05–47.40,
+the finisher path's frames). Left: only the 8 SP of her own finisher,
+which no log records (a fortieth of the bar; not testable by hand). Seen
+with `efsim zmdlogs replay <fixture>` (the laser and power_attack lines).
 
 **Why:** in the data, Cluster Strike (four lasers and half her energy)
 comes from a Final Strike by the controlled operator or from a finisher.
@@ -1088,7 +1168,35 @@ Solidifications within 1 s should give one step, not two, but they can't
 be timed by hand reliably; skip that part.) If the gauge doesn't show such
 a small step, this one is not testable by hand.
 
-### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, Da Pan with Ancient Canal, or Ardelia with Dreams of the Starry Beach; Hot Work answered by the logs)
+### 51. Does an effect a hit triggers count on that same hit? (Solemn Phalanx, Starry Beach and Hot Work decided by the logs, 2026-11-18: yes; ready only for Da Pan with Ancient Canal)
+
+**Decided by the logs (2026-11-18), Solemn Phalanx and Dreams of the
+Starry Beach:** both count on the hit that creates them (the engine's
+reading). Every hit whose own time starts the buff's listing
+(`since` = the hit), against `efsim zmdlogs hits`:
+- **Solemn Phalanx** (INT Arts DMG, `buff_wpn_funnel_0016_wisd_natureup`,
+  from her battle skill's infliction): 00ae 7.42 s (combo explosion,
+  +0.40) and a7a7 3.86 s (explosion and battle skill, +0.44) are three
+  plain exact hits with it on; 8915's (6.79, 31.01, 85.61 s) sit exactly
+  on that log's stage factor (×0.5 / ×0.2) with it on. **New:** the
+  Corrosion that same infliction forms also has it on its own hit, which
+  the engine had left without: a7a7 3.86 s logged 54,365 against 41,356,
+  exactly (1.399 + 0.44) / 1.399 of Arcane's Nature DMG zone; 8915 6.79 and
+  31.01 s ×1.229 = (1.399 + 0.32) / 1.399 beyond the stage's ×0.5. Hot
+  Work's Nature DMG (from the Corrosion itself) stays off it, as
+  3f78 / 4a64 showed. Mechanism: the weapon listens to abilityEvent 126
+  (the wearer applies an infliction), which the game sends before it
+  resolves the infliction into a reaction; Hot Work listens to the reaction.
+  The engine now runs before-damage triggers on the infliction ahead of
+  those on the reaction (timeline/landing.ts), and the three hits are plain
+  exact (8915's on its stage factor).
+- **Dreams of the Starry Beach** (Ardelia, `buff_wpn_funnel_0013_valid`,
+  0.16–0.18, with her Susceptibility from the consumed Corrosion): her
+  battle skill is plain exact with it on at 1cd1 21.46, 4e36 8.84 / 31.54 /
+  51.48, 79cc 10.15 / 29.77, c3c7 11.48, f879 14.30 / 58.75 / 100.10 /
+  123.75 s (11 hits; f879 also a crit follow-up and a basic at the same
+  moment).
+- **Ancient Canal** (Da Pan): worn in no log; that variant stays ready.
 
 **Partly answered (2026-11-11, zmdlogs-3f78ceb15bc3, 4a64e58e75ad):** Hot
 Work's Nature DMG, made when a hit forms a Corrosion, counts on that hit
@@ -1230,7 +1338,17 @@ sealed (her crystals on it) and twice while it isn't. Is the Crush number
 about ×1.2 when sealed? (Status hits can crit: take the two lowest of
 each.)
 
-### 57. Akekuri's Link during her ultimate (ready, if you have Akekuri)
+### 57. Akekuri's Link during her ultimate (decided by the logs, 2026-11-18: ×1.30, one Link; don't ask)
+
+**Decided by the logs (2026-11-18):** one Link stack, ×1.30 multiplicative
+(the engine's reading). pending/zmdlogs-458b03609665.json, the only log
+with her ultimate (84.4, 160.4 and 227.4 s): Laevatain's battle-skill hits
+during the first two (`normal_skill_during_ult`) are five plain exact
+matches with `Link (1)` = 0.30 on them (91,043, 102,079 and 293,585 at
+92.9–94.3 s; 96,842 and 108,581 at 163.2–163.7 s), and a fixed +20% would
+miss them by about 8%. The ×1.45 variant (a Camille or Lifeng combo just
+before) has no log with Akekuri; the 012a Links are Camille's (no Akekuri
+ultimate in it).
 
 **Why:** her talent 2 gives the team a Link stack during her ultimate
 (batch 2, B1): a teammate's battle skill then deals ×1.30 (one Link), ×1.45
@@ -1310,7 +1428,21 @@ Alternatives (the owner doesn't use these two, so low priority):
   controlled): a swing within about 1 s (mark, engine), or only about 7 s
   later.
 
-### 62. Layers on one timer: does each new layer restart it? (ready, if you have Chen; or Akekuri at P1+, Yvonne or Ember)
+### 62. Layers on one timer: does each new layer restart it? (ready, if you have Chen; Akekuri's part decided by the logs, 2026-11-18: each layer restarts it; or Yvonne or Ember)
+
+**Akekuri's P1 decided by the logs (2026-11-18):** each new layer restarts
+the shared timer (the engine's reading). pending/zmdlogs-458b03609665.json
+is the one clean case: her P1 ATK layers (`positive_feedback`, from her
+skills' SP) come at 156.07, 158.40, 160.50, 161.80 and 162.90 s, and her
+basic attacks at 167.13–172.82 s are 11 plain exact hits with all five
+layers (the replay ends them together at 173.83 s, 10 s plus 0.9 s of stops
+after the last). Expiring with the first layer would leave none from about
+167 s, and own timers only one or two by 172 s (each layer is +10% ATK,
+several % per layer on those hits, far beyond rounding). The listing runs
+to 173.9 s: her three hits at 173.88 s still have the layers where the
+replay has just ended them (by 0.05 s; noted, not chased). Chen's,
+Yvonne's and Ember's cases (the same question) are still open; Chen's needs
+the damage per layer count (8 logs).
 
 **Why:** buffs whose layers share one timer (the data's stackingType 8:
 Chen's talent 1, Perlica's P3, Da Pan's talent 1, Akekuri's P1, Æthertech,

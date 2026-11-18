@@ -100,6 +100,12 @@ full energy, +0.66% ± 0.52 from zero (noise), and one press fewer.
 | First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
 
+**Arcane's and Akekuri's tests from the logs (2026-11-18; in-game tests 4, 7, 30, 31, 51, 57, 62):** the Corrosion
+ramp, her Susceptibility's 10 s, the finisher's Cluster Strike, Akekuri's ×1.30 Link and her P1 timer were already
+the engine's; the two fixes (Solemn Phalanx's INT Arts DMG on the Corrosion its infliction forms, her second
+ultimate's own Amp) need Intellect ≥ Will, and this Arcane plays WILL. The same seeds at 9384cb0: **53,780 /
+52,744** (sd 1,193 / 1,541), within 0.01% of the row above, and the 60 s examples' snapshots didn't move.
+
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** bosses
 freeze (Rhodagn: Si's freezes hold every debuff) 56,493 → 56,716 / 56,055
 → 56,141; Haste no longer speeds casts → 55,278 / 55,598 (−2.5% / −1.0%);

@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 101 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 102 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -77,6 +77,54 @@ to an existing overshoot), mixed 4. Team (32 seeds): 52,374 → 52,529 / 48,973 
 volley's own, not beats: only 1d91 and 7910 moved, both worse (their stance was cast before the log). Pinning every
 ticking buff to its logged hits also fixed Rossi's bleed (489c mismatch 124 → 111) but is outside this task: opt-in
 for Liino only, a lead for Rossi's kit.
+
+## 2026-11-18: Arcane's and Akekuri's in-game tests from the logs
+
+**Goal:** decide from the logs the in-game tests on Arcane and Akekuri (the owner's team and Typhoeus's): 31, 51, 7,
+30, 4, 57, 62 (the "Logs first" rule; the claims of docs/in-game-tests-retriage-01-40.md and -41-75.md checked, not
+taken).
+
+**Decided** (each in its own section of docs/in-game-tests.md, "Decided by the logs (2026-11-18)"):
+- **31** (finishers in the array): a finisher alone is a Cluster Strike, four lasers about 0.4 s after its first hit
+  (00ae, 4d60, a7a7, 2b01, c516). The engine already had it (`cluster_strike_finisher`): the re-triage's "the engine
+  only has the Final Strike trigger" was stale; the replay lands all 20 lasers. A finisher and a Final Strike together
+  are one strike (b6aa 46.6 s, four lasers).
+- **51** (a hit's own effect on that hit): Solemn Phalanx (3 plain exact; 8915's on its stage factor) and Starry Beach
+  (11 plain exact) count on the hit that creates them. New: Solemn Phalanx's INT Arts DMG is also on the Corrosion the
+  same infliction forms (a7a7 3.86 s exactly (1.399 + 0.44) / 1.399; 8915 twice at 0.32), Hot Work's (from the
+  Corrosion) isn't.
+- **7** (INT Arcane ×2?): no; 00ae and a7a7 fit, 8915's ×1.85 is all its stage (238 of her 278 hits in the stage's
+  windows within 1% of its factor, as Si's and Wulfgard's). The Amp lasts the array, Gloompurge relists it, and the
+  second ultimate's cast replaces it with its own, gone by her next basic attack (00ae, 8915): the engine kept it up
+  to 10 s more.
+- **30** (her Susceptibility's length): 10 s from the hit (tight windows 10.4–11.8 s; none 20 s); the −1 to +3 s
+  differences are timer holds (tests 37, 110).
+- **4** (the Corrosion ramp): the engine's ramp; 1,156 of 1,897 non-crit hits under a plain-formula Corrosion within
+  0.3 points of its shred, alternatives at most 281; 743 of 936 with raised caps / forced scales / carried shreds.
+- **57** (Akekuri's Link): ×1.30, five plain exact Laevatain battle-skill hits in 458b.
+- **62, Akekuri's part**: each layer restarts the shared timer (458b: 11 plain exact basics at 167–173 s with all five
+  layers); Chen's, Yvonne's and Ember's parts stay open.
+
+**Engine changes** (both kept: no log worse without explanation, hold-out not worse):
+1. Before-damage triggers on the infliction (`inflictionApplied`: the game's abilityEvent 126, sent before it resolves
+   the infliction into a reaction) run ahead of those on the reaction, so a Corrosion's (or Combustion's) own hit sees
+   what they give (timeline/landing.ts). Only Solemn Phalanx (INT) changes a wearer's own Corrosion hit in practice.
+2. Arcane's kit: `int_amp_ult2`, the second ultimate's own Amp (ends Gloompurge's at the cast; ended by her next basic
+   attack, at most the skill's 287 frames). A first try with `endsWithCast` cut it before the ultimate's own hit in
+   a7a7 (a battle skill placed inside the cast) and made a7a7 and a hold-out worse; a7a7 also shows her battle skill
+   right after keeping it, so only a basic attack ends it.
+
+**Scoreboard** (docs/accuracy.md from `npm run snapshots:update`, against 9fa151b): development
+plain 49.5 → 49.6%, mismatch 19.3 → 19.2%, mean |damage error| 13.0 → 13.1% (00ae's total: its post-ultimate hits
+moved from −40% to −15% each, unquantified, under a total already below the log); hold-out unchanged in the
+aggregates (1 log better, none worse); 8915 plain 101 → 113, a7a7 352 → 353; Arcane's row plain 60.9 → 61.1%.
+
+**Teams:** both play Arcane in WILL, where neither change acts (Solemn Phalanx's INT trigger and the second
+ultimate's Amp need Intellect ≥ Will): the example snapshots didn't move.
+
+**Left:** 8915 after its stage (×0.986 at 92–103 s, ×0.81–1.21 steps at 104–112 s); whether a combo or battle skill
+ends the second ultimate's Amp; the 0.05 s by which Akekuri's P1 outlives the replay's end in 458b; her own finisher's
+8 SP (no log records SP).
 
 ## 2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings
 
@@ -407,43 +455,3 @@ others in 3aa6), and the level readings that differ are in 3aa6 and
 d774. Breach can't be checked from the hit export (it lists no physical
 statuses). Of 79 Artful Intent bursts, 39 are credited to Final Stroke
 and 33 to an Inksoul expiry; 7 deal no Stagger and record no path.
-
-## 2026-11-16: Improvement round 2: package boundaries, CLI commands, design.md split
-
-Goal (the lead): the larger restructures of the architecture review
-(12–14) and the open friction points, behaviour-preserving throughout.
-Summary: docs/friction-done/2026-11-16-round-2.md.
-
-Done, one commit (or two) per item, in order:
-- **Quick wins:** `npm run lint:changed`; premerge skips the suites when
-  typecheck or lint fails; the game-data cache keys only on what the
-  build runs and says why it rebuilds; `framesOf` / `withSeconds`;
-  `node scripts/with-lock.ts`, `scripts/at-commit.ts`, a per-file
-  progress reporter for background vitest runs; one snapshot writer and
-  `scripts/snapshot-keys.ts`; status tests on `toMatchObject`;
-  `PolicyObserver.check` / `.press`; pending shards balanced by measured
-  time (longest shard 79 → 54 s of check time).
-- **CLI:** one module per command (`packages/cli/src/commands/`); the
-  usage text is byte for byte the old one.
-- **Engine:** `core.ts` (`@efsim/engine/core`) and `planning/`, with
-  lint-enforced boundaries; the data package imports only the core.
-- **Logs:** `packages/logs` (`@efsim/logs`), the logcheck ⇄ enginecheck
-  cycle broken; `efsim zmdlogs` is a thin wrapper.
-- **Docs:** design.md is the principles and an index; the sections are in
-  docs/design/; `npm run links` (and a test) checks relative links.
-
-Checks: after every item `npm test` passed and 42–48 CLI invocations gave
-the same output as 1de265e (scratch/at/, `scripts/at-commit.ts`), apart
-from timings and the provenance line. `npm run snapshots:update` after
-item 4 left every snapshot and docs/accuracy.md byte for byte as they
-were: the scoreboard didn't move.
-
-Decisions: the planning code moved into a folder (a visible boundary,
-simple lint globs) while the core stayed where it was, so tests' deep
-imports into timeline/* still work; `@efsim/cli` re-exports `@efsim/logs`
-so older imports work; setup-worktree now also links a new workspace
-package in the main checkout (packages/logs), so main runs after the
-merge without `npm install`. Not done (carried to
-docs/friction/2026-11-16-backlog-after-round-2.md): one module for data
-file reads, facts on status landings, a structured status on modifiers,
-the test-helper moves, the SP anchor, search-time tables.
