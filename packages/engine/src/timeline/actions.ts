@@ -10,7 +10,7 @@ import { type EvalContext, evaluate } from "../expr.ts";
 import { type ActiveBuff, applyBuff, buffEndedEvent, buffReach, endBuff, endBuffFor, extendBuff, reaches, withBuff } from "../buffs.ts";
 import { applyToEnemy, expireStatus } from "../status.ts";
 import { FPS } from "../units.ts";
-import type { Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
+import type { Clock, Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES, hasteFrames } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
 import { controlImmune, shiftDebuffs, shiftEnemy } from "./clock.ts";
@@ -377,7 +377,8 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         const pending: PendingHit[] = [];
         // `now`: its frame-0 hits land as the action runs, before the trigger's next action (a DamageAction inside an event handler).
         const landNow: PendingHit[] = [];
-        const clock = { operator: owner };
+        // A buff's or entity's timeline (`world`) is held by every slow-down, its owner's own too; else the owner's clock.
+        const clock: Clock = a.world ? "world" : { operator: owner };
         for (const h of a.hits) {
           // A count that's a value is judged as the action runs.
           (typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, ec()))).forEach((f, i) => {

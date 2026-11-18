@@ -294,9 +294,13 @@ export type TriggerActionKind =
    * Land hits, as the owner, at frames counted from the event (values from
    * the trigger's `skill`); each names its damage type. `now`: its frame-0
    * hits land as the action runs, before the trigger's next action (a
-   * DamageAction inside the game's event handler).
+   * DamageAction inside the game's event handler). `world`: on the world's
+   * clock, not the owner's: every slow-down holds them, the owner's own
+   * ultimate stop and combo slow-down too (hits a buff's or an ability
+   * entity's timeline deals: the game runs buffs on the world's time,
+   * docs/design/timeline.md "Time").
    */
-  | { readonly kind: "hits"; readonly hits: readonly KitHit[]; readonly now?: boolean }
+  | { readonly kind: "hits"; readonly hits: readonly KitHit[]; readonly now?: boolean; readonly world?: boolean }
   /**
    * One option's actions, picked at random when the action runs: option i with probability weight_i / Σ weights
    * (weights judged then; 0 excludes an option, all 0 runs none), rolled on the battle's `chance` stream

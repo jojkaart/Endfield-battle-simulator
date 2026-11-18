@@ -133,7 +133,12 @@ plumbing (rules.ts `hasteFrames`) stays for an effect that does speed
 casts. Until 2026-11-16 a hasted cast played faster.
 **Waiting on the enemy's clock**: what a buff on the enemy does after its
 `triggerInterval` (`waitFirstTriggerInterval`) is held by every time stop,
-the caster's own included. An Arts Burst lands `burstDelayFrames` (1 s)
+the caster's own included. Likewise a trigger's hits marked `world` (the
+hits a buff's or an ability entity's timeline deals, as Arcane's Cluster
+Strike lasers and her INT early end's lasers): they run on the world's
+clock, so the owner's own ultimate stop holds them too, where hits on the
+owner's clock aren't (2026-11-18: a7a7a40c97ed's lasers after her
+Gloompurge Arcana's stop). An Arts Burst lands `burstDelayFrames` (1 s)
 after the infliction that made it, on its operator's clock: others' time
 stops and slow-downs hold it, also ones already running when it's made
 (`operatorClockDue`), its own operator's don't, nor a freeze (its buff

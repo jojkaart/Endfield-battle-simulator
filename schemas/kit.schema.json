@@ -1489,6 +1489,10 @@
                     "now": {
                       "type": "boolean",
                       "description": "Its frame-0 hits land as the action runs, before the trigger's next action (a DamageAction inside the game's event handler)."
+                    },
+                    "world": {
+                      "type": "boolean",
+                      "description": "On the world's clock, not the owner's: every slow-down holds the hits, the owner's own ultimate stop and combo slow-down too (hits a buff's or an ability entity's timeline deals: the game runs buffs on the world's time)."
                     }
                   }
                 },

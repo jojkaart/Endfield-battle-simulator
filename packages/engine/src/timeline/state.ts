@@ -132,7 +132,7 @@ export interface EnemyAction {
 
 /**
  * The clock a scheduled item runs on (docs/design/timeline.md "Time"): a slow-down or freeze that stops that clock delays it
- * (clock.ts). `world`: everything but the operators (nothing scheduled runs on it today); `enemy`: the enemy's own
+ * (clock.ts). `world`: everything but the operators (a trigger's `world` hits: a buff's or entity's timeline, held by every slow-down, the owner's own too); `enemy`: the enemy's own
  * (its actions, Arts Bursts), which a freeze stops too; an operator's: its casts' hits, delayed actions, team
  * energy and jumps.
  */

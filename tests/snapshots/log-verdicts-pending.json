@@ -3,8 +3,8 @@
   "chr_0016_laevat": {"plain":129,"assumed":13,"fallback":8,"mismatch":28,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0006_wolfgd": {"plain":81,"assumed":10,"fallback":0,"mismatch":10,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0033_camille": {"plain":145,"assumed":0,"fallback":13,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":156,"assumed":32,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-8.8,"operator chr_0006_wolfgd":-1.2,"operator chr_0033_camille":-1.8,"operator chr_0016_laevat":-11.2,"operator chr_0032_lizhiyan":-2.2,"kind basic":-4.1,"kind battle":-12.2,"kind combo":-2.8,"kind status":-20.4,"kind ultimate":0.5,"hits":0,"status hits":-14.6,"staggered hits":-6.4,"last hit":0,"crit share (points)":0.1}
+  "chr_0032_lizhiyan": {"plain":157,"assumed":32,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "totals": {"damage":-8.8,"operator chr_0006_wolfgd":-1.2,"operator chr_0033_camille":-1.8,"operator chr_0016_laevat":-11.2,"operator chr_0032_lizhiyan":-2.1,"kind basic":-4.1,"kind battle":-12.2,"kind combo":-2.8,"kind status":-20.4,"kind ultimate":0.6,"hits":0,"status hits":-14.6,"staggered hits":-6.4,"last hit":0,"crit share (points)":0.1}
  },
  "holdout/zmdlogs-0a35d0ad00b4.json": {
   "chr_0016_laevat": {"plain":126,"assumed":24,"fallback":12,"mismatch":0,"unvalued":0,"unquantified":11,"uncovered":0},
@@ -57,10 +57,10 @@
  },
  "holdout/zmdlogs-7bbc94d2da9f.json": {
   "chr_0035_liino": {"plain":28,"assumed":1,"fallback":0,"mismatch":6,"unvalued":0,"unquantified":7,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":54,"assumed":4,"fallback":0,"mismatch":5,"unvalued":0,"unquantified":55,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":55,"assumed":4,"fallback":0,"mismatch":4,"unvalued":0,"unquantified":55,"uncovered":0},
   "chr_0013_aglina": {"plain":17,"assumed":2,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":21,"uncovered":0},
   "chr_0036_jsspsi": {"plain":20,"assumed":7,"fallback":1,"mismatch":8,"unvalued":0,"unquantified":19,"uncovered":0},
-  "totals": {"damage":-0.7,"operator chr_0036_jsspsi":-2.2,"operator chr_0032_lizhiyan":-0.4,"operator chr_0035_liino":5.1,"operator chr_0013_aglina":-1.4,"kind basic":0.2,"kind battle":-0.7,"kind combo":-3,"kind none":0.6,"kind status":-11,"kind ultimate":0,"hits":2,"status hits":0,"staggered hits":0,"last hit":0,"crit share (points)":-0.1}
+  "totals": {"damage":-0.4,"operator chr_0036_jsspsi":-2.2,"operator chr_0032_lizhiyan":0,"operator chr_0035_liino":5.1,"operator chr_0013_aglina":-1.4,"kind basic":0.2,"kind battle":-0.7,"kind combo":-3,"kind none":0.6,"kind status":-11,"kind ultimate":0.7,"hits":2,"status hits":0,"staggered hits":7.4,"last hit":0,"crit share (points)":-0.1}
  },
  "holdout/zmdlogs-7be1ca9f455b.json": {
   "chr_0036_jsspsi": {"plain":46,"assumed":19,"fallback":8,"mismatch":1,"unvalued":0,"unquantified":9,"uncovered":0},
@@ -95,7 +95,7 @@
   "chr_0032_lizhiyan": {"plain":149,"assumed":28,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":58,"uncovered":0},
   "chr_0013_aglina": {"plain":97,"assumed":1,"fallback":4,"mismatch":2,"unvalued":0,"unquantified":28,"uncovered":0},
   "chr_0004_pelica": {"plain":70,"assumed":3,"fallback":0,"mismatch":9,"unvalued":0,"unquantified":3,"uncovered":0},
-  "totals": {"damage":-5.2,"operator chr_0032_lizhiyan":-6,"operator chr_0013_aglina":0.6,"operator chr_0034_typhoea":-5.5,"operator chr_0004_pelica":7.4,"kind basic":-3.8,"kind battle":6.8,"kind combo":-3.5,"kind status":70.7,"kind ultimate":-27.6,"hits":2.7,"status hits":11.1,"staggered hits":-3.4,"last hit":0,"crit share (points)":0.1}
+  "totals": {"damage":-5.1,"operator chr_0032_lizhiyan":-5.8,"operator chr_0013_aglina":0.6,"operator chr_0034_typhoea":-5.5,"operator chr_0004_pelica":7.4,"kind basic":-3.8,"kind battle":6.8,"kind combo":-3.5,"kind status":70.7,"kind ultimate":-27,"hits":2.7,"status hits":11.1,"staggered hits":-0.9,"last hit":0,"crit share (points)":0.1}
  },
  "pending/zmdlogs-012ae1c80ae6.json": {
   "chr_0016_laevat": {"plain":101,"assumed":8,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -226,9 +226,9 @@
  "pending/zmdlogs-79cc42ff7a18.json": {
   "chr_0016_laevat": {"plain":71,"assumed":8,"fallback":7,"mismatch":0,"unvalued":0,"unquantified":4,"uncovered":0},
   "chr_0036_jsspsi": {"plain":54,"assumed":5,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":7,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":142,"assumed":6,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":143,"assumed":6,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0025_ardelia": {"plain":118,"assumed":8,"fallback":0,"mismatch":17,"unvalued":0,"unquantified":1,"uncovered":0},
-  "totals": {"damage":-3.4,"operator chr_0032_lizhiyan":-0.3,"operator chr_0025_ardelia":1.5,"operator chr_0036_jsspsi":-5.9,"operator chr_0016_laevat":-2.4,"kind basic":-4,"kind battle":-4.6,"kind combo":0,"kind status":-9,"kind ultimate":-2.9,"hits":4.8,"status hits":0,"staggered hits":-2.4,"last hit":0,"crit share (points)":0.1}
+  "totals": {"damage":-3.4,"operator chr_0032_lizhiyan":-0.4,"operator chr_0025_ardelia":1.5,"operator chr_0036_jsspsi":-5.9,"operator chr_0016_laevat":-2.4,"kind basic":-4,"kind battle":-4.6,"kind combo":0,"kind status":-9,"kind ultimate":-3,"hits":4.8,"status hits":0,"staggered hits":-2.4,"last hit":0,"crit share (points)":0.1}
  },
  "pending/zmdlogs-7b54dc249bcd.json": {
   "chr_0033_camille": {"plain":0,"assumed":0,"fallback":1,"mismatch":29,"unvalued":0,"unquantified":0,"uncovered":1},
@@ -256,7 +256,7 @@
   "chr_0032_lizhiyan": {"plain":288,"assumed":37,"fallback":46,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0004_pelica": {"plain":101,"assumed":13,"fallback":16,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":83,"assumed":3,"fallback":85,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-5.4,"operator chr_0035_liino":-15,"operator chr_0032_lizhiyan":-4.5,"operator chr_0034_typhoea":-4.8,"operator chr_0004_pelica":-13,"kind basic":-4.9,"kind battle":-15.1,"kind combo":-8.8,"kind status":-2.6,"kind ultimate":-6.7,"hits":-1.1,"status hits":0,"staggered hits":-30.3,"last hit":0,"crit share (points)":0.2}
+  "totals": {"damage":-5.4,"operator chr_0035_liino":-15,"operator chr_0032_lizhiyan":-4.5,"operator chr_0034_typhoea":-4.8,"operator chr_0004_pelica":-13,"kind basic":-4.9,"kind battle":-15.1,"kind combo":-8.8,"kind status":-2.6,"kind ultimate":-6.8,"hits":-1.1,"status hits":0,"staggered hits":-30.3,"last hit":0,"crit share (points)":0.2}
  },
  "pending/zmdlogs-92b450306768.json": {
   "chr_0032_lizhiyan": {"plain":1,"assumed":1,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -298,7 +298,7 @@
   "chr_0032_lizhiyan": {"plain":108,"assumed":6,"fallback":23,"mismatch":8,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0033_camille": {"plain":60,"assumed":6,"fallback":28,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":71,"assumed":24,"fallback":20,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-12.7,"operator chr_0032_lizhiyan":-9.9,"operator chr_0033_camille":-14.3,"operator chr_0016_laevat":-12.3,"operator chr_0036_jsspsi":-8.8,"kind basic":-18.1,"kind battle":-10.1,"kind combo":-12.1,"kind status":-13.6,"kind ultimate":-4.2,"hits":3.1,"status hits":4,"staggered hits":-15.7,"last hit":0,"crit share (points)":0.2}
+  "totals": {"damage":-12.7,"operator chr_0032_lizhiyan":-9.9,"operator chr_0033_camille":-14.3,"operator chr_0016_laevat":-12.3,"operator chr_0036_jsspsi":-8.8,"kind basic":-18.1,"kind battle":-10.1,"kind combo":-12.1,"kind status":-13.6,"kind ultimate":-4.2,"hits":3.1,"status hits":4,"staggered hits":-15.7,"last hit":0,"crit share (points)":0.1}
  },
  "pending/zmdlogs-9c6e97486a9d.json": {
   "chr_0034_typhoea": {"plain":44,"assumed":35,"fallback":32,"mismatch":58,"unvalued":0,"unquantified":4,"uncovered":0},
@@ -316,10 +316,10 @@
  },
  "pending/zmdlogs-a7a7a40c97ed.json": {
   "chr_0006_wolfgd": {"plain":31,"assumed":1,"fallback":0,"mismatch":13,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":222,"assumed":18,"fallback":1,"mismatch":28,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":229,"assumed":20,"fallback":1,"mismatch":19,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":65,"assumed":24,"fallback":1,"mismatch":5,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":27,"assumed":1,"fallback":0,"mismatch":21,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-0.9,"operator chr_0036_jsspsi":-1.1,"operator chr_0006_wolfgd":-2.8,"operator chr_0032_lizhiyan":-0.7,"operator chr_0035_liino":2.4,"kind basic":0.7,"kind battle":0.2,"kind combo":-2.3,"kind status":-2.6,"kind ultimate":-1.2,"hits":2,"status hits":7.1,"staggered hits":1.9,"last hit":0,"crit share (points)":0}
+  "totals": {"damage":-1,"operator chr_0036_jsspsi":-1.1,"operator chr_0006_wolfgd":-2.8,"operator chr_0032_lizhiyan":-0.9,"operator chr_0035_liino":2.4,"kind basic":0.7,"kind battle":0.2,"kind combo":-3.1,"kind status":-2.6,"kind ultimate":-0.6,"hits":2,"status hits":7.1,"staggered hits":1.9,"last hit":0,"crit share (points)":0.3}
  },
  "pending/zmdlogs-a9d7fcb089c5.json": {
   "chr_0005_chen": {"plain":0,"assumed":0,"fallback":1,"mismatch":185,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -378,7 +378,7 @@
   "totals": {"damage":32.9,"operator chr_0030_zhuangfy":24.7,"operator chr_0035_liino":38.6,"operator chr_0004_pelica":135.2,"operator chr_0032_lizhiyan":142.5,"kind basic":68,"kind battle":36,"kind combo":1.4,"kind status":20.8,"kind ultimate":38.1,"kind uncovered":-100,"hits":3.8,"status hits":0,"staggered hits":-37.5,"last hit":0,"crit share (points)":0.3}
  },
  "pending/zmdlogs-c7790d76a4f0.json": {
-  "chr_0032_lizhiyan": {"plain":203,"assumed":17,"fallback":6,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":204,"assumed":19,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":78,"assumed":23,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0006_wolfgd": {"plain":63,"assumed":6,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0016_laevat": {"plain":36,"assumed":7,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},

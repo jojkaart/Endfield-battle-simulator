@@ -77,7 +77,7 @@ function checkLandedCount(h: RawHit, count: ValueExpr, triggered: boolean, where
 
 type RawAction =
   | Exclude<TriggerAction, { kind: "hits" } | { kind: "choose" }>
-  | { kind: "hits"; hits: RawHit[]; if?: Predicate; now?: boolean }
+  | { kind: "hits"; hits: RawHit[]; if?: Predicate; now?: boolean; world?: boolean }
   | { kind: "choose"; options: { weight: ValueExpr; do: RawAction[] }[]; if?: Predicate };
 
 /**
@@ -756,7 +756,7 @@ function kitChecker(scope: KitScope) {
     const normalize = (list: readonly RawAction[]): TriggerAction[] =>
       list.map((a) =>
         a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) }
-        : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), ...(a.now ? { now: true } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w), buffTick: t.on.event === "buffTick" }, where) }
+        : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), ...(a.now ? { now: true } : {}), ...(a.world ? { world: true } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w), buffTick: t.on.event === "buffTick" }, where) }
         : a.kind === "choose" ? { ...a, options: a.options.map((o) => ({ weight: o.weight, do: normalize(o.do) })) }
         : a,
       );
