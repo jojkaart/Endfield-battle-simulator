@@ -9,7 +9,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData, sourceCommit, SOURCES } from "@efsim/data";
-import { checkLog, engineHits, engineReport, logBuffReplay, readLogFixture, simulateLog, verdictCounts, verificationProblems, type EngineHits, type HitVerdict, type LogBuffReplay } from "@efsim/cli";
+import { readLogFixture, simulateLog, snapshotEntry, verificationProblems, type EngineHits, type HitVerdict, type LogBuffReplay, type SnapshotEntry } from "@efsim/logs";
 import { changes, entry, logFixtures, regressions, ROOT, totalsChanges, totalsOf, type FixtureCounts } from "./logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "./snapshot.ts";
 
@@ -58,14 +58,8 @@ function unreproduced(fx: ReturnType<typeof readLogFixture>, verdicts: readonly 
 
 describe.each(files)("%s", (file) => {
   const fx = readLogFixture(join(ROOT, "fixtures", file));
-  let cached: { replay: LogBuffReplay; byHit: EngineHits; verdicts: HitVerdict[] } | undefined;
-  const checked = () => {
-    if (cached) return cached;
-    const replay = logBuffReplay(data, fx);
-    const byHit = engineHits(data, fx, replay);
-    return (cached = { replay, byHit, verdicts: checkLog(data, fx, { replay, engineHits: byHit }) });
-  };
-  const verdictsOf = () => checked().verdicts;
+  let cached: SnapshotEntry | undefined;
+  const checked = () => (cached ??= snapshotEntry(data, fx));
 
   it("reproduces each plain match through the simulation's damage path (the replay's landing, as simulate computes it)", () => {
     const { replay, byHit, verdicts } = checked();
@@ -78,10 +72,7 @@ describe.each(files)("%s", (file) => {
   });
 
   it("is verified, and its verdict counts don't fall behind the snapshot", () => {
-    const verdicts = verdictsOf();
-    const { replay, byHit } = checked();
-    const totals = engineReport(data, fx, replay, byHit, verdicts).errors;
-    const now = verdictCounts(fx, verdicts);
+    const { verdicts, totals, counts: now } = checked();
     // Recorded before any assertion can fail, so an update run never keeps a stale entry for a failing log.
     const stored = snapshot.record(file, entry(now, totals));
     expect(verificationProblems(data, fx, verdicts)).toEqual([]);

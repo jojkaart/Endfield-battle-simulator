@@ -15,7 +15,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { checkLog, engineHits, engineReport, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
+import { readLogFixture, snapshotEntry } from "@efsim/logs";
 import { changes, entry, logFixtures, ROOT, shard, totalsChanges, totalsOf, type FixtureCounts } from "../logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "../snapshot.ts";
 import { direction, fitChange, GROUPS, groupOf, readSplit, type Direction, type Entry, type Group } from "../../scripts/accuracy.ts";
@@ -64,12 +64,8 @@ export function pendingSuite(index: number): void {
   describe.each(files.map((f) => [testTitle(f), f] as const))("%s", (_title, file) => {
     it("checks as its snapshot says", () => {
       const fx = readLogFixture(join(ROOT, "fixtures", file));
-      const replay = logBuffReplay(data, fx);
-      const byHit = engineHits(data, fx, replay);
-      const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
-      const now = verdictCounts(fx, verdicts);
-      // Its totals' errors too (the simulation of the logged casts against the log: engineReport).
-      const totals = engineReport(data, fx, replay, byHit, verdicts).errors;
+      // Its verdict counts and its totals' errors (the simulation of the logged casts against the log), as measure computes them.
+      const { counts: now, totals } = snapshotEntry(data, fx);
       const current = entry(now, totals);
       const stored = snapshotOf(file).record(file, current);
       if (stored === undefined) return;

@@ -22,3 +22,4 @@ export * from "./bufftiming.ts";
 export * from "./reports.ts";
 export * from "./views.ts";
 export * from "./query.ts";
+export * from "./snapshotentry.ts";

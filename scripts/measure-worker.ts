@@ -40,11 +40,13 @@ if (under) {
 }
 
 function entryOf(fx: any): { entry: Record<string, Record<string, number | null>>; perHit: PerHit } {
-  const replay = under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx);
-  const byHit = logs.engineHits(data, fx, replay);
-  const verdicts = logs.checkLog(data, fx, { replay, engineHits: byHit });
-  const counts = logs.verdictCounts(fx, verdicts);
-  const totals = logs.engineReport(data, fx, replay, byHit, verdicts).errors;
+  // The snapshots' own computation (packages/logs/src/snapshotentry.ts) where the commit has it; before it, its five calls.
+  const own = typeof logs.snapshotEntry === "function" ? logs.snapshotEntry(data, fx, under ?? {}) : undefined;
+  const replay = own?.replay ?? (under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx));
+  const byHit = own?.byHit ?? logs.engineHits(data, fx, replay);
+  const verdicts = own?.verdicts ?? logs.checkLog(data, fx, { replay, engineHits: byHit });
+  const counts = own?.counts ?? logs.verdictCounts(fx, verdicts);
+  const totals = own?.totals ?? logs.engineReport(data, fx, replay, byHit, verdicts).errors;
   // Not in the snapshots: what measure's "mixed" lines add (did the hits get closer while a signed total drifted?).
   const errors = (fx.hits as any[]).flatMap((h) => {
     const p = byHit.get(h)?.primary;
