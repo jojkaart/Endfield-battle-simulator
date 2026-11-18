@@ -31,6 +31,13 @@ must be something a person can do by hand while playing:
 - **If it can't be made observable,** say so, keep the engine's interim,
   note how small the impact is, and mark the test **not testable by hand**
   instead of asking for it.
+- **Logs first** (the owner, 2026-11-18): never ask the owner for what
+  the logs can decide. Timings, durations, paces, damage values and
+  anything else ZMDLogs records (per-hit damage and times, cast events,
+  listed buffs and their values, Stagger bars) are the logs' job; a test
+  goes to the owner only when no log records it (SP, energy, cooldowns,
+  icons the log doesn't list, inputs, positions, what the screen shows),
+  after the logs were tried ([in-game-tests-log-triage.md](in-game-tests-log-triage.md)).
 - **Honest priorities:** say what a test needs. The owner doesn't use
   Catcher, Ember, Snowshine or Purrchena, so tests that need them are low
   priority; tests that affect every operator come first.
@@ -54,8 +61,7 @@ what you saw, in a line; the formats below are only suggestions.
 | 8 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
 | 9 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
 | 10 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
-| 11 | [110](#110-how-long-a-stagger-lasts-ready-any-operator-a-stopwatch-or-a-phone-video) how long a Stagger lasts | anyone, any staggerable enemy | `110: Rhodagn, attacking 13 s, idle 10 s` |
-| 12 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
+| 11 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -2313,7 +2319,10 @@ can run that reading with `--assume si-haste-every-end=every-end` and say
 whether a conclusion flips under it with `--assumptions`.)
 **Reply, e.g.:** `109: A no icon, B icon` or `109: icon in both`.
 
-### 110. How long a Stagger lasts (ready, any operator; a stopwatch or a phone video)
+### 110. How long a Stagger lasts (to the logs, 2026-11-18: not for the owner)
+
+**To the logs (the owner, 2026-11-18):** easier to settle from the logs' Stagger windows than by hand.
+
 
 **Why:** the game data gives each enemy's Stagger length (Rhodagn 10 s, most
 elites 9–11 s), and the simulator holds it longer

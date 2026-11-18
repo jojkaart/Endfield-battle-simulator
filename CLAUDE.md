@@ -91,7 +91,10 @@ groups|differences|casts|replay|stagger` (first steps in
 
 The owner plays daily and may run simple in-game tests. Keep
 [docs/in-game-tests.md](docs/in-game-tests.md) current and tell the owner
-when a new test becomes ready.
+when a new test becomes ready. Logs first: never ask the owner for
+anything the logs can decide (timings, durations, paces, damage, listed
+buffs, Stagger bars); only what no log records (SP, energy, cooldowns,
+inputs, icons, the screen), after trying the logs.
 
 ## Operator kits
 
