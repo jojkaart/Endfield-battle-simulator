@@ -4,9 +4,42 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 102 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 103 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15
+
+**Goal:** decide from the logs the in-game tests on Si (14, 41, 92), the basic-attack cancel (16) and the swap
+lock (15), checking the re-triage's claims (docs/in-game-tests-retriage-*.md), fixing the engine where it's wrong.
+
+**Done** (each test's own section in docs/in-game-tests.md):
+- **14 decided:** Si's battle skill inflicts Heat with a Heat operator first, Cryo otherwise, as the engine has:
+  her 11 `fire_fire` and 9 `cryst_cryst` bursts (`checkReactions`) fall on that split, every predicted one with the
+  engine's element, none against it.
+- **41 decided:** Jade Vessel's next-combo bonus comes from her ultimate or her Immobilization, lasts 20 s (held by
+  stops) and goes with the next combo, as the engine has: 37 final hits plain with it, 4 without; 6 ultimate-only
+  combos plain with it; no non-plain final hit fits with it toggled.
+- **92 decided, the re-triage reversed:** Long Heritage's team Arts DMG (`teamatk`, 0.112) starts with Si's Amp at all
+  four of her ultimates (632c, 67d8), on every member: her Cryo Amp counts (checkType 1 reads its ID list), the
+  engine's reading. The re-triage had read `teamspell` (0.168, the wielder's own Cryo DMG from her battle skill),
+  which is hers alone by design. The kit notes say so.
+- **16 partly:** the re-triage's Final Strikes "after her battle-skill cast" follow her hitless battle-button events
+  (282 of 370 events have no battle-skill hit; test 106's open part), not battle skills; no real cast (73) has a
+  basic hit of hers between its event and its hit. Whether a press drops an unlanded hit leaves no trace: still the
+  owner's. Added to open-problems ("Type 50 Yinglung's Edge"): the events don't end her basic attack.
+- **15 not decidable:** Gilberta is never the controlled operator in any development log (none of her 371
+  Final-Strike hits deals Stagger, a controlled-only mark), so her 3.7 s lock never had anything to hold; the
+  re-triage's "fresh chains" are the controlled operator's and teammates' own attacks.
+
+**No engine change**, so the scoreboard and the team numbers don't move (snapshots:update: nothing changed).
+
+**Decisions:** Si's Final Stroke has a `switchToBuffConfig` with `asSkillCast` and a buff (as Last Rite's beside cast),
+so it may run beside her basic attack; left as a note in test 16, since no log tells a stroke from the hitless
+events. Test 10 left to the queue agent.
+
+**Dead ends:** a teammate's `attack1` as a swap marker (teammates attack on their own); the Jade Vessel enemy-debuff
+lane's `since` as an Immobilization marker (whether it moves on a refresh is open: data.md).
 
 ## 2026-11-18: Si's misfit logs and Ardelia's build: build overrides and fit-build
 
@@ -412,46 +445,3 @@ casts).
 Dead end: the old 3.5 s's "40% of free time" didn't reproduce with the
 same measure on the engine. A scratch measure had a units bug (time stops
 in frames compared with ms), harmless since both sides had it.
-
-## 2026-11-16: Older development fixtures refreshed from fresh battle details
-
-Goal (the lead; backlog after round 2, point 3): give the 79 development
-fixtures imported before 2026-11-16 what newer imports keep, from a
-one-off fetch of their raw details the owner approved.
-
-Done:
-- `efsim zmdlogs refresh <fixture>` reads the cached detail when
-  `--detail` is omitted, else fetches it once (`refreshFromDetail`,
-  zmdraw.ts). `refreshFixture` now rebuilds the hits as an import would
-  (`zmdlogsHits`, factored out of `zmdlogsToFixture`) and adds every
-  field the fixture lacks: casts, poise, poise.origin and, new, effects'
-  and boundaryEffects' `source` / `since`, one provenance note per kind.
-  The rebuilt hits must equal the fixture's but for those fields, and
-  logged casts the detail's; otherwise `RefreshMismatch` and nothing is
-  written. Tests on synthetic details (tests/zmdrefresh.test.ts,
-  tests/helpers/zmdlogs.ts).
-- Import against refresh, compared: everything an import records from
-  the detail is now covered. Not refreshed, as they come from elsewhere
-  or feed the computation: the team (the export, a second request), the
-  enemy level (stage or total damage; where the stage names the boss,
-  its level is every fixture's), the import's notes, `verifiedAgainst`.
-- The fetch: 79 details, one request each, 3.5 s apart, all found, no
-  parser version changed. 77 fixtures refreshed (6 multi-target ones also
-  got casts and Stagger); every other field is as it was (checked against
-  HEAD), and no string other than game keys and the notes was added.
-- `npm run snapshots:update`: no snapshot and no scoreboard number moved
-  (the fields are record-only).
-
-Skipped: 40d9 and 4e5e (verified). Each detail now lacks a zero-length
-buff lane at one hit that the fixture lists as unquantified (40d9's lane
-is still there, with its dynamic effects emptied; 4e5e's is gone).
-Damage and hit counts match, but the brief said not to overwrite a
-detail that differs. ZMDLogs can change a stored detail
-(data-sources.md).
-
-What the new fields answered (open-problems.md): Electrification's
-logged giver is the replay's applier at 3,497 of 3,505 kit hits (the 8
-others in 3aa6), and the level readings that differ are in 3aa6 and
-d774. Breach can't be checked from the hit export (it lists no physical
-statuses). Of 79 Artful Intent bursts, 39 are credited to Final Stroke
-and 33 to an Inksoul expiry; 7 deal no Stagger and record no path.

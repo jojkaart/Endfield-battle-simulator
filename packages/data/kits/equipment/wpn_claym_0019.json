@@ -47,7 +47,7 @@
       "by": "self",
       "skill": "sk_wpn_claym_0019",
       "do": [{ "kind": "buff", "buff": "wpn_claym_0019.team_arts" }],
-      "note": "Read as checkType 1 = the ID list or the tag query: a Cryo Amp (buff_common_affixes_enhance_crystal, what Si's ultimate grants with its Heat Amp) or an all-Arts one (tag 486772476), i.e. an Amp reaching Cryo; toOthers: it reaches someone other than the wielder (NotNext CheckTargetsEqual). If checkType 1 is the tag query only, this becomes `tags: [486772476]` and Si's Amp doesn't count: in-game test 92 (report E11; batch-4 T1's open reading)."
+      "note": "Read as checkType 1 = the ID list or the tag query: a Cryo Amp (buff_common_affixes_enhance_crystal, what Si's ultimate grants with its Heat Amp) or an all-Arts one (tag 486772476), i.e. an Amp reaching Cryo; toOthers: it reaches someone other than the wielder (NotNext CheckTargetsEqual). Decided by the logs (in-game test 92, 2026-11-18): buff_wpn_claym_0019_teamatk starts with Si's ultimate Amp at all four of her ultimates in fixtures/multi-target/zmdlogs-632caa872eb4.json and zmdlogs-67d85d1dc611.json, on every member, so checkType 1 reads the ID list too (report E11; batch-4 T1)."
     }
   ]
 }
