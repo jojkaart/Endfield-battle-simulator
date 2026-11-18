@@ -261,43 +261,43 @@
   ]
  },
  "ink-melt-zero.scenario.json": {
-  "total": 2838087.909,
+  "total": 2844497.507,
   "hits": 467,
   "casts": 200,
   "perOperator": {
-   "chr_0016_laevat": 1333735.224,
-   "chr_0036_jsspsi": 968011.519,
-   "chr_0006_wolfgd": 280084.5,
+   "chr_0016_laevat": 1335479.289,
+   "chr_0036_jsspsi": 970865.89,
+   "chr_0006_wolfgd": 281895.662,
    "chr_0025_ardelia": 256256.666
   },
-  "digest": "64a864b8d103",
+  "digest": "d147f78e29a2",
   "windows": [
    "658cc1f41afd",
    "3f80623034cc",
    "2c00175dd346",
    "a0a4c6474292",
    "fc2b0211db0e",
-   "3beb45587fd5"
+   "0c540ec73d04"
   ]
  },
  "ink-melt.scenario.json": {
-  "total": 3953128.917,
+  "total": 3990548.565,
   "hits": 486,
   "casts": 173,
   "perOperator": {
-   "chr_0016_laevat": 2295747.573,
-   "chr_0036_jsspsi": 987678.903,
+   "chr_0016_laevat": 2302162.765,
+   "chr_0036_jsspsi": 1018683.359,
    "chr_0006_wolfgd": 387823.771,
    "chr_0025_ardelia": 281878.67
   },
-  "digest": "dc4c86a04dc8",
+  "digest": "07cbf7e24776",
   "windows": [
    "c5db5ea5dcf6",
    "20fd95addbaf",
    "1b3c9e95eaf1",
    "ee3fb323466c",
-   "7ffc515f3bae",
-   "c07b23ed8d26"
+   "832a7431c294",
+   "9a6041b3b3fa"
   ]
  },
  "laevatain-solo.scenario.json": {
@@ -492,43 +492,43 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4849679.062,
+  "total": 4901144.513,
   "hits": 510,
   "casts": 167,
   "perOperator": {
-   "chr_0034_typhoea": 3741004.222,
+   "chr_0034_typhoea": 3788276.54,
    "chr_0032_lizhiyan": 193646.523,
-   "chr_0035_liino": 314738.402,
+   "chr_0035_liino": 318931.535,
    "chr_0004_pelica": 600289.914
   },
-  "digest": "f4a408d624dc",
+  "digest": "6f3ed6ac41b7",
   "windows": [
    "3b38a5dc408a",
    "c46d9f8bf52c",
    "733ca68e8755",
    "3e1b46ee6415",
    "c05f947ffa22",
-   "e0a1f74c6f20",
-   "d0d4d9e9861c"
+   "a9b6c015e060",
+   "16559fd12ceb"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5615426.372,
+  "total": 5622625.13,
   "hits": 415,
   "casts": 164,
   "perOperator": {
-   "chr_0034_typhoea": 4239378.223,
+   "chr_0034_typhoea": 4246576.98,
    "chr_0032_lizhiyan": 382783.024,
    "chr_0035_liino": 281780.003,
    "chr_0004_pelica": 711485.122
   },
-  "digest": "f99bddcaf568",
+  "digest": "5fd00db42ba9",
   "windows": [
    "23c29201ecab",
    "ebaab50911e0",
    "ad06a0dd314c",
    "ad1b4da0a4d0",
-   "6d1650788cb9",
+   "c3d399ba11e4",
    "1fbb279f7904"
   ]
  },

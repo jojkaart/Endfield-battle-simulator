@@ -26,7 +26,7 @@ commit, and how many logs got better or worse.
 | Verified (fixtures/) | 6 | 804 | 71.0% | 94.5% | 0.0% | 1.7% | 6 |
 | Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 49.5% | 73.1% | 19.3% | 13.0% | 12 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 65.0% | 86.2% | 7.4% | 12.5% | 7 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 47.2% | 70.4% | 26.1% | 8.2% | 9 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 47.2% | 70.4% | 26.1% | 8.3% | 9 |
 | All but the hold-outs | 60 | 28693 | 49.2% | 72.6% | 21.5% | 10.1% | 27 |
 
 ## By operator (every log but the hold-outs)
@@ -61,6 +61,6 @@ commit, and how many logs got better or worse.
 | chr_0032_lizhiyan | 39 | 5575 | 60.9% | 15.5% | 14.2% |
 | chr_0033_camille | 10 | 1004 | 71.3% | 6.1% | 14.4% |
 | chr_0034_typhoea | 12 | 2081 | 60.2% | 11.6% | 4.9% |
-| chr_0035_liino | 19 | 1469 | 36.1% | 21.9% | 17.7% |
+| chr_0035_liino | 19 | 1469 | 36.1% | 21.9% | 17.8% |
 | chr_0036_jsspsi | 28 | 2993 | 57.2% | 18.6% | 8.6% |
 | chr_0038_purrche | 3 | 290 | 62.1% | 29.7% | 25.5% |
