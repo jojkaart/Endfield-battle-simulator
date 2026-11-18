@@ -34,6 +34,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     default: "held",
     readings: {
       held: "held: its timer starts when the world's clock runs again (Laevatain's Twilight, created at her ultimate's frame 0, lasts 15 s after her own stop: every closed Twilight window in the logs ends later than 15 s from the press allows; Typhoeus's Hail of Arrows window created inside Gilberta's and Arcane's stops, d9e59d0fb737) (2026-11-18)",
+      ultimates: "held by the rest of a running ultimate's time stop, not by a combo's slow-down (measured 2026-11-18 against held: development plain 50.0 → 49.8%, hold-out 66.1 → 65.9%, 11 development logs worse, 3 better)",
       runs: "runs: its timer starts at once; only a stop that begins later holds it (the engine until 2026-11-18)",
     },
   },

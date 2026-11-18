@@ -8,7 +8,10 @@ import { loadGameData } from "@efsim/data";
 import { loopCommand, readScenario } from "../../packages/cli/src/simulate.ts";
 
 const data = loadGameData();
-const example = readScenario(new URL("../../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
+// Under the buff rule before 2026-11-18 (engine assumption buff-in-stop=runs): with Twilight held by her own stop,
+// Laevatain alone finds no loop within 12 rounds at beam 6; these tests check the loop machinery, not her kit.
+const solo = readScenario(new URL("../../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
+const example = { ...solo, options: { ...solo.options, assume: { "buff-in-stop": "runs" } } };
 const { rotation: _r, ...open } = example;
 const options = { beamWidth: 6, plays: 5 };
 

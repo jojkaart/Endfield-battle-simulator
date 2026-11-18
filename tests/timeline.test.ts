@@ -1502,23 +1502,24 @@ describe("Laevatain's kit: Twilight, its pauses and cooldown; Scorching Heart; a
   };
   const until = (s: ReturnType<typeof run>, id: string) => s.buffs.find((b) => b.id === id)?.expiresAt;
 
-  it("Twilight lasts 15 s, show_weapon 16 s; an enhanced battle skill pauses both while it runs (frames 0–115 less what its jumps skip), given back when it's cut short", () => {
+  it("Twilight lasts 15 s, show_weapon 16 s, after her ultimate's time stop; an enhanced battle skill pauses both while it runs (frames 0–115 less what its jumps skip), given back when it's cut short", () => {
+    // Created at the ultimate's frame 0, both are held by its 61-frame time stop (engine assumption buff-in-stop).
     const ult = run([a("ultimate_skill")], 30 * 3);
-    expect([until(ult, "twilight"), until(ult, "show_weapon")]).toEqual([450, 480]);
+    expect([until(ult, "twilight"), until(ult, "show_weapon")]).toEqual([450 + 61, 480 + 61]);
     // Plain, it jumps 39 → 196: the pause lasts 39 frames.
     const one = run([a("ultimate_skill"), a("normal_skill_during_ult")], 30 * 6);
-    expect([until(one, "twilight"), until(one, "show_weapon")]).toEqual([450 + 39, 480 + 39]);
+    expect([until(one, "twilight"), until(one, "show_weapon")]).toEqual([450 + 61 + 39, 480 + 61 + 39]);
     // Empowered (4 Melting Flame), it jumps 24 → 75, then 195 → 270: 24 + 40 = 64.
     const empowered = run([a("ultimate_skill"), a("normal_skill_during_ult")], 30 * 6, { startStacks: { [op]: { melting_flame: 4 } } });
-    expect([until(empowered, "twilight"), until(empowered, "show_weapon")]).toEqual([450 + 64, 480 + 64]);
+    expect([until(empowered, "twilight"), until(empowered, "show_weapon")]).toEqual([450 + 61 + 64, 480 + 61 + 64]);
     // A second one in the first's window (its frame 33) ends the first pause after 33 frames.
     const two = run([a("ultimate_skill"), a("normal_skill_during_ult"), a("normal_skill_during_ult")], 30 * 6);
     expect((two.casts[2]?.frame ?? NaN) - (two.casts[1]?.frame ?? NaN)).toBe(33);
-    expect([until(two, "twilight"), until(two, "show_weapon")]).toEqual([450 + 33 + 39, 480 + 33 + 39]);
+    expect([until(two, "twilight"), until(two, "show_weapon")]).toEqual([450 + 61 + 33 + 39, 480 + 61 + 33 + 39]);
   });
 
   it("her ultimate's 10 s cooldown starts when show_weapon ends (SetSkillCdAtOnce)", () => {
-    expect(run([a("ultimate_skill")], 30 * 17).readyAt[L + "ultimate_skill"]).toBe(480 + 300);
+    expect(run([a("ultimate_skill")], 30 * 19).readyAt[L + "ultimate_skill"]).toBe(480 + 61 + 300);
   });
 
   it("Scorching Heart starts on reaching 4 Melting Flame, not again on a gain capped at 4", () => {

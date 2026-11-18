@@ -214,7 +214,7 @@ describe("Mi Fu's combo", () => {
     const s = run(scenario({}, { startEnergy: { [D]: "full" } }), [...stacks, op("combo_skill")], 200);
     const c = castAt(s, "combo_skill");
     expect(hitsOf(s, "combo_skill").map((h) => [h.hitId, h.frame - c])).toEqual([["hit", 8], ["hit", 10], ["uppercut", 31]]);
-    expect(spans(s, "combo_susceptibility")).toEqual([[c + 31, c + 31 + 20 * 30]]);
+    expect(spans(s, "combo_susceptibility")).toEqual([[c + 31, c + 31 + 20 * 30 + 5]]); // + 5: held by the rest of her combo's slow-down (buff-in-stop)
     expect(buffs(s, "combo_susceptibility")[0]?.modifiers.map((m) => [m.zone, m.element, m.value])).toEqual([["susceptibility", "physical", expect.closeTo(0.1, 6)]]);
     expect(fromSource(hitsOf(s, "combo_skill", "uppercut")[0], "Combo: Physical Susceptibility")).toEqual([expect.closeTo(0.1, 6)]);
     expect(fromSource(hitsOf(s, "combo_skill", "hit")[1], "Combo: Physical Susceptibility")).toEqual([]);
@@ -222,7 +222,7 @@ describe("Mi Fu's combo", () => {
     expect(e(c + 31) - e(c + 30)).toBeCloseTo(10, 6);
     const p0 = run(scenario({ potential: 0 }), [...stacks, op("combo_skill")], 200);
     const c0 = castAt(p0, "combo_skill");
-    expect(spans(p0, "combo_susceptibility")).toEqual([[c0 + 31, c0 + 31 + 16 * 30]]);
+    expect(spans(p0, "combo_susceptibility")).toEqual([[c0 + 31, c0 + 31 + 16 * 30 + 5]]);
     expect(buffs(p0, "combo_susceptibility")[0]?.modifiers[0]?.value).toBeCloseTo(0.05, 6);
     expect(data.skills[P + "combo_skill"]?.levels[11]?.coolDown).toBe(19);
     const cd = (potential: number) => skillParam(computeStats(data, { ...mifu, potential }), P + "combo_skill", "cooldown", 19);
@@ -232,7 +232,7 @@ describe("Mi Fu's combo", () => {
   it("P3: ATK +6% for 20 s at the combo's cast with talent 2's shield, once per 45 s; not below P3 or without talent 2", () => {
     const s = run(scenario(), [...stacks, op("combo_skill")], 100);
     const c = castAt(s, "combo_skill");
-    expect(spans(s, "p3_atk")).toEqual([[c, c + 20 * 30]]);
+    expect(spans(s, "p3_atk")).toEqual([[c, c + 20 * 30 + 36]]); // + 36: held by the rest of her combo's slow-down (buff-in-stop)
     expect(buffs(s, "p3_atk")[0]?.modifiers.map((m) => [m.zone, m.value])).toEqual([["atk", expect.closeTo(0.06, 6)]]);
     expect(run(scenario({ potential: 2 }), [...stacks, op("combo_skill")], 100).buffs.some((b) => b.id === "p3_atk")).toBe(false);
     expect(run(scenario({ talents: [2, 0] }), [...stacks, op("combo_skill")], 100).buffs.some((b) => b.id === "p3_atk")).toBe(false);
@@ -266,7 +266,7 @@ describe("Amaranthine Tassel (wpn_claym_0017)", () => {
   it("the wielder's Physical Susceptibility (her combo) gives Arts Intensity +84 for 20 s at its frame 31", () => {
     const s = run(scenario(), [...stacks, op("combo_skill")], 200);
     const c = castAt(s, "combo_skill");
-    expect(spans(s, "wpn_claym_0017.arts_intensity")).toEqual([[c + 31, c + 31 + 20 * 30]]);
+    expect(spans(s, "wpn_claym_0017.arts_intensity")).toEqual([[c + 31, c + 31 + 20 * 30 + 5]]); // + 5: held by the rest of her combo's slow-down (buff-in-stop)
     expect(buffs(s, "wpn_claym_0017.arts_intensity")[0]?.modifiers.map((m) => [m.zone, m.value])).toEqual([["artsIntensity", expect.closeTo(84, 4)]]);
   });
 

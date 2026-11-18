@@ -195,7 +195,7 @@ describe("Rossi's combo: two sequences", () => {
     const later = mine(s, "attack1")[0];
     expect(mod(later, "Crit Rate and Crit DMG", "critRate")).toBeCloseTo(0.25, 6);
     expect(mod(later, "Crit Rate and Crit DMG", "critDamage")).toBeCloseTo(0.5, 6);
-    const late = mine(run(scenario(), [...opener, r("combo_2_skill"), r("combo_3_skill"), r("attack1", c3 + 15 * 30 + 1)]), "attack1")[0];
+    const late = mine(run(scenario(), [...opener, r("combo_2_skill"), r("combo_3_skill"), r("attack1", c3 + 15 * 30 + 30)]), "attack1")[0]; // a second past its 15 s, past the rest of her combo's slow-down that holds it (buff-in-stop)
     expect(mod(late, "Crit Rate and Crit DMG")).toBe(0);
   });
 

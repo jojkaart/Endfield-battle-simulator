@@ -73,9 +73,10 @@ describe("Akekuri's kit", () => {
     const after = run(example, ult, 233);
     expect(active(after, "squad_atk")).toHaveLength(0);
     expect(active(after, "zone_tail").map((b) => b.expiresAt)).toEqual([383]);
-    // The Link's own 10 s from frame 1 runs out first (in-game test: does it cap the tail?).
-    expect(active(run(example, ult, 300), "zone_link")).toHaveLength(1);
-    expect(active(run(example, ult, 301), "zone_link")).toHaveLength(0);
+    // The Link's own 10 s from frame 1 runs out first (in-game test: does it cap the tail?); created inside her
+    // ultimate's time stop, it is held by the rest of it (engine assumption buff-in-stop).
+    expect(active(run(example, ult, 354), "zone_link")).toHaveLength(1);
+    expect(active(run(example, ult, 355), "zone_link")).toHaveLength(0);
     const cut = [...ult, K("attack1")];
     const c = run(example, cut, 129);
     expect(c.casts.at(-1)?.frame).toBe(129);
@@ -119,7 +120,7 @@ describe("Akekuri's kit", () => {
     expect(at(31).spReturned).toBe(at(0).spReturned);
     const after = at(31);
     expect(active(after, "positive_feedback").map((b) => b.expiresAt)).toEqual([combo + 331, combo + 331]);
-    expect(active(after, "wpn_sword_0009.atk").map((b) => [b.appliedAt, b.expiresAt])).toEqual([[combo, combo + 600]]);
+    expect(active(after, "wpn_sword_0009.atk").map((b) => [b.appliedAt, b.expiresAt])).toEqual([[combo, combo + 612]]); // + the rest of her combo's slow-down (buff-in-stop)
     expect(active(after, "wpn_sword_0009.atk")[0]?.modifiers[0]?.value).toBeCloseTo(0.336, 6);
     const efficiency = computeStats(data, akekuri).attrs[44]?.total ?? 1;
     expect((after.energy[A] ?? 0) - (at(0).energy[A] ?? 0)).toBeCloseTo(10 * efficiency, 6);
@@ -160,7 +161,7 @@ describe("Akekuri's equipment", () => {
     const s = run(sc, example.rotation);
     const combo = s.casts.find((c) => c.skill === `${A}_combo_skill`)?.frame ?? NaN;
     const layer = active(run(sc, example.rotation, combo + 1), "suit_combo_cd01.spellup");
-    expect(layer.map((b) => [b.appliedAt, b.expiresAt, b.maxLayers])).toEqual([[combo, combo + 450, 2]]);
+    expect(layer.map((b) => [b.appliedAt, b.expiresAt, b.maxLayers])).toEqual([[combo, combo + 462, 2]]); // + the rest of her combo's slow-down (buff-in-stop)
     expect(layer[0]?.modifiers.map((m) => [m.zone, m.skillType, m.value])).toEqual(
       ["battle", "combo", "ultimate"].map((k) => ["damageBonus", k, expect.closeTo(0.2, 6)]),
     );

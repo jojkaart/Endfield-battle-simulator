@@ -95,11 +95,13 @@ describe("rotation search", () => {
     // 1,118,447.887, 513 states. Since 2026-11-14 that's the ranking by damage so far alone (valueWeight 0, bit for
     // bit); the default ranking adds the resources' worth (resourceValue) and its beam of 8 keeps other states here:
     // 1,113,946.019, 510 states (−0.4%; wider beams: docs/design/search.md "How the beam ranks").
+    // 2026-11-18, buffs created inside a running stop are held (engine assumption buff-in-stop): her Twilight lasts 2 s
+    // longer after her own ultimate's stop: 1,258,965.998 (+12.6%).
     const unvalued = searchRotation(data, open, { beamWidth: 8, valueWeight: 0 });
-    expect(unvalued.result.total).toBeCloseTo(1118447.887, 3);
-    expect(unvalued.expanded).toBe(513);
-    expect(found.result.total).toBeCloseTo(1113946.019, 3);
-    expect(found.expanded).toBe(510);
+    expect(unvalued.result.total).toBeCloseTo(1258965.998, 3);
+    expect(unvalued.expanded).toBe(531);
+    expect(found.result.total).toBeCloseTo(1218069.057, 3); // 2026-11-18 (buff-in-stop): 1,113,946.019 → 1,218,069.057
+    expect(found.expanded).toBe(523);
   });
 
   it("works for a team: casts of both operators interleave, all legal; no swaps unless asked for", () => {

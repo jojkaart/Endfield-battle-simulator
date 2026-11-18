@@ -237,6 +237,6 @@ describe("Opero 77 (wpn_lance_0009) and JET (wpn_lance_0011)", () => {
       const b = s.buffs.find((x) => x.id === id);
       return b && b.expiresAt - b.appliedAt;
     };
-    expect([span("wpn_lance_0011.battle"), span("wpn_lance_0011.combo")]).toEqual([15 * 30, 15 * 30]);
+    expect([span("wpn_lance_0011.battle"), span("wpn_lance_0011.combo")]).toEqual([15 * 30, 15 * 30 + 10]); // the combo's: + 10 frames held by the rest of her combo's slow-down (buff-in-stop)
   });
 });

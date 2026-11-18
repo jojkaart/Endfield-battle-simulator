@@ -307,7 +307,7 @@ describe("Yvonne's equipment kits", () => {
     // Interim (the data; in-game test 80): the battle skill doesn't consume it, it lasts its 20 s.
     const c = castAt(s, "combo_skill");
     const later = run(scenario(hl), [...solidify, y("attack5", BOMB + 1), y("combo_skill"), y("normal_skill", 400)], (bombs[1]?.frame ?? NaN) + 1);
-    expect(myBuff(later, "wpn_pistol_0007.valid").map((b) => b.expiresAt - c)).toEqual([20 * 30]);
+    expect(myBuff(later, "wpn_pistol_0007.valid").map((b) => b.expiresAt - c)).toEqual([20 * 30 + 13]); // + 13: held by the rest of her combo's slow-down (buff-in-stop)
   });
 
   it("Wedge: a battle-skill cast gives Arts DMG +spell_dmg_up2 (0.224) for 15 s; its Arts Reaction another +spell_dmg_up3 (0.448), on the bomb itself", () => {

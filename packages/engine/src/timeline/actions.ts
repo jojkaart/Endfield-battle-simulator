@@ -60,7 +60,8 @@ export function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, 
   if (!b) return { state: st, applied: false, buff: null };
   // Created inside a running time stop or slow-down: held by the rest of it, as the buffs already running were when it
   // began (shiftWorld); one that ends with its owner's skill keeps that end (engine assumption buff-in-stop).
-  const held = b.endsWithCast === undefined && engineReading(ctx.scenario, "buff-in-stop") === "held" ? heldFromNow(st, frame) : 0;
+  const inStop = engineReading(ctx.scenario, "buff-in-stop");
+  const held = b.endsWithCast === undefined && inStop !== "runs" ? heldFromNow(st, frame, inStop === "ultimates") : 0;
   if (held > 0) b = { ...b, expiresAt: b.expiresAt + held, ...(b.nextTick !== undefined && b.nextTick > frame ? { nextTick: b.nextTick + held } : {}) };
   // What made it (ActiveBuff.createdBy): the skill, and its owner's latest cast of it.
   const made = st.casts.findLastIndex((c) => c.operator === owner && c.skill === skillId);

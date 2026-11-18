@@ -291,7 +291,7 @@ describe("Lone Barge (wpn_funnel_0015)", () => {
   it("after an ultimate cast: Battle Skill Electric DMG + pulse_dmg_up3 for duration2 (25 s from the cast)", () => {
     const st = run(solo(lone, { startEnergy: { [Z]: 1000 } }), [z("ultimate_skill"), z("normal_skill_ult"), ...empChain], 200);
     const b = active(st, "wpn_funnel_0015.ultimate")[0];
-    expect([b?.appliedAt, b && b.expiresAt - b.appliedAt]).toEqual([0, 25 * 30]);
+    expect([b?.appliedAt, b && b.expiresAt - b.appliedAt]).toEqual([0, 25 * 30 + 78]); // + 78: created at her ultimate's frame 0, held by its time stop (buff-in-stop)
     expect(from(hitsOf(st, "normal_skill_ult")[0], "Lone Barge").map(round)).toEqual([1.12]);
     expect(from(hitsOf(st, "attack1_ult")[0], "Lone Barge")).toEqual([]);
     // The exit skill at the state's end (skill type 3, kind basic in the kit) isn't an ultimate cast: no new buff then.

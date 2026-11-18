@@ -165,7 +165,7 @@ describe("Wolven Fury (ultimate), talent 1, P5", () => {
     for (const h of hits) expect(from(h, "Scorching Fangs").map((m) => m.value)).toEqual([expect.closeTo(0.3, 6)]);
     // Fangs lasts `duration` (10 s) from the Combustion.
     const fangs = s.buffs.find((b) => b.owner === W && b.id === "scorching_fangs");
-    expect((fangs?.expiresAt ?? NaN) - (fangs?.appliedAt ?? NaN)).toBe(300);
+    expect((fangs?.expiresAt ?? NaN) - (fangs?.appliedAt ?? NaN)).toBe(301); // + 1: the last frame of his ultimate's stop (buff-in-stop)
     // Talent 1 at level 1: +0.2; not learned: none.
     expect(from(mine(run(scenario({ talents: [1, 2] }, full), [op("ultimate_skill")]), "ultimate_skill")[0], "Scorching Fangs").map((m) => m.value)).toEqual([expect.closeTo(0.2, 6)]);
     expect(from(mine(run(scenario({ talents: [0, 2] }, full), [op("ultimate_skill")]), "ultimate_skill")[0], "Scorching Fangs")).toEqual([]);

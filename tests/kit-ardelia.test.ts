@@ -179,7 +179,7 @@ describe("Ardelia's arts units on their wielders", () => {
     const c = castAt(s, A, "combo_skill");
     expect(from(hitsOf(s, A, "attack4")[0], "Twilight")).toEqual([]);
     expect(hitsOf(s, A, "combo_skill").map((h) => from(h, "Twilight: Humiliation (combo)"))).toEqual([[expect.closeTo(0.336, 6)], [expect.closeTo(0.336, 6)]]);
-    expect(buffOf(run(solo(oblivion), opener, c + 1), A, "wpn_funnel_0009.combo").map((b) => [b.appliedAt, b.expiresAt])).toEqual([[c, c + 15 * 30]]);
+    expect(buffOf(run(solo(oblivion), opener, c + 1), A, "wpn_funnel_0009.combo").map((b) => [b.appliedAt, b.expiresAt])).toEqual([[c, c + 15 * 30 + 16]]); // + 16: held by the rest of her combo's slow-down (buff-in-stop)
     const ult = hitsOf(s, A, "ultimate_skill")[0];
     expect(from(ult, "Twilight: Humiliation (ultimate)")).toEqual([expect.closeTo(0.672, 6)]);
     expect(from(ult, "Twilight: Humiliation (combo)")).toEqual([expect.closeTo(0.336, 6)]);
