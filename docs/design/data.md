@@ -273,6 +273,21 @@ engine's Stagger. Where the engine's own Stagger ran short of the log's
 is in `BuffReplay.staggerHolds`. Landings a log can't
 have (a hit that didn't reach the logged enemy) are named by hand in the
 fixture's `absent`, each with why, and left out of the replay's side.
+Build inputs the export omits or got wrong are the fixture's
+`buildOverrides` (2026-11-18): `team` stays as exported, each override
+sets fields over it when the fixture is read (logs.ts `readLogFixture`;
+`readLogFixtureRaw` and `zmdlogs refresh` keep the file as written), with
+its evidence in `why`. The evidence is `efsim zmdlogs fit-build <fixture>
+--operator <op>` (buildfit.ts): every attribute-node count, weapon level
+and food (or none), each scored by the operator's landed kit hits within
+±1 of its primary reading recomputed with the candidate's panel, and
+apart on the clean ones (no difference between the log's listing and the
+replay), so an override is the fit that explains the most hits with the
+fewest changes, not a ratio's nearest ATK. Older hand fits are still
+written into `team` with a note (not migrated). The weapon's level isn't
+yet bounded by its logged skill levels (WeaponBreakThroughTemplateTable's
+`skillLevelBounds`, not in packages/data/tables.json): check a fitted
+level by hand.
 
 **Why the check missed the Stagger bug** (journal 2026-10-25): until then
 `checkLog` computed every hit through options of its own (`staggered:

@@ -22,7 +22,8 @@
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-18, buildOverrides): Si's attribute nodes 0, fitted with efsim zmdlogs fit-build; the team entry is as exported."
   ]
  },
  "enemy": {
@@ -249,6 +250,15 @@
      ]
     }
    ]
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0036_jsspsi",
+   "set": {
+    "attributeNodes": 0
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-18): 23 of 81 landed hits within ±1, 4 of 4 clean (as exported 0, ×0.9403): ATK ×0.9397, no attribute node (nodes need trust the log doesn't record; as in c83c and e989). The other hits carry her combo's unlogged Yinglung's Edge and P2 ATK, and Arcane's Will debuffs the log lists differently."
   }
  ],
  "hits": [

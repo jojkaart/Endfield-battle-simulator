@@ -13,6 +13,7 @@ import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Sche
 import { DIVE, ENERGY, JUMP, linkValue, SP } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
 import { slowDown } from "./clock.ts";
+import { engineReading } from "./assumptions.ts";
 import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spAt, spCostAt, spGrantOf } from "./resources.ts";
 import { chainAfter, windowKey } from "./timing.ts";
 import { situationAt } from "./situation.ts";
@@ -370,6 +371,7 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   const castEvent: BattleEvent = {
     type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
     ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}), ...(beside ? { beside: true } : {}),
+    ...(full.timing.subSkill && engineReading(ctx.scenario, "battle-sub-skills") === "main-only" ? { unseenByKind: true } : {}),
   };
   const endedEvents: BattleEvent[] = buffEndedEvents(consumedBuffs, frame, true);
   // Buffs the cast used up (Link, consumed ones) may have set a combo's recovery rate.

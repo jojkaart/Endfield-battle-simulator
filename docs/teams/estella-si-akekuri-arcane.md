@@ -95,10 +95,18 @@ full energy, +0.66% ± 0.52 from zero (noise), and one press fewer.
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **53,781** (1,194) | **52,740** (1,539) |
+| Sustained DPS over 300 s (sd over seeds) | **52,937** (1,539) | **52,850** (1,629) |
 | As a bot (0 s) / at 0.6 s | 57,835 / 55,713 | 56,552 / 55,928 |
 | First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
+
+**Arcane's and Akekuri's tests from the logs (2026-11-18; in-game tests 4, 7, 30, 31, 51, 57, 62):** the Corrosion
+ramp, her Susceptibility's 10 s, the finisher's Cluster Strike, Akekuri's ×1.30 Link and her P1 timer were already
+the engine's; the two fixes (Solemn Phalanx's INT Arts DMG on the Corrosion its infliction forms, her second
+ultimate's own Amp) need Intellect ≥ Will, and this Arcane plays WILL. The same seeds at 9384cb0: **53,780 /
+52,744** (sd 1,193 / 1,541), within 0.01% of the row above, and the 60 s examples' snapshots didn't move.
+
+**The engine change of 2026-11-18 (in-game test 110 from the logs: a Stagger lasts about 2 s past its data; same seeds):** 53,780 → 53,514 / 52,744 → 52,972 (−0.5% / +0.4%, within the noise; `--assume stagger-recovery=none` gives the earlier reading). The rules check then caught Akekuri's battle skill pressed past her ultimate's interrupt mark (it ends her ultimate state); the SP ≥ 200 rule now waits until she isn't in her ultimate (a visible state): → **52,937 / 52,850** (−1.1% / −0.2%). As a bot / at 0.6 s now 52,665 / 53,447 (full energy).
 
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** bosses
 freeze (Rhodagn: Si's freezes hold every debuff) 56,493 → 56,716 / 56,055

@@ -11,6 +11,7 @@ import {
   checkReport,
   differencesCliReport,
   findScalesReport,
+  fitBuildReport,
   formatRaw,
   formatReactionCheck,
   groupsCliReport,
@@ -76,6 +77,11 @@ export default command({
                                           buff effects' giver and start): from the raw cache, else fetched
                                           once; writes nothing when the detail's hits differ from the fixture's
                 [--detail file]           Use an already downloaded /api/battles/<id> response
+  efsim zmdlogs fit-build <fixture> --operator <op>  The build inputs the export omits or may have wrong, fitted:
+                                          every attribute-node count, weapon level and food (or none) scored by the
+                                          operator's clean hits (log and replay agree) within ±1; the evidence for a
+                                          fixture's buildOverrides
+                [--top n] [--no-foods]    Candidates shown (default 8); without trying foods
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim zmdlogs casts <fixture>           The placement in time order: each logged hit with the cast, slot and
@@ -124,6 +130,7 @@ export default command({
     what: { type: "string" },
     hits: { type: "boolean", default: false },
     assume: { type: "string", multiple: true, default: [] },
+    "no-foods": { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -164,6 +171,10 @@ export default command({
     if (sub === "groups") {
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
       return groupsCliReport(data, values.operator[0] as string, args.slice(1), { workers: values.workers, verbose: values.verbose, progress });
+    }
+    if (sub === "fit-build") {
+      if (args.length !== 2 || !arg || values.operator.length !== 1) throw new Error("zmdlogs fit-build takes one fixture file and one --operator <op> (--top n, --no-foods)");
+      return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"] });
     }
     if ((sub === "scales" || sub === "find-scales") && arg && op) {
       const fx = readDevFixture(arg);

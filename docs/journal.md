@@ -4,9 +4,42 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 100 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 105 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15
+
+**Goal:** decide from the logs the in-game tests on Si (14, 41, 92), the basic-attack cancel (16) and the swap
+lock (15), checking the re-triage's claims (docs/in-game-tests-retriage-*.md), fixing the engine where it's wrong.
+
+**Done** (each test's own section in docs/in-game-tests.md):
+- **14 decided:** Si's battle skill inflicts Heat with a Heat operator first, Cryo otherwise, as the engine has:
+  her 11 `fire_fire` and 9 `cryst_cryst` bursts (`checkReactions`) fall on that split, every predicted one with the
+  engine's element, none against it.
+- **41 decided:** Jade Vessel's next-combo bonus comes from her ultimate or her Immobilization, lasts 20 s (held by
+  stops) and goes with the next combo, as the engine has: 37 final hits plain with it, 4 without; 6 ultimate-only
+  combos plain with it; no non-plain final hit fits with it toggled.
+- **92 decided, the re-triage reversed:** Long Heritage's team Arts DMG (`teamatk`, 0.112) starts with Si's Amp at all
+  four of her ultimates (632c, 67d8), on every member: her Cryo Amp counts (checkType 1 reads its ID list), the
+  engine's reading. The re-triage had read `teamspell` (0.168, the wielder's own Cryo DMG from her battle skill),
+  which is hers alone by design. The kit notes say so.
+- **16 partly:** the re-triage's Final Strikes "after her battle-skill cast" follow her hitless battle-button events
+  (282 of 370 events have no battle-skill hit; test 106's open part), not battle skills; no real cast (73) has a
+  basic hit of hers between its event and its hit. Whether a press drops an unlanded hit leaves no trace: still the
+  owner's. Added to open-problems ("Type 50 Yinglung's Edge"): the events don't end her basic attack.
+- **15 not decidable:** Gilberta is never the controlled operator in any development log (none of her 371
+  Final-Strike hits deals Stagger, a controlled-only mark), so her 3.7 s lock never had anything to hold; the
+  re-triage's "fresh chains" are the controlled operator's and teammates' own attacks.
+
+**No engine change**, so the scoreboard and the team numbers don't move (snapshots:update: nothing changed).
+
+**Decisions:** Si's Final Stroke has a `switchToBuffConfig` with `asSkillCast` and a buff (as Last Rite's beside cast),
+so it may run beside her basic attack; left as a note in test 16, since no log tells a stroke from the hitless
+events. Test 10 left to the queue agent.
+
+**Dead ends:** a teammate's `attack1` as a swap marker (teammates attack on their own); the Jade Vessel enemy-debuff
+lane's `since` as an Immobilization marker (whether it moves on a refresh is open: data.md).
 
 ## 2026-11-18: Typhoeus's and Laevatain's in-game tests from the logs; buffs created in a stop are held
 
@@ -70,6 +103,170 @@ hold-out 66.1 → 65.9%).
 **Dead ends:** see open-problems "Laevatain's Twilight runs longer than its model" (a constant,
 show_weapon's 16 s, the full 115-frame pause, a smaller combo hold). Two small Typhoeus misfits
 noted there (1cd1 40.12 s, d9e5 11.73 s).
+
+## 2026-11-18: The owner's in-game test queue from the logs: Stagger recovery, Laevatain's Finisher
+
+**Goal:** the owner: "don't ask me to test things that are easier to determine from logs." Test 110 and every
+test in the owner's queue (106, 108, 10, 97, 107, 8, 54, 100, 98, 12, 109) tried on the logs; the queue rebuilt
+with only what no log can decide. (The other ready tests are being re-triaged by other agents.)
+
+**Decided by the logs** (each test's section in docs/in-game-tests.md has the evidence):
+- **110:** a Stagger lasts about 2 s past PoiseRecTime and the stops in it. 30 windows bracketed within 3 s: the
+  log's end a median 2.3 s after the engine's own; with +2 s on the enemy's clock a median 0.1 s off, rms 3.15 →
+  1.40 s, 12 short / 13 long (27 / 2 before). Hits don't extend it (Staggers outlast 1.8–7 s hitless gaps and end
+  0.1 s after a hit); hit rate, Finishers, Stagger dealt don't explain it. Engine assumption `stagger-recovery`
+  (`2s` default, `none`); `stagger-freeze` (held / runs: rms 1.40 / 1.42, undecided).
+- **108 (the tap):** the next tap is the Finisher, except in Laevatain's Twilight: 7 Staggers with her Twilight
+  chain (2–26 hits each), no Finisher; outside it she Finishers every time. Her kit gates the Finisher off in
+  Twilight (the enhanced chain has no finisher in the data).
+- **10** (final hit by stacks: 63 of 86 exact, n 1–5), **8** (ordinary combos give no Link: 714 skills after one,
+  327 plain without it, 20 of 220 mismatches at ×1.2), **12** (the data's value formula; 5 s with ends scattered
+  −1 to +2 s), **107** (buffs held for exactly the stops: the 2026-11-14 damage evidence), **98** (the stew),
+  **100** (when: 0–9 s after Rhodagn's HP first falls below 70%, five of five long fights).
+
+**Engine changes, measured:** scoreboard (`npm run snapshots:update`): development and verified unchanged, hold-out
+plain 65.0% unchanged (one log mixed), earlier pending mean |damage error| 8.2 → 8.3% (d774: a Stagger the replay
+breaks itself at 127.9 s, unlisted, now 2 s longer). The replay follows the log's listing, so the recovery shows in
+the simulations, not the scoreboard. Team numbers, 32 fresh seeds (1001–1032), full energy / from zero: the owner's
+53,780 → 53,514 / 52,744 → 52,972, → **52,937 / 52,850** with Akekuri's battle skill kept out of her ultimate (below); Typhoeus's 52,374 → 51,859 / 48,973 → 48,937; Ink Melt 63,347 → 62,424 / 56,123
+→ 57,486 with the recovery, → **59,140 / 54,421** with the Finisher gate (−5.3% both: the rules had Laevatain
+Finisher inside Twilight).
+
+**Tooling:** `BuffReplay.staggerCuts` / `StaggerRun.engineCut` (the engine's own end where the log's calm hit came
+first, which `staggerHolds` missed: those windows looked like exact fits), `staggerRuns(data, fx, { assume })`;
+engine assumption `combo-window-count` (highest / latest) for test 10: no verdict moves under `latest` in 36 Si
+logs, so no log has the case.
+
+**premerge** then failed on tests the 2 s moves (the stagger timeline test, 9090's engine ends), on Laevatain-alone loop
+searches (no exact loop in 12 rounds at beam 6 with the recovery: those tests now run under `stagger-recovery=none`,
+as they test the loop machinery) and on the owner's team's rules check: Akekuri's battle skill pressed past her
+ultimate's interrupt mark ends her ultimate state (seed 2). Her `zone_hold` is a visible state now and the SP ≥ 200
+rule waits for it.
+
+**Not decidable / left:** 106 (the buff isn't listed), 97 and 108's dive part (4 dive hits in 79 logs, none in a
+row), 54 (dashes not logged), 109 (no Haste logged), 100's trigger, 98's milk: the new queue. Test 12's leftover is
+an engine issue: its Vulnerable count at Gilberta's ultimate is one or two low in 4360, 489c, 9847, d572 (the damage
+follows the listed value 86 to 24; open-problems). Also found: 4d60 has a 7.2 s whole-game pause (no hit from
+anyone, a teammate's chain continuing after it), which the log's clock runs through; bigents' Staggers run 11–14 s
+past the data.
+
+## 2026-11-18: Si's misfit logs and Ardelia's build: build overrides and fit-build
+
+**Goal:** the misfits of Si (0c14, 9555, c83c) and Ardelia (f978, 1d91): build offsets or kit rules, and build
+offsets fitted from the hits instead of by hand (the roadmap's "build fitter with structured buildOverrides").
+
+**Done:**
+- **Build overrides and a fitter.** A fixture's `buildOverrides` sets fields over the exported `team` when it is
+  read (`readLogFixture`; `readLogFixtureRaw` and `zmdlogs refresh` keep the file as written), each with its
+  evidence. `efsim zmdlogs fit-build <fixture> --operator <op>` (packages/logs/src/buildfit.ts) scores every
+  attribute-node count, weapon level and food by the operator's landed kit hits within ±1 of the primary reading
+  recomputed with the candidate's panel (clean hits counted apart), so foods' DMG lines and crit-null hits count.
+  docs/design/data.md, the log check's rule.
+- **Fits** (open-problems): 0c14 Si = Kunst Tube (her teammates' food) and two attribute nodes: her ratio was
+  ×1.1543 without Alesh's +0.16 DMG and ×1.1322 with it, which only an additive DMG (+0.247) with ATK ×0.962 fits;
+  46 of 191 hits, 25 of 25 clean. 9555 Si = no attribute node (×0.9397). f978 Ardelia = weapon at level 60 (the
+  earlier "no pair fits" read the ATK ratio, inside the hits' rounding): 107 of 139, all 55 clean.
+- **0c14's step ×1.0965 at 13.25 s:** Alesh's P3 ATK and Thermite Cutter's team ATK, listed from a combo whose hits
+  the log hasn't; the replay can't cast it (left: a cast inferred from a buff only it gives).
+- **c83c's late combos:** now one Yinglung's Edge layer off each way (the +21% went with the consumed-buff fix).
+  The engine assumption `battle-sub-skills` (main-only: sub-skills unseen by skill-type triggers) measured mixed
+  (c83c 31 → 22 and 9555 11 → 1 mismatches, the hold-out row 7.4 → 7.6%), so it stays a switch; Si's
+  battle-button events every 3.2–3.6 s (most hitless) are the open part (test 106).
+- **1d91's Ardelia:** not a build: Liino's Medicant layers reach her later than the engine's every-beat heal
+  (1 layer to 18 s, none at 23–32 s, 2–4 after), Typhoeus and Arcane at other times: the soundwave's area is the
+  candidate (positions, not modelled).
+
+**Scoreboard** (`npm run snapshots:update`, docs/accuracy.md): development plain 49.5 → 50.2%, mismatch
+19.3 → 18.4%; earlier pending plain 47.2 → 47.8%, mismatch 26.1 → 23.9%; all but the hold-outs mismatch
+21.5 → 20.1%, mean |damage error| 10.1 → 10.0%; hold-out unchanged; 1 log better, 2 mixed (0c14, f978: plain up,
+mismatches down, their simulated totals +1.0 and −0.2 points), none worse. Si's mismatches 18.6 → 10.0%,
+Ardelia's 22.2 → 12.9%. Example and kit snapshots unchanged.
+
+**Decisions:** the fits are overrides, not edits of `team`, so a later fitter (weapon levels bounded by their
+logged skill levels: WeaponBreakThroughTemplateTable isn't loaded yet) can redo them; the older hand fits stay in
+`team` with notes (not migrated). No kit default changed, so the team numbers don't move.
+
+**Dead ends:** a food alone or a node count alone for 0c14's Si (it takes both); replaying the food search through
+the whole check per candidate (minutes per log; the fitter recomputes the primary reading instead, seconds).
+
+## 2026-11-18: Liino's volley is a timer; Perlica's runs aren't her kit
+
+**Goal:** two leads on Typhoeus's team: Liino's volleys (9090: 10 logged, 1 replayed) with 1d91's doubling, and
+Perlica's ×1.3/×1.5 runs (4360, 9847, …) and fc63's ×0.934.
+
+**Liino's volley.** Her volley buff (spelllnfliction_extraattack) ticks every 10 s from the battle skill's frame 45,
+first at once, and its tick's reaction check has `isEnable false`: a plain timer, not test 26's reading B (a reaction,
+then 10 s). `efsim gamedata tree` left disabled actions out as defaults, which is how the dead condition read as live
+for months; it now prints `DISABLED`. The logs agree (103 volleys, 10.0–11.7 s of world time apart, also with no stop
+between). The kit's volley_window ticks; since the game's clock for it runs ~5% slower than the replay's world time
+(as her beats' does), the replay takes each tick from its logged volley (`KitBuff.ticksShownByHits`). 1d91's "doubling"
+was the team's buffs (Ardelia's Susceptibility and Arts DMG Taken, Arcane's WILL, usp02): its 886s now match plainly.
+In-game test 26 is answered by the data and the logs (told to the lead; in-game-tests.md is another agent's).
+
+**Perlica.** Not her kit. Talent 1 fits where the engine gives it; 9847's runs are team-wide (Gilberta, Avywenna,
+Liino at the same ratios: Bigents' fight). 4360's ×0.62–0.70 run was Liino's Cosmovoice kept on past an End Stance the
+log doesn't record: the kit can't cast her battle skill in Cosmovoice, the replay made it anyway. The replay now infers
+the exit press after the log's last listing of the stance's buffs (`exitPresses`). fc63's ×0.934 is her ATK (3,571
+from 30 hits, against 3,822); no weapon level or skill level at her logged level 90 gives it, and the "artifice read as
+0" candidate is ruled out by direction.
+
+**Scoreboard** (docs/accuracy.md): verified plain 71.0 → 72.8%; development plain 49.5 → 50.8%, mismatch 19.3 →
+19.0%, mean |damage error| 13.0 → 12.9%; hold-out plain 65.0 → 66.0%, mismatch 7.4 → 7.2%, error 12.5 → 12.4%. Logs
+better 12, worse 1 (891: its Liino volleys are ×0.1 the engine's, like c6d8's every hit, so landing more of them adds
+to an existing overshoot), mixed 4. Team (32 seeds): 52,374 → 52,529 / 48,973 → 49,185.
+
+**Dead ends:** reading Liino's battle-skill events at a volley's first-hit ms (37 of 100 volleys have one) as the
+volley's own, not beats: only 1d91 and 7910 moved, both worse (their stance was cast before the log). Pinning every
+ticking buff to its logged hits also fixed Rossi's bleed (489c mismatch 124 → 111) but is outside this task: opt-in
+for Liino only, a lead for Rossi's kit.
+
+## 2026-11-18: Arcane's and Akekuri's in-game tests from the logs
+
+**Goal:** decide from the logs the in-game tests on Arcane and Akekuri (the owner's team and Typhoeus's): 31, 51, 7,
+30, 4, 57, 62 (the "Logs first" rule; the claims of docs/in-game-tests-retriage-01-40.md and -41-75.md checked, not
+taken).
+
+**Decided** (each in its own section of docs/in-game-tests.md, "Decided by the logs (2026-11-18)"):
+- **31** (finishers in the array): a finisher alone is a Cluster Strike, four lasers about 0.4 s after its first hit
+  (00ae, 4d60, a7a7, 2b01, c516). The engine already had it (`cluster_strike_finisher`): the re-triage's "the engine
+  only has the Final Strike trigger" was stale; the replay lands all 20 lasers. A finisher and a Final Strike together
+  are one strike (b6aa 46.6 s, four lasers).
+- **51** (a hit's own effect on that hit): Solemn Phalanx (3 plain exact; 8915's on its stage factor) and Starry Beach
+  (11 plain exact) count on the hit that creates them. New: Solemn Phalanx's INT Arts DMG is also on the Corrosion the
+  same infliction forms (a7a7 3.86 s exactly (1.399 + 0.44) / 1.399; 8915 twice at 0.32), Hot Work's (from the
+  Corrosion) isn't.
+- **7** (INT Arcane ×2?): no; 00ae and a7a7 fit, 8915's ×1.85 is all its stage (238 of her 278 hits in the stage's
+  windows within 1% of its factor, as Si's and Wulfgard's). The Amp lasts the array, Gloompurge relists it, and the
+  second ultimate's cast replaces it with its own, gone by her next basic attack (00ae, 8915): the engine kept it up
+  to 10 s more.
+- **30** (her Susceptibility's length): 10 s from the hit (tight windows 10.4–11.8 s; none 20 s); the −1 to +3 s
+  differences are timer holds (tests 37, 110).
+- **4** (the Corrosion ramp): the engine's ramp; 1,156 of 1,897 non-crit hits under a plain-formula Corrosion within
+  0.3 points of its shred, alternatives at most 281; 743 of 936 with raised caps / forced scales / carried shreds.
+- **57** (Akekuri's Link): ×1.30, five plain exact Laevatain battle-skill hits in 458b.
+- **62, Akekuri's part**: each layer restarts the shared timer (458b: 11 plain exact basics at 167–173 s with all five
+  layers); Chen's, Yvonne's and Ember's parts stay open.
+
+**Engine changes** (both kept: no log worse without explanation, hold-out not worse):
+1. Before-damage triggers on the infliction (`inflictionApplied`: the game's abilityEvent 126, sent before it resolves
+   the infliction into a reaction) run ahead of those on the reaction, so a Corrosion's (or Combustion's) own hit sees
+   what they give (timeline/landing.ts). Only Solemn Phalanx (INT) changes a wearer's own Corrosion hit in practice.
+2. Arcane's kit: `int_amp_ult2`, the second ultimate's own Amp (ends Gloompurge's at the cast; ended by her next basic
+   attack, at most the skill's 287 frames). A first try with `endsWithCast` cut it before the ultimate's own hit in
+   a7a7 (a battle skill placed inside the cast) and made a7a7 and a hold-out worse; a7a7 also shows her battle skill
+   right after keeping it, so only a basic attack ends it.
+
+**Scoreboard** (docs/accuracy.md from `npm run snapshots:update`, against 9fa151b): development
+plain 49.5 → 49.6%, mismatch 19.3 → 19.2%, mean |damage error| 13.0 → 13.1% (00ae's total: its post-ultimate hits
+moved from −40% to −15% each, unquantified, under a total already below the log); hold-out unchanged in the
+aggregates (1 log better, none worse); 8915 plain 101 → 113, a7a7 352 → 353; Arcane's row plain 60.9 → 61.1%.
+
+**Teams:** both play Arcane in WILL, where neither change acts (Solemn Phalanx's INT trigger and the second
+ultimate's Amp need Intellect ≥ Will): the example snapshots didn't move.
+
+**Left:** 8915 after its stage (×0.986 at 92–103 s, ×0.81–1.21 steps at 104–112 s); whether a combo or battle skill
+ends the second ultimate's Amp; the 0.05 s by which Akekuri's P1 outlives the replay's end in 458b; her own finisher's
+8 SP (no log records SP).
 
 ## 2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings
 
@@ -267,201 +464,3 @@ the parallel agents: db87's first strike (Laevatain's ultimate stop
 missing from the placement), fc63's second (Typhoeus's shot count), and
 the ×1.3 runs of 1d91 70–72 s and 4d60 80 s (Stagger). Alesh is ×0.85 on
 every hit in ad7f (his build), untouched.
-
-## 2026-11-17: Haste is movement speed; the owner's team drops Initial Stroke
-
-**Goal:** settle what Si's talent Haste does after the logs found it doesn't
-speed up attacks (docs/journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md),
-and whether the owner's team should still press Initial Stroke.
-
-**Done:**
-- The owner (2026-11-17) has never noticed Haste in play and would notice
-  faster attacks. The game's own glossary entry for Haste (I18nTextTable_EN,
-  the `ba.speedup` term) reads "Temporarily raises the movement speed of a
-  target … Effects of the same type can stack until hitting the speed cap";
-  Slow is its opposite ("movement speed reduction"). So Haste is movement
-  speed, which the simulator doesn't model: settled by the data's text, the
-  logs (test 19) and the owner.
-- In-game test 109 (does the Haste need Initial Stroke) moved to the bottom
-  of the queue: it matters only if Haste shortened cooldowns, which nothing
-  suggests.
-- The owner's team's rule 9 now presses only Si's battle skill (no Initial
-  Stroke). `efsim rules … --compare` against the old list: +1.37% ± 0.58 on
-  64 fresh seeds at full energy, +0.66% ± 0.52 from zero (noise), one press
-  fewer. On seeds 1001–1032: 53,781 (sd 1,194) / 52,740 (sd 1,539), against
-  52,382 / 52,716 with Initial Stroke (docs/teams/estella-si-akekuri-arcane.md).
-
-**Left:** the `hasteFrames` plumbing in the engine is now inert (a cleanup
-for a later round). No other rule list in examples/ presses Initial Stroke.
-
-## 2026-11-17: Tests 18, 19, 101, 104 from the logs: bosses freeze, Haste isn't attack speed, teammates' pause
-
-Goal: the owner can't record tests 18, 19, 101 by hand and answered 104
-from play (most bosses freeze, a few rare ones don't); decide what the
-logs can (development logs only).
-
-**104.** Bosses freeze by default now; control immunity is per enemy, in
-a table with the log evidence (packages/data/src/enemyFacts.ts, read into
-EnemyData.controlImmune: the data has the tag on no enemy, so it's a data
-fact from the logs, not an engine rule). Each boss with a freezer, checked
-frozen against immune: Rhodagn's five logs don't move (he freezes),
-Chiliarch (c3c7: Ardelia's Susceptibility held too long) and the enemy Si
-(4a64: Arcane's WILL debuff held too long; 3f78 leans the other way) are
-listed immune. Under both readings Si's own debuffs are held, so her
-Artful Intent ends (the 2026-11-13 evidence) don't tell them apart. Not
-per fixture: fixtures are being refreshed in parallel, and immunity is the
-enemy's. Scoreboard unchanged in every group.
-
-**18.** Cooldowns run through others' ultimate stops: settled (58 combo
-pairs come back between the cooldown and the cooldown plus the stops,
-e.g. Typhoeus 17.1 s apart, cooldown 17 s, 4.9 s of stops in 9c6e).
-Estella's Physical Susceptibility held by her own stop fits c4f3 (5 of
-6). Laevatain's Twilight isn't decided (her logged Twilight ends run
-2.5–7 s past the simple model): registered as kit assumption
-`laevatain-twilight-own-stop` (reading `held`, +2.03 s).
-
-**19.** Haste doesn't speed up attacks: basic-attack steps in the 5 s
-after Si's Inksoul ends (30%) are 0.995× as far apart as elsewhere (95%
-0.95–1.02; sped up, 0.77). The engine no longer plays hasted casts faster
-(clock.ts actionSpeed is 1). It broke the five Si example timelines,
-which had been searched with hasted casts: each now has the better of
-the old timeline repaired (the gear ascent's repaired replay: steps
-moved later or dropped) and a fresh single-beam search, a lower bound
-(owner's 3.99M → 3.47M repaired, from zero 3.26M → 2.29M searched; Ink
-Melt 4.75M → 3.95M repaired, from zero 4.72M → 2.84M searched, beam 48 no better; Si, Laevatain,
-Liino, Gilberta 3.08M → 2.60M searched). A full re-search (beams
-12/24/48, skeletons) is left: hours of CPU.
-
-**101.** Not one timer: two thirds of full chains run straight on, the
-rest wait a heavy-tailed pause (median 3.7 s); the share of free time a
-teammate attacks depends on the fight and the operator (R² 0.41 each),
-not on Stagger or the parser. Measured the same way, the engine's
-teammates attacked 0.59–0.66 of their free time against the logs' 0.43
-(median per operator-fight): the old 3.5 s was the median of the gaps
-over 1.5 s alone. Pause now 6.5 s (0.41–0.45). The log replay plays the
-logged casts, so only the examples and the rule numbers see it.
-
-Rule numbers (32 fresh seeds, sustained DPS, full / from zero; docs/teams):
-the owner's team 56,493 / 56,055 → bosses freeze 56,716 / 56,141 → no
-Haste speed 55,278 / 55,598 → pause **52,382 / 52,716**; Ink Melt 69,668
-/ 61,716 → 69,698 / 62,331 → 61,255 / 57,302 → **63,347 / 56,123**;
-Typhoeus's team (no freezer, no Haste) 54,607 / 51,076 → pause **52,369
-/ 48,967**. All three fight Rhodagn, now frozen by Si's battle skill.
-Scoreboard (docs/accuracy.md): bosses freezing moves no group; Haste
-without cast speed: development plain 47.2 → 47.3% (79cc +26 plain, 458b
-+4, 791 −3 plain but damage −18.4 → −17.6%, a7a7 −2), mismatch 19.8% and
-mean |damage error| 15.8% unchanged; hold-out 62.1 / 7.6 / 13.5%
-unchanged. The pause doesn't reach the log replay (it plays the logged
-casts).
-
-Dead end: the old 3.5 s's "40% of free time" didn't reproduce with the
-same measure on the engine. A scratch measure had a units bug (time stops
-in frames compared with ms), harmless since both sides had it.
-
-## 2026-11-16: Older development fixtures refreshed from fresh battle details
-
-Goal (the lead; backlog after round 2, point 3): give the 79 development
-fixtures imported before 2026-11-16 what newer imports keep, from a
-one-off fetch of their raw details the owner approved.
-
-Done:
-- `efsim zmdlogs refresh <fixture>` reads the cached detail when
-  `--detail` is omitted, else fetches it once (`refreshFromDetail`,
-  zmdraw.ts). `refreshFixture` now rebuilds the hits as an import would
-  (`zmdlogsHits`, factored out of `zmdlogsToFixture`) and adds every
-  field the fixture lacks: casts, poise, poise.origin and, new, effects'
-  and boundaryEffects' `source` / `since`, one provenance note per kind.
-  The rebuilt hits must equal the fixture's but for those fields, and
-  logged casts the detail's; otherwise `RefreshMismatch` and nothing is
-  written. Tests on synthetic details (tests/zmdrefresh.test.ts,
-  tests/helpers/zmdlogs.ts).
-- Import against refresh, compared: everything an import records from
-  the detail is now covered. Not refreshed, as they come from elsewhere
-  or feed the computation: the team (the export, a second request), the
-  enemy level (stage or total damage; where the stage names the boss,
-  its level is every fixture's), the import's notes, `verifiedAgainst`.
-- The fetch: 79 details, one request each, 3.5 s apart, all found, no
-  parser version changed. 77 fixtures refreshed (6 multi-target ones also
-  got casts and Stagger); every other field is as it was (checked against
-  HEAD), and no string other than game keys and the notes was added.
-- `npm run snapshots:update`: no snapshot and no scoreboard number moved
-  (the fields are record-only).
-
-Skipped: 40d9 and 4e5e (verified). Each detail now lacks a zero-length
-buff lane at one hit that the fixture lists as unquantified (40d9's lane
-is still there, with its dynamic effects emptied; 4e5e's is gone).
-Damage and hit counts match, but the brief said not to overwrite a
-detail that differs. ZMDLogs can change a stored detail
-(data-sources.md).
-
-What the new fields answered (open-problems.md): Electrification's
-logged giver is the replay's applier at 3,497 of 3,505 kit hits (the 8
-others in 3aa6), and the level readings that differ are in 3aa6 and
-d774. Breach can't be checked from the hit export (it lists no physical
-statuses). Of 79 Artful Intent bursts, 39 are credited to Final Stroke
-and 33 to an Inksoul expiry; 7 deal no Stagger and record no path.
-
-## 2026-11-16: Improvement round 2: package boundaries, CLI commands, design.md split
-
-Goal (the lead): the larger restructures of the architecture review
-(12–14) and the open friction points, behaviour-preserving throughout.
-Summary: docs/friction-done/2026-11-16-round-2.md.
-
-Done, one commit (or two) per item, in order:
-- **Quick wins:** `npm run lint:changed`; premerge skips the suites when
-  typecheck or lint fails; the game-data cache keys only on what the
-  build runs and says why it rebuilds; `framesOf` / `withSeconds`;
-  `node scripts/with-lock.ts`, `scripts/at-commit.ts`, a per-file
-  progress reporter for background vitest runs; one snapshot writer and
-  `scripts/snapshot-keys.ts`; status tests on `toMatchObject`;
-  `PolicyObserver.check` / `.press`; pending shards balanced by measured
-  time (longest shard 79 → 54 s of check time).
-- **CLI:** one module per command (`packages/cli/src/commands/`); the
-  usage text is byte for byte the old one.
-- **Engine:** `core.ts` (`@efsim/engine/core`) and `planning/`, with
-  lint-enforced boundaries; the data package imports only the core.
-- **Logs:** `packages/logs` (`@efsim/logs`), the logcheck ⇄ enginecheck
-  cycle broken; `efsim zmdlogs` is a thin wrapper.
-- **Docs:** design.md is the principles and an index; the sections are in
-  docs/design/; `npm run links` (and a test) checks relative links.
-
-Checks: after every item `npm test` passed and 42–48 CLI invocations gave
-the same output as 1de265e (scratch/at/, `scripts/at-commit.ts`), apart
-from timings and the provenance line. `npm run snapshots:update` after
-item 4 left every snapshot and docs/accuracy.md byte for byte as they
-were: the scoreboard didn't move.
-
-Decisions: the planning code moved into a folder (a visible boundary,
-simple lint globs) while the core stayed where it was, so tests' deep
-imports into timeline/* still work; `@efsim/cli` re-exports `@efsim/logs`
-so older imports work; setup-worktree now also links a new workspace
-package in the main checkout (packages/logs), so main runs after the
-merge without `npm install`. Not done (carried to
-docs/friction/2026-11-16-backlog-after-round-2.md): one module for data
-file reads, facts on status landings, a structured status on modifiers,
-the test-helper moves, the SP anchor, search-time tables.
-
-## 2026-11-16: Rule numbers refreshed for the fixed driver; Ink Melt re-tuning finds nothing
-
-Goal (the lead): after the rule driver's fixes (one start check, event
-stepping), refresh the documented rule numbers, and win back Ink Melt's
-−2.4% from zero if a change holds up.
-
-Done:
-- `efsim rules --first-seed n` (default 1): the report on fresh seeds.
-  The three team pages' "Rules" tables, design.md's results table and the
-  example lists' descriptions now give 32 fresh seeds (1001–1032), full
-  energy and from zero. The old 10-seed numbers are marked superseded in
-  one line. The owner's team: 56,493 / 56,055; Ink Melt: 69,668 / 61,716;
-  Typhoeus's: 54,607 / 51,076. Against the fixed 300 s search: +21.1%,
-  +27.4%, −3.2%.
-- The owner's page: Initial Stroke's +4% was the old driver's. Now
-  leaving it out is noise under the data's reading and +2.8% ± 0.6 under
-  test 109's alternative (`--assumptions`), so test 109 decides it.
-- Ink Melt: neither guided search kept an edit: the default one, judged
-  on the zero start too, and one led by the zero start. Nor did a short
-  random search. From zero the best edit was noise (+1.2% ± 1.2) and lost
-  6.6% at full energy. The example list stays (team page).
-
-Also: the friction report of phase 2
-(docs/friction/2026-11-16-phase-2-friction.md).

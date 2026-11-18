@@ -79,7 +79,7 @@
           "buff": "wpn_claym_0018.combo_ready"
         }
       ],
-      "note": "Ability event 30, CheckSkillType [7] (ultimate). In-game test 41."
+      "note": "Ability event 30, CheckSkillType [7] (ultimate). In-game test 41, decided by the logs (2026-11-18): Si's combos with only an ultimate since the previous combo match plain with the bonus (458b, 79cc, f978, c3c7)."
     }
   ]
 }

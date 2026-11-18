@@ -937,7 +937,10 @@ describe("timeline: stagger and finishers", () => {
 
   it("enough stagger staggers the enemy for its stagger time; meanwhile hits take ×1.3", () => {
     const { end } = at([{ operator: op, skill: L + "attack1" }], 7);
-    expect(end.stagger).toEqual({ poise: 0, until: 6 + 300, finisherUsed: false });
+    // PoiseRecTime 10 s, plus the 2 s recovery (engine assumption stagger-recovery, test 110); the data alone under `none`.
+    expect(end.stagger).toEqual({ poise: 0, until: 6 + 300 + 60, finisherUsed: false });
+    const dataOnly = createContext(d, { ...scenario([{ operator: op, skill: L + "attack1" }]), options: { ...scenario([]).options, assume: { "stagger-recovery": "none" } } });
+    expect(advance(dataOnly, apply(dataOnly, init(dataOnly), { operator: op, skill: L + "attack1" }), 7).stagger.until).toBe(6 + 300);
     const r = simulate(d, scenario([{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "attack2" }]));
     const a2 = r.hits.find((h) => h.skillId === L + "attack2");
     expect(a2?.modifiers.some((m) => m.source === "Staggered" && m.zone === "multiplicative" && m.value === 0.3)).toBe(true);

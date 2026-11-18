@@ -44,24 +44,26 @@ must be something a person can do by hand while playing:
 
 ## The queue: the tests that decide the most now
 
-Ranked by how much of the simulation each answer moves for the teams in
-work (the owner's team, Ink Melt, Typhoeus's team) first, then every fight, as of 2026-11-16 (18, 19, 101, 102 not testable by hand and 103, 104 answered by the owner on 2026-11-16; 91 answered by the logs; 77 on 2026-11-01; 104 from 2026-10-31, 103 from 2026-10-30; 101 and 102
-from 2026-10-28; 99 answered by the logs). Reply with the number and
-what you saw, in a line; the formats below are only suggestions.
+Only tests no log can decide (2026-11-18: the logs were tried on each;
+what they decided is in each test's section). Ranked by how much of the
+simulation each answer moves for the teams in work (the owner's team, Ink
+Melt, Typhoeus's team) first, then every fight. Taken from the queue on
+2026-11-18, decided by the logs: 8, 10, 12, 107, 110, 108's tap, 98's
+stew, 100's when (earlier: 18, 19, 101, 102 not testable by hand; 103,
+104 answered by the owner on 2026-11-16; 91 and 99 by the logs). Reply
+with the number and what you saw, in a line; the formats below are only
+suggestions.
 
-| # | test | needs | reply, e.g. |
-|---|---|---|---|
-| 1 | [106](#106-type-50-yinglungs-edge-which-battle-skills-give-a-stack-and-how-long-it-lasts-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge stacks | Estella and Si with 3 pieces each | `106: anyone's battle skill +1 to every wearer; no expiry` |
-| 2 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
-| 3 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
-| 4 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
-| 5 | [107](#107-sis-amp-across-teammates-ultimates-ready-if-you-have-si-lower-priority) Si's Amp across ultimates | Si and two others' ultimates | `107: A 12 s, B 18 s` |
-| 6 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
-| 7 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
-| 8 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
-| 9 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
-| 10 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
-| 11 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
+| # | test | needs | why only the game | reply, e.g. |
+|---|---|---|---|---|
+| 1 | [106](#106-type-50-yinglungs-edge-which-battle-skills-give-a-stack-and-how-long-it-lasts-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge stacks | Estella and Si with 3 pieces each | the buff's icon: the log doesn't list it | `106: anyone's battle skill +1 to every wearer; no expiry` |
+| 2 | [16](#16-does-a-skill-cancel-the-basic-attack-it-interrupts-ready-optional-variant-with-ardelia-the-logs-partly-2026-11-18) a skill pressed during attack 5 | Si (or anyone) | presses aren't logged, and a dropped hit leaves no trace | `16: the Final Strike's number still appears / is gone` |
+| 3 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | jumps and dashes aren't logged; players never dive | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
+| 4 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-decided-by-the-logs-2026-11-18-for-the-tap-yes-but-not-in-laevatains-twilight-the-dive-part-ready-any-operator-lower-priority) a dive on a Staggered enemy | anyone | no logged dive on a Staggered enemy | `108: a dive isn't the Finisher` |
+| 5 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | dashes aren't logged | `54: dashes at once, extra hit gone; combo hit gone` |
+| 6 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | the log records no Haste | `109: A no icon, B icon` |
+| 7 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-partly-decided-by-the-logs-2026-11-18-09-s-after-his-hp-falls-below-70-what-sets-it-off-ready-if-you-fight-rhodagn-lower-priority) what sets off Rhodagn's bar snapping back | anyone, vs Rhodagn | what he does isn't logged | `100: after 70%, when he jumps to the stacks` |
+| 8 | [98](#98-food-buffs-on-the-stat-panel-the-stew-decided-by-the-logs-2026-11-18-the-milk-ready-any-operator-lower-priority) Bottled Milk's DEF on the stat panel | anyone | DEF changes no logged damage | `98: DEF 140 → 167` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -109,7 +111,28 @@ compare another operator's hit with and without Breach.
 instances, and each of the other 12 at his AI ± one Fervent Morale layer
 (combat-mechanics §3.7). No need to test by hand.
 
-### 4. Corrosion ramp (later)
+### 4. Corrosion ramp (decided by the logs, 2026-11-18: the engine's ramp; don't ask)
+
+**Decided by the logs (2026-11-18):** the engine's ramp holds: the level's
+start (3.6 / 4.8 / 6 / 7.2 points), + its step (0.84 / 1.12 / 1.4 / 1.68)
+at each full second, to the cap (12 / 16 / 20 / 24), all × the applier's
+Arts Intensity effect (reactions.ts `corrosionShred`). Every non-crit hit
+the log check compares (plain or mismatch) under a Corrosion, from
+`efsim zmdlogs hits --json`, gives the shred the log implies (the engine's
+shred plus the ratio's gap in resistance points). Of 1,897 such hits in
+27 logs under a Corrosion the plain formula describes (8915 left out: its
+stage factor), 1,156 are within 0.3 points of the engine's shred (899 of
+the 1,571 at 1 s or later); the alternatives reach at most 281 (no ramp
+267, the cap at once 84, a continuous ramp 261, the first step at 0 s 104,
+steps every 2 s 279, Arts Intensity not on the shred 281). Of 936 hits
+under a Corrosion with Arcane's raised cap, a forced Corrosion's scale or
+a carried shred, 743 are within 0.3 points. The median gap is 0 at every
+elapsed second from 0 to 15+. The misfits gather in logs with known other
+causes (8915's stage, fc63's shot placement, 9c6e's Corrosion levels,
+9847's Liino misses, 7910 and 4d60 Stagger windows, d9e5's fight-wide
+factor: [open-problems.md](open-problems.md)). The evidence below (0eef,
+bdf2) is from before the replay's fixes: their hits under Corrosion are
+now plain.
 
 **Why:** how the resistance reduction grows over time.
 **How (planned):** read the same hit's damage at 0, 5 and 15 s into
@@ -140,7 +163,37 @@ doesn't explain, and it doesn't record her own ultimate buffs.
 Arts reactions): her stat panel (ATK, Will), ultimate level, and the
 damage numbers of one ultimate, ideally recorded with the ZMDLogs client.
 
-### 7. Arcane's INT damage under her own Corrosion (ready, if you have Arcane)
+### 7. Arcane's INT damage under her own Corrosion (decided by the logs, 2026-11-18: no doubling; the Amp's length fixed; don't ask)
+
+**Decided by the logs (2026-11-18):** 1.6 INT Arcane does not deal twice
+the model. Her hits in the 1.6 INT logs (base 9fa151b): 00ae 149 plain,
+28 assumed, 0 mismatch; a7a7 229 plain, 20 assumed, 19 mismatch. 8915's
+opposite miss (the engine ×1.85 the log) is that log's stage
+([open-problems.md](open-problems.md) "8915's stage"): of her 278 hits in
+its windows, 238 are within 1% of the window's factor (×0.5 to 37.7 s,
+×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s), as are Si's, Liino's and
+Wulfgard's in the same windows (Si 114 of 138, Wulfgard 59 of 71); after
+86.8 s (×1) her hits fit but for the Amp below. d9e5 (the old game-1.5
+log) keeps its fight-wide ×1.12–1.20 on every operator.
+
+**The Amp (the second question), from the listing:** her talent-1 Amp
+(`buff_common_affixes_enhance_spell` from her) lasts the array: listed on
+her hits until it ends (00ae 66.32 s, gone by 66.71; the replay's array
+ends 66.70; a7a7 53.00 / 53.96 against 53.97; 8915 94.37 / 95.37 against
+95.37). Gloompurge Arcana relists it (00ae from 66.71 s) until her second
+ultimate's cast replaces it with the ultimate's own (00ae 68.61 s, 8915
+97.85 s, a7a7 54.22 s; the game buff has one instance), which is on the
+ultimate's hit and the lasers around it and gone by her next basic attack
+(00ae 70.83 s, 8915 99.40 s): the data's CreateBuffAction on ultimate 2
+with autoFinishByAction and finishWithNextSkillIfNotInherited. The engine
+kept the Gloompurge Amp up to 10 s after the second ultimate: 8915's basic
+attacks at 99.4–104 s were ×0.84 the log's (0.24 of 1.54 Amp). Arcane's
+kit now ends it at the second ultimate's cast and gives the ultimate its
+own (`int_amp_ult2`, ended by her next basic attack, at most the skill's
+287 frames); those hits are plain or at the 8915 residue of ×0.986. In
+a7a7 her battle skill right after the second ultimate (56.34 s) still has
+it, so only a basic attack is written to end it; whether a combo or
+battle skill does is open (no log has one before a basic attack there).
 
 **Why:** in the only INT log (btl_upload_d9e59d0fb737, possibly still game
 1.5) all damage after her ultimate is about twice the model; WILL logs from
@@ -154,7 +207,22 @@ array's 20 s (as the engine now assumes) or end with the animation? The
 same log suggests it ends with the animation; if it really lasts 20 s, it
 explains about ×1.24 of the ×1.9.
 
-### 8. Where Link comes from, and its values (ready; higher priority: affects every team)
+### 8. Where Link comes from, and its values (decided by the logs, 2026-11-18: as the data; the two-stack value waits for a log; don't ask)
+
+**Decided by the logs (2026-11-18, every development log):** ordinary
+combos give no Link. 714 battle skills and ultimates landing within 5 s of
+another operator's combo, with no Camille, Lifeng or Akekuri combo in the
+20 s before, fit without Link: 327 plain, 60 assumed, 99 fallback; of their
+220 mismatches only 20 lie at ×1.18–1.24 (the rest spread from ×0.14 to
+×20: other causes). The data's sources do give it: Laevatain's battle
+skill after Camille's combo 34 plain (and 13 assumed) with Link 0.30 (one
+stack, battle skill); Chen's battle skills after Lifeng's combo 2 plain
+with 0.30; Rossi's ultimates after Camille's 79 assumed with 0.20 (one
+stack, ultimate). Not checked apart: Camille's combo with and without
+Vesperwings (c against d). The two-stack value: 14 hits carry two stacks
+(Chen's ultimate, d4fb 147 s), mismatched for other reasons (his ultimate
+is off in that log with or without it), so a log with a clean case decides
+it; the owner isn't asked.
 
 **Why:** Link boosts the next battle skill or ultimate (+20% for one
 stack on an ultimate, from a log). Until 2026-10-20 the engine gave Link
@@ -196,7 +264,18 @@ then one right after a teammate applied a Nature infliction (Gilberta's
 battle skill or ultimate). Screenshots of the burst's damage number both
 times (no crits).
 
-### 10. Si's combo by stacks consumed (ready, if you have Si)
+### 10. Si's combo by stacks consumed (decided by the logs, 2026-11-18, but for "highest or latest", which waits for a log; don't ask)
+
+**Decided by the logs (2026-11-18):** the final hit is `atk_scale2 +
+n × atk_scale2_1` with n the stacks the trigger consumed, +1 at P5, as the
+engine has it: of the 86 logged final hits in 36 logs, 63 fit the engine's
+n exactly (n = 1 to 5 all seen), and the rest are hits other factors blur
+(crit not logged, 7b54's slug, 8915's slashes at ×0.5) or within a stack.
+"Highest or latest" isn't decided: under the engine assumption
+`combo-window-count=latest` no verdict moves in any of the 36 logs (`npm
+run measure -- --with chr_0036_jsspsi`), so no logged window was reopened
+with a different count before the cast. A log with that case decides it
+(its final hit is logged); the owner isn't asked. Si's kit is unchanged.
 
 **Why:** her combo's final hit is `atk_scale2 + n × atk_scale2_1`,
 n = the infliction stacks consumed by the trigger, +1 at P5 (the data and
@@ -227,7 +306,21 @@ Susceptibility icon. On the non-Solidified target the combo should still
 show a Lift damage number and add a Vulnerable stack (it forces Lift), but
 no Shatter.
 
-### 12. Gilberta's Arts Susceptibility value and duration (ready, if you have Gilberta)
+### 12. Gilberta's Arts Susceptibility value and duration (decided by the logs, 2026-11-18: the data's formula, 5 s; don't ask)
+
+**Decided by the logs (2026-11-18):** the value is the data's `rate × (1 +
+0.1 × Vulnerable stacks)`, × 1.2 from P2: below P2 the logs list 0.30,
+0.33, 0.36, 0.39 and 0.42 (0–4 stacks), and 40d9 (P3) 0.36 with none.
+Where the engine's value differs from the listed one (its Vulnerable count
+when the ultimate lands is one or two low: 0.39 against 0.42 in 489c and
+d572, 0.30 against 0.36 in 9847, 0.33 against 0.39 in 4360), the damage
+follows the listing: 86 hits fit the log's value, 24 the engine's
+(open-problems "Gilberta's Susceptibility: the engine's Vulnerable count").
+The duration fits 5 s held by the stops: over 16 bracketed windows the
+log's end is a median +0.4 s from the engine's (from about −1 to +2 s, the
+same scatter as the Stagger's, test 110), the late listed hits' damage
+with it. Not seen: P2+ with stacks (the "3 or fewer" check): a log with it
+decides it.
 
 **Why:** the data says her ultimate's Arts Susceptibility is `rate` × 1.2
 from potential 2 (0.36 at ultimate level 10–12) and the plain rate below
@@ -264,6 +357,12 @@ question. (b) Build 3 stacks on Estella, wait 10 s, then 30 s: do they
 stay? (c) With stacks on both, cast Si's combo: do Estella's stacks stay?
 (d) Si's battle-skill strokes (Initial / Final Stroke): does each count?
 **Reply, e.g.:** `106: anyone's battle skill +1 to every wearer; no expiry; Si's combo clears only Si's; strokes count`.
+**The logs can't decide it (tried 2026-11-14 and 2026-11-18):** ZMDLogs
+never lists the buff, and the combo damage over 34 logs fits the engine's
+count in about 25 of 37 combo groups and misses both ways in the rest; the
+casts the stacks would come from are partly inferred from hits (Si's
+strokes, Laevatain's during-ultimate skill), so the damage can't tell the
+readings apart. The icon's count is what only the game shows.
 
 ### 105. Arcane on the mode line: INT's cooldown with WILL's skills? (answered, 2026-11-13: no; 0206 is game 1.5)
 
@@ -356,7 +455,20 @@ every operator's combo gaps (haiku).
 **How:** with Will > Intellect, cast her combo and time the cooldown:
 18 s expected (12 s would mean the cut applies in WILL mode too).
 
-### 14. Si's battle skill element with a Heat operator in slot 1 (optional confirmation)
+### 14. Si's battle skill element with a Heat operator in slot 1 (done: decided by the logs, 2026-11-18; don't ask)
+
+**Decided by the logs (2026-11-18): Heat with a Heat operator first, Cryo
+otherwise, as the engine has.** Every Arts Burst credited to Si in the
+development logs (`checkReactions`, the kits' inflictions replayed in the
+log's team order): Heat first (Laevatain 458b, 9c0b; Wulfgard c83c, 632c,
+67d8; Camille db87) gives 11 `fire_fire` bursts, 6 of them predicted by
+the engine as Heat bursts, the other 5 0.9–2.5 s after her battle-skill
+hit where the replay has no earlier Heat stack to burst on (458b 173755,
+209526; 9c0b 43169; c83c 96750; db87 13775); Si, Arcane or Gilberta first
+(9555, abfd, ad7f, 69e7, c3c7) gives 9 `cryst_cryst`, 8 predicted as Cryo
+bursts. No log has a Cryo burst of hers with a Heat operator first or a
+Heat one without (4f7e, Si first: a `cryst_fire` reaction, her Cryo onto
+Heat). Her hit's own element field stays `cryst` (the damage element).
 
 **Why:** her description says the battle skill applies Heat instead of Cryo
 Infliction when a Heat operator is in Team Position 01. The data settles it
@@ -366,7 +478,25 @@ slot); this would only confirm it.
 and look at the infliction icon on the enemy; repeat with a Cryo or Nature
 operator first.
 
-### 15. Swapping and casting during a battle skill (ready, if you have Gilberta)
+### 15. Swapping and casting during a battle skill (ready, if you have Gilberta; the logs can't decide it, 2026-11-18)
+
+**The logs (2026-11-18): not decidable; Gilberta is never the controlled
+operator in any development log.** A basic-attack hit that deals Stagger
+is the controlled operator's only (a Final Strike's, KitHit
+`poiseControlledOnly`; buffreplay.ts `controlledFromLog`). Her Final
+Strike would deal Stagger, but none of her 371 Final-Strike hits in the
+20 logs with her and Stagger data does (her battle skill's explosion does,
+in 9 of them, so the field is recorded); before each of her 20 battle
+skills the controlled operator is someone else (Chen, Wulfgard, Mi Fu,
+Typhoeus …), and that operator's Final Strikes go on inside her 3.7 s
+(c4f3: Chen's at +1.8–2.5 s after five of her six casts). So every cast
+was a teammate's, and the lock (cantSwitchPosition / cantCastSkill: her
+switching and casting while she's the one in control) never had anything
+to hold. The re-triage's "another operator's fresh basic chain starts
+inside the 3.7 s" (16 of 19) are the controlled operator's and teammates'
+own attacks (teammates attack on their own: test 101), not swaps. The
+field keeping all five hits fits both readings (she's off-field anyway).
+So the test stays as written: it needs her controlled.
 
 **Why:** the data forbids switching for the first 3.7 s of Gilberta's
 battle skill (`cantSwitchPosition`); the engine now lets you swap at any
@@ -392,7 +522,36 @@ her ultimate (or combo) right after the battle skill. Does it start at
 once, or only after about 3.7 s? Does a teammate's combo still fire
 meanwhile? Liino's stance has the same question (test 28).
 
-### 16. Does a skill cancel the basic attack it interrupts? (ready; optional variant with Ardelia)
+### 16. Does a skill cancel the basic attack it interrupts? (ready; optional variant with Ardelia; the logs: partly, 2026-11-18)
+
+**The logs (2026-11-18): partly.** The re-triage's case (Si's Final
+Strike, kit frame 25 = 833 ms, landing 106–694 ms after her own
+battle-skill cast event in 15 of 370 events, 9 more at the same ms) isn't
+a skill cutting into the attack: none of those 24 events (28 within 1 s)
+is followed by her battle skill's hit (`normal_skill_abilityrange_1`, kit
+frame 15, logged 400–650 ms after the event for a real cast). They are her
+hitless battle-button events (282 of her 370 events have no battle-skill
+hit within 1.5 s; most come 2.8–4.9 s after the previous one: test 106's
+open part, open-problems "Type 50 Yinglung's Edge"). What the logs do
+settle: (1) those events don't end her basic attack: the Final Strike
+lands after them; (2) of her 73 real battle skills, none has a basic hit
+of hers between the event and the skill's hit, so a started battle skill
+never ran beside an attack's hit; (3) the one real cast with a Final
+Strike after its event (a7a7 16792: Final Strike +426, the skill's hit
++1273 ms, 770 ms later than usual) started about 350 ms after that Final
+Strike landed: the press waited for the hit rather than cutting it, or
+the event was a hitless one and the real press came later (one case
+either way). What they can't: whether a press before the attack's hit drops that
+hit (a dropped hit leaves no trace, and the log has no press times). The
+engine's rotations don't depend on it much: an action without a time
+waits for the current skill's own hits (timing.ts `ownHitsLanded`), the
+reading (3) fits. Still for the owner as written (press the battle skill
+right after attack 5 starts: does the Final Strike's number appear?).
+Data aside: Si's Final Stroke (`normal_skill_2`) has a
+`switchToBuffConfig` with `asSkillCast` and a buff (xianjing_inkboom),
+like Last Rite's beside cast, so it may play no timeline and leave the
+attack alone; the engine ends the attack (not changed: no log separates
+it, as the strokes can't be told from the hitless events).
 
 **Why:** the engine assumes a battle skill, combo or ultimate can start at
 any moment of a basic attack and cancels the attack's hits that haven't
@@ -796,7 +955,20 @@ ultimate; see test 8), and Liino's talent-2 SP.
   right after Cloudtrapper, which would use the Link itself): is Link used
   up? Engine: yes.
 
-### 30. Arcane's talent-1 Susceptibility duration (ready, if you have Arcane)
+### 30. Arcane's talent-1 Susceptibility duration (decided by the logs, 2026-11-18: 10 s; don't ask)
+
+**Decided by the logs (2026-11-18):** 10 s from the ultimate's hit (the
+ultimate's own stop comes before the hit), as the engine has it, not 20 s.
+Her listed Nature and Cryo Susceptibility whose `since` is an ultimate's
+hit (55 windows in the 29 verified and pending logs that list it): of the windows
+neither a refresh nor the fight's end cuts, the tightly bracketed ones end
+10.4–10.6 s (9090 at 131.6 s; the replay 10.4 s), 10.8–10.9 s (3aa6 at
+87.2 s), 11.2–11.6 s (c6d8), 11.7–11.8 s (9c0b at 16.9 s) and 14.9–15.1 s
+(f978, with ultimates' stops in it; the replay 14.97 s) after the hit; none
+lasts 20 s plus its stops. The engine's end and the log's differ by −1.1
+to +3 s in some windows (c83c at 32.3 s +2.9 s, fc63 at 84.1 s ≥ +2.5 s,
+9c0b at 31.5 s −0.7 to −1.1 s): what holds an enemy's timers (her
+Imprisonment, combos' slow-downs; tests 37 and 110), not the duration.
 
 **Why (optional confirmation):** in WILL mode her ultimates give the
 enemy Nature and Cryo Susceptibility (up to 12.8%, +7% at P5). A closer
@@ -807,7 +979,23 @@ after the hit, which fits 10 s plus the time stop.
 Susceptibility icon from the ultimate's hit. About 10 s or 20 s, plus the
 ultimate's 1.6 s time stop if it's frozen.
 
-### 31. Finishers inside Arcane's array (ready, if you have Arcane)
+### 31. Finishers inside Arcane's array (decided by the logs, 2026-11-18: yes; don't ask)
+
+**Decided by the logs (2026-11-18):** a finisher by the controlled
+operator inside the array is a Cluster Strike: four lasers (and the
+energy). Five laser clusters follow a finisher with no Final Strike near
+(pending 00ae 61.60 → 62.02 s, 4d60 57.21 → 57.59, a7a7 49.92 → 50.35,
+multi-target 2b01 110.36 → 110.79 and c516 49.68 → 50.10), each four
+lasers about 0.4 s after the finisher's first hit, the finisher path's
+frames 12/16/20/24 (4d60: logged 57.59 / 57.70 / 57.89 / 57.98, the
+replay 57.60 / 57.73 / 57.87 / 58.00). The engine already had this half
+(trigger `cluster_strike_finisher`, Arcane's kit; the text below was
+stale): its replay lands all four lasers of all five clusters. A finisher
+and a Final Strike at the same moment give one strike, not two (b6aa
+46.63 s: Arcane's attack 5 and Si's finisher, four lasers at 47.05–47.40,
+the finisher path's frames). Left: only the 8 SP of her own finisher,
+which no log records (a fortieth of the bar; not testable by hand). Seen
+with `efsim zmdlogs replay <fixture>` (the laser and power_attack lines).
 
 **Why:** in the data, Cluster Strike (four lasers and half her energy)
 comes from a Final Strike by the controlled operator or from a finisher.
@@ -1027,7 +1215,27 @@ ultimates come.
 on the stat panel with and without Gilberta in the team, and the same for
 a Striker or Vanguard (unchanged expected).
 
-### 41. Jade Vessel's combo bonus after Si's ultimate (ready, if you have Si with Jade Vessel)
+### 41. Jade Vessel's combo bonus after Si's ultimate (done: decided by the logs, 2026-11-18; don't ask)
+
+**Decided by the logs (2026-11-18): as the engine has: her ultimate or
+her Immobilization gives it, for 20 s (held by stops), and her next combo
+takes it.** The bonus isn't listed, so the combo's final hit (its largest)
+is the evidence: over the 86 Si combos in the verified and pending logs
+where she wears Jade Vessel (`zmdlogs hits --operator`), 37 final hits
+match plain with the engine's bonus on and 4 with it off. *The ultimate
+alone:* 6 combos with only her ultimate since the previous combo (no
+battle-skill hit, the Immobilization) match plain with it, 1.8–18.1 s
+after the ultimate (458b 93.2, 172.1, 233.3 s; 79cc 52.3 s; f978 52.0 s;
+c3c7 115.2 s). *Its end and its consumption:* the 4 without come after a
+combo that took it (9c0b 36.8 s: 14.9 s after one, 28.9 s after her
+ultimate) or long after the last source (8915 89.7 s: her battle skill
+32.6 s before, no combo between; 458b 132.1 s, 4e36 38.7 s: nothing since
+the previous combo); 458b 198.3 s, 24.6 s after her battle skill, fits
+without it (an assumed match), and abfd 106.9 s, 21.1 s after one with a
+stop between, fits with it (plain). No final hit that isn't a plain match
+(44, crits allowed) fits with the bonus toggled within 0.4%, so nothing
+says the engine has it at the wrong combo. The owner's two-step test
+would show the same.
 
 **Why:** the weapon's next-combo DMG bonus (+25–70% by level) comes from
 Immobilization and from the wielder's ultimate, for 20 s, and only on the
@@ -1196,7 +1404,35 @@ Solidifications within 1 s should give one step, not two, but they can't
 be timed by hand reliably; skip that part.) If the gauge doesn't show such
 a small step, this one is not testable by hand.
 
-### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, Da Pan with Ancient Canal, or Ardelia with Dreams of the Starry Beach; Hot Work answered by the logs)
+### 51. Does an effect a hit triggers count on that same hit? (Solemn Phalanx, Starry Beach and Hot Work decided by the logs, 2026-11-18: yes; ready only for Da Pan with Ancient Canal)
+
+**Decided by the logs (2026-11-18), Solemn Phalanx and Dreams of the
+Starry Beach:** both count on the hit that creates them (the engine's
+reading). Every hit whose own time starts the buff's listing
+(`since` = the hit), against `efsim zmdlogs hits`:
+- **Solemn Phalanx** (INT Arts DMG, `buff_wpn_funnel_0016_wisd_natureup`,
+  from her battle skill's infliction): 00ae 7.42 s (combo explosion,
+  +0.40) and a7a7 3.86 s (explosion and battle skill, +0.44) are three
+  plain exact hits with it on; 8915's (6.79, 31.01, 85.61 s) sit exactly
+  on that log's stage factor (×0.5 / ×0.2) with it on. **New:** the
+  Corrosion that same infliction forms also has it on its own hit, which
+  the engine had left without: a7a7 3.86 s logged 54,365 against 41,356,
+  exactly (1.399 + 0.44) / 1.399 of Arcane's Nature DMG zone; 8915 6.79 and
+  31.01 s ×1.229 = (1.399 + 0.32) / 1.399 beyond the stage's ×0.5. Hot
+  Work's Nature DMG (from the Corrosion itself) stays off it, as
+  3f78 / 4a64 showed. Mechanism: the weapon listens to abilityEvent 126
+  (the wearer applies an infliction), which the game sends before it
+  resolves the infliction into a reaction; Hot Work listens to the reaction.
+  The engine now runs before-damage triggers on the infliction ahead of
+  those on the reaction (timeline/landing.ts), and the three hits are plain
+  exact (8915's on its stage factor).
+- **Dreams of the Starry Beach** (Ardelia, `buff_wpn_funnel_0013_valid`,
+  0.16–0.18, with her Susceptibility from the consumed Corrosion): her
+  battle skill is plain exact with it on at 1cd1 21.46, 4e36 8.84 / 31.54 /
+  51.48, 79cc 10.15 / 29.77, c3c7 11.48, f879 14.30 / 58.75 / 100.10 /
+  123.75 s (11 hits; f879 also a crit follow-up and a basic at the same
+  moment).
+- **Ancient Canal** (Da Pan): worn in no log; that variant stays ready.
 
 **Partly answered (2026-11-11, zmdlogs-3f78ceb15bc3, 4a64e58e75ad):** Hot
 Work's Nature DMG, made when a hit forms a Corrosion, counts on that hit
@@ -1312,6 +1548,9 @@ dodging on.
 If the operator doesn't dash until the skill ends, or the hit still
 lands, that skill can't be dashed out of (or its hit is already on its
 way).
+**The logs can't decide it (2026-11-18):** dashes and dodges aren't logged,
+and a skill's missing later hits (about 3 of 89 logged Si combos lack their final
+hit) can't be told from a swap, another cancel or the log ending.
 
 ### 55. The Endministrator's ATK: stat panel vs the engine (answered 2026-10-21: a food buff; optional confirmation)
 
@@ -1338,7 +1577,17 @@ sealed (her crystals on it) and twice while it isn't. Is the Crush number
 about ×1.2 when sealed? (Status hits can crit: take the two lowest of
 each.)
 
-### 57. Akekuri's Link during her ultimate (ready, if you have Akekuri)
+### 57. Akekuri's Link during her ultimate (decided by the logs, 2026-11-18: ×1.30, one Link; don't ask)
+
+**Decided by the logs (2026-11-18):** one Link stack, ×1.30 multiplicative
+(the engine's reading). pending/zmdlogs-458b03609665.json, the only log
+with her ultimate (84.4, 160.4 and 227.4 s): Laevatain's battle-skill hits
+during the first two (`normal_skill_during_ult`) are five plain exact
+matches with `Link (1)` = 0.30 on them (91,043, 102,079 and 293,585 at
+92.9–94.3 s; 96,842 and 108,581 at 163.2–163.7 s), and a fixed +20% would
+miss them by about 8%. The ×1.45 variant (a Camille or Lifeng combo just
+before) has no log with Akekuri; the 012a Links are Camille's (no Akekuri
+ultimate in it).
 
 **Why:** her talent 2 gives the team a Link stack during her ultimate
 (batch 2, B1): a teammate's battle skill then deals ×1.30 (one Link), ×1.45
@@ -1418,7 +1667,21 @@ Alternatives (the owner doesn't use these two, so low priority):
   controlled): a swing within about 1 s (mark, engine), or only about 7 s
   later.
 
-### 62. Layers on one timer: does each new layer restart it? (ready, if you have Chen; or Akekuri at P1+, Yvonne or Ember)
+### 62. Layers on one timer: does each new layer restart it? (ready, if you have Chen; Akekuri's part decided by the logs, 2026-11-18: each layer restarts it; or Yvonne or Ember)
+
+**Akekuri's P1 decided by the logs (2026-11-18):** each new layer restarts
+the shared timer (the engine's reading). pending/zmdlogs-458b03609665.json
+is the one clean case: her P1 ATK layers (`positive_feedback`, from her
+skills' SP) come at 156.07, 158.40, 160.50, 161.80 and 162.90 s, and her
+basic attacks at 167.13–172.82 s are 11 plain exact hits with all five
+layers (the replay ends them together at 173.83 s, 10 s plus 0.9 s of stops
+after the last). Expiring with the first layer would leave none from about
+167 s, and own timers only one or two by 172 s (each layer is +10% ATK,
+several % per layer on those hits, far beyond rounding). The listing runs
+to 173.9 s: her three hits at 173.88 s still have the layers where the
+replay has just ended them (by 0.05 s; noted, not chased). Chen's,
+Yvonne's and Ember's cases (the same question) are still open; Chen's needs
+the damage per layer count (8 logs).
 
 **Why:** buffs whose layers share one timer (the data's stackingType 8:
 Chen's talent 1, Perlica's P3, Da Pan's talent 1, Akekuri's P1, Æthertech,
@@ -2053,7 +2316,32 @@ lower of two tries each (crits):
 - 4.0: it takes the Battle Skill DMG bonus;
 - anything else: the table's factor isn't 1.
 
-### 92. Long Heritage and Si's Amp (ready, if you have Si with Long Heritage)
+### 92. Long Heritage and Si's Amp (done: decided by the logs, 2026-11-18: Si's Amp counts; don't ask)
+
+**Decided by the logs (2026-11-18): Si's Amp counts, as the engine has.**
+632c and 67d8 (Si with Long Heritage, both multi-target): the team buff
+`buff_wpn_claym_0019_teamatk` (Arts DMG 0.112, the weapon's skill-3 level
+9 `spell_dmg_up`) starts with her ultimate's Cryo and Heat Amp at all four
+of her ultimates, with the Amp's own `since` (632c 10455, 97603; 67d8
+14267, 117583; ultimate events 8293, 97494, 14167, 117479), on all four
+operators' hits (Wulfgard, Camille, Gilberta and Si herself), and at no
+other time. The engine's replay of 67d8 (`zmdlogs hits`, a multi-target
+log the scoreboard doesn't count) has it on 222 of the 234 hits that list
+it and on 4 that don't; 88 hits under it match plain with it in (52 in
+the first lane, to 41.5 s, 36 in the second), the rest mostly this fight's
+other mismatches. So CheckBuffIdInContext checkType 1 reads its ID list
+(`buff_common_affixes_enhance_crystal`, which lacks the Arts Amp tag
+486772476) as well as its tag query, not the tag query only (batch-4 T1,
+Mi Fu E11: the engine's reading). What checkType 0 does with a tag
+(Grand Vision's stray tag, Glorious Memory) this doesn't decide.
+The re-triage's lanes "0.5 s after a battle skill, listed on Si's hits
+only" are the other buff, `buff_wpn_claym_0019_teamspell` (0.168, the
+wielder's own Cryo DMG when her battle skill inflicts Cryo or Heat): it
+starts at her battle-skill hit and is hers alone, also as the engine has;
+the battle skill right after 67d8's ultimate (event 117583) has no logged
+hit, so no infliction and no lane. The team buff's lanes run 27.6–31 s
+against the data's 20 s, held by the fights' many stops; the engine's
+replay holds it to the same 41.5 s in 67d8.
 
 **Why:** Long Heritage gives the team Arts DMG +11.2% for 20 s when an Amp
 the wielder gives, one reaching Cryo, reaches a teammate. Si's ultimate
@@ -2157,7 +2445,15 @@ change which rotations are found.
    chain, dive, then attack again: is it attack 1 (engine: the dive clears
    the chain) or the chain's next step?
 
-### 98. Food buffs on the stat panel (ready, any operator; a few minutes)
+**The logs can't decide it (2026-11-18):** all 79 development logs hold 4
+dive hits, 3 of them at one ms in 67d8 (an enemy's plunge mechanic
+launching the team), none in a row; jumps, dashes and swaps aren't logged.
+After 67d8's plunge Si's and Wulfgard's next basic hits are attack 1 (part
+5, the engine's reading, but forced, not a player's dive). Players
+practically never dive, so the logs won't get better at this; the test
+stays for the game.
+
+### 98. Food buffs on the stat panel (the stew decided by the logs, 2026-11-18; the milk ready, any operator, lower priority)
 
 **Why:** builds can now hold a food buff (UseItemTable: one per operator,
 300 s). The engine puts a food's stats into the operator's stat panel the
@@ -2181,6 +2477,15 @@ for ATK).
    Endministrator's base DEF is 0; that example's 140): **140 → 167** if
    it's a percentage of the whole DEF, **unchanged** if of the operator's
    own base DEF.
+
+**Decided by the logs for the stew (2026-11-18):** with the stew's 180 in
+the flat slot before the attribute multiplier, as the engine has it, 7e19's
+Endministrator matches 31 of 34 hits (28 plain) and e82d's Si 22 of 22 (17
+plain); after the multiplier every hit would be short. **Left:** the tea
+(no log has it; its damage would decide it, so not for the owner) and the
+milk (DEF changes no logged damage: only the stat panel shows it; lower
+priority, only Catcher's P1 strike reads DEF). The test is now part 3
+only.
 
 ### 99. Does the Stagger bar refill when the enemy isn't hit? (done 2026-10-26 from the logs: it doesn't; don't ask)
 
@@ -2206,7 +2511,7 @@ for 15 s and watch the bar.
    about how long it waits before refilling and how fast it refills
    (seconds, by stopwatch or a phone video).
 
-### 100. What makes Rhodagn's Stagger bar snap back to full? (ready, if you fight Rhodagn; higher priority: every Rhodagn fight)
+### 100. What makes Rhodagn's Stagger bar snap back to full? (partly decided by the logs, 2026-11-18: 0–9 s after his HP falls below 70%; what sets it off: ready, if you fight Rhodagn, lower priority)
 
 **Why:** in three of five logged Rhodagn fights his Stagger bar jumps
 back to full with no Stagger before it, and once it cut a Stagger short:
@@ -2224,6 +2529,20 @@ stacks?). If he's Staggered when it happens, note whether the Stagger
 ends there.
 1. Engine (now): the bar never refills except at a Stagger's end.
 2. Logs: around 30–45 s and 69–75% HP, maybe tied to a move of his.
+
+**Partly decided by the logs (2026-11-18, the nine Rhodagn logs):** it
+comes once his HP is below 70%. Each of the five fights that went on past
+70% HP for more than ~6 s shows it once (HP from the logged damage): 4e5e
+29.5 s (72.3%: right as he crosses 70%), 7e19 33.2 s (70.1%, the same;
+it cut a Stagger), a27b 32.5 s (66.5%, 7.3 s after crossing), abfd 44.6 s
+(68.8%, 6.8 s after), c779 31.1 s (61.2%, 8.6 s after); the four killed
+within 6 s of 70% (40d9, b7b3, d9e5, e82d) show none. 4e5e's bar is full
+again at 42.2 s too, after 11 s without a Stagger hit (a second one, or a
+gap the log doesn't fill). So: 0–9 s after his HP first falls below 70%.
+**Left for the game:** what sets the delay (his move then). Lower
+priority: the 300 s team runs don't track his HP, so it moves no team
+number; a fight-to-the-kill scenario could schedule `recover` at 70% + a
+few seconds.
 
 ### 101. How often a teammate attacks on its own (not testable by hand; the logs, 2026-11-16: about 43% of free time)
 
@@ -2357,7 +2676,7 @@ end: Arcane 64 → 32 plain; 3f78 leans frozen, Si 20 → 23) are marked
 immune. The scoreboard is unchanged. Under both readings Si's own debuffs
 are held, so her Artful Intent ends don't tell them apart.
 
-### 107. Si's Amp across teammates' ultimates (ready, if you have Si; lower priority)
+### 107. Si's Amp across teammates' ultimates (decided by the logs: held for exactly the stops; don't ask)
 
 **Why:** the engine holds every buff through other operators' ultimate
 time stops: a buff lasts its duration plus each stop that falls inside
@@ -2378,8 +2697,16 @@ buffs; 1–2 s more than the engine's figure means they hold for longer
 than the time stop (as the log's listing has it).
 **Reply, e.g.:** `107: A 12 s, B (all three) 18 s` or
 `107: A 12 s, B 20 s`.
+**Decided by the logs (2026-11-14, taken from the queue 2026-11-18):** the
+damage puts the Amp's end where the engine does: in db87 its hits pin the
+end between 45.7 and 46.6 s, the engine's 151 frames of others' stops put
+it at 46.5 s (unheld it would end at 41.5 s); in 458b and 489c the hits
+after the engine's end and before the listing's fit the engine (open-
+problems "Buffs through stops"). Stops hold buffs for exactly their length;
+the listing's extra 0.5–2.5 s doesn't act. Whether the icon outlasts the
+effect doesn't change any number, so the owner isn't asked.
 
-### 108. Is a Finisher what the basic-attack button does on a Staggered enemy? (ready, any operator; for the rule-based rotations)
+### 108. Is a Finisher what the basic-attack button does on a Staggered enemy? (decided by the logs, 2026-11-18, for the tap: yes, but not in Laevatain's Twilight; the dive part ready, any operator, lower priority)
 
 **Why:** the rule-based rotations (design/rules.md "Rule-based rotations",
 2026-11-16) assume that while you keep pressing basic attack, the game
@@ -2399,6 +2726,24 @@ enemy become the Finisher, or only a basic-attack tap?
 Finisher, and a dive isn't.
 **Reply, e.g.:** `108: the next tap is the Finisher; dives aren't` or
 `108: a prompt appears, I have to press E`.
+**Decided by the logs for the tap (2026-11-18):** 61 of the 70 logged
+Staggers have a Finisher; in 32 its operator lands no basic hit in the
+Stagger before it, and where one comes first it's the chain already
+running at the break (0–0.3 s in) or a state with its own attacks
+(Typhoeus hovering); the Finisher comes a median 1.0 s after the first
+Staggered hit (quartiles 0.3–2.6 s; players often cast skills first). No
+log shows a fresh basic chain on the ground before a Finisher: the next tap
+is the Finisher. The exception is Laevatain in Twilight: in all 7 Staggers
+where she basic-attacked during it (2–26 enhanced hits each: 012a, 458b,
+79cc, c83c, db87, f879, f978) she never Finishers, and in f879 her
+Finisher lands 0.46 s after her last Twilight hit; outside Twilight she
+Finishers in each Stagger she's controlled for. Her attack input is the
+enhanced chain then, which has no finisher in the data, so her kit now
+gates the Finisher off during Twilight. Ink Melt, 32 fresh seeds: 62,424 →
+59,140 / 57,486 → 54,421 (−5.3% both; she used to Finisher inside
+Twilight). Scoreboard: unchanged. **Left for the game:** the dive part (4
+dive hits in all the logs, none on a Staggered enemy): lower priority
+(only Typhoeus's team dives between skills).
 
 ### 109. Does Si's Haste need Initial Stroke? (ready, if you have Si with talent Unsoiled Brush; lower priority since 2026-11-17: Haste doesn't speed up attacks)
 
@@ -2426,10 +2771,40 @@ the reply, `efsim rules`, `diagnose`, `gear --rules` and `rules --guided`
 can run that reading with `--assume si-haste-every-end=every-end` and say
 whether a conclusion flips under it with `--assumptions`.)
 **Reply, e.g.:** `109: A no icon, B icon` or `109: icon in both`.
+**The logs can't decide it (checked 2026-11-16, again 2026-11-18):** ZMDLogs
+records no Haste, and Haste changes no logged damage or timing (test 19).
 
-### 110. How long a Stagger lasts (to the logs, 2026-11-18: not for the owner)
+### 110. How long a Stagger lasts (decided by the logs, 2026-11-18: PoiseRecTime and the stops, plus about 2 s; don't ask)
 
 **To the logs (the owner, 2026-11-18):** easier to settle from the logs' Stagger windows than by hand.
+
+**Decided by the logs (2026-11-18):** it's the Stagger itself, about 2 s
+longer than its data, not something the fights do. Over the 30 logged
+Stagger windows whose end is bracketed within 3 s (the last Staggered hit
+and the next calm one; development logs, bigents and three windows the
+replay broke seconds early aside), the log's end comes a median 2.3 s
+(quartiles 1.4–3.9) after the engine's own end from PoiseRecTime and the
+stops inside it. With 2 s more on the enemy's clock the engine's end sits
+in or next to the bracket: median 0.1 s off (quartiles −0.9 to +0.7),
+12 windows short and 13 long where there were 27 short and 2 long (rms
+3.15 → 1.40 s; views.ts `staggerRuns` under each reading). A fit of
+the real-time length on the stops gives 1.8 s + 1.18 × the ultimates' stops
++ 0.79 × the combos' (each counts about once). **Ruled out:** hits
+extending it (Staggers outlast hitless gaps of 1.8–7 s past the data's end
+and end 0.1 s after a hit: 00ae, 9090, 4d60), the hit rate (r −0.01),
+Finishers (r 0.24), the Stagger dealt. **Not decided:** whether a freeze
+holds it (rms 1.40 held, 1.42 not); the spread (sd ~1.4 s on every enemy);
+Bigents (tower019) 11–14 s more in three logs; and 4d60's second window,
+where the whole game stood still for 7.2 s (no hit from anyone, Akekuri's
+chain going on from attack 2 to attack 3 afterwards: a pause the log's
+clock runs through). The engine adds the 2 s (engine assumption
+`stagger-recovery`, `none` for the data alone; `stagger-freeze` for the
+freeze): a recovery after PoiseRecTime that still counts as Staggered (the
+damage shows the ×1.3). Team numbers, 32 fresh seeds (full energy / from
+zero): the owner's 53,780 → 53,514 / 52,744 → 52,972; Ink Melt 63,347 →
+62,424 / 56,123 → 57,486; Typhoeus's 52,374 → 51,859 / 48,973 → 48,937:
+within the noise. The scoreboard: unchanged (the replay follows the log's
+listing).
 
 
 **Why:** the game data gives each enemy's Stagger length (Rhodagn 10 s, most
@@ -2456,3 +2831,4 @@ attacking but more while attacking means hits extend it.
 ## Results
 
 - 2026-11-16 (the owner): 103 (a) a press in Vocalist Stance ends it early (the engine's reading). 104: most bosses are frozen by Imprisonment; some rare ones ignore it. 18, 19, 101, 102: too hard to record by hand; to the logs where they can decide.
+- 2026-11-18 (the logs, the owner's queue): 110 a Stagger lasts PoiseRecTime and the stops plus about 2 s (the engine adds it); 108 the next tap is the Finisher, but not in Laevatain's Twilight (her kit gates it); 10 the final hit by stacks as the data; 8 Link only from the data's sources; 12 the data's value formula and 5 s; 107 buffs held for exactly the stops; 98 the stew's flat ATK before the attribute multiplier; 100 0–9 s after Rhodagn's HP falls below 70%. 106, 97, 54, 109 and the rest of 108, 100 and 98 need the game.

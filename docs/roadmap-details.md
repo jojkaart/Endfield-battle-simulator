@@ -65,9 +65,12 @@ beam 96 run, or the search seeded with the found rotations; casts
 across others' time stops are placed from their cast events since
 2026-11-18 (open-problems.md, Typhoeus's hover); left: Typhoeus's 4th
 shot anchored to her 5th's cast (fc63), 9c6e as a multi-target fixture;
-9090's Liino total (her volleys: 10 logged, 1 replayed; the Stagger half
-is done, 2026-11-18: Liino −15.0 → −10.4%, Perlica −13.0 → −10.7%);
-Perlica's ×1.3/×1.5 runs, which aren't the Stagger windows (her kit); gear
+Liino's volleys done 2026-11-18 (a 10 s timer: the data's reaction
+check is disabled; 9090's Liino −10.4 → +2.5%), and 4360's Perlica run
+(an unlogged End Stance out of Cosmovoice, now inferred); left: Perlica's
+−9.6% in 9090 (every hit matches), 9847's team-wide ×0.975 / ×1.3–1.5
+runs (Bigents), fc63's Perlica ATK (3,571 against 3,822), Liino stances
+cast before a log starts (1d91, 7910, 4d60); gear
 chosen jointly with the rotation (a search per candidate set, not a
 replay).
 
@@ -121,11 +124,12 @@ the freezer's own debuffs (test 37).
 
 **Stagger windows (2026-11-17, accuracy plan B1 follow-up):** the replay
 follows the log's Stagger listing (the damage confirms it). The game's
-windows run longer than the engine's own (median 3.5 s past its end);
-the cause is open (open-problems.md "The replay's Stagger windows";
-in-game test 110). Once timed, add it to the engine (`staggerFrames` or
-an enemy-clock hold); the teams moved −1.2 / +0.7 / −0.2% under a flat
-+3.5 s, so it's low priority for them.
+windows run longer than the engine's own (median 3.5 s past its end).
+**Decided by the logs (2026-11-18, test 110):** about 2 s past
+PoiseRecTime and the stops, a recovery the engine now adds (engine
+assumption `stagger-recovery`); the teams moved −0.5 / −1.5 / −1.0% (full
+energy), within the noise. Left: the ±1.4 s spread, bigents' 11–14 s
+(open-problems.md "The replay's Stagger windows").
 
 **Engine accuracy first** (the owner, 2026-10-26: above the search's
 scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
@@ -139,16 +143,17 @@ extra heal left);
 next the screened logs' leads ([open-problems.md](open-problems.md):
 what each has ruled out and what still stands; Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
 27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
-eny_0134 logs' food in 0c14 and de6a; Yvonne −23% in 5082 and
+eny_0134 logs' food in de6a (0c14's: Kunst Tube on all but Alesh, 2026-11-18); Yvonne −23% in 5082 and
 Ardelia's sheep ×1.407 in 791, both unmasked 2026-11-14), diagnosed in parallel (small
 models first, the owner's call 2026-11-11); then the favourites' kit
 leads (B8: the build offsets the log check
 reports without an explanation (04d4's Snowshine ×0.96,
 92b4's Liino ×1.031), and those it can't see (flat ATK buffs spread the
-ratio: 4e36 / c3c7's Ardelia, set by hand; a replay per candidate build,
-bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
-(d774: 8 strikes where the log has 3); Si's build in 9555 (every hit
-×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
+ratio: 4e36 / c3c7's Ardelia, set by hand; now `efsim zmdlogs fit-build`, still
+to be bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
+(d774: 8 strikes where the log has 3); Si's build in 9555 (found
+2026-11-18: no attribute nodes, a fixture buildOverride; 0c14's Si and
+f978's Ardelia too); logged presses with no damage of their own while the enemy is
 there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
 3aa6's Stagger at 145.6 s (the replay has none), Xaihi's ultimate Amp in
 b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), bdf2's Si combo
@@ -188,7 +193,10 @@ landings the replay misses (Arcane's Final Strike in b6aa, 9555's casts);
 458b's ×1.3 on Laevatain's `normal_skill_during_ult`; then tighten the
 totals' bound (45%). The fallbacks in verified fixtures (~300) are the
 work queue; a build fitter with structured `buildOverrides` instead of
-hand fits in notes; the negative control on the unscaled replay; d9e5
+hand fits in notes (done 2026-11-18: `efsim zmdlogs fit-build`; next: the
+weapon level bounded by its logged skill levels from
+WeaponBreakThroughTemplateTable, the older hand fits moved into
+`buildOverrides`, weapon skill levels and artifice as candidates); the negative control on the unscaled replay; d9e5
 (now a fight-wide ×1.12–1.20 on every operator from 4.4 s, not Arcane's);
 whether mostly-assumed matches (Rossi in 4e5e) hold hit by hit.
 
@@ -201,7 +209,13 @@ the seal buff's abilityEvent 8 / 1403 / 1601 early ends, then take the end
 from the log; a7a7's INT lasers 0.4–1.1 s early; the rest is teammates'
 buffs (Liino's Medicant in 1d91, Camille's talent ATK in db87, Ardelia's
 Susceptibility in af7b), Stagger and placement (db87's Laevatain ultimate
-stop, fc63's shot count).
+stop, fc63's shot count). In-game tests 4, 7, 30, 31, 51, 57 and
+Akekuri's part of 62 decided by the logs (2026-11-18): the Corrosion
+ramp, her talent-1 Susceptibility's 10 s, the finisher's Cluster Strike and
+Akekuri's Link and P1 timer were already the engine's; two fixes
+(Solemn Phalanx's INT Arts DMG on the Corrosion its infliction forms; her
+second ultimate's own Amp, gone by her next basic attack). Left in 8915
+after its stage: ×0.986 at 92–103 s and ×0.81–1.21 steps at 104–112 s.
 
 ## Kit values from the data
 

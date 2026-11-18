@@ -3,7 +3,7 @@
 // says.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, allAssumptions, createContext, ENGINE_ASSUMPTIONS, engineReading, init, kitAssumptions, TEAMMATE_PAUSE_FRAMES, type Build, type TimelineScenario } from "@efsim/engine";
+import { advance, allAssumptions, apply, createContext, ENGINE_ASSUMPTIONS, engineReading, init, kitAssumptions, TEAMMATE_PAUSE_FRAMES, type Build, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { parseAssume } from "../packages/cli/src/assume.ts";
 
@@ -50,6 +50,26 @@ describe("the engine's assumptions", () => {
     expect(now).toBeGreaterThanOrEqual(TEAMMATE_PAUSE_FRAMES);
     expect(old).toBeGreaterThanOrEqual(105);
     expect(now - old).toBe(TEAMMATE_PAUSE_FRAMES - 105);
+  });
+
+  it("battle-sub-skills=main-only: Si's Initial and Final Stroke give no Yinglung's Edge layer; her battle skill does", () => {
+    const si = read("si-jade-vessel.json");
+    const edges = (assume?: Record<string, string>) => {
+      const sc: TimelineScenario = {
+        team: [si],
+        target: { enemy: "eny_0051_rodin", level: 90 },
+        durationFrames: 30 * 12,
+        rotation: ["normal_skill", "normal_skill_1", "normal_skill_2"].map((s) => ({ operator: si.operator, skill: `${si.operator}_${s}` })),
+        options: { crit: "never", ...(assume ? { assume } : {}) },
+        controlled: si.operator,
+      };
+      const ctx = createContext(data, sc);
+      const end = advance(ctx, sc.rotation.reduce((st, a) => apply(ctx, st, a), init(ctx)), sc.durationFrames);
+      expect(end.casts.map((c) => c.skill.replace(`${si.operator}_`, ""))).toEqual(["normal_skill", "normal_skill_1", "normal_skill_2"]);
+      return end.buffs.filter((b) => b.id === "suit_atk02.edge").length;
+    };
+    expect(edges()).toBe(3);
+    expect(edges({ "battle-sub-skills": "main-only" })).toBe(1);
   });
 
   it("are refused when unknown, and taken by --assume", () => {

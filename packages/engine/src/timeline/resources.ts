@@ -13,6 +13,7 @@ import { FPS } from "../units.ts";
 import type { TimelineContext, TimelineState } from "./state.ts";
 import { SP } from "./rules.ts";
 import { attrTotal, enemyAttr, maxPoise, panelAt, skillCosts, skillGroup } from "./context.ts";
+import { engineReading } from "./assumptions.ts";
 
 /** SP at a later frame, with regeneration (whole frames, no fractions lost): from the state's frame, after its pause, outside its stops. */
 export function spAt(state: TimelineState, frame: number): number {
@@ -231,9 +232,10 @@ export function holdStagger(st: TimelineState, frame: number, through: number): 
   return { ...st, stagger: { poise: 0, until: through, finisherUsed: running ? st.stagger.finisherUsed : false } };
 }
 
-/** How long a Stagger lasts (frames): the enemy's attribute 21 × 31 seconds. */
+/** How long a Stagger lasts (frames): the enemy's attribute 21 × 31 seconds, plus the recovery the engine assumption `stagger-recovery` reads. */
 export function staggerFrames(ctx: TimelineContext): number {
-  return Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);
+  const recovery = engineReading(ctx.scenario, "stagger-recovery") === "2s" ? 2 : 0;
+  return Math.round((enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) + recovery) * FPS);
 }
 
 /**

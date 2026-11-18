@@ -53,3 +53,16 @@ describe("Liino: Cosmovoice starts at her ultimate's frame 77", () => {
     expect(amp(s)?.appliedAt).toBe(77);
   });
 });
+
+describe("Liino: Vocalist Stance's volley is a 10 s timer, not a reaction's (in-game test 26)", () => {
+  // buff spelllnfliction_extraattack: triggerInterval atk_trigger (10 s), first tick at once (frame 45); its tick's
+  // reaction check (CheckBuffIdInContext spelllnfliction_hit) has isEnable false. No teammate attacks: no reaction.
+  it("fires at the battle skill's frame 45 and every 10 s after, with no reaction in the fight", () => {
+    const s = run([act(LI, "normal_skill", 0)], 34 * 30);
+    expect(s.reactions).toHaveLength(0);
+    const volleys = s.hits.filter((h) => h.operator === LI && h.hitId === "volley");
+    const firsts = volleys.filter((h, i) => i % 6 === 0).map((h) => h.frame);
+    expect(volleys).toHaveLength(24);
+    expect(firsts).toEqual([45 + 24, 345 + 24, 645 + 24, 945 + 24]);
+  });
+});

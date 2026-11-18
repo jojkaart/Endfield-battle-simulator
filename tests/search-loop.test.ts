@@ -7,10 +7,11 @@ import { loadGameData } from "@efsim/data";
 import { readScenario } from "../packages/cli/src/simulate.ts";
 
 const data = loadGameData();
-// Under the buff rule before 2026-11-18 (engine assumption buff-in-stop=runs): with Twilight held by her own stop,
-// Laevatain alone finds no loop within 12 rounds at beam 6; these tests check the loop machinery, not her kit.
-const laevatainSolo = readScenario(new URL("../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
-const { rotation: _r, ...open } = { ...laevatainSolo, options: { ...laevatainSolo.options, assume: { "buff-in-stop": "runs" } } };
+// Under the data's Stagger length and the buff rule before 2026-11-18 (engine assumptions stagger-recovery=none,
+// buff-in-stop=runs): with the 2 s Stagger recovery (test 110) or Twilight held by her own stop (tests 18, 21),
+// Laevatain alone settles into no exact loop within 12 rounds at beam 6; these tests are about the loop machinery.
+const { rotation: _r, ...plain } = readScenario(new URL("../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
+const open = { ...plain, options: { ...plain.options, assume: { "stagger-recovery": "none", "buff-in-stop": "runs" } } };
 const options = { beamWidth: 6, plays: 5 };
 const LAEV = "chr_0016_laevat";
 const ULT = "chr_0016_laevat_ultimate_skill";

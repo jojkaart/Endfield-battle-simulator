@@ -11,6 +11,7 @@ import { REPO_ROOT } from "@efsim/data";
 import { listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, refuseHoldoutFile } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, type ViewFilter } from "./views.ts";
 import type { LogFixture } from "./zmdlogs.ts";
+import { fitBuild, type BuildCandidate } from "./buildfit.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -104,9 +105,7 @@ export async function differencesCliReport(data: () => GameData, named: readonly
 
 /** `efsim zmdlogs groups --operator <op>`: an operator's mismatches grouped (the named logs, or every development log with it). */
 export async function groupsCliReport(data: () => GameData, operator: string, named: readonly string[], opts: { readonly workers: string | undefined; readonly verbose: boolean; readonly progress: (line: string) => void }): Promise<string> {
-  const d = data();
-  const id = d.operators[operator] ? operator : Object.keys(d.operators).find((op) => d.operators[op]?.name?.toLowerCase() === operator.toLowerCase() || op.includes(operator));
-  if (!id) throw new Error(`--operator ${operator}: no such operator (an id, its name or part of the id)`);
+  const id = operatorNamed(data(), operator);
   const files = named.length ? named : listLogs({ dirs: ["verified", "pending"], withOperators: [id] }).map((l) => join(REPO_ROOT, l.file));
   const records = await collectRecords(data, files, opts.workers, { progress: opts.progress });
   return groupsReport(records, id, { verbose: opts.verbose, fixtureLabel });
@@ -131,4 +130,26 @@ export function findScalesReport(data: GameData, fx: LogFixture, operator: strin
     for (const x of m.matches) lines.push(`   ${x.agree}/${m.hits}  ${x.skillId} ${x.keys.join(" * ")} ${x.damageType}${x.corrosion ? ` corrosion L${x.corrosion}` : ""}`);
   }
   return lines.join("\n");
+}
+
+/** The operator id an --operator names: an id, its name or part of the id. */
+export function operatorNamed(data: GameData, operator: string): string {
+  const id = data.operators[operator] ? operator : Object.keys(data.operators).find((op) => data.operators[op]?.name?.toLowerCase() === operator.toLowerCase() || op.includes(operator));
+  if (!id) throw new Error(`--operator ${operator}: no such operator (an id, its name or part of the id)`);
+  return id;
+}
+
+/** `efsim zmdlogs fit-build`: an operator's attribute nodes, weapon level and food fitted to its clean hits (buildfit.ts). */
+export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean } = {}): string {
+  const id = operatorNamed(data, operator);
+  const fit = fitBuild(data, fx, id, opts);
+  const line = (c: BuildCandidate) => `  ${String(c.fits).padStart(4)} of ${fit.landed} fit (${c.cleanFits} of ${fit.clean} clean)  median ×${c.median.toFixed(4)}  ${c.label}${Object.keys(c.set).length ? `  set ${JSON.stringify(c.set)}` : ""}`;
+  const overrides = fx.buildOverrides?.filter((o) => o.operator === id) ?? [];
+  return [
+    `${fx.id} ${data.operators[id]?.name ?? id}: ${fit.landed} landed kit hits, ${fit.clean} clean (the log and the replay agree on their modifiers); fits within ±1 of the primary reading`,
+    ...(overrides.length ? [`  (the build as read: the fixture's overrides ${overrides.map((o) => JSON.stringify(o.set)).join(", ")} applied)`] : []),
+    line(fit.exported),
+    "best:",
+    ...fit.best.map(line),
+  ].join("\n");
 }

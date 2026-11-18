@@ -219,10 +219,19 @@ character and the skill button (rank 3).
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **52,369** (1,568) | **48,967** (1,568) |
+| Sustained DPS over 300 s (sd over seeds) | **51,859** (1,845) | **48,937** (1,140) |
 | As a bot (0 s) / at 0.6 s | 61,698 / 53,558 | 56,993 / 50,683 |
 | First 60 s against the 60 s timeline (the examples) | 4,226,194 against 5,774,076 (−26.8%) | 2,858,065 against 5,019,331 (−43.1%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,382,151 against 16,925,847 (−3.2%) | |
+
+**Arcane's INT fixes (2026-11-18, in-game tests 51 and 7 from the logs):** Solemn Phalanx's INT Arts DMG on the
+Corrosion its infliction forms, and her second ultimate's own Amp, need Intellect ≥ Will; this Arcane plays WILL, so
+neither acts. The same seeds at 9384cb0: **52,374 / 48,973** (sd 1,567 / 1,570), within 0.01% of the row above
+(what other changes since moved), and the 60 s examples' snapshots didn't move. In INT mode (the owner's open call)
+her basic attacks after the second ultimate lose the Gloompurge Amp (×0.71 at +0.4), and her battle skill's
+Corrosion hit gains the weapon's Arts DMG.
+
+**The engine change of 2026-11-18 (in-game test 110 from the logs: a Stagger lasts about 2 s past its data; same seeds):** 52,374 → **51,859** / 48,973 → **48,937** (−1.0% / −0.1%, within the noise). As a bot / at 0.6 s now 59,749 / 51,843 (full energy).
 
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** no
 freezer on this team and no Haste, so only the teammates' pause (6.5 s
@@ -230,6 +239,19 @@ instead of 3.5 s) moves it: 54,607 → **52,369** / 51,076 → **48,967**
 (−4.1% / −4.1%; Arcane, Liino and Perlica basic-attack less, as the logs
 show). The other rows are from before. As a bot / at 0.6 s now 59,379 /
 51,427.
+
+**Liino's volley as a 10 s timer (2026-11-18; same seeds 1001–1032, the
+base 1e1e7a8 against this commit):** her stance's volley fires every 10 s
+from the battle skill's frame 45 whether or not a reaction came (the
+data's reaction check is disabled; open-problems.md "Liino's volleys"),
+where it used to wait for a reaction and then 10 s. Sustained DPS 52,374 →
+**52,529** (+0.3%) / 48,973 → **49,185** (+0.4%); as a bot 59,400 →
+59,577 / 54,907 → 55,130; Liino's share 2.5 → 2.9% (seed 1). The 60 s
+timelines (the examples): 5,615,426 → 5,649,021 (+0.6%) / 4,849,679 →
+4,855,803 (+0.1%). (The base's own numbers sit below the table's from
+the changes since 2026-11-16; the table's rows are left as they were.)
+Small: Liino deals about 3% of the team's damage, and the volleys are a
+part of hers. The rules don't change.
 
 **Buffs created inside a running stop are held (2026-11-18, in-game tests 18, 21, 46 from the
 logs; same seeds 1001–1032):** engine assumption `buff-in-stop` ([journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)): Typhoeus's

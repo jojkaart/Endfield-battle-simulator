@@ -93,6 +93,12 @@ export interface SkillTiming {
   /** dontInterruptCombo: casting it keeps the basic-attack chain's next step. */
   readonly keepsChain: boolean;
   /**
+   * normalSkillSubType 1: a sub-skill on the battle-skill button, not the battle skill itself (Si's Initial and Final
+   * Stroke, Liino's End Stance, Camille's, Mi Fu's and Purrchena's follow-ups). Whether others' CheckSkillType [2]
+   * sees it is the engine assumption battle-sub-skills (timeline/assumptions.ts).
+   */
+  readonly subSkill?: true;
+  /**
    * Global time slow-downs the skill causes for everyone but its caster
    * (UltimateTimeAction, global-layer TimeDilationAction): from frame
    * `from`, the world's time scale for each following frame.
@@ -694,6 +700,12 @@ export interface KitBuff {
    * there, not a press (cli buffreplay.ts). The engine doesn't read it.
    */
   readonly ticksLoggedAs?: string;
+  /**
+   * A battle log shows each tick by the hits a trigger on it (`buffTick`) fires (Liino's volleys): the log check's replay
+   * holds or brings its ticks to those logged casts' starts (cli buffreplay.ts loggedTickLandings). The engine doesn't
+   * read it.
+   */
+  readonly ticksShownByHits?: boolean;
   /**
    * Ends with the action that applied it (CreateBuffAction autoFinishByAction):
    * when its owner's current skill ends or the owner starts another one.

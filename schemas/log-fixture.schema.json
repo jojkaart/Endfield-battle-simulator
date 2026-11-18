@@ -42,6 +42,42 @@
         "properties": { "t": { "type": "number" }, "operator": { "type": "string" }, "skill": { "type": "string" } }
       }
     },
+    "buildOverrides": {
+      "type": "array",
+      "description": "Hand-written: build inputs the export omits or got wrong (attribute nodes, weapon level, food, ...), set over the exported build in `team` when the fixture is read (logs.ts readLogFixture), each with the evidence. `team` stays as exported. Found with `efsim zmdlogs fit-build`.",
+      "items": {
+        "type": "object",
+        "required": ["operator", "set", "why"],
+        "additionalProperties": false,
+        "properties": {
+          "operator": { "type": "string" },
+          "set": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "description": "The build fields to replace; `weapon` lists only the fields it changes (level, skillLevels), the rest stays as exported.",
+            "properties": {
+              "level": { "type": "integer", "minimum": 1 },
+              "promotion": { "type": "integer", "minimum": 0, "maximum": 4 },
+              "potential": { "type": "integer", "minimum": 0, "maximum": 5 },
+              "attributeNodes": { "type": "integer", "minimum": 0 },
+              "talents": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+              "weapon": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": false,
+                "properties": {
+                  "level": { "type": "integer", "minimum": 1 },
+                  "skillLevels": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 1, "maxItems": 3 }
+                }
+              },
+              "food": { "type": "string", "pattern": "^item_" }
+            }
+          },
+          "why": { "type": "string", "description": "The evidence: which hits fit with it and without (fit-build's counts), and why the export can't say." }
+        }
+      }
+    },
     "absent": {
       "type": "array",
       "description": "Hand-written: the replay's landings the log doesn't have and can't (a hit that didn't reach the logged enemy, or one ZMDLogs dropped), judged from the log, each with why. The totals leave each out (enginecheck.ts fightTotals): the landing of the operator's skill and hit nearest t, within 1 s.",

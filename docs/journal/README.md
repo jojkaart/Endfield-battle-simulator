@@ -8,7 +8,12 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15](2026-11-18-04-si-s-in-game-tests-from-the-logs-14-41-92-16-15.md)
 - [2026-11-18: Typhoeus's and Laevatain's in-game tests from the logs; buffs created in a stop are held](2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)
+- [2026-11-18: The owner's in-game test queue from the logs: Stagger recovery, Laevatain's Finisher](2026-11-18-03-the-owner-s-in-game-test-queue-from-the-logs-stagger.md)
+- [2026-11-18: Si's misfit logs and Ardelia's build: build overrides and fit-build](2026-11-18-03-si-s-misfit-logs-and-ardelia-s-build-build-overrides-and-fit.md)
+- [2026-11-18: Liino's volley is a timer; Perlica's runs aren't her kit](2026-11-18-03-liino-s-volley-is-a-timer-perlica-s-runs-aren-t-her-kit.md)
+- [2026-11-18: Arcane's and Akekuri's in-game tests from the logs](2026-11-18-03-arcane-s-and-akekuri-s-in-game-tests-from-the-logs.md)
 - [2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings](2026-11-18-02-improvement-round-3-measuring-views-a-fair-lock-engine.md)
 - [2026-11-18: The replay follows the log's Stagger windows](2026-11-18-01-the-replay-follows-the-log-s-stagger-windows.md)
 - [2026-11-18: Cast starts across other operators' time stops](2026-11-18-01-cast-starts-across-other-operators-time-stops.md)

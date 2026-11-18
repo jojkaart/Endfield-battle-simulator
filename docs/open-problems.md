@@ -19,7 +19,11 @@ landing and own, by skill and by what the log and the replay disagree on)
 and `efsim zmdlogs differences` (does the damage side with the log's
 listing or with the replay, per thing they disagree on); then `zmdlogs
 casts`, `replay`, `stagger` for the fight itself, and `npm run measure`
-for each idea (docs/design/tests.md "Measuring a change").
+for each idea (docs/design/tests.md "Measuring a change"). An operator off
+by one factor on most hits: `efsim zmdlogs fit-build <fixture> --operator
+<op>` first (attribute nodes, weapon level, food), so a build offset
+doesn't hide a kit error; its fit goes into the fixture's
+`buildOverrides`.
 
 Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
@@ -343,6 +347,21 @@ mismatch against teammates' mismatches within 1.5 s at the same ratio
    → 100 plain, 4e36 plain 117 → 239. Development plain 47.3 → 47.7%,
    mismatch 19.8 → 19.6%; hold-out plain 62.1 → 63.3%, mismatch 7.6 →
    7.7%, mean |damage error| 13.5 → 13.4%.
+3. (Tests 51 and 7, 2026-11-18.) Her Corrosion's own hit has Solemn
+   Phalanx's INT Arts DMG, which the same infliction creates (abilityEvent
+   126 comes before the game resolves the infliction into a reaction; Hot
+   Work, on the reaction, stays off it): before-damage triggers on the
+   infliction now run ahead of those on the reaction (timeline/landing.ts).
+   a7a7 3.86 s and 8915 6.79 / 31.01 / 85.61 s now plain or exactly on the
+   stage factor. And her second ultimate's Amp: the cast replaces
+   Gloompurge Arcana's Amp with its own, gone by her next basic attack
+   (00ae, 8915; was up to 10 s more), kit `int_amp_ult2`. 8915's basics at
+   99–104 s ×0.84 → ×0.986 (the residue left).
+
+The 8915 share of the stage logs (323) is the stage's own factor on her
+hits (test 7: 238 of her 278 hits in its windows within 1% of it, as
+Si's and Wulfgard's); after the stage, a ×0.986 on her hits at 92–103 s
+and ×0.81–0.84 / ×1.10–1.21 steps at 104–112 s remain (not looked at).
 
 **Ruled out:** her own buffs' timing as a group (`zmdlogs timing`: her
 only patterns are funnel_0008 in 9c6e, 7 hits, and int_amp in 8915, a
@@ -602,8 +621,30 @@ cap 2) are listed up to 12 times too: a log habit.
 → ×0.917 at 39.0 s; the engine giving Typhoeus's ultimate hits no layers
 (37974, 41265 ms); c6d8's engine values ×10 off on every hit.
 
+**1d91's Ardelia (2026-11-18): her layers come slower than the engine's.**
+118 of her 130 hits mismatch, all with the engine's Liino stance ATK and
+4 Medicant layers (the log lists none of Liino's buffs there). Her first
+hit (6.0 s, 1 layer) is exact; the ATK% her later hits need with every
+other zone the engine's (scratch: logged ÷ reading × the reading's ATK
+÷ her panel's): +0.156 to 18 s (stance + 1 layer: the same 5287 at 12.0 and
+16.6 s, while the engine goes to 3 and 4 layers), +0.100 at 23–32 s (stance
+only: the layer ran out at 20 s), +0.212, +0.268 at 35–49 s, +0.324 (4
+layers) from 51 s. Typhoeus fits 4 from 10 s and Arcane from 17 s (both
+had more than the engine before), Arcane fewer again at 53–70 s
+(×0.965 → ×0.893). So the heals reach the three at different times.
+
+**Ruled out (1d91's Ardelia):** her build (the hit at 6.0 s is exact; the
+pattern follows the layers, not a factor).
+
+**Still possible (1d91's Ardelia):** the stance's heal being the
+soundwave projectile's area (normal_skill_soundwave_projhit, an AOE
+HealAction): teammates out of its reach get no heal and no layer (not
+modelled: positions); a heal on a teammate at full HP giving none.
+
 **Next check:** 1cd1's step at 24 s (sonnet); the log check's fallback
-should not trust stackingType-11 listings' counts.
+should not trust stackingType-11 listings' counts; whether other logs
+without Liino's buffs listed show a teammate's layers lagging like
+1d91's Ardelia.
 
 ## Ardelia's Wooly Party: a random hit count (test 96)
 
@@ -758,13 +799,23 @@ f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
   reaction or physical status removes): every operator's hits ×0.5 to
   37.7 s, ×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s, ×1 from 86.8 s;
   nothing in the log's buffs marks it. Not modelled; the log is mostly
-  not checkable until it is.
-- **c83c Si's combo from ~55 s**: the engine adds Jade Vessel's next-combo
-  bonus (0.7), Yinglung's Edge (0.2 ×2) and P2 ATK that the log doesn't
-  list (combo +21%): buff lifetimes, maybe with "Consumed buffs end at the
-  planned last hit" (being fixed) or the Yinglung stack count (test 106).
-- **f978 Ardelia** ×0.8168 on 137 of 139 hits: a build offset, but no
-  weapon level / node pair fits exactly (4 nodes + 60, 3 + 64, 1 + 71).
+  not checkable until it is. It is all of Arcane's ×1.85 there (in-game
+  test 7, 2026-11-18: 238 of her 278 hits in the windows within 1% of the
+  factor).
+- **c83c Si's combo from ~55 s: now only the Yinglung stack count
+  (2026-11-18).** The +21% is gone (consumed buffs end at their cast's
+  last hit, 2026-11-14): her combos at 55.6, 82.8 and 98.4 s are ×0.9494,
+  ×1.0528, ×0.9518 = exactly one Edge layer (0.2 of DMG 3.95 / 3.79 /
+  4.15) fewer, more, fewer than the engine's 2, 2, 3 (scratch edge fit on
+  `zmdlogs hits --json`; Jade Vessel's 0.7 and the P2 ATK the engine has
+  fit). Her first combo (9.5 s) wants one more too (engine 2). Which casts
+  count: "Type 50 Yinglung's Edge" below.
+- **f978 Ardelia: found (2026-11-18).** Her weapon at level 60 (the third
+  breakthrough's cap; c3c7's is at 60 too): `efsim zmdlogs fit-build`
+  fits 107 of 139 hits, all 55 clean ones (0 as exported); the earlier
+  "no pair fits exactly" read the ATK ratio alone (×0.81663 against
+  ×0.8167, inside the hits' rounding). Fixture `buildOverrides`; f978
+  plain 258 → 365, mismatches 139 → 2.
 - **f879**: Wulfgard's late hits (104–126 s) ×1.06–1.10 with many
   Camille talent-1 stacks listed; Laevatain −8.3% (−9.1% before the
   Combustion snapshot fix) not diagnosed.
@@ -782,7 +833,13 @@ engine adds under time stops (c7790's 7 against 10).
 **Check improvement:** the build-offset line only reads hits with
 `crit === false`; Si's hits there have crit null, so no offset was
 reported. Weapon skill levels could be inferred from logged weapon-buff
-values (c83c's 0.21).
+values (c83c's 0.21). Done in part (2026-11-18): `efsim zmdlogs
+fit-build` scores attribute nodes, weapon level and food on every landed
+kit hit (crit null tried both ways) by the recomputed reading, foods' DMG
+lines too; its fits go into a fixture's `buildOverrides` with the counts
+(docs/design/data.md, the log check's rule). Left: the weapon level's
+bound from its logged skill levels (WeaponBreakThroughTemplateTable isn't
+loaded), weapon skill levels and gear artifice as candidates.
 
 ## Akekuri in 012a: Thermite Cutter's team ATK too early, and ×0.89 left
 
@@ -833,7 +890,46 @@ casts from hits; Laevatain's during-ultimate and Si's strokes, test 29);
 an expiry (3f78: only the casts in the last 3.5 s count, once); Estella's
 combo bound to its own cast id, or landing inside another cast.
 
-**Next check:** in-game test 106 (the buff's stack count on screen).
+**Si's strokes as a switch (2026-11-18):** the engine assumption
+`battle-sub-skills` (timeline/assumptions.ts; skills of SkillData
+normalSkillSubType 1, which the data's CheckSkillType gives
+`normalSkillSubTypeFilter` 0 everywhere, so the data doesn't say) reads
+`main-only` as "a sub-skill's cast isn't seen by triggers by skill type".
+`npm run measure -- --assume battle-sub-skills=main-only` (on the build
+overrides of the same day): c83c mismatches 31 → 22, 9555 11 → 1, 0c14
+plain 123 → 133, 489c 124 → 117 mismatches; 9a80 +1 mismatch, a27b and
+c7790 a few plain fewer; the hold-out row plain 65.0 → 64.8%, mismatch
+7.4 → 7.6%. Mixed, so the default stays `count`. Per combo it fits neither
+reading: c83c's fitted layers 3, 3, 1, 3, 2 (engine 2, 3, 2, 2, 3); her
+battle-button events come every 3.2–3.6 s (26 in 99 s, most with no hit
+and while she attacks), so most of them aren't strokes the replay can
+place; in the window before 55.6 s (Laevatain's battle skill and four
+such events) only one layer counts, before 82.8 s three (Si's battle
+skill, Laevatain's and the events). 0c14 (82.2 s one fewer, 122.5 s one
+more), 9555 (39.7 and 92.8 s one fewer) alike.
+
+**Still possible (added):** what Si's periodic battle-button events are
+(like Liino's stance beats, `ticksLoggedAs`?) and whether some are presses
+that count; a layer lost or kept across her own ultimate (c83c's 55.6 s
+combo right after it at 54.4 s fits 1).
+
+**The events and her basic attack (test 16, 2026-11-18; counted over
+every development log with Si, multi-target
+included):** 282 of her 370 battle-skill cast events have no battle-skill
+hit (`normal_skill_abilityrange_1`) within 1.5 s; a real cast's hit comes
+400–650 ms after its event (73 casts). Her Final Strike lands 0–0.98 s
+after 28 of the hitless events (none with a battle-skill hit after it),
+so whatever they are, they don't end her basic attack: no timeline that
+replaces the current action starts. *Ruled out:* that they're battle
+skills interrupting the attack (no hit follows); that they're all
+strokes (most have no stroke hit: `inkmark_projhit` or `inkmove_2` follow
+only 8 of the 28, within 2.5 s). *Still possible:* presses the game switches to a buff
+(SkillData `switchToBuffConfig` with `asSkillCast`: her Final Stroke's
+has the buff xianjing_inkboom, as Last Rite's beside cast) or a periodic
+internal cast (`canDummyCast` is set on all three of her battle skills).
+
+**Next check:** in-game test 106 (the buff's stack count on screen; its
+(d) is the strokes question).
 
 ## Estella's Razorhorn ATK: on the Shattering hit; Lifts get about half
 
@@ -1091,32 +1187,74 @@ stop (a clock ~2.5% slow against the log's, or holds a little longer).
 **Next check:** in-game test 107 (Si's Amp across three ultimates); af7b
 after the placement fix.
 
-## Liino's volley doubles in 1d91
+## Liino's volley doubles in 1d91: closed 2026-11-18
 
-**Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;
-some ×1.90 / ×2.11 against the engine.
+**Shows:** 442 at 1990 ms, 886 (2.007×) at 13713 ms, later 985, 1152.
+**Cause: the team's buffs, not the volley.** Once the replay lands the
+volleys (the next entry), 1d91's 886s match the engine plainly: from its
+second volley on the volley carries Ardelia's Arts Susceptibility (0.28)
+and Tidal Murmurs' Arts DMG Taken (0.16), Arcane's WILL Susceptibility
+(0.096) and the usp02 set's DMG (0.16), ×1.28 × 1.352 × 1.16 = 2.007 the
+first's (`efsim zmdlogs hits --json` on 1d91, t=13713: plain, predicted
+886). 1d91 lists none of Liino's buffs and no teammate's on her, which is
+why the log looked unbuffed. 4360 (419 → 785) and 9090 (388 → 567) are
+the same: the first volley comes before the teammates' debuffs.
+**Left:** the first volley (1990 ms) still lands nowhere: the log's first
+battle-skill event of Liino is at that very ms (the volley's own event,
+next entry), so her stance was cast before the log began, and the replay
+makes a stance at 1.99 s instead (its projectiles and first volley land
+as the replay's own); 7910 (1898 ms) and 4d60 (1354 ms) start the same
+way. The volley at 51.0 s is ×1.11 the engine's (985 against 886), 62.2
+and 64.0 s (1152 = 886 × 1.3) are under the log's Stagger, split in two
+by a stop.
 
-**Ruled out:** nothing specific yet.
+## Liino's volleys: a 10 s timer, reaction or not (in-game test 26 from the data and the logs, 2026-11-18)
 
-**Ruled out (round 3):** two projectiles merged into one hit (14245 has
-886 and a 1329 crit at one time: separate landings, six per volley as in
-bdf2 and d774); battle-skill level (12 in all three); potential (0 in bdf2
-and 1d91); the Stagger (explains 1152 = 886 × 1.3, not the 2×); Typhoeus's
-damage taken (24670 is 886 without it). Wrong premise in this file's
-earlier entry: the log shows no stance ATK or lance layer before 1990 ms.
-
-**Found:** 442 (1990 ms) is the volley's 0.2 scale (bdf2's and d774's fit
-0.2); 886 is 2.007× it, and atk_scale 0.4 gives 883 (0.3% off).
-
-**Still possible:** these "volleys" being battle-skill projectiles (0.4)
-logged under the volley's key: the groups of 886 follow her presses
-(13713 at a press, 24670 0.96 s after one, 36754, 50920): a clue for
-in-game test 103 (do presses in the stance launch projectiles?); an
-unlisted ×2 on the enemy; volley 4 (985) a further ×1.11. The replay
-lands no volley in 1d91 at all.
-
-**Next check:** in-game test 103 with this in mind; why the replay
-lands no volley here.
+**Shows:** 9090 logged 10 volleys, the replay 1 (the kit's reading B of
+test 26: an Arts Reaction while her listener is up, then 10 s of
+cooldown); no reaction hit is logged in the 2 s before the one at 15.2 s,
+and its first comes 1.9 s after her cast, before any reaction.
+**Cause (the data):** buff spelllnfliction_extraattack (the battle skill's
+frame 45) ticks every hit_tigger = atk_trigger (10 s), the first at once
+(waitFirstTriggerInterval false), and each tick launches the volley at a
+marked enemy within 20 m; the tick's first condition, CheckBuffIdInContext
+spelllnfliction_hit (the 2 s mark an Arts Reaction leaves), has
+`isEnable false`. `efsim gamedata tree` left disabled actions out as
+defaults, so the condition read as live; it now prints `DISABLED`.
+**The logs agree:** 103 volleys in 24 Liino logs, 10.0–11.7 s of world
+time apart (time stops taken out; `scratch` count over all Liino logs,
+logcasts `worldMs`), also with no stop between (1d91 11.29, 4bfe 10.70,
+8915 11.67, a7a7 10.02, c6d8 10.70 s); a stance's first comes 1.6–2.4 s
+after its first projectile (the kit: 1.9 s), with no reaction needed.
+**Fixed:** the kit's volley_window ticks every atk_trigger from frame 45
+and fires the volley (kit-liino test). The game's clock for it runs
+slower than the replay's world time (mean gap ~10.5 s; her beats drift the
+same way, "Liino's battle-skill presses" above), so the replay takes each
+tick from its logged volley (`KitBuff.ticksShownByHits`, buffreplay
+`loggedTickLandings`): held to one up to 5 s later, brought forward to one
+up to 5 s sooner. 9090: Liino's volleys 60 logged, 58 replayed (the first
+volley's last two lie after Arcane's combo stop at 2.5 s), her totals
+−10.4 → +2.5%.
+**Ruled out:** the volley waiting for a beat (but for the 37 at 0 ms,
+below, the volleys' offsets from the last logged beat spread evenly over
+0.1–3 s); a cooldown from a reaction (9090's first volley comes before any
+reaction, and its 15.2 s one has none in the 2 s before).
+**Found, not acted on:** 37 of the 100 volleys have a Liino battle-skill
+cast event at their first hit's very ms (the beats and the volley tick on
+unrelated clocks, so these events are the volley's). Reading them as
+neither presses nor beats changed nothing but 1d91 and 7910, both worse
+(their first event is then no stance at all: plain 280 → 249, 202 → 177,
+measure 2026-11-18), so the replay still reads them as beats (or, before
+any stance, as the stance's cast).
+**Still possible:** the game's slower clock: hit-stop or a time scale on
+Liino herself (useTimeDilationDt false on the buff), or stops longer than
+the engine's; the data's listener end at frame 1691 (54.9 s; the kit ends
+it with the stance at 60 s, which no tick falls between).
+**Next check:** none for the volley. Rossi's bleed ticks (an `every 1`
+enemy buff) took the same pinning in a trial: 489c mismatch 124 → 111,
+d572, 2fd9, 99fb better, 0c14 +0.3, 4a64 −0.1 points of damage error
+(measure 2026-11-18); not kept here (outside this task), a lead for
+Rossi's kit.
 
 ## Si's Artful Intent bursts that fit no reading (6 of 40)
 
@@ -1162,20 +1300,49 @@ phase change.
 ## 0c14: Si, and Rossi's later windows
 
 Found (2026-11-11): Alesh's weapon at level 60 (her buff-free hits
-×0.807 exactly), Rossi's food (Kunst Tube; early hits exact). Left:
+×0.807 exactly), Rossi's food (Kunst Tube; early hits exact).
+
+**Found (2026-11-18): Si's build is two inputs, food and nodes.** Her
+hits with the log's listing in place of the replay's (scratch
+recomputation on `zmdlogs hits --json`) are ×1.1543 where she has no DMG
+from others and ×1.1322 under Alesh's set DMG (+0.16), whatever the ATK
+buffs: a ratio that depends on her DMG bonus is an additive DMG, and only
++0.247 with ATK ×0.962 fits both. +0.2465 is Kunst Tube (all-element DMG),
+the food Rossi's and the Endministrator's hits fit; ×0.962 is two
+attribute nodes of four (nodes 5 and 7 need trust 300, as in 40d9).
+`efsim zmdlogs fit-build`: 46 of 191 hits within ±1, all 25 clean ones
+(0 as exported); the next best fits 26. Fixture `buildOverrides`; 0c14
+mismatches 212 → 23, plain 77 → 123 (the fight's total +7.5 → +8.5%: Si's
+hits were the low ones under Rossi's and Alesh's highs). The earlier "a
+food alone" was right: it takes both.
+
+**Found (2026-11-18): the step ×1.0965 at 13.25 s** is Alesh's P3 team
+ATK (+0.15, buff_chr_0024_deepfin_potential_3, listed since 13254),
+which only her combo's Rare Fin slam gives; with her weapon's team ATK
+listed since 12707 (Thermite Cutter on natural SP, which her combo's hook
+grants) it says Alesh cast a combo at ~12.5 s whose hits the log hasn't
+(her combo window opened by the Endministrator's Crystals shattered at
+11.2 s). The replay makes no cast there (no logged hit or cast event), so
+it lacks the team ATK until Alesh's ultimate (18.4 s) and the P3 ATK until
+her next combo (60.6 s): Si's combo hits from 13.25 s and Si's ultimate's
+carry them (log-listing fallbacks now).
 
 **Ruled out:** a food alone for Si (residual 0.91–1.15 with the best);
-a weapon level or nodes for Rossi and Si (they only lower ATK; both are
-predicted low).
+a weapon level or nodes for Rossi (they only lower ATK; she is predicted
+low); for Si either alone (two inputs, above).
 
 **Still possible:** Rossi at 22–40, 62–82, 150–195 s: Wolven Blood layer
 and max-stack timing (the log lists two entries per layer), Si's ultimate
 window, the Endministrator's ATK buff and Razor Clawmark timing (the
-engine has Razor Clawmark's 0.12 at 52–60 s, the log doesn't). Si: a step
-×1.0965 at 13.05–13.25 s with identical engine modifiers; Yinglung's Edge
-or Jade Vessel's next-combo state; Stagger. Alesh: ×1.146 at 26 s (the
-log lists her ATK buff twice, the engine once), ×1.38–1.44 at 59–60 s, her
-ultimates ×1.34 and ×1.90.
+engine has Razor Clawmark's 0.12 at 52–60 s, the log doesn't). Si: her
+combos' Yinglung's Edge count (82.2 s one layer fewer, 122.5 s one more,
+167.1 s one more and Jade Vessel's next-combo bonus the engine hasn't: "Type 50 Yinglung's
+Edge"). Alesh: ×1.146 at 26 s (the log lists her ATK buff twice, the
+engine once), ×1.38–1.44 at 59–60 s, her ultimates ×1.34 and ×1.90.
+For the replay: a cast inferred from a buff only it gives (a logged
+effect whose `since` no replayed cast explains, like
+castsFromBuffEnds for ends): not built; Alesh's combo here is its first
+case.
 
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window.
@@ -1505,39 +1672,64 @@ From the kit check before simulating the team
   which the engine doesn't let hold her own entities (T7). Both single instances; not
   pursued.
 - **9090 (the whole team): Liino −15.0%, Perlica −13.0% in the totals**
-  (the simulation of the logged casts), with every hit-by-hit check
-  matching (Perlica 130 of 130, Liino 171 of 172). Hits under Stagger
-  145 replayed against 208 logged: Perlica's talent 1 (DMG vs Staggered)
-  and her finisher only exist while Staggered. Liino's battle-skill kind
-  −15% (her volleys). **Narrowed (2026-11-17):** the Stagger windows were
-  half of it: the replay now follows the log's Stagger (see "The replay's
-  Stagger windows" below): hits under Stagger 197 of 208, Liino −15.0 →
-  −10.4%, Perlica −13.0 → −10.7%, the fight −5.4 → −2.1%. The volleys
-  are the rest: 10 logged (6 hits each, 2.1–153.0 s, 33,159 damage)
-  against 1 replayed (53.5 s, 4,424); battle kind −15.1% unchanged. No
-  reaction hit is logged in the 2 s before the one at 15.2 s, so the kit's
-  reading B of test 26 (a reaction while the listener is up) doesn't make
-  them; they come 10–16 s apart (her listener's cooldown is 10 s).
-  Next: Liino's volley trigger against the logs (her kit, test 26's
-  reading A, or the press in Vocalist Stance: test 103).
+  (the simulation of the logged casts). **Narrowed (2026-11-17):** the
+  replay follows the log's Stagger: Liino −15.0 → −10.4%, Perlica −13.0 →
+  −10.7%, the fight −5.4 → −2.1%. **Liino closed (2026-11-18):** her
+  volleys are a 10 s timer (entry "Liino's volleys" above): 58 of 60
+  volley hits replayed, Liino −10.4 → +2.5%, her plain 100 → 148.
+  Perlica's −9.6% is left: her 130 hits all match (101 plain), so it's
+  hits the replay doesn't land or lands differently, not their values.
 - **Perlica in fc63: every hit ×0.934** from the first (4.8 s), before
-  any reaction or buff. Ruled out: her weapon at level 80 (its skills
-  allow 80–90), 2 or 3 attribute nodes, talents at 1 (each tried: worse).
-  Still possible: the export's empty artifice lists on three Pulser Labs
-  pieces read as 0 (the export gives their sub-stat values at level 0),
-  another build input the export omits. Not a kit lead (her other logs
-  fit).
+  any reaction or buff. Her ATK from 30 unbuffed hits is 3,570.8–3,571.5
+  against the engine's 3,822.0 (×0.9343), the same on every skill kind
+  (basic level 6, battle 6, combo 10, ultimate 9), so it's ATK, not a
+  skill level. Ruled out: her weapon at level 80 (its skills allow
+  80–90), 2 or 3 attribute nodes, talents at 1 (each tried: worse); the
+  enemy (eny_0120 tower015, where 9090, 4bfc and 00ae fit her); **the
+  export's empty artifice lists read as 0** (2026-11-18: missing artifice
+  only lowers the engine's stats, and the log is the lower; 4360 has the
+  same three Pulser Labs pieces at [0, 0, 0] and fits); **the weapon's
+  level and skill levels** (not in the log, assumed the highest: a
+  search over weapon level 60–90 and skills 1–9 at her logged level 90
+  comes no nearer than 3,568.9 and 3,573.9, scratch/fc63atk.ts); her
+  hand piece's variant (usp02 hand_01–_04: 4,023–4,139) and its
+  artifice. Still possible: an ATK% of 22.6% instead of 31.2% or 54 less
+  Wisd from a source the export misreads (the nearest single inputs:
+  weapon skill 2 at 7, ×0.939; skill 1 at 5–6, ×0.930 / ×0.946), her
+  operator level (the log's 90; at 80 ×0.933). Not a kit lead (her
+  other logs fit).
 - **Perlica's misfits elsewhere** (4360, 9847, 4bfc, 3aa6, d774) come in
   runs of ×1.3–1.5 (or their inverse) on basic attacks and ultimates.
-  **Ruled out (2026-11-17): the Stagger windows.** With the replay
-  following the log's Stagger, every one of her mismatches in 4360 and
-  9847 has the log and the replay agreeing on Stagger, and they stay
-  (4360 16, 9847 26; 4bfc 13 → 9, 3aa6 6, d774 3): runs of ×0.97,
-  ×1.29–1.31 and ×1.50 (9847 80.9–81.6 s, 137.9–141.9 s), ×0.62–0.68
-  (4360 62.8–64.5 s, 69.9 s) and ×1.58–1.72 (4360 74.6–75.3 s, not
-  Staggered). Still possible: her talent 1's condition (another state
-  than Stagger), a buff window of hers or a teammate's. Next: her kit's
-  talent 1 and buffs against these runs.
+  **Ruled out (2026-11-17): the Stagger windows.** **Ruled out
+  (2026-11-18): her talent 1 (DMG vs Staggered).** Where the engine gives
+  it (CheckPoiseValue = 0: Staggered), 9090's 26 and 4bfc's 22 of her
+  hits match plainly; 9847's misfits under it sit beside plain matches
+  with the same modifiers (64107, 65735 plain; 65313, 66539 ×0.972–0.973),
+  and they're **team-wide**: Gilberta, Avywenna and Liino are ×0.972–0.979
+  at 65–74 s and 139–142 s, ×1.40–1.50 at 80.9–81.9 s and ×1.29 at 138 s
+  too (zmdlogs hits on 9847; groups: 22 of 26 team-wide). So 9847's runs
+  are the enemy's or the fight's (Bigents, tower019, whose Stagger windows
+  run 18–20 s: "The replay's Stagger windows" below), not Perlica's kit.
+  **Found and fixed (2026-11-18): 4360's ×0.62–0.70 run (62.8–73.5 s) was
+  Liino's Cosmovoice.** The log lists its Amp and ATK on the team to
+  62.10 s, not from 62.76 s, with no finale, then her battle skill at
+  63.57 s (projectiles 64.41 s): she pressed End Stance (unlogged: no log
+  has an End Stance event) and recast Vocalist. The kit can't cast her
+  battle skill while End Stance holds the slot (the ultimate's
+  ChangeSkillAction, frames 77–527), but the replay made it anyway inside
+  Cosmovoice and kept the Amp. Now the replay infers the exit press after
+  the last listing (buffreplay `exitPresses`, made only while the stance
+  is on and would last past then): 4360 Perlica plain 104 → 111,
+  mismatches 16 → 12, Liino's totals +29 → +5.7%; 9847 the same at 73.1 s
+  (its Amp unlisted from 74.44 s, battle skill 75.84 s). 4d60's inferred
+  End Stance (Amp unlisted after 98 s, battle skill 101.7 s) is wrong in
+  kind, its finale is logged at 99.87 s (the stance ran out), but right in
+  effect: the replay's Cosmovoice, 1.5 s behind the log's beats, was
+  still on at the battle skill (4d60 mismatch +1, damage −0.4 points).
+  Still possible: 4360's 74.6–75.3 s (×1.58–1.72, not Staggered, 3 hits),
+  63.3 s (×1.54 now), 59.5 / 61.5 s (×0.97 under talent 1); 3aa6 ×1.16 /
+  ×1.60 under talent 1 (2 hits); d774 ×1.29 / ×1.71 (3). Next: 4360's
+  74.6 s (what the log lists there that the engine lacks).
 
 ## The replay's Stagger windows: the game's last longer than the engine's (2026-11-17)
 
@@ -1588,7 +1780,42 @@ Shatter, 12 listed), 14.04 at 55.403 s (Gilberta's combo, 5 listed);
 after that every step matches. The non-whole steps suggest a scaled or
 time-based amount (Solidification or Shatter?), not a hit. The replay
 takes the bar from the log, so only the engine's own sums miss it.
-**Next check:** in-game test 110 (a Stagger timed by hand).
+**Found (test 110 from the logs, 2026-11-18):** the Stagger itself lasts
+about 2 s longer. Over 30 windows bracketed within 3 s (bigents, 4d60's
+paused one and three the replay broke seconds early aside) the log's end
+is a median 2.3 s after the engine's own end (quartiles 1.4–3.9); with 2 s
+more on the enemy's clock, a median 0.1 s off, 12 short and 13 long (rms
+3.15 → 1.40 s; `staggerRuns(data, fx, { assume })`, the engine's own end
+also where the log's calm hit cut it: `BuffReplay.staggerCuts`). The
+engine adds it (engine assumption `stagger-recovery`, `2s`): a recovery
+after PoiseRecTime that still counts as Staggered. Also ruled out now:
+hits extending it (Staggers outlast hitless gaps of 1.8–7 s past the
+data's end and end 0.1 s after a hit), the hit rate (r −0.01), Finishers
+(r 0.24). A fit: 1.8 s + 1.18 × the ultimates' stops + 0.79 × the combos'.
+**Still open:** the spread around the 2 s (sd ~1.4 s, every enemy; the same
+scatter as Gilberta's Susceptibility ends, below); whether a freeze holds
+it (`stagger-freeze`: rms 1.40 held, 1.42 not); bigents (tower019) 11–14 s
+more in 489c, 9847, 9c0b (its own recovery?); 4d60 at 117.2–124.5 s, a
+7.2 s gap with no hit from anyone and Akekuri's chain going on after it (a
+whole-game pause the log's clock runs through: anything timed across it is
+off by 7 s).
+**Next check:** a per-enemy recovery for bigents if a team fights it; the
+spread against the enemy's actions (not logged).
+
+## Gilberta's Susceptibility: the engine's Vulnerable count (test 12, 2026-11-18)
+
+**Shows:** the listed value is `rate × (1 + 0.1 × Vulnerable stacks)` (0.30–
+0.42 at P0/P1); where the engine's differs (4360 0.33 / 0.39, 489c and d572
+0.39 / 0.42, 9847 0.30 / 0.36: one or two stacks low when the ultimate
+lands), the damage follows the log's value (86 hits against 24). Her
+windows' ends scatter −1 to +2 s around the engine's 5 s plus stops (16
+bracketed windows, median +0.4 s), the late listed hits' damage with them.
+**Still possible:** the engine's Vulnerable stacks short (a Lift or Knock
+Down it misses, a stack's expiry), or the data's count reading something
+else (every physical status); the end scatter shares a cause with the
+Stagger's (above).
+**Next check:** the four logs' Vulnerable stacks before her ultimate,
+replay against the listed Physical Susceptibility.
 
 ## Smaller, not yet diagnosed
 

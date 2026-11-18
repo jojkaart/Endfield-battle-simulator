@@ -163,7 +163,9 @@ B1 done (2026-10-26), with B0's half in the replay. From all 29 logs'
   stops**: the logged windows (real time) are the enemy's 9–11 s plus
   the ultimates' and combos' stops inside them, plus 0.3–2.3 s (median
   ~1.1 s) nothing explains yet (hit-stop, B10?). Short windows are the
-  fight's end, or a recovery cutting them.
+  fight's end, or a recovery cutting them. (2026-11-18, test 110 from the
+  logs, with the replay following the listing: a median 2.3 s over 30
+  bracketed windows; the engine adds 2 s, `stagger-recovery`.)
 - **Teammates' Final Strikes deal no Stagger** (onlyEnableForMainChar):
   one operator per fight has Stagger on its basic hits. The replay made
   every basic attacker controlled, so teammates' attacks (B0) Staggered

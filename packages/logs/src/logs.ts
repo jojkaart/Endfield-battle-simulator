@@ -5,9 +5,9 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import type { GameData } from "@efsim/engine";
+import type { Build, GameData } from "@efsim/engine";
 import { sourceCommit, SOURCES } from "@efsim/data";
-import { enemiesHit, fetchBattle, zmdlogsCasts, zmdlogsHits, zmdlogsToFixture, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
+import { enemiesHit, fetchBattle, zmdlogsCasts, zmdlogsHits, zmdlogsToFixture, type BuildOverride, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -124,10 +124,31 @@ export function listLogs(opts: { readonly root?: string; readonly dirs?: readonl
 }
 
 export function readLogFixture(file: string): LogFixture {
+  return withBuildOverrides(readLogFixtureRaw(file));
+}
+
+/** A fixture as written: `team` as exported, its buildOverrides not applied (for tools that rewrite the file). */
+export function readLogFixtureRaw(file: string): LogFixture {
   const { ajv, validate } = validator();
   const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
   if (!validate(raw)) throw new Error(`${file}: ${ajv.errorsText(validate.errors)}`);
   return raw as LogFixture;
+}
+
+/** A build with overrides set over it (LogFixture.buildOverrides): `weapon`'s fields over the build's weapon. */
+export function overrideBuild(b: Build, set: BuildOverride["set"]): Build {
+  const { weapon, ...rest } = set;
+  if (weapon && !b.weapon) throw new Error(`${b.operator}: a weapon override, but the build has no weapon`);
+  return { ...b, ...rest, ...(weapon && b.weapon ? { weapon: { ...b.weapon, ...weapon } } : {}) };
+}
+
+/** The fixture with its buildOverrides set over `team` (each operator's in order); unchanged without any. */
+export function withBuildOverrides(fx: LogFixture): LogFixture {
+  const overrides = fx.buildOverrides;
+  if (!overrides?.length) return fx;
+  for (const o of overrides) if (!fx.team.some((b) => b.operator === o.operator)) throw new Error(`${fx.id}: a build override for ${o.operator}, who isn't in the team`);
+  const team = fx.team.map((b) => overrides.filter((o) => o.operator === b.operator).reduce((acc, o) => overrideBuild(acc, o.set), b));
+  return { ...fx, team };
 }
 
 /**
@@ -253,7 +274,7 @@ function comparable(h: LogHit, drop: ReadonlySet<RefreshedField>): unknown {
  * The team (from the export, a second request), the enemy level and the notes an import writes aren't touched.
  */
 export function refreshFixture(file: string, detail: unknown, keepDetail?: (detail: unknown) => void): RefreshResult {
-  const fx = readLogFixture(file);
+  const fx = readLogFixtureRaw(file);
   const battle = (detail as { battle?: { id?: string; parserVersion?: string } }).battle;
   if (battle?.id !== fx.provenance.battleId) throw new Error(`the detail is battle ${String(battle?.id)}, not ${fx.provenance.battleId}`);
   keepDetail?.(detail);

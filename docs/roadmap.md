@@ -25,9 +25,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   owner's team's gear (+8.0%) and on Arcane in INT mode for Typhoeus's team
   (+5.9%, a rule search for INT first); a cheaper worth for timeline-moving
   stats; the guided rule search's limit is noise (cheaper variance next),
-  and the owner's call on its full-energy options; in-game tests 106, 108.
+  and the owner's call on its full-energy options; in-game tests 106, 108 (dives).
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
-  the found rotations); fc63's 4th shot anchored to her 5th's cast.
+  the found rotations); fc63's 4th shot anchored to her 5th's cast;
+  Perlica's −9.6% in 9090 (Liino's volleys done 2026-11-18).
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't
@@ -41,7 +42,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   22, 46 decided and 21, 43 partly from the logs (2026-11-18: buffs created
   in a stop are held; Twilight still 0.1–4.6 s longer than its model); Arcane's misses grouped (2026-11-18: 908 → 866; next her
   Imprisonment's end from the log); the replay follows the log's Stagger
-  windows (2026-11-18; why the game's run longer: test 110); then the
+  windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
+  the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
+  only game-only tests now); Gilberta's Vulnerable count at her ultimate
+  (test 12's leftover); build offsets fitted, not hand-set (`zmdlogs
+  fit-build`, fixture `buildOverrides`, 2026-11-18; next: weapon levels
+  bounded by their skill levels, the old hand fits moved over); then the
   screened logs' leads
   ([open-problems.md](open-problems.md)), diagnosed in parallel; then B8,
   B6, B9, B10.

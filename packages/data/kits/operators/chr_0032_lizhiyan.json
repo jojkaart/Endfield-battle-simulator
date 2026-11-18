@@ -221,7 +221,31 @@
         }
       ],
       "gameBuff": "buff_chr_0032_lizhiyan_talent1_enhance",
-      "note": "Child of listener_owner and then of listener: lasts the array and Gloompurge Arcana (ended by array_end / gloompurge_end). Test 7."
+      "note": "Child of listener_owner and then of listener: lasts the array and Gloompurge Arcana (ended by array_end / gloompurge_end), until ultimate 2's own instance replaces it (int_amp_ult2; maxStackCnt 1, stackingType 2). Test 7."
+    },
+    {
+      "id": "int_amp_ult2",
+      "label": "Talent 1 Arts Amp (INT, ultimate 2)",
+      "target": "self",
+      "duration": 9.567,
+      "dataOverride": { "duration": "lifeType 1 (until ended): ultimate 2's CreateBuff has autoFinishByAction and finishWithNextSkillIfNotInherited, so it lasts at most the skill's action (durationFrame 287) and ends at her next basic attack (ult2_amp_end); the file's 30 s isn't reached (see the buff's note)." },
+      "modifiers": [
+        {
+          "zone": "amp",
+          "value": {
+            "talent": 0,
+            "key": "enhance_rate"
+          },
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ]
+        }
+      ],
+      "gameBuff": "buff_chr_0032_lizhiyan_talent1_enhance",
+      "note": "ultimate_skill2 [0–287] in INT (EntityBB_wisd_greater_will ≥ 1, enhance_rate > 0): CreateBuffAction asChildBuff, autoFinishByAction, finishWithNextSkillIfNotInherited: its own talent1_enhance, which replaces Gloompurge Arcana's (one instance) and ends with the skill's action or at her next skill. The logs (test 7): pending/zmdlogs-00ae0a364ad4.json lists a new Amp at the cast (68.61 s), on her hits to 69.13 s and not on her next basic attack at 70.83 s; pending/zmdlogs-891566c224f8.json at 97.85 s, to 98.27 s, not at 99.40 s (her basics after it ×0.84 the engine's with Gloompurge's Amp still on: 0.24 of 1.54); pending/zmdlogs-a7a7a40c97ed.json keeps it on her battle skill right after (56.34 s, and ultimate 2's own hit at 56.21 s), so only a basic attack is written to end it (ult2_amp_end; whether a battle skill or combo does is open)."
     },
     {
       "id": "t1_susceptibility",
@@ -868,6 +892,77 @@
       "note": "listener ends: layer counter reset, energy −999."
     },
     {
+      "id": "ult2_amp",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0032_lizhiyan_ultimate_skill2"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          },
+          {
+            "talentAtLeast": [
+              0,
+              1
+            ]
+          },
+          {
+            "any": [
+              {
+                "talentAtLeast": [
+                  0,
+                  2
+                ]
+              },
+              {
+                "potentialAtLeast": 5
+              }
+            ]
+          }
+        ]
+      },
+      "skill": "chr_0032_lizhiyan_ultimate_skill2",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "int_amp"
+        },
+        {
+          "kind": "buff",
+          "buff": "int_amp_ult2"
+        }
+      ],
+      "note": "ultimate_skill2 frame 0, INT with talent 1's enhance_rate above 0 (the condition of array_start's Amp): its own Amp replaces Gloompurge Arcana's (int_amp_ult2)."
+    },
+    {
+      "id": "ult2_amp_end",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "basic"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "buffActive": "int_amp_ult2"
+      },
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "int_amp_ult2"
+        }
+      ],
+      "note": "finishWithNextSkillIfNotInherited on ultimate 2's Amp: her next basic attack ends it (00ae, 8915; test 7). A battle skill right after doesn't in a7a7."
+    },
+    {
       "id": "p5_cooldown",
       "on": {
         "event": "cast",
@@ -1221,7 +1316,7 @@
       "available": {
         "buffActive": "gloompurge_arcana"
       },
-      "note": "Castable while Gloompurge Arcana lasts (after the second Cluster Strike), paid by its 100% energy grant. In INT, talent 1's Amp is already on (int_amp lasts Gloompurge Arcana). Can't be cut before 63.",
+      "note": "Castable while Gloompurge Arcana lasts (after the second Cluster Strike), paid by its 100% energy grant. In INT, its own talent-1 Amp from frame 0 replaces Gloompurge Arcana's and ends at her next basic attack (ult2_amp, int_amp_ult2, ult2_amp_end; test 7). Can't be cut before 63.",
       "hits": [
         {
           "id": "will",
