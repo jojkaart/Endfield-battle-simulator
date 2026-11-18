@@ -71,7 +71,8 @@ describe("Zhuang Fangyi: basic attacks, finisher, the Empyrean attacks", () => {
   it("each landing once, at the data's frames (kit-draft's distance and VFX alternatives are one hit)", () => {
     expect(["attack1", "attack2", "attack3", "attack4", "attack5"].map(rel)).toEqual([[6, 8], [2, 2, 15, 24, 27, 30], [14, 14, 16, 16], [11, 20, 23, 26], [20]]);
     expect(hitsOf(s, "attack5").map((h) => round(h.zones.scale))).toEqual([1.08]);
-    // The finisher (castable on a Staggered enemy): BreakingAttackCalculation × 0.1 at 11 and × 0.9 at 40; in the Empyrean too (U6).
+    // The finisher (castable on a Staggered enemy): BreakingAttackCalculation × 0.1 at 11 and × 0.9 at 40; not in the Empyrean
+    // (U6, 2026-11-18: no kit condition; the engine gates it while an enhanced attack is the input, tests/finisher-gate.test.ts).
     expect(kitSkill("power_attack")?.hits.map((h) => [h.frames, h.factor])).toEqual([[[11], 0.1], [[40], 0.9]]);
     expect(kitSkill("power_attack")?.available).toBeUndefined();
   });
