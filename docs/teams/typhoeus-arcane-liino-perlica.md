@@ -263,12 +263,14 @@ unchanged (no Liino ultimate in the first 60 s from zero). The rules
 don't change.
 
 **Buffs created inside a running stop are held (2026-11-18, in-game tests 18, 21, 46 from the
-logs; same seeds 1001–1032):** engine assumption `buff-in-stop` ([journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)): Typhoeus's
-Hail of Arrows window and the team's buffs created during a time stop or combo slow-down last the
-rest of it longer. Sustained DPS 52,374 → **52,641** (+0.5%) at full energy, 48,973 → **49,095**
-(+0.2%) from zero, each against the old rule at the same code (`--assume buff-in-stop=runs`); as a
-bot / at 0.6 s 59,764 / 51,748. The 60 s timeline +0.75% (5,615,426 → 5,657,280), the zero-energy
-one unchanged. In-game tests 9, 43 (the controlled half), 46 decided from the logs: no kit change.
+logs; same seeds 1001–1032, against `--assume buff-in-stop=runs` at the same code, after Liino's ten
+beats):** engine assumption `buff-in-stop`
+([journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)):
+Typhoeus's Hail of Arrows window and the team's buffs created during a time stop or combo slow-down
+last the rest of it longer. Sustained DPS 52,047 → **52,261** (+0.4%) at full energy, 49,169 →
+**49,309** (+0.3%) from zero; as a bot / at 0.6 s 60,340 / 52,292 (full energy). The 60 s timelines
+5,663,487 → 5,705,341 (+0.74%) / unchanged. In-game tests 9, 43 (the controlled half) and 46 decided
+from the logs: no kit change.
 
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
