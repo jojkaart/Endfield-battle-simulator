@@ -179,8 +179,8 @@ Data and logs (engine now): a = b = d, c = e ≈ 1.20 × a. The old rule
 when the Power Shot's arrow consumed a Nature Infliction) fits. In all 16 Typhoeus logs
 (`efsim zmdlogs hits --json`, her `buff_common_natural_natural_triggered_typhoea` hits):
 the bursts the replay reads with ×1.3 match 41 plain, 5 assumed and 9 log-listing
-fallback in 10 logs, and none is ×1/1.3 the engine's; the bursts it reads without
-match plain 87 times. The three ×1.3 mismatches are other causes: 1cd1 37.97 s is
+fallback in 11 logs, and none is ×1/1.3 the engine's; the bursts it reads without
+match plain 91 times. The three ×1.3 mismatches are other causes: 1cd1 37.97 s is
 exactly ×1.502 over the engine's, Liino's Cosmovoice Amp (the burst, held by her
 ultimate's stop, landed inside Cosmovoice), and 9c6e 52.8 s is the two-target log. Two
 bursts the replay read without ×1.3 are logged ×1.300 (1cd1 40.12 s) and ×1.286 (4bfe,
@@ -616,15 +616,15 @@ against the replay's Twilight (`efsim zmdlogs replay --kit-buff chr_0016_laevat:
 Two placement fixes first: her ultimate's cast event comes at the end of her 2.03 s stop
 in nearly every log (the last hit before it 2.0–2.9 s earlier), and the replay now starts
 the ultimate 2.03 s before it in 17 of the 22 (11 before; buffreplay.ts `loggedCastStart`:
-another's hit within 0.5 s after the event, not only at it, says the stop ended there); and a window's holds are counted with Twilight long enough not to
-end early (an early end drops the later combos' and pauses' holds). Then, in the 7 closed
+another's hit within 0.5 s after the event, not only at it, says the stop ended there);
+and a window's holds are counted with Twilight long enough not to end early (an early end drops the later combos' and pauses' holds). Then, in the 7 closed
 windows (458b ×2, f879 ×2, c83c, e49e, 0206), the game's Twilight is longer than 15 s from
 the press plus every hold the engine counts (her battle skills' pauses, her combos' 1.9 s,
 others' stops) by 2.1–6.6 s in all 7: her own ultimate's stop holds Twilight too (test
-18's entry, now the engine's rule). With that, it is still 0.1–4.6 s short in 6 of 7 and
+18's entry, now the engine's rule). With that, it is still 0.1–4.6 s short in all 7 and
 never too long (458b 0.6–2.6 and 1.8–2.4 s, f879 0.1–1.2 and 1.8–2.5 s, c83c 3.1–4.6 s,
-0206 2.2–2.7 s; e49e fits once its first combo, logged at 54.86 s before the ultimate, is
-taken out). No single further term fits all seven: a constant, show_weapon's 16 s, the
+0206 2.2–2.7 s, e49e 0.6–1.6 s with its first combo, logged at 54.86 s before the
+ultimate, left out: the replay counts it inside). No single further term fits all seven: a constant, show_weapon's 16 s, the
 battle skill's full 115-frame pause (no skips: four windows would end after the log's
 first plain cast) or a smaller combo hold each leave some windows outside their brackets.
 What's left is in open-problems "Laevatain's Twilight runs longer than its model". The

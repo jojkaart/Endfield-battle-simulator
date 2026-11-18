@@ -110,8 +110,9 @@ Si's hitless ultimate in 9c0b, Hot Work on Combustion ticks); the loop's long op
 (Chiliarch, the enemy Si; packages/data/src/enemyFacts.ts); cooldowns run
 through others' ultimate stops (settled); Haste doesn't speed attacks (the
 engine no longer plays hasted casts faster); teammates' pause 6.5 s. Left:
-Laevatain's Twilight runs 2.5–7 s past its model (open-problems; kit
-assumption `laevatain-twilight-own-stop`); re-search the five Si example
+Laevatain's Twilight runs past its model (open-problems; since
+2026-11-18 her own stop holds it, engine assumption `buff-in-stop`, and it
+is still 0.1–4.6 s longer); re-search the five Si example
 timelines with the full beams (after Haste's change they hold the old
 timeline repaired or a single-beam search: lower bounds);
 per-operator and per-fight teammate pace (the logs' R² 0.41 each) if a

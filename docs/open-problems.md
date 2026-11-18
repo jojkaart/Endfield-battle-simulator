@@ -967,24 +967,42 @@ time-dilation flags).
 
 ## Laevatain's Twilight runs longer than its model (tests 17, 18, 21)
 
-**Shows (2026-11-16):** bracketed by her last enhanced hit and her first
-plain hit after each ultimate (fx casts' ultimate events), Twilight lasts
-2.5–7 s past 15 s plus her enhanced battle skills' pauses (115 frames each,
-counted from the placed casts) plus the stops between: 458b 82333 ms
-(bracket 26.3–28.7 s, model 21.9 s), 158314 (28.7–29.2, 24.4), 9c0b 2929
-(31.8–34.1, 25.1), c83c 44548 (28.2–29.0, 22.3), f879 47479 (27.6–28.6,
-25.2), 99845 (25.7–26.2, 23.2).
+**Shows (2026-11-18, replacing the 2026-11-16 brackets):** the 22 Twilight windows of
+the 18 Laevatain logs, each bracketed by her last enhanced cast and her first plain cast
+after it (the placed casts, `efsim zmdlogs casts`), against the replay's Twilight
+(`efsim zmdlogs replay <log> --kit-buff chr_0016_laevat:twilight`), its holds counted
+with the kit's duration set long so that an early end doesn't drop the later holds
+(scripts in scratch/: twilight2.ts, dneed.ts, holds.ts). The base duration from the press
+each closed window needs on top of the holds the engine counts (her battle skills'
+pauses, her combos' 1.9 s and slow-downs, others' stops): 458b 80.3 s 17.6–19.6 s,
+458b 156.3 s 18.8–19.4, f879 45.4 s 17.1–18.2, f879 97.8 s 18.9–19.6, c83c 42.5 s 20.1–21.6,
+e49e 55.2 s 17.6–18.6 (its first combo, logged at 54.86 s, is before the ultimate),
+0206 41.7 s 19.2–19.7 (two targets); 9c0b 2.9 s 21.5–23.0 (no hit by anyone for the
+first 10 s: left out). The engine since 2026-11-18: 17.03 s (15 s after her own stop,
+engine assumption `buff-in-stop`).
 
-**Ruled out:** nothing yet.
+**Ruled out:**
+- Twilight running through her own stop (15 s from the press, the kit's default until
+  2026-11-18): every closed window needs at least 17.1 s.
+- Her ultimate placed at its cast event (the stop's end) instead of its press: fixed
+  (buffreplay.ts `loggedCastStart`, another's hit within 0.5 s after the event); in 6
+  windows that had moved the window 2 s later.
+- The battle skill's pause at its full 115 frames (no jump skips): f879 45.4 s, 458b
+  156.3 s, 0206 and e49e would end after the first plain cast (and test 17's timings
+  say the jumps skip).
+- A constant on top of 17.03 s, or show_weapon's 16 s as Twilight's length: f879 45.4 s
+  allows at most +1.2 s, f879 97.8 s and 0206 need at least +1.8 s, c83c +3.1 s.
 
-**Still possible:** her combo's hold (the kit's twilight extend triggers,
-not in this simple model); more enhanced battle skills than placed; her
-own ultimate's stop holding Twilight (+2.03 s: kit assumption
-`laevatain-twilight-own-stop`, reading `held`), which alone doesn't cover
-the gap.
+**Still possible:** her combo's hold being other than 1.9 s (the residual falls with the
+number of her combos in the window: 1 combo 1.8–4.6 s, 2 combos 0.1–2.7 s; but it
+doesn't fit a single value either); others' stops held longer than their
+UltimateTimeAction frames (the casts' animations); placement error in the brackets
+(±0.3 s) and in others' stops (c83c's three ultimates); a hold the engine doesn't model
+(hit-stop, T10).
 
-**Next check:** the replay's own Twilight end (`kitWindows`) against these
-brackets.
+**Next check:** her combo's ChannelingAction ticks (0.1 s, frames 0–57) against the
+combo's own slow-down: do they run on her clock or the world's (a combo pressed inside
+another's stop)?
 
 ## Arcane's Array Arcana on a knife edge (0206, b6aa): closed 2026-11-13
 
@@ -1479,6 +1497,13 @@ From the kit check before simulating the team
     by the 2026-11-18 placement fix (no stop between those casts and their
     landings; fc63 92–98 s: bursts logged before their shots' projectiles
     still open casts, as before).
+- **Typhoeus's smaller misfits seen deciding tests 9, 43, 46 (2026-11-18).** 1cd1
+  40.12 s: her burst logged ×1.300 the replay's, whose arrow (39.69 s) consumed no Nature
+  Infliction in the replay: an infliction the replay lacks (whose: not checked). d9e5
+  11.73 s: the rain of her shot at 10.88 s lands as three ticks at one ms, 0.46 s after
+  the replay's (11.07–11.27 s), as if held by her own combo (slow-down 11.17–12.00 s),
+  which the engine doesn't let hold her own entities (T7). Both single instances; not
+  pursued.
 - **9090 (the whole team): Liino −15.0%, Perlica −13.0% in the totals**
   (the simulation of the logged casts), with every hit-by-hit check
   matching (Perlica 130 of 130, Liino 171 of 172). Hits under Stagger

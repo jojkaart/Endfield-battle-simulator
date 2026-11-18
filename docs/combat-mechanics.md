@@ -542,8 +542,9 @@ reaction has no initial hit.
   [ASSUMED] for buffs (test 18); SP regen runs through them (K2, the logs).
   The caster's own buff in its own ultimate's stop: Estella's Physical
   Susceptibility held fits c4f3's listing (5 of 6 combos with her ultimate
-  after); Laevatain's Twilight runs through hers (kit; the held reading is
-  assumption `laevatain-twilight-own-stop`). [OPEN] Rossi's crit-DMG window running
+  after); a buff created inside a running stop is held by its rest
+  (engine assumption `buff-in-stop`, 2026-11-18): Laevatain's Twilight is
+  held by her own stop (the logs, tests 18 and 21). [OPEN] Rossi's crit-DMG window running
   about 3 s longer in the log than the replay: [OPEN] (open-problems
   "Rossi's ultimate").
 - **Cooldowns run on raw time** through stops. [SETTLED] by the logs (test
