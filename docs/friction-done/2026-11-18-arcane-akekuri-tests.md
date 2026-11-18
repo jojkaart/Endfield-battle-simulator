@@ -92,3 +92,20 @@ show it wrong, measure, regenerate the snapshots, and report how the owner's tea
   directions caught the bad first fix immediately.
 - `efsim gamedata tree <id>` showed the second ultimate's CreateBuffAction flags and the Amp buff's stacking, which
   gave the fix its mechanism.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+1. Done (2b82e56): scripts/team-ab.ts compares every hit of each team page's example timeline and a 300 s rules seed,
+   full and zero energy, at the base code and here; identical → "unchanged", no 32-seed runs. CLAUDE.md says to run it.
+   For this round: identical against c83c9e5 (the round's journal entry).
+2. Done (0a846c6): the replay's INSIDE flag ("N frames before <skill> lets it start (its uncuttable frames …)");
+   a7a7's casts show 7 such. In `zmdlogs casts` (the placement alone) it isn't shown: the replay is what knows the
+   running action.
+3. Done (ec22f1c, f6259ef): `zmdlogs buffs` maps each listed id (common affixes included) to the kit buffs it stands
+   for; "Common misreadings" has the affix case.
+4. Done (3fcbe84): measure prints, for each mixed log, the mean |per-hit error| before and after (closer / further);
+   hold-outs counted only.
+5. Not done: a kit-note "test N" check against docs/in-game-tests.md (round-4 backlog, "Test texts in step with the
+   kits").

@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-18: Improvement round 4: a query layer over the logs](2026-11-18-05-improvement-round-4-a-query-layer-over-the-logs.md)
 - [2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15](2026-11-18-04-si-s-in-game-tests-from-the-logs-14-41-92-16-15.md)
 - [2026-11-18: Liino's and Perlica's in-game tests from the logs](2026-11-18-04-liino-s-and-perlica-s-in-game-tests-from-the-logs.md)
 - [2026-11-18: Typhoeus's and Laevatain's in-game tests from the logs; buffs created in a stop are held](2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)

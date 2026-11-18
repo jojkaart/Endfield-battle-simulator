@@ -85,3 +85,20 @@ and diagnose Perlica's ×1.3/×1.5 runs and fc63's ×0.934 on Typhoeus's team. W
 - `zmdlogs hits --json` (zones, modifiers, listed, differences per hit) answered the 1d91 doubling and the fc63
   ATK fit with a few lines of Python.
 - `scripts/at-commit.ts` and `with-lock` made the base-versus-new team runs safe alongside other agents.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+1. The fix was in that branch; done now (3cd4610): docs/game-data-format.md says `isEnable false` means the action
+   never runs, and "Common misreadings" repeats it. The audit of kit notes against disabled actions: round-4 backlog.
+2. Done (ec22f1c): `efsim zmdlogs cadence --operator <op> --event <re> [fixture…]`: per log the key's hit groups, the
+   world-time gap from the last (time stops taken out), the stops between (counted by operator and skill), the nearest
+   cast event, and the gaps' spread.
+3. Done (0a846c6): BuffReplay.castFlags; `zmdlogs replay` prints FORCED (its kit makes it unavailable, with the
+   operator's own buffs) and INSIDE (started before the running action lets it) lines and counts them in its header.
+   Counting them in `zmdlogs groups`: round-4 backlog.
+4. Done (e8131c1): CLAUDE.md's rule as "one tool per call; inline programs and batch edits as scratch files".
+   Repo scripts for mixed steps (commit, grep-logs): not done; `zmdlogs census` covers the grep-the-logs case.
+5. Done (2b82e56): `node scripts/team-ab.ts --base <ref>`: an identity check, then (only if a team's fight changed)
+   the 32-seed runs at both codes in one locked job and the table.

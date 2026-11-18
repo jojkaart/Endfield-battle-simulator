@@ -63,3 +63,17 @@ docs/friction/2026-11-18-backlog-after-round-3.md aren't repeated.
   `snapshots:update`'s, so agents read one format.
 - The game-data cache: worker threads load the data in about half a second, which is what makes a one-minute full
   measurement possible.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+1. Done (e8131c1): CLAUDE.md's command shapes say a batch of replacements goes into `scratch/patch.py` (plain
+   Python strings, `assert old in s` before each replace, `python3 -I scratch/patch.py`), never TypeScript inlined in
+   `python3 -c`. This round's edits were made that way.
+2. Done (7f7bd0d): cli.ts no longer runs calcOptions for every command (calc and compare check their own values);
+   command.ts says option names are global (declared alike) and their meaning and checks are each command's.
+   `zmdlogs lanes --buff <regex>` now shares the name with calc's `--buff`.
+3. Done (02a4c36): `snapshotEntry(data, fx, { assume })` in @efsim/logs (snapshotentry.ts), called by tests/logs.test.ts,
+   tests/slow/pending.ts and scripts/measure-worker.ts (which falls back to the five calls for older commits).
+4. Done (e8131c1): docs/design/timeline.md's module table has no line counts any more (it points at `wc -l`).

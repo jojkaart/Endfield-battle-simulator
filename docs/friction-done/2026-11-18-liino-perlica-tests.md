@@ -93,3 +93,16 @@ worktree agent-af1cb1b7111306310, base 6cddc31.
 - `node scripts/at-commit.ts HEAD` for the before/after team numbers; `efsim rules --seeds 32` ran in under a minute.
 - The kits' long `note` fields (data ids, frames, the logs they were checked on) made the beat count's origin
   (the 77–477 clip) quick to find.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+1. Done (7aa310e): measure and with-lock print `EFSIM-DONE <job> killed` on SIGTERM/SIGINT (waiting included); the
+   wait's estimate at the start and in each heartbeat; CLAUDE.md and tests.md say never to wrap them in `timeout`.
+2. Done (ec22f1c, f6259ef): `loggedSkillInstances(data, fx, { operator })` exported and in the scratch template;
+   "Common misreadings" lists the cast-event habits.
+3. Done (ec22f1c, f6259ef): `efsim zmdlogs buffs`; data.md says talents and potentials count from 0.
+4. Done (e8131c1): CLAUDE.md and setup-worktree.ts's output give `npm run -s efsim -- <args>`.
+5. Done (ec22f1c, f6259ef): `zmdlogs census` prints its selection and a rerun line; data.md says a claim cites it.
+6. Not done (round-4 backlog): Liino's beats as a ticking buff (a kit change that moves verdicts).

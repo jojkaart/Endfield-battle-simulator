@@ -81,3 +81,20 @@ assumption `battle-sub-skills`).
   Yinglung windows and Alesh's missing combo visible.
 - Engine assumptions (`timeline/assumptions.ts`) made an open reading a switch with a test in under an hour.
 - `snapshots:update` and premerge ran unattended with clear `EFSIM-DONE` lines.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+1. Done (4de8cb2): every hit record has `logReading` / `logError` (ReadingBasis.logReading: each team kit buff as the
+   log lists it, the engine's statuses kept); `zmdlogs hits --reading log` prints it. Splitting `zmdlogs groups` into
+   "off under both readings" and "off only under the replay's": round-4 backlog.
+2. Done (f6259ef): data.md's question table sends build offsets to `hits --reading log`, then `zmdlogs fit-build`.
+   Weapon skill levels and artifice in fit-build: round-4 backlog.
+3. Partly (e8131c1): data/README.md "Adding a table" (ask the lead; read a table meanwhile with `git show` into
+   scratch/; the lead adds it to tables.json and runs fetch-data.sh in the main checkout). The table itself isn't
+   added: that changes the shared sparse checkout and needs the lead before a merge (round-4 backlog, with the steps).
+4. Done (e8131c1): CLAUDE.md's command shapes: any inline program into scratch/ (the existing rule) and batch edits
+   through `scratch/patch.py`.
+5. Done (f6259ef, ec22f1c): Si's battle-button events in "Common misreadings"; `zmdlogs instances` lists them as
+   "an event only". Marking in `zmdlogs casts` which events the replay made into casts: round-4 backlog.

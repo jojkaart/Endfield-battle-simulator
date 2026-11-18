@@ -184,3 +184,15 @@ point is complete on its own; the originals are in docs/friction-done/ with an "
 
 The reports' points were specific enough to implement from the text alone; the prototypes left in old worktrees'
 scratch/ folders (stagger-*.ts, place.ts, landings.ts, arcane-groups.py) were the specification of the new views.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+- 11 (repair): done (70dc452): `efsim repair`, gear.ts repairRotation, the examples test names it.
+- 16 (a skill's timing): done (f749798): `efsim kit <operator> --skill <re>`.
+- 13 (cast table): partly (ec22f1c): `loggedSkillInstances` (every cast, placed or hitless, with its hits and events);
+  the world-time gaps and cooldowns per cast and branded Ms/Frames types stay in the round-4 backlog.
+- 15 (Imprisonment's logged end): partly (ec22f1c): `zmdlogs instances` marks such events; using them as timing
+  facts stays in the backlog.
+- The rest (1–10, 12, 14, 17) carried over unchanged to the round-4 backlog.

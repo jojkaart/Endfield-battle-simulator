@@ -16,10 +16,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–3
-  done (round 3, 2026-11-18: `npm run measure`, the zmdlogs diagnosis
-  views, a fair test-lock queue, engine assumptions); the backlog
-  ([2026-11-18-backlog-after-round-3.md](friction/2026-11-18-backlog-after-round-3.md))
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–4
+  done (round 4, 2026-11-18: a query layer over the logs, `zmdlogs
+  instances | census | buffs | lanes | control | cadence`, `efsim kit`,
+  `efsim repair`, `npm run smoke`, `team-ab`, a short lane in the test
+  lock, the hold-outs' own snapshot file); the backlog
+  ([2026-11-18-backlog-after-round-4.md](friction/2026-11-18-backlog-after-round-4.md))
   joins the next round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done): the owner's call on the
   owner's team's gear (+8.0%) and on Arcane in INT mode for Typhoeus's team

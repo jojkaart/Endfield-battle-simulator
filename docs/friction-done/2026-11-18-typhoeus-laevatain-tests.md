@@ -64,3 +64,17 @@ logs, fix the engine where the logs showed it wrong, and report the teams' movem
 - `zmdlogs casts` (placed casts and stops) made the Twilight brackets and test 17's timings straightforward.
 - `at-commit.ts` for a base-code comparison (db87's Corrosion) without touching the tree.
 - Engine assumptions with `--assume` everywhere (rules, measure, check; replay now too) made the A/B for the teams clean.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+1. Done (0a846c6): `zmdlogs replay --trace-buff owner:id` (ReplayOptions.trace, BuffReplay.traces). `--hold-only`
+   with the duration set long: not done (the kit can be swapped with `--kit` for that).
+2. Done (7aa310e): measure is a short job in its own lane beside long jobs; the heartbeat shows the time waited and the
+   estimate.
+3. Partly (70dc452, 2b82e56): `efsim repair <scenario> --write` (gear.ts repairRotation exported, with "try the
+   skill's other form"); `npm run smoke` catches the pinned tests in 90 s. `expectLasts` for kit tests: round-4
+   backlog.
+4. Done (f6259ef): Typhoeus's repeated ultimate events in "Common misreadings"; the claims rule asks to quote the kit
+   hit and its `if` for "engine compared".

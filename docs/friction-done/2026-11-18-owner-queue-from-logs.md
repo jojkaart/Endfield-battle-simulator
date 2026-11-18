@@ -101,3 +101,21 @@ where the logs show it wrong (measured), and rebuild the queue with only game-on
 - `zmdlogs differences --what … --hits` and `zmdlogs replay --kit-buff` answered test 12's "does the damage follow the
   listing" directly.
 - premerge's step table and the snapshot update's "better / worse" lines made the final state easy to report.
+
+## Outcome (round 4)
+
+2026-11-18, improvement round 4 (docs/friction-done/2026-11-18-round-4.md); what's left is in docs/friction/2026-11-18-backlog-after-round-4.md.
+
+1. Partly (0a846c6): `zmdlogs replay --trace-buff owner:id` prints every change of a kit buff's expiry with the step
+   that made it, which shows where the replay cut or held a buff. The kit-buff windows' "engine's own end" as a field
+   (as `engineCut` for Stagger): round-4 backlog.
+2. Done (2b82e56): `npm run smoke` (about 90 s: kit tests, loop and beam searches, the owner's rules check, timeline
+   and examples tests). Pinning `options.assume` in the loop tests for readings they don't test: round-4 backlog.
+3. Not done (round-4 backlog): the generic `inUltimate` cue (it changes the rules language's cue table and the
+   team's list; team numbers must not move this round).
+4. Partly (ec22f1c, f6259ef): `zmdlogs lanes --buff <re>` gives the listed runs (first, last, next hit); the
+   `hits --json` record fields are listed in data.md. Joining a lane with the replay's kit-buff window in one row:
+   round-4 backlog.
+5. Done (428fe66): the hold-outs' entries are in tests/snapshots/log-verdicts-holdout.json (ripgrep skips it; CLAUDE.md
+   says never to diff it), so a diff of the pending file names none.
+6. Done (7aa310e): CLAUDE.md's recipe greps for the job's own name; with-lock's line is `EFSIM-DONE <--name> exit n`.
