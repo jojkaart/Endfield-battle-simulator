@@ -40,7 +40,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   freeze, Haste isn't attack speed, teammates' pause 6.5 s; Twilight's
   length left); Arcane's misses grouped (2026-11-18: 908 → 866; next her
   Imprisonment's end from the log); the replay follows the log's Stagger
-  windows (2026-11-18; why the game's run longer: test 110); then the
+  windows (2026-11-18; why the game's run longer: test 110); build
+  offsets fitted, not hand-set (`zmdlogs fit-build`, fixture
+  `buildOverrides`, 2026-11-18; next: weapon levels bounded by their
+  skill levels, the old hand fits moved over); then the
   screened logs' leads
   ([open-problems.md](open-problems.md)), diagnosed in parallel; then B8,
   B6, B9, B10.

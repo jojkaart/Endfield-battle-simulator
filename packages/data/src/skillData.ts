@@ -217,6 +217,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     channels,
     specification: get(j, "skillSpecification", ctx, int),
     keepsChain: j["dontInterruptCombo"] === true,
+    ...(j["normalSkillSubType"] === 1 ? { subSkill: true as const } : {}),
     slowdowns,
     jumps: jumps.filter((j, i) => jumps.findIndex((k) => k.at === j.at && k.to === j.to && k.conditional === j.conditional) === i).sort((a, b) => a.at - b.at),
     ends: ends.sort((a, b) => a - b),

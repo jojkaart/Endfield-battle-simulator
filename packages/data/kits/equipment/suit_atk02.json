@@ -43,7 +43,7 @@
           "buff": "suit_atk02.edge"
         }
       ],
-      "note": "Any team member's battle-skill cast. Battle-skill sub-skills (Si's Initial and Final Stroke, normalSkillSubType 1) count here too: whether CheckSkillType [2] sees them is open (in-game test 29)."
+      "note": "Any team member's battle-skill cast. Battle-skill sub-skills (Si's Initial and Final Stroke, normalSkillSubType 1) count here too: whether CheckSkillType [2] sees them is open (in-game tests 29, 106): the engine assumption battle-sub-skills (main-only: they don't; measured 2026-11-18, mixed: c83c and 9555 better, the hold-outs slightly worse, so the default stays)."
     }
   ]
 }

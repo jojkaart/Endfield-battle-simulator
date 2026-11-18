@@ -28,6 +28,16 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "battle-sub-skills",
+    test: "29",
+    question: "Does a battle-type sub-skill's cast (SkillData normalSkillSubType 1: Si's Initial and Final Stroke, Liino's End Stance, Camille's, Mi Fu's and Purrchena's follow-ups) count as a battle-skill cast for triggers that listen by skill type (CheckSkillType [2]: Type 50 Yinglung's Edge, talents on a battle-skill cast)? Link isn't part of it.",
+    default: "count",
+    readings: {
+      count: "it counts: the data's skill type is battle (the engine until 2026-11-18)",
+      "main-only": "only the battle skill itself counts (normalSkillSubTypeFilter 0 read as the main skill only)",
+    },
+  },
+  {
     id: "teammate-pause",
     test: "101",
     question: "How long does a teammate (an operator not controlled) pause after a full basic-attack chain (timeline/teammates.ts)?",
