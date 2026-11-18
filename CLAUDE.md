@@ -132,7 +132,8 @@ suites (a shared lock) and ends with a pass/fail table. A game-data
 rebuild (~10 s) prints why on stderr (which inputs changed). To verify a
 commit while you go on editing: `node scripts/verify-at.ts [<ref>]`.
 
-Command shapes the worktree sandbox accepts (others are refused as "too
+The CLI in a worktree: `npm run -s efsim -- <args>` (`efsim` isn't on the
+PATH there). Command shapes the worktree sandbox accepts (others are refused as "too
 complex to verify"):
 
 - One plain command per Bash call, run from the worktree, absolute paths.
@@ -144,7 +145,10 @@ complex to verify"):
 - Never a heredoc or a multi-line `python3 -c`, even where one has worked
   before: the guard judges the whole text, so the same form passes once
   and is refused the next time. Write the file with the Write tool, then
-  run it with one plain command. File edits with the Write/Edit tools.
+  run it with one plain command. File edits with the Write/Edit tools; a
+  batch of replacements: `scratch/patch.py` (plain Python strings, `assert
+  old in s` before each replace) run with `python3 -I scratch/patch.py`,
+  never TypeScript inlined in `python3 -c`.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
   `scripts/scratch-template.ts`, run `node scratch/x.ts`. Times go through

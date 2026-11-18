@@ -273,25 +273,25 @@ engine is two parts with a lint-enforced boundary.
 
 The timeline (`packages/engine/src/timeline.ts`, a façade re-exporting the
 stepping API as `@efsim/engine` exports it) is split by concern under
-`timeline/` (review 3.3, 2026-10-25; lines as of then):
+`timeline/` (review 3.3, 2026-10-25; `wc -l packages/engine/src/timeline/*.ts` for their sizes: hand-written counts drifted):
 
-| module | lines | what's in it |
-|---|---|---|
-| `state.ts` | 399 | the types: scenario, context, state, scheduled items (`Scheduled`), casts, landed hits |
-| `rules.ts` | 93 | fixed rules: team SP, energy, combo windows, dives, priorities, Link, `TIMELINE_ASSUMPTIONS` |
-| `assumptions.ts` | 77 | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, teammate-pause, stagger-recovery, stagger-freeze, combo-window-count), switched by `TimelineOptions.assume` |
-| `context.ts` | 181 | `createContext` (the build stage), panels, kit and skill lookups, skill costs and timing, the enemy's attributes |
-| `schedule.ts` | 117 | the scheduled list: the order within a frame (`IN_FRAME`, `dueBefore`) and one pass each to shift a clock, end a cast and jump on a cast's timeline |
-| `clock.ts` | 132 | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`), control immunity |
-| `resources.ts` | 243 | SP (regen, stops, costs), ultimate energy, cooldowns and recovery rates, the enemy's stagger |
-| `timing.ts` | 393 | when an operator may act: combo windows, action gates, chains, `earliestStart` |
-| `situation.ts` | 169 | what predicates, values and damage see at a frame |
-| `actions.ts` | 393 | triggers (`runTriggers`) and their actions, kit buffs and stacks |
-| `landing.ts` | 373 | a hit or burst landing, status damage, the random streams |
-| `casting.ts` | 289 | casting a skill, ending one, jumps, a dive's jump |
-| `advance.ts` | 234 | `advance`: everything due up to a frame, in order; enemy actions and perfect dodges; `memoised` |
-| `drivers.ts` | 251 | `init`, `apply`, `replayCast`, `simulate`, `simulateRuns`, `startsNow` |
-| `teammates.ts` | 64 | teammates' own basic attacks: the chain at its windows, the pause after a full chain, held by the operator's own action |
+| module | what's in it |
+|---|---|
+| `state.ts` | the types: scenario, context, state, scheduled items (`Scheduled`), casts, landed hits |
+| `rules.ts` | fixed rules: team SP, energy, combo windows, dives, priorities, Link, `TIMELINE_ASSUMPTIONS` |
+| `assumptions.ts` | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, teammate-pause, stagger-recovery, stagger-freeze, combo-window-count), switched by `TimelineOptions.assume` |
+| `context.ts` | `createContext` (the build stage), panels, kit and skill lookups, skill costs and timing, the enemy's attributes |
+| `schedule.ts` | the scheduled list: the order within a frame (`IN_FRAME`, `dueBefore`) and one pass each to shift a clock, end a cast and jump on a cast's timeline |
+| `clock.ts` | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`), control immunity |
+| `resources.ts` | SP (regen, stops, costs), ultimate energy, cooldowns and recovery rates, the enemy's stagger |
+| `timing.ts` | when an operator may act: combo windows, action gates, chains, `earliestStart` |
+| `situation.ts` | what predicates, values and damage see at a frame |
+| `actions.ts` | triggers (`runTriggers`) and their actions, kit buffs and stacks |
+| `landing.ts` | a hit or burst landing, status damage, the random streams |
+| `casting.ts` | casting a skill, ending one, jumps, a dive's jump |
+| `advance.ts` | `advance`: everything due up to a frame, in order; enemy actions and perfect dodges; `memoised` |
+| `drivers.ts` | `init`, `apply`, `replayCast`, `simulate`, `simulateRuns`, `startsNow` |
+| `teammates.ts` | teammates' own basic attacks: the chain at its windows, the pause after a full chain, held by the operator's own action |
 
 The modules import each other in cycles (casting runs triggers, triggers
 cast), which is safe because no top-level value is computed from another

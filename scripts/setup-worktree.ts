@@ -55,5 +55,5 @@ export function setupWorktree(root: string = resolve(dirname(fileURLToPath(impor
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.stderr.write(setupWorktree() + "\n");
+  process.stderr.write(setupWorktree() + "; the CLI here: npm run -s efsim -- <args> (efsim is not on the PATH)\n");
 }
