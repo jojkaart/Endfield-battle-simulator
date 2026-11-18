@@ -11,7 +11,7 @@ import { type ActiveBuff, applyBuff, buffEndedEvent, buffReach, endBuff, endBuff
 import { applyToEnemy, expireStatus } from "../status.ts";
 import { FPS } from "../units.ts";
 import type { Clock, Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
-import { COMBO_WINDOW_FRAMES, LINK_FRAMES, hasteFrames } from "./rules.ts";
+import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
 import { controlImmune, shiftDebuffs, shiftEnemy } from "./clock.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
@@ -171,12 +171,9 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
         if (t.delay) {
           // A detached trigger's actions are the cast's own until their launch.
           const cast = e.type === "cast" && e.cast !== undefined && (!t.detached || t.launch !== undefined) ? { cast: { operator: e.operator, index: e.cast } } : undefined;
-          // A cast's own effects at frames play at its speed, as its hits do (Haste).
-          const acting = e.type === "cast" ? st.acting[e.operator] : undefined;
-          const scaled = (f: number) => (acting && acting.frame === e.frame ? hasteFrames(f, acting.speed) : f);
-          const launch = t.detached && t.launch !== undefined && cast ? { detached: true as const, launchAt: e.frame + scaled(t.launch) } : {};
+          const launch = t.detached && t.launch !== undefined && cast ? { detached: true as const, launchAt: e.frame + t.launch } : {};
           // On its cast's operator's clock (as the cast's hits), else its owner's.
-          st = schedule(st, [{ kind: "action", frame: e.frame + scaled(t.delay), clock: { operator: cast?.cast.operator ?? owner }, owner, trigger: t.id, event: e, origin, ...cast, ...launch, ...(t.awaited ? { awaited: true } : {}), ...(t.afterHits ? { afterHits: true } : {}) }]);
+          st = schedule(st, [{ kind: "action", frame: e.frame + t.delay, clock: { operator: cast?.cast.operator ?? owner }, owner, trigger: t.id, event: e, origin, ...cast, ...launch, ...(t.awaited ? { awaited: true } : {}), ...(t.afterHits ? { afterHits: true } : {}) }]);
           continue;
         }
         const r = runActions(ctx, st, t, owner, e, origin, atEvent);

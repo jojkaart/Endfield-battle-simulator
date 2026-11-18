@@ -125,12 +125,13 @@ dilation (Si's hit-stop on the enemy), hit-stop (attacker pauses of
 target enums aren't in the data, or need in-game tests (18).
 **Haste** (attribute 92, `KeywordSpeedUpScalar`, which the data's
 SpeedupAction raises: Si's talent, Tangtang's water) doesn't play casts
-faster (clock.ts `actionSpeed` is 1): in the logs (in-game test 19,
+faster (a cast's frames are its skill frames: casting.ts `castSkill`): in the logs (in-game test 19,
 2026-11-16) basic-attack steps in the 5 s after Si's Inksoul ends (30%)
 are 0.995× as far apart as the same steps elsewhere (95% 0.95–1.02; 0.77
-if sped). Taken as movement speed, which isn't modelled; the speed
-plumbing (rules.ts `hasteFrames`) stays for an effect that does speed
-casts. Until 2026-11-16 a hasted cast played faster.
+if sped). Taken as movement speed, which isn't modelled. Until
+2026-11-16 a hasted cast played faster; the inert speed plumbing
+(`hasteFrames`, `Acting.speed`) was removed in improvement round 3: an
+effect that does speed casts would bring it back where casts are planned.
 **Waiting on the enemy's clock**: what a buff on the enemy does after its
 `triggerInterval` (`waitFirstTriggerInterval`) is held by every time stop,
 the caster's own included. Likewise a trigger's hits marked `world` (the
@@ -277,10 +278,11 @@ stepping API as `@efsim/engine` exports it) is split by concern under
 | module | lines | what's in it |
 |---|---|---|
 | `state.ts` | 399 | the types: scenario, context, state, scheduled items (`Scheduled`), casts, landed hits |
-| `rules.ts` | 101 | fixed rules: team SP, energy, combo windows, dives, priorities, Link, haste's frame mapping (`hasteFrames`), `TIMELINE_ASSUMPTIONS` |
+| `rules.ts` | 93 | fixed rules: team SP, energy, combo windows, dives, priorities, Link, `TIMELINE_ASSUMPTIONS` |
+| `assumptions.ts` | 47 | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, teammate-pause), switched by `TimelineOptions.assume` |
 | `context.ts` | 181 | `createContext` (the build stage), panels, kit and skill lookups, skill costs and timing, the enemy's attributes |
 | `schedule.ts` | 117 | the scheduled list: the order within a frame (`IN_FRAME`, `dueBefore`) and one pass each to shift a clock, end a cast and jump on a cast's timeline |
-| `clock.ts` | 132 | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`), action speed |
+| `clock.ts` | 132 | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`), control immunity |
 | `resources.ts` | 243 | SP (regen, stops, costs), ultimate energy, cooldowns and recovery rates, the enemy's stagger |
 | `timing.ts` | 393 | when an operator may act: combo windows, action gates, chains, `earliestStart` |
 | `situation.ts` | 169 | what predicates, values and damage see at a frame |

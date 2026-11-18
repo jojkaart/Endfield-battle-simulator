@@ -9,7 +9,7 @@ import { test } from "../expr.ts";
 import { activeAt } from "../buffs.ts";
 import { FPS } from "../units.ts";
 import type { Acting, ChainStep, PendingJump, RotationAction, TimelineContext, TimelineState } from "./state.ts";
-import { CHAIN_CACHE_FRAMES, priorityOf, SP, hasteFrames, skillFramesOf } from "./rules.ts";
+import { CHAIN_CACHE_FRAMES, priorityOf, SP } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts, timingOf } from "./context.ts";
 import { afterRegen, isStaggered, spAt, spCostAt } from "./resources.ts";
 import { situationAt } from "./situation.ts";
@@ -46,9 +46,9 @@ export function needsWindow(ctx: TimelineContext, operator: string, skill: KitSk
   return ownWindowSkills(ctx, operator).has(skill.skillId) || hasComboTrigger(ctx, operator);
 }
 
-/** The real frame of an action's skill frame `x`: from its start at its speed, less what its jumps skipped (a skipped frame is its jump's). */
+/** The real frame of an action's skill frame `x`: from its start, less what its jumps skipped (a skipped frame is its jump's). */
 export function actionFrame(cur: Acting, x: number): number {
-  let f = cur.frame + hasteFrames(x, cur.speed);
+  let f = cur.frame + x;
   for (const j of cur.skips ?? []) {
     if (x <= j.from) continue;
     if (x < j.to) return j.at;
@@ -153,9 +153,9 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
  * The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills
  * that don't interrupt the chain, cleared by others. `openWindows`: its conditional windows open at this cast (Acting.windows).
  */
-export function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, speed = 1, openWindows: readonly number[] = []): TimelineState["chainNext"] {
+export function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, openWindows: readonly number[] = []): TimelineState["chainNext"] {
   const t = timingOf(ctx, skill.skillId);
-  const at = (x: number) => frame + hasteFrames(x, speed);
+  const at = (x: number) => frame + x;
   const { [operator]: prev, ...rest } = st.chainNext;
   if (skill.kind === "basic" && t.specification === 1) {
     const kit = ctx.kits.get(operator);
@@ -208,18 +208,17 @@ export function ownHitsLanded(st: TimelineState, operator: string): number {
  * frames isn't reached.
  */
 function skippedByJumps(st: TimelineState, operator: string, cast: number): (frame: number) => boolean {
-  const speed = st.acting[operator]?.speed;
   const spans: { readonly at: number; readonly until: number }[] = [];
   for (const j of ofKind(st.scheduled, "jump").filter((x) => ofCast(x, operator, cast) && !x.end).sort((a, b) => a.frame - b.frame)) {
     if (spans.some((s) => j.frame > s.at && j.frame < s.until)) continue;
-    spans.push({ at: j.frame, until: j.frame + hasteFrames(j.to - j.from, speed) });
+    spans.push({ at: j.frame, until: j.frame + j.to - j.from });
   }
   return (frame) => spans.some((s) => frame > s.at && frame < s.until);
 }
 
-/** An action's playhead at a real frame, in skill frames: real frames since its start plus what its jumps skipped, at its speed. */
+/** An action's playhead at a real frame, in skill frames: real frames since its start plus what its jumps skipped. */
 export function playheadOf(cur: Acting, frame: number): number {
-  return skillFramesOf(frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0), cur.speed);
+  return frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0);
 }
 
 /**

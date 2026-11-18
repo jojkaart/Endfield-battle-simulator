@@ -492,7 +492,6 @@ export interface TimelineContext {
 export interface Acting {
   readonly skill: string;
   readonly frame: number;
-  readonly speed?: number;
   readonly cast?: number;
   /** Jumps it took: from skill frame `from` to `to`, at real frame `at`, `length` real frames skipped. */
   readonly skips?: readonly { readonly from: number; readonly to: number; readonly at: number; readonly length: number }[];

@@ -10,9 +10,9 @@ import { activeAt, type ActiveBuff, buffEndedEvents, reaches } from "../buffs.ts
 import { FPS } from "../units.ts";
 import { FINISHER_SP_SOURCE_TYPE } from "../constants.ts";
 import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Scheduled, TimelineContext, TimelineState } from "./state.ts";
-import { DIVE, ENERGY, JUMP, linkValue, SP, hasteFrames } from "./rules.ts";
+import { DIVE, ENERGY, JUMP, linkValue, SP } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
-import { actionSpeed, slowDown } from "./clock.ts";
+import { slowDown } from "./clock.ts";
 import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spAt, spCostAt, spGrantOf } from "./resources.ts";
 import { chainAfter, windowKey } from "./timing.ts";
 import { situationAt } from "./situation.ts";
@@ -25,7 +25,7 @@ import { draw } from "./landing.ts";
  * cast's scheduled items run through jumpCast and cancelCast as takeJump and the cast's end will (events and
  * triggers that jump or cut the cast later can't be foreseen here).
  */
-function plannedLandings(own: readonly PendingHit[], planned: readonly PendingJump[], operator: string, index: number, speed: number): PendingHit[] {
+function plannedLandings(own: readonly PendingHit[], planned: readonly PendingJump[], operator: string, index: number): PendingHit[] {
   // Tagged by position, as jumpCast copies what it moves.
   let list: readonly Scheduled[] = [...own.map((p, i) => ({ ...p, ref: String(i) })), ...planned];
   for (;;) {
@@ -33,7 +33,7 @@ function plannedLandings(own: readonly PendingHit[], planned: readonly PendingJu
     if (jumps.length === 0) break;
     const j = jumps.reduce((a, b) => (b.frame < a.frame ? b : a));
     list = list.filter((x) => x !== j);
-    list = j.end ? cancelCast(list, operator, index, j.frame) : jumpCast(list, operator, index, j.frame, hasteFrames(j.to - j.from, speed));
+    list = j.end ? cancelCast(list, operator, index, j.frame) : jumpCast(list, operator, index, j.frame, j.to - j.from);
   }
   const left = new Set(ofKind(list, "hit").map((h) => Number(h.ref)));
   return own.filter((_, i) => left.has(i)).sort((a, b) => a.frame - b.frame);
@@ -46,7 +46,7 @@ function plannedLandings(own: readonly PendingHit[], planned: readonly PendingJu
  * chosen uniformly (stream `landed`); TimelineOptions.landedCounts takes the fewest or most, the first landings.
  * A logged fight's replay (loggedCrits) leaves them to replayCast, which lands the ones the log shows.
  */
-function landedCounts(ctx: TimelineContext, st: TimelineState, skill: KitSkill, pending: readonly PendingHit[], planned: readonly PendingJump[], operator: string, index: number, speed: number): { state: TimelineState; pending: readonly PendingHit[] } {
+function landedCounts(ctx: TimelineContext, st: TimelineState, skill: KitSkill, pending: readonly PendingHit[], planned: readonly PendingJump[], operator: string, index: number): { state: TimelineState; pending: readonly PendingHit[] } {
   const hits = skill.hits.filter((h): h is KitHit & { landedCount: LandedCount } => h.landedCount !== undefined);
   if (hits.length === 0 || ctx.loggedCrits) return { state: st, pending };
   const potential = (ctx.builds.get(operator) as Build).potential;
@@ -56,7 +56,7 @@ function landedCounts(ctx: TimelineContext, st: TimelineState, skill: KitSkill, 
   for (const h of hits) {
     const own = out.filter((p) => p.hitId === h.id && !p.trigger);
     if (own.length === 0) continue;
-    const kept = plannedLandings(own, planned, operator, index, speed);
+    const kept = plannedLandings(own, planned, operator, index);
     const counts = landedCountsAt(h.landedCount, potential);
     if (Math.max(...counts) > kept.length) throw new EngineError(`${operator} ${skill.skillId} hit ${h.id}: an observed landed count of ${Math.max(...counts)}, but the cast plans ${kept.length} landings`);
     if (how === "expected") {
@@ -89,12 +89,12 @@ function landedCounts(ctx: TimelineContext, st: TimelineState, skill: KitSkill, 
 const sameSkills = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
 /** A cast's jumps and ends: the unconditional ones, and conditional ones whose kit condition holds at the cast. */
-function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operator: string, cast: number, frame: number, scaled: (f: number) => number): PendingJump[] {
+function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operator: string, cast: number, frame: number): PendingJump[] {
   const taken = timing.jumps.filter((j) => !j.conditional || skill.jumps?.some((k) => k.at === j.at && (k.to === undefined || k.to === j.to) && decide(k.if, ec)));
   const of = { kind: "jump", clock: { operator }, cast: { operator, index: cast }, operator } as const;
   return [
-    ...taken.map((j) => ({ ...of, frame: frame + scaled(j.at), from: j.at, to: j.to })),
-    ...timing.ends.map((e) => ({ ...of, frame: frame + scaled(e), from: e, to: e, end: true as const })),
+    ...taken.map((j) => ({ ...of, frame: frame + j.at, from: j.at, to: j.to })),
+    ...timing.ends.map((e) => ({ ...of, frame: frame + e, from: e, to: e, end: true as const })),
   ];
 }
 
@@ -125,7 +125,7 @@ function plannedSlowdowns(timing: SkillTiming, planned: readonly PendingJump[]):
 export function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; events: BattleEvent[] } {
   const cur = st.acting[j.operator] as Acting;
   const at = j.frame;
-  const length = hasteFrames(j.to - j.from, cur.speed);
+  const length = j.to - j.from;
   const index = j.cast.index;
   const ending = st.buffs.filter((b) => b.owner === j.operator && b.endsWithCast === index && b.expiresAt > at && b.expiresAt < at + length);
   const events: BattleEvent[] = buffEndedEvents(ending, at, false);
@@ -223,9 +223,12 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && activeAt(b, frame)).length,
   };
   const castIndex = s.casts.length;
-  // Haste (attribute 92) doesn't play casts faster (the logs, in-game test 19: clock.ts actionSpeed).
-  const speed = actionSpeed();
-  const scaled = (f: number) => hasteFrames(f, speed);
+  // A cast's real frames are its skill frames: Haste (attribute 92, KeywordSpeedUpScalar, which the data's SpeedupAction
+  // raises: Si's talent, Tangtang's water) doesn't play casts faster. In the logs (in-game test 19, 2026-11-16: 111
+  // basic-attack steps of 12 operators in 12 Si fights, in the 5 s after an Inksoul-path burst, at 30% Haste) the steps
+  // come 0.995× as far apart as the same operator's same steps elsewhere in the fight (bootstrap 95% 0.95–1.02; sped up
+  // they'd be 0.77×), and casts' hit spreads 1.07× (34 casts). So it's taken as movement speed, which the engine
+  // doesn't model; until 2026-11-16 the engine played hasted casts faster (round 3 removed the then inert scaling).
   // A combo's window (its own, or its operator's; none for one cast without it): what opened it, and it's used up.
   const windowOf = costs.kind === "combo" && skill.comboWindow !== false ? windowKey(ctx, operator, skillId) : undefined;
   const windowCount = windowOf !== undefined ? s.comboWindow[windowOf]?.count : undefined;
@@ -259,9 +262,9 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     const frames = typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, countEc()));
     frames.forEach((f, i) =>
       pending.push({
-        kind: "hit", frame: frame + scaled(f), clock, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castRef,
+        kind: "hit", frame: frame + f, clock, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castRef,
         ...(usesAtHit(h.id).length && i === 0 ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached || h.launch !== undefined ? { detached: true as const } : {}),
-        ...(h.launch !== undefined ? { launchAt: frame + scaled(h.launch) } : {}),
+        ...(h.launch !== undefined ? { launchAt: frame + h.launch } : {}),
         ...(windowCount !== undefined ? { eventCount: windowCount } : {}), ...(windowSource ? { eventSource: windowSource } : {}), ...(h.branch ? { branch: `${castIndex}:${h.branch}:${i}` } : {}),
       }),
     );
@@ -288,7 +291,7 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     if (skill.teamEnergy === undefined || beside) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame, { source: "sp" });
     else
       for (const part of skill.teamEnergy) {
-        const at = frame + scaled(part.frame);
+        const at = frame + part.frame;
         const grants = ctx.scenario.team.map((b): PendingEnergy => ({ kind: "energy", frame: at, clock, operator: b.operator, amount: natural * ENERGY.perNaturalSp * part.ratio, cast: castRef, ...(part.detached ? { detached: true } : {}), ...(part.if ? { if: part.if } : {}) }));
         next = schedule(next, grants);
       }
@@ -328,7 +331,7 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   // (endCurrentSkill cuts it short).
   const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && activeAt(b, frame));
   if (consumedBuffs.length) {
-    const castEnd = frame + scaled(full.timing.durationFrames);
+    const castEnd = frame + full.timing.durationFrames;
     const scopeOf = (b: ActiveBuff) => ctx.kits.get(b.owner)?.buffs.find((x) => x.id === b.id)?.consumedScope;
     next = {
       ...next,
@@ -340,9 +343,9 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   }
   // A conditional jump reads the situation at the cast, the enemy's state included (Arclight's battle skill on an Electrified target).
   const jumpEc = evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation, castLink: linkUsed });
-  const planned = castJumps(full.timing, skill, jumpEc, operator, castIndex, frame, scaled);
+  const planned = castJumps(full.timing, skill, jumpEc, operator, castIndex, frame);
   // Hits with a random landed count: which of their planned landings land (or each at the expected count).
-  const landed = landedCounts(ctx, next, skill, pending, beside ? [] : planned, operator, castIndex, speed);
+  const landed = landedCounts(ctx, next, skill, pending, beside ? [] : planned, operator, castIndex);
   next = landed.state;
   // Its conditional windows open at this cast (KitSkill.windows), judged as its jumps are.
   const openWindows = full.timing.windows.flatMap((w, i) => (w.conditional && skill.windows?.some((k) => k.from === w.from && (k.skills === undefined || sameSkills(k.skills, w.skills)) && (!k.if || decide(k.if, jumpEc))) ? [i] : []));
@@ -354,9 +357,9 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     frame: Math.max(s.frame, frame),
     // A spend never shortens a pause running longer (one a slow-down lengthened).
     spPausedUntil: costs.spCost > 0 ? Math.max(s.spPausedUntil, frame + SP.pauseAfterSpendFrames) : s.spPausedUntil,
-    acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}), ...(openWindows.length ? { windows: openWindows } : {}) } },
+    acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(openWindows.length ? { windows: openWindows } : {}) } },
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
-    chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed, openWindows),
+    chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, openWindows),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame, s.buffs),
     ...(skill.takesControl ? { controlled: operator } : {}),
     // A skill that takes control leaves the operator it replaces attacking on its own (teammates.ts).

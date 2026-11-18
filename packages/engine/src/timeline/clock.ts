@@ -185,15 +185,3 @@ export function shiftOperator(st: TimelineState, operator: string, start: number
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),
   };
 }
-
-/**
- * An operator's action speed (rules.ts hasteFrames): 1. Haste (attribute 92, KeywordSpeedUpScalar, which the data's
- * SpeedupAction raises: Si's talent, Tangtang's water) doesn't play casts faster. In the logs (in-game test 19,
- * 2026-11-16: 111 basic-attack steps of 12 operators in 12 Si fights, in the 5 s after an Inksoul-path burst, at 30%
- * Haste) the steps come 0.995× as far apart as the same operator's same steps elsewhere in the fight (bootstrap 95%
- * 0.95–1.02; sped up they'd be 0.77×), and casts' hit spreads 1.07× (34 casts). So it's taken as movement speed, which
- * the engine doesn't model; until 2026-11-16 the engine played hasted casts faster.
- */
-export function actionSpeed(): number {
-  return 1;
-}
