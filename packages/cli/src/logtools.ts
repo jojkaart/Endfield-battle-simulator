@@ -11,12 +11,16 @@ export function logDirs(values: readonly string[]): LogDir[] | undefined {
   return values as LogDir[];
 }
 
-/** `efsim zmdlogs list`: the development logs, with team, enemy and size; JSON with `json`. */
-export function formatLogList(data: GameData, opts: { readonly withOperators?: readonly string[]; readonly dirs?: readonly LogDir[]; readonly json?: boolean } = {}): string {
+/**
+ * `efsim zmdlogs list`: the development logs, with team, enemy and size; JSON with `json`; with `ids`, each operator's
+ * id and weapon's name beside its name (the logs and kits name operators by id: Rossi is chr_0028_wulfa).
+ */
+export function formatLogList(data: GameData, opts: { readonly withOperators?: readonly string[]; readonly dirs?: readonly LogDir[]; readonly json?: boolean; readonly ids?: boolean } = {}): string {
   const name = (op: string) => data.operators[op]?.name;
   const logs = listLogs({ ...(opts.dirs ? { dirs: opts.dirs } : {}), ...(opts.withOperators?.length ? { withOperators: opts.withOperators } : {}), names: name });
   if (opts.json) return JSON.stringify(logs, null, 1);
-  const who = (t: LogSummary["team"][number]) => `${name(t.operator) ?? t.operator}${t.potential ? ` P${t.potential}` : ""}`;
+  const weapon = (w: string | undefined) => (w ? (data.weapons[w]?.name ?? w) : "no weapon");
+  const who = (t: LogSummary["team"][number]) => `${name(t.operator) ?? t.operator}${t.potential ? ` P${t.potential}` : ""}${opts.ids ? ` (${t.operator}, ${weapon(t.weapon)})` : ""}`;
   const rows = logs.map((l) => [l.file, l.dir, l.team.map(who).join(", "), l.enemy, String(l.hits), String(l.casts), `${l.seconds.toFixed(0)} s`]);
   return [
     `${logs.length} development log(s)${opts.withOperators?.length ? ` with ${opts.withOperators.join(" and ")}` : ""} (hold-out logs are never listed):`,

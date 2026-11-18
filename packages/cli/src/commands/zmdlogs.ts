@@ -5,7 +5,15 @@
 
 import {
   battleIdOf,
+  buffsView,
   cacheRawDetail,
+  cadenceView,
+  census,
+  controlView,
+  devFixtures,
+  instancesView,
+  lanesView,
+  parseSelector,
   checkReactions,
   castsReport,
   checkReport,
@@ -27,6 +35,7 @@ import {
   staggerReport,
   timingReport,
 } from "@efsim/logs";
+import { readFileSync } from "node:fs";
 import { parseAssume } from "../assume.ts";
 import { command } from "../command.ts";
 import { formatLogList, logDirs } from "../logtools.ts";
@@ -37,6 +46,7 @@ export default command({
                                           enemy, hits, casts, length; the safe start of any scan over the logs
                 [--with <operator>]       Only logs whose team has it (id or part of the name; repeatable: all of them)
                 [--dir <dir>] [--json]    Only verified, pending or multi (repeatable); everything as JSON
+                [--ids]                   Each operator's id and weapon name too (efsim find <name> for one)
   efsim zmdlogs hits <fixture…|--all>     The log check's numbers per logged hit, one line each (fixtures: paths or
                                           ids such as 0c14; --all every verified and pending development log; never
                                           a hold-out): logged value, verdict and class, the engine's primary reading
@@ -114,6 +124,37 @@ export default command({
                                           teammate mismatches at the same ratio nearby), no landing, own by skill
                                           event and by what the log and replay disagree on (default: every
                                           development log with it; --verbose each mismatch; --workers n)
+The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 and operators by name):
+  efsim zmdlogs instances <fixture>       Every real cast as the log means it (loggedSkillInstances): placed from its
+                                          hits (combos log no cast event), with the log's cast events of it (an
+                                          ultimate's repeat every ~3.5 s), or a cast event alone with no hit of it
+                                          (Si's periodic battle-button events); --operator, --kind <k>
+  efsim zmdlogs census [fixture…] --select <sel>  How many items a selection picks per log (default: every
+                                          verified and pending development log); the output's first lines record the
+                                          selection and the command that reruns it: cite them with a claim.
+                                          <sel>: cast:<regex> (skill instances), event:<regex> (hit groups of a logged
+                                          event key, a gap over 1 s starts one), buff:<regex> (runs of a listed buff)
+                [--operator <op>]         Only these operators' items (repeatable)
+                [--near <sel>] [--near-operator <op>]  Also whether an item of this selection is near each item…
+                [--within ms | --window from,to]  …within ±ms (default 1000), or from..to ms relative to it (0,700:
+                                          only after)
+                [--list]                  Each item with its nearest near item
+                [--fixtures-from <file>] [--dir multi]  Logs listed in a file; the multi-target logs instead
+  efsim zmdlogs buffs [fixture…]          Every listed game buff over the logs (default: every verified and pending
+                                          development log) with the team kit buffs it stands for (gameBuff, loggedAs,
+                                          affixes; or an engine status; or none), its sources, whose hits list it
+                                          ("only on its source's own hits": a weapon's team buff), values
+                [--buff <regex>] [--operator <op>]  Only buffs matching; only buffs from or of these operators
+  efsim zmdlogs lanes <fixture> [--buff <regex>]  Each run of a listed buff (one per source and since): since,
+                                          first and last listed hit, the next hit of its hitters that doesn't list
+                                          it, values (since is the lane's start as logged: a refresh may move it)
+  efsim zmdlogs control <fixture>         Who the log shows controlled when (a basic hit with Stagger is the
+                                          controlled operator's: controlledFromLog) and every cast, logged or
+                                          inferred from hits, with who was controlled at its start; --operator
+  efsim zmdlogs cadence --operator <op> --event <regex> [fixture…]  The operator's hit groups of matching keys
+                                          in each log (default: every verified and pending development log with the
+                                          operator), with world-time gaps (time stops taken out), the stops between
+                                          and the nearest cast event; the gaps' spread (timer, cooldown or event?)
 `,
   options: {
     with: { type: "string", multiple: true, default: [] },
@@ -145,14 +186,22 @@ export default command({
     "fixtures-from": { type: "string" },
     reading: { type: "string" },
     "no-cache": { type: "boolean", default: false },
+    ids: { type: "boolean", default: false },
+    select: { type: "string" },
+    near: { type: "string" },
+    "near-operator": { type: "string", multiple: true, default: [] },
+    within: { type: "string" },
+    window: { type: "string" },
+    list: { type: "boolean", default: false },
+    buff: { type: "string", multiple: true, default: [] },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
     const [sub, arg, op] = args;
     if (sub === "list") {
-      if (args.length !== 1) throw new Error("zmdlogs list takes no argument (--with <operator>, --dir <dir>, --json)");
+      if (args.length !== 1) throw new Error("zmdlogs list takes no argument (--with <operator>, --dir <dir>, --json, --ids)");
       const dirs = logDirs(values.dir);
-      return formatLogList(data(), { withOperators: values.with, ...(dirs ? { dirs } : {}), json: values.json });
+      return formatLogList(data(), { withOperators: values.with, ...(dirs ? { dirs } : {}), json: values.json, ids: values.ids });
     }
     if (sub === "raw") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs raw takes one fixture file, fixture id or battle id (--buffs <regex>, --events <regex>)");
@@ -166,6 +215,51 @@ export default command({
     const operators = values.operator.map((o) => operatorNamed(data(), o));
     const selection = { named: args.slice(1), all: values.all, ...(values["fixtures-from"] !== undefined ? { fixturesFrom: values["fixtures-from"] } : {}) };
     const event = values.event !== undefined ? { event: new RegExp(values.event) } : {};
+    if (sub === "instances" || sub === "control" || sub === "lanes") {
+      if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture (a path or an id such as 0c14)`);
+      const fx = readDevFixture(arg);
+      if (sub === "instances") return instancesView(data(), fx, { operators, ...(values.kind !== undefined ? { kind: values.kind } : {}) });
+      if (sub === "control") return controlView(data(), fx, { operators });
+      if (values.buff.length > 1) throw new Error("zmdlogs lanes takes one --buff <regex>");
+      return lanesView(data(), fx, values.buff[0] !== undefined ? new RegExp(values.buff[0]) : undefined);
+    }
+    if (sub === "census" || sub === "buffs" || sub === "cadence") {
+      const named = args.slice(1);
+      const ids = [...named, ...(values["fixtures-from"] !== undefined ? readFileSync(values["fixtures-from"], "utf8").split("\n").map((l) => l.replace(/#.*/, "").trim()).filter(Boolean) : [])];
+      const dirs = logDirs(values.dir);
+      const withOps = sub === "cadence" ? operators : [];
+      const logs = devFixtures({ ...(ids.length ? { ids } : {}), ...(dirs ? { dirs } : {}), ...(withOps.length ? { withOperators: withOps } : {}) });
+      const which = ids.length ? logs.map((d) => d.short).join(" ") : `every ${dirs ? dirs.join(" and ") : "verified and pending"} development log`;
+      if (sub === "buffs") {
+        if (values.buff.length > 1) throw new Error("zmdlogs buffs takes one --buff <regex>");
+        return buffsView(data(), logs, { ...(values.buff[0] !== undefined ? { buff: new RegExp(values.buff[0]) } : {}), operators });
+      }
+      if (sub === "cadence") {
+        if (operators.length !== 1 || values.event === undefined) throw new Error("zmdlogs cadence takes one --operator <op> and --event <regex>");
+        return cadenceView(data(), logs, operators[0] as string, new RegExp(values.event));
+      }
+      if (values.select === undefined) throw new Error("zmdlogs census takes --select <cast:|event:|buff:regex>");
+      const window = values.window !== undefined ? values.window.split(",").map(Number) : values.within !== undefined ? [-Number(values.within), Number(values.within)] : [-1000, 1000];
+      if (window.length !== 2 || window.some((x) => !Number.isFinite(x))) throw new Error("--within takes ms, --window from,to (ms)");
+      const nearOps = values["near-operator"].map((o) => operatorNamed(data(), o));
+      const rerun = [
+        "efsim zmdlogs census",
+        ...named,
+        ...(values["fixtures-from"] !== undefined ? [`--fixtures-from ${values["fixtures-from"]}`] : []),
+        ...(dirs ? dirs.map((d) => `--dir ${d}`) : []),
+        `--select '${values.select}'`,
+        ...operators.map((o) => `--operator ${o}`),
+        ...(values.near !== undefined ? [`--near '${values.near}'`, ...nearOps.map((o) => `--near-operator ${o}`), `--window ${window.join(",")}`] : []),
+      ].join(" ");
+      return census(data(), logs, {
+        select: parseSelector(values.select),
+        operators,
+        ...(values.near !== undefined ? { near: parseSelector(values.near), nearOperators: nearOps, window: { from: window[0] as number, to: window[1] as number } } : {}),
+        list: values.list,
+        rerun,
+        logs: which,
+      });
+    }
     if (sub === "hits") {
       if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
       const reading = values.reading === "log" ? "log" : "primary";

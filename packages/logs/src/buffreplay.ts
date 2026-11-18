@@ -701,27 +701,49 @@ const RUN_GAP_MS = 1500;
  * replay then makes each basic cast's operator the controlled one, as before).
  */
 export function controlledFromLog(placement: Placement, casts: readonly ReplayedCast[]): { readonly first: string; readonly casts: ReplayedCast[] } | null {
+  const c = controlSwaps(placement, casts);
+  if (!c) return null;
+  const controlledAt = (t: number) => c.swaps.filter((x) => x.at <= t).at(-1)?.operator ?? c.first;
+  return { first: c.first, casts: casts.map((x) => (x.kind === "basic" && x.operator !== controlledAt(x.start) ? { ...x, teammate: true as const } : x)) };
+}
+
+/**
+ * The evidence of controlledFromLog: the first operator the log shows controlled (and the hit that shows it), and each
+ * swap (at the start of the new operator's run of basic casts ending with the hit that shows it). Null when no hit
+ * names anyone. Also read by `zmdlogs control` (query.ts controlSpans).
+ */
+export function controlSwaps(placement: Placement, casts: readonly ReplayedCast[]): { readonly first: string; readonly firstEvidence: { readonly t: number; readonly event: string }; readonly swaps: readonly { readonly at: number; readonly operator: string; readonly evidence: { readonly t: number; readonly event: string } }[] } | null {
   const ofCast = (c: LoggedCast) => casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= mergeMs(placement, c.skillId));
   const shown = [...placement.hits]
     .filter(([h, p]) => h.poise !== undefined && p.cast.kind === "basic" && p.hits.some((k) => k.poise !== undefined && k.poiseControlledOnly))
     .flatMap(([h, p]) => {
       const cast = ofCast(p.cast);
-      return cast ? [{ t: h.t, operator: h.operator, cast }] : [];
+      return cast ? [{ t: h.t, operator: h.operator, cast, event: h.event }] : [];
     })
     .sort((a, b) => a.t - b.t);
   const first = shown[0];
   if (!first) return null;
-  const swaps: { at: number; operator: string }[] = [];
+  const swaps: { at: number; operator: string; evidence: { t: number; event: string } }[] = [];
   for (const [i, e] of shown.entries()) {
     const prev = shown[i - 1];
     if (!prev || prev.operator === e.operator) continue;
     const own = casts.filter((c) => c.operator === e.operator && c.kind === "basic" && c.start > prev.t && c.start <= e.cast.start).sort((a, b) => b.start - a.start);
     let start = e.cast;
     for (const c of own) if (c !== start && start.start - c.lastHit <= RUN_GAP_MS) start = c;
-    swaps.push({ at: start.start, operator: e.operator });
+    swaps.push({ at: start.start, operator: e.operator, evidence: { t: e.t, event: e.event } });
   }
-  const controlledAt = (t: number) => swaps.filter((x) => x.at <= t).at(-1)?.operator ?? first.operator;
-  return { first: first.operator, casts: casts.map((c) => (c.kind === "basic" && c.operator !== controlledAt(c.start) ? { ...c, teammate: true as const } : c)) };
+  return { first: first.operator, firstEvidence: { t: first.t, event: first.event }, swaps };
+}
+
+/**
+ * The casts the replay makes, before control and the casts that hit nothing: the placed casts (not follow-up-only
+ * skills), the log's hitless cast events it lacks (withLoggedCasts), and the casts inferred from buff lanes, trigger
+ * hits, buff ends and exits (castsFromBuffLanes, castsFromTriggerHits, castsFromBuffEnds, exitPresses).
+ */
+export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[]): ReplayedCast[] {
+  if (kits.length === 0) return [];
+  const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
+  return exitPresses(kits, fx, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts))))));
 }
 
 export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits">): ReplayedCast[] {
@@ -1183,8 +1205,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const kitIds = [...decided].flatMap(([g, defs]) => defs.map((d) => ({ g, owner: d.split(":", 2)[0] as string, id: d.split(":", 2)[1] as string })));
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
-  const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  const assembled: ReplayedCast[] = kits.length > 0 ? exitPresses(kits, fx, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts)))))) : [];
+  const assembled = assembleCasts(data, fx, placement, kits);
   const control = controlledFromLog(placement, assembled);
   const recoveries = loggedRecoveries(fx).map(frameOf);
   // The bar is set a frame before its hit, so the hit sees the bar the log has before it.

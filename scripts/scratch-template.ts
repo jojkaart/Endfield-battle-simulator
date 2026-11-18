@@ -14,28 +14,32 @@
 // minutes of CPU: `node scripts/with-lock.ts node scratch/x.ts` (one job per wrap), output to a new file per run; end
 // with a line `EFSIM-DONE <name> pass` so one Monitor until-loop waits for it.
 //
-// Before writing one, check the commands that already answer the usual questions: `npm run measure` (a change's
-// accuracy, every log in a minute), `efsim zmdlogs casts | replay | stagger <fixture>` (the placement, the replay's
-// landings and Stagger windows), `efsim zmdlogs differences` / `groups --operator <op>` (where log and replay
-// disagree, an operator's mismatches by cause), `efsim zmdlogs hits --json` (per hit: engine modifiers, the log's
-// listing, differences), `efsim gamedata find <type>` (game-data actions by type). Their functions are exported
-// (packages/logs/src/views.ts) for a script that needs more. Times: the log's are ms, the engine's frames
-// (docs/design/data.md "What the log records").
+// Before writing one, check the commands that already answer the usual questions (docs/design/data.md "Questions and
+// the command that answers them"): `npm run measure` (a change's accuracy, every log in a minute); the log itself:
+// `efsim zmdlogs instances | lanes | control <fixture>`, `census --select … [--near …]` (counts that cite their
+// selection), `buffs` (listed id → kit buff), `cadence --operator --event`; the engine's side: `efsim zmdlogs casts |
+// replay | stagger <fixture>`, `differences` / `groups --operator <op>`, `hits <fixture…|--all> --json` (per hit:
+// engine modifiers, the log's listing and reading, differences; cached per fixture), `efsim kit <operator>` (compiled
+// skills and hit frames), `efsim gamedata find <type>`. Their functions are exported (packages/logs/src/query.ts,
+// views.ts) for a script that needs more. Times: the log's are ms, the engine's frames (docs/design/data.md "What the
+// log records"; its "Common misreadings" box before counting anything).
 //
-// Logs: list development logs with `logFixtureFiles` or `listLogs` (never a hold-out; fixtures/holdout/ is never
-// opened by hand: docs/accuracy-plan.md, "Choosing logs"). Per-hit numbers of the log check: `efsim zmdlogs hits`. The log tooling is @efsim/logs (packages/logs).
+// Logs: `devFixtures()` (every verified and pending development log as a fixture, never a hold-out; `ids: ["0c14"]`,
+// `withOperators`), and `loggedSkillInstances(data, fx)` for "the casts of X" (combos from hits, an ultimate's
+// repeated events grouped, hitless events apart). fixtures/holdout/ is never opened by hand (docs/accuracy-plan.md,
+// "Choosing logs"). The log tooling is @efsim/logs (packages/logs).
 
 import { loadGameData } from "@efsim/data";
-import { checkLog, engineHits, listLogs, logBuffReplay, readLogFixture } from "@efsim/logs";
+import { checkLog, devFixtures, engineHits, logBuffReplay, loggedSkillInstances } from "@efsim/logs";
 
 const data = loadGameData();
 const operator = process.argv[2] ?? "chr_0036_jsspsi";
 
 // The development logs with this operator (verified and pending; multi-target logs aren't checked by the engine).
-for (const log of listLogs({ withOperators: [operator], dirs: ["verified", "pending"] })) {
-  const fx = readLogFixture(log.file);
+for (const { short, fx } of devFixtures({ withOperators: [operator] })) {
   const replay = logBuffReplay(data, fx);
   const verdicts = checkLog(data, fx, { replay, engineHits: engineHits(data, fx, replay) });
   const mine = verdicts.filter((v) => v.hit.operator === operator);
-  process.stdout.write(`${log.id}: ${mine.length} hits of ${data.operators[operator]?.name ?? operator}\n`);
+  const casts = loggedSkillInstances(data, fx, { operator }).filter((i) => i.from === "hits");
+  process.stdout.write(`${short}: ${mine.length} hits and ${casts.length} casts of ${data.operators[operator]?.name ?? operator}\n`);
 }
