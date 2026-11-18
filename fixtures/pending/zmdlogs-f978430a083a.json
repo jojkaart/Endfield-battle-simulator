@@ -19,7 +19,8 @@
    "2026-11-15: Si's attribute nodes 1 (all her hits ×0.9500 of the engine with the default; 1 node gives it).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-18, buildOverrides): Ardelia's weapon level 60, fitted with efsim zmdlogs fit-build; the team entry is as exported."
   ]
  },
  "enemy": {
@@ -247,6 +248,17 @@
      ]
     }
    ]
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0025_ardelia",
+   "set": {
+    "weapon": {
+     "level": 60
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-18): 107 of 139 landed hits within ±1, 55 of 55 clean (as exported 0, ×0.8154): her weapon (wpn_funnel_0013, skills [3, 4, 4]) at level 60, the third breakthrough's cap, as in c3c7. Its logged skill levels allow breakthroughs 1–4 (WeaponBreakThroughTemplateTable 456star: skill 2 at 4 needs the first), so levels 20–90. Foods with lower levels tie (Kunst Vial at 42 and others: two changes for one); the one-change fit is taken."
   }
  ],
  "hits": [

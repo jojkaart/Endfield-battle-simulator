@@ -22,7 +22,8 @@
    "Hand corrections (2026-11-11): Alesh's weapon (wpn_sword_0012, skills [2, 2, 2]) is level 60, not 90: her eight buff-free hits at 0–11 s were ×0.807 = (277 + 342) / (277 + 490), her base ATK and the weapon's at 60 and 90, and match exactly with it (53 of 54 hits match). Rossi's build has \"food\": \"item_bottled_insec2_2\" (Kunst Tube, DMG +24.65%): her hits at 0–12 s and 110 s match with it, 252 of 268 in all; her windows at 22–40, 62–82 and 150–195 s carry other differences (Wolven Blood layers, Razor Clawmark). Si (no constant factor) is open.",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-18, buildOverrides): Si's attribute nodes 2 and Kunst Tube, fitted with efsim zmdlogs fit-build; the team entry is as exported."
   ]
  },
  "enemy": {
@@ -251,6 +252,16 @@
      ]
     }
    ]
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0036_jsspsi",
+   "set": {
+    "attributeNodes": 2,
+    "food": "item_bottled_insec2_2"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-18): 46 of 191 landed hits within ±1, 25 of 25 clean (as exported 0; clean hits ×1.1324). Two inputs, because her ratio depends on her DMG bonus: ×1.1543 on hits without Alesh's set DMG (+0.16), ×1.1322 with it, which only an all-element DMG of +0.247 (Kunst Tube, +0.2465: the food her teammates Rossi and the Endministrator fit too) with ATK ×0.962 fits; ×0.962 is two attribute nodes (chr_0036_jsspsi_5 and _7 need trust 300, as in fixtures/zmdlogs-40d9a3c1da37.json). The remaining misfits are her combo's unlogged Yinglung's Edge and Jade Vessel layers and Alesh's buffs from a combo the log shows no hit of (docs/open-problems.md, 0c14)."
   }
  ],
  "hits": [
