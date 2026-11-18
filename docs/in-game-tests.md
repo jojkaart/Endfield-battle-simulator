@@ -154,9 +154,33 @@ also raises the cap and duration of every Corrosion she applies.
 multiply separately.
 **How (planned):** a Combustion hit with one bonus, the other, and both.
 
-### 6. Liino's ultimate (ready)
+### 6. Liino's ultimate (decided by the logs, 2026-11-18: the engine's values hold; don't ask)
 
-**Why:** the only log of it (ZMDLogs parser v58) implies each of the 20
+**Decided by the logs (2026-11-18): nothing for the owner.** The "2 ×"
+below is the data's pairs: the ultimate's entity launches two projectiles
+at each of its frames (20 pyrotechnics and the bomb; 20 × `atk_scale` =
+`display_atk_scale`), as the kit has. 16 single-target Liino logs record
+572 hits of her ultimate (projectiles, bomb, beats, finale): 332 plain, 23
+assumed, 90 fallback, 30 unquantified, 97 mismatches; dbae (verified) 25
+of 25 plain, 4bfc 51 of 63, 4d60 46 of 62, 9090 34 of 51, d774 32 of 52,
+1cd1 19 of 21 (the other logs' are mostly fallbacks and assumed, d9e5's
+unquantified: Corrosion). The mismatches aren't her ultimate's:
+7910 25 (every hit ×1.143, bomb included: the log's value of Tangtang's
+weapon Arts DMG Taken differs from the engine's, 89 mismatches of the
+whole team at that ratio), 8915 27 (its stage's shield factor, ×0.2 on
+every operator), 9847 23 of 28 team-wide (Avywenna and Perlica at the same
+×1.043 within 1.5 s: the Bigents fight's run), 4d60 7 of 12 team-wide,
+the rest beats the replay lands at another moment. Her own ultimate buffs
+are listed now: Cosmovoice's Electric and Nature Amp in 11 logs (dbae
+0.410537 = 0.0004 × Will, the kit's formula) and its ATK (one buff with
+the stance's). One kit fix from it: ten beats per Cosmovoice, not nine
+(the three Cosmovoices logged with every beat, 4bfc 55.3 s, 4d60 82.6 s,
+9847 53.5 s, have ten each, never eleven), and the finale is logged at 3
+× a beat. Left for the replay, not the owner: beats it lands at other
+moments (logged 1.35–1.55 s apart, the kit's 1.5 s; other operators'
+stops; open-problems.md, "Liino's Cosmovoice beats").
+
+**Why (2026-10):** the only log of it (ZMDLogs parser v58) implies each of the 20
 small projectiles deals 2 × the ultimate's `atk_scale`, which the data
 doesn't explain, and it doesn't record her own ultimate buffs.
 **How:** Liino alone against a training dummy (no teammates' buffs, no
@@ -792,7 +816,19 @@ Final Strike: 4 Melting Flame and 2 Heat stacks should be left. (2) On a
 Staggered enemy with Heat Infliction on it, use any operator's finisher:
 does Laevatain's Melting Flame go up?
 
-### 25. Liino's weapon stacks on each teammate (ready, if you have Liino with Bedazzling Night Debut)
+### 25. Liino's weapon stacks on each teammate (partly decided by the logs: 4 each; left: does a heal at full HP count; ready, if you have Liino with Bedazzling Night Debut)
+
+**Decided by the logs (2026-11-13, restated 2026-11-18): 4 per teammate,
+whoever heals.** In 18 Liino logs (~4,500 teammates' hits with the
+engine's 4 layers) the damage fits a cap of 4 per recipient, shared by
+every heal of hers; the listing's counts of up to 13 are a habit of the
+log (stackingType-11 buffs are over-listed alike). Layers rise within 4 s
+of her heals and end 20 s later (median 19.9 s). How often: with her heals,
+as the engine has (open-problems.md, "Liino's weapon"). **Left for the
+game:** whether a heal on a teammate at full HP (an overheal) gives a
+layer: HP isn't logged, and 1d91's Ardelia, whose layers come slower than
+the engine's, fits that as well as being out of the soundwave's reach. So
+only the How's second question (at full HP) is still worth asking.
 
 **Why:** when her skills heal a teammate, that teammate gets ATK +9.8%
 (weapon level 9) for 20 s, up to 4 stacks. The engine gives each teammate
@@ -807,9 +843,26 @@ each? Does it count up while they're at full HP (does an overheal count)?
 How often does it rise: every 3 s soundwave, or only when the teammate is
 near her?
 
-### 26. What fires Liino's volley (ready, if you have Liino)
+### 26. What fires Liino's volley (decided by the data and the logs, 2026-11-18: a plain 10 s timer; don't ask)
 
-**Why:** in Vocalist Stance, an Arts Reaction near her fires a volley (six
+**Decided by the logs (2026-11-18): a 10 s timer from the battle skill's
+frame 45, no reaction needed.** The data: buff
+spelllnfliction_extraattack ticks every `atk_trigger` (10 s), the first at
+once, and launches the volley at a marked enemy within 20 m; its tick's
+reaction check (CheckBuffIdInContext spelllnfliction_hit) has `isEnable
+false` (`efsim gamedata tree` printed disabled actions as live until
+2026-11-18). The logs agree: 103 volleys in 24 Liino logs come 10.0–11.7 s
+of world time apart, also with no time stop between (1d91 11.29, 4bfe
+10.70, 8915 11.67, a7a7 10.02, c6d8 10.70 s); a stance's first comes 1.6–2.4
+s after its first projectile (the kit: 1.9 s) with no reaction before it
+(9090's first, before any reaction; its 15.2 s one with none in the 2 s
+before). Neither the engine's old reading (a reaction, then 10 s) nor the
+other one below (a tick that fires only after a reaction). The kit now
+ticks every 10 s; the replay takes each tick from its logged volley, as
+the game's clock for it runs ~5% slower than world time
+(open-problems.md, "Liino's volleys").
+
+**Why (2026-10):** in Vocalist Stance, an Arts Reaction near her fires a volley (six
 small Electric hits, 1.2 × ATK in all, 1.44 at P5), at most once per 10 s.
 The engine fires it at the reaction, then waits 10 s. The other reading:
 a 10 s tick from the cast that fires only if a reaction happened shortly
@@ -821,7 +874,17 @@ Reaction: does a volley follow within about a second (engine), or only at
 the next 10 s mark after the cast (tick)? Trigger a second reaction 3 s
 later: no volley is expected.
 
-### 27. Liino's combo and energy during Cosmovoice (ready, if you have Liino)
+### 27. Liino's combo and energy during Cosmovoice (partly decided by the logs: the combo opens; left: energy and acting after it; ready, if you have Liino)
+
+**Decided by the logs (2026-11-18): her combo opens in Cosmovoice.** d774
+logs it at 22.23 and 22.47 s, 7.6 s into her ultimate, under the name of
+the Cosmovoice variant (buff_chr_0035_liino_comboskill_ultskill_hit, which
+the data runs only during Cosmovoice); both hits match the engine plainly,
+and the stance's beats go on after it. One instance (the re-triage's five
+counted combos after a repeat of the ultimate's event, not inside one).
+**Left for the game:** the energy block (1 s or the whole 15 s: energy
+isn't logged) and whether she can basic attack or swap right after that
+combo (inputs; d774's Liino did neither). Ask only these two.
 
 **Why:** the engine (and the data, likely) lets her combo open during
 Cosmovoice, her ultimate's stance, though the description names only
@@ -855,6 +918,14 @@ until her battle skill can be cast again? The data says 3 s (the first
 report said 5). (e) After End Stance from Vocalist, how long does the
 team's ATK buff icon stay? The data says 5 s more (atkup_finishtime); one
 log suggests under 2 s.
+**Checked against the logs (2026-11-18): none of it is decided.** (a):
+her 10 basic-attack strings in 8 logs all fall between stances (no beat
+event in the 6 s before, no stance ATK listed on the first hit, a new
+stance after), so players don't attack in the stance, which fits the
+engine but doesn't show the game forbids it. (b)–(d) are inputs and
+cooldowns. (e): no log records an End Stance press, and the one stance
+end with teammates' hits after it (0eef) has no linger
+(open-problems.md, "Liino's stance ATK ends early"). Still for the game.
 
 ### 29. Do sub-skills count as a battle skill? (ready, if you have Si, Liino or Mi Fu)
 
@@ -1692,7 +1763,22 @@ completes the count (the data adds the layer before the hit's damage).
    Electrification also raises the extra attack (12% or more), so
    different sources would hide the 16%.
 
-### 66. A forced Electrification on a stronger one (ready, if you have Perlica)
+### 66. A forced Electrification on a stronger one (ready, if you have Perlica; a ZMDLogs log of the case decides it too)
+
+**Checked against the logs (2026-11-18): not decidable yet.** No Perlica
+combo lands while a teammate's level II–IV Electrification is still
+listed: in 3aa6 a level II from Zhuang Fangyi is listed 1.5–3.5 s before
+three of her combos (76.67, 102.28, 147.16 s), but each time it is gone
+from the hits just before the combo lands (Zhuang Fangyi's battle skill
+consumes it), so her forced one lands on none. What the logs do show:
+the newest forced level I replaces a running forced level I of higher
+value (Liino's ultimate bomb, 0.12, replaces Perlica's 0.284–0.296 at
+4360 57.47 s, 9090 65.03 s, 9847 134.23 s, hers listed until then), so
+"keep the higher value" is out for one level. **A log that decides it:**
+a team without Zhuang Fangyi in which a teammate's reaction makes a
+level III or IV Electrification (three or four Cryo, Heat or Nature
+stacks, then an Electric hit) and Perlica's combo lands within a few
+seconds; the listing then shows which entry stays.
 
 **Why:** Perlica's combo forces Electrification I (5 s; 8.75 s from P1).
 On an enemy that already has a stronger, longer Electrification from a
@@ -1709,7 +1795,18 @@ at once. Time how long the Electrification icon stays after the combo:
 - replaced (engine): about 8.75 s (5 s below P1);
 - kept: the rest of the original, about 20 s (III) or 26 s (IV).
 
-### 67. Perlica's finisher: a Knock Down on an enemy that survives? (ready, if you have Perlica)
+### 67. Perlica's finisher: a Knock Down on an enemy that survives? (decided by the logs, 2026-11-18: no Knock Down, as the engine; don't ask)
+
+**Decided by the logs (2026-11-18): no Knock Down.** Her three finishers
+(power_attack: 4360 at 58.36 s, 9847 at 64.11 and 136.79 s; her only ones
+in the logs, controlled by definition) are followed by no Knock Down hit
+(buff_physical_knockdown) in the 1.5 s after, and the enemy fights on
+(the logs run 7–80 s longer). The log does record Knock Downs: 42 such
+hits in 4 other logs (04d4's at 0.39 s after Ember's finisher is
+another operator's). So deadOption 2 marks the dying target only, as the
+SkillData compiler reads it (batch 3, D2), for Perlica and for that flag
+elsewhere. The Vulnerable stack isn't listed, but it comes only with the
+Knock Down.
 
 **Why:** her finisher's data forces a Knock Down when she's controlled
 (her report, row 7), but the action carries the flag for a dying target
@@ -1726,7 +1823,29 @@ a Knock Down damage number appear and a Vulnerable stack show on the
 dummy (or does it fall)? Engine: neither. Then the same with another
 operator's finisher, as the baseline (no Knock Down expected).
 
-### 68. Perlica's P3 layers and Wild Wanderer (ready, if you have Perlica at P3+; part 2 needs Wild Wanderer)
+### 68. Perlica's P3 layers and Wild Wanderer (part 2's forced half decided by the logs, 2026-11-18; the rest a ZMDLogs log can decide; ready, if you have Perlica at P3+; part 2 needs Wild Wanderer)
+
+**Decided by the logs (2026-11-18): her combo's forced Electrification
+gives Wild Wanderer**, as the engine has. In the four logs with Perlica
+wielding it (3aa6, 4d60, c6d8, d774) all 21 listed starts of
+buff_wpn_funnel_0004_up (3aa6 6, 4d60 7, c6d8 4, d774 4) fall at the very
+ms of a combo hit of hers whose forced Electrification is listed from the
+same ms; none starts elsewhere (and none at Liino's ultimate bomb, a
+teammate's forced one). **Not in any log:** the reaction half. In those
+four logs Perlica never makes a reaction Electrification (her
+Electrification entries are all her combos'; her Electric bursts on
+Electric inflictions aren't Electrification), and her one reaction
+Electrification (e82d, 7.54 s) is without the weapon.
+**Part 1 (P3 layers): not decided.** P3's ATK is listed in 11 logs, always
+one entry of 0.2, and it acts on the hit that applies the Electrification
+(her combo hits: 14 plain matches with it in 00ae, 4bfc, 3aa6, 4d60; she
+has no other source of it then), but no log has two of her
+Electrifications within 5 s, and the e82d battle skill (the reaction) is
+off by ×1.67 for other reasons. **A log that decides both:** Perlica at P3+
+with Wild Wanderer, her battle skill on an enemy with a teammate's Cryo,
+Heat or Nature infliction (a reaction Electrification) while no combo of
+hers is near: the listing then shows whether Wild Wanderer starts, and how
+many P3 entries her next hits carry.
 
 **Why:** (1) P3 gives her ATK +20% per layer (up to 2) when she applies
 Electrification. The engine gives one layer per Electrification; her only
@@ -2245,7 +2364,19 @@ checks in Grand Vision and Glorious Memory.
 the weapon's team Arts DMG icon appear on the teammate? Yes: Si's Amp
 counts (engine). No: only all-Arts Amps count.
 
-### 93. Camille's talent 2 from a teammate's heal (ready, if you have Camille and Liino)
+### 93. Camille's talent 2 from a teammate's heal (ready, if you have Camille and Liino; a ZMDLogs log of them together decides it too)
+
+**Checked against the logs (2026-11-18): not decidable yet.** No log has
+Camille with Liino (15 Camille logs). Her talent 2 is listed (as
+buff_chr_0033_camille_talent1_atkup, 0.04 per layer on her, 0.01 on
+teammates; the 2026-11-18 re-triage missed it under that name): all 56
+listed starts in 14 logs fall at her own combo's heal (its last hit's ms,
+or within 0.8 s). But no teammate in those logs gives her a battle, combo
+or ultimate heal (Antal's talent heal in 0206 and 3440 isn't one of those
+kinds), so they don't tell "anyone's heal" from "her own". **A log that
+decides it:** Camille and Liino, Liino's battle skill up for 10 s or more
+while Camille's combo isn't cast: talent-2 entries starting at Liino's
+soundwaves (every 3 s) mean anyone's heal counts (the data, the engine).
 
 **Why:** talent 2 gives Camille two layers of Heat DMG (+4% each at talent
 level 2, up to 5 layers, 40 s), and each teammate a quarter of that, each

@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 104 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 105 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -40,6 +40,41 @@ events. Test 10 left to the queue agent.
 
 **Dead ends:** a teammate's `attack1` as a swap marker (teammates attack on their own); the Jade Vessel enemy-debuff
 lane's `since` as an Immobilization marker (whether it moves on a refresh is open: data.md).
+
+## 2026-11-18: Liino's and Perlica's in-game tests from the logs
+
+**Goal:** decide from the logs the open in-game tests on Liino and Perlica (Typhoeus's team) under the owner's
+"Logs first" rule, and fix the engine where the logs show it wrong.
+
+**Decided** (each in its own section of docs/in-game-tests.md): **26** Liino's volley, a plain 10 s timer (the last
+entry's data and logs); **6** Liino's ultimate, the values hold (572 checked hits, 332 plain, dbae 25 of 25; the
+mismatches are 7910's Tangtang weapon value, 8915's stage factor, team-wide runs in 9847 and 4d60); **67** no Knock
+Down after Perlica's finisher (three finishers, while Knock Downs are logged elsewhere: 42 hits in 4 logs).
+**Partly:** **25** (4 layers per teammate; left: a heal at full HP), **27** (her combo opens in Cosmovoice: d774's
+Cosmovoice variant, plain; left: energy, acting after it), **68** (Wild Wanderer from her combo's forced
+Electrification: 21 of 21 starts in 4 logs; the reaction half and P3's layers per reaction are in no log).
+**Not decidable from these logs** (each section names the log that would decide it): **66** (no Perlica combo lands
+on a stronger Electrification: 3aa6's three near-cases were consumed by Zhuang Fangyi's battle skill first), **93**
+(no Camille with Liino; her talent 2 is listed after all, as `talent1_atkup`, starting only at her own combo heals,
+with no other battle/combo/ultimate heal on her in any log), **28** (none of it logged).
+
+**Engine change:** Liino's Cosmovoice has ten beats, not nine. The three Cosmovoices logged with every beat (4bfc,
+4d60, 9847) have ten each, never eleven; the kit had ended the beats' buff with its 77–477 creating clip. Now it ticks
+at 482 too and ends at its 15 s duration. Scoreboard (docs/accuracy.md): development plain 51.4 → 51.5% (mismatch 18.2%, error
+12.9% unchanged), verified and hold-out rows unchanged (66.0%, 7.2%, 12.4%); logs better 3 (4d60, 9847, 9c6e), worse
+1 (8915: its stage factor, every prediction already too high), and d774 among the earlier pending (its replay
+already lands beats where the log has none); hold-out 2 better, 0 worse. Liino's row: plain 55.9 → 56.0%, mismatch
+18.9 → 18.8%, mean |damage error| 17.7 → 18.2% (the extra beat where the replay's beats are already off: d774,
+8915). Team (32 seeds): 52,529 →
+52,563 / 49,185 → 49,206; the 60 s timeline 5,649,021 → 5,654,191 (from zero unchanged).
+
+**Corrections to the re-triage** (model output): test 27's five "combos in Cosmovoice" were counted after repeats of
+the ultimate's cast event, all after the stance had ended; test 93's "no talent-2 buff listed" missed it under its
+data name; test 66's verdict stands, but for a reason it didn't give.
+
+**Left:** the beats' timing (logged 1.35–1.55 s apart, other operators' stops; open-problems.md "Liino's Cosmovoice
+beats", next: pinning them to their logged landings as the volleys are); Perlica's combo hits ×1.15–1.40 above the
+engine in fc63, 3aa6, 4d60, 4360, 9847 (seen, not followed).
 
 ## 2026-11-18: The owner's in-game test queue from the logs: Stagger recovery, Laevatain's Finisher
 
@@ -401,29 +436,3 @@ the parallel agents: db87's first strike (Laevatain's ultimate stop
 missing from the placement), fc63's second (Typhoeus's shot count), and
 the ×1.3 runs of 1d91 70–72 s and 4d60 80 s (Stagger). Alesh is ×0.85 on
 every hit in ad7f (his build), untouched.
-
-## 2026-11-17: Haste is movement speed; the owner's team drops Initial Stroke
-
-**Goal:** settle what Si's talent Haste does after the logs found it doesn't
-speed up attacks (docs/journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md),
-and whether the owner's team should still press Initial Stroke.
-
-**Done:**
-- The owner (2026-11-17) has never noticed Haste in play and would notice
-  faster attacks. The game's own glossary entry for Haste (I18nTextTable_EN,
-  the `ba.speedup` term) reads "Temporarily raises the movement speed of a
-  target … Effects of the same type can stack until hitting the speed cap";
-  Slow is its opposite ("movement speed reduction"). So Haste is movement
-  speed, which the simulator doesn't model: settled by the data's text, the
-  logs (test 19) and the owner.
-- In-game test 109 (does the Haste need Initial Stroke) moved to the bottom
-  of the queue: it matters only if Haste shortened cooldowns, which nothing
-  suggests.
-- The owner's team's rule 9 now presses only Si's battle skill (no Initial
-  Stroke). `efsim rules … --compare` against the old list: +1.37% ± 0.58 on
-  64 fresh seeds at full energy, +0.66% ± 0.52 from zero (noise), one press
-  fewer. On seeds 1001–1032: 53,781 (sd 1,194) / 52,740 (sd 1,539), against
-  52,382 / 52,716 with Initial Stroke (docs/teams/estella-si-akekuri-arcane.md).
-
-**Left:** the `hasteFrames` plumbing in the engine is now inert (a cleanup
-for a later round). No other rule list in examples/ presses Initial Stroke.
