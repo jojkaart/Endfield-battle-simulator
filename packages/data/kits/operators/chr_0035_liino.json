@@ -368,7 +368,7 @@
               "scale": [
                 "atk_scale_3"
               ],
-              "count": 9,
+              "count": 10,
               "frames": [
                 77,
                 122,
@@ -378,7 +378,8 @@
                 302,
                 347,
                 392,
-                437
+                437,
+                482
               ],
               "events": [
                 "chr_0035_liino_ultimate_skill_soundwave_projhit"
@@ -388,7 +389,7 @@
                 "buffActive": "cosmovoice_amp"
               },
               "dataOverride": { "count": "Each beat launches two soundwave projectiles (two LaunchProjectileActions in buff ultskill_music_damage's event); the logs show one hit per beat on one enemy (zmdlogs-dbaee23b801d: 4 of 4), so the kit has one." },
-              "note": "buff ultskill_music_damage: a soundwave every ultmusic_trigger (1.5 s) from frame 77 (first at once: waitFirstTriggerInterval false) until its CreateBuffAction (autoFinishByAction) ends at 477: 9 beats. Each also heals (ultimate heal tag). Only enemies in the AOE are hit: the logs have 4 beats in ~7.4 s (dbaee23) and 3 (d9e59). Verified per beat: zmdlogs-dbaee23b801d 4/4."
+              "note": "buff ultskill_music_damage: a soundwave every ultmusic_trigger (1.5 s) from frame 77 (first at once: waitFirstTriggerInterval false) past the end of its CreateBuffAction clip (autoFinishByAction, 77–477) to its own duration (15 s: 527, no tick at the end): 10 beats, the logs' count (in-game test 6). Each also heals (ultimate heal tag). Only enemies in the AOE are hit: the logs have 4 beats in ~7.4 s (dbaee23) and 3 (d9e59). Verified per beat: zmdlogs-dbaee23b801d 4/4."
             },
             {
               "id": "finale",
@@ -407,7 +408,7 @@
               "if": {
                 "buffActive": "cosmovoice_amp"
               },
-              "note": "Frame 508: atk_scale_4 = atk_scale_3 × final_value (SimpleCalcBB; final_value 3), then the soundwave_02 projectile. Not in any log. Skipped when the stance is ended early (End Stance → JumpTo 540)."
+              "note": "Frame 508: atk_scale_4 = atk_scale_3 × final_value (SimpleCalcBB; final_value 3), then the soundwave_02 projectile. Logged 3 × a beat (4d60e7fe92c2 13043 against 4348, 9090afbacec9 7294 against 2431). Skipped when the stance is ended early (End Stance → JumpTo 540)."
             }
           ]
         }
@@ -719,8 +720,8 @@
       "skillId": "chr_0035_liino_ultimate_skill",
       "label": "Ultimate",
       "damageType": "ultimate",
-      "dataOverride": { "energyBlockSeconds": "buff_chr_0035_liino_ultskill_refrainobtainusp has duration 1 s but lifeType 1 (until ended) and is created by a 77–527 autoFinishByAction clip: the kit blocks energy with the cosmovoice_block buff for the whole stance (in-game test 27). The compiler reads the 1 s.", "lands chr_0035_liino_ultimate_skill_soundwave_projhit": "Compiler limit: the beats' buff ends at its autoFinishByAction clip (frame 477, 9 beats); the compiler keeps it ticking to its duration (beats at 482 and 527)." },
-      "note": "Ability entity chr_0035_liino_ultimate_skill_projhit_abilityentity spawned at frame 76 (two projectiles at each of its frames 0/3/6/8/11/15/18/21/25/28, the bomb at 40); beats from buff ultskill_music_damage (frame 77, every ultmusic_trigger until its autoFinishByAction clip ends at 477: 9 beats); finale launched at 508. Every hit is a projectile or entity already on its way: detached. The beats and finale are the ult_song trigger's hits (interim: the engine judges a skill hit's if at the cast, when Cosmovoice hasn't started yet). Energy block: buff cosmovoice_block.",
+      "dataOverride": { "energyBlockSeconds": "buff_chr_0035_liino_ultskill_refrainobtainusp has duration 1 s but lifeType 1 (until ended) and is created by a 77–527 autoFinishByAction clip: the kit blocks energy with the cosmovoice_block buff for the whole stance (in-game test 27). The compiler reads the 1 s.", "lands chr_0035_liino_ultimate_skill_soundwave_projhit": "The logs have 10 beats per Cosmovoice (all ten logged in 4bfc6f3e84b8 at 55.3 s, 4d60e7fe92c2 at 82.6 s, 984748cfa662 at 53.5 s; never 11): the beats' buff outlives its 77–477 creating clip, ticking at 482 too, and ends at its own duration (15 s from 77: 527) without a tick there. The compiler ticks to the duration and keeps the tick at 527 (11 beats)." },
+      "note": "Ability entity chr_0035_liino_ultimate_skill_projhit_abilityentity spawned at frame 76 (two projectiles at each of its frames 0/3/6/8/11/15/18/21/25/28, the bomb at 40); beats from buff ultskill_music_damage (frame 77, every ultmusic_trigger to its 15 s duration: 10 beats, as the logs); finale launched at 508. Every hit is a projectile or entity already on its way: detached. The beats and finale are the ult_song trigger's hits (interim: the engine judges a skill hit's if at the cast, when Cosmovoice hasn't started yet). Energy block: buff cosmovoice_block.",
       "hits": [
         {
           "id": "projectiles_first",
