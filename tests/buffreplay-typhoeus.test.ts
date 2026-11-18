@@ -102,3 +102,15 @@ describe("bdf223db8e49: Corrosion from the replay's landings", () => {
     expect(tried.every((v) => v.assumed.some((a) => a.includes("the replay can't say")))).toBe(true);
   });
 });
+
+describe("A buff created inside a running stop is held by its rest (engine assumption buff-in-stop, 2026-11-18)", () => {
+  it("d9e59d0fb737: her Hail of Arrows window, created inside Gilberta's and Arcane's stops, is open for her 5th rain at 13.62 s", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-d9e59d0fb737.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const w = r.kitWindows("chr_0034_typhoea:hail_window", "chr_0034_typhoea")[0];
+    expect(w?.end ?? 0).toBeGreaterThan(14000);
+    const sub2 = fx.hits.filter((h) => h.event === "chr_0034_typhoea_ultimate_skill_arrowrain_sub2");
+    expect(sub2.length).toBe(6);
+    expect(sub2.every((h) => !("unknown" in r.landing(h)))).toBe(true);
+  });
+});

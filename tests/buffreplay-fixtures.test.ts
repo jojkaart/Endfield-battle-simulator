@@ -122,6 +122,14 @@ describe("a hitless ultimate's logged cast at its time stop's end", () => {
     expect("unknown" in l ? [] : l.modifiers.filter((m) => m.source.includes("Stack Overflow"))).toHaveLength(1);
   });
 
+  it("starts its stop's length earlier when another's hit comes soon after the event (c83c: Laevatain at 44548 ms, the team resuming 125 ms later)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-c83c75d02a85.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const twilight = r.kitWindows("chr_0016_laevat:twilight", "chr_0016_laevat")[0];
+    expect(Math.abs((twilight?.start ?? 0) - 42500)).toBeLessThan(100);
+  });
+
   it("stays at the event without such a hit (e82d: Xaihi at 3896 ms; her Amp not yet on Arcane's ultimate at 7022 ms)", async () => {
     const { logBuffReplay } = await import("@efsim/cli");
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-e82d45c46040.json", import.meta.url).pathname);
