@@ -344,16 +344,16 @@
   ]
  },
  "liino-laevatain.scenario.json": {
-  "total": 580413.577,
-  "hits": 55,
+  "total": 584043.195,
+  "hits": 61,
   "casts": 15,
   "perOperator": {
    "chr_0016_laevat": 478939.477,
-   "chr_0035_liino": 101474.1
+   "chr_0035_liino": 105103.718
   },
-  "digest": "51e0a43ecf0b",
+  "digest": "4678844e1e9b",
   "windows": [
-   "06924876acf4",
+   "2a348ebd483e",
    "a79396b47fb1",
    "44e694a06457"
   ]
@@ -434,19 +434,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2603569.919,
-  "hits": 164,
+  "total": 2611348.902,
+  "hits": 170,
   "casts": 64,
   "perOperator": {
    "chr_0036_jsspsi": 691334.359,
    "chr_0016_laevat": 1588339.105,
-   "chr_0035_liino": 200212.279,
+   "chr_0035_liino": 207991.261,
    "chr_0013_aglina": 123684.176
   },
-  "digest": "3d4649d592a7",
+  "digest": "05fe395bc5ae",
   "windows": [
    "991099f731d0",
-   "e3cb614fe6a9"
+   "fa4213108143"
   ]
  },
  "si-laevatain.scenario.json": {
@@ -492,44 +492,44 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4849679.062,
-  "hits": 510,
+  "total": 4855802.905,
+  "hits": 516,
   "casts": 167,
   "perOperator": {
    "chr_0034_typhoea": 3741004.222,
    "chr_0032_lizhiyan": 193646.523,
-   "chr_0035_liino": 314738.402,
+   "chr_0035_liino": 320862.245,
    "chr_0004_pelica": 600289.914
   },
-  "digest": "f4a408d624dc",
+  "digest": "04a10fca1995",
   "windows": [
-   "3b38a5dc408a",
+   "2908d034b1f7",
    "c46d9f8bf52c",
-   "733ca68e8755",
-   "3e1b46ee6415",
-   "c05f947ffa22",
+   "1165cb6a6d24",
+   "5a7a8f9cea38",
+   "cb90dab60851",
    "e0a1f74c6f20",
    "d0d4d9e9861c"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5615426.372,
-  "hits": 415,
+  "total": 5649021.106,
+  "hits": 439,
   "casts": 164,
   "perOperator": {
    "chr_0034_typhoea": 4239378.223,
    "chr_0032_lizhiyan": 382783.024,
-   "chr_0035_liino": 281780.003,
+   "chr_0035_liino": 315374.737,
    "chr_0004_pelica": 711485.122
   },
-  "digest": "f99bddcaf568",
+  "digest": "29fe3d80c538",
   "windows": [
    "23c29201ecab",
    "ebaab50911e0",
    "ad06a0dd314c",
-   "ad1b4da0a4d0",
-   "6d1650788cb9",
-   "1fbb279f7904"
+   "14238fe211e5",
+   "45a2109beb98",
+   "f66a764d253e"
   ]
  },
  "typhoeus-gilberta.scenario.json": {
