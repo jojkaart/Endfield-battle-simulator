@@ -238,15 +238,16 @@ lower bounds until a full re-search. As a bot / at 0.6 s now 65,484 /
 62,233. (Test 18's alternative then, her own stop holding Twilight: 61,928.)
 
 **Twilight held by her own stop (2026-11-18, in-game tests 18 and 21 from the logs; same seeds
-1001–1032):** a buff created inside a running time stop is now held by the rest of it (engine
-assumption `buff-in-stop`; [journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)), so Twilight and show_weapon last 2 s longer
-after her ultimate. Sustained DPS 63,347 → **62,377** (−1.5%; sd 2,166) at full energy,
-56,123 → **59,917** (+6.8%; sd 2,930) from zero (as a bot / at 0.6 s: 67,918 / 56,004 at full
-energy). A longer Twilight is more enhanced attacks but also blocks her energy and starts her
-ultimate's cooldown later, which costs a full start more. The 60 s timeline repaired again
-(Laevatain's steps in the extra 2 s as their Twilight forms): 3,953,129 → **3,402,966**; its
-second ultimate (48.6 s) no longer fits in 60 s. A lower bound until a re-search. Under the old
-rule (`--assume buff-in-stop=runs`) the list still plays 63,347 / 56,123.
+1001–1032, on top of the numbers above):** a buff created inside a running time stop is now held by
+the rest of it (engine assumption `buff-in-stop`;
+[journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)), so
+Twilight and show_weapon last 2 s longer after her ultimate. Sustained DPS 59,140 → **59,662** (+0.9%;
+sd 3,591) at full energy, 54,421 → **59,097** (+8.6%; sd 1,672) from zero; as a bot / at 0.6 s 51,962 /
+59,616 (full energy). A longer Twilight is more enhanced attacks, but it also blocks her energy and
+starts her ultimate's cooldown later, which costs a full start more than a zero one. The 60 s timeline
+repaired (Laevatain's steps in the extra 2 s as their Twilight forms): 3,990,549 → **3,414,967**; its
+second ultimate (48.6 s) no longer fits in 60 s, a lower bound until a re-search. `--assume
+buff-in-stop=runs` gives the earlier reading.
 
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 

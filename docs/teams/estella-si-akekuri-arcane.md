@@ -108,6 +108,11 @@ ultimate's own Amp) need Intellect ≥ Will, and this Arcane plays WILL. The sam
 
 **The engine change of 2026-11-18 (in-game test 110 from the logs: a Stagger lasts about 2 s past its data; same seeds):** 53,780 → 53,514 / 52,744 → 52,972 (−0.5% / +0.4%, within the noise; `--assume stagger-recovery=none` gives the earlier reading). The rules check then caught Akekuri's battle skill pressed past her ultimate's interrupt mark (it ends her ultimate state); the SP ≥ 200 rule now waits until she isn't in her ultimate (a visible state): → **52,937 / 52,850** (−1.1% / −0.2%). As a bot / at 0.6 s now 52,665 / 53,447 (full energy).
 
+**Buffs created inside a running stop are held (2026-11-18, engine assumption `buff-in-stop`;
+[journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md); same
+seeds):** 52,937 → **53,162** (+0.4%) / 52,850 → **52,826** (−0.05%), within the noise; as a bot / at
+0.6 s 55,438 / 52,941 (full energy). The 60 s timelines +0.03% / +0.02%.
+
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** bosses
 freeze (Rhodagn: Si's freezes hold every debuff) 56,493 → 56,716 / 56,055
 → 56,141; Haste no longer speeds casts → 55,278 / 55,598 (−2.5% / −1.0%);
