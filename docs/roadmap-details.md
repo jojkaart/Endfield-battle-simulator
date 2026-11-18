@@ -65,7 +65,9 @@ beam 96 run, or the search seeded with the found rotations; the log
 check's casts placed across others' time stops (open-problems.md,
 Typhoeus's hover: 1cd1's combo, 9090's, dbae's battle skill start up to
 3 s late) and Typhoeus's 4th shot anchored to her 5th's cast (fc63);
-9090's Liino / Perlica totals (volleys, the replay's Stagger); gear
+9090's Liino total (her volleys: 10 logged, 1 replayed; the Stagger half
+is done, 2026-11-17: Liino −15.0 → −10.4%, Perlica −13.0 → −10.7%);
+Perlica's ×1.3/×1.5 runs, which aren't the Stagger windows (her kit); gear
 chosen jointly with the rotation (a search per candidate set, not a
 replay).
 
@@ -115,6 +117,14 @@ timeline repaired or a single-beam search: lower bounds);
 per-operator and per-fight teammate pace (the logs' R² 0.41 each) if a
 favourite's numbers lean on teammates' attacks; why an immune enemy holds
 the freezer's own debuffs (test 37).
+
+**Stagger windows (2026-11-17, accuracy plan B1 follow-up):** the replay
+follows the log's Stagger listing (the damage confirms it). The game's
+windows run longer than the engine's own (median 3.5 s past its end);
+the cause is open (open-problems.md "The replay's Stagger windows";
+in-game test 110). Once timed, add it to the engine (`staggerFrames` or
+an enemy-clock hold); the teams moved −1.2 / +0.7 / −0.2% under a flat
++3.5 s, so it's low priority for them.
 
 **Engine accuracy first** (the owner, 2026-10-26: above the search's
 scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
@@ -166,7 +176,8 @@ and stays one battle), then `--percentile` from the distribution.
 
 **Log check leads** (design/data.md "The log check's rule"; the report names
 them, largest first): Stagger the log has that no logged hit explains
-(4e5e: 24 at 53.2 s), Rossi's Wolven Blood layers, Typhoeus's hover through
+(4e5e: 68 over 53.2–55.4 s in three steps, two not whole numbers:
+Solidification or Shatter?), Rossi's Wolven Blood layers, Typhoeus's hover through
 her combo, Arcane's Solemn Phalanx WILL buffs, Camille's weapon ATK the
 log stops listing, the replay's inflictions against the log's reactions
 (one enemy replay instead of reactioncheck.ts's own; reaction levels

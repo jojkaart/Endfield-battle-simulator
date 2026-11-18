@@ -54,7 +54,8 @@ what you saw, in a line; the formats below are only suggestions.
 | 8 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
 | 9 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
 | 10 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
-| 11 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
+| 11 | [110](#110-how-long-a-stagger-lasts-ready-any-operator-a-stopwatch-or-a-phone-video) how long a Stagger lasts | anyone, any staggerable enemy | `110: Rhodagn, attacking 13 s, idle 10 s` |
+| 12 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -2311,6 +2312,29 @@ the reply, `efsim rules`, `diagnose`, `gear --rules` and `rules --guided`
 can run that reading with `--assume si-haste-every-end=every-end` and say
 whether a conclusion flips under it with `--assumptions`.)
 **Reply, e.g.:** `109: A no icon, B icon` or `109: icon in both`.
+
+### 110. How long a Stagger lasts (ready, any operator; a stopwatch or a phone video)
+
+**Why:** the game data gives each enemy's Stagger length (Rhodagn 10 s, most
+elites 9–11 s), and the simulator holds it longer
+only for ultimates' and combos' time stops and freezes. In the logs the
+enemy stays Staggered longer than that: from the moment the engine's own
+Stagger would have ended to the last hit the log lists as Staggered is
+0.4–12 s, median 3.5 s (34 Stagger windows in 24 development logs,
+2026-11-17), and the damage confirms the log (hits there take the ×1.3).
+No logged quantity explains the extra time (not the Stagger dealt while
+Staggered, hit-stop, Finishers, Lift or Knock Down), so a clean timing
+decides whether it's the Stagger itself or something the fights do.
+**How:** fight any enemy that can be Staggered (a Stagger bar under its
+HP bar) with one operator, no ultimates or combos during the Stagger.
+Break the bar, then keep basic-attacking (or stop attacking: try both if
+you can). Time from the bar emptying to it refilling (the "Staggered"
+state ending). Note the enemy.
+**Predictions:** the data: the enemy's own length (9–11 s for most
+elites; 10 s Rhodagn). About 1–4 s more means a Stagger lasts longer
+than its data, and the simulator adds it; the data's length with no
+attacking but more while attacking means hits extend it.
+**Reply, e.g.:** `110: Rhodagn, attacking 13 s, idle 10 s`.
 
 ## Results
 

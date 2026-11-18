@@ -38,7 +38,8 @@ below ([review-2026-10.md](review-2026-10.md)).
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
   test 71; tests 18, 19, 101, 104 done from the logs (2026-11-16: bosses
   freeze, Haste isn't attack speed, teammates' pause 6.5 s; Twilight's
-  length left); then the screened logs' leads
+  length left); the replay follows the log's Stagger windows (2026-11-17;
+  why the game's run longer: test 110); then the screened logs' leads
   ([open-problems.md](open-problems.md)), diagnosed in parallel; then B8,
   B6, B9, B10.
 - **The tool's purpose:** rotations for the owner's favourites (Typhoeus,

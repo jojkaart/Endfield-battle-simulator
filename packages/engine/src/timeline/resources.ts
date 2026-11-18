@@ -219,6 +219,18 @@ export function setPoise(ctx: TimelineContext, st: TimelineState, poise: number,
   return { ...st, stagger: { poise: Math.max(0, Math.min(maxPoise(ctx), poise)), until: null, finisherUsed: endStagger ? false : st.stagger.finisherUsed } };
 }
 
+/**
+ * The enemy Staggered through `through` (a frame): a running Stagger lasts at least that long, else one begins now
+ * (bar empty, its finisher unused), with no `staggered` event (nothing the timeline did broke the bar). The state a
+ * log shows, which a replay follows (logs buffreplay.ts loggedStaggerSteps): the damage of the hits a log lists as
+ * Staggered confirms the listing where the engine's own Stagger has ended (accuracy plan B1, 2026-11-17).
+ */
+export function holdStagger(st: TimelineState, frame: number, through: number): TimelineState {
+  const running = isStaggered(st, frame);
+  if (running && (st.stagger.until as number) >= through) return st;
+  return { ...st, stagger: { poise: 0, until: through, finisherUsed: running ? st.stagger.finisherUsed : false } };
+}
+
 /** How long a Stagger lasts (frames): the enemy's attribute 21 × 31 seconds. */
 export function staggerFrames(ctx: TimelineContext): number {
   return Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);

@@ -263,9 +263,14 @@ as replayed, so a teammate's replay error stays in that teammate's row
 the replay's burst, and the report lists each move. The replay's Stagger bar
 follows the log: set to the log's bar before each hit with Stagger, and a
 Stagger of its own ended where the log shows none (buffreplay.ts
-`loggedPoiseBars`), so its Stagger windows are the log's; the totals'
-"hits under Stagger" row measures that following, not the engine's
-Stagger sums. Landings a log can't
+`loggedPoiseBars`), and its Stagger state follows the log's listing:
+Staggered through each moment whose hits list it to the next listed one,
+not Staggered at a moment that lists none (`loggedStaggerSteps`, engine
+`holdStagger`; the damage confirms the listing, 2026-11-17). So its
+Stagger windows are the log's; the totals' "hits under Stagger" row
+measures that following (and landings the replay lacks), not the
+engine's Stagger. Where the engine's own Stagger ran short of the log's
+is in `BuffReplay.staggerHolds`. Landings a log can't
 have (a hit that didn't reach the logged enemy) are named by hand in the
 fixture's `absent`, each with why, and left out of the replay's side.
 

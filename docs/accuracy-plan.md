@@ -191,6 +191,19 @@ Left: 4e5e's bar 24 lower than the engine's from 53.2 s (unattributed
 Stagger at Estella's projectile and a Cryo-on-Heat reaction), which
 costs Rossi's killing blow its Stagger.
 
+B1 follow-up, the Stagger windows (2026-11-17). The replay's Stagger
+ended 0.4–12 s (median 3.5 s) before the log's in 34 windows and broke
+the bar again at the next logged Stagger hit; the damage sides with the
+log (597 hits it lists as Staggered and the replay didn't: ×1.30, 214
+the other way: ×0.77). The replay now follows the log's listing
+(`loggedStaggerSteps`, engine `holdStagger`) as it follows the bar.
+Development plain 47.3 → 48.5%, mean |damage error| 15.8 → 14.9%;
+hold-out plain 62.1 → 63.6%, 13.5 → 13.1%; earlier pending plain
+45.1 → 45.9%; 16 development logs better, 1 worse (f978 −3.5 → −3.7%).
+Why the game's windows are longer isn't known (open-problems, "The
+replay's Stagger windows"; in-game test 110); the engine's own Stagger
+is unchanged, so the simulated teams don't move.
+
 B0 done (2026-10-28). Measured in 28 logs (the replay's teammate casts,
 from the controlled operator the log's Stagger names): a teammate runs
 its chain at the chain's windows (step intervals 0.82× the steps'

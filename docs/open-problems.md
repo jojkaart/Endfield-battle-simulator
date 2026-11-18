@@ -1362,10 +1362,17 @@ From the kit check before simulating the team
   matching (Perlica 130 of 130, Liino 171 of 172). Hits under Stagger
   145 replayed against 208 logged: Perlica's talent 1 (DMG vs Staggered)
   and her finisher only exist while Staggered. Liino's battle-skill kind
-  −15% (her volleys). Still possible: the replay's Stagger (accuracy
-  plan B1), volleys the replay doesn't fire (each needs a reaction while
-  the window is open), a beat's timing. Next check: count Liino's logged
-  and replayed volleys in 9090.
+  −15% (her volleys). **Narrowed (2026-11-17):** the Stagger windows were
+  half of it: the replay now follows the log's Stagger (see "The replay's
+  Stagger windows" below): hits under Stagger 197 of 208, Liino −15.0 →
+  −10.4%, Perlica −13.0 → −10.7%, the fight −5.4 → −2.1%. The volleys
+  are the rest: 10 logged (6 hits each, 2.1–153.0 s, 33,159 damage)
+  against 1 replayed (53.5 s, 4,424); battle kind −15.1% unchanged. No
+  reaction hit is logged in the 2 s before the one at 15.2 s, so the kit's
+  reading B of test 26 (a reaction while the listener is up) doesn't make
+  them; they come 10–16 s apart (her listener's cooldown is 10 s).
+  Next: Liino's volley trigger against the logs (her kit, test 26's
+  reading A, or the press in Vocalist Stance: test 103).
 - **Perlica in fc63: every hit ×0.934** from the first (4.8 s), before
   any reaction or buff. Ruled out: her weapon at level 80 (its skills
   allow 80–90), 2 or 3 attribute nodes, talents at 1 (each tried: worse).
@@ -1374,9 +1381,67 @@ From the kit check before simulating the team
   another build input the export omits. Not a kit lead (her other logs
   fit).
 - **Perlica's misfits elsewhere** (4360, 9847, 4bfc, 3aa6, d774) come in
-  runs of ×1.3–1.5 (or their inverse) on basic attacks and ultimates: the
-  replay's Stagger windows against the log's (her talent 1 and the
-  Stagger multiplier both follow them), not her kit.
+  runs of ×1.3–1.5 (or their inverse) on basic attacks and ultimates.
+  **Ruled out (2026-11-17): the Stagger windows.** With the replay
+  following the log's Stagger, every one of her mismatches in 4360 and
+  9847 has the log and the replay agreeing on Stagger, and they stay
+  (4360 16, 9847 26; 4bfc 13 → 9, 3aa6 6, d774 3): runs of ×0.97,
+  ×1.29–1.31 and ×1.50 (9847 80.9–81.6 s, 137.9–141.9 s), ×0.62–0.68
+  (4360 62.8–64.5 s, 69.9 s) and ×1.58–1.72 (4360 74.6–75.3 s, not
+  Staggered). Still possible: her talent 1's condition (another state
+  than Stagger), a buff window of hers or a teammate's. Next: her kit's
+  talent 1 and buffs against these runs.
+
+## The replay's Stagger windows: the game's last longer than the engine's (2026-11-17)
+
+**Shows:** over the development logs the replay's Stagger ended 0.4–12 s
+before the log's (median 3.5 s, 34 windows that ended before the fight
+did; the engine's own end, from the replay's holds: BuffReplay
+`staggerHolds`), then broke the bar again at the next logged Stagger hit
+(the log lists them at bar 0 with Stagger dealt) and ran a full new
+window past the log's end. Starts mostly agree (a frame or so); a few
+come seconds early or late where the replay's own hits break a bar the
+log's don't, or miss the breaking hit (d4fb 92.4 against 97.0 s, c6d8,
+a9d7 197 s). Bigents (tower019) windows run 18–20 s of world time
+against its 8 s (489c, 9847, 9c0b).
+**Settled: the log's listing is right.** Where the two disagreed, the
+597 hits the log lists as Staggered and the replay didn't were ×1.30
+(median) the replay's reading, the 214 the other way ×0.77. And no
+logged hit falls between a hit that breaks the bar and the first that
+lists Stagger (77–2676 ms later, median ~0.65 s). So the replay now
+follows the listing (buffreplay.ts `loggedStaggerSteps`, engine
+`holdStagger`), as it follows the bar: Staggered through each listed
+moment to the next listed one, not Staggered at a moment that lists none
+(unless a hit there breaks the bar).
+**Ruled out as what lengthens the game's:** a ZMDLogs listing lag (the
+damage, above); Stagger dealt while Staggered (no relation to the
+excess); target hit-stop (HitStopAction affectType 1/2: per-window sums
+3–14 s, no relation); Finishers, Lifts and Knock Downs in the window
+(none); the modelled stops (no relation, if anything windows with more
+of them run short less); the Slow status (SlowAction: Gilberta's
+`move_speed_scalar` 0.8, Typhoeus's combo `persistent_slow` 0.6, movement).
+**Still possible:** the Stagger lasting longer than PoiseRecTime (a
+recovery animation, an AI state; bigents' far longer); enemy-side slows
+the engine doesn't model holding its clock (Arcane's combo SealAction, a
+0.2–1.0 time-scale curve over 5 s; Rossi's `ult_stopenemy_elite`,
+Tangtang's and Aurora's enemy TimeDilationActions); time stops the data
+gives no curve for. Windows with Typhoeus (2.5–5.5 s) and Liino run
+long, but so do some with neither. The cost of not knowing is small for
+the teams: the engine's Stagger 3.5 s longer moves the three simulated
+teams' sustained DPS −1.2% (the owner's), +0.7% (Ink Melt), −0.2%
+(Typhoeus's), 32 fresh seeds, within the noise.
+**Also left:** hits at the breaking hit's own ms the log lists without
+Stagger while the engine counts them (~20 over all logs; their damage is
+mixed: ×0.77 and ×1.0), so whether a Stagger starts the frame after
+the break is open. And 4e5e's unattributed Stagger (accuracy plan B1's
+lead): from 53.2 to 55.4 s the bar falls 68 more than the logged hits
+deal, in three steps: 24 at 53.177 s (with Estella's battle skill and
+its Cryo-on-Heat reaction, 12 listed), 29.92 at 54.882 s (her combo and
+Shatter, 12 listed), 14.04 at 55.403 s (Gilberta's combo, 5 listed);
+after that every step matches. The non-whole steps suggest a scaled or
+time-based amount (Solidification or Shatter?), not a hit. The replay
+takes the bar from the log, so only the engine's own sums miss it.
+**Next check:** in-game test 110 (a Stagger timed by hand).
 
 ## Smaller, not yet diagnosed
 

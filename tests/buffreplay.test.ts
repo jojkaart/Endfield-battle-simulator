@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type ActiveBuff, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { type LogEffect, type LogFixture, type LogHit } from "@efsim/logs";
-import { castsFromBuffLanes, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, readLogFixture, replayedCasts, withLoggedCasts, type HitVerdict } from "@efsim/cli";
+import { castsFromBuffLanes, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, loggedStaggerSteps, readLogFixture, replayedCasts, withLoggedCasts, type HitVerdict } from "@efsim/cli";
 import { placeHits } from "../packages/logs/src/logcasts.ts";
 
 const data = loadGameData();
@@ -282,6 +282,44 @@ describe("4e5e1390085e: who the log shows controlled, and the enemy's own Stagge
     const r = logBuffReplay(data, fx).replay;
     // The replay's only Stagger is the log's last one (66.6 s); before, it Staggered at 29.5 s, where the log's bar refilled.
     expect(r.staggers.every((f) => f * (1000 / FPS) > 60_000)).toBe(true);
+  });
+});
+
+describe("the log's Stagger state (loggedStaggerSteps): the replay follows its listing", () => {
+  const S: LogEffect = { buff: "buff_common_poise_break_damage_taken_scale", zone: "multiplicative", element: null, value: 0.3 };
+  const at = (t: number, staggered: boolean, poise?: LogHit["poise"]): LogHit => ({ t, operator: op, event: BASIC, value: 1, crit: false, element: "physical", unquantified: [], effects: staggered ? [S] : [], boundaryEffects: [], ...(poise ? { poise } : {}) });
+
+  it("holds through the next listed moment, ends where none lists it, and carries the last logged bar", () => {
+    const steps = loggedStaggerSteps({ hits: [at(1000, false, { dealt: 10, bar: 30 }), at(2000, false, { dealt: 30, bar: 0 }), at(2600, true), at(4000, true), at(4000, true), at(9000, true), at(9500, false)] });
+    expect(steps).toEqual([
+      { t: 1000, calm: { bar: null } },
+      { t: 2000, calm: { bar: 30 } },
+      { t: 2600, through: 4000 },
+      { t: 4000, through: 9000 },
+      { t: 9000, through: 9000 },
+      { t: 9500, calm: { bar: 0 } },
+    ]);
+  });
+
+  it("says nothing for a log without buff listings or Stagger bars", () => {
+    expect(loggedStaggerSteps({ hits: [at(1000, false), at(2000, false)] })).toEqual([]);
+  });
+
+  it("9090afbacec9: the log's two Stagger windows (53.0–69.2 s, 129.0–142.5 s), past the engine's own end", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9090afbacec9.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    // The damage confirms the listing: the replay used to end the first at 64.3 s and break the bar again at 67.7 s.
+    expect(r.staggerSpans.length).toBe(2);
+    const own = r.staggerHolds.filter((h) => h.engineUntil !== null).map((h) => Math.round(((h.engineUntil as number) * 1000) / FPS / 100) / 10);
+    expect(own[0]).toBeLessThan(65);
+    expect(own[1]).toBeLessThan(141);
+    let differ = 0;
+    for (const h of fx.hits) {
+      const l = r.landing(h);
+      if ("unknown" in l || !l.inputs) continue;
+      if ((l.inputs.options.staggered === true) !== h.effects.some((e) => /poise_break/.test(e.buff))) differ++;
+    }
+    expect(differ).toBeLessThanOrEqual(1);
   });
 });
 
