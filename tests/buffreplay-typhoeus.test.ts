@@ -51,6 +51,26 @@ describe("Typhoeus's shots that hit nothing (2026-11-15)", () => {
     expect(formatBuffReplay(data, logBuffReplay(data, fx)).join("\n")).toContain(`assumed: 1 cast(s) that hit nothing (no log shows one), added where a logged cast needs them:\n    Typhoeus ${T}_floating_attack2 at 58733 ms`);
   });
 
+  it("dbaee23b801d: her battle skill from its event (0.85 s, before Li Zhiyan's ultimate stop); the first shot that hit nothing is looked for past the stop", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    // The state at the battle skill's action's end (1.7 s) gave a first shot inside the stop, which no shot can be.
+    expect(r.missed.map((m) => [m.skillId, Math.round(m.start / 100) / 10])).toEqual([
+      [`${T}_floating_attack1`, 3.8],
+      [`${T}_floating_attack3`, 6.6],
+    ]);
+  });
+
+  it("1cd1657bc305: her combo pressed at 34.70 s inside her hover, its arrows after Liino's ultimate stop, is the hovering one", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-1cd1657bc305.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const combo = fx.hits.find((h) => h.operator === T && h.event === `${T}_combo_01_projhit` && h.t > 39000) as LogHit;
+    const l = r.landing(combo);
+    expect("unknown" in l ? l.unknown : l.skillId).toBe(`${T}_combo_skillfloating`);
+    const later = fx.hits.find((h) => h.operator === T && h.event === `${T}_floating_attack1_01_projhit` && h.t > 40000) as LogHit;
+    expect(r.instances(later, "buff_chr_0034_typhoea_potential_atkup")).toBe(1);
+  });
+
   it("fc63a2001251: none where the log shows a shot in the gap (a cast the placement started elsewhere)", () => {
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-fc63a2001251.json", import.meta.url).pathname);
     expect(logBuffReplay(data, fx).replay.missed).toEqual([]);

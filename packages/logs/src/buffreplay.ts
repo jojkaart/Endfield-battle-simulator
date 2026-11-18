@@ -834,6 +834,9 @@ function unmet(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: numb
 /** The most casts that hit nothing added before one logged cast (Typhoeus's hover takes at most 4 shots before the 5th, which ends it). */
 const MISSED_MAX = 4;
 
+/** How many times missedCasts looks again for a shot's first frame from a later state (a stop held the earlier one). */
+const FIRST_TRIES = 3;
+
 /** The most logged casts the replay adds casts that hit nothing before (missedCasts), per fight. */
 const MISSED_ROUNDS = 12;
 
@@ -900,19 +903,29 @@ function missedCasts(r: MissedSearch, need: { c: ReplayedCast; f: number }, make
   };
   /** The skill a shot at `t` after `times` is made as, or null. */
   const madeAs = (times: readonly number[], t: number) => trial([...times, t], t).skills?.at(-1) ?? null;
-  /** The first frame after `times` a shot can start (the earliest start from the state after them, of a step the kit allows), and its step. */
+  /**
+   * The first frame after `times` a shot can start (the earliest start from the state after them, of a step the kit
+   * allows), and its step. Where none can start there, again from the state there: a time stop cast in between holds
+   * the earliest start the state before it gave (dbaee23b801d: Typhoeus's battle skill at 0.85 s, then Li Zhiyan's
+   * ultimate stop from 0.93 to 2.50 s; her first shot can't start at 1.7 s, the end of her battle skill's action).
+   */
   const first = (times: readonly number[]): { t: number; skill: string } | null => {
-    const from = (times.at(-1) ?? prev.f) + 1;
-    if (from >= need.f) return null;
-    const st = trial(times, from).st;
-    const starts = attackSteps(ctx, op).flatMap((skill) => {
-      if (!skillAvailable(ctx, st, op, skill, from)) return [];
-      const e = earliestStart(ctx, st, { operator: op, skill });
-      return "error" in e || e.frame >= need.f ? [] : [e.frame];
-    });
-    for (const t of [...new Set(starts)].sort((a, b) => a - b)) {
-      const skill = madeAs(times, t);
-      if (skill !== null) return { t, skill };
+    let from = (times.at(-1) ?? prev.f) + 1;
+    for (let tries = 0; tries < FIRST_TRIES && from < need.f; tries++) {
+      const st = trial(times, from).st;
+      const at = from;
+      const starts = attackSteps(ctx, op).flatMap((skill) => {
+        if (!skillAvailable(ctx, st, op, skill, at)) return [];
+        const e = earliestStart(ctx, st, { operator: op, skill });
+        return "error" in e || e.frame >= need.f ? [] : [e.frame];
+      });
+      const sorted = [...new Set(starts)].sort((a, b) => a - b);
+      for (const t of sorted) {
+        const skill = madeAs(times, t);
+        if (skill !== null) return { t, skill };
+      }
+      if (sorted.length === 0) return null;
+      from = Math.max(from, (sorted[0] as number) + 1);
     }
     return null;
   };
@@ -1367,6 +1380,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       if (broken(hit.t)) return { unknown: "after the replay stopped" };
       const p = placement.hits.get(hit);
       if (!p) return { unknown: "a hit the placement doesn't place" };
+      const shared = p.sameAs ? landed.get(String(hitIndex.get(p.sameAs))) : undefined;
+      if (shared) return shared;
       const c = castFacts(p.cast);
       if ("unknown" in c) return c;
       if (p.frame === undefined) return { unknown: "a landing whose order the kit doesn't give" };
