@@ -103,12 +103,21 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   [--steps typecheck,lint,test]` runs premerge's steps in the commit's
   worktree.
 - **The shared lock** (scripts/testlock.ts) is a queue in arrival order;
-  premerge and test suites go ahead of jobs (with-lock, measure) that
-  arrived up to 20 min before them. A waiter prints a heartbeat a minute;
+  premerge, test suites and short jobs go ahead of long jobs (with-lock)
+  that arrived up to 20 min before them. Short jobs (measure, `with-lock
+  --kind short`: minutes) have a side lane: they run beside a long job,
+  never beside a premerge, a test suite, another short job or a
+  `--exclusive` job (timing runs: `with-lock --exclusive npm run bench`).
+  Waiting lines go to stderr: at the start and once a minute, who holds
+  it, what is ahead and the estimated wait (from earlier runs' durations);
   `node scripts/with-lock.ts --status` shows the queue. Wrap each job on
-  its own, never a batch script.
+  its own, never a batch script, and never in `timeout` (the wait counts
+  against it): background mode with the Bash tool's own limit.
 - **Long runs end with one line** `EFSIM-DONE <job> pass|fail`
-  (snapshots, premerge, measure, verify-at, with-lock) and keep a state
-  file (`node scripts/runstate.ts` lists them: started, at which code,
-  finished or interrupted by a restart). Wait with a Monitor on
-  `until grep -q '^EFSIM-DONE' <log>; do sleep 15; done`.
+  (snapshots, premerge, measure, verify-at; with-lock `EFSIM-DONE <name>
+  exit <n>`, name from `--name`) and `EFSIM-DONE <job> killed` when a
+  signal stops measure, snapshots or with-lock (waiting included). They
+  keep a state file (`node scripts/runstate.ts` lists them: started, at
+  which code, finished or interrupted by a restart). Wait for your job's
+  own name, since a script around several jobs prints several lines:
+  `until grep -qE '^EFSIM-DONE measure ' <log>; do sleep 15; done`.

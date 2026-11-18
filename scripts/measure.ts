@@ -25,8 +25,9 @@
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, accuracy.md, summary.txt
 //
-// It takes the test lock as a job (scripts/testlock.ts), writes its run state to scratch/runs/measure.json and ends
-// with `EFSIM-DONE measure pass` (or `fail`). A full run takes the pending suite's check time over the workers
+// It takes the test lock as a short job (scripts/testlock.ts: the side lane, beside a long rule search but not beside a
+// premerge or test suite), writes its run state to scratch/runs/measure.json and ends with `EFSIM-DONE measure pass`
+// (or `fail`; `killed` when a signal stopped it, waiting included). A full run takes the pending suite's check time over the workers
 // (about 1.5–2 min on 3 workers when the machine is quiet); `--with` or `--changed` a fraction of it.
 
 import { execFileSync } from "node:child_process";
@@ -40,7 +41,7 @@ import { compare, readSplit, render, snapshotsAt, type Entries, type Entry, type
 import { atCommit } from "./at-commit.ts";
 import type { MeasureAnswer, MeasureJob } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
-import { runLocked, testLockFile } from "./testlock.ts";
+import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -238,7 +239,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const argv = process.argv.slice(2);
   if (testLockFile()) {
     // Under the test lock as a job (a queue: premerges and test suites go first), then this script again inside it.
-    process.exitCode = runLocked([process.execPath, fileURLToPath(import.meta.url), ...argv], { kind: "job", who: "measure" });
+    // A short job: the side lane, beside a long rule search, never beside a premerge or test suite (testlock.ts).
+    void runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...argv], { kind: "short", who: "measure", done: "measure" }).then((c) => (process.exitCode = c));
   } else {
     startRun("measure", argv.join(" "));
     main(argv).then(

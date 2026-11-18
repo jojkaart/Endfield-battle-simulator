@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PRIORITY_MS, queueOrder, type LockKind, type Ticket } from "../scripts/testlock.ts";
+import { estimateWait, expectedMs, jobLabel, mayGo, PRIORITY_MS, queueOrder, waitingFor, type LockKind, type Ticket } from "../scripts/testlock.ts";
 import { batchWarning } from "../scripts/with-lock.ts";
 
 const MIN = 60_000;
-const ticket = (pid: number, kind: LockKind, arrival: number, claimed?: number): Ticket => ({ pid, boot: "b", kind, worktree: `w${pid}`, command: "x", arrival, ...(claimed !== undefined ? { claimed } : {}) });
+const ticket = (pid: number, kind: LockKind, arrival: number, claimed?: number, more: Partial<Ticket> = {}): Ticket => ({ pid, boot: "b", kind, worktree: `w${pid}`, command: "x", arrival, ...(claimed !== undefined ? { claimed } : {}), ...more });
 const order = (ts: Ticket[]) => queueOrder(ts).map((t) => t.pid);
 
 describe("the test lock's queue", () => {
@@ -21,6 +21,40 @@ describe("the test lock's queue", () => {
     expect(order([ticket(1, "job", 0), ticket(2, "premerge", PRIORITY_MS + MIN)])).toEqual([1, 2]);
     // A stream of premerges: the job is passed by those arriving within the head start only.
     expect(order([ticket(1, "job", 0), ticket(2, "premerge", 5 * MIN), ticket(3, "premerge", PRIORITY_MS + 5 * MIN)])).toEqual([2, 1, 3]);
+  });
+});
+
+describe("the short lane", () => {
+  const goes = (ts: Ticket[], pid: number) => mayGo(queueOrder(ts), ts.find((t) => t.pid === pid) as Ticket);
+
+  it("runs a short job beside a long job, but not beside a premerge, a test suite, an exclusive job or another short job", () => {
+    expect(goes([ticket(1, "job", 0, 1), ticket(2, "short", 5 * MIN)], 2)).toBe(true);
+    expect(goes([ticket(1, "premerge", 0, 1), ticket(2, "short", 5 * MIN)], 2)).toBe(false);
+    expect(goes([ticket(1, "tests", 0, 1), ticket(2, "short", 5 * MIN)], 2)).toBe(false);
+    expect(goes([ticket(1, "job", 0, 1, { exclusive: true }), ticket(2, "short", 5 * MIN)], 2)).toBe(false);
+    expect(goes([ticket(1, "job", 0, 1), ticket(3, "short", 1 * MIN, 2 * MIN), ticket(2, "short", 5 * MIN)], 2)).toBe(false);
+    expect(goes([ticket(2, "short", 5 * MIN)], 2)).toBe(true);
+  });
+
+  it("keeps short jobs in their order, and the main lane ignores a running short job", () => {
+    expect(goes([ticket(1, "job", 0, 1), ticket(2, "short", 5 * MIN), ticket(3, "short", 6 * MIN)], 3)).toBe(false);
+    // A premerge heads the main lane while a short job runs: it goes on (and its flock chain waits for the short lane).
+    expect(goes([ticket(3, "short", 1 * MIN, 2 * MIN), ticket(4, "premerge", 5 * MIN)], 4)).toBe(true);
+    // A waiting premerge that heads the main lane (nothing holds it) keeps a short job out.
+    expect(goes([ticket(4, "premerge", 5 * MIN), ticket(2, "short", 6 * MIN)], 2)).toBe(false);
+  });
+
+  it("estimates the wait from the job's earlier runs, else its kind's default", () => {
+    const history = [1, 2, 3].map((m) => ({ key: "job:efsim rules", ms: m * 10 * MIN }));
+    const long = ticket(1, "job", 0, 0, { label: "efsim rules" });
+    expect(expectedMs(history, long)).toBe(20 * MIN);
+    const order = queueOrder([long, ticket(2, "job", 1 * MIN, undefined, { label: "efsim gear" }), ticket(3, "job", 2 * MIN)]);
+    const mine = order[2] as Ticket;
+    expect(waitingFor(order, mine).map((t) => t.pid)).toEqual([1, 2]);
+    expect(estimateWait(order, mine, history, 5 * MIN)).toBe(15 * MIN + 15 * MIN);
+    expect(jobLabel(["node", "packages/cli/src/main.ts", "rules", "x.json"])).toBe("efsim rules");
+    expect(jobLabel(["npx", "vitest", "run", "--config", "vitest.logs.config.ts"])).toBe("vitest");
+    expect(jobLabel(["/usr/bin/node", "/x/scripts/measure.ts", "--with", "a"])).toBe("measure.ts");
   });
 });
 

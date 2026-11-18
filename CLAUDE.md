@@ -146,12 +146,15 @@ complex to verify"):
 - Long runs: start them with the Bash tool's background mode (never `&` or
   `nohup`: such a job can't be stopped, and `pkill` is off limits), with
   progress to a new file per run, then wait with Monitor on
-  `until grep -q '^EFSIM-DONE' scratch/x.log; do sleep 15; done` (snapshots,
-  premerge, measure, verify-at and with-lock end with `EFSIM-DONE <job>
-  pass|fail`; a foreground `sleep` is refused). Minutes of CPU (seed
-  tables, `gear --rules`): `node scripts/with-lock.ts <command>`, one job
-  per wrap, never a batch script: a queue behind premerges and test suites,
-  a heartbeat while waiting, `--status` shows it.
+  `until grep -q '^EFSIM-DONE <job> ' scratch/x.log; do sleep 15; done`
+  with the job's own name (snapshots, premerge, measure, verify-at end with
+  `EFSIM-DONE <job> pass|fail|killed`, with-lock `EFSIM-DONE <--name>
+  exit <n>`; a foreground `sleep` is refused). Minutes of CPU (seed
+  tables, `gear --rules`): `node scripts/with-lock.ts --name <job>
+  <command>`, one job per wrap, never a batch script, never inside
+  `timeout`: a queue behind premerges and test suites (measure and
+  `--kind short` jobs run beside long ones), an estimated wait and a
+  heartbeat on stderr, `--status` shows it.
 - The container can restart and kill background jobs silently: commit work
   in progress before a long run, and after a restart `node
   scripts/runstate.ts` says which run was in flight, at which code, and

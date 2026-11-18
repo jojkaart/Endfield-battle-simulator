@@ -22,7 +22,7 @@ cd "$root"
 # The test lock premerge takes (scripts/testlock.ts: a queue, with a heartbeat line while waiting): the whole run
 # holds it once, so parallel worktrees' suites queue instead of timing out.
 if [ "${EFSIM_NO_TEST_LOCK:-}" != "1" ] && [ "${EFSIM_TEST_LOCK_HELD:-}" != "1" ]; then
-  exec node scripts/testlock.ts --kind tests --who snapshots -- "$0" "$@"
+  exec node scripts/testlock.ts --kind tests --who snapshots --done snapshots -- "$0" "$@"
 fi
 export EFSIM_TEST_LOCK_HELD=1
 
