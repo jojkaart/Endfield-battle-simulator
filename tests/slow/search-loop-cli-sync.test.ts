@@ -8,7 +8,11 @@ import { loadGameData } from "@efsim/data";
 import { loopCommand, readScenario } from "../../packages/cli/src/simulate.ts";
 
 const data = loadGameData();
-const example = readScenario(new URL("../../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
+// Under the data's Stagger length (engine assumption stagger-recovery=none): with the 2 s recovery (test 110,
+// 2026-11-18) Laevatain alone settles into no exact loop within 12 rounds at beam 6 (her Stagger cycle no longer lines
+// up with her ultimate's), and these tests are about the loop machinery, not the Stagger.
+const read = readScenario(new URL("../../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
+const example = { ...read, options: { ...read.options, assume: { "stagger-recovery": "none" } } };
 const { rotation: _r, ...open } = example;
 const options = { beamWidth: 6, plays: 5 };
 

@@ -313,7 +313,7 @@ describe("the log's Stagger state (loggedStaggerSteps): the replay follows its l
     expect(r.staggerSpans.length).toBe(2);
     const own = r.staggerHolds.filter((h) => h.engineUntil !== null).map((h) => Math.round(((h.engineUntil as number) * 1000) / FPS / 100) / 10);
     expect(own[0]).toBeLessThan(67);
-    expect(own[1]).toBeLessThan(141);
+    expect(own[1]).toBeLessThan(143);
     let differ = 0;
     for (const h of fx.hits) {
       const l = r.landing(h);

@@ -12,6 +12,6 @@
     { "when": { "combo": "Arcane" }, "do": [{ "operator": "Arcane", "cast": "combo" }, { "operator": "Estella", "cast": "battle" }] },
     { "when": { "combo": "Akekuri" }, "do": { "operator": "Akekuri", "cast": "combo" } },
     { "when": { "all": [{ "sp": { "atLeast": 115 } }, { "not": { "buff": { "operator": "Si", "buff": "artful_intent" } } }] }, "do": { "operator": "Si", "cast": "battle" } },
-    { "when": { "sp": { "atLeast": 200 } }, "do": { "operator": "Akekuri", "cast": "battle" } }
+    { "when": { "all": [{ "sp": { "atLeast": 200 } }, { "not": { "buff": { "operator": "Akekuri", "buff": "zone_hold" } } }] }, "do": { "operator": "Akekuri", "cast": "battle" } }
   ]
 }
