@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 107 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 108 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-18: The Finisher gated on every enhanced basic attack (test 108, the Talos Wiki)
+
+**Goal:** the owner pointed to the Talos Wiki's "Stagger" article: the Finisher is the first basic attack on a
+Staggered enemy "that aren't under any active enhancement effects (such as Laevatain's Twilight)", and a Staggered
+enemy takes no more Stagger. The engine blocked the Finisher only in Laevatain's Twilight (her kit's `available`).
+Generalise it with the game's own rule, check it against the logs.
+
+**The game's mechanism (data):** nothing in SkillData or BuffData checks the Finisher. It sits in each operator's
+NormalAttack skill group (CharGrowthTable type 0); the enhanced chains are basic attacks (skillSpecification 1) in
+the battle skill's or ultimate's group, switched in by a buff's SwitchModeAction (`efsim gamedata find
+SwitchModeAction`: modeId `ult` Laevatain, Yvonne; `UltMode` Zhuang Fangyi; `floating` Typhoeus) or ComboCacheAction
+(Yvonne's ultimate end). Four kits have such attacks: Laevatain (Twilight), Yvonne (her ultimate), Zhuang Fangyi
+(Empyrean), Typhoeus (hovering). None for Chen, Liino or Arcane (the brief's guesses); Wulfgard's, Gilberta's and the
+Endministrator's mode buffs are created by nothing; Yvonne's barrage maps to `attack5`, a NormalAttack skill.
+
+**The logs** (`efsim zmdlogs stagger`, which now prints each run's Finisher and enhanced basic hits; listing only):
+23 Staggers with enhanced hits, none with a Finisher while the enhanced chain runs (Laevatain 11, 7 without a
+Finisher; Typhoeus 7; Zhuang Fangyi 3; Yvonne 2); a Finisher and an enhanced hit of the same operator are never within
+0.45 s (`zmdlogs census --select event:power_attack --near …`, test 108's section).
+
+**Done:** timing.ts `enhancedBasic` (the attack input is a basic attack of another skill group whose kit condition
+holds, or a buff maps the input to one) gates the Finisher in `gatesFrom`; Laevatain's kit gate removed; Zhuang
+Fangyi's interim U6 ("castable in the Empyrean") reversed. "No Stagger while Staggered" was already the engine's
+(resources.ts `dealPoise`, the 2 s recovery included). tests/finisher-gate.test.ts.
+
+**Numbers:** scoreboard unchanged (`npm run measure`: no log's verdicts moved; the replay places the logged casts and
+none of the 14 logged Finishers of these four falls in the replay's state). Teams (`node scripts/team-ab.ts --base 470dbf0`, 32 fresh seeds): the owner's and Ink Melt identical; Typhoeus's
+52,261 → 52,949 (+1.3%) full energy, 49,309 → 50,194 (+1.8%) from zero (no Finisher mid-hover; bot unchanged).
+
+**Decisions:** the rule reads CharGrowthTable's groups, not a list of buffs, so a new operator's state chain is gated
+when its kit models it; a group-foreign basic attack without a kit condition doesn't count (it would block every
+Finisher; tests check there is none). The gate refuses the Finisher rather than waiting for the state's end (as the
+Stagger check does).
+
+**Left:** Yvonne's barrage during a Stagger (no log), the dive part of test 108; Zhuang Fangyi's
+`attack1_ult_2_abilityrange` key, which no kit hit names (32 hit groups, open-problems.md "Smaller").
 
 ## 2026-11-18: Improvement round 4: a query layer over the logs
 
@@ -383,52 +420,3 @@ only the kits' alternatives (backlog point 14).
 
 **Left:** docs/friction/2026-11-18-backlog-after-round-3.md (17 points: the round-2 code-quality items, a CLI / A/B
 harness, citation checks, a status-key table in code, example repair, the teammate-pace measure, a cast table, …).
-
-## 2026-11-18: The replay follows the log's Stagger windows
-
-Goal: why the replay's Stagger windows don't line up with the logs'
-(Perlica's ×1.3–1.5 runs, 9090's 145 against 208 hits under Stagger,
-the snapshots' "staggered hits" errors), and a general fix.
-
-Found: the starts mostly agree; the replay's windows end early, 0.4–12 s
-before the log's last Staggered hit (median 3.5 s over 34 windows), and
-then the next logged Stagger hit (listed at bar 0 with Stagger dealt)
-broke the replay's bar again for a full new window past the log's end.
-The damage sides with the log: 597 hits it lists as Staggered and the
-replay didn't are ×1.30 (median) the replay's reading, 214 the other way
-×0.77. No logged hit falls between a breaking hit and the first one that
-lists Stagger.
-
-Done: the replay follows the listing as it follows the bar
-(buffreplay.ts `loggedStaggerSteps`; engine `holdStagger`): Staggered
-through each listed moment to the next listed one, not Staggered at a
-moment that lists none unless a hit there breaks the bar; a log with
-bars and buff lists but no Stagger anywhere never Staggers (7b54's slug).
-The replay's window tracking keeps one window through a stop that moves
-its end (it split them), and `BuffReplay.staggerSpans` / `staggerHolds`
-say where the windows were and where the engine's own Stagger would
-have ended. Scoreboard (`npm run snapshots:update`): development plain
-47.3 → 48.5%, mismatch 19.8 → 19.6%, mean |damage error| 15.8 → 14.9%
-(16 better, 1 worse: f978 −3.5 → −3.7%); hold-out plain 62.1 → 63.6%,
-mismatch 7.6 → 7.5%, 13.5 → 13.1% (6 better, 1 worse, 2 mixed); earlier
-pending plain 45.1 → 45.9%. 9090: Liino −15.0 → −10.4%, Perlica −13.0
-→ −10.7%, the fight −5.4 → −2.1%. Damage totals moved away from 0 in
-458b (2.2 → 3.2%), c6d8 (32.9 → 36%), 4360 (8.1 → 8.4%): their plain
-matches rose, so the added ×1.3 hits are right and the excess is
-elsewhere.
-
-Decisions: follow the log rather than lengthen the engine's Stagger, as
-nothing found explains the extra length (the engine stays on the data's
-PoiseRecTime plus stops and freezes); the teams don't move (52,369 /
-53,781 / 63,347 rerun, unchanged). A flat +3.5 s on the engine's Stagger,
-tried as a sensitivity: −1.2% (the owner's team), +0.7% (Ink Melt),
-−0.2% (Typhoeus's), within the noise. In-game test 110 times a Stagger.
-
-Dead ends (open-problems.md "The replay's Stagger windows"): a ZMDLogs
-listing lag, Stagger dealt while Staggered, target hit-stop sums,
-Finishers, Lifts, the modelled stops, the Slow status (movement). Left:
-Liino's volleys (10 logged, 1 replayed in 9090: her kit's trigger
-reading), Perlica's runs (her mismatches stay where log and replay agree
-on Stagger: her kit), 4e5e's unattributed Stagger (68 over 53.2–55.4 s,
-two steps not whole numbers), whether a Stagger starts the frame after
-the breaking hit (~20 hits, mixed damage).

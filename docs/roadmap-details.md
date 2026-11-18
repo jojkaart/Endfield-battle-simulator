@@ -29,7 +29,10 @@ list for the rules' gap to the timeline (which presses come late, which
 windows are missed); the rule search re-run on the new gear (a first
 60-list search: see the journal); Typhoeus's team is the furthest from
 its timeline (hover upkeep and SP sharing are hard to say as cues);
-in-game test 108 (the Finisher input) decides the filler's assumption.
+in-game test 108 (the Finisher input) decides the filler's assumption
+(the tap decided by the logs; 2026-11-18 also no Finisher under an
+enhanced attack, Typhoeus's hover included, from the Talos Wiki and the
+logs; the dive part still the game's).
 The guided rule search (`efsim rules --guided`, 2026-11-16: ideal
 combos per window, losses per missing multiplier, directed edits:
 `shows`, holds for a window's visible cue, chains) now makes the moves

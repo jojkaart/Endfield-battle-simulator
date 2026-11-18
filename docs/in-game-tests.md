@@ -64,7 +64,7 @@ suggestions.
 | 1 | [106](#106-type-50-yinglungs-edge-which-battle-skills-give-a-stack-and-how-long-it-lasts-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge stacks | Estella and Si with 3 pieces each | the buff's icon: the log doesn't list it | `106: anyone's battle skill +1 to every wearer; no expiry` |
 | 2 | [16](#16-does-a-skill-cancel-the-basic-attack-it-interrupts-ready-optional-variant-with-ardelia-the-logs-partly-2026-11-18) a skill pressed during attack 5 | Si (or anyone) | presses aren't logged, and a dropped hit leaves no trace | `16: the Final Strike's number still appears / is gone` |
 | 3 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | jumps and dashes aren't logged; players never dive | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
-| 4 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-decided-by-the-logs-2026-11-18-for-the-tap-yes-but-not-in-laevatains-twilight-the-dive-part-ready-any-operator-lower-priority) a dive on a Staggered enemy | anyone | no logged dive on a Staggered enemy | `108: a dive isn't the Finisher` |
+| 4 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-decided-by-the-logs-2026-11-18-for-the-tap-yes-but-not-under-an-enhanced-attack-eg-laevatains-twilight-generalised-2026-11-18-from-the-talos-wiki-the-dive-part-ready-any-operator-lower-priority) a dive on a Staggered enemy | anyone | no logged dive on a Staggered enemy | `108: a dive isn't the Finisher` |
 | 5 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | dashes aren't logged | `54: dashes at once, extra hit gone; combo hit gone` |
 | 6 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | the log records no Haste | `109: A no icon, B icon` |
 | 7 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-partly-decided-by-the-logs-2026-11-18-09-s-after-his-hp-falls-below-70-what-sets-it-off-ready-if-you-fight-rhodagn-lower-priority) what sets off Rhodagn's bar snapping back | anyone, vs Rhodagn | what he does isn't logged | `100: after 70%, when he jumps to the stacks` |
@@ -2842,7 +2842,7 @@ problems "Buffs through stops"). Stops hold buffs for exactly their length;
 the listing's extra 0.5–2.5 s doesn't act. Whether the icon outlasts the
 effect doesn't change any number, so the owner isn't asked.
 
-### 108. Is a Finisher what the basic-attack button does on a Staggered enemy? (decided by the logs, 2026-11-18, for the tap: yes, but not in Laevatain's Twilight; the dive part ready, any operator, lower priority)
+### 108. Is a Finisher what the basic-attack button does on a Staggered enemy? (decided by the logs, 2026-11-18, for the tap: yes, but not under an enhanced attack, e.g. Laevatain's Twilight; generalised 2026-11-18 from the Talos Wiki; the dive part ready, any operator, lower priority)
 
 **Why:** the rule-based rotations (design/rules.md "Rule-based rotations",
 2026-11-16) assume that while you keep pressing basic attack, the game
@@ -2902,13 +2902,13 @@ enhancement. Wulfgard's and Gilberta's `extra_attack` and the
 Endministrator's `windMove` modes are in buffs no skill or buff creates.
 *The logs* (`efsim zmdlogs stagger`, every development log, each run's
 Finisher and the enhanced basic hits in it; listing only: hit times and
-keys): in all 22 Staggers with enhanced hits no Finisher lands while the
+keys): in all 23 Staggers with enhanced hits no Finisher lands while the
 enhanced chain runs. Laevatain 11 (no Finisher in 7; in 458b ×2 and 9c0b
 it comes before her Twilight, in f879 0.46 s after its last hit);
 Typhoeus 7 (00ae, 1d91, 9090 before she hovers; af7b, fc63 ×2 2.2–3.4 s
 after the 5th aerial shot that ends the hover; 9090 at 133.22 s between
 two hovers); Zhuang Fangyi 3 (4bfc, c6d8 before the Empyrean; 4bfc at
-180.58 s 1.4 s after her last Empyrean hit); Yvonne 1 (5082: 0.95 s after
+180.58 s 1.4 s after her last Empyrean hit); Yvonne 2 (5082: 0.95 s after
 her enhanced Final Strike, the first hit not listing her P5 ultimate
 buff; in abfd Si's Finisher came first). A Finisher and an enhanced hit
 of the same operator are never within 0.45 s (rerun: `efsim zmdlogs
@@ -2921,6 +2921,13 @@ removed); Stagger already wasn't dealt while Staggered (resources.ts
 `dealPoise`: nothing while `isStaggered`, the 2 s recovery included).
 Scoreboard: unchanged (the replay places the logged casts, and none of
 the 14 logged Finishers of these four falls in the replay's state).
+Team numbers (`node scripts/team-ab.ts --base 470dbf0`, 32 fresh seeds):
+the owner's team and Ink Melt identical (Ink Melt had the Twilight gate
+already); Typhoeus's 52,261 → 52,949 (+1.3%) / 49,309 → 50,194 (+1.8%),
+no Finisher mid-hover ([team page](teams/typhoeus-arcane-liino-perlica.md)).
+**Left:** Yvonne's barrage (talent 1 maps the next input to `attack5`,
+of the NormalAttack group, so the engine keeps the Finisher; no logged
+Stagger falls in a barrage); the dive part above.
 
 ### 109. Does Si's Haste need Initial Stroke? (ready, if you have Si with talent Unsoiled Brush; lower priority since 2026-11-17: Haste doesn't speed up attacks)
 
@@ -3008,4 +3015,4 @@ attacking but more while attacking means hits extend it.
 ## Results
 
 - 2026-11-16 (the owner): 103 (a) a press in Vocalist Stance ends it early (the engine's reading). 104: most bosses are frozen by Imprisonment; some rare ones ignore it. 18, 19, 101, 102: too hard to record by hand; to the logs where they can decide.
-- 2026-11-18 (the logs, the owner's queue): 110 a Stagger lasts PoiseRecTime and the stops plus about 2 s (the engine adds it); 108 the next tap is the Finisher, but not in Laevatain's Twilight (her kit gates it); 10 the final hit by stacks as the data; 8 Link only from the data's sources; 12 the data's value formula and 5 s; 107 buffs held for exactly the stops; 98 the stew's flat ATK before the attribute multiplier; 100 0–9 s after Rhodagn's HP falls below 70%. 106, 97, 54, 109 and the rest of 108, 100 and 98 need the game.
+- 2026-11-18 (the logs, the owner's queue): 110 a Stagger lasts PoiseRecTime and the stops plus about 2 s (the engine adds it); 108 the next tap is the Finisher, but not under an enhanced attack (Twilight, Yvonne's ultimate, Empyrean, hovering: the engine's enhancedBasic, generalised from the Talos Wiki's Stagger article the same day); 10 the final hit by stacks as the data; 8 Link only from the data's sources; 12 the data's value formula and 5 s; 107 buffs held for exactly the stops; 98 the stew's flat ATK before the attribute multiplier; 100 0–9 s after Rhodagn's HP falls below 70%. 106, 97, 54, 109 and the rest of 108, 100 and 98 need the game.

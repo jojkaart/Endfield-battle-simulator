@@ -272,6 +272,15 @@ last the rest of it longer. Sustained DPS 52,047 → **52,261** (+0.4%) at full 
 5,663,487 → 5,705,341 (+0.74%) / unchanged. In-game tests 9, 43 (the controlled half) and 46 decided
 from the logs: no kit change.
 
+**No Finisher while hovering (2026-11-18, in-game test 108 generalised from the Talos Wiki's Stagger article and the
+logs; same seeds 1001–1032, `node scripts/team-ab.ts --base 470dbf0`):** her aerial attacks are her battle skill's
+skill group, not the NormalAttack group the Finisher is in, so the engine no longer turns her attack input into the
+Finisher while she hovers (in 7 logged Staggers with her aerial attacks, the Finisher comes before she hovers or
+after the hover's 5th shot). The simulated player could take the Finisher mid-hover before (its filler puts the
+Finisher first); now she shoots on and Finishers once the hover is over. Sustained DPS 52,261 → **52,949** (+1.3%) at full energy, 49,309 → **50,194** (+1.8%) from zero (sd 1,802 /
+1,909); as a bot unchanged (60,340 / 54,768), at 0.6 s 52,292 → 52,622 / 49,512 → 50,081; shares (seed 1001)
+Typhoeus 82.2 → 83.0%. The 60 s timelines (the examples) unchanged. The rules don't change.
+
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Rule 7 fixed (2026-11-16).** It read only Vocalist Stance, so it also

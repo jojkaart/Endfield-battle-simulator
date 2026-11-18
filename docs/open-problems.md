@@ -1793,7 +1793,10 @@ moment to the next listed one, not Staggered at a moment that lists none
 (unless a hit there breaks the bar).
 **Ruled out as what lengthens the game's:** a ZMDLogs listing lag (the
 damage, above); Stagger dealt while Staggered (no relation to the
-excess); target hit-stop (HitStopAction affectType 1/2: per-window sums
+excess; and the Talos Wiki's Stagger article, 2026-11-18: "While
+staggered, Enemies can't receive more stagger", as the engine has it:
+resources.ts `dealPoise` deals nothing while `isStaggered`, the 2 s
+recovery included; in-game test 108); target hit-stop (HitStopAction affectType 1/2: per-window sums
 3–14 s, no relation); Finishers, Lifts and Knock Downs in the window
 (none); the modelled stops (no relation, if anything windows with more
 of them run short less); the Slow status (SlowAction: Gilberta's
@@ -1872,6 +1875,15 @@ replay against the listed Physical Susceptibility.
 - d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
   2.6 s before its event (the same placement rule); her simulated total +11.3 →
   +15.4%, no verdict moved. Not looked into.
+- Zhuang Fangyi's `attack1_ult_2_abilityrange` (seen 2026-11-18 while
+  checking test 108): 32 hit groups in 5 logs (`efsim zmdlogs census
+  --select 'event:attack1_ult_2_abilityrange'`: 3aa6 10, 4bfc 10, 4d60 7,
+  d774 4, c6d8 1) under a key no kit hit names, so the placement doesn't
+  place them (replay NOLAND, e.g. 4bfc 150.07, 179.17 s). **Still
+  possible:** her Empyrean attack 2 (the kit gives attack2_ult the key
+  `attack1_ult_1_abilityrange`), or a second hit of attack1_ult. **Next
+  check:** `efsim gamedata tree chr_0030_zhuangfy_attack2_ult` for the
+  entity it spawns, and the logged key order within an Empyrean chain.
 
 - Si's talent Haste after a burst without an Inksoul (2026-11-16): the
   data (only xianjing_linkline's finish and xianjing_inkboom create
