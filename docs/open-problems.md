@@ -1206,6 +1206,35 @@ d572, 2fd9, 99fb better, 0c14 +0.3, 4a64 −0.1 points of damage error
 (measure 2026-11-18); not kept here (outside this task), a lead for
 Rossi's kit.
 
+## Liino's Cosmovoice beats: logged at other moments than the replay's (2026-11-18)
+
+**Shows:** of her ultimate's 572 checked hits (in-game test 6, decided:
+the values hold, 332 plain, dbae 25 of 25), 21 are beats or finales the
+replay lands nowhere, beside beats it lands where the log has none: 4d60
+82.6–99.9 s (logged 1.35–1.38 s apart, the replay 1.5 s: 86.69, 89.86,
+91.22, 98.19 s and the finale at 99.87 s unlanded), 7910 59.0–62.1 s (the
+replay's beat at 55.70 s falls before the stop of 55.1–58.5 s the log's
+beats skip), 9090 (finale logged 79.82 s, the replay's 79.03 s; no beat
+logged 68.5–75.8 s), 8915, 9847 one each. Cosmovoice's Amp is listed on
+teammates' hits up to the logged finale where the replay's has ended
+(8915 104.65–105.88 s, 9090 79.71–79.82 s: `zmdlogs differences --what
+cosmovoice_amp`, 35 log-only hits, 5 mismatches).
+**Cause: not known.** Logged gaps between consecutive beats (scratch over
+the 16 single-target Liino logs, gaps under 1.9 s): 1.17–1.89 s, most
+1.35–1.55; 4d60 a steady 1.36, c6d8 1.52, 9847 1.44–1.55. Not every beat
+is logged (gaps of 3–7 s with no stop that long), so the count per
+Cosmovoice (the kit's 9, ending at the clip's frame 477) isn't read off.
+**Ruled out:** the values (test 6); the beats' damage where they land
+(plain or team-wide).
+**Still possible:** the beats on a clock of their own, as her volleys'
+(which runs ~5% slower, "Liino's volleys" above), here sometimes faster;
+other operators' stops placed differently from the game's (7910); a 10th
+beat (the data's clip ends at 477, the buff's own duration later); beats
+that miss an enemy out of reach going unlogged. **Next check:** pinning
+the beats to their logged landings as the volley ticks are
+(`ticksShownByHits` needs the beats as a ticking buff, not fixed frames),
+then the finale from the last pinned beat.
+
 ## Si's Artful Intent bursts that fit no reading (6 of 40)
 
 **Shows (2026-11-14, recordedburst.ts):** the log check values each burst
