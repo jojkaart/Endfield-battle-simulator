@@ -32,7 +32,7 @@ with only what no log can decide. (The other ready tests are being re-triaged by
 plain 65.0% unchanged (one log mixed), earlier pending mean |damage error| 8.2 → 8.3% (d774: a Stagger the replay
 breaks itself at 127.9 s, unlisted, now 2 s longer). The replay follows the log's listing, so the recovery shows in
 the simulations, not the scoreboard. Team numbers, 32 fresh seeds (1001–1032), full energy / from zero: the owner's
-53,780 → 53,514 / 52,744 → 52,972; Typhoeus's 52,374 → 51,859 / 48,973 → 48,937; Ink Melt 63,347 → 62,424 / 56,123
+53,780 → 53,514 / 52,744 → 52,972, → **52,937 / 52,850** with Akekuri's battle skill kept out of her ultimate (below); Typhoeus's 52,374 → 51,859 / 48,973 → 48,937; Ink Melt 63,347 → 62,424 / 56,123
 → 57,486 with the recovery, → **59,140 / 54,421** with the Finisher gate (−5.3% both: the rules had Laevatain
 Finisher inside Twilight).
 
@@ -40,6 +40,12 @@ Finisher inside Twilight).
 first, which `staggerHolds` missed: those windows looked like exact fits), `staggerRuns(data, fx, { assume })`;
 engine assumption `combo-window-count` (highest / latest) for test 10: no verdict moves under `latest` in 36 Si
 logs, so no log has the case.
+
+**premerge** then failed on tests the 2 s moves (the stagger timeline test, 9090's engine ends), on Laevatain-alone loop
+searches (no exact loop in 12 rounds at beam 6 with the recovery: those tests now run under `stagger-recovery=none`,
+as they test the loop machinery) and on the owner's team's rules check: Akekuri's battle skill pressed past her
+ultimate's interrupt mark ends her ultimate state (seed 2). Her `zone_hold` is a visible state now and the SP ≥ 200
+rule waits for it.
 
 **Not decidable / left:** 106 (the buff isn't listed), 97 and 108's dive part (4 dive hits in 79 logs, none in a
 row), 54 (dashes not logged), 109 (no Haste logged), 100's trigger, 98's milk: the new queue. Test 12's leftover is
