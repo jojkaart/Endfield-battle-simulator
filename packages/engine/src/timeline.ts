@@ -17,7 +17,7 @@ export { withSeconds } from "./timeline/state.ts";
 export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, diveFrames, linkValue } from "./timeline/rules.ts";
 export { createContext, kitAssumptions, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
-export { setPoise, refillPoise, staggerFrames } from "./timeline/resources.ts";
+export { setPoise, refillPoise, holdStagger, staggerFrames } from "./timeline/resources.ts";
 export { exclusiveUntil, earliestStart, skillAvailable } from "./timeline/timing.ts";
 export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";

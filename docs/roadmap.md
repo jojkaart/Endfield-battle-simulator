@@ -39,7 +39,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   test 71; tests 18, 19, 101, 104 done from the logs (2026-11-16: bosses
   freeze, Haste isn't attack speed, teammates' pause 6.5 s; Twilight's
   length left); Arcane's misses grouped (2026-11-18: 908 → 866; next her
-  Imprisonment's end from the log); then the screened logs' leads
+  Imprisonment's end from the log); the replay follows the log's Stagger
+  windows (2026-11-18; why the game's run longer: test 110); then the
+  screened logs' leads
   ([open-problems.md](open-problems.md)), diagnosed in parallel; then B8,
   B6, B9, B10.
 - **The tool's purpose:** rotations for the owner's favourites (Typhoeus,

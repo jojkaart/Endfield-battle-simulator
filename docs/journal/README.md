@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-18: The replay follows the log's Stagger windows](2026-11-18-01-the-replay-follows-the-log-s-stagger-windows.md)
 - [2026-11-18: Cast starts across other operators' time stops](2026-11-18-01-cast-starts-across-other-operators-time-stops.md)
 - [2026-11-18: Arcane's mismatches as one group: lasers on the world's clock, chance-path buffs](2026-11-18-01-arcane-s-mismatches-as-one-group-lasers-on-the-world-s-clock.md)
 - [2026-11-17: Haste is movement speed; the owner's team drops Initial Stroke](2026-11-17-02-haste-is-movement-speed-the-owner-s-team-drops-initial.md)
