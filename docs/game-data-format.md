@@ -16,6 +16,12 @@ ability-entity (`*_abilityentity`) skills do exist as SkillData files.
   `Beyond.Gameplay.Core.PlayAnimationAction+PlayAnimationActionData`.
 - Enums are unnamed numbers (attribute type, stacking type, buff event,
   formula slot, side). See [known enum values](#known-enum-values).
+- **`isEnable: false` on an action means it never runs** (hundreds of
+  disabled actions in operator files: TimeDilationAction, FindTargetAction,
+  CreateBuffAction, SpellInfliction, …). `efsim gamedata tree` prints
+  `DISABLED (isEnable false)` on its line; a kit claim resting on such an
+  action is wrong (Liino's volley trigger read a disabled
+  CheckBuffIdInContext as a live condition from batch 1 to 2026-11-18).
 
 ## SkillData (one file per skill ID)
 
