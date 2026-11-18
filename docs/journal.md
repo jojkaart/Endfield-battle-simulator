@@ -4,9 +4,60 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 99 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 100 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-18: Typhoeus's and Laevatain's in-game tests from the logs; buffs created in a stop are held
+
+**Goal:** decide from the logs in-game tests 9, 43, 46 (Typhoeus) and 17, 21, 22 (Laevatain's
+Twilight and Scorching Heart), checking the re-triage's claims (docs/in-game-tests-retriage-*.md).
+
+**Decided** (each in its test's section of docs/in-game-tests.md):
+- 9: the ×1.3 on her Power Shot's burst after a consumed Nature Infliction fits (41 plain matches
+  with it, none at ×1/1.3; the misses are other causes).
+- 43, partly: the re-triage misread the engine. Her controlled 5th shot is a Power Shot with a
+  burst and no arrow used (data and kit); every logged 5th is the controlled one
+  (`floating_attack5_01_projhit`) and is followed by its burst. No log has an off-field 5th: that
+  half stays for the game.
+- 46: one rain per shot, at most five, the 5th empowered (7 ultimates; the re-triage's 13 counted
+  the log's repeated `ultimate_skill` events). d9e5's 5th rain needed the window held by two
+  teammates' stops that were already running when it began.
+- 17 (Laevatain's variant): the jumps skip: explosion to extra hit 0.97–1.17 s (no skip: 2.7 s),
+  battle skill to next attack 1.2–1.4 s (3.8 s).
+- 22: `since` is the latest (re)application (it moves at every re-creation, f879 92.49 s 12 s into
+  an instance); in 25 empowered casts at 4 Melting Flame it never moves at the capped gain: no
+  restart, as the engine has.
+- 21 and 18's Twilight part, partly: every closed Twilight window outlasts 15 s from the press plus
+  the engine's holds by 2.1–6.6 s, so her own stop holds Twilight; with that it's still 0.1–4.6 s
+  short in all 7, and no single extra term fits (open-problems). No log has a combo cutting her
+  enhanced battle skill short.
+
+**Engine and replay changes:**
+- Engine assumption `buff-in-stop` (default `held`; timeline/clock.ts `heldFromNow`, actions.ts
+  `addBuff`): a buff created while a time stop or slow-down runs is held by the rest of it, as the
+  running buffs were when it began (the same rule as an Arts Burst's clock, T14). It replaces the
+  kit assumption `laevatain-twilight-own-stop` (removed with its trigger).
+- `loggedCastStart` (buffreplay.ts): another's hit within 0.5 s after an ultimate's cast event, not
+  only at it, says the event is the stop's end (Laevatain's ultimate in 17 of 22 windows, was 11).
+- `efsim zmdlogs replay --assume <id>=<reading>`.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 49.5 → 50.0%, mismatch 19.3 → 19.3%, mean
+|damage error| 13.0 → 12.7% (18 better, 3 worse, 2 mixed); hold-out plain 65.0 → 66.1%, mismatch 7.4 → 6.9%,
+damage 12.5 → 12.1% (7 better, 2 worse); earlier pending plain 47.2 → 47.4%, damage 8.2 → 8.4%; verified
+unchanged. Worse: db87 (plain 152 → 114: the placement fix makes Laevatain's stop overlap Camille's combo
+slow-down, so Arcane's Corrosion ramp is held 0.5 s less; open-problems), d774 (totals +11.6 → +16.7%, Zhuang
+Fangyi's ultimate 2.6 s earlier, no verdict moved), 1d91 (two of Ardelia's assumed matches), and 0.1-point totals
+(4360, 0c14, c3c7), b6aa one plain hit.
+
+**Examples:** the Ink Melt and Si-Laevatain-Liino-Gilberta timelines repaired (Laevatain's steps in Twilight's
+extra 2 s as its forms): Ink Melt's 60 s 3,953,129 → 3,402,966 (−13.9%: its second ultimate no longer fits, as
+show_weapon blocks her energy and starts her cooldown 2 s later); Si-Laevatain-Liino-Gilberta +2.7%; Typhoeus's
+team's 60 s +0.75%.
+
+**Dead ends:** see open-problems "Laevatain's Twilight runs longer than its model" (a constant,
+show_weapon's 16 s, the full 115-frame pause, a smaller combo hold). Two small Typhoeus misfits
+noted there (1cd1 40.12 s, d9e5 11.73 s).
 
 ## 2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings
 
@@ -402,65 +453,3 @@ Done:
 
 Also: the friction report of phase 2
 (docs/friction/2026-11-16-phase-2-friction.md).
-
-## 2026-11-16: Rule driver phase 2: button model, one start check, event stepping, run checks, assumption switches
-
-Goal: phase 2 of the [architecture review](architecture-review.md)
-(items 3, 4, 8, 9, 10) and the rule-noise points of the three friction
-reports on rules, gear on rules and the guided search. Done (design.md
-"Rule-based rotations", its "Assumption switches"):
-- **Button model** (engine timeline/buttons.ts): what each battle, combo
-  and ultimate button shows and casts, from the kits' `available`
-  conditions, follow-ups and own combo windows. A press casts that skill
-  or nothing; `shows` checks its label. No example button is ambiguous at
-  any frame (test).
-- **One start check** (`canStartAt`): earliestStart now judges an `at` on
-  the state advanced to it. Every disagreement between the old pair
-  (startsNow on the advanced state, earliestStart from the last press) was
-  SP granted on the way, the dive-landing case included; the old driver
-  waited for the stale check, so SP-gated presses came late (Ardelia's
-  battle skill 1.7 s). SP is snapped to its regeneration grid, so it reads
-  the same however a state was advanced. Property test on the examples'
-  rotations and rule runs.
-- **Event stepping**: the driver visits the frames where something it
-  reads can change (about a third); `stepping: "frames"` is the reference
-  and gives the same rotations (test: three lists, several seeds, both
-  energies). 1.2–1.7× faster a run (the simulation itself is the floor).
-- **Run checks** (`checkRuleRun`): no press casts another skill than its
-  button showed, none cuts its operator's own ultimate state (a
-  counterfactual without the press), `simulate` replays it; zero on the
-  three lists; a constructed End Stance list is caught.
-- **Visible states in the kits**: `visible` on kit buffs and stacks
-  replaces policy.ts's operator tables; cues unchanged.
-- **Assumption switches**: kits register open readings (`assumptions`,
-  triggers with `reading`); test 109's alternative is the first
-  (`si-haste-every-end`). `--assume` and `--assumptions` on `rules`,
-  `diagnose`, `gear --rules`, `--guided`.
-- **Noise tooling**: `efsim rules --compare` (paired gain ± SE on seeds
-  1–k and fresh 1001…), a seed/power table in design.md, the zero-energy
-  companion judged by default (`gear --rules`, `--guided`), one worker
-  pool per command (`efsim rules` uses it too), the commit at the head of
-  long outputs, the guided search's list written after each kept round.
-  Antithetic delays tried: no gain (the owner's
-  team: SE 0.17% against 0.14% plain at 128 seeds), dropped.
-
-Behaviour changes (32 fresh seeds, 1001–1032, 300 s; before → after):
-
-| Team | Full energy | From zero |
-|---|---|---|
-| The owner's | 56,274 → 56,493, +0.39% ± 0.47 | 55,852 → 56,055, +0.36% ± 0.25 |
-| Ink Melt | 66,355 → 69,668, +4.99% ± 0.99 | 63,213 → 61,716, −2.37% ± 1.23 |
-| Typhoeus's | 54,847 → 54,607, −0.44% ± 0.78 | 50,818 → 51,076, +0.51% ± 0.62 |
-
-All of it comes from earliestStart's fix: the old driver with only that
-fix gives the same means (against the new driver: the
-owner's team identical on 31 of 32 seeds, Ink Melt +0.01% ± 0.15 and
-+0.23% ± 0.23 from zero; Typhoeus's −0.40% ± 0.40 and −0.15% ± 0.09,
-presses an SP tie now starts a frame sooner (the snap)). The two moved example scenarios
-(akekuri-laevatain, wulfgard-fluorite) are SP ties the snap now reads
-exactly. The documented 10-seed numbers on the team pages predate this.
-
-Not done: the review's estimate of 3–10× for event stepping was too
-high: after the probes, most of a run is the simulation and the basic
-attack's earliest start (it advances copies of the state). The friction
-reports stay in docs/friction/ for the improvement round to file.
