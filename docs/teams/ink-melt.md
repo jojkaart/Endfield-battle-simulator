@@ -219,10 +219,12 @@ complexity 46; the hardest cues are the three "ultimate ready" ones
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **63,347** (3,405) | **56,123** (2,662) |
+| Sustained DPS over 300 s (sd over seeds) | **59,140** (3,554) | **54,421** (1,930) |
 | As a bot (0 s) / at 0.6 s | 70,347 / 66,655 | 66,705 / 60,522 |
 | First 60 s against the 60 s timeline (the examples) | 3,454,357 against 4,732,088 (−27.0%) | 2,506,673 against 4,642,409 (−46.0%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 20,900,414 against 16,406,168 (**+27.4%**) | |
+
+**The engine changes of 2026-11-18 (in-game tests 110 and 108 from the logs; same seeds):** a Stagger lasts about 2 s past its data: 63,347 → 62,424 / 56,123 → 57,486 (−1.5% / +2.4%, within the noise); Laevatain no longer Finishers during Twilight (the logs: 7 Staggers with her Twilight chain, no Finisher), which the rules had her do: → **59,140 / 54,421** (−5.3% / −5.3%). As a bot / at 0.6 s now 57,300 / 58,479 (full energy).
 
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** bosses
 freeze 69,668 → 69,698 / 61,716 → 62,331; Haste no longer speeds casts

@@ -120,11 +120,12 @@ the freezer's own debuffs (test 37).
 
 **Stagger windows (2026-11-17, accuracy plan B1 follow-up):** the replay
 follows the log's Stagger listing (the damage confirms it). The game's
-windows run longer than the engine's own (median 3.5 s past its end);
-the cause is open (open-problems.md "The replay's Stagger windows";
-in-game test 110). Once timed, add it to the engine (`staggerFrames` or
-an enemy-clock hold); the teams moved −1.2 / +0.7 / −0.2% under a flat
-+3.5 s, so it's low priority for them.
+windows run longer than the engine's own (median 3.5 s past its end).
+**Decided by the logs (2026-11-18, test 110):** about 2 s past
+PoiseRecTime and the stops, a recovery the engine now adds (engine
+assumption `stagger-recovery`); the teams moved −0.5 / −1.5 / −1.0% (full
+energy), within the noise. Left: the ±1.4 s spread, bigents' 11–14 s
+(open-problems.md "The replay's Stagger windows").
 
 **Engine accuracy first** (the owner, 2026-10-26: above the search's
 scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)

@@ -25,7 +25,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   owner's team's gear (+8.0%) and on Arcane in INT mode for Typhoeus's team
   (+5.9%, a rule search for INT first); a cheaper worth for timeline-moving
   stats; the guided rule search's limit is noise (cheaper variance next),
-  and the owner's call on its full-energy options; in-game tests 106, 108.
+  and the owner's call on its full-energy options; in-game tests 106, 108 (dives).
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast.
 - **Gear:** a search seeded with the current rotation, so a re-search with
@@ -40,7 +40,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   freeze, Haste isn't attack speed, teammates' pause 6.5 s; Twilight's
   length left); Arcane's misses grouped (2026-11-18: 908 → 866; next her
   Imprisonment's end from the log); the replay follows the log's Stagger
-  windows (2026-11-18; why the game's run longer: test 110); then the
+  windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
+  the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
+  only game-only tests now); Gilberta's Vulnerable count at her ultimate
+  (test 12's leftover); then the
   screened logs' leads
   ([open-problems.md](open-problems.md)), diagnosed in parallel; then B8,
   B6, B9, B10.

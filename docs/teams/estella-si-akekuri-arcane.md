@@ -95,10 +95,12 @@ full energy, +0.66% ± 0.52 from zero (noise), and one press fewer.
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **53,781** (1,194) | **52,740** (1,539) |
+| Sustained DPS over 300 s (sd over seeds) | **53,514** (1,845) | **52,972** (1,569) |
 | As a bot (0 s) / at 0.6 s | 57,835 / 55,713 | 56,552 / 55,928 |
 | First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
+
+**The engine change of 2026-11-18 (in-game test 110 from the logs: a Stagger lasts about 2 s past its data; same seeds):** 53,780 → **53,514** / 52,744 → **52,972** (−0.5% / +0.4%, within the noise; `--assume stagger-recovery=none` gives the earlier reading).
 
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** bosses
 freeze (Rhodagn: Si's freezes hold every debuff) 56,493 → 56,716 / 56,055

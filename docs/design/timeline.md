@@ -279,7 +279,7 @@ stepping API as `@efsim/engine` exports it) is split by concern under
 |---|---|---|
 | `state.ts` | 399 | the types: scenario, context, state, scheduled items (`Scheduled`), casts, landed hits |
 | `rules.ts` | 93 | fixed rules: team SP, energy, combo windows, dives, priorities, Link, `TIMELINE_ASSUMPTIONS` |
-| `assumptions.ts` | 47 | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, teammate-pause), switched by `TimelineOptions.assume` |
+| `assumptions.ts` | 77 | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, teammate-pause, stagger-recovery, stagger-freeze, combo-window-count), switched by `TimelineOptions.assume` |
 | `context.ts` | 181 | `createContext` (the build stage), panels, kit and skill lookups, skill costs and timing, the enemy's attributes |
 | `schedule.ts` | 117 | the scheduled list: the order within a frame (`IN_FRAME`, `dueBefore`) and one pass each to shift a clock, end a cast and jump on a cast's timeline |
 | `clock.ts` | 132 | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`), control immunity |

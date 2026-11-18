@@ -1563,7 +1563,42 @@ Shatter, 12 listed), 14.04 at 55.403 s (Gilberta's combo, 5 listed);
 after that every step matches. The non-whole steps suggest a scaled or
 time-based amount (Solidification or Shatter?), not a hit. The replay
 takes the bar from the log, so only the engine's own sums miss it.
-**Next check:** in-game test 110 (a Stagger timed by hand).
+**Found (test 110 from the logs, 2026-11-18):** the Stagger itself lasts
+about 2 s longer. Over 30 windows bracketed within 3 s (bigents, 4d60's
+paused one and three the replay broke seconds early aside) the log's end
+is a median 2.3 s after the engine's own end (quartiles 1.4–3.9); with 2 s
+more on the enemy's clock, a median 0.1 s off, 12 short and 13 long (rms
+3.15 → 1.40 s; `staggerRuns(data, fx, { assume })`, the engine's own end
+also where the log's calm hit cut it: `BuffReplay.staggerCuts`). The
+engine adds it (engine assumption `stagger-recovery`, `2s`): a recovery
+after PoiseRecTime that still counts as Staggered. Also ruled out now:
+hits extending it (Staggers outlast hitless gaps of 1.8–7 s past the
+data's end and end 0.1 s after a hit), the hit rate (r −0.01), Finishers
+(r 0.24). A fit: 1.8 s + 1.18 × the ultimates' stops + 0.79 × the combos'.
+**Still open:** the spread around the 2 s (sd ~1.4 s, every enemy; the same
+scatter as Gilberta's Susceptibility ends, below); whether a freeze holds
+it (`stagger-freeze`: rms 1.40 held, 1.42 not); bigents (tower019) 11–14 s
+more in 489c, 9847, 9c0b (its own recovery?); 4d60 at 117.2–124.5 s, a
+7.2 s gap with no hit from anyone and Akekuri's chain going on after it (a
+whole-game pause the log's clock runs through: anything timed across it is
+off by 7 s).
+**Next check:** a per-enemy recovery for bigents if a team fights it; the
+spread against the enemy's actions (not logged).
+
+## Gilberta's Susceptibility: the engine's Vulnerable count (test 12, 2026-11-18)
+
+**Shows:** the listed value is `rate × (1 + 0.1 × Vulnerable stacks)` (0.30–
+0.42 at P0/P1); where the engine's differs (4360 0.33 / 0.39, 489c and d572
+0.39 / 0.42, 9847 0.30 / 0.36: one or two stacks low when the ultimate
+lands), the damage follows the log's value (86 hits against 24). Her
+windows' ends scatter −1 to +2 s around the engine's 5 s plus stops (16
+bracketed windows, median +0.4 s), the late listed hits' damage with them.
+**Still possible:** the engine's Vulnerable stacks short (a Lift or Knock
+Down it misses, a stack's expiry), or the data's count reading something
+else (every physical status); the end scatter shares a cause with the
+Stagger's (above).
+**Next check:** the four logs' Vulnerable stacks before her ultimate,
+replay against the listed Physical Susceptibility.
 
 ## Smaller, not yet diagnosed
 
