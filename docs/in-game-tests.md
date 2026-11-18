@@ -173,7 +173,20 @@ of two damage numbers each time (crits):
 Data and logs (engine now): a = b = d, c = e ≈ 1.20 × a. The old rule
 (every combo gives Link) would give b = d ≈ 1.20 × a and c ≈ 1.30 × a.
 
-### 9. Typhoeus's burst with and without a Nature infliction (ready, if you have Typhoeus)
+### 9. Typhoeus's burst with and without a Nature infliction (decided by the logs, 2026-11-18: ×1.3 as the engine has; don't ask)
+
+**Decided by the logs (2026-11-18):** the engine's ×1.3 (`enchence_burst_damage_rate`
+when the Power Shot's arrow consumed a Nature Infliction) fits. In all 16 Typhoeus logs
+(`efsim zmdlogs hits --json`, her `buff_common_natural_natural_triggered_typhoea` hits):
+the bursts the replay reads with ×1.3 match 41 plain, 5 assumed and 9 log-listing
+fallback in 10 logs, and none is ×1/1.3 the engine's; the bursts it reads without
+match plain 87 times. The three ×1.3 mismatches are other causes: 1cd1 37.97 s is
+exactly ×1.502 over the engine's, Liino's Cosmovoice Amp (the burst, held by her
+ultimate's stop, landed inside Cosmovoice), and 9c6e 52.8 s is the two-target log. Two
+bursts the replay read without ×1.3 are logged ×1.300 (1cd1 40.12 s) and ×1.286 (4bfe,
+two targets): consumptions of a Nature Infliction the replay didn't have, which side
+with the ×1.3 too. The other no-×1.3 mismatches are known placement and multi-target
+runs (fc63 87–106 s, 9c6e 29–31 s) or a ×1.035 run (1d91 6.6–9.3 s). No test needed.
 
 **Why:** her enhanced floating shot's own Nature burst appears to deal
 ×1.3 more when the target already has a Nature infliction for the arrow to
@@ -399,7 +412,19 @@ Dolly's Final Strike number still appear, and does her combo light (a
 Final Strike on a clean dummy opens it)? Engine: neither. Both: the
 Dolly's hit is on its way once it's sent.
 
-### 17. Do the jumps in Laevatain's battle skill skip time? (ready, if you have Laevatain or Wulfgard)
+### 17. Do the jumps in Laevatain's battle skill skip time? (decided by the logs, 2026-11-18: they skip, as the engine has; don't ask)
+
+**Laevatain's variant decided by the logs (2026-11-18):** the jumps skip. From the
+empowered battle skill's explosion (its first hit, frame 22) to its big extra hit (frame
+104): 0.97–1.17 s in most of 40 casts in 18 logs (median 1.07 s; 458b 70.95 → 72.07,
+f879 87.85 → 88.98, c83c 16.00 → 16.99, 2b01 37.07 → 38.13 s), longer only across a stop
+(1.6–3.4 s: 7b54, 3440, f879 128.8, 9c0b 54.8 s); the skip model gives about 1.1 s, no
+skip about 2.7 s. And from a plain battle skill's cast to her next basic attack: 1.20–1.38
+s in 7 of 13 (the rest later, by choice), against about 1.3 s with skips and 3.8 s
+without. (Scripts: the placed casts of `efsim zmdlogs casts`.) The Twilight windows
+agree: with her battle skill's pause at its full 115 frames (no skips), four of the six
+closed windows with a battle skill would end after the log's first plain attack (test
+21's entry below).
 
 **Wulfgard variant decided by the logs (2026-11-13):** 4e36, cast to his big shot 1.87, 2.16, 1.74 and 1.88 s: the jumps skip (about 1.8 s with the flight; about 4.7 s without), as the engine has (frame 54 = 1.8 s). The "about 2.4 s to his next attack" sign isn't checked; Laevatain's own variant stays open.
 
@@ -452,7 +477,7 @@ shot's flight), without **about 4.7 s**. A second sign: with skips he
 attacks again about 2.4 s after the cast (test 61's Combusted run),
 without about 5.3 s.
 
-### 18. What an ultimate's time stop freezes (not testable by hand; the logs: cooldowns run, Estella's buff held, Twilight open)
+### 18. What an ultimate's time stop freezes (not testable by hand; the logs: cooldowns run, Estella's buff held, Twilight held by her own stop)
 
 **Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
 
@@ -470,12 +495,17 @@ without about 5.3 s.
   s logged, 10.29 s predicted): with her ultimate after the combo, 5 of 6
   listings end at the held end (81311 ms to 6 ms), none at the unheld one
   (1.1–1.8 s short). a9d7 and 4e5e are noisier (another source of the same
-  common buff). Laevatain's Twilight isn't decided: its logged ends (last
-  enhanced hit, first plain one) sit 2.5–7 s past 15 s plus her battle-skill
-  pauses and the stops in 458b, 9c0b, c83c, f879, more than the 2 s the two
-  readings differ by (other holds, test 21). Registered as kit assumption
-  `laevatain-twilight-own-stop` (reading `held`: +2.03 s per ultimate;
-  `efsim rules … --assumptions`).
+  common buff).
+- *A buff created inside a running stop* (2026-11-18): held by the rest of
+  it, as the buffs already running are. Laevatain's Twilight, created at her
+  ultimate's frame 0: in all 7 closed Twilight windows the game's Twilight
+  outlasts 15 s from the press plus every hold the engine counts, by 2.1–6.6
+  s, so her own stop holds it (+2.03 s; test 21's entry has the windows and
+  what is still longer). Typhoeus's Hail of Arrows window, created at her
+  ultimate's frame 61 inside Gilberta's and Arcane's stops: d9e5's 5th rain
+  needs it held by them (test 46). Now the engine's rule for every buff
+  (engine assumption `buff-in-stop`, reading `held`; `runs` is the old
+  rule); it replaces the kit assumption `laevatain-twilight-own-stop`.
 - Still open, the overlapping-ultimates question above.
 
 **Why:** the engine now freezes everyone but the caster for an ultimate's
@@ -504,9 +534,8 @@ Gilberta's freeze ends (about 1.7 s longer)?
 The caster's own buffs are a second question. The engine freezes them too
 (only the caster's hits and action are exempt), but the data exempts the
 caster from its own time stops and slow-downs, and one Estella log fits
-neither rule cleanly. (Laevatain's Twilight is created after her
-ultimate's time stop is taken into account, so the engine runs it 15 s
-from the press.) It decides up to 2 s of Twilight per ultimate and up to
+neither rule cleanly. (Since 2026-11-18 the engine holds Laevatain's
+Twilight by her own stop too, from the logs: about 17 s from the press.) It decides up to 2 s of Twilight per ultimate and up to
 1.8 s of Estella's team-wide Physical Susceptibility (+15%) per ultimate:
 - Laevatain: time Twilight from pressing the ultimate to its end, with
   only basic attacks (test 17's baseline): about 15 s means her own time
@@ -579,7 +608,29 @@ battle skill's first hit with a plain battle skill's explosion from just
 before the ultimate: about 2.8× means `ratio` applies (kit), about 2.4×
 means it doesn't (data).
 
-### 21. Twilight's length with combos and cut-short battle skills (ready, if you have Laevatain)
+### 21. Twilight's length with combos and cut-short battle skills (partly decided by the logs, 2026-11-18: Twilight runs longer than the model; the cut-short case isn't in any log)
+
+**Partly decided by the logs (2026-11-18):** the 22 Twilight windows in 18 logs, each
+bracketed by her last enhanced cast and her first plain cast after it (the placed casts),
+against the replay's Twilight (`efsim zmdlogs replay --kit-buff chr_0016_laevat:twilight`).
+Two placement fixes first: her ultimate's cast event comes at the end of her 2.03 s stop
+in nearly every log (the last hit before it 2.0–2.9 s earlier), and the replay now starts
+the ultimate 2.03 s before it in 17 of the 22 (11 before; buffreplay.ts `loggedCastStart`:
+another's hit within 0.5 s after the event, not only at it, says the stop ended there); and a window's holds are counted with Twilight long enough not to
+end early (an early end drops the later combos' and pauses' holds). Then, in the 7 closed
+windows (458b ×2, f879 ×2, c83c, e49e, 0206), the game's Twilight is longer than 15 s from
+the press plus every hold the engine counts (her battle skills' pauses, her combos' 1.9 s,
+others' stops) by 2.1–6.6 s in all 7: her own ultimate's stop holds Twilight too (test
+18's entry, now the engine's rule). With that, it is still 0.1–4.6 s short in 6 of 7 and
+never too long (458b 0.6–2.6 and 1.8–2.4 s, f879 0.1–1.2 and 1.8–2.5 s, c83c 3.1–4.6 s,
+0206 2.2–2.7 s; e49e fits once its first combo, logged at 54.86 s before the ultimate, is
+taken out). No single further term fits all seven: a constant, show_weapon's 16 s, the
+battle skill's full 115-frame pause (no skips: four windows would end after the log's
+first plain cast) or a smaller combo hold each leave some windows outside their brackets.
+What's left is in open-problems "Laevatain's Twilight runs longer than its model". The
+cut-short case (a combo pressed during her enhanced battle skill, ending its pause) isn't
+in any log: her combos come 2.1–3.5 s after an enhanced battle skill (17 cases), after its
+2.13 s pause. That half stays the test below; a log of it would decide it too.
 
 **Why:** Twilight is her highest-damage state. The engine holds its timer
 for 1.9 s per combo cast (it reads the data's re-created buff as "add
@@ -594,7 +645,24 @@ right); once with an enhanced battle skill cancelled by her combo at once.
 If the last one is as long as the combo alone, the pause ends with the
 skill (data, and the engine); if it's about 3 s longer, it doesn't.
 
-### 22. Scorching Heart's 20 s (ready, if you have Laevatain)
+### 22. Scorching Heart's 20 s (decided by the logs, 2026-11-18: a capped gain doesn't restart it, as the engine has; don't ask)
+
+**Decided by the logs (2026-11-18):** first, what a listed effect's `since` is: the
+latest (re)application, not the first. Scorching Heart's `since` moves to each new
+start the replay has (458b 67.94, 90.90, 108.64 … s, each within 20 ms of the replay's
+window start), and in f879 at 92.49 s it moves while the old instance, from 84.11 s, had
+12 s left: the re-creation shows. Then the test: at each empowered battle skill outside
+Twilight, the explosion's Melting Flame comes while she is at 4 (a capped gain). In 25
+such casts with Scorching Heart listed on her hits between the explosion and the extra
+hit (13 logs), `since` stays at the earlier start every time (458b 70.95 s: since 67.94;
+f879 19.01 s: 15.47; c83c, e989, 2b01, 3440, e49e, 0206, 064b, 012a, 7b54, 9c0b, f978); never
+at the gain. Two lanes that changed `since` around a cast (79cc 31.5 s, c83c 36.8 s)
+changed it before the cast's first hit, at a new reach of 4. So a capped gain doesn't
+restart the 20 s. The replay's windows (no restart) against the listing lanes: 41 end
+where the log's lane does, 4 short by 0.2–1.05 s (458b 38.14 and 174.21 s, f879 15.47 s,
+e49e 11.32 s: open-problems "Laevatain's Twilight"), the rest off where the replay's
+Melting Flame count runs out of step (0206, 064b, 2b01, c83c 51.9 s, f879 92.5 s, 6339,
+7b54).
 
 **Why:** on reaching 4 Melting Flame her damage ignores 20 Heat RES (talent
 level 2) for 20 s. The engine starts the window only when she reaches 4,
@@ -1001,7 +1069,28 @@ vanish without being used. The kit keeps them until used (no lifetime), so
 nothing changes. (Not proof they never expire: holding them 24 s unused
 may simply not come up in play.)
 
-### 43. Typhoeus's shots off-field (ready, if you have Typhoeus)
+### 43. Typhoeus's shots off-field (partly decided by the logs, 2026-11-18: the controlled 5th shot as the engine has; the off-field half is open)
+
+**Decided by the logs (2026-11-18), the controlled half:** the re-triage's "a burst
+follows the 5th shot in 8 of 11 hovers, against the engine's plain 5th" misread the
+engine: its 5th shot is plain only when she isn't the controlled operator; controlled,
+it's a Power Shot with its forced burst that uses no Hunting Arrow (the data's
+floating_attack5: "her 5th ABATK is regarded as a Final Strike and a Power Shot, and does
+not consume Hunting Arrows"). The log tells the two apart by the projectile's key: the
+controlled 5th is `floating_attack5_01_projhit`, the off-field 5th launches
+`floating_attack1_01_projhit`. Every 5th shot in the pending and verified logs (30 in 8 logs)
+is `floating_attack5_01_projhit` at atk_scale_base × atk_scale_enhence (9090 50.39 s:
+20399 logged and replayed), and a burst follows each 0.29–0.72 s later, or 1–2 s later
+across a stop (9090 50.39 → 51.51 s, 00ae 28.53 → 30.02 s, af7b 43.36 → 44.39 s), except
+where the log ends first (1cd1 42.70, 4bfe 115.98, 7b4e 34.70, 0b4a 44.24 s) or the
+replay loses the burst behind her ultimate (fc63 90.53 s; its burst at 92.87 s is
+unplaced). So the logs confirm the controlled 5th; the "three without a burst" (1d91
+52.2, 9090 23.8, 7b4e 31.2 s) are hover starts, not 5th shots.
+**Left for the game, the off-field half:** no log has an off-field 5th (a 5th logged as
+`floating_attack1_01_projhit`; the one candidate, 0b4a 39.24 s, is a two-target log
+whose replay is a fallback), so whether she fires five shots on her own after a swap
+and whether the 5th is plain stays the test below. A log of that fight would decide it
+as well as watching.
 
 **Why:** the data has her fire five shots on her own when you swap away
 during the hover; shots with arrows are Power Shots, but the 5th is a plain
@@ -1028,7 +1117,26 @@ engine doesn't do that yet. One combo more or less per such hover.
 it's off cooldown, then end the hover (the 5th shot): does the combo
 become available without another Sign?
 
-### 46. Hail of Arrows count (optional, if you have Typhoeus)
+### 46. Hail of Arrows count (decided by the logs, 2026-11-18: one rain per shot, the 5th empowered; don't ask)
+
+**Decided by the logs (2026-11-18):** one rain per aerial shot, at most five, the 5th
+the empowered one, as the engine has. The logs have 7 Typhoeus ultimates in 7 logs
+(the re-triage's 13 counted the log's extra `ultimate_skill` events, which come at
+later shots, as ultimates). Each shot in the window brings one `arrowrain_sub1` (three
+ticks) and the 5th one `arrowrain_sub2` (five ticks and the blast): 00ae 99.4 s, 9090
+116.7 s, fc63 92.7 s, d9e5 4.4 s and 7b4e 18.5 s (two targets) have four sub1 and one
+sub2 each, and every rain is replayed on its shot (`efsim zmdlogs replay`); dbae and 9c6e
+end the hover (or the log) after three shots with three rains. Shots after the 5th bring
+none (d9e5 14.26 and 14.88 s, 9090 from +9.0 s, fc63 from +10.5 s). The window's length:
+in d9e5 her 5th rain comes from a shot at 13.62 s, 9.25 s after the window began (4.37 s),
+inside Gilberta's and Arcane's ultimate stops (4.33–6.10 s) and Liino's (6.93–9.50 s). The
+engine closed it at 13.23 s: it held the window by Liino's stop but not by the two stops
+already running when the window was created (at her ultimate's frame 61). With the
+engine's new rule that a buff created inside a running stop is held by the rest of it
+(engine assumption `buff-in-stop`, reading `held`), the window runs to 14.93 s and the
+5th rain's six hits are replayed and matched. The grounded half (attacks on the ground in
+the window bring no rain) follows the data (the rain's trigger checks the aerial arrows'
+damage tags); no log has a grounded attack inside a window.
 
 **Why:** after her ultimate, each of her next five shots within 5 s
 brings a rain of arrows, the 5th an empowered one. The engine counts one

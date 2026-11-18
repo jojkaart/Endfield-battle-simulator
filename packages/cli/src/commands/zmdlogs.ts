@@ -86,6 +86,7 @@ export default command({
                                           (or "replay only"), logged hits without a landing and why, casts it
                                           couldn't make or made without the log, its Stagger windows
                 [--kit-buff owner:id[@op]] Also a kit buff's windows at an operator (default its owner; repeatable)
+                [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
                                           windows and where the engine's own would have ended; with several logs
@@ -147,7 +148,7 @@ export default command({
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
     }
     if (sub === "casts" || sub === "replay") {
-      if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op]" : ""})`);
+      if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const seconds = (v: string | undefined, name: string) => {
         if (v === undefined) return {};
         const x = Number(v);
@@ -156,7 +157,7 @@ export default command({
       };
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators: values.operator };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"] });
+      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], assume: parseAssume(data(), values.assume) });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
     if (sub === "differences") return differencesCliReport(data, args.slice(1), { workers: values.workers, operators: values.operator, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, progress });

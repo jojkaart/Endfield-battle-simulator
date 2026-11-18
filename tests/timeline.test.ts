@@ -391,7 +391,6 @@ describe("timeline: kit triggers", () => {
     // Kit order (chr_0016_laevat.json, batch-1 pass-3 plan); the pauses, the cooldown at show_weapon's end and Scorching Heart are triggered now.
     expect(kit.triggers.map((t) => [t.id, t.on.event, t.by])).toEqual([
       ["ultimate_state", "cast", "self"],
-      ["twilight_own_stop", "cast", "self"],
       ["ultimate_cooldown", "buffEnded", "self"],
       ["twilight_paused_by_battle_skill", "cast", "self"],
       ["twilight_pause_cut", "buffEnded", "self"],

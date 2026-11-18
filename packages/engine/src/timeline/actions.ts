@@ -13,7 +13,8 @@ import { FPS } from "../units.ts";
 import type { Clock, Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
-import { controlImmune, shiftDebuffs, shiftEnemy } from "./clock.ts";
+import { controlImmune, heldFromNow, shiftDebuffs, shiftEnemy } from "./clock.ts";
+import { engineReading } from "./assumptions.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
@@ -57,6 +58,10 @@ export function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, 
     b = cur && index >= 0 && end > frame ? { ...b, expiresAt: Math.min(b.expiresAt, end), endsWithCast: index } : null;
   }
   if (!b) return { state: st, applied: false, buff: null };
+  // Created inside a running time stop or slow-down: held by the rest of it, as the buffs already running were when it
+  // began (shiftWorld); one that ends with its owner's skill keeps that end (engine assumption buff-in-stop).
+  const held = b.endsWithCast === undefined && engineReading(ctx.scenario, "buff-in-stop") === "held" ? heldFromNow(st, frame) : 0;
+  if (held > 0) b = { ...b, expiresAt: b.expiresAt + held, ...(b.nextTick !== undefined && b.nextTick > frame ? { nextTick: b.nextTick + held } : {}) };
   // What made it (ActiveBuff.createdBy): the skill, and its owner's latest cast of it.
   const made = st.casts.findLastIndex((c) => c.operator === owner && c.skill === skillId);
   b = { ...b, createdBy: { skill: skillId, ...(made >= 0 ? { cast: made } : {}) } };

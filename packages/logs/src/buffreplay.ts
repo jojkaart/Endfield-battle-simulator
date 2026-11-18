@@ -318,9 +318,13 @@ function loggedCastStart(data: GameData | undefined, lc: { t: number; operator: 
   const [from, to] = [lc.t - length, lc.t];
   if (hits.some((h) => h.t > from + EDGE_MS && h.t < to - EDGE_MS)) return lc.t;
   // What waited out a time stop lands as it ends: another's hit at the event's own time (b6aa15281db4: Arcane's attack
-  // 2 at 31027 ms) says the stop ended there (not the caster's own: d774d0ce7bd3, Zhuang Fangyi's sword at her ultimate); without one (e82d45c46040: Xaihi's at 3896 ms after 2315 ms, her Amp not yet on
-  // Arcane's hit at 7022 ms) the event is the cast.
-  if (!hits.some((h) => h.operator !== lc.operator && Math.abs(h.t - lc.t) <= FLUSH_MS)) return lc.t;
+  // 2 at 31027 ms) says the stop ended there (not the caster's own: d774d0ce7bd3, Zhuang Fangyi's sword at her ultimate),
+  // and so does another's hit soon after it (RESUME_MS), which a stop starting at the event would have held: Laevatain's
+  // ultimate, logged at its stop's end in every log (the last hit before it 2.0–2.9 s earlier, her stop 2.03 s), the team
+  // resuming 83–356 ms after it in 012ae1c80ae6, c83c75d02a85, db8711232de9, e9896c8d02be, f8793bc8aea2, 2b013866dfa3.
+  // Without one (e82d45c46040: Xaihi's at 3896 ms after 2315 ms, her Amp not yet on Arcane's hit at 7022 ms) the event is
+  // the cast.
+  if (!hits.some((h) => h.operator !== lc.operator && h.t >= lc.t - FLUSH_MS && h.t <= lc.t + RESUME_MS)) return lc.t;
   const covered = stops.some((x) => {
     if (x.operator === lc.operator) return false;
     const [a, b] = [(x.start * 1000) / FPS, ((x.start + x.scales.length) * 1000) / FPS];
@@ -333,6 +337,8 @@ function loggedCastStart(data: GameData | undefined, lc: { t: number; operator: 
 const EDGE_MS = 100;
 /** How close to a cast event a logged hit is at it (ms; loggedCastStart). */
 const FLUSH_MS = 15;
+/** How soon after an ultimate's cast event another's hit says the team resumed from its stop (ms; loggedCastStart). */
+const RESUME_MS = 500;
 
 export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[], data?: GameData, stops: readonly TimeStop[] = []): ReplayedCast[] {
   if (!fx.casts?.length) return [...casts];

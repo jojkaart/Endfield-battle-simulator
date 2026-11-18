@@ -413,10 +413,13 @@ detail):
   In code: `parseReactionEvent` and `PHYSICAL_EVENT_KINDS` (engine
   reactions.ts), `statusEventKey` and `PHYSICAL_KEYS` (status.ts),
   `ENGINE_STATUS_BUFF` (logs enginecheck.ts).
-- **Buff lanes' start** (`LogEffect.since`): whether it is the first
-  application or the latest refresh is open; against the replay's
-  Electrification `appliedAt`, 1,212 of 3,705 hits agree within 300 ms
-  (docs/friction-done/2026-11-17-fixture-refresh.md).
+- **Buff lanes' start** (`LogEffect.since`): the latest (re)application,
+  not the first (2026-11-18, in-game test 22): Laevatain's Scorching
+  Heart's `since` moves to each start the replay has (458b, within 20 ms),
+  and in f879 at 92.49 s to a re-creation while the old instance had 12 s
+  left; a lane whose `since` doesn't move wasn't re-applied. Earlier,
+  against the replay's Electrification `appliedAt`, 1,212 of 3,705 hits
+  agreed within 300 ms (docs/friction-done/2026-11-17-fixture-refresh.md).
 
 **What a log check verifies** (2026-10-24, after a review found matches
 that said little). A logged hit is read many ways (crit or not, boundary

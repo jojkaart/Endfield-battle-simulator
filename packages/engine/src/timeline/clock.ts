@@ -59,6 +59,24 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 }
 
 /**
+ * The world's frames the time stops and slow-downs running at `frame` still take from it (the lowest scale where they
+ * overlap, as slowDown counts them): what a buff created at `frame` is held by, as the buffs already running were when
+ * each began (engine assumption `buff-in-stop`, reading `held`; actions.ts addBuff). 0 outside every stop.
+ */
+export function heldFromNow(st: TimelineState, frame: number): number {
+  const running = st.slowdowns.filter((x) => x.start + x.scales.length > frame && x.start <= frame);
+  if (running.length === 0) return 0;
+  const last = Math.max(...running.map((x) => x.start + x.scales.length));
+  let held = 0;
+  for (let f = frame; f < last; f++) {
+    let m = 1;
+    for (const x of st.slowdowns) if (f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
+    held += 1 - m;
+  }
+  return Math.round(held);
+}
+
+/**
  * When an operator's clock, from `from`, has run `delay` frames: through the slow-downs already under way or to come
  * that hold it (TimelineState.slowdowns, all but its own; slowDown shifted what was scheduled when each began, not what
  * comes later). An Arts Burst runs on its operator's clock: it waits out the rest of another's time stop or slow-down

@@ -98,31 +98,7 @@
           "buff": "show_weapon"
         }
       ],
-      "note": "ultimate_skill frame 0: CreateBuff show_weapon, which creates ult_end (Twilight). The cast trigger runs after the cast's own time stop shift, so her 61-frame UltimateTimeAction doesn't shorten them (the data exempts the caster)."
-    },
-    {
-      "id": "twilight_own_stop",
-      "on": {
-        "event": "cast",
-        "skills": [
-          "chr_0016_laevat_ultimate_skill"
-        ]
-      },
-      "by": "self",
-      "reading": { "assumption": "laevatain-twilight-own-stop", "reading": "held" },
-      "do": [
-        {
-          "kind": "extendBuff",
-          "buff": "twilight",
-          "seconds": 2.0333333333
-        },
-        {
-          "kind": "extendBuff",
-          "buff": "show_weapon",
-          "seconds": 2.0333333333
-        }
-      ],
-      "note": "Only under in-game test 18's alternative (assumption laevatain-twilight-own-stop, reading held): her own ultimate's time stop (61 frames) holds Twilight too, so it lasts 15 s after the stop, about 17 s from the press. The logs don't decide it (2026-11-16): Twilight's logged ends (last enhanced hit, first plain one after: 458b03609665, 9c0bb09daff2, c83c75d02a85, f8793bc8aea2) sit 2.5–7 s past 15 s plus the battle-skill pauses and the stops, more than the 2 s the readings differ by."
+      "note": "ultimate_skill frame 0: CreateBuff show_weapon, which creates ult_end (Twilight). Created inside her own 61-frame UltimateTimeAction, they are held by the rest of it like any buff created inside a running stop (engine assumption buff-in-stop, reading held: 15 s after the stop, about 17 s from the press; until 2026-11-18 the kit's assumption laevatain-twilight-own-stop, default unheld). The logs (in-game tests 18, 21): in all 7 closed Twilight windows the game's Twilight outlasts the unheld reading by 2.1-6.6 s, and the held one is never too long."
     },
     {
       "id": "ultimate_cooldown",
@@ -334,18 +310,6 @@
         }
       ],
       "note": "Talent 1 (buff_chr_0016_laevat_passive): Scorching Heart when Melting Flame reaches 4 (the data's energy_icon_5 gate: it starts on reaching 4, refreshes on reaching 4 again after spending, and a gain capped at 4 doesn't restart it; stackAtLeast fires only when the count changes)."
-    }
-  ],
-  "assumptions": [
-    {
-      "id": "laevatain-twilight-own-stop",
-      "test": "18",
-      "question": "Does Laevatain's own ultimate time stop hold her Twilight (about 17 s from the press), or does Twilight run through it (15 s from the press)?",
-      "default": "data",
-      "readings": {
-        "data": "Twilight runs through her own time stop (the data exempts the caster from its own UltimateTimeAction): 15 s from the press",
-        "held": "her own time stop holds Twilight like any other buff: 15 s after the stop, about 17 s from the press"
-      }
     }
   ],
   "skills": [

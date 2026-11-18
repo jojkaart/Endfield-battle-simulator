@@ -36,7 +36,7 @@ describe("assumption switches", () => {
     expect(hasted(owner)).toBe(false);
     expect(hasted(underAssume(owner, parseAssume(data, ["si-haste-every-end=every-end"])))).toBe(true);
   });
-  it("Laevatain's own time stop holds Twilight only under test 18's alternative (2 s more)", () => {
+  it("Laevatain's own time stop holds Twilight (engine assumption buff-in-stop: 2 s less under runs)", () => {
     const LAEV = "chr_0016_laevat";
     const inkMelt = readScenario(join(ROOT, "examples/ink-melt.scenario.json"));
     const twilightEnd = (sc: TimelineScenario) => {
@@ -44,9 +44,9 @@ describe("assumption switches", () => {
       const st = apply(ctx, init(ctx), { operator: LAEV, skill: "chr_0016_laevat_ultimate_skill" });
       return st.buffs.find((b) => b.id === "twilight" && b.owner === LAEV)?.expiresAt;
     };
-    const plain = twilightEnd(inkMelt);
-    expect(plain).toBeDefined();
-    expect((twilightEnd(underAssume(inkMelt, parseAssume(data, ["laevatain-twilight-own-stop=held"]))) ?? 0) - (plain ?? 0)).toBe(61);
+    const held = twilightEnd(inkMelt);
+    expect(held).toBeDefined();
+    expect((held ?? 0) - (twilightEnd(underAssume(inkMelt, parseAssume(data, ["buff-in-stop=runs"]))) ?? 0)).toBe(61);
   });
   it("refuses unknown assumptions and readings", () => {
     expect(() => parseAssume(data, ["nope=x"])).toThrow(/assumptions: .*si-haste-every-end/);

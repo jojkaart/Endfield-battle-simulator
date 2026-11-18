@@ -90,10 +90,11 @@ function landingsOf(replay: BuffReplay, fx: LogFixture): { byLanding: Map<Landed
 /**
  * `zmdlogs replay`: the replay of a fight in time order: its landings (with the logged hit each stands for, or
  * "replay only"), logged hits without a landing and why, failed and missed casts, Stagger windows, and the windows of
- * the kit buffs named (`owner:id`, at the owner unless `@operator` follows).
+ * the kit buffs named (`owner:id`, at the owner unless `@operator` follows); under other readings of open assumptions
+ * with `assume` (as `zmdlogs check --assume`).
  */
-export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[] } = {}): string {
-  const { replay } = logBuffReplay(data, fx);
+export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+  const { replay } = logBuffReplay(data, fx, undefined, f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {});
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
   for (const l of replay.hits) {
