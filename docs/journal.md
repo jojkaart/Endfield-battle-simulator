@@ -55,6 +55,18 @@ extra 2 s as its forms): Ink Melt's 60 s 3,953,129 → 3,402,966 (−13.9%: its 
 show_weapon blocks her energy and starts her cooldown 2 s later); Si-Laevatain-Liino-Gilberta +2.7%; Typhoeus's
 team's 60 s +0.75%.
 
+**Teams** (`efsim rules`, 32 seeds from 1001, against `--assume buff-in-stop=runs` at the same code): Ink Melt
+63,347 → 62,377 (−1.5%) at full energy, 56,123 → 59,917 (+6.8%) from zero (a longer Twilight, but her energy
+blocked and her ultimate's cooldown started 2 s later); Typhoeus's team 52,374 → 52,641 (+0.5%) / 48,973 → 49,095
+(+0.2%). Team pages updated.
+
+**Tests:** kit tests whose buffs are created inside a stop or a combo's slow-down now expect the rest of it
+(Akekuri, Ardelia, Lifeng, Mi Fu, Rossi, Wulfgard, Yvonne, Zhuang Fangyi, Laevatain); the search test re-pinned
+(Laevatain alone +12.6%). The loop-search tests run Laevatain alone under `buff-in-stop=runs`: with the
+longer Twilight she finds no loop in 12 rounds at beam 6 (a lead for the loop search). Holding by ultimates'
+stops only (reading `ultimates`) measured worse than by every slow-down (development plain 50.0 → 49.8%,
+hold-out 66.1 → 65.9%).
+
 **Dead ends:** see open-problems "Laevatain's Twilight runs longer than its model" (a constant,
 show_weapon's 16 s, the full 115-frame pause, a smaller combo hold). Two small Typhoeus misfits
 noted there (1cd1 40.12 s, d9e5 11.73 s).

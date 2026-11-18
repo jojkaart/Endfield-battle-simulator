@@ -231,6 +231,14 @@ instead of 3.5 s) moves it: 54,607 → **52,369** / 51,076 → **48,967**
 show). The other rows are from before. As a bot / at 0.6 s now 59,379 /
 51,427.
 
+**Buffs created inside a running stop are held (2026-11-18, in-game tests 18, 21, 46 from the
+logs; same seeds 1001–1032):** engine assumption `buff-in-stop` ([journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)): Typhoeus's
+Hail of Arrows window and the team's buffs created during a time stop or combo slow-down last the
+rest of it longer. Sustained DPS 52,374 → **52,641** (+0.5%) at full energy, 48,973 → **49,095**
+(+0.2%) from zero, each against the old rule at the same code (`--assume buff-in-stop=runs`); as a
+bot / at 0.6 s 59,764 / 51,748. The 60 s timeline +0.75% (5,615,426 → 5,657,280), the zero-energy
+one unchanged. In-game tests 9, 43 (the controlled half), 46 decided from the logs: no kit change.
+
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Rule 7 fixed (2026-11-16).** It read only Vocalist Stance, so it also
