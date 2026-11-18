@@ -6,7 +6,7 @@
 //
 // Usage: node scripts/pending-costs.ts <vitest-json-report>
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { VitestReport } from "./premerge.ts";
@@ -14,13 +14,20 @@ import type { VitestReport } from "./premerge.ts";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const PENDING_COSTS = join(ROOT, "tests", "slow", "pending-costs.json");
 
+/** The hold-out logs' keys in the order their tests count them ("hold-out log N" is the Nth: tests/slow/pending.ts testTitle). */
+export function holdoutKeys(root: string = ROOT): string[] {
+  const dir = join(root, "fixtures", "holdout");
+  return existsSync(dir) ? readdirSync(dir).filter((f) => f.startsWith("zmdlogs-") && f.endsWith(".json")).sort().map((f) => `holdout/${f}`) : [];
+}
+
 /** Each log's check time in seconds (to 0.1), by its key under fixtures/ ("pending/zmdlogs-….json"). */
-export function pendingCosts(report: VitestReport): Record<string, number> {
+export function pendingCosts(report: VitestReport, holdouts: readonly string[] = holdoutKeys()): Record<string, number> {
   const out: Record<string, number> = {};
   for (const f of report.testResults) {
     for (const a of f.assertionResults) {
-      const m = /^((?:pending|holdout)\/zmdlogs-[^ ]+\.json) checks as its snapshot says$/.exec(a.fullName);
-      if (m && typeof a.duration === "number") out[m[1] as string] = Math.round(a.duration / 100) / 10;
+      const m = /^((?:pending|holdout)\/zmdlogs-[^ ]+\.json|hold-out log (\d+)) checks as its snapshot says$/.exec(a.fullName);
+      const key = m?.[2] !== undefined ? holdouts[Number(m[2]) - 1] : m?.[1];
+      if (key && typeof a.duration === "number") out[key] = Math.round(a.duration / 100) / 10;
     }
   }
   return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));

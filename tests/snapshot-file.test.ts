@@ -8,6 +8,7 @@ import { formatSnapshot, readStored, snapshotLayout, writeSnapshotFile } from ".
 import { logFixtures, ROOT, shard } from "./logverdicts.ts";
 import { renameKeys } from "../scripts/snapshot-keys.ts";
 import { pendingCosts } from "../scripts/pending-costs.ts";
+import { testTitle } from "./slow/pending.ts";
 import type { VitestReport } from "../scripts/premerge.ts";
 
 const dir = mkdtempSync(join(tmpdir(), "efsim-snapshot-"));
@@ -71,5 +72,13 @@ describe("the pending shards (tests/logverdicts.ts shard)", () => {
       { status: "passed", fullName: "has a verdict snapshot for every pending fixture and none for a fixture that isn't one", failureMessages: [], duration: 5 },
     ] }] };
     expect(pendingCosts(report)).toEqual({ "pending/zmdlogs-a.json": 12.3 });
+  });
+
+  it("maps a hold-out's counter title back to its key, so no test title names a hold-out (tests/slow/pending.ts testTitle)", () => {
+    const holdouts = ["holdout/zmdlogs-x.json", "holdout/zmdlogs-y.json"];
+    expect(testTitle("holdout/zmdlogs-y.json", holdouts)).toBe("hold-out log 2");
+    expect(testTitle("pending/zmdlogs-a.json", holdouts)).toBe("pending/zmdlogs-a.json");
+    const report: VitestReport = { testResults: [{ name: "/r/tests/slow/logs-pending-1.test.ts", status: "passed", assertionResults: [{ status: "passed", fullName: "hold-out log 2 checks as its snapshot says", failureMessages: [], duration: 4_000 }] }] };
+    expect(pendingCosts(report, holdouts)).toEqual({ "holdout/zmdlogs-y.json": 4 });
   });
 });

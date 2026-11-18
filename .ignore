@@ -1,0 +1,3 @@
+# Searches (ripgrep, and tools built on it) skip these: the hold-out logs are never opened, listed or grepped
+# (docs/accuracy-plan.md, "Choosing logs"). grep -r still needs --exclude-dir=holdout.
+fixtures/holdout/

@@ -8,7 +8,8 @@
 // So that improvements and regressions look different, each moved log's failure says its direction by the fit
 // measure (scripts/accuracy.ts `direction`: plain matches, mismatches, |total damage error|), and each shard ends
 // with a summary line per group (development, hold-out, earlier): how many logs got better or worse. Hold-out logs
-// only ever count in the summary's numbers. The scoreboard (docs/accuracy.md) shows the aggregate change.
+// only ever count in the summary's numbers, and their tests are titled by a counter ("hold-out log 7"), so no run's
+// output names one (the snapshot keeps the file names). The scoreboard (docs/accuracy.md) shows the aggregate change.
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -19,6 +20,11 @@ import { Snapshot, UPDATE_HINT, UPDATING } from "../snapshot.ts";
 import { direction, fitChange, GROUPS, groupOf, readSplit, type Direction, type Entry, type Group } from "../../scripts/accuracy.ts";
 
 export const PENDING_SHARDS = 4;
+
+/** A pending log's test title: its file, or for a hold-out a counter ("hold-out log 7", its place among the hold-outs). */
+export function testTitle(file: string, holdouts: readonly string[] = logFixtures("holdout")): string {
+  return file.startsWith("holdout/") ? `hold-out log ${holdouts.indexOf(file) + 1}` : file;
+}
 
 export function pendingSuite(index: number): void {
   const data = loadGameData();
@@ -48,7 +54,7 @@ export function pendingSuite(index: number): void {
     });
   }
 
-  describe.each(files)("%s", (file) => {
+  describe.each(files.map((f) => [testTitle(f), f] as const))("%s", (_title, file) => {
     it("checks as its snapshot says", () => {
       const fx = readLogFixture(join(ROOT, "fixtures", file));
       const replay = logBuffReplay(data, fx);
