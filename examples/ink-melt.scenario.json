@@ -378,7 +378,7 @@
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_normal_skill",
+      "skill": "chr_0016_laevat_normal_skill_during_ult",
       "at": 16.1333
     },
     {
@@ -388,33 +388,28 @@
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack1",
+      "skill": "chr_0016_laevat_ult_attack1",
       "at": 20.0333
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack2",
+      "skill": "chr_0016_laevat_ult_attack2",
       "at": 20.3
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack3",
+      "skill": "chr_0016_laevat_ult_attack3",
       "at": 20.7
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack4",
+      "skill": "chr_0016_laevat_attack1",
       "at": 21
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack5",
+      "skill": "chr_0016_laevat_attack1",
       "at": 21.5667
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_combo_skill",
-      "at": 22.4333
     },
     {
       "operator": "chr_0016_laevat",
@@ -442,9 +437,9 @@
       "at": 25.2333
     },
     {
-      "operator": "chr_0025_ardelia",
-      "skill": "chr_0025_ardelia_combo_skill",
-      "at": 26.1
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_combo_skill",
+      "at": 27.333333333333332
     },
     {
       "operator": "chr_0016_laevat",
@@ -492,6 +487,11 @@
       "at": 33.6333
     },
     {
+      "operator": "chr_0025_ardelia",
+      "skill": "chr_0025_ardelia_combo_skill",
+      "at": 35.733333333333334
+    },
+    {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_plunging_attack_end",
       "at": 35.0333
@@ -532,11 +532,6 @@
       "at": 38.6
     },
     {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_combo_skill",
-      "at": 39.4667
-    },
-    {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack1",
       "at": 40.2667
@@ -560,11 +555,6 @@
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
       "at": 42.2667
-    },
-    {
-      "operator": "chr_0025_ardelia",
-      "skill": "chr_0025_ardelia_combo_skill",
-      "at": 43.1333
     },
     {
       "operator": "chr_0016_laevat",
@@ -607,43 +597,43 @@
       "at": 47.7333
     },
     {
+      "operator": "chr_0025_ardelia",
+      "skill": "chr_0025_ardelia_combo_skill",
+      "at": 53.53333333333333
+    },
+    {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_normal_skill_2",
       "at": 47.7333
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ultimate_skill",
-      "at": 48.6
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack1",
+      "skill": "chr_0016_laevat_attack1",
       "at": 50.4667
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack2",
+      "skill": "chr_0016_laevat_attack2",
       "at": 50.9
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack3",
+      "skill": "chr_0016_laevat_attack3",
       "at": 51.6
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack4",
+      "skill": "chr_0016_laevat_attack4",
       "at": 51.9667
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack1",
+      "skill": "chr_0016_laevat_attack1",
       "at": 52.8667
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_normal_skill_during_ult",
+      "skill": "chr_0016_laevat_normal_skill",
       "at": 53.2667
     }
   ]

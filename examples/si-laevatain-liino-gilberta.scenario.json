@@ -314,12 +314,12 @@
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack1",
+      "skill": "chr_0016_laevat_ult_attack1",
       "at": 19.333333333333332
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack2",
+      "skill": "chr_0016_laevat_ult_attack2",
       "at": 19.666666666666668
     }
   ]
