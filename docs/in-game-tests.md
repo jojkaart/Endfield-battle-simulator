@@ -343,7 +343,20 @@ every operator's combo gaps (haiku).
 **How:** with Will > Intellect, cast her combo and time the cooldown:
 18 s expected (12 s would mean the cut applies in WILL mode too).
 
-### 14. Si's battle skill element with a Heat operator in slot 1 (optional confirmation)
+### 14. Si's battle skill element with a Heat operator in slot 1 (done: decided by the logs, 2026-11-18; don't ask)
+
+**Decided by the logs (2026-11-18): Heat with a Heat operator first, Cryo
+otherwise, as the engine has.** Every Arts Burst credited to Si in the
+development logs (`checkReactions`, the kits' inflictions replayed in the
+log's team order): Heat first (Laevatain 458b, 9c0b; Wulfgard c83c, 632c,
+67d8; Camille db87) gives 11 `fire_fire` bursts, 6 of them predicted by
+the engine as Heat bursts, the other 5 0.9–2.5 s after her battle-skill
+hit where the replay has no earlier Heat stack to burst on (458b 173755,
+209526; 9c0b 43169; c83c 96750; db87 13775); Si, Arcane or Gilberta first
+(9555, abfd, ad7f, 69e7, c3c7) gives 9 `cryst_cryst`, 8 predicted as Cryo
+bursts. No log has a Cryo burst of hers with a Heat operator first or a
+Heat one without (4f7e, Si first: a `cryst_fire` reaction, her Cryo onto
+Heat). Her hit's own element field stays `cryst` (the damage element).
 
 **Why:** her description says the battle skill applies Heat instead of Cryo
 Infliction when a Heat operator is in Team Position 01. The data settles it
@@ -353,7 +366,25 @@ slot); this would only confirm it.
 and look at the infliction icon on the enemy; repeat with a Cryo or Nature
 operator first.
 
-### 15. Swapping and casting during a battle skill (ready, if you have Gilberta)
+### 15. Swapping and casting during a battle skill (ready, if you have Gilberta; the logs can't decide it, 2026-11-18)
+
+**The logs (2026-11-18): not decidable; Gilberta is never the controlled
+operator in any development log.** A basic-attack hit that deals Stagger
+is the controlled operator's only (a Final Strike's, KitHit
+`poiseControlledOnly`; buffreplay.ts `controlledFromLog`). Her Final
+Strike would deal Stagger, but none of her 371 Final-Strike hits in the
+20 logs with her and Stagger data does (her battle skill's explosion does,
+in 9 of them, so the field is recorded); before each of her 20 battle
+skills the controlled operator is someone else (Chen, Wulfgard, Mi Fu,
+Typhoeus …), and that operator's Final Strikes go on inside her 3.7 s
+(c4f3: Chen's at +1.8–2.5 s after five of her six casts). So every cast
+was a teammate's, and the lock (cantSwitchPosition / cantCastSkill: her
+switching and casting while she's the one in control) never had anything
+to hold. The re-triage's "another operator's fresh basic chain starts
+inside the 3.7 s" (16 of 19) are the controlled operator's and teammates'
+own attacks (teammates attack on their own: test 101), not swaps. The
+field keeping all five hits fits both readings (she's off-field anyway).
+So the test stays as written: it needs her controlled.
 
 **Why:** the data forbids switching for the first 3.7 s of Gilberta's
 battle skill (`cantSwitchPosition`); the engine now lets you swap at any
@@ -379,7 +410,36 @@ her ultimate (or combo) right after the battle skill. Does it start at
 once, or only after about 3.7 s? Does a teammate's combo still fire
 meanwhile? Liino's stance has the same question (test 28).
 
-### 16. Does a skill cancel the basic attack it interrupts? (ready; optional variant with Ardelia)
+### 16. Does a skill cancel the basic attack it interrupts? (ready; optional variant with Ardelia; the logs: partly, 2026-11-18)
+
+**The logs (2026-11-18): partly.** The re-triage's case (Si's Final
+Strike, kit frame 25 = 833 ms, landing 106–694 ms after her own
+battle-skill cast event in 15 of 370 events, 9 more at the same ms) isn't
+a skill cutting into the attack: none of those 24 events (28 within 1 s)
+is followed by her battle skill's hit (`normal_skill_abilityrange_1`, kit
+frame 15, logged 400–650 ms after the event for a real cast). They are her
+hitless battle-button events (282 of her 370 events have no battle-skill
+hit within 1.5 s; most come 2.8–4.9 s after the previous one: test 106's
+open part, open-problems "Type 50 Yinglung's Edge"). What the logs do
+settle: (1) those events don't end her basic attack: the Final Strike
+lands after them; (2) of her 73 real battle skills, none has a basic hit
+of hers between the event and the skill's hit, so a started battle skill
+never ran beside an attack's hit; (3) the one real cast with a Final
+Strike after its event (a7a7 16792: Final Strike +426, the skill's hit
++1273 ms, 770 ms later than usual) started about 350 ms after that Final
+Strike landed: the press waited for the hit rather than cutting it, or
+the event was a hitless one and the real press came later (one case
+either way). What they can't: whether a press before the attack's hit drops that
+hit (a dropped hit leaves no trace, and the log has no press times). The
+engine's rotations don't depend on it much: an action without a time
+waits for the current skill's own hits (timing.ts `ownHitsLanded`), the
+reading (3) fits. Still for the owner as written (press the battle skill
+right after attack 5 starts: does the Final Strike's number appear?).
+Data aside: Si's Final Stroke (`normal_skill_2`) has a
+`switchToBuffConfig` with `asSkillCast` and a buff (xianjing_inkboom),
+like Last Rite's beside cast, so it may play no timeline and leave the
+attack alone; the engine ends the attack (not changed: no log separates
+it, as the strokes can't be told from the hitless events).
 
 **Why:** the engine assumes a battle skill, combo or ultimate can start at
 any moment of a basic attack and cancels the attack's hits that haven't
@@ -1945,7 +2005,30 @@ lower of two tries each (crits):
 - 4.0: it takes the Battle Skill DMG bonus;
 - anything else: the table's factor isn't 1.
 
-### 92. Long Heritage and Si's Amp (ready, if you have Si with Long Heritage)
+### 92. Long Heritage and Si's Amp (done: decided by the logs, 2026-11-18: Si's Amp counts; don't ask)
+
+**Decided by the logs (2026-11-18): Si's Amp counts, as the engine has.**
+632c and 67d8 (Si with Long Heritage, both multi-target): the team buff
+`buff_wpn_claym_0019_teamatk` (Arts DMG 0.112, the weapon's skill-3 level
+9 `spell_dmg_up`) starts with her ultimate's Cryo and Heat Amp at all four
+of her ultimates, with the Amp's own `since` (632c 10455, 97603; 67d8
+14267, 117583; ultimate events 8293, 97494, 14167, 117479), on all four
+operators' hits (Wulfgard, Camille, Gilberta and Si herself), and at no
+other time. The engine's replay of 67d8 (`zmdlogs hits`, a multi-target
+log the scoreboard doesn't count) has it on 222 of the 234 hits that list
+it and on 4 that don't; 88 hits under it match plain with it in (52 in
+the first lane, to 41.5 s, 36 in the second), the rest mostly this fight's
+other mismatches. So the check reads Si's Cryo Amp (the ID
+list, or the tag and the ID list), not only all-Arts Amps (batch-4 T1;
+the same reading in Grand Vision and Glorious Memory stays the data's).
+The re-triage's lanes "0.5 s after a battle skill, listed on Si's hits
+only" are the other buff, `buff_wpn_claym_0019_teamspell` (0.168, the
+wielder's own Cryo DMG when her battle skill inflicts Cryo or Heat): it
+starts at her battle-skill hit and is hers alone, also as the engine has;
+the battle skill right after 67d8's ultimate (event 117583) has no logged
+hit, so no infliction and no lane. The team buff's lanes run 27.6–31 s
+against the data's 20 s, held by the fights' many stops; the engine's
+replay holds it to the same 41.5 s in 67d8.
 
 **Why:** Long Heritage gives the team Arts DMG +11.2% for 20 s when an Amp
 the wielder gives, one reaching Cryo, reaches a teammate. Si's ultimate

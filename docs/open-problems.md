@@ -896,6 +896,21 @@ more), 9555 (39.7 and 92.8 s one fewer) alike.
 that count; a layer lost or kept across her own ultimate (c83c's 55.6 s
 combo right after it at 54.4 s fits 1).
 
+**The events and her basic attack (test 16, 2026-11-18; counted over
+every development log with Si, multi-target
+included):** 282 of her 370 battle-skill cast events have no battle-skill
+hit (`normal_skill_abilityrange_1`) within 1.5 s; a real cast's hit comes
+400–650 ms after its event (73 casts). Her Final Strike lands 0–0.98 s
+after 28 of the hitless events (none with a battle-skill hit after it),
+so whatever they are, they don't end her basic attack: no timeline that
+replaces the current action starts. *Ruled out:* that they're battle
+skills interrupting the attack (no hit follows); that they're all
+strokes (most have no stroke hit: `inkmark_projhit` or `inkmove_2` follow
+only 8 of the 28, within 2.5 s). *Still possible:* presses the game switches to a buff
+(SkillData `switchToBuffConfig` with `asSkillCast`: her Final Stroke's
+has the buff xianjing_inkboom, as Last Rite's beside cast) or a periodic
+internal cast (`canDummyCast` is set on all three of her battle skills).
+
 **Next check:** in-game test 106 (the buff's stack count on screen; its
 (d) is the strokes question).
 
