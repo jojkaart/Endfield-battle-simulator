@@ -21,6 +21,7 @@ const ON_TIME_MS = 150;
 
 /** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
 export interface TimeStop {
+  /** A frame (30 a second), not ms as the log's times; it lasts `scales.length` frames. */
   readonly start: number;
   readonly scales: readonly number[];
   readonly operator: string;

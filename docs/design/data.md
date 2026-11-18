@@ -332,6 +332,92 @@ point, `zmdlogs check --simulate` (`simulateLog`), compares each logged
 hit with its landing's damage, with only crits, enemy HP and effects no
 kit models from the log: a diagnostic (journal 2026-10-25).
 
+**What the replay takes from the log** (round 3, 2026-11-18: one list of
+the "follow the log" mechanisms that grew one at a time in
+packages/logs/src/buffreplay.ts and logcheck.ts). Each row is something the
+check no longer tests of the engine: a mismatch can't come from it, and a
+change to the engine there doesn't show in the verdicts. `efsim zmdlogs
+replay <fixture>` shows the result; `efsim zmdlogs differences` where the
+replay and the log's listing still disagree.
+
+| What | From the log | Function | What the check then doesn't test |
+|---|---|---|---|
+| Casts and their starts | logged hits grouped into casts, each cast's start its first landing less the kit frame, time stops counted back (logcasts.ts) | `placeHits`, `replayedCasts` | when the engine would let the cast start |
+| Landings' frames | each logged hit of a cast lands at its logged frame (`replayCast` landings `ref`) | `replayedCasts` | the kit's hit frames for logged hits |
+| Casts without damage | the log's cast events (`LogFixture.casts`); casts inferred from a buff's end, a buff's lane or a trigger's hits | `withLoggedCasts`, `castsFromBuffEnds`, `castsFromBuffLanes`, `castsFromTriggerHits` | that the press happened |
+| Casts the log can't show | a cast that hits nothing, added where a logged cast needs it (an assumption) | `missedCasts` (BuffReplay.missed) | whether it was pressed |
+| Who is controlled | basic-attack hits with Stagger are the controlled operator's | `controlledFromLog` | swap timing |
+| Crits | the logged crit flags (`TimelineScenario.loggedCrits`) | `replayKitBuffs` | crit rolls, and buffs triggered by crits where logged |
+| Arts reaction levels | the level whose reading fits the logged value (`loggedReactionLevels`, up to 3 replays) | `logBuffReplay` | the engine's infliction stacks at those reactions |
+| Stagger bar | the bar before each group of logged hits with Stagger | `loggedPoiseBars`, engine `setPoise` | the kits' Stagger per hit (between groups only) |
+| Stagger state | Staggered through moments the log lists `buff_common_poise_break_damage_taken_scale`; not where it lists none (`calm`) | `loggedStaggerSteps`, engine `holdStagger` | Stagger windows' starts and lengths (`zmdlogs stagger` compares the engine's own) |
+| Stagger recoveries | a full bar between two hits refills it | `loggedRecoveries`, engine `refillPoise` | the enemy's own recovery |
+| Enemy HP | the HP the logged damage leaves (when it sums to Max HP) | `loggedEnemyHp` | HP-threshold effects' timing |
+| Effects no kit models | (`--simulate` only) the log's effects as modifiers | `simulateLog` `loggedModifiers` | — |
+
+Readings of the engine's own open rules (control immunity, ...) switch with
+`--assume` (`zmdlogs check --assume`, `scripts/measure.ts --assume`;
+packages/engine/src/timeline/assumptions.ts), as the kits' do.
+
+**What the log records** (round 3, 2026-11-18: facts agents measured and
+left in code comments or reports). ZMDLogs' battle detail, as the importer
+keeps it (packages/logs/src/zmdlogs.ts; `efsim zmdlogs raw` shows a raw
+detail):
+- **Times** are ms from the fight's start, in the world's time: other
+  casts' time stops and hit-stop are in them. The engine counts frames
+  (30 a second): `LandingFacts` statuses' `appliedAt` and `TimeStop.start`
+  are frames; `LogEffect.since`, `LogHit.t`, `LogCast.t` and the placed
+  casts' `start` are ms (`zmdlogs hits --json` gives `appliedAtMs` too).
+- **Cast events** (`LogFixture.casts`: the detail's skill events without a
+  damage value) are presses as the log has them, not the kit's frame 0:
+  - battle skills: the event is at the placed start (within a frame or
+    two);
+  - combos: the event lags the kit's frame 0 by 0.3–0.7 s, differing by
+    operator;
+  - ultimates: the event comes at the end of the ultimate's own time stop,
+    about 1.9 s after the placed start (`loggedCastStart` in
+    buffreplay.ts);
+  - a press during another operator's time stop is logged at that stop's
+    end, sharing its ms (`unplacedCastStops`);
+  - the event names the slot's skill, not the kit's variant
+    (`chr_0034_typhoea_normal_skill` for `normal_skill_floating_start`:
+    `castEventOf` in logcasts.ts matches them);
+  measured over the development logs in the cast-placement round
+  (docs/friction-done/2026-11-18-cast-placement.md, point 5); redo the
+  measurement with `efsim zmdlogs casts <fixture>` (EVENT against CAST
+  lines) after a placement change.
+- **Hidden casts logged as another skill's**: an entity's CastSkill is
+  logged as a cast of the skill that spawned it. Arcane's combo appears
+  again about 6.5 s after each real one: the CastSkill of
+  `combo_skill_abilityentity_end` at Imprisonment's natural end (an
+  explosion follows about 0.45 s later), so the log gives Imprisonment's
+  end; her INT twin's `seal_again` is logged under the combo's id too. The
+  placement and `withLoggedCasts` treat such events as presses (which then
+  fail on cooldown); none is used as a timing fact yet.
+- **Status keys** (event keys of a status's own hit; effect keys of its
+  debuff lane at later hits), as the development logs have them:
+
+  | Status | Its hit's event key | Its debuff lane (effect key, zone) |
+  |---|---|---|
+  | Arts Burst | `buff_common_<e>_<e>_triggered` (Typhoeus' own: `buff_common_natural_natural_triggered_typhoea`) | — |
+  | Reaction | `buff_common_<e>_<consumed>_triggered`; Corrosion's own hit `buff_common_natural_triggered` | Electrification: `buff_common_pulse_pulse_conduct_triggered_do` (damageTaken); `buff_common_pulse_<x>_triggered` (damageTaken, a few) |
+  | Corrosion | `buff_common_natural_triggered` | listed without a value (`isCorrosionBuff`: `buff_common_natural_natural_corrupt_do`, `buff_common_natural[_x]_triggered`) |
+  | Combustion tick | `buff_common_burning_status` | — |
+  | Solidification | — | `buff_common_originum_frozen` (an event key too) |
+  | Lift / Knock Down | `buff_physical_airborne` / `buff_physical_knockdown` | — |
+  | Crush | `buff_physical_do_crushed` (`buff_physical_crushed` in some logs) | — |
+  | Breach | `buff_physical_do_fracture` | `buff_physical_do_fracture` (damageTaken, physical) |
+  | Shatter | `buff_common_cryst_triggered_physical_break` | — |
+  | Stagger | — | `buff_common_poise_break_damage_taken_scale` (multiplicative) |
+
+  In code: `parseReactionEvent` and `PHYSICAL_EVENT_KINDS` (engine
+  reactions.ts), `statusEventKey` and `PHYSICAL_KEYS` (status.ts),
+  `ENGINE_STATUS_BUFF` (logs enginecheck.ts).
+- **Buff lanes' start** (`LogEffect.since`): whether it is the first
+  application or the latest refresh is open; against the replay's
+  Electrification `appliedAt`, 1,212 of 3,705 hits agree within 300 ms
+  (docs/friction-done/2026-11-17-fixture-refresh.md).
+
 **What a log check verifies** (2026-10-24, after a review found matches
 that said little). A logged hit is read many ways (crit or not, boundary
 buffs, Corrosion levels, situational parts, event counts, value

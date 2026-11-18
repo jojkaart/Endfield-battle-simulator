@@ -72,4 +72,43 @@ Part of the [design](../design.md): Fixtures, tests, snapshots and the accuracy 
 - **The pending shards** (tests/slow/logs-pending-*.test.ts) are balanced
   by each log's check time in the last snapshot update
   (tests/slow/pending-costs.json, written by scripts/pending-costs.ts from
-  snapshots.sh's vitest report; a new log falls back to its hit count).
+  snapshots.sh's vitest report with `snapshots:update -- --costs`, on a
+  quiet machine when rebalancing; a new log falls back to its hit count).
+
+## Measuring a change
+
+Round 3 (2026-11-18), after agents spent half their sessions waiting on
+`snapshots:update` to try an idea:
+
+- **`npm run measure`** (scripts/measure.ts) runs the log checks the
+  verdict snapshots record on worker threads (all 73 logs in about a
+  minute), writes what the snapshot files and the scoreboard would become
+  to `scratch/measure/<time>/` and prints the scoreboard's change and each
+  log's direction against the snapshots committed at HEAD. Nothing tracked
+  is written; hold-outs only count. `--with <op>` / `--logs <ids>` measure
+  a selection (the rest keep the reference's entries), `--changed
+  placement` only the logs whose placed casts differ from the reference
+  code's, `--assume <id>=<reading>` an open reading (the kits' or the
+  engine's). On a clean tree it ends "The log verdict snapshots would stay
+  as they are (byte for byte)".
+- **Against other code:** `--at <ref>` measures a commit in its own
+  worktree (scripts/at-commit.ts), so the working tree stays editable;
+  `--base <ref>` measures two commits' code on the same logs (an A/B that
+  doesn't trust either side's committed snapshots). Never copy older source
+  files over the tree while a job runs on it.
+- **`npm run snapshots:update`** stays the final step before a commit
+  that moves verdicts (it also rewrites the example and kit snapshots and
+  checks every test's assertions).
+- **Verifying a commit while editing:** `node scripts/verify-at.ts [<ref>]
+  [--steps typecheck,lint,test]` runs premerge's steps in the commit's
+  worktree.
+- **The shared lock** (scripts/testlock.ts) is a queue in arrival order;
+  premerge and test suites go ahead of jobs (with-lock, measure) that
+  arrived up to 20 min before them. A waiter prints a heartbeat a minute;
+  `node scripts/with-lock.ts --status` shows the queue. Wrap each job on
+  its own, never a batch script.
+- **Long runs end with one line** `EFSIM-DONE <job> pass|fail`
+  (snapshots, premerge, measure, verify-at, with-lock) and keep a state
+  file (`node scripts/runstate.ts` lists them: started, at which code,
+  finished or interrupted by a restart). Wait with a Monitor on
+  `until grep -q '^EFSIM-DONE' <log>; do sleep 15; done`.

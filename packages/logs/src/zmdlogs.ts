@@ -84,7 +84,12 @@ export interface LogFixture {
   readonly enemy: { readonly id: string; readonly level: number };
   readonly team: readonly Build[];
   readonly hits: readonly LogHit[];
-  /** Skill events the log records without damage: casts' starts as the log has them (zmdlogsCasts). Absent in fixtures imported before 2026-10-25. */
+  /**
+   * Skill events the log records without damage: casts' starts as the log has them (zmdlogsCasts), in ms. Not the kit's
+   * frame 0: how far off depends on the skill kind, presses in another's time stop are logged at its end, and the slot's
+   * skill is named, not the variant (docs/design/data.md "What the log records"). Absent in fixtures imported before
+   * 2026-10-25.
+   */
   readonly casts?: readonly LogCast[];
   /** Hand-written: the replay's landings the log doesn't have and can't, each with why (the totals leave them out). */
   readonly absent?: readonly AbsentLanding[];

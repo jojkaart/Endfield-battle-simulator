@@ -10,6 +10,17 @@ what it left standing; a candidate goes from "still possible" to "ruled
 out" only with evidence. The accuracy plan says what was done; this file
 says what isn't known.
 
+A stated cause cites the check that showed it (a command, a script, a
+count); without one it goes under "still possible" (round 3: a guess
+written as a finding sent a Stagger diagnosis the wrong way). The first
+steps of a diagnosis, before hunting a mechanism: `efsim zmdlogs groups
+--operator <op>` (the operator's mismatches split into team-wide, no
+landing and own, by skill and by what the log and the replay disagree on)
+and `efsim zmdlogs differences` (does the damage side with the log's
+listing or with the replay, per thing they disagree on); then `zmdlogs
+casts`, `replay`, `stagger` for the fight itself, and `npm run measure`
+for each idea (docs/design/tests.md "Measuring a change").
+
 Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
