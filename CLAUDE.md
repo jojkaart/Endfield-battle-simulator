@@ -63,7 +63,14 @@ pending logs, negative control, single tests of tens of seconds) and
 working, run only what a change touches: `npx vitest run tests/<file>.test.ts`
 (one file; `-t "<name>"` for one test) or `npx vitest related --run
 <changed source files>` (every test file that imports them), and `npm run
-lint:changed` (ESLint on the files changed since `main`, seconds). A
+lint:changed` (ESLint on the files changed since `main`, seconds). After a
+change to the engine's timing rules (packages/engine/src/timeline/, kit
+timing): `npm run smoke` (under 2 min: kit tests, loop searches, the
+owner's rules check, the examples) before premerge; an example that stops
+playing: `npm run -s efsim -- repair examples/<file> --write`. A kit or
+engine change's team numbers: `node scripts/team-ab.ts --base <ref>` (an
+identity check first: the 32-seed runs only when a team's own fight
+changed; it prints the table). A
 background test run: add `--reporter=default
 --reporter=./scripts/vitest-progress.ts` (a line per finished file). A test file
 that takes over ~40 s gets split, and a single test of tens of seconds goes

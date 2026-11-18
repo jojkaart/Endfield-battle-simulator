@@ -23,6 +23,7 @@
     "snapshots:update": "scripts/snapshots.sh",
     "accuracy": "node scripts/accuracy.ts --write",
     "measure": "node scripts/measure.ts",
+    "smoke": "node scripts/smoke.ts",
     "bench": "node scripts/bench.ts",
     "merge": "node scripts/merge.ts",
     "prune-unused": "node scripts/prune-unused.ts",

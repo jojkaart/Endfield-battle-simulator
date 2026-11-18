@@ -102,6 +102,16 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
 - **`npm run snapshots:update`** stays the final step before a commit
   that moves verdicts (it also rewrites the example and kit snapshots and
   checks every test's assertions).
+- **Timing changes:** `npm run smoke` (scripts/smoke.ts, under 2 min: every
+  kit test, the loop and beam searches, the owner's rules check, the
+  timeline and examples tests: what engine timing changes broke far from
+  their own tests) between the change's tests and premerge; `efsim repair
+  <scenario> --write` for an example that stops playing.
+- **Team numbers:** `node scripts/team-ab.ts --base <ref>` compares each team
+  page's example (every hit of its timeline, one 300 s rules seed, full
+  energy and from zero) at the base code and here; identical means the
+  32-seed runs can't move and are skipped, otherwise (or `--force`) it runs
+  them at both codes in one locked job and prints the table.
 - **Verifying a commit while editing:** `node scripts/verify-at.ts [<ref>]
   [--steps typecheck,lint,test]` runs premerge's steps in the commit's
   worktree.
