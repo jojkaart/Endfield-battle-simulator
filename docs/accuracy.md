@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 71.0% | 94.5% | 0.0% | 1.7% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 49.5% | 73.1% | 19.3% | 13.0% | 12 |
+| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 50.2% | 73.8% | 18.4% | 13.0% | 12 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 65.0% | 86.2% | 7.4% | 12.5% | 7 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 47.2% | 70.4% | 26.1% | 8.2% | 9 |
-| All but the hold-outs | 60 | 28693 | 49.2% | 72.6% | 21.5% | 10.1% | 27 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 47.8% | 72.6% | 23.9% | 8.2% | 9 |
+| All but the hold-outs | 60 | 28693 | 49.8% | 73.9% | 20.1% | 10.0% | 27 |
 
 ## By operator (every log but the hold-outs)
 
@@ -51,7 +51,7 @@ commit, and how many logs got better or worse.
 | chr_0021_whiten | 5 | 289 | 41.2% | 29.8% | 8.5% |
 | chr_0022_bounda | 1 | 56 | 87.5% | 0.0% | 4.4% |
 | chr_0024_deepfin | 4 | 169 | 10.7% | 68.6% | 12.8% |
-| chr_0025_ardelia | 11 | 1470 | 49.9% | 22.2% | 6.7% |
+| chr_0025_ardelia | 11 | 1470 | 57.2% | 12.9% | 4.9% |
 | chr_0026_lastrite | 4 | 156 | 56.4% | 0.6% | 4.3% |
 | chr_0027_tangtang | 2 | 265 | 44.9% | 21.5% | 6.3% |
 | chr_0028_wulfa | 9 | 2173 | 23.1% | 27.5% | 18.2% |
@@ -62,5 +62,5 @@ commit, and how many logs got better or worse.
 | chr_0033_camille | 10 | 1004 | 71.3% | 6.1% | 14.4% |
 | chr_0034_typhoea | 12 | 2081 | 60.2% | 11.6% | 4.9% |
 | chr_0035_liino | 19 | 1469 | 36.1% | 21.9% | 17.7% |
-| chr_0036_jsspsi | 28 | 2993 | 57.2% | 18.6% | 8.6% |
+| chr_0036_jsspsi | 28 | 2993 | 59.6% | 10.0% | 8.5% |
 | chr_0038_purrche | 3 | 290 | 62.1% | 29.7% | 25.5% |
