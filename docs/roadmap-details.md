@@ -65,9 +65,12 @@ beam 96 run, or the search seeded with the found rotations; casts
 across others' time stops are placed from their cast events since
 2026-11-18 (open-problems.md, Typhoeus's hover); left: Typhoeus's 4th
 shot anchored to her 5th's cast (fc63), 9c6e as a multi-target fixture;
-9090's Liino total (her volleys: 10 logged, 1 replayed; the Stagger half
-is done, 2026-11-18: Liino −15.0 → −10.4%, Perlica −13.0 → −10.7%);
-Perlica's ×1.3/×1.5 runs, which aren't the Stagger windows (her kit); gear
+Liino's volleys done 2026-11-18 (a 10 s timer: the data's reaction
+check is disabled; 9090's Liino −10.4 → +2.5%), and 4360's Perlica run
+(an unlogged End Stance out of Cosmovoice, now inferred); left: Perlica's
+−9.6% in 9090 (every hit matches), 9847's team-wide ×0.975 / ×1.3–1.5
+runs (Bigents), fc63's Perlica ATK (3,571 against 3,822), Liino stances
+cast before a log starts (1d91, 7910, 4d60); gear
 chosen jointly with the rotation (a search per candidate set, not a
 replay).
 
