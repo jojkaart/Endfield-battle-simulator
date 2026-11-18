@@ -268,6 +268,91 @@ their replay already over-predicts).
 **Next check:** in-game test 33 (latest opener against first, and the
 consumed element).
 
+## Arcane's mismatches as one group (2026-11-18)
+
+**Shows:** Arcane had 908 mismatches of 5,575 hits in the logs the
+scoreboard counts (all but the hold-outs), 866 after the two fixes below.
+Grouped (scratch: `zmdlogs hits --json` over every log, each Arcane
+mismatch against teammates' mismatches within 1.5 s at the same ratio
+±1.5%, and the engine's modifiers against the log's listing per hit):
+
+- **Stage logs** (8915 323, c6d8 200, 7b54 28, 6339 6: 557) and the
+  fight-wide factor of **d9e5** (15: every operator ×1.12–1.20 from 4.4 s,
+  Arcane ×1.116–1.134, Liino ×1.20; the old ×1.7–2.0 is gone): not hers.
+- **Team-wide** (another operator's mismatch at the same ratio within
+  1.5 s): 143 outside the stage logs (fc63 43, 1d91 26, 9c6e 26, 4d60 23,
+  a7a7 9, 7910 9): Stagger windows (×1.3 runs: 1d91 70–72 s, 4d60 80 s),
+  Typhoeus's shot count in fc63 (placement), Corrosion levels in 9c6e.
+- **Teammates' buffs on her basic-attack strings** (only she attacks then,
+  so no teammate shares the ratio), ~110: **ad7f 30** (Alesh's P3 team ATK
+  after a Rare Fin the replay rolled; fixed: below), **1d91 ~50** (×0.965,
+  ×0.929, ×0.983, ×0.894 steps: the replay's modifiers identical on plain
+  and mismatched hits 0.2 s apart, i.e. an ATK layer ending in the game
+  earlier; 1d91 doesn't list Liino's buffs: her Medicant layers, "Buff
+  timing leads" 10; ×1.208 / ×1.254 at 70–72 s are that times Stagger's
+  ×1.3), **af7b 16** (×1.131 at 61.8–63.4 s with Typhoeus and Ardelia
+  fallbacks at the same ratio: Ardelia's Susceptibility after 60 s, "Teammates'
+  enemy debuffs"), **db87 9** (Camille's talent-1 ATK, listed, absent in the
+  engine: ×1.093 on Arcane, ×1.038 on Si), b6aa 9 (×0.98), 5082 2, f978 2.
+- **Her lasers without a landing** (70 of 238 logged had none; 29
+  mismatches): (a) a second Cluster Strike inside her own Gloompurge
+  Arcana stop (players cast it as the strike makes it castable): fixed,
+  below; (b) a second strike the replay never makes because an earlier
+  final strike made two (fc63 47 s: Typhoeus's 4th shot replayed as her
+  5th, "Typhoeus, Arcane, Liino, Perlica"; 9090 51–53 s); (c) a first
+  strike the replay lands 2 s early because a teammate's ultimate stop is
+  missing in the placement (db87 16.4 s: Laevatain's attack 5, lasers
+  logged at 18.98 s after her ultimate, whose stop the placement lacks;
+  9c0b 21 s): cast placement across stops, not her kit.
+- **INT early-end lasers** in a7a7 (8: 23.0–23.5 s and 49.4–50.0 s): the
+  replay lands them 0.4 s and 1.1 s before the log, the log's in uneven
+  batches (two at 49.37 s, two at 49.79 s, the final at 50.01 s). Not
+  explained.
+- **The combo's explosion** (`abilityentity_end`; 8 mismatches, 39 of 82
+  logged without a landing): the log records the natural end as a combo
+  "cast" (the CastSkill of `abilityentity_end`), ~0.45 s before each
+  explosion, so it gives Imprisonment's end. Against it the replay's
+  Imprisonment ends later: median +0.3 s, 58 of 118 more than 0.3 s late,
+  24 earlier (scratch/imprison-ends.ts). Cases: 4d60 +1.0 s on every
+  window (the game's 5.6 s from cast + 11 against 6.633 s), ad7f +2.5 s
+  (Si's Immobilization at 4.9 s holds it 1.5 s in the replay, then
+  teammates' combo slow-downs; the log's end at 10.28 s fits no hold).
+- Small: 9c6e 51–52.5 s ×0.729 (its second target), cryst bursts without
+  a landing (489c, 9a80), 1cd1's touch at 38 s (placement).
+
+**Fixed (2026-11-18):**
+1. Her lasers run on the world's clock (the "hits" action's `world`): the
+   Cluster Strike lasers and the INT early end's are buff timelines
+   (`buff_…_inaura_laser1/2`, `seal_finisher_wisd`), which the game runs on
+   the world's time, so her own ultimate's stop holds them. a7a7 Arcane
+   mismatches 28 → 19 (the lasers at 55.99–56.47 s now land within 4
+   frames), 79cc, c779 +1 plain; scoreboard rows unchanged.
+2. A buff only a chance path's hit applies is one the replay can't judge
+   (buffreplay.ts `chancePathBuff`): ad7f Arcane 34 → 1 mismatches, Si 80
+   → 100 plain, 4e36 plain 117 → 239. Development plain 47.3 → 47.7%,
+   mismatch 19.8 → 19.6%; hold-out plain 62.1 → 63.3%, mismatch 7.6 →
+   7.7%, mean |damage error| 13.5 → 13.4%.
+
+**Ruled out:** her own buffs' timing as a group (`zmdlogs timing`: her
+only patterns are funnel_0008 in 9c6e, 7 hits, and int_amp in 8915, a
+stage log); her kit values on the matched hits (her plain matches cover
+every skill); a freeze holding only the freezer's own debuffs on every
+enemy (the experiment, 2026-11-18: 489c plain 367 → 353, b6aa 238 → 220,
+7910 −17.6 → −20.5%, hold-out plain 63.3 → 62.9%; ad7f's Imprisonment is
+the one case against).
+
+**Still possible:** Imprisonment ended early by the events its buff
+listens to (BuffData `buff_…_combo_skill_seal`: abilityEvent 8, 1403 and
+1601 cast the explosion before the timer; undecoded), which would explain
+4d60's 1 s; Imprisonment (and so the Doubles Susceptibility) not held by
+freezes while other debuffs are (ad7f only); the INT lasers' batches being
+the log's timestamps rather than the game's timing.
+
+**Next check:** decode abilityEvent 8 / 1403 / 1601 (which event ends
+Imprisonment early); then take Imprisonment's end from the log's
+natural-end cast in the replay, as the reaction levels are; Alesh's own
+×0.85 on every hit in ad7f (his build).
+
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 
 (Ember is chr_0009_azrila; this entry called her Azrila before 2026-11-12.)

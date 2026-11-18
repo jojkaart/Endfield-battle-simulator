@@ -177,8 +177,19 @@ landings the replay misses (Arcane's Final Strike in b6aa, 9555's casts);
 totals' bound (45%). The fallbacks in verified fixtures (~300) are the
 work queue; a build fitter with structured `buildOverrides` instead of
 hand fits in notes; the negative control on the unscaled replay; d9e5
-(×1.7–2.0 after Arcane's ultimate); whether mostly-assumed matches (Rossi
-in 4e5e) hold hit by hit.
+(now a fight-wide ×1.12–1.20 on every operator from 4.4 s, not Arcane's);
+whether mostly-assumed matches (Rossi in 4e5e) hold hit by hit.
+
+**Arcane's mismatches as one group (2026-11-18,
+[open-problems](open-problems.md#arcanes-mismatches-as-one-group-2026-11-18)):**
+908 → 866 (her lasers on the world's clock; buffs a chance path's hit
+applies left to the log). Next: Imprisonment's end (the log records it as
+a combo cast; the replay's runs late by a median 0.3 s, 4d60 1 s): decode
+the seal buff's abilityEvent 8 / 1403 / 1601 early ends, then take the end
+from the log; a7a7's INT lasers 0.4–1.1 s early; the rest is teammates'
+buffs (Liino's Medicant in 1d91, Camille's talent ATK in db87, Ardelia's
+Susceptibility in af7b), Stagger and placement (db87's Laevatain ultimate
+stop, fc63's shot count).
 
 ## Kit values from the data
 

@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-18: Arcane's mismatches as one group: lasers on the world's clock, chance-path buffs](2026-11-18-01-arcane-s-mismatches-as-one-group-lasers-on-the-world-s-clock.md)
 - [2026-11-17: Haste is movement speed; the owner's team drops Initial Stroke](2026-11-17-02-haste-is-movement-speed-the-owner-s-team-drops-initial.md)
 - [2026-11-17: Tests 18, 19, 101, 104 from the logs: bosses freeze, Haste isn't attack speed, teammates' pause](2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md)
 - [2026-11-16: Older development fixtures refreshed from fresh battle details](2026-11-16-18-older-development-fixtures-refreshed-from-fresh-battle.md)
