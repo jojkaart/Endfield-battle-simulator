@@ -1,14 +1,18 @@
 // `efsim zmdlogs hits`: the log check's per-hit numbers as records, one per logged hit, for analyses across logs ("does
 // X trend with Y"): the logged value, the verdict, the engine's primary reading with its scale parts, zones and
 // modifier sources, the landing's operator, and for kit hits the enemy's statuses there (applier, level, Arts
-// Intensity: the landing's facts; a status event's own landing records none, so read the next kit hit's).
+// Intensity: the landing's facts; a status event's own landing records none, so read the next kit hit's); beside the
+// engine's side, the log's own listing at the hit (`listed`) and where the two disagree (`differences`: logDifferences,
+// what the check's "where it and the log disagree" counts).
 // The same computations as `zmdlogs check` (logBuffReplay, engineHits, checkLog, readingBasis), not a copy of them.
 
-import { landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
+import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
-import { engineCheck, readingBasis } from "./enginecheck.ts";
+import { engineCheck, logDifferences, readingBasis, type LogDifference } from "./enginecheck.ts";
 import { placeHits } from "./logcasts.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
+
+const msOf = (frames: number) => (frames * 1000) / FPS;
 
 export interface HitRecord {
   /** The fixture's path as given (or its id). */
@@ -29,6 +33,14 @@ export interface HitRecord {
   readonly error: number | null;
   /** Why the replay has no landing for the hit. */
   readonly unknown?: string;
+  /** The game buffs the log lists at the hit (its effects, one entry per buff with its instance count when above 1: "id ×2"). */
+  readonly listed: readonly string[];
+  /**
+   * Where the log's listing and the engine's modifiers at the landing disagree (logDifferences: kit buffs by their
+   * logged names, Stagger): "engine" has it and the log doesn't list it, "log" the reverse, "values" both with other
+   * values. Kit hits with a landing only.
+   */
+  readonly differences?: readonly LogDifference[];
   readonly landing?: {
     readonly frame: number;
     readonly operator: string;
@@ -41,8 +53,13 @@ export interface HitRecord {
     readonly modifiers: readonly { readonly source: string; readonly zone: string; readonly element?: string; readonly value: number; readonly kitBuff?: string }[];
     /** A status event's reaction (kind, element, stacks). */
     readonly reaction?: { readonly kind: string; readonly element: string; readonly stacks: number };
-    /** A kit hit's enemy statuses at the landing (before its own applications): applier, level, Arts Intensity. Status events record none. */
-    readonly enemy?: readonly { readonly status: string; readonly level: number; readonly operator: string; readonly artsIntensity: number; readonly appliedAt: number; readonly damageScale?: number }[];
+    /**
+     * A kit hit's enemy statuses at the landing (before its own applications): applier, level, Arts Intensity, from
+     * EnemyStatus.statuses (reactions: Combustion, Corrosion, ...) and, with `physical: true`, EnemyStatus.physical
+     * (Breach, Lift, Crush, Knock Down). `appliedAt` is the engine's frame (30 a second), `appliedAtMs` the same in ms
+     * (the log's LogEffect.since is in ms). Control statuses and Vulnerable aren't exported. Status events record none.
+     */
+    readonly enemy?: readonly { readonly status: string; readonly level: number; readonly operator: string; readonly artsIntensity: number; readonly appliedAt: number; readonly appliedAtMs: number; readonly damageScale?: number; readonly physical?: true }[];
   };
 }
 
@@ -65,6 +82,7 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       crit: hit.crit,
       verdict: v.kind,
       class: verdictCount(v),
+      listed: listedBuffs(hit.effects),
     };
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;
@@ -80,8 +98,10 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       return { ...base, predicted, error, unknown: "no reading applies" };
     }
     const inputs = primary.inputs;
+    const differences = landing.inputs ? logDifferences(c, hit, landing as typeof landing & { readonly inputs: NonNullable<typeof landing.inputs> }) : [];
     return {
       ...base,
+      ...(differences.length ? { differences } : {}),
       predicted: predicted ?? roundDamage(d.exact),
       error: hit.value / (predicted ?? roundDamage(d.exact)) - 1,
       landing: {
@@ -96,19 +116,28 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
         ...(inputs.kind === "status" ? { reaction: { kind: inputs.reaction.kind, element: inputs.reaction.element, stacks: inputs.reaction.stacks } } : {}),
         ...(landing.facts
           ? {
-              enemy: landing.facts.enemy.statuses.map((s) => ({
+              enemy: [...landing.facts.enemy.statuses.map((s) => ({ s, physical: false })), ...landing.facts.enemy.physical.map((s) => ({ s, physical: true }))].map(({ s, physical }) => ({
                 status: s.status,
                 level: s.level,
                 operator: s.operator,
                 artsIntensity: s.artsIntensity,
                 appliedAt: s.appliedAt,
+                appliedAtMs: msOf(s.appliedAt),
                 ...(s.damageScale ? { damageScale: s.damageScale.value } : {}),
+                ...(physical ? { physical: true as const } : {}),
               })),
             }
           : {}),
       },
     };
   });
+}
+
+/** The game buffs a hit's effects list, each once with its instance count when above 1 ("id ×2"), in listing order. */
+export function listedBuffs(effects: readonly { readonly buff: string }[]): string[] {
+  const n = new Map<string, number>();
+  for (const e of effects) n.set(e.buff, (n.get(e.buff) ?? 0) + 1);
+  return [...n].map(([b, k]) => (k > 1 ? `${b} ×${k}` : b));
 }
 
 /** The records a filter keeps: by reaction kind ("skill" for kit hits) and by operator id. */

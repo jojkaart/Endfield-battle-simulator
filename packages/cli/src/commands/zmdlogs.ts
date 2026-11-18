@@ -7,17 +7,22 @@ import {
   battleIdOf,
   cacheRawDetail,
   checkReactions,
+  castsReport,
   checkReport,
+  differencesCliReport,
   findScalesReport,
   formatRaw,
   formatReactionCheck,
+  groupsCliReport,
   hitsReport,
   importBattle,
   rawDetail,
   rawDir,
   readDevFixture,
   refreshFromDetail,
+  replayReport,
   scalesReport,
+  staggerReport,
   timingReport,
 } from "@efsim/logs";
 import { command } from "../command.ts";
@@ -69,6 +74,26 @@ export default command({
                 [--detail file]           Use an already downloaded /api/battles/<id> response
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
+  efsim zmdlogs casts <fixture>           The placement in time order: each logged hit with the cast, slot and
+                                          frame it was placed at, the log's cast events, the placed casts and their
+                                          time stops
+                [--from s] [--to s]       Only this window (seconds); --operator: only these operators' hits, casts
+  efsim zmdlogs replay <fixture>          The replay in time order: its landings with the logged hit each stands for
+                                          (or "replay only"), logged hits without a landing and why, casts it
+                                          couldn't make or made without the log, its Stagger windows
+                [--kit-buff owner:id[@op]] Also a kit buff's windows at an operator (default its owner; repeatable)
+                [--from s] [--to s]       Only this window; --operator: only these operators
+  efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
+                                          windows and where the engine's own would have ended; with several logs
+                                          (default: every development log) a summary of the shortfalls
+  efsim zmdlogs differences [fixture…]    Where the log's listing and the replay disagree (a kit buff, Stagger),
+                                          grouped, with the logged value ÷ the engine's reading per group: does the
+                                          damage side with the log or the replay? (default: every development log)
+                [--what <regex>] [--hits] Only differences about this; each hit too. --operator, --workers n as hits
+  efsim zmdlogs groups --operator <op> [fixture…]  An operator's mismatches sorted into causes: team-wide (a
+                                          teammate mismatches at the same ratio nearby), no landing, own by skill
+                                          event and by what the log and replay disagree on (default: every
+                                          development log with it; --verbose each mismatch; --workers n)
 `,
   options: {
     with: { type: "string", multiple: true, default: [] },
@@ -88,6 +113,11 @@ export default command({
     singles: { type: "boolean", default: false },
     top: { type: "string" },
     verbose: { type: "boolean", default: false },
+    from: { type: "string" },
+    to: { type: "string" },
+    "kit-buff": { type: "string", multiple: true, default: [] },
+    what: { type: "string" },
+    hits: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -110,6 +140,24 @@ export default command({
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
+    }
+    if (sub === "casts" || sub === "replay") {
+      if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op]" : ""})`);
+      const seconds = (v: string | undefined, name: string) => {
+        if (v === undefined) return {};
+        const x = Number(v);
+        if (!Number.isFinite(x)) throw new Error(`--${name} takes seconds`);
+        return { [name]: x * 1000 };
+      };
+      const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators: values.operator };
+      const fx = readDevFixture(arg);
+      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"] });
+    }
+    if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
+    if (sub === "differences") return differencesCliReport(data, args.slice(1), { workers: values.workers, operators: values.operator, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, progress });
+    if (sub === "groups") {
+      if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
+      return groupsCliReport(data, values.operator[0] as string, args.slice(1), { workers: values.workers, verbose: values.verbose, progress });
     }
     if ((sub === "scales" || sub === "find-scales") && arg && op) {
       const fx = readDevFixture(arg);

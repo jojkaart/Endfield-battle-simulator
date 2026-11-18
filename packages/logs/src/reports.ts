@@ -1,6 +1,6 @@
 // What the `efsim zmdlogs` commands compute and print, so the CLI's command (packages/cli/src/commands/zmdlogs.ts) only
 // checks its arguments and calls these: the log check's report, the per-hit export, the buff timing report over a
-// selection of logs, and the scale reports.
+// selection of logs, the scale reports, and the diagnosis views (views.ts: casts, replay, stagger, differences, groups).
 
 import { basename, join } from "node:path";
 import type { GameData } from "@efsim/engine";
@@ -8,7 +8,8 @@ import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { exportHits, exportHitsParallel, formatRecord, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 import { REPO_ROOT } from "@efsim/data";
-import { LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, refuseHoldoutFile } from "./logs.ts";
+import { listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, refuseHoldoutFile } from "./logs.ts";
+import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, type ViewFilter } from "./views.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 
 /**
@@ -50,16 +51,64 @@ export function checkReport(data: GameData, fx: LogFixture, opts: { readonly log
  * development log; on worker threads when `workers` (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called).
  */
 export async function hitsReport(data: () => GameData, named: readonly string[], opts: { readonly workers: string | undefined; readonly kind?: string; readonly operators: readonly string[]; readonly json: boolean; readonly progress: (line: string) => void }): Promise<string> {
+  const filter = { ...(opts.kind !== undefined ? { kind: opts.kind } : {}), operators: opts.operators, progress: opts.progress };
+  return (await collectRecords(data, named, opts.workers, filter)).map((r) => formatRecord(r, opts.json)).join("\n");
+}
+
+/** The hit records of the named logs (never a hold-out), or of every verified and pending development log, on `workers` threads. */
+async function collectRecords(data: () => GameData, named: readonly string[], workersOpt: string | undefined, filter: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void }): Promise<HitRecord[]> {
   for (const f of named) refuseHoldoutFile(f);
   const files = named.length ? [...named] : logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
-  const workers = opts.workers === undefined ? 1 : Number(opts.workers);
+  const workers = workersOpt === undefined ? 1 : Number(workersOpt);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
-  const lines: string[] = [];
-  const filter = { ...(opts.kind !== undefined ? { kind: opts.kind } : {}), operators: opts.operators, progress: opts.progress };
-  const out = (r: HitRecord) => lines.push(formatRecord(r, opts.json));
+  const records: HitRecord[] = [];
+  const out = (r: HitRecord) => records.push(r);
   if (workers > 1) await exportHitsParallel(files, workers, out, filter);
   else exportHits(data(), files, readLogFixture, out, filter);
-  return lines.join("\n");
+  return records;
+}
+
+const fixtureLabel = (f: string) => basename(f).replace(/\.json$/, "");
+
+/** `efsim zmdlogs casts`: the placement view of one log. */
+export function castsReport(data: GameData, fx: LogFixture, filter: ViewFilter): string {
+  return castsView(data, fx, filter);
+}
+
+/** `efsim zmdlogs replay`: the replay view of one log, with the named kit buffs' windows. */
+export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[] }): string {
+  return replayView(data, fx, filter);
+}
+
+/** `efsim zmdlogs stagger`: the Stagger runs of the named logs (or of every verified and pending development log), and a summary over them. */
+export function staggerReport(data: GameData, named: readonly string[], progress?: (line: string) => void): string {
+  for (const f of named) refuseHoldoutFile(f);
+  const files = named.length ? [...named] : logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
+  const out: string[] = [];
+  const runs = files.flatMap((f) => {
+    progress?.(`stagger ${fixtureLabel(f)}`);
+    const fx = readLogFixture(f);
+    out.push(staggerView(data, fx));
+    return staggerRuns(data, fx);
+  });
+  if (files.length > 1) out.push("", staggerSummary(runs));
+  return out.join("\n");
+}
+
+/** `efsim zmdlogs differences`: where the log's listing and the replay disagree, grouped, with the damage's ratio per group. */
+export async function differencesCliReport(data: () => GameData, named: readonly string[], opts: { readonly workers: string | undefined; readonly operators: readonly string[]; readonly what?: string; readonly hits: boolean; readonly progress: (line: string) => void }): Promise<string> {
+  const records = await collectRecords(data, named, opts.workers, { operators: opts.operators, progress: opts.progress });
+  return differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, fixtureLabel });
+}
+
+/** `efsim zmdlogs groups --operator <op>`: an operator's mismatches grouped (the named logs, or every development log with it). */
+export async function groupsCliReport(data: () => GameData, operator: string, named: readonly string[], opts: { readonly workers: string | undefined; readonly verbose: boolean; readonly progress: (line: string) => void }): Promise<string> {
+  const d = data();
+  const id = d.operators[operator] ? operator : Object.keys(d.operators).find((op) => d.operators[op]?.name?.toLowerCase() === operator.toLowerCase() || op.includes(operator));
+  if (!id) throw new Error(`--operator ${operator}: no such operator (an id, its name or part of the id)`);
+  const files = named.length ? named : listLogs({ dirs: ["verified", "pending"], withOperators: [id] }).map((l) => join(REPO_ROOT, l.file));
+  const records = await collectRecords(data, files, opts.workers, { progress: opts.progress });
+  return groupsReport(records, id, { verbose: opts.verbose, fixtureLabel });
 }
 
 /** `efsim zmdlogs scales`: the multiplier each logged hit of an operator implies, one line each. */

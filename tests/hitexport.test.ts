@@ -38,6 +38,15 @@ describe("per-hit records of the log check", () => {
     expect(status?.landing?.reaction).toBeDefined();
     const kit = records.find((r) => r.kind === "skill" && r.landing?.enemy?.length);
     expect(kit?.landing?.enemy?.[0]).toMatchObject({ level: expect.any(Number), operator: expect.any(String), artsIntensity: expect.any(Number) });
+    const s = kit?.landing?.enemy?.[0];
+    expect(s?.appliedAtMs).toBeCloseTo(((s?.appliedAt ?? 0) * 1000) / 30, 6);
+  });
+
+  it("gives the log's listing beside the engine's side, and where they disagree", () => {
+    fx.hits.forEach((h, i) => expect(records[i]?.listed.length).toBe(new Set(h.effects.map((e) => e.buff)).size));
+    const differing = records.filter((r) => r.differences?.length);
+    expect(differing.length).toBeGreaterThan(0);
+    expect(differing.every((r) => r.kind === "skill" && r.landing && r.differences?.every((d) => ["engine", "log", "values"].includes(d.kind)))).toBe(true);
   });
 
   it("filters by kind and operator, and prints JSON lines or a row", () => {
