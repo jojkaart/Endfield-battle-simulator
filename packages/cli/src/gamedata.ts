@@ -28,6 +28,41 @@ export function dataFile(id: string): { folder: DataFolder; file: string } {
  * readings are marked "?" there and here.
  */
 export const ENUMS: Readonly<Record<string, Readonly<Record<number, string>>>> = {
+  // docs/game-data-format.md "abilityEvent numbers": collected from the kits' notes (round 3); "?" from one file only.
+  abilityEvent: {
+    1: "owner's HP reaches 0",
+    6: "entering battle",
+    8: "owner defeated?",
+    9: "a buff added to the holder",
+    12: "takes damage?",
+    13: "deals damage (a landing)",
+    30: "casts a skill",
+    40: "applies Knock Down?",
+    43: "takes Critical DMG",
+    44: "scores a critical hit",
+    45: "receives a heal",
+    50: "heals someone",
+    55: "an enemy Lifted?",
+    59: "suffers a physical status",
+    64: "an operator takes damage?",
+    101: "takes damage (is hit)",
+    102: "applies a buff",
+    122: "an infliction on the holder?",
+    126: "applies an Arts Infliction",
+    127: "applies an Arts Burst",
+    141: "an enemy's charge interrupted?",
+    142: "obtains SP",
+    143: "a skill cast, cost paid?",
+    150: "leaving battle",
+    205: "a buff added to the aura holder?",
+    206: "applies a buff (before output)",
+    208: "removes / consumes a buff",
+    209: "a buff layer of the holder ends?",
+    222: "a kill?",
+    262: "an ability entity finished",
+    302: "deals damage (before output)",
+    401: "applies a physical status",
+  },
   buffEvent: { 0: "on start", 1: "on tick", 2: "on finish", 5: "while enabled", 6: "on stack change?", 7: "on stack added?" },
   compare: { 0: "<", 1: "<=", 2: ">", 3: ">=", 4: "==" },
   costType: { 0: "ultimate energy", 1: "SP" },
@@ -190,4 +225,76 @@ export function whoMentions(id: string): Mention[] {
 export function formatMentions(id: string, ms: readonly Mention[]): string {
   if (!ms.length) return `${id}: no BuffData or SkillData file names it`;
   return [`${id}: named in ${new Set(ms.map((m) => m.file)).size} file(s), ${ms.length} place(s):`, ...ms.map((m) => `  ${m.folder}/${m.file}  ${m.action ?? "-"}${m.context ? `  [${m.context}]` : ""}  ${m.path}`)].join("\n");
+}
+
+export interface Found {
+  readonly folder: DataFolder;
+  readonly file: string;
+  readonly path: string;
+  /** Its own scalar and value fields (selectors and nested actions left out), as the tree shows them. */
+  readonly fields: Readonly<Record<string, string>>;
+  /** The buff event, ability event or frame it sits under. */
+  readonly context: string | null;
+}
+
+/**
+ * Every action (any object with a `$type`) of a type in the BuffData / SkillData files: `type` matches the short type
+ * ("HitStop" or "HitStopAction", a regex), `file` the file name, `enabled` keeps only those not switched off
+ * (isEnable false). For questions like "who applies a slow to the enemy" without a walker per agent.
+ */
+export function findActions(opts: { readonly type: string; readonly file?: string; readonly folder?: DataFolder; readonly enabled?: boolean }): Found[] {
+  const type = new RegExp(`^(${opts.type})(Action)?$`);
+  const fileRe = opts.file ? new RegExp(opts.file) : null;
+  const out: Found[] = [];
+  for (const f of opts.folder ? [opts.folder] : (["BuffData", "SkillData"] as const)) {
+    const dir = folder(f);
+    for (const name of readdirSync(dir).sort()) {
+      if (!name.endsWith(".json") || (fileRe && !fileRe.test(name))) continue;
+      const file = name.replace(/\.json$/, "");
+      const visit = (v: unknown, path: string, context: string | null) => {
+        if (Array.isArray(v)) return v.forEach((x, i) => visit(x, `${path}[${i}]`, context));
+        if (!isObj(v)) return;
+        const c =
+          typeof v["buffEvent"] === "number"
+            ? `buffEvent ${v["buffEvent"]}${ENUMS["buffEvent"]?.[v["buffEvent"]] ? ` (${ENUMS["buffEvent"][v["buffEvent"]]})` : ""}`
+            : typeof v["abilityEvent"] === "number"
+              ? `abilityEvent ${v["abilityEvent"]}${ENUMS["abilityEvent"]?.[v["abilityEvent"]] ? ` (${ENUMS["abilityEvent"][v["abilityEvent"]]})` : ""}`
+              : typeof v["_startFrame"] === "number"
+                ? `frame ${v["_startFrame"]}`
+                : context;
+        const t = typeof v["$type"] === "string" ? shortType(v["$type"]) : null;
+        if (t && type.test(t) && !(opts.enabled && v["isEnable"] === false)) {
+          const fields: Record<string, string> = {};
+          for (const [k, x] of Object.entries(v)) {
+            if (k === "$type" || SKIP_KEY.test(k)) continue;
+            if (isObj(x)) {
+              const val = valueField(x);
+              if (val !== null) fields[k] = val;
+            } else if (!Array.isArray(x)) fields[k] = scalar(k, x);
+          }
+          out.push({ folder: f, file, path, fields, context: c });
+        }
+        for (const [k, x] of Object.entries(v)) visit(x, `${path}.${k}`, c);
+      };
+      visit(parseJsonExact(readFileSync(join(dir, name), "utf8")), "", null);
+    }
+  }
+  return out;
+}
+
+/** `efsim gamedata find`: one line per action found (its fields, or only `fields`), or with `count` the counts of a field's values. */
+export function formatFound(found: readonly Found[], opts: { readonly fields?: readonly string[]; readonly count?: string } = {}): string {
+  if (opts.count) {
+    const n = new Map<string, number>();
+    for (const x of found) {
+      const k = x.fields[opts.count] ?? "(absent)";
+      n.set(k, (n.get(k) ?? 0) + 1);
+    }
+    return [`${found.length} action(s) in ${new Set(found.map((x) => x.file)).size} file(s), by ${opts.count}:`, ...[...n].sort((a, b) => b[1] - a[1]).map(([k, c]) => `  ${String(c).padStart(6)}  ${k}`)].join("\n");
+  }
+  const lines = found.map((x) => {
+    const fs = Object.entries(x.fields).filter(([k]) => !opts.fields?.length || opts.fields.includes(k));
+    return `  ${x.folder}/${x.file}${x.context ? `  [${x.context}]` : ""}  ${fs.map(([, v]) => v).join(", ")}  ${x.path}`;
+  });
+  return [`${found.length} action(s) in ${new Set(found.map((x) => x.file)).size} file(s):`, ...lines].join("\n");
 }

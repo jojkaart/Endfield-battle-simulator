@@ -1,7 +1,7 @@
 // `efsim gamedata tree / who` (packages/cli/src/gamedata.ts): the compact tree of a raw data file and the reverse
 // index of who names a buff.
 import { describe, expect, it } from "vitest";
-import { dataTree, gamedataTree, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
+import { dataTree, findActions, formatFound, gamedataTree, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
 
 describe("the data-file tree", () => {
   const file = {
@@ -46,5 +46,16 @@ describe("the game's files", () => {
     expect(new Set(ms.map((m) => m.file))).toEqual(new Set(["buff_chr_0036_jsspsi_xianjing_inkboom", "buff_chr_0036_jsspsi_xianjing_linkline"]));
     expect(ms.every((m) => m.action === "CreateBuffAction")).toBe(true);
     expect(gamedataTree("buff_chr_0036_jsspsi_talent1_speedup")).toContain("SpeedupAction");
+  });
+});
+
+describe("finding actions by type", () => {
+  it("lists every action of a type with its fields and context, or counts a field's values", () => {
+    const found = findActions({ type: "Speedup", file: "jsspsi" });
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.every((x) => x.file.includes("jsspsi") && x.path.length > 0)).toBe(true);
+    expect(formatFound(found)).toMatch(/^\d+ action\(s\) in \d+ file\(s\):\n {2}BuffData\/buff_chr_0036_jsspsi/);
+    expect(formatFound(found, { count: "isEnable" })).toMatch(/by isEnable:/);
+    expect(gamedataTree("buff_chr_0032_lizhiyan_combo_skill_seal")).toContain("abilityEvent 8 (owner defeated?)");
   });
 });

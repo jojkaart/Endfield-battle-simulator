@@ -158,3 +158,55 @@ text table, BuffData effects, the kit analyses (docs/kit-batches/).
 | SpellInfliction.inflictionType | 0 / 1 / 2 / 3 | Heat / Electric / Cryo / Nature | batch-1 chr_0032_lizhiyan; design.md |
 | lifeType | 0 / 1 | timed (its `duration`) / until something finishes it (duration ignored) | inferred: batch-1 chr_0034_typhoea (rows 8, 41: open test T1) |
 | stackingType | 13 values | unlimited, high priority, stack, enhance, refresh, extend, modify, unique, enhance+refresh, overwrite duration, enhance+overwrite, high priority with max, timed growing enhance (order to verify) | Endaxis (described, not copied) |
+
+### abilityEvent numbers
+
+What an `EventListenerAction` / `abilityEventAction` listens to, collected
+from the kits' notes and the batch reports (round 3, 2026-11-18). `efsim
+gamedata tree` names them (packages/cli/src/gamedata.ts `ENUMS`, "?" kept);
+a reading marked "?" comes from one file or one context only. Add a number
+here (and to `ENUMS`) when a kit decodes one; `efsim gamedata tree <id>
+--grep abilityEvent` shows a file's listeners with their names.
+
+| abilityEvent | Meaning | Where it was read |
+|---|---|---|
+| 1 | the owner's HP reaches 0 (OnOwnerHpZero) | kit notes |
+| 6 | entering battle | Liino, Perlica (stances) |
+| 8 | the owner is defeated? | one note; Arcane's Imprisonment (buff_chr_0032_lizhiyan_combo_skill_seal) ends on 8, 1403 and 1601 (open: the likeliest cause of 4d60's 1 s short windows) |
+| 9 | a buff added to the holder (OnAddedBuff) | Purrchena, Camille, Catcher, weapons |
+| 12 | takes damage? | Ember (one file) |
+| 13 | deals damage (a landing of the holder's) | Catcher P1, Da Pan |
+| 30 | casts a skill (with CheckSkillType) | Da Pan, weapons |
+| 40 | applies Knock Down? | Lifeng U1 (only file using it) |
+| 43 | the holder takes Critical DMG | gear |
+| 44 | the holder scores a critical hit | weapons, gear |
+| 45 | receives a heal (OnReceiveHeal) | Camille |
+| 50 | heals someone (OnOutputHeal) | Camille, weapons |
+| 55 | an enemy Lifted? (`buff_common_train_airborne`: "airborne success") | one file |
+| 59 | suffers a physical status (anyone's) | Pogranichnik |
+| 64 | an operator takes damage? | one note |
+| 101 | takes damage, is hit (melee; 161 the projectile listener) | Purrchena, Catcher, Bounda, Antal, buffData.ts dash |
+| 102 | applies a buff | Alesh, gear, weapons |
+| 121 | an infliction applied to the enemy? (with CheckSpellInflictionType) | Bounda P5 |
+| 122 | an infliction on the holder? | one note |
+| 126 | applies an Arts Infliction (OnCharBeforeOutputSpellInfliction) | weapons, gear |
+| 127 | applies an Arts Burst | weapons, gear |
+| 141 | an enemy's charge interrupted? | one file |
+| 142 | obtains SP (OnObtainAtb; CheckObtainAtbType) | Karin P1, Pogranichnik talent 1 |
+| 143 | a skill cast, its cost paid? (with CheckSkillType) | Liino talent 2 |
+| 150 | leaving battle | Pogranichnik |
+| 202 | ? (a Corrosion buff Arcane applies) | Arcane |
+| 203 | ? (resumecombo's end) | one note |
+| 205 | a buff added to the aura holder, from anyone? | one note |
+| 206 | applies a buff (OnBeforeOutputBuff) | weapons |
+| 208 | removes / consumes a buff (CheckConsumeBuffLayer) | Da Pan, Last Rite, gear |
+| 209 | a buff layer of the holder ends? | one note |
+| 222 | a kill? | one note |
+| 262 | an ability entity finished (OnAbilityEntityFinished) | one note |
+| 302 | deals damage (OnBeforeOutputDamage) | Last Rite, Xaihi, weapons |
+| 401 | applies a physical status | weapons, gear |
+| 402 | applies a physical status? | one note |
+
+Seen without a reading: 21, 31 (resets `EntityBB_isCombo`), 155, 204,
+1403, 1601.
+
