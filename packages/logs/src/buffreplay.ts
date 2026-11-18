@@ -72,12 +72,36 @@ function critTriggers(kit: OperatorKit, buffId: string, depth = 0): KitTrigger[]
 }
 
 /**
+ * Why the replay can't decide a buff a kit hit applies, or null: the hit lands only on the path a chance jump takes
+ * (every frame of it at or after the jump's target), which the replay rolls on its own stream and the log doesn't
+ * give. ad7f5ee2c91c: the replay rolled Alesh's Rare Fin at 13.8 s (his logged slam fits the normal one, ×0.85 as all
+ * his hits), so his P3 team ATK, which only the Rare Fin's slam applies, stood on 10 s of everyone's hits the log
+ * lists it on none of (Arcane's 30 basic attacks ×0.904, Si's ×0.929).
+ */
+function chancePathBuff(kit: OperatorKit, buffId: string): string | null {
+  for (const t of kit.triggers) {
+    if (t.chance === undefined) continue;
+    for (const a of allActions(t.do)) {
+      if (a.kind !== "jump") continue;
+      const skill = kit.skills.find((s) => s.skillId === a.skill);
+      for (const h of skill?.hits ?? []) {
+        if (!(h.buffs ?? []).some((b) => b.buff === buffId)) continue;
+        if (h.frames?.length && h.frames.every((f) => f >= a.to)) return `${t.id}: a chance (${h.id} lands only on the path it jumps to)`;
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Why the replay can't decide one of a kit's buffs, or null: a trigger that
  * applies it can't be judged, or listens to a buff that can't (to a depth of
  * a few such links).
  */
 function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0): string | null {
   if (depth > 4) return null;
+  const byChance = chancePathBuff(kit, buffId);
+  if (byChance) return byChance;
   for (const t of kit.triggers) {
     if (!allActions(t.do).some((a) => a.kind === "buff" && a.buff === buffId)) continue;
     const own = unjudged(t, kit);

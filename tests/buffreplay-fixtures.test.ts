@@ -139,6 +139,15 @@ describe("kit buffs the replay can't judge, where the log records none of their 
     expect(unjudged("1d9198480e75")).toBe(false);
     expect(unjudged("1cd1657bc305")).toBe(true);
   });
+
+  it("include a buff only a chance path's hit applies: ad7f, Alesh's P3 ATK after a Rare Fin the replay rolled; Arcane's hits under it match", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-ad7f5ee2c91c.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx);
+    expect(r.replay.unjudgedKitBuffs.get("chr_0024_deepfin:p3_atk")).toMatch(/rare_fin: a chance/);
+    const arcane = checkLog(data, fx, { replay: r }).filter((v) => v.hit.operator === "chr_0032_lizhiyan" && v.hit.t >= 14798 && v.hit.t <= 22984);
+    expect(arcane.length).toBeGreaterThanOrEqual(30);
+    expect(arcane.every((v) => v.kind === "match")).toBe(true);
+  });
 });
 
 describe("an operator in its own ultimate's time stop isn't held by another's slow-down", () => {
