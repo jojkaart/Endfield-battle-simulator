@@ -97,3 +97,23 @@ chance path's hit applies left to the log.
   four `efsim rules` runs safe to start in parallel.
 - `npm run snapshots:update`'s closing comparison (rows plus better/worse logs) made each fix's effect clear, and
   premerge's one-table summary was easy to read.
+
+## Outcome (round 3)
+
+1. **No "mine or the team's" tool:** done. `efsim zmdlogs groups --operator <op>` splits an operator's mismatches into
+   team-wide (a teammate's mismatch at the same ratio ±1.5% within 1.5 s), no landing and own, then by skill event and
+   by what the log and the replay disagree on, with median ratios; `zmdlogs hits --json` has `listed` (the log's game
+   buffs) and `differences` (logDifferences, keyed `owner:id`) per hit (e339d30). On the 39 development logs with
+   Arcane: 866 mismatches, 597 team-wide, 45 without a landing, 224 own.
+2. **Replay not printable:** done. `efsim zmdlogs replay <fixture>` (landings with their logged hit or "replay only",
+   hits without one and why, failed / missed casts, Stagger windows, `--kit-buff owner:id` windows); `zmdlogs casts`
+   for the placement (e339d30). `LandedHit` already has `skillId` / `hitId` (from HitDamage) and `BuffReplay.hits` is
+   typed, so no cast was needed; the views show the use.
+3. **Measuring only through snapshots:** done. (a) `npm run measure [-- --with <op>]` writes to scratch/ and prints
+   the change (2743847); (b) engine readings switch like kit ones (af14ec4); (c) snapshots.sh waits in the lock queue
+   with a heartbeat (d345393).
+4. **Hidden events logged as casts:** documented in docs/design/data.md "What the log records" (5d6eab7). Not done:
+   using Imprisonment's logged end as a timing fact; carried over (point 15).
+5. **abilityEvent numbers:** done. docs/game-data-format.md "abilityEvent numbers" collects every number the kits
+   decoded ("?" where one file says so), and `gamedata tree` names them; 8, 1403, 1601 on the seal are listed as open
+   (b261ba5).

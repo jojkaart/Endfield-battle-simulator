@@ -169,3 +169,23 @@ numbers. Branch: the worktree's own, merged into
   worry out of broad scripts.
 - `efsim search --out` writing a playable scenario, and the scenario
   `description` field for provenance.
+
+## Outcome (round 3)
+
+1. **The lock isn't fair:** done. scripts/testlock.ts is a ticket queue (arrival order; premerge and test suites go
+   ahead of jobs that arrived up to 20 min before them, so neither starves), with a heartbeat while waiting,
+   `with-lock.ts --status`, a warning for batch scripts, and snapshots.sh holding the lock once for its whole run
+   (d345393).
+2. **No example repair tool:** not done; carried over (point 11).
+3. **No shared teammate-pace measure:** not done; carried over (point 12). The pause itself is now an engine reading
+   (`teammate-pause=6.5s|3.5s`, af14ec4).
+4. **Per-hit / per-cast plumbing:** partly. `efsim zmdlogs casts <fixture>` lists hits with their placed casts, cast
+   events and time stops; `TimeStop.start` says it is a frame; docs/design/data.md gives the ms / frames split
+   (e339d30, 5d6eab7). Not done: a `logCastTable` helper with cooldowns and branded types; carried over (point 13).
+5. **Frozen vs immune needed a monkeypatch:** done another way: the engine reading `control-immunity`
+   (listed / bosses / none / all) switches it, in `zmdlogs check --assume` and `npm run measure -- --assume` (which
+   prints each log's change) (af14ec4). Not done: a generic `--target` override and a per-hit diff of two readings.
+6. **Engine readings can't be assumptions:** done. packages/engine/src/timeline/assumptions.ts registers
+   control-immunity and teammate-pause beside the kits' (`allAssumptions`), read through TimelineOptions.assume;
+   `--assume` takes them everywhere it exists. `--assumptions` (the robustness check) still runs only the kits'
+   alternatives; carried over (point 14). Haste wasn't registered: its plumbing was inert and is removed (2d96fc3).

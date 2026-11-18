@@ -106,3 +106,18 @@ point is complete on its own; the originals are in docs/friction-done/.
 ## What worked well
 
 The three reports' points were each specific enough to implement or to carry over without their transcripts.
+
+## Outcome (round 3)
+
+Round 3 ranked the newer reports' measurement and diagnosis friction first (docs/friction-done/2026-11-18-round-3.md);
+none of these code-quality points blocked accuracy work this round, so all but one carry over unchanged to
+docs/friction/2026-11-18-backlog-after-round-3.md.
+
+1. **Game-data file reads scattered:** not done; carried over (point 1 there).
+2. **Status landings record no facts:** not done; carried over (point 2). Related and done: `zmdlogs hits --json` now
+   exports the enemy's physical statuses beside the reaction ones at kit hits (e339d30).
+3. **Older fixtures:** done in round 2's follow-up (see above).
+4. **Modifiers identified by text:** not done; carried over (point 3).
+5. **Test-helper copies:** not done; carried over (point 4).
+6. **SP anchor:** not done; carried over (point 5): nothing needs it yet.
+7. **Fixed-length search times:** not done; carried over (point 6): a long measuring session.

@@ -107,3 +107,22 @@ Branch: the agent worktree merged into claude/beautiful-rubin-rpg8vp (commits f9
 - `efsim zmdlogs hits --json` with per-hit modifiers: diffing two runs' modifiers named the cause of each regression
   (Corrosion ramp, Hovering ATK, Tactical Doubles Susceptibility) in one step.
 - `scripts/premerge.sh` with its pass/fail table, and `npm run journal:new` / `npm run journal`.
+
+## Outcome (round 3)
+
+1. **Ten minutes per idea:** done. `npm run measure` checks every log in about a minute on 3 workers and writes only
+   scratch/; `--changed placement` checks only the logs whose placed casts differ from the reference code's (seconds
+   to find them) (2743847).
+2. **A/B by swapping source files:** done for verdicts: `measure --base <ref>` measures two commits' code on the same
+   logs, `--at <ref>` a commit beside the working tree; CLAUDE.md says never to copy older files over the tree
+   (0bb1a1a). Not done: a generic `scripts/ab.ts <command>` diffing any command's output; carried over (point 8, with
+   the CLI comparison).
+3. **No placement view:** done. `efsim zmdlogs casts` and `replay` (e339d30). Not done: `efsim kit <op> --skill <id>`
+   for a skill's timing; carried over (point 16).
+4. **Guard refuses chained git:** done. CLAUDE.md: a sequence mixing git with other commands goes into
+   `scratch/x.sh` run with bash (0bb1a1a).
+5. **Cast events undocumented:** done. docs/design/data.md "What the log records" lists the offsets by skill kind,
+   presses during a stop, slot names; `LogFixture.casts` points there (5d6eab7). The measurement script wasn't kept:
+   `zmdlogs casts` (EVENT against CAST lines) redoes it per log.
+6. **Restart cost a run:** done. scratch/runs/<job>.json per long run (`node scripts/runstate.ts`), CLAUDE.md:
+   commit WIP before a long run (d345393, 0bb1a1a).

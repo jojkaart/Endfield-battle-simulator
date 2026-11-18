@@ -4,9 +4,48 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 98 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 99 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings
+
+**Goal:** the third friction round (docs/friction/README.md): seven open reports (the round-2 backlog and
+friction, the fixture refresh, tests from logs, Arcane's mismatches, cast placement, Stagger windows), ranked by the
+time they cost accuracy work, behaviour-preserving. Summary: docs/friction-done/2026-11-18-round-3.md.
+
+**Done** (a commit each):
+- `npm run measure` (scripts/measure.ts): the log checks on worker threads into scratch/, the scoreboard change and
+  each log's direction printed, nothing tracked written. All 73 logs in 64 s on a quiet machine, against 5-10 min for
+  `snapshots:update`; `--with`, `--logs`, `--changed placement`, `--at <ref>`, `--base <ref>`, `--assume`.
+- The test lock is a queue (arrival order, premerge and test suites ahead of jobs that arrived up to 20 min before,
+  no starvation), with a heartbeat, `with-lock --status`, a batch-script warning; snapshots.sh holds it once;
+  `EFSIM-DONE <job> pass|fail` lines; run states in scratch/runs/ (`node scripts/runstate.ts`);
+  `snapshots:update -- --costs` alone rewrites pending-costs.json; `scripts/verify-at.ts` verifies a commit while
+  editing goes on.
+- `efsim zmdlogs casts | replay | stagger | differences | groups`, built from the agents' scratch prototypes;
+  `zmdlogs hits --json` gains `listed`, `differences`, physical statuses and `appliedAtMs`.
+- Engine assumptions (timeline/assumptions.ts): `control-immunity` (listed / bosses / none / all) and
+  `teammate-pause` (6.5s / 3.5s) switch with `--assume`, in `zmdlogs check` and `measure` too (c3c7 under
+  `control-immunity=none` gives test 104's Si 120 → 110 plain again).
+- The inert Haste speed plumbing (hasteFrames, Acting.speed) removed.
+- `efsim gamedata find <type>`; abilityEvent numbers tabled (docs/game-data-format.md) and named by `gamedata tree`.
+- Docs: data.md "What the replay takes from the log" and "What the log records" (cast events by kind, hidden casts,
+  status keys, ms vs frames); tests.md "Measuring a change"; open-problems' header (a cause cites its check; first
+  steps `zmdlogs groups` / `differences`); `.ignore` and counter titles keep hold-outs off screen; CLAUDE.md.
+
+**Behaviour:** `npm run snapshots:update` at 0bb1a1a left every snapshot and docs/accuracy.md as they were ("No log's
+verdicts moved", no file changed); `npm run measure` agreed byte for byte; the default suite passed at 2d96fc3
+(after the Haste removal) through verify-at. Scoreboard unchanged.
+
+**Decisions:** measure compares against committed snapshots by default (they are HEAD's measurement), and keeps
+unmeasured logs at the reference's entry on both sides, so a selection shows only its own moves. The lock's priority
+is a fixed head start rather than a count of passes, so it needs no shared mutable state. Haste got no engine reading:
+its alternative had no code left worth keeping; the evidence moved to castSkill's comment. `--assumptions` still runs
+only the kits' alternatives (backlog point 14).
+
+**Left:** docs/friction/2026-11-18-backlog-after-round-3.md (17 points: the round-2 code-quality items, a CLI / A/B
+harness, citation checks, a status-key table in code, example repair, the teammate-pace measure, a cast table, …).
 
 ## 2026-11-18: The replay follows the log's Stagger windows
 
@@ -425,43 +464,3 @@ Not done: the review's estimate of 3–10× for event stepping was too
 high: after the probes, most of a run is the simulation and the basic
 attack's earliest start (it advances copies of the state). The friction
 reports stay in docs/friction/ for the improvement round to file.
-
-## 2026-11-16: Improvement round 1: friction reports to tools, docs and engine records
-
-**Goal:** the owner's standing workflow (docs/friction/README.md): read the
-eight friction reports of the day, find the common causes, implement the
-improvements. Rule tooling (driver, noise, pools) was phase 2's, in parallel.
-
-**Done** (summary and measurements: docs/friction-done/2026-11-16-round-1.md;
-each report's per-point outcome at its end in docs/friction-done/):
-
-- premerge: every step to the end, a pass/fail table with times and the
-  slowest tests, a re-run of files that only timed out, a lock shared by all
-  worktrees (scripts/premerge.ts).
-- Sandbox: the command shapes that work, a git-ignored `scratch/` that
-  resolves `@efsim/*`, a template (CLAUDE.md, scripts/scratch-template.ts).
-- Hold-outs in fixtures/holdout/ (moved by id, unread);
-  `efsim zmdlogs list` never lists them; check/hits/raw/import refuse them.
-- `efsim zmdlogs hits` (per-hit records, JSON Lines, workers),
-  `efsim zmdlogs raw` (cached raw details), importer keeps effect sources and
-  Stagger origins (new imports only), `efsim gamedata tree / who`, an enum
-  table and "What the data can't tell" (game-data-format.md).
-- Engine: `OWN_HIT_SEES` table (combat-mechanics §3.8, a test per row);
-  infliction appliers, a landing's cast, a buff's maker, `keepInputs` and
-  `recomputeHit`; state queries exported from timeline.ts; `statLabel`.
-- CLI `--kit <file>`, `--duration` on simulate and search; `npm run bench`,
-  `npm run merge` (rebuilds the built journal), `npm run prune-unused`;
-  tests/helpers/; snapshots readable mid-merge; stdout for must-see lines.
-- main.ts is a thin entry running the checkout check before cli.ts loads
-  (its own commit, droppable if phase 2 edited main.ts).
-
-**Decisions:** no eslint plugin for unused imports (main's node_modules
-would lack it until reinstalled, breaking every worktree's lint): a script on
-TypeScript's own fixes instead. Older fixtures keep their fields (no mass
-download). No number changed: examples, kits and verified-log snapshots
-identical, all 67 pending verdicts identical (13 hold-outs by group only);
-docs/accuracy.md changed only in labels.
-
-**Left:** docs/friction/2026-11-16-backlog-after-round-1.md (data-file
-module, engine core entry, older fixtures, a status tag on modifiers, helper
-migration, shard costs, slow tests, paired suite timing, search times).

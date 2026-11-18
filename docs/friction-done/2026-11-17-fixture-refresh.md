@@ -85,3 +85,18 @@ Branch `worktree-agent-ad2a28efaa2f5bf4a`, merged into `claude/beautiful-rubin-r
   step.
 - `snapshots:update`'s summary ("No log's verdicts moved") answered the record-only question in one line;
   `git commit --pathspec-from-file` committed 77 fixtures by explicit path in one plain command.
+
+## Outcome (round 3)
+
+1. **Physical statuses missing from the export:** done. `landing.enemy` carries EnemyStatus.physical too, marked
+   `physical: true`; the comment says which lists are exported (e339d30).
+2. **No status-key map, no units on `appliedAt`:** done as documentation and a field: docs/design/data.md "What the log
+   records" has the status event and debuff-lane keys over the development logs and the ms / frames split;
+   `appliedAtMs` beside the frame `appliedAt` (e339d30, 5d6eab7). Not done: a code table (`STATUS_LOG_KEYS`) and the
+   lane-start question (first application or latest refresh), recorded there as open; carried over (point 9).
+3. **No documented wait shape:** done. Long runs end with `EFSIM-DONE <job> pass|fail`; CLAUDE.md gives the one Monitor
+   until-loop and "a new file per run"; the scratch template says to end a script with such a line (d345393, 0bb1a1a).
+   No separate wait-for script: the until-loop is one line.
+4. **`snapshots:update` rewrites check timings:** done. Only `snapshots:update -- --costs` writes
+   tests/slow/pending-costs.json (d345393).
+5. **Importer untested:** not done; carried over (point 10).

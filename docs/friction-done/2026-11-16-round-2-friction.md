@@ -93,3 +93,17 @@ Points already in docs/friction/2026-11-16-backlog-after-round-2.md aren't repea
   temporary file importing across a boundary confirmed it in seconds.
 - The vitest alias and setup-worktree made a new workspace package work in tests and the CLI with two small edits.
 - tsc caught every import the moves broke, including dynamic `await import(…)` paths in tests.
+
+## Outcome (round 3)
+
+1. **Verification blocks editing:** done. `node scripts/verify-at.ts [<ref>] [--steps …]` runs premerge's steps in the
+   commit's worktree under scratch/at/ (0f93b4a); `scripts/measure.ts --at <ref>` does the same for the log checks'
+   accuracy (2743847). CLAUDE.md names both.
+2. **Prose citations unchecked:** not done; carried over (backlog after round 3, point 7).
+3. **No CLI before/after harness:** not done; carried over (point 8). The log-check side of "same behaviour" is now
+   `npm run measure` ("would stay as they are, byte for byte").
+4. **`git mv` staged into another commit:** done. CLAUDE.md "Worktrees and sub-agents": commit by pathspec
+   (`git commit -F msg -- <paths>`) because `git mv` / `git rm` stage on their own (0bb1a1a).
+5. **Hold-out names on screen:** done. `.ignore` lists fixtures/holdout/ (ripgrep and tools on it skip it; CLAUDE.md
+   says `grep -r` needs `--exclude-dir=holdout`), and the pending suite titles hold-out tests "hold-out log N"
+   (snapshot keys unchanged; pending-costs.ts maps the counter back) (3696e4e).

@@ -108,3 +108,18 @@ the worktree `agent-a827325316763019d`, commit 0b748db.
 - The game-data cache: scratch scripts started in about a second.
 - `node scripts/with-lock.ts` for the team runs, and the team pages quoting the exact `efsim rules` command and seeds,
   so the baselines could be reproduced exactly.
+
+## Outcome (round 3)
+
+1. **No Stagger view:** done. `efsim zmdlogs stagger [fixture…]`: per logged run the replay's windows and the engine's
+   own end, a shortfall summary over several logs (e339d30).
+2. **"Does the damage confirm the listing?":** done. `efsim zmdlogs differences` groups every log-vs-replay
+   disagreement by what and which side with the ratio quartiles (and a no-difference baseline); docs/open-problems.md
+   names it a first step (e339d30, 5d6eab7).
+3. **Game-data queries:** done. `efsim gamedata find <type>` (--file, --folder, --enabled, --fields, --count)
+   (b261ba5).
+4. **Invisible lock waits:** done. Heartbeat lines in the queue, `EFSIM-DONE` lines for snapshots, premerge, measure,
+   verify-at and with-lock, and the Monitor line in CLAUDE.md (d345393, 0bb1a1a).
+5. **No list of what the replay copies:** done. docs/design/data.md "What the replay takes from the log" (5d6eab7).
+   Not done: moving the step list into its own module (`replaysteps.ts`); carried over (point 17).
+6. **Stale claims in open problems:** done. Its header requires a stated cause to cite its check (5d6eab7).
