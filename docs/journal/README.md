@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-18: Cast starts across other operators' time stops](2026-11-18-01-cast-starts-across-other-operators-time-stops.md)
 - [2026-11-17: Haste is movement speed; the owner's team drops Initial Stroke](2026-11-17-02-haste-is-movement-speed-the-owner-s-team-drops-initial.md)
 - [2026-11-17: Tests 18, 19, 101, 104 from the logs: bosses freeze, Haste isn't attack speed, teammates' pause](2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md)
 - [2026-11-16: Older development fixtures refreshed from fresh battle details](2026-11-16-18-older-development-fixtures-refreshed-from-fresh-battle.md)

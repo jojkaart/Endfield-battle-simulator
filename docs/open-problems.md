@@ -1327,17 +1327,33 @@ From the kit check before simulating the team
   index (shot 1 again), so a logged 4th was replayed as a 5th and ended
   the hover; the step is now the one her attempt index allows.
   **Still open:**
-  - 1cd1 at 37.5 s (26 hits): not missed shots. Her 4th shot is logged at
-    34.39 s (no shot can follow but the 5th, which ends the hover); the
-    log's combo cast is at 34.70 s, inside the hover, but the placement
-    starts it at 37.87 s (its arrows at 39.04 s less frame 35), ignoring
-    the time stop between (Liino's ultimate, placed at 36.2 s; nobody's
-    hit is logged from 34.7 to 38.0 s), so the replay casts the grounded
-    combo after the hover ended. Same shape
-    in 9090 (combo event 60.63 s, placed 62.57 s) and dbae (battle skill
-    event 0.44 s, placed 2.43 s). Next: place a cast's start from its first
-    landing less the time other casts' stops held it (logcasts.ts
-    `placeWith`), or from its logged cast event when that fits.
+  - Closed 2026-11-18: 1cd1 at 37.5 s, 9090's combo, dbae's battle skill
+    (casts placed too late across other operators' time stops). Root: a
+    cast's start was its first landing less the landing's frame, with no
+    regard for the stops between, so a cast pressed before a teammate's
+    ultimate started up to 3 s late (1cd1: combo pressed 34.70 s, its arrows
+    at 39.04 s, placed 37.87 s, after the hover had ended). Now (logcasts.ts
+    `castStart`, `heldStart`) the start is counted back in the world's time
+    when the log's cast event of the skill is nearer that held start than
+    the plain one, and not before the event: 1cd1 35.30 s (Typhoeus plain
+    42 → 65, mismatches 27 → 4), 9090 60.63 s (after her shot at 60.60 s),
+    dbae 0.85 s (its two missed shots kept: `missedCasts` looks for a first
+    shot past a stop that holds it). An event of the slot's skill counts
+    (the log names her battle skill normal_skill, her hovering ultimate
+    ultimate_skill; this also stops `unplacedCastStops` from adding a second
+    stop for her ultimate from its event). Ruled out: counting every cast
+    back across every stop (development plain 47.3 → 45.9%, verified 71.0 →
+    64.9%: a stop placed a little off moves a cast pressed as it ended to
+    before it, dbae's Li Zhiyan combo); a combo held by others' combos (bdf2:
+    Jsspsi's combo at its event 10.46 s held Corrosion's ramp 0.4 s too
+    long; combos pressed together take their turns); events logged at the
+    same ms as another operator's time-stopping cast's event (pressed during
+    its stop, logged at its end: 5082 at 33.71 s, e82d at 3.90 s, a7a7 at
+    45.59 s). Still possible: casts without a cast event (basic attacks,
+    older imports) keep the plain start; ultimates' own events come at their
+    stop's end, so an ultimate held by another's stop is rarely moved; two
+    ultimates whose stops hold each other in the first placement (fc63's
+    Aglina and Pelica at 41.6 s, no events) stay where they are.
   - fc63 at 46.8 s (4 hits): no shot is missing (39.94 s and 44.43–45.66 s
     are shots 1–4, 46.82 s the 5th). The replay has one too many: the
     burst at 43.58 s (39.94 s's, held by the stops before everyone's hits
@@ -1352,11 +1368,21 @@ From the kit check before simulating the team
     with the 5th (bdf2 −11%, 00ae −7%): not kept. Root: the 5th shot's
     off-field key is the other shots' key, so the placement anchors a 4th
     shot to the 5th's cast.
+  - 9c6e: two targets in a single-target fixture (two hits per shot, and
+    of Li Zhiyan's and Liino's skills). Since 2026-11-18 a landing logged
+    at its cast's last landing's time, all of the cast's landings logged,
+    is the same landing on another enemy (PlacedHit.sameAs: same cast,
+    slot and replay landing), not a second cast: Typhoeus's totals +61.9 →
+    −9.8% (the log's plain 114 → 148, mismatches 121 → 130; hers 58 → 67:
+    the second enemy's hits read against the first's landing). The totals simulate one enemy (Li Zhiyan +17.3 → −34%). The
+    honest fix is importing it as a multi-target fixture. The same rule
+    merges same-instant duplicate basic attacks elsewhere (af7b, b6aa,
+    00ae, 79cc: totals ±0.2 points).
   - fc63 96.5–98.2 s (10 hits, fit neither), 9090 51.5 s (a delayed burst
-    after the 5th shot's hover end), 00ae 30.0 s, 9c6e 52.5 s: not looked
-    at. 9c6e logs two hits per shot (two targets), so its placement makes
-    two casts per shot; with the attempt-index step its hovers end early
-    (Typhoeus +48 → +62% in the totals, mismatches 65 → 58).
+    after the 5th shot's hover end), 00ae 30.0 s, 9c6e 52.5 s: not touched
+    by the 2026-11-18 placement fix (no stop between those casts and their
+    landings; fc63 92–98 s: bursts logged before their shots' projectiles
+    still open casts, as before).
 - **9090 (the whole team): Liino −15.0%, Perlica −13.0% in the totals**
   (the simulation of the logged casts), with every hit-by-hit check
   matching (Perlica 130 of 130, Liino 171 of 172). Hits under Stagger

@@ -27,7 +27,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   stats; the guided rule search's limit is noise (cheaper variance next),
   and the owner's call on its full-energy options; in-game tests 106, 108.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
-  the found rotations); the log check's casts across others' time stops.
+  the found rotations); fc63's 4th shot anchored to her 5th's cast.
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't
