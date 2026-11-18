@@ -15,8 +15,13 @@ export interface MeasureJob {
   readonly key: string;
   readonly what: "entry" | "placement";
 }
+/** A log's per-hit fit: over every logged hit with a primary reading, how many and the mean |logged ÷ primary − 1|. */
+export interface PerHit {
+  readonly n: number;
+  readonly meanAbs: number;
+}
 export type MeasureAnswer =
-  | { readonly key: string; readonly entry: Record<string, Record<string, number | null>>; readonly seconds: number }
+  | { readonly key: string; readonly entry: Record<string, Record<string, number | null>>; readonly perHit?: PerHit; readonly seconds: number }
   | { readonly key: string; readonly placement: string; readonly seconds: number }
   | { readonly key: string; readonly error: string };
 
@@ -34,13 +39,18 @@ if (under) {
   for (const [id, r] of Object.entries(under.assume)) if (!known.some((a) => a.id === id && r in a.readings)) throw new Error(`--assume ${id}=${r}: no such reading (${known.map((a) => a.id).join(", ")})`);
 }
 
-function entryOf(fx: any): Record<string, Record<string, number | null>> {
+function entryOf(fx: any): { entry: Record<string, Record<string, number | null>>; perHit: PerHit } {
   const replay = under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx);
   const byHit = logs.engineHits(data, fx, replay);
   const verdicts = logs.checkLog(data, fx, { replay, engineHits: byHit });
   const counts = logs.verdictCounts(fx, verdicts);
   const totals = logs.engineReport(data, fx, replay, byHit, verdicts).errors;
-  return { ...counts, totals };
+  // Not in the snapshots: what measure's "mixed" lines add (did the hits get closer while a signed total drifted?).
+  const errors = (fx.hits as any[]).flatMap((h) => {
+    const p = byHit.get(h)?.primary;
+    return typeof p === "number" && p > 0 ? [Math.abs(h.value / p - 1)] : [];
+  });
+  return { entry: { ...counts, totals }, perHit: { n: errors.length, meanAbs: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : 0 } };
 }
 
 function placementOf(fx: any): string {
@@ -59,7 +69,7 @@ parentPort?.on("message", (job: MeasureJob) => {
   try {
     const fx = logs.readLogFixture(join(tree, "fixtures", job.key));
     const seconds = () => (performance.now() - start) / 1000;
-    parentPort?.postMessage(job.what === "entry" ? { key: job.key, entry: entryOf(fx), seconds: seconds() } : { key: job.key, placement: placementOf(fx), seconds: seconds() });
+    parentPort?.postMessage(job.what === "entry" ? { key: job.key, ...entryOf(fx), seconds: seconds() } : { key: job.key, placement: placementOf(fx), seconds: seconds() });
   } catch (e) {
     parentPort?.postMessage({ key: job.key, error: e instanceof Error ? `${e.message}\n${e.stack ?? ""}` : String(e) });
   }

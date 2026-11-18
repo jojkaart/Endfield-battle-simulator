@@ -38,9 +38,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { compare, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots } from "./accuracy.ts";
+import { compare, direction, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots } from "./accuracy.ts";
 import { atCommit } from "./at-commit.ts";
-import type { MeasureAnswer, MeasureJob } from "./measure-worker.ts";
+import type { MeasureAnswer, MeasureJob, PerHit } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
@@ -200,14 +200,18 @@ async function main(argv: string[]): Promise<number> {
 
   const cost = costs(tree, keys);
   const order = [...keys].sort((a, b) => (cost.get(b) as number) - (cost.get(a) as number) || a.localeCompare(b));
-  const measureTree = async (t: string, label: string) => {
+  const perHit = new Map<string, Map<string, PerHit>>();
+  const measureTree = async (t: string, label: string, which: readonly string[] = order) => {
     const got = new Map<string, Entry>();
+    const fits = new Map<string, PerHit>();
+    perHit.set(t, fits);
     const start = performance.now();
-    await pool(t, order.map((key) => ({ key, what: "entry" as const })), workers, (a) => {
+    await pool(t, which.map((key) => ({ key, what: "entry" as const })), workers, (a) => {
       if ("error" in a) throw new Error(`${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
       if (!("entry" in a)) return;
       got.set(a.key, a.entry);
-      say(`[${got.size}/${keys.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
+      if (a.perHit) fits.set(a.key, a.perHit);
+      say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
     }, t === tree ? assume : {});
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
     return got;
@@ -216,13 +220,28 @@ async function main(argv: string[]): Promise<number> {
   const reference = snapshotsAt(against);
   const before = baseTree ? overlay(reference, await measureTree(baseTree, `base ${values.base}: `)) : reference;
   const after = overlay(before, measured, split);
+  // The mixed logs' per-hit fit on both sides (the reference's code measured for them alone when it wasn't already).
+  const entryOf = (s: Snapshots, k: string) => (k.includes("/") ? s.pending[k] : s.verified[k]);
+  const mixed = keys.filter((k) => {
+    const [a, b] = [entryOf(before, k), entryOf(after, k)];
+    return a !== undefined && b !== undefined && direction(a, b) === "mixed";
+  });
+  let refFits: Map<string, PerHit> | undefined = baseTree ? perHit.get(baseTree) : undefined;
+  if (mixed.length && !refFits) {
+    const refTree = resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${against}^{commit}`]));
+    atCommit(against, refTree);
+    say(`measure: ${mixed.length} mixed log(s): their per-hit fit at ${against}'s code`);
+    await measureTree(refTree, `reference ${against}: `, mixed);
+    refFits = perHit.get(refTree);
+  }
+  const mixedLines = mixedPerHit(mixed, refFits ?? new Map(), perHit.get(tree) ?? new Map());
 
   writeFileSync(join(out, VERIFIED), formatSnapshot(after.verified as Entries, true));
   const files = splitPending(after.pending);
   writeFileSync(join(out, PENDING), formatSnapshot(files.pending, true));
   writeFileSync(join(out, HOLDOUT), formatSnapshot(files.holdout, true));
   writeFileSync(join(out, "accuracy.md"), render(after));
-  const lines = [`Accuracy of ${what} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`, ...compare(before, after)];
+  const lines = [`Accuracy of ${what} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`, ...compare(before, after), ...mixedLines];
   if (keys.length === logKeys(tree).length && !baseTree) {
     const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(out, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
     lines.push(same ? "The log verdict snapshots would stay as they are (byte for byte)." : "The log verdict snapshots would change: `npm run snapshots:update` before committing.");
@@ -231,6 +250,29 @@ async function main(argv: string[]): Promise<number> {
   say("");
   for (const l of lines) say(l);
   return 0;
+}
+
+/**
+ * The mixed logs (a fit measure better, another worse) by their mean |per-hit error| (logged ÷ the primary reading − 1,
+ * every hit with one), before and after: closer or further. Hold-outs only as counts.
+ */
+export function mixedPerHit(mixed: readonly string[], before: ReadonlyMap<string, PerHit>, after: ReadonlyMap<string, PerHit>): string[] {
+  if (!mixed.length) return [];
+  const pct = (x: number) => `${(100 * x).toFixed(2)}%`;
+  const out = ["Mixed logs by the mean |per-hit error| (logged ÷ the primary reading − 1, over every hit with one; not in the snapshots):"];
+  const hold = { closer: 0, further: 0, same: 0 };
+  for (const k of mixed) {
+    const [a, b] = [before.get(k), after.get(k)];
+    if (!a || !b) {
+      if (!isHoldout(k)) out.push(`  ${k}: per-hit fit not measured`);
+      continue;
+    }
+    const way = b.meanAbs < a.meanAbs - 1e-6 ? "closer" : b.meanAbs > a.meanAbs + 1e-6 ? "further" : "same";
+    if (isHoldout(k)) hold[way]++;
+    else out.push(`  ${k}: ${pct(a.meanAbs)} → ${pct(b.meanAbs)} over ${b.n} hits (${way})`);
+  }
+  if (hold.closer + hold.further + hold.same) out.push(`  hold-out: ${hold.closer} closer, ${hold.further} further, ${hold.same} the same`);
+  return out;
 }
 
 const readTracked = (tree: string, rel: string) => (existsSync(join(tree, rel)) ? readFileSync(join(tree, rel), "utf8") : "");

@@ -3,7 +3,7 @@
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { overlay, selectLogs } from "../scripts/measure.ts";
+import { mixedPerHit, overlay, selectLogs } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -42,5 +42,14 @@ describe("measure's overlay", () => {
     const text = compare(base, after).join("\n");
     expect(text).toMatch(/Hold-out.*1 better/);
     expect(text).not.toMatch(/cccc/);
+  });
+  it("gives the mixed logs' mean per-hit error before and after, hold-outs only counted", () => {
+    const key = "pending/zmdlogs-bbbb11112222.json";
+    const hold = "holdout/zmdlogs-cccc11112222.json";
+    const lines = mixedPerHit([key, hold], new Map([[key, { n: 10, meanAbs: 0.4 }], [hold, { n: 5, meanAbs: 0.1 }]]), new Map([[key, { n: 10, meanAbs: 0.15 }], [hold, { n: 5, meanAbs: 0.2 }]]));
+    expect(lines[1]).toBe(`  ${key}: 40.00% → 15.00% over 10 hits (closer)`);
+    expect(lines[2]).toBe("  hold-out: 0 closer, 1 further, 0 the same");
+    expect(lines.join("\n")).not.toMatch(/cccc/);
+    expect(mixedPerHit([], new Map(), new Map())).toEqual([]);
   });
 });
