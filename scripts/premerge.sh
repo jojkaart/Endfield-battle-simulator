@@ -12,11 +12,21 @@
 #   - a branch that changes code, kits or examples also adds a journal entry
 #     (a file under docs/journal/: CLAUDE.md "Journal and roadmap"); `npm run
 #     check` then checks that docs/journal.md is rebuilt from the entries.
+# Its last line is `EFSIM-DONE premerge pass` (or `fail`), whatever the outcome: wait for that.
 # Usage: scripts/premerge.sh [base]   (base: main by default)
 set -euo pipefail
 base="${1:-main}"
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
+# One last line to wait for, whatever the outcome, and the run state (scratch/runs/premerge.json; node scripts/runstate.ts).
+finish() {
+  local s=$?
+  local r=$([ "$s" -eq 0 ] && echo pass || echo fail)
+  node scripts/runstate.ts end premerge "$r" || true
+  echo "EFSIM-DONE premerge $r"
+}
+node scripts/runstate.ts start premerge "against $base"
+trap finish EXIT
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "premerge: the tree has uncommitted changes:" >&2
