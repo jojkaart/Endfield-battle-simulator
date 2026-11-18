@@ -85,7 +85,8 @@ To try an idea, measure instead: `npm run measure [-- --with <op>]`
 an open reading: [docs/design/tests.md](docs/design/tests.md#measuring-a-change)),
 and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards). Diagnosis views: `efsim zmdlogs
-groups|differences|casts|replay|stagger` (first steps in
+groups|differences|casts|replay|stagger`; a build offset: `efsim zmdlogs
+fit-build <fixture> --operator <op>`, kept as the fixture's `buildOverrides` (first steps in
 [docs/open-problems.md](docs/open-problems.md)). After a fixture move, `node scripts/snapshot-keys.ts <file> --rename
 <regex> <to>` renames snapshot keys (counts only, no values shown).
 
