@@ -795,15 +795,55 @@ function loggedTickFrames(kits: readonly OperatorKit[], casts: readonly Replayed
   return out;
 }
 
-/** The state with each tick due by `frame` that comes less than half an interval before a logged event of it (loggedTickFrames) held to that event (loggedTick). */
-function heldTicks(st: TimelineState, frame: number, events: ReadonlyMap<string, readonly number[]>): TimelineState {
-  if (events.size === 0) return st;
+/**
+ * The frames at which a buff's ticks fired a trigger's hits the log shows, per `owner|buff` (buffs with
+ * KitBuff.ticksShownByHits): each placed cast of a trigger on the buff's ticks (`buffTick`), its start (its first logged
+ * landing less the landing's frame). Liino's volleys: her
+ * volley timer ticks every 10 s of her stance's clock, which runs slower than the replay's world time (1.0–11.7 s logged
+ * between volleys without a time stop; 9090afbacec9's 10.1–11.2 s with the stops taken out), so the replay's ticks drift
+ * a second or more early by the second volley.
+ */
+function loggedTickLandings(kits: readonly OperatorKit[], placement: Placement): Map<string, number[]> {
+  const out = new Map<string, number[]>();
+  for (const k of kits) for (const t of k.triggers) {
+    if (t.on.event !== "buffTick" || !("buff" in t.on)) continue;
+    const buff = t.on.buff;
+    if (!k.buffs.some((d) => d.id === buff && d.ticksShownByHits)) continue;
+    const key = `${k.operator}|${buff}`;
+    const frames = placement.casts.filter((c) => c.operator === k.operator && c.group === `trigger:${t.id}`).map((c) => frameOf(c.start));
+    if (frames.length) out.set(key, [...(out.get(key) ?? []), ...frames].sort((a, b) => a - b));
+  }
+  return out;
+}
+
+/** The logged moments of buffs' ticks: cast events (loggedTickFrames) and the starts of landings ticks fired (loggedTickLandings). */
+interface TickEvents {
+  readonly events: ReadonlyMap<string, readonly number[]>;
+  readonly landings: ReadonlyMap<string, readonly number[]>;
+}
+
+/**
+ * The state with each tick due by `frame` that comes less than half an interval before a logged event of it (loggedTickFrames) held to that event (loggedTick).
+ * With `landings` (loggedTickLandings): also a tick due less than half an interval after a logged landing's start between
+ * the state's frame and `frame` brought to it (no later than the state's frame), as loggedTick does at a cast event.
+ */
+function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): TimelineState {
+  const { events, landings } = ticks;
+  if (events.size === 0 && landings.size === 0) return st;
   let changed = false;
   const buffs = st.buffs.map((b) => {
-    const frames = events.get(`${b.owner}|${b.id}`);
+    const key = `${b.owner}|${b.id}`;
     const [n, every] = [b.nextTick, b.every];
-    if (!frames || n === undefined || every === undefined || b.cast !== undefined || n > frame) return b;
-    const e = frames.find((x) => x > n && x - n <= every / 2);
+    if (n === undefined || every === undefined || b.cast !== undefined) return b;
+    const shown = landings.get(key);
+    const early = shown?.find((x) => x <= frame && x >= st.frame && x < n && n - x <= every / 2);
+    if (early !== undefined) {
+      changed = true;
+      return { ...b, nextTick: Math.max(early, st.frame) };
+    }
+    const frames = [...(events.get(key) ?? []), ...(shown ?? [])];
+    if (!frames.length || n > frame) return b;
+    const e = frames.filter((x) => x > n && x - n <= every / 2).sort((x, y) => x - y)[0];
     if (e === undefined) return b;
     changed = true;
     return { ...b, nextTick: e };
@@ -923,7 +963,7 @@ interface MissedSearch {
  * candidate is judged by making the casts from the previous one's state to the need's frame (`make`: the replay's own
  * cast making, the others' casts in between included).
  */
-function missedCasts(r: MissedSearch, need: { c: ReplayedCast; f: number }, make: (st: TimelineState, c: ReplayedCast, f: number) => { st: TimelineState; skillId: string | null }, tickEvents: ReadonlyMap<string, readonly number[]>, hits: readonly Pick<LogHit, "t" | "operator" | "event">[]): ReplayedCast[] {
+function missedCasts(r: MissedSearch, need: { c: ReplayedCast; f: number }, make: (st: TimelineState, c: ReplayedCast, f: number) => { st: TimelineState; skillId: string | null }, tickEvents: TickEvents, hits: readonly Pick<LogHit, "t" | "operator" | "event">[]): ReplayedCast[] {
   const { ctx } = r;
   const op = need.c.operator;
   const prev = r.made.filter((m) => m.c.operator === op && m.f < need.f).at(-1);
@@ -1116,7 +1156,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const logged = control?.casts ?? assembled;
   // With the casts that hit nothing the log needs (missedCasts), added below.
   let casts: readonly ReplayedCast[] = logged;
-  const tickEvents = loggedTickFrames(kits, logged);
+  const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement) };
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */

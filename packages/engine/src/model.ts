@@ -695,6 +695,12 @@ export interface KitBuff {
    */
   readonly ticksLoggedAs?: string;
   /**
+   * A battle log shows each tick by the hits a trigger on it (`buffTick`) fires (Liino's volleys): the log check's replay
+   * holds or brings its ticks to those logged casts' starts (cli buffreplay.ts loggedTickLandings). The engine doesn't
+   * read it.
+   */
+  readonly ticksShownByHits?: boolean;
+  /**
    * Ends with the action that applied it (CreateBuffAction autoFinishByAction):
    * when its owner's current skill ends or the owner starts another one.
    * Applied while its owner isn't in a skill, it isn't applied.
