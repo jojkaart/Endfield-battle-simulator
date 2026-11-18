@@ -4,9 +4,48 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 99 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 100 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-18: Si's misfit logs and Ardelia's build: build overrides and fit-build
+
+**Goal:** the misfits of Si (0c14, 9555, c83c) and Ardelia (f978, 1d91): build offsets or kit rules, and build
+offsets fitted from the hits instead of by hand (the roadmap's "build fitter with structured buildOverrides").
+
+**Done:**
+- **Build overrides and a fitter.** A fixture's `buildOverrides` sets fields over the exported `team` when it is
+  read (`readLogFixture`; `readLogFixtureRaw` and `zmdlogs refresh` keep the file as written), each with its
+  evidence. `efsim zmdlogs fit-build <fixture> --operator <op>` (packages/logs/src/buildfit.ts) scores every
+  attribute-node count, weapon level and food by the operator's landed kit hits within ±1 of the primary reading
+  recomputed with the candidate's panel (clean hits counted apart), so foods' DMG lines and crit-null hits count.
+  docs/design/data.md, the log check's rule.
+- **Fits** (open-problems): 0c14 Si = Kunst Tube (her teammates' food) and two attribute nodes: her ratio was
+  ×1.1543 without Alesh's +0.16 DMG and ×1.1322 with it, which only an additive DMG (+0.247) with ATK ×0.962 fits;
+  46 of 191 hits, 25 of 25 clean. 9555 Si = no attribute node (×0.9397). f978 Ardelia = weapon at level 60 (the
+  earlier "no pair fits" read the ATK ratio, inside the hits' rounding): 107 of 139, all 55 clean.
+- **0c14's step ×1.0965 at 13.25 s:** Alesh's P3 ATK and Thermite Cutter's team ATK, listed from a combo whose hits
+  the log hasn't; the replay can't cast it (left: a cast inferred from a buff only it gives).
+- **c83c's late combos:** now one Yinglung's Edge layer off each way (the +21% went with the consumed-buff fix).
+  The engine assumption `battle-sub-skills` (main-only: sub-skills unseen by skill-type triggers) measured mixed
+  (c83c 31 → 22 and 9555 11 → 1 mismatches, the hold-out row 7.4 → 7.6%), so it stays a switch; Si's
+  battle-button events every 3.2–3.6 s (most hitless) are the open part (test 106).
+- **1d91's Ardelia:** not a build: Liino's Medicant layers reach her later than the engine's every-beat heal
+  (1 layer to 18 s, none at 23–32 s, 2–4 after), Typhoeus and Arcane at other times: the soundwave's area is the
+  candidate (positions, not modelled).
+
+**Scoreboard** (`npm run snapshots:update`, docs/accuracy.md): development plain 49.5 → 50.2%, mismatch
+19.3 → 18.4%; earlier pending plain 47.2 → 47.8%, mismatch 26.1 → 23.9%; all but the hold-outs mismatch
+21.5 → 20.1%, mean |damage error| 10.1 → 10.0%; hold-out unchanged; 1 log better, 2 mixed (0c14, f978: plain up,
+mismatches down, their simulated totals +1.0 and −0.2 points), none worse. Si's mismatches 18.6 → 10.0%,
+Ardelia's 22.2 → 12.9%. Example and kit snapshots unchanged.
+
+**Decisions:** the fits are overrides, not edits of `team`, so a later fitter (weapon levels bounded by their
+logged skill levels: WeaponBreakThroughTemplateTable isn't loaded yet) can redo them; the older hand fits stay in
+`team` with notes (not migrated). No kit default changed, so the team numbers don't move.
+
+**Dead ends:** a food alone or a node count alone for 0c14's Si (it takes both); replaying the food search through
+the whole check per candidate (minutes per log; the fitter recomputes the primary reading instead, seconds).
 
 ## 2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings
 
@@ -402,65 +441,3 @@ Done:
 
 Also: the friction report of phase 2
 (docs/friction/2026-11-16-phase-2-friction.md).
-
-## 2026-11-16: Rule driver phase 2: button model, one start check, event stepping, run checks, assumption switches
-
-Goal: phase 2 of the [architecture review](architecture-review.md)
-(items 3, 4, 8, 9, 10) and the rule-noise points of the three friction
-reports on rules, gear on rules and the guided search. Done (design.md
-"Rule-based rotations", its "Assumption switches"):
-- **Button model** (engine timeline/buttons.ts): what each battle, combo
-  and ultimate button shows and casts, from the kits' `available`
-  conditions, follow-ups and own combo windows. A press casts that skill
-  or nothing; `shows` checks its label. No example button is ambiguous at
-  any frame (test).
-- **One start check** (`canStartAt`): earliestStart now judges an `at` on
-  the state advanced to it. Every disagreement between the old pair
-  (startsNow on the advanced state, earliestStart from the last press) was
-  SP granted on the way, the dive-landing case included; the old driver
-  waited for the stale check, so SP-gated presses came late (Ardelia's
-  battle skill 1.7 s). SP is snapped to its regeneration grid, so it reads
-  the same however a state was advanced. Property test on the examples'
-  rotations and rule runs.
-- **Event stepping**: the driver visits the frames where something it
-  reads can change (about a third); `stepping: "frames"` is the reference
-  and gives the same rotations (test: three lists, several seeds, both
-  energies). 1.2–1.7× faster a run (the simulation itself is the floor).
-- **Run checks** (`checkRuleRun`): no press casts another skill than its
-  button showed, none cuts its operator's own ultimate state (a
-  counterfactual without the press), `simulate` replays it; zero on the
-  three lists; a constructed End Stance list is caught.
-- **Visible states in the kits**: `visible` on kit buffs and stacks
-  replaces policy.ts's operator tables; cues unchanged.
-- **Assumption switches**: kits register open readings (`assumptions`,
-  triggers with `reading`); test 109's alternative is the first
-  (`si-haste-every-end`). `--assume` and `--assumptions` on `rules`,
-  `diagnose`, `gear --rules`, `--guided`.
-- **Noise tooling**: `efsim rules --compare` (paired gain ± SE on seeds
-  1–k and fresh 1001…), a seed/power table in design.md, the zero-energy
-  companion judged by default (`gear --rules`, `--guided`), one worker
-  pool per command (`efsim rules` uses it too), the commit at the head of
-  long outputs, the guided search's list written after each kept round.
-  Antithetic delays tried: no gain (the owner's
-  team: SE 0.17% against 0.14% plain at 128 seeds), dropped.
-
-Behaviour changes (32 fresh seeds, 1001–1032, 300 s; before → after):
-
-| Team | Full energy | From zero |
-|---|---|---|
-| The owner's | 56,274 → 56,493, +0.39% ± 0.47 | 55,852 → 56,055, +0.36% ± 0.25 |
-| Ink Melt | 66,355 → 69,668, +4.99% ± 0.99 | 63,213 → 61,716, −2.37% ± 1.23 |
-| Typhoeus's | 54,847 → 54,607, −0.44% ± 0.78 | 50,818 → 51,076, +0.51% ± 0.62 |
-
-All of it comes from earliestStart's fix: the old driver with only that
-fix gives the same means (against the new driver: the
-owner's team identical on 31 of 32 seeds, Ink Melt +0.01% ± 0.15 and
-+0.23% ± 0.23 from zero; Typhoeus's −0.40% ± 0.40 and −0.15% ± 0.09,
-presses an SP tie now starts a frame sooner (the snap)). The two moved example scenarios
-(akekuri-laevatain, wulfgard-fluorite) are SP ties the snap now reads
-exactly. The documented 10-seed numbers on the team pages predate this.
-
-Not done: the review's estimate of 3–10× for event stepping was too
-high: after the probes, most of a run is the simulation and the basic
-attack's earliest start (it advances copies of the state). The friction
-reports stay in docs/friction/ for the improvement round to file.

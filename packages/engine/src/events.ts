@@ -37,9 +37,10 @@ export type BattleEvent =
   /** A skill was cast. */
   /**
    * A skill was cast; `cast` is its index, `count` a combo's window count (ValueExpr `eventCount`); `beside`: it runs
-   * beside its operator's current action (KitSkill.beside), which it doesn't end.
+   * beside its operator's current action (KitSkill.beside), which it doesn't end; `unseenByKind`: a sub-skill
+   * (SkillTiming.subSkill) that triggers listening by `kinds` don't see (engine assumption battle-sub-skills, main-only).
    */
-  | { readonly type: "cast"; readonly frame: number; readonly operator: string; readonly skillId: string; readonly kind: SkillType; readonly finisher: boolean; readonly controlled: boolean; readonly cast?: number; readonly count?: number; readonly followUp?: boolean; readonly beside?: boolean }
+  | { readonly type: "cast"; readonly frame: number; readonly operator: string; readonly skillId: string; readonly kind: SkillType; readonly finisher: boolean; readonly controlled: boolean; readonly cast?: number; readonly count?: number; readonly followUp?: boolean; readonly beside?: boolean; readonly unseenByKind?: true }
   /** Something the enemy's arts state did (status.ts); `fromKind`: the kind of the hit that caused it (`none` for a trigger's or a tick's). */
   | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number }
   /**
@@ -415,7 +416,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       );
     case "cast":
       return (
-        e.type === "cast" && has(on.kinds, e.kind) && has(on.skills, e.skillId) && (on.finisher === undefined || on.finisher === e.finisher) && (on.followUp === undefined || on.followUp === (e.followUp ?? false)) &&
+        e.type === "cast" && has(on.kinds, e.kind) && !(on.kinds && e.unseenByKind) && has(on.skills, e.skillId) && (on.finisher === undefined || on.finisher === e.finisher) && (on.followUp === undefined || on.followUp === (e.followUp ?? false)) &&
         (on.beside === undefined || on.beside === (e.beside ?? false))
       );
     case "buffApplied":

@@ -138,16 +138,17 @@ extra heal left);
 next the screened logs' leads ([open-problems.md](open-problems.md):
 what each has ruled out and what still stands; Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
 27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
-eny_0134 logs' food in 0c14 and de6a; Yvonne −23% in 5082 and
+eny_0134 logs' food in de6a (0c14's: Kunst Tube on all but Alesh, 2026-11-18); Yvonne −23% in 5082 and
 Ardelia's sheep ×1.407 in 791, both unmasked 2026-11-14), diagnosed in parallel (small
 models first, the owner's call 2026-11-11); then the favourites' kit
 leads (B8: the build offsets the log check
 reports without an explanation (04d4's Snowshine ×0.96,
 92b4's Liino ×1.031), and those it can't see (flat ATK buffs spread the
-ratio: 4e36 / c3c7's Ardelia, set by hand; a replay per candidate build,
-bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
-(d774: 8 strikes where the log has 3); Si's build in 9555 (every hit
-×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
+ratio: 4e36 / c3c7's Ardelia, set by hand; now `efsim zmdlogs fit-build`, still
+to be bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
+(d774: 8 strikes where the log has 3); Si's build in 9555 (found
+2026-11-18: no attribute nodes, a fixture buildOverride; 0c14's Si and
+f978's Ardelia too); logged presses with no damage of their own while the enemy is
 there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
 3aa6's Stagger at 145.6 s (the replay has none), Xaihi's ultimate Amp in
 b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), bdf2's Si combo
@@ -187,7 +188,10 @@ landings the replay misses (Arcane's Final Strike in b6aa, 9555's casts);
 458b's ×1.3 on Laevatain's `normal_skill_during_ult`; then tighten the
 totals' bound (45%). The fallbacks in verified fixtures (~300) are the
 work queue; a build fitter with structured `buildOverrides` instead of
-hand fits in notes; the negative control on the unscaled replay; d9e5
+hand fits in notes (done 2026-11-18: `efsim zmdlogs fit-build`; next: the
+weapon level bounded by its logged skill levels from
+WeaponBreakThroughTemplateTable, the older hand fits moved into
+`buildOverrides`, weapon skill levels and artifice as candidates); the negative control on the unscaled replay; d9e5
 (now a fight-wide ×1.12–1.20 on every operator from 4.4 s, not Arcane's);
 whether mostly-assumed matches (Rossi in 4e5e) hold hit by hit.
 

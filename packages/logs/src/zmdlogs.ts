@@ -93,6 +93,18 @@ export interface LogFixture {
   readonly casts?: readonly LogCast[];
   /** Hand-written: the replay's landings the log doesn't have and can't, each with why (the totals leave them out). */
   readonly absent?: readonly AbsentLanding[];
+  /**
+   * Hand-written: build inputs the export omits or got wrong, set over the exported build when the fixture is read
+   * (logs.ts readLogFixture applies them to `team`; readLogFixtureRaw doesn't), each with its evidence.
+   */
+  readonly buildOverrides?: readonly BuildOverride[];
+}
+
+/** Build fields a fixture sets over an exported build (LogFixture.buildOverrides): `weapon` only the fields it changes. */
+export interface BuildOverride {
+  readonly operator: string;
+  readonly set: Partial<Omit<Build, "operator" | "weapon" | "gear" | "skillLevels">> & { readonly weapon?: Partial<Pick<NonNullable<Build["weapon"]>, "level" | "skillLevels">> };
+  readonly why: string;
 }
 
 /** A replay landing a log can't have (LogFixture.absent): the landing of the operator's skill and hit nearest `t` (ms). */

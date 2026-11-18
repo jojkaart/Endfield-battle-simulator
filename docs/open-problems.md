@@ -19,7 +19,11 @@ landing and own, by skill and by what the log and the replay disagree on)
 and `efsim zmdlogs differences` (does the damage side with the log's
 listing or with the replay, per thing they disagree on); then `zmdlogs
 casts`, `replay`, `stagger` for the fight itself, and `npm run measure`
-for each idea (docs/design/tests.md "Measuring a change").
+for each idea (docs/design/tests.md "Measuring a change"). An operator off
+by one factor on most hits: `efsim zmdlogs fit-build <fixture> --operator
+<op>` first (attribute nodes, weapon level, food), so a build offset
+doesn't hide a kit error; its fit goes into the fixture's
+`buildOverrides`.
 
 Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
@@ -602,8 +606,30 @@ cap 2) are listed up to 12 times too: a log habit.
 → ×0.917 at 39.0 s; the engine giving Typhoeus's ultimate hits no layers
 (37974, 41265 ms); c6d8's engine values ×10 off on every hit.
 
+**1d91's Ardelia (2026-11-18): her layers come slower than the engine's.**
+118 of her 130 hits mismatch, all with the engine's Liino stance ATK and
+4 Medicant layers (the log lists none of Liino's buffs there). Her first
+hit (6.0 s, 1 layer) is exact; the ATK% her later hits need with every
+other zone the engine's (scratch: logged ÷ reading × the reading's ATK
+÷ her panel's): +0.156 to 18 s (stance + 1 layer: the same 5287 at 12.0 and
+16.6 s, while the engine goes to 3 and 4 layers), +0.100 at 23–32 s (stance
+only: the layer ran out at 20 s), +0.212, +0.268 at 35–49 s, +0.324 (4
+layers) from 51 s. Typhoeus fits 4 from 10 s and Arcane from 17 s (both
+had more than the engine before), Arcane fewer again at 53–70 s
+(×0.965 → ×0.893). So the heals reach the three at different times.
+
+**Ruled out (1d91's Ardelia):** her build (the hit at 6.0 s is exact; the
+pattern follows the layers, not a factor).
+
+**Still possible (1d91's Ardelia):** the stance's heal being the
+soundwave projectile's area (normal_skill_soundwave_projhit, an AOE
+HealAction): teammates out of its reach get no heal and no layer (not
+modelled: positions); a heal on a teammate at full HP giving none.
+
 **Next check:** 1cd1's step at 24 s (sonnet); the log check's fallback
-should not trust stackingType-11 listings' counts.
+should not trust stackingType-11 listings' counts; whether other logs
+without Liino's buffs listed show a teammate's layers lagging like
+1d91's Ardelia.
 
 ## Ardelia's Wooly Party: a random hit count (test 96)
 
@@ -759,12 +785,20 @@ f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
   37.7 s, ×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s, ×1 from 86.8 s;
   nothing in the log's buffs marks it. Not modelled; the log is mostly
   not checkable until it is.
-- **c83c Si's combo from ~55 s**: the engine adds Jade Vessel's next-combo
-  bonus (0.7), Yinglung's Edge (0.2 ×2) and P2 ATK that the log doesn't
-  list (combo +21%): buff lifetimes, maybe with "Consumed buffs end at the
-  planned last hit" (being fixed) or the Yinglung stack count (test 106).
-- **f978 Ardelia** ×0.8168 on 137 of 139 hits: a build offset, but no
-  weapon level / node pair fits exactly (4 nodes + 60, 3 + 64, 1 + 71).
+- **c83c Si's combo from ~55 s: now only the Yinglung stack count
+  (2026-11-18).** The +21% is gone (consumed buffs end at their cast's
+  last hit, 2026-11-14): her combos at 55.6, 82.8 and 98.4 s are ×0.9494,
+  ×1.0528, ×0.9518 = exactly one Edge layer (0.2 of DMG 3.95 / 3.79 /
+  4.15) fewer, more, fewer than the engine's 2, 2, 3 (scratch edge fit on
+  `zmdlogs hits --json`; Jade Vessel's 0.7 and the P2 ATK the engine has
+  fit). Her first combo (9.5 s) wants one more too (engine 2). Which casts
+  count: "Type 50 Yinglung's Edge" below.
+- **f978 Ardelia: found (2026-11-18).** Her weapon at level 60 (the third
+  breakthrough's cap; c3c7's is at 60 too): `efsim zmdlogs fit-build`
+  fits 107 of 139 hits, all 55 clean ones (0 as exported); the earlier
+  "no pair fits exactly" read the ATK ratio alone (×0.81663 against
+  ×0.8167, inside the hits' rounding). Fixture `buildOverrides`; f978
+  plain 258 → 365, mismatches 139 → 2.
 - **f879**: Wulfgard's late hits (104–126 s) ×1.06–1.10 with many
   Camille talent-1 stacks listed; Laevatain −8.3% (−9.1% before the
   Combustion snapshot fix) not diagnosed.
@@ -782,7 +816,13 @@ engine adds under time stops (c7790's 7 against 10).
 **Check improvement:** the build-offset line only reads hits with
 `crit === false`; Si's hits there have crit null, so no offset was
 reported. Weapon skill levels could be inferred from logged weapon-buff
-values (c83c's 0.21).
+values (c83c's 0.21). Done in part (2026-11-18): `efsim zmdlogs
+fit-build` scores attribute nodes, weapon level and food on every landed
+kit hit (crit null tried both ways) by the recomputed reading, foods' DMG
+lines too; its fits go into a fixture's `buildOverrides` with the counts
+(docs/design/data.md, the log check's rule). Left: the weapon level's
+bound from its logged skill levels (WeaponBreakThroughTemplateTable isn't
+loaded), weapon skill levels and gear artifice as candidates.
 
 ## Akekuri in 012a: Thermite Cutter's team ATK too early, and ×0.89 left
 
@@ -833,7 +873,31 @@ casts from hits; Laevatain's during-ultimate and Si's strokes, test 29);
 an expiry (3f78: only the casts in the last 3.5 s count, once); Estella's
 combo bound to its own cast id, or landing inside another cast.
 
-**Next check:** in-game test 106 (the buff's stack count on screen).
+**Si's strokes as a switch (2026-11-18):** the engine assumption
+`battle-sub-skills` (timeline/assumptions.ts; skills of SkillData
+normalSkillSubType 1, which the data's CheckSkillType gives
+`normalSkillSubTypeFilter` 0 everywhere, so the data doesn't say) reads
+`main-only` as "a sub-skill's cast isn't seen by triggers by skill type".
+`npm run measure -- --assume battle-sub-skills=main-only` (on the build
+overrides of the same day): c83c mismatches 31 → 22, 9555 11 → 1, 0c14
+plain 123 → 133, 489c 124 → 117 mismatches; 9a80 +1 mismatch, a27b and
+c7790 a few plain fewer; the hold-out row plain 65.0 → 64.8%, mismatch
+7.4 → 7.6%. Mixed, so the default stays `count`. Per combo it fits neither
+reading: c83c's fitted layers 3, 3, 1, 3, 2 (engine 2, 3, 2, 2, 3); her
+battle-button events come every 3.2–3.6 s (26 in 99 s, most with no hit
+and while she attacks), so most of them aren't strokes the replay can
+place; in the window before 55.6 s (Laevatain's battle skill and four
+such events) only one layer counts, before 82.8 s three (Si's battle
+skill, Laevatain's and the events). 0c14 (82.2 s one fewer, 122.5 s one
+more), 9555 (39.7 and 92.8 s one fewer) alike.
+
+**Still possible (added):** what Si's periodic battle-button events are
+(like Liino's stance beats, `ticksLoggedAs`?) and whether some are presses
+that count; a layer lost or kept across her own ultimate (c83c's 55.6 s
+combo right after it at 54.4 s fits 1).
+
+**Next check:** in-game test 106 (the buff's stack count on screen; its
+(d) is the strokes question).
 
 ## Estella's Razorhorn ATK: on the Shattering hit; Lifts get about half
 
@@ -1144,20 +1208,49 @@ phase change.
 ## 0c14: Si, and Rossi's later windows
 
 Found (2026-11-11): Alesh's weapon at level 60 (her buff-free hits
-×0.807 exactly), Rossi's food (Kunst Tube; early hits exact). Left:
+×0.807 exactly), Rossi's food (Kunst Tube; early hits exact).
+
+**Found (2026-11-18): Si's build is two inputs, food and nodes.** Her
+hits with the log's listing in place of the replay's (scratch
+recomputation on `zmdlogs hits --json`) are ×1.1543 where she has no DMG
+from others and ×1.1322 under Alesh's set DMG (+0.16), whatever the ATK
+buffs: a ratio that depends on her DMG bonus is an additive DMG, and only
++0.247 with ATK ×0.962 fits both. +0.2465 is Kunst Tube (all-element DMG),
+the food Rossi's and the Endministrator's hits fit; ×0.962 is two
+attribute nodes of four (nodes 5 and 7 need trust 300, as in 40d9).
+`efsim zmdlogs fit-build`: 46 of 191 hits within ±1, all 25 clean ones
+(0 as exported); the next best fits 26. Fixture `buildOverrides`; 0c14
+mismatches 212 → 23, plain 77 → 123 (the fight's total +7.5 → +8.5%: Si's
+hits were the low ones under Rossi's and Alesh's highs). The earlier "a
+food alone" was right: it takes both.
+
+**Found (2026-11-18): the step ×1.0965 at 13.25 s** is Alesh's P3 team
+ATK (+0.15, buff_chr_0024_deepfin_potential_3, listed since 13254),
+which only her combo's Rare Fin slam gives; with her weapon's team ATK
+listed since 12707 (Thermite Cutter on natural SP, which her combo's hook
+grants) it says Alesh cast a combo at ~12.5 s whose hits the log hasn't
+(her combo window opened by the Endministrator's Crystals shattered at
+11.2 s). The replay makes no cast there (no logged hit or cast event), so
+it lacks the team ATK until Alesh's ultimate (18.4 s) and the P3 ATK until
+her next combo (60.6 s): Si's combo hits from 13.25 s and Si's ultimate's
+carry them (log-listing fallbacks now).
 
 **Ruled out:** a food alone for Si (residual 0.91–1.15 with the best);
-a weapon level or nodes for Rossi and Si (they only lower ATK; both are
-predicted low).
+a weapon level or nodes for Rossi (they only lower ATK; she is predicted
+low); for Si either alone (two inputs, above).
 
 **Still possible:** Rossi at 22–40, 62–82, 150–195 s: Wolven Blood layer
 and max-stack timing (the log lists two entries per layer), Si's ultimate
 window, the Endministrator's ATK buff and Razor Clawmark timing (the
-engine has Razor Clawmark's 0.12 at 52–60 s, the log doesn't). Si: a step
-×1.0965 at 13.05–13.25 s with identical engine modifiers; Yinglung's Edge
-or Jade Vessel's next-combo state; Stagger. Alesh: ×1.146 at 26 s (the
-log lists her ATK buff twice, the engine once), ×1.38–1.44 at 59–60 s, her
-ultimates ×1.34 and ×1.90.
+engine has Razor Clawmark's 0.12 at 52–60 s, the log doesn't). Si: her
+combos' Yinglung's Edge count (82.2 s one layer fewer, 122.5 s one more,
+167.1 s one more and Jade Vessel's next-combo bonus the engine hasn't: "Type 50 Yinglung's
+Edge"). Alesh: ×1.146 at 26 s (the log lists her ATK buff twice, the
+engine once), ×1.38–1.44 at 59–60 s, her ultimates ×1.34 and ×1.90.
+For the replay: a cast inferred from a buff only it gives (a logged
+effect whose `since` no replayed cast explains, like
+castsFromBuffEnds for ends): not built; Alesh's combo here is its first
+case.
 
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window.
