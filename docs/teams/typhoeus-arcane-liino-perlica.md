@@ -219,7 +219,7 @@ character and the skill button (rank 3).
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **52,369** (1,568) | **48,967** (1,568) |
+| Sustained DPS over 300 s (sd over seeds) | **51,859** (1,845) | **48,937** (1,140) |
 | As a bot (0 s) / at 0.6 s | 61,698 / 53,558 | 56,993 / 50,683 |
 | First 60 s against the 60 s timeline (the examples) | 4,226,194 against 5,774,076 (−26.8%) | 2,858,065 against 5,019,331 (−43.1%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,382,151 against 16,925,847 (−3.2%) | |
@@ -230,6 +230,8 @@ neither acts. The same seeds at 9384cb0: **52,374 / 48,973** (sd 1,567 / 1,570),
 (what other changes since moved), and the 60 s examples' snapshots didn't move. In INT mode (the owner's open call)
 her basic attacks after the second ultimate lose the Gloompurge Amp (×0.71 at +0.4), and her battle skill's
 Corrosion hit gains the weapon's Arts DMG.
+
+**The engine change of 2026-11-18 (in-game test 110 from the logs: a Stagger lasts about 2 s past its data; same seeds):** 52,374 → **51,859** / 48,973 → **48,937** (−1.0% / −0.1%, within the noise). As a bot / at 0.6 s now 59,749 / 51,843 (full energy).
 
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** no
 freezer on this team and no Haste, so only the teammates' pause (6.5 s

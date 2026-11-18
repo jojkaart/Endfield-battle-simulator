@@ -61,11 +61,11 @@ cooldowns, dodges, dashes, positions, screen).
 | 5 Reaction bonus grouping | LOGS IF | No "Arts Reaction DMG" buff listed anywhere. |
 | 6 Liino's ultimate | LOGS | 175 projectile hits in 9–10 logs: value / (ATK × scale). |
 | 7 Arcane INT under her Corrosion | LOGS | See ranked list. |
-| 8 Where Link comes from | LOGS | See ranked list; two stacks LOGS IF. |
+| 8 Where Link comes from | LOGS (decided 2026-11-18) | Ordinary combos give none (714 skills after one: 327 plain without Link, 20 of 220 mismatches at ×1.2); Camille's and Lifeng's do (0.30 battle skill, 0.20 ultimate). Two stacks LOGS IF (14 hits, all off for other reasons). |
 | 9 Typhoeus's burst ×1.3 | LOGS | With and without a Nature infliction before the arrow. |
-| 10 Si's combo by stacks | LOGS | Final hit / ATK gives n; windows opened twice. |
+| 10 Si's combo by stacks | LOGS (decided 2026-11-18) | 63 of 86 final hits fit n exactly (n 1–5, +1 at P5). Highest vs latest LOGS IF: under `combo-window-count=latest` no verdict moves in 36 logs. |
 | 11 Estella's combo, non-Solidified | LOGS IF | All 21 of her combos come with a Shatter. |
-| 12 Gilberta's Susceptibility | LOGS | See ranked list. |
+| 12 Gilberta's Susceptibility | LOGS (decided 2026-11-18) | Values 0.30–0.42 by Vulnerable stacks, the damage follows the listing where the engine's count is low (86 hits against 24); 5 s + stops with ends −1 to +2 s. P2+ with stacks LOGS IF. |
 | 13 Arcane's WILL combo cooldown | LOGS | See ranked list. |
 | 14 Si's skill element, Heat in slot 1 | LOGS | 40d9, 458b, 6339 (Laevatain first); reactions after Si's battle skill; check the fixture's team order is the slot order. |
 | 15 Swapping during a battle skill | PARTLY | Own casts logged, swaps aren't. |
@@ -106,7 +106,7 @@ cooldowns, dodges, dashes, positions, screen).
 | 51 An effect on its own hit | LOGS | Solemn Phalanx (a7a7, 0b4a, 4bfe, d9e5), Starry Beach (1cd1, 4e36, c3c7), Seeker of Dark Lung (10df); Ancient Canal LOGS IF. |
 | 52 SP from a perfect dodge | GAME ONLY | — |
 | 53 Dodged hit counts as attacked | GAME ONLY | Dodges and enemy attacks aren't logged. |
-| 54 Dash cancels | GAME ONLY | Dashes. |
+| 54 Dash cancels | GAME ONLY (rechecked 2026-11-18) | Dashes aren't logged; a skill's missing hits can't be tied to one. |
 | 56 Endministrator's Crush | LOGS | Crush with crystals on vs off (0c14, 7e19, d4fb, 10df, 8273). |
 | 57 Akekuri's Link | LOGS | 458b: Laevatain's enhanced battle skills in Akekuri's ultimates, ×1.30 or ×1.20. |
 | 58 Antal repeats a Lift | LOGS IF | No Lift source on his teams. |
@@ -146,13 +146,18 @@ cooldowns, dodges, dashes, positions, screen).
 | 94 Thermite Cutter | LOGS | d4fb, 8273: layers rise around Lifeng's combos. |
 | 95 Third Whirlpool | GAME ONLY | SP refund, Whirlpools. |
 | 96 Wooly Party | LOGS | 7 and 3 hits vs 11 (above). |
-| 97 Dives | GAME ONLY | One dive hit in all logs; pace LOGS IF. |
-| 98 Food | PARTLY | Stew decided by 7e19; tea and DEF need the panel. |
-| 100 Rhodagn's bar | PARTLY | When and at what HP (8 logs); what he does isn't logged. |
+| 97 Dives | GAME ONLY (rechecked 2026-11-18) | 4 dive hits in 79 logs (3 forced by 67d8's enemy at one ms), none in a row; jumps, dashes, swaps not logged. |
+| 98 Food | PARTLY (2026-11-18) | Stew decided (7e19 Endministrator 31 / 34, e82d Si 22 / 22 with the flat slot before the multiplier); tea LOGS IF (no log has it); milk GAME ONLY (DEF on the panel). |
+| 100 Rhodagn's bar | PARTLY (2026-11-18) | When: 0–9 s after his HP first falls below 70% (5 of 5 long fights; none in the 4 killed within 6 s of it); what he does then GAME ONLY. |
 | 101 Teammate's own attacks | PARTLY | Gaps logged; who's controlled isn't. |
 | 102 SP refill | GAME ONLY | SP. |
 | 103 Liino's presses | GAME ONLY | Part a can't be told from beats. |
 | 104 Bosses and freezes | LOGS | See ranked list; Jade Vessel's 30 s end pinned to about 0.35 s. |
+| 106 Yinglung's Edge stacks | GAME ONLY (rechecked 2026-11-18) | The buff isn't listed; combo damage fits the engine's count in ~25 of 37 groups, both ways in the rest; the casts are partly inferred. |
+| 107 Si's Amp across ultimates | LOGS (decided 2026-11-14) | Damage puts the end at duration + stops (db87 45.7–46.6 s, engine 46.5 s); the listing's extra 0.5–2.5 s doesn't act. |
+| 108 Finisher from the attack button | LOGS for the tap (decided 2026-11-18) | The next tap is the Finisher (61 of 70 Staggers have one, no fresh chain before it), not in Laevatain's Twilight (7 Staggers, none: her kit gates it now). Dives GAME ONLY. |
+| 109 Si's Haste without Initial Stroke | GAME ONLY | No Haste logged. |
+| 110 How long a Stagger lasts | LOGS (decided 2026-11-18) | PoiseRecTime + stops + ~2 s (30 bracketed windows: rms 3.15 → 1.40 s); hits don't extend it. |
 
 ## Worked on (2026-11-13, overnight diagnoses)
 
@@ -212,6 +217,24 @@ claims to check before they change the engine.
 - **37 Timers while Imprisoned or Immobilized: in part.** Si's: Artful
   Intent = 20 s + freeze + stops on every enemy, Jade Vessel stretched by
   her freeze too. Arcane's, Last Rite's and Tangtang's parts: no data.
+
+## Worked on (2026-11-18, the owner's queue; the logs first)
+
+The owner (2026-11-18): don't ask for what the logs can decide. Each test in
+the queue was tried on the logs; the results are in in-game-tests.md.
+
+- **110 decided:** the Stagger lasts about 2 s past PoiseRecTime and its
+  stops (engine assumption `stagger-recovery`, default `2s`); hits,
+  Finishers, the hit rate and the Stagger dealt don't explain it; freezes
+  can't be told (`stagger-freeze`); bigents 11–14 s more; 4d60 has a 7.2 s
+  whole-game pause in a window. Team numbers within the noise.
+- **108 decided for the tap**, with a fix: Laevatain doesn't Finisher in
+  Twilight (7 Staggers); her kit gates it. Ink Melt −5.3%.
+- **10, 8, 12, 107 decided** (as the engine; 12's Vulnerable count at the
+  ultimate is low in four logs: open-problems); their leftovers wait for a
+  log with the case (LOGS IF), not for the owner.
+- **98, 100 partly** (the stew; when Rhodagn's bar snaps back);
+  **106, 97, 54, 109 game only** (icons, inputs, no Haste logged).
 
 ## Worked on (2026-11-16, tests the owner can't record by hand)
 

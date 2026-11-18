@@ -134,13 +134,15 @@ export interface StaggerRun {
   readonly replay: readonly { readonly start: number; readonly end: number }[];
   /** Where the engine's own Stagger would have ended, where the replay held it past that for the log (null: none held; "none": it had none running). */
   readonly engineEnd: number | "none" | null;
+  /** Where the log's calm hit ended the run while the engine's own Stagger still ran: when the engine's would have ended (ms; null: it didn't). */
+  readonly engineCut: number | null;
   /** The Stagger dealt during the run (each logged event once). */
   readonly dealt: number;
 }
 
-/** Every logged Stagger run of a fight with the replay's windows and the engine's own ends. */
-export function staggerRuns(data: GameData, fx: LogFixture): StaggerRun[] {
-  const { replay } = logBuffReplay(data, fx);
+/** Every logged Stagger run of a fight with the replay's windows and the engine's own ends (`assume`: readings of open assumptions to replay under, TimelineOptions.assume). */
+export function staggerRuns(data: GameData, fx: LogFixture, opts: { readonly assume?: Readonly<Record<string, string>> } = {}): StaggerRun[] {
+  const { replay } = logBuffReplay(data, fx, undefined, opts);
   const spans = replay.staggerSpans.map((w) => ({ start: msOf(w.start), end: msOf(w.end) }));
   const hits = [...fx.hits].sort((a, b) => a.t - b.t);
   const out: StaggerRun[] = [];
@@ -166,6 +168,7 @@ export function staggerRuns(data: GameData, fx: LogFixture): StaggerRun[] {
       next: hits[k + 1]?.t ?? null,
       replay: spans.filter((w) => w.end > a - 2000 && w.start < b),
       engineEnd: own ? msOf(own.engineUntil as number) : holds.length ? "none" : null,
+      engineCut: ((c) => (c ? msOf(c.engineUntil) : null))(replay.staggerCuts.find((c) => msOf(c.frame) >= b && msOf(c.frame) <= (hits[k + 1]?.t ?? b) + 100)),
       dealt,
     });
     i = k;
@@ -180,7 +183,7 @@ export function staggerView(data: GameData, fx: LogFixture): string {
     const first = r.replay[0];
     const gap = first ? r.last - first.end : 0;
     const short = first ? `; the replay's first window ends ${s(Math.abs(gap))} s ${gap >= 0 ? "before" : "after"} the log's last Staggered hit` : "";
-    const engine = r.engineEnd === null ? "the engine's own covered it" : r.engineEnd === "none" ? "the engine had none running (held for the log)" : `the engine's own ended ${s(r.engineEnd)} (held for the log)`;
+    const engine = r.engineEnd === null ? (r.engineCut !== null ? `the engine's own would have run to ${s(r.engineCut)} (cut by the log's calm hit)` : "the engine's own covered it") :r.engineEnd === "none" ? "the engine had none running (held for the log)" : `the engine's own ended ${s(r.engineEnd)} (held for the log)`;
     return `  log ${s(r.start)}–${s(r.last)}${r.next === null ? " (to the fight's end)" : ` (next hit ${s(r.next)})`}, Stagger dealt ${r.dealt}: replay ${r.replay.map((w) => `${s(w.start)}–${s(w.end)}`).join(", ") || "none"}${short}; ${engine}`;
   });
   return [`${fx.id} (${fx.enemy.id}): ${runs.length} logged Stagger run(s), the log's (first–last Staggered hit) against the replay's windows (times in s)`, ...lines].join("\n");

@@ -390,7 +390,9 @@ runtime, read not copied; engine `status.ts`):
   Checked against 29 logs' bars (2026-10-26, accuracy plan B1): the
   Stagger per hit matches; teammates' Final Strikes deal none; the bar
   never recovers on its own; a Staggered window lasts attribute 21 × 31
-  on the enemy's clock (time stops extend it) plus ~1 s unexplained.
+  on the enemy's clock (time stops extend it) plus about 2 s, a recovery
+  the data doesn't give (in-game test 110, decided by the logs 2026-11-18;
+  engine assumption `stagger-recovery`).
   Bosses refill it themselves at times: a second life, and Rhodagn in
   three of five fights (29.5–45 s; not a fixed HP; in-game test 100).
   `buff_common_recoverpoise` (RecoverPoiseAction) and

@@ -32,6 +32,7 @@
     {
       "id": "zone_hold",
       "label": "Staying in the Zone (while the ultimate lasts)",
+      "visible": { "on": "is in her ultimate", "off": "isn't in her ultimate", "why": "it lasts while her ultimate plays (autoFinishByAction), which the player sees; a battle-skill press past the ultimate's interrupt mark ends it (the rules check, 2026-11-18)" },
       "target": "self",
       "gameBuff": "buff_chr_0019_karin_talent_2",
       "dataOverride": { "duration": "lifeType 1 (until ended): the ultimate's CreateBuff has autoFinishByAction, so it lasts while her ultimate does; the file's 3 s isn't reached (see the buff's note)." },
