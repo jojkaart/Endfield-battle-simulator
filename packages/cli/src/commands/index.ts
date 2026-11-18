@@ -16,9 +16,10 @@ import gear from "./gear.ts";
 import zmdlogs from "./zmdlogs.ts";
 import gamedata from "./gamedata.ts";
 import kit from "./kit.ts";
+import repair from "./repair.ts";
 import kitDraft from "./kit-draft.ts";
 import kitCensus from "./kit-census.ts";
 import kitTrim from "./kit-trim.ts";
 import cache from "./cache.ts";
 
-export const COMMANDS: readonly Command[] = [find, template, calc, compare, edge, simulate, search, rules, payoffs, diagnose, gear, zmdlogs, gamedata, kit, kitDraft, kitCensus, kitTrim, cache];
+export const COMMANDS: readonly Command[] = [find, template, calc, compare, edge, simulate, search, rules, payoffs, diagnose, gear, repair, zmdlogs, gamedata, kit, kitDraft, kitCensus, kitTrim, cache];

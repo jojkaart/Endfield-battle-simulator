@@ -152,6 +152,83 @@ const FULL: readonly [number, number, number] = [3, 3, 3];
 /** How much later a repaired replay tries a step it can't play (frames: 0.33 to 2 s at once, up to 15 s after the last step), first that works. */
 const LATER = [10, 20, 30, 45, 60, 90, 120, 150, 210, 300, 450];
 
+type Step = TimelineScenario["rotation"][number];
+
+/** A repaired rotation (repairRotation): the steps kept, which were moved (to frame `to`, as another variant `as`) and which dropped. */
+export interface RepairedRotation {
+  readonly rotation: TimelineScenario["rotation"];
+  /** Each moved step: its index in the scenario's rotation, the step, where it went (frame), the variant it was played as, and the step as kept (in `rotation`). */
+  readonly moved: readonly { readonly index: number; readonly step: Step; readonly to: number; readonly as?: string; readonly played: Step }[];
+  readonly dropped: readonly { readonly index: number; readonly step: Step }[];
+  /** More than `limit` steps failed: the repair stopped (the rotation is partial). */
+  readonly over: boolean;
+}
+
+/**
+ * A scenario's rotation with each step its team can't play (EngineError) moved to the first later start that works (up
+ * to 2 s later, else before a later step, else up to 15 s after the last), or else dropped; each tried from the state
+ * the kept steps left; it stops when more than `limit` steps fail (`over`). With `variants`, a failing step is first
+ * tried as each other skill of its operator and kind at the same time (a state-dependent form: Laevatain's Twilight
+ * battle skill against the plain one). The gear ascent's repaired replay, and `efsim repair`.
+ */
+export function repairRotation(data: GameData, scenario: TimelineScenario, opts: { readonly limit?: number; readonly variants?: boolean } = {}): RepairedRotation {
+  const limit = opts.limit ?? Infinity;
+  const ctx = createContext(data, scenario);
+  let state = init(ctx);
+  const kept: Step[] = [];
+  const moved: { index: number; step: Step; to: number; as?: string; played: Step }[] = [];
+  const last = () => kept.at(-1) as Step;
+  const dropped: { index: number; step: Step }[] = [];
+  const tryApply = (a: Step) => {
+    try {
+      state = apply(ctx, state, a);
+      kept.push(a);
+      return true;
+    } catch (e) {
+      if (!(e instanceof EngineError)) throw e;
+      return false;
+    }
+  };
+  const kitSkills = (op: string) => data.kits.operators[op]?.skills ?? [];
+  const variantsOf = (a: Step) => {
+    const kind = kitSkills(a.operator).find((k) => k.skillId === a.skill)?.kind;
+    return opts.variants && kind ? kitSkills(a.operator).filter((k) => k.kind === kind && k.skillId !== a.skill && !k.followUpOnly).map((k) => k.skillId) : [];
+  };
+  // A step that can't start within 2 s waits (an ultimate's energy may come from the steps after it): it's tried again
+  // before each later step, and after the last one up to 15 s on; dropped only if none of that works.
+  const pending: { index: number; step: Step }[] = [];
+  for (const [index, action] of scenario.rotation.entries()) {
+    for (let i = 0; i < pending.length; ) {
+      const p = pending[i] as { index: number; step: Step };
+      if (tryApply({ ...p.step, at: state.frame })) {
+        pending.splice(i, 1);
+        moved.push({ ...p, to: last().at ?? state.frame, played: last() });
+      } else i++;
+    }
+    if (tryApply(action)) continue;
+    const variant = variantsOf(action).find((skill) => tryApply({ ...action, skill }));
+    if (variant) {
+      moved.push({ index, step: action, to: last().at ?? action.at ?? 0, as: variant, played: last() });
+      continue;
+    }
+    const from = Math.max(action.at ?? 0, state.frame);
+    const d = LATER.slice(0, 5).find((x) => tryApply({ ...action, at: from + x }));
+    if (d !== undefined) moved.push({ index, step: action, to: from + d, played: last() });
+    else pending.push({ index, step: action });
+    if (moved.length + pending.length > limit) break;
+  }
+  const over = moved.length + pending.length > limit;
+  if (!over) {
+    for (const p of pending) {
+      const at = state.frame;
+      const d = LATER.find((x) => tryApply({ ...p.step, at: at + x }));
+      if (d !== undefined) moved.push({ ...p, to: at + d, played: last() });
+      else dropped.push(p);
+    }
+  }
+  return { rotation: kept, moved, dropped, over };
+}
+
 /** A repaired replay's changes: "2 steps later, 1 dropped". */
 function repairText(x: { readonly moved?: number; readonly dropped?: number }): string {
   const m = x.moved ?? 0;
@@ -208,43 +285,8 @@ export function gearAscent(
     const k = `${version}#${teamKey(team)}`;
     if (repairs.has(k)) return repairs.get(k) ?? null;
     const sc = { ...scenario, team, rotation };
-    const ctx = createContext(data, sc);
-    let state = init(ctx);
-    const kept: TimelineScenario["rotation"][number][] = [];
-    let moved = 0;
-    let dropped = 0;
-    const tryApply = (a: TimelineScenario["rotation"][number]) => {
-      try {
-        state = apply(ctx, state, a);
-        kept.push(a);
-        return true;
-      } catch (e) {
-        if (!(e instanceof EngineError)) throw e;
-        return false;
-      }
-    };
-    // A step that can't start within 2 s waits (an ultimate's energy may come from the steps after it): it's tried again
-    // before each later step, and after the last one up to 15 s on; dropped only if none of that works.
-    const pending: TimelineScenario["rotation"][number][] = [];
-    for (const action of rotation) {
-      for (let i = 0; i < pending.length; ) {
-        if (tryApply({ ...(pending[i] as TimelineScenario["rotation"][number]), at: state.frame })) {
-          pending.splice(i, 1);
-          moved++;
-        } else i++;
-      }
-      if (tryApply(action)) continue;
-      const from = Math.max(action.at ?? 0, state.frame);
-      if (LATER.slice(0, 5).some((d) => tryApply({ ...action, at: from + d }))) moved++;
-      else pending.push(action);
-      if (moved + pending.length > limit) break;
-    }
-    const over = moved + pending.length > limit;
-    if (!over) for (const a of pending) {
-      if (LATER.some((d) => tryApply({ ...a, at: state.frame + d }))) moved++;
-      else dropped++;
-    }
-    const r = !over ? { total: simulate(data, { ...sc, rotation: kept }).total, rotation: kept, moved, dropped } : null;
+    const fixed = repairRotation(data, sc, { limit });
+    const r = !fixed.over ? { total: simulate(data, { ...sc, rotation: fixed.rotation }).total, rotation: fixed.rotation, moved: fixed.moved.length, dropped: fixed.dropped.length } : null;
     repairs.set(k, r);
     return r;
   };

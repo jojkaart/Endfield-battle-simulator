@@ -12,7 +12,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { FPS, simulate, type LandedHit } from "@efsim/engine";
+import { EngineError, FPS, simulate, type LandedHit } from "@efsim/engine";
 import { readScenario } from "@efsim/cli";
 import { Snapshot, UPDATE_HINT, UPDATING } from "./snapshot.ts";
 
@@ -48,7 +48,14 @@ describe("example scenarios against their snapshot (a regression baseline, not v
   });
 
   it.each(files)("%s", (file) => {
-    const r = simulate(data, readScenario(join(dir, file)));
+    let r: ReturnType<typeof simulate>;
+    try {
+      r = simulate(data, readScenario(join(dir, file)));
+    } catch (e) {
+      // A timing change that leaves a step unable to start: the example's rotation is repaired by a command, not by hand.
+      if (e instanceof EngineError) throw new Error(`${file} no longer plays (${e.message}): \`npm run -s efsim -- repair examples/${file} --write\`, then \`npm run snapshots:update\``, { cause: e });
+      throw e;
+    }
     const lines = [...r.hits].sort((a, b) => a.frame - b.frame).map(line);
     const window = (h: LandedHit) => Math.floor(h.frame / (WINDOW_S * FPS));
     const windowCount = r.hits.reduce((m, h) => Math.max(m, window(h) + 1), 0);
