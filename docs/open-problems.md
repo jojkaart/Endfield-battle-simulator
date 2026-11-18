@@ -1256,6 +1256,45 @@ d572, 2fd9, 99fb better, 0c14 +0.3, 4a64 −0.1 points of damage error
 (measure 2026-11-18); not kept here (outside this task), a lead for
 Rossi's kit.
 
+## Liino's Cosmovoice beats: logged at other moments than the replay's (2026-11-18)
+
+**Shows:** of her ultimate's 572 checked hits (in-game test 6, decided:
+the values hold, 332 plain, dbae 25 of 25), 21 are beats or finales the
+replay lands nowhere, beside beats it lands where the log has none: 4d60
+82.6–99.9 s (logged 1.35–1.38 s apart, the replay 1.5 s: 86.69, 89.86,
+91.22, 98.19 s and the finale at 99.87 s unlanded), 7910 59.0–62.1 s (the
+replay's beat at 55.70 s falls before the stop of 55.1–58.5 s the log's
+beats skip), 9090 (finale logged 79.82 s, the replay's 79.03 s; no beat
+logged 68.5–75.8 s), 8915, 9847 one each. Cosmovoice's Amp is listed on
+teammates' hits up to the logged finale where the replay's has ended
+(8915 104.65–105.88 s, 9090 79.71–79.82 s: `zmdlogs differences --what
+cosmovoice_amp`, 35 log-only hits, 5 mismatches).
+**Cause: not known.** Logged gaps between consecutive beats (scratch over
+the 16 single-target Liino logs, gaps under 1.9 s): 1.17–1.89 s, most
+1.35–1.55; 4d60 a steady 1.36, c6d8 1.52, 9847 1.44–1.55. Not every beat
+is logged (gaps of 3–7 s with no stop that long, e.g. d774's second
+Cosmovoice: 2 beats).
+**Fixed: ten beats, not nine.** The three Cosmovoices logged with every
+beat (4bfc 55.3 s, 4d60 82.6 s, 9847 53.5 s; scratch count over every
+Liino log) have ten each and none has eleven; the kit ended the beats'
+buff with its creating clip (77–477: 9). Now it ticks at 482 too and ends
+at its 15 s duration (527) without a tick there (measure 2026-11-18:
+development plain 51.4 → 51.5%, 4d60, 9847, 9c6e better; 8915 worse, its
+stage factor; d774 worse, its replay-only beats; hold-out 2 better, 0
+worse). The finale is logged at 3 × a beat (4d60 13043 / 4348, 9090 7294
+/ 2431), as the kit.
+**Ruled out:** the values (test 6); the beats' damage where they land
+(plain or team-wide); nine beats.
+**Still possible:** the beats on a clock of their own, as her volleys'
+(which runs ~5% slower, "Liino's volleys" above), here sometimes faster
+(4d60 a steady 1.36 s, which would also fit ten ticks inside the 477
+clip); other operators' stops placed differently from the game's (7910,
+4bfc 152–155 s); beats that miss an enemy out of reach going unlogged.
+**Next check:** pinning
+the beats to their logged landings as the volley ticks are
+(`ticksShownByHits` needs the beats as a ticking buff, not fixed frames),
+then the finale from the last pinned beat.
+
 ## Si's Artful Intent bursts that fit no reading (6 of 40)
 
 **Shows (2026-11-14, recordedburst.ts):** the log check values each burst

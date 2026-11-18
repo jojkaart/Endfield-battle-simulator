@@ -253,6 +253,15 @@ the changes since 2026-11-16; the table's rows are left as they were.)
 Small: Liino deals about 3% of the team's damage, and the volleys are a
 part of hers. The rules don't change.
 
+**Liino's Cosmovoice with ten beats (2026-11-18; same seeds 1001–1032,
+the base 20f79a4 against this commit):** the logs record ten beats per
+Cosmovoice where they record them all (in-game test 6; the kit had nine).
+Sustained DPS 52,529 → **52,563** (+0.06%) / 49,185 → **49,206**
+(+0.04%); as a bot 59,577 → 59,608 / 55,130 → 55,161; shares unchanged
+(seed 1). The 60 s timelines: 5,649,021 → 5,654,191 (+0.09%) / 4,855,803
+unchanged (no Liino ultimate in the first 60 s from zero). The rules
+don't change.
+
 **Buffs created inside a running stop are held (2026-11-18, in-game tests 18, 21, 46 from the
 logs; same seeds 1001–1032):** engine assumption `buff-in-stop` ([journal](../journal/2026-11-18-03-typhoeus-s-and-laevatain-s-in-game-tests-from-the-logs-buffs.md)): Typhoeus's
 Hail of Arrows window and the team's buffs created during a time stop or combo slow-down last the
