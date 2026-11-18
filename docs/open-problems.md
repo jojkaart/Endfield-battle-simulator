@@ -1592,6 +1592,21 @@ takes the bar from the log, so only the engine's own sums miss it.
 
 ## Smaller, not yet diagnosed
 
+- db87 after the ultimate-placement fix (2026-11-18): Laevatain's ultimate now
+  starts at 16.60 s (its event at 18.62 s, the last hit 2.19 s before it, the team
+  resuming 0.36 s after, her first enhanced cast at 19.01 s, which the old start
+  at 18.62 s put inside her 73-frame cast). Plain 152 → 114: Arcane's level-4
+  Corrosion shreds 20.9 instead of 17.6 Heat RES at 20.1 s (Camille's hits ×0.973
+  low from 19 s), because her stop now overlaps Camille's combo slow-down
+  (16.70–17.20 s) and holds the ramp 0.5 s less. **Still possible:** overlapping
+  stops holding a Corrosion ramp for their sum (the engine takes the lowest scale,
+  T3); Camille's combo placed 0.5 s early; the old placement's fit a coincidence of
+  two errors. **Next check:** other Corrosion ramps across an ultimate stop that
+  overlaps a combo slow-down.
+- d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
+  2.6 s before its event (the same placement rule); her simulated total +11.3 →
+  +15.4%, no verdict moved. Not looked into.
+
 - Si's talent Haste after a burst without an Inksoul (2026-11-16): the
   data (only xianjing_linkline's finish and xianjing_inkboom create
   talent1_speedup; xianjing_inkhurteffect's end doesn't) and the kit give

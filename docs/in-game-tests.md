@@ -1125,7 +1125,7 @@ the empowered one, as the engine has. The logs have 7 Typhoeus ultimates in 7 lo
 later shots, as ultimates). Each shot in the window brings one `arrowrain_sub1` (three
 ticks) and the 5th one `arrowrain_sub2` (five ticks and the blast): 00ae 99.4 s, 9090
 116.7 s, fc63 92.7 s, d9e5 4.4 s and 7b4e 18.5 s (two targets) have four sub1 and one
-sub2 each, and every rain is replayed on its shot (`efsim zmdlogs replay`); dbae and 9c6e
+sub2 each, replayed on their shots (`efsim zmdlogs replay`; a late tick or blast each in 00ae, 9090, fc63 lands unpaired); dbae and 9c6e
 end the hover (or the log) after three shots with three rains. Shots after the 5th bring
 none (d9e5 14.26 and 14.88 s, 9090 from +9.0 s, fc63 from +10.5 s). The window's length:
 in d9e5 her 5th rain comes from a shot at 13.62 s, 9.25 s after the window began (4.37 s),
