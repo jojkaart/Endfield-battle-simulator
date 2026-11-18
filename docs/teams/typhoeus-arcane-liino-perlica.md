@@ -224,6 +224,13 @@ character and the skill button (rank 3).
 | First 60 s against the 60 s timeline (the examples) | 4,226,194 against 5,774,076 (−26.8%) | 2,858,065 against 5,019,331 (−43.1%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,382,151 against 16,925,847 (−3.2%) | |
 
+**Arcane's INT fixes (2026-11-18, in-game tests 51 and 7 from the logs):** Solemn Phalanx's INT Arts DMG on the
+Corrosion its infliction forms, and her second ultimate's own Amp, need Intellect ≥ Will; this Arcane plays WILL, so
+neither acts. The same seeds at 9384cb0: **52,374 / 48,973** (sd 1,567 / 1,570), within 0.01% of the row above
+(what other changes since moved), and the 60 s examples' snapshots didn't move. In INT mode (the owner's open call)
+her basic attacks after the second ultimate lose the Gloompurge Amp (×0.71 at +0.4), and her battle skill's
+Corrosion hit gains the weapon's Arts DMG.
+
 **The engine changes of 2026-11-16 (in-game tests 104, 19, 101 from the logs; same seeds 1001–1032):** no
 freezer on this team and no Haste, so only the teammates' pause (6.5 s
 instead of 3.5 s) moves it: 54,607 → **52,369** / 51,076 → **48,967**
