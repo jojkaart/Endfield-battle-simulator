@@ -497,7 +497,7 @@ reaction has no initial hit.
 - At 0 the enemy is **Staggered**: × 1.3 damage taken
   (`buff_common_poise_break_damage_taken_scale`, defender ProdCalcZone,
   `dmg_up` 0.3), its own multiplier. While Staggered it takes no more
-  Stagger and allows one finisher. [SETTLED] (data; logs). "DMG vs
+  Stagger and allows one finisher, which an enhanced attack input (Twilight, Empyrean, hovering, Yvonne's ultimate) doesn't give (in-game test 108). [SETTLED] (data; logs). "DMG vs
   Staggered" bonuses add into damageBonus instead (attribute 61,
   `staggeredOnly`).
 - **Duration:** attribute 21 × attribute 31 (about 10 s) on the enemy's

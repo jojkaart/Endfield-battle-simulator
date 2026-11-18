@@ -15,7 +15,7 @@
 //   whether a teammate mismatches at the same ratio nearby (team-wide, so not this operator's kit).
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
-import { FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
+import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { castTimeStops, distinctCasts, placeHits } from "./logcasts.ts";
@@ -194,14 +194,45 @@ export function staggerRuns(data: GameData, fx: LogFixture, opts: { readonly ass
 /** `zmdlogs stagger`: a fight's Stagger runs, the log's against the replay's. */
 export function staggerView(data: GameData, fx: LogFixture): string {
   const runs = staggerRuns(data, fx);
+  const input = attackInputKeys(data, fx);
+  const hits = [...fx.hits].sort((a, b) => a.t - b.t);
   const lines = runs.map((r) => {
-    const first = r.replay[0];
-    const gap = first ? r.last - first.end : 0;
-    const short = first ? `; the replay's first window ends ${s(Math.abs(gap))} s ${gap >= 0 ? "before" : "after"} the log's last Staggered hit` : "";
-    const engine = r.engineEnd === null ? (r.engineCut !== null ? `the engine's own would have run to ${s(r.engineCut)} (cut by the log's calm hit)` : "the engine's own covered it") :r.engineEnd === "none" ? "the engine had none running (held for the log)" : `the engine's own ended ${s(r.engineEnd)} (held for the log)`;
-    return `  log ${s(r.start)}–${s(r.last)}${r.next === null ? " (to the fight's end)" : ` (next hit ${s(r.next)})`}, Stagger dealt ${r.dealt}: replay ${r.replay.map((w) => `${s(w.start)}–${s(w.end)}`).join(", ") || "none"}${short}; ${engine}`;
+    // Each run's Finishers (their hits up to 1.5 s past its last Staggered hit: the second one may land after) and the
+    // enhanced basic attacks landed in it (in-game test 108: no Finisher while one is the input).
+    const fin = hits.filter((h) => h.t >= r.start && h.t <= r.last + 1500 && input.get(`${h.operator}|${h.event}`) === "finisher");
+    const enh = new Map<string, LogHit[]>();
+    for (const h of hits) if (h.t >= r.start && h.t <= r.last && input.get(`${h.operator}|${h.event}`) === "enhanced") enh.set(h.operator, [...(enh.get(h.operator) ?? []), h]);
+    const name = (op: string) => data.operators[op]?.name ?? op;
+    const attacks = `; ${fin[0] ? `Finisher ${s(fin[0].t)} (${name(fin[0].operator)})` : "no Finisher"}${[...enh].map(([op, hs]) => `, ${name(op)}'s enhanced basic hits ${hs.length} (${s((hs[0] as LogHit).t)}–${s((hs.at(-1) as LogHit).t)})`).join("")}`;
+    return staggerLine(r) + attacks;
   });
-  return [`${fx.id} (${fx.enemy.id}): ${runs.length} logged Stagger run(s), the log's (first–last Staggered hit) against the replay's windows (times in s)`, ...lines].join("\n");
+  return [`${fx.id} (${fx.enemy.id}): ${runs.length} logged Stagger run(s), the log's (first–last Staggered hit) against the replay's windows (times in s), with the Finisher and enhanced basic attacks in each`, ...lines].join("\n");
+}
+
+/**
+ * The team's basic-attack event keys (`operator|event`) of a Finisher (skillSpecification 8) and of an enhanced basic
+ * attack (skillSpecification 1 in the battle skill's or ultimate's skill group: engine timing.ts enhancedBasic).
+ */
+function attackInputKeys(data: GameData, fx: LogFixture): Map<string, "finisher" | "enhanced"> {
+  const out = new Map<string, "finisher" | "enhanced">();
+  for (const b of fx.team) {
+    for (const k of effectiveKit(data, b)?.skills ?? []) {
+      if (k.kind !== "basic") continue;
+      const spec = data.skills[k.skillId]?.timing?.specification;
+      const cls = spec === 8 ? "finisher" : spec === 1 && (data.operators[b.operator]?.skillGroups[k.skillId] ?? "basic") !== "basic" ? "enhanced" : null;
+      if (cls) for (const h of k.hits) for (const e of h.events) out.set(`${b.operator}|${e}`, cls);
+    }
+  }
+  return out;
+}
+
+/** One Stagger run against the replay's windows and the engine's own end. */
+function staggerLine(r: StaggerRun): string {
+  const first = r.replay[0];
+  const gap = first ? r.last - first.end : 0;
+  const short = first ? `; the replay's first window ends ${s(Math.abs(gap))} s ${gap >= 0 ? "before" : "after"} the log's last Staggered hit` : "";
+  const engine = r.engineEnd === null ? (r.engineCut !== null ? `the engine's own would have run to ${s(r.engineCut)} (cut by the log's calm hit)` : "the engine's own covered it") : r.engineEnd === "none" ? "the engine had none running (held for the log)" : `the engine's own ended ${s(r.engineEnd)} (held for the log)`;
+  return `  log ${s(r.start)}–${s(r.last)}${r.next === null ? " (to the fight's end)" : ` (next hit ${s(r.next)})`}, Stagger dealt ${r.dealt}: replay ${r.replay.map((w) => `${s(w.start)}–${s(w.end)}`).join(", ") || "none"}${short}; ${engine}`;
 }
 
 const quartiles = (xs: readonly number[], digits = 3) => {

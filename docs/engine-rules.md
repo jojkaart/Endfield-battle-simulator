@@ -137,7 +137,7 @@ are at 30 FPS.
 - S10. The bar never recovers by itself; it refills to full when a Stagger ends, or on a scenario `recover` action (boss refills). [SETTLED]; Rhodagn's refill trigger [OPEN]
 - S11. Stagger Nodes (`poiseKnotPctList`, e.g. 50%) raise a `staggerNode` event when the bar passes them from above; no damage effect. [DATA]
 - S12. Time stops and freezes extend a running Stagger (its end is on the enemy clock). [SETTLED]
-- S13. Finisher (`power_attack`, skillSpecification 8): only on a Staggered enemy, once per Stagger. [DATA]
+- S13. Finisher (`power_attack`, skillSpecification 8): only on a Staggered enemy, once per Stagger, and not while the attack input is an enhanced basic attack (a skillSpecification 1 attack of the battle skill's or ultimate's skill group whose kit condition holds: Laevatain's Twilight, Yvonne's ultimate, Zhuang Fangyi's Empyrean, Typhoeus's hover; timing.ts `enhancedBasic`, in-game test 108). [DATA] (the Talos Wiki's Stagger article; logs)
 - S14. Finisher damage × enemy attribute 27 (1 / 1.25 / 1.5 / 1.75; Common 1, Advanced 1.25, Elite/Alpha 1.5, Boss 1.75 typical), multiplicative zone. [DATA]
 - S15. Finisher SP: the enemy's `breakingAttackedAtbObtain` (25 / 35 / 50 / 100), natural SP, atbSourceType 0, at the finisher's first landing. [DATA]; source type [ASSUMED]
 

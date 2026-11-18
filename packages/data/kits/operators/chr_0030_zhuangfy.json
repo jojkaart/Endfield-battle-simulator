@@ -699,7 +699,7 @@
    "skillId": "chr_0030_zhuangfy_power_attack",
    "label": "Finisher",
    "damageType": "basic",
-   "note": "BreakingAttackCalculation x 0.1 at 11 and x 0.9 at 40; castable in the Empyrean too (UltMode's windows don't list it: U6).",
+   "note": "BreakingAttackCalculation x 0.1 at 11 and x 0.9 at 40. Not in the Empyrean (U6, decided 2026-11-18: in-game test 108, the Talos Wiki's Stagger article, and 3 logged Staggers with her Empyrean attacks, the Finisher before them or 1.4 s after the last): the engine gates it while her attack input is attack1-3_ult (timing.ts enhancedBasic), no kit condition.",
    "hits": [
     {
      "id": "hit",

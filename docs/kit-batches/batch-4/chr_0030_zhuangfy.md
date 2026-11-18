@@ -157,7 +157,7 @@ to create 3 Sunderblades."
 | 47 | P5: her hits ignore 15 Electric RES during the state | supported | self buff `p5_resist` (`ignoreResistance` pulse 15) with the state, from P5 |
 | 48 | Attribute nodes: Will +10 / +15 / +15 / +20 | supported | stat panel |
 | 49 | Hit-stops (battle skill 0.25 s, final strikes 0.4 s, combo 0.3 s) | gap | Ti1b (open, not re-proposed) |
-| 50 | Finisher during the state (UltMode's windows don't list it) | unknown | interim: castable (U6) |
+| 50 | Finisher during the state (UltMode's windows don't list it) | decided 2026-11-18 | not castable (U6: in-game test 108, the engine's enhancedBasic) |
 | 51 | Visual, training and targeting files (data overview, last row) | supported | nothing to write |
 
 Equipment:
@@ -351,7 +351,7 @@ kit-draft's output, corrected by hand in the plan:
 - **U4** G1's rate: × 4 or × 5. Not testable by hand (17 / 4 = 4.25 s vs
   3.4 s); small, as Final Strikes limit her combos more than the cooldown.
 - **U5** talent 1's growth (test F).
-- **U6** the finisher in the state (low priority; no test proposed).
+- **U6** the finisher in the state: decided 2026-11-18, not castable (in-game test 108: the Talos Wiki's Stagger article and the logs).
 - Row 25 (test 66), J3 (test 35).
 
 ## Verification
@@ -606,7 +606,7 @@ the mechanics table says):
 - Row 37: G4. Row 38: done (G5). Row 39 (U3, TagQueryListener 1200): no
   early end. Row 41 (U5): cumulative growth. Row 42 (talent 2): not
   modelled (N2). Row 49 (hit-stop, Ti1b): not modelled. Row 50 (U6): the
-  finisher stays castable in the state.
+  finisher isn't castable in the state (decided 2026-11-18, in-game test 108).
 - **New, the exit skill's kind:** ult_base casts `ultimate_skill_end` after
   ChangeSkillType skillType 3, none of battle (2), combo (6) or ultimate
   (7). The kit format has only the four kinds, so the kit says `basic`: no

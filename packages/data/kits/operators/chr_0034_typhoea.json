@@ -958,7 +958,7 @@
       "skillId": "chr_0034_typhoea_power_attack",
       "label": "Finisher",
       "damageType": "basic",
-      "note": "skillSpecification 8: only on a Staggered enemy, once per stagger, × its finisher multiplier, with its finisher SP. durationFrames: battle and combo skills are allowed from frame 40 (SkillData durationFrame 180). Not yet seen in a log.",
+      "note": "skillSpecification 8: only on a Staggered enemy, once per stagger, × its finisher multiplier, with its finisher SP. durationFrames: battle and combo skills are allowed from frame 40 (SkillData durationFrame 180). Not while hovering (in-game test 108, 2026-11-18: her aerial attacks are her battle skill's group, timing.ts enhancedBasic): in 7 logged Staggers with her aerial attacks the Finisher comes before she hovers or 2.2-3.4 s after the 5th shot ends the hover, never during it.",
       "hits": [
         {
           "id": "arrow",

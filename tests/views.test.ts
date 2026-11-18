@@ -48,6 +48,11 @@ describe("the placement and replay views", () => {
 
   it("gives a log's Stagger runs and a summary", () => {
     expect(staggerView(data, fx)).toMatch(/logged Stagger run/);
+    // Each run's Finisher and enhanced basic attacks (test 108): f879's first Stagger has Twilight attacks and no
+    // Finisher, its second the Finisher 0.46 s after the last of them.
+    const f879 = staggerView(data, readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-f8793bc8aea2.json")));
+    expect(f879).toMatch(/no Finisher, Laevatain's enhanced basic hits 9 \(58\.24–70\.06\)/);
+    expect(f879).toMatch(/Finisher 126\.00 \(Laevatain\), Laevatain's enhanced basic hits 7 \(118\.81–125\.54\)/);
     const runs: StaggerRun[] = [
       { start: 1000, last: 5000, next: 5200, replay: [{ start: 900, end: 4000 }], engineEnd: 4000, engineCut: null, dealt: 50 },
       { start: 9000, last: 12000, next: null, replay: [], engineEnd: "none", engineCut: null, dealt: 10 },

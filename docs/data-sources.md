@@ -179,6 +179,12 @@ consistent with them deriving from the client tables.
   damage page was last edited ~231 days ago; in fact it was edited 20 times
   between 2026-03-26 and 2026-10-12 (verified). The Attribute page was last
   edited 2026-03-04.
+- **Mechanics pages:** [Stagger](https://endfield.wiki.gg/wiki/Stagger)
+  (fetched 2026-11-18 through api.php, at the owner's pointer): the Finisher
+  is the first basic attack on a Staggered enemy not under an enhancement
+  (Laevatain's Twilight its example), and a Staggered enemy takes no more
+  Stagger; checked against the data and the logs in
+  [in-game test 108](in-game-tests.md) (the engine's `enhancedBasic`).
 - **Data origin:** not stated, but matches the tables exactly (verified
   2026-10-18 for Perlica, Laevatain and Si skills, Forgeborn Scathe ATK,
   Rhodagn HP/ATK/DEF). So it's derived from them and adds little independent

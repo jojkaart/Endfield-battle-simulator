@@ -2880,6 +2880,47 @@ gates the Finisher off during Twilight. Ink Melt, 32 fresh seeds: 62,424 →
 Twilight). Scoreboard: unchanged. **Left for the game:** the dive part (4
 dive hits in all the logs, none on a Staggered enemy): lower priority
 (only Typhoeus's team dives between skills).
+**Generalised (2026-11-18, the owner's pointer to the Talos Wiki):** the
+wiki's "Stagger" article (fetched 2026-11-18 through api.php) says the
+first basic attack of the controlled operator "that aren't under any
+active enhancement effects (such as Laevatain's Twilight) becomes a
+Finisher", and "While staggered, Enemies can't receive more stagger".
+*The game's mechanism (from the data):* no SkillData or BuffData checks
+the Finisher; it is in each operator's NormalAttack skill group
+(CharGrowthTable skillGroupType 0, with attack1–5 and the dive), and the
+enhanced chains are basic attacks (skillSpecification 1) that
+CharGrowthTable puts in the battle skill's or the ultimate's group,
+switched in by a buff's SwitchModeAction (modeId `ult`: Laevatain's
+`ring_start_asset`, Yvonne's `ultimate_skill`; `UltMode`: Zhuang Fangyi's
+`ult_base`; `floating`: Typhoeus's `floatingmode`) or a buff's
+ComboCacheAction (Yvonne's `ultimate_skill_end`). Exactly four kits have
+such attacks: Laevatain (Twilight, `ult_attack1–4`), Yvonne (her
+ultimate, `ult_attack1_1…3_2`, `ult_attack_end`), Zhuang Fangyi (Empyrean,
+`attack1–3_ult`), Typhoeus (hovering, `floating_attack1–5`). Yvonne's
+barrage maps the input to `attack5`, of the NormalAttack group: not an
+enhancement. Wulfgard's and Gilberta's `extra_attack` and the
+Endministrator's `windMove` modes are in buffs no skill or buff creates.
+*The logs* (`efsim zmdlogs stagger`, every development log, each run's
+Finisher and the enhanced basic hits in it; listing only: hit times and
+keys): in all 22 Staggers with enhanced hits no Finisher lands while the
+enhanced chain runs. Laevatain 11 (no Finisher in 7; in 458b ×2 and 9c0b
+it comes before her Twilight, in f879 0.46 s after its last hit);
+Typhoeus 7 (00ae, 1d91, 9090 before she hovers; af7b, fc63 ×2 2.2–3.4 s
+after the 5th aerial shot that ends the hover; 9090 at 133.22 s between
+two hovers); Zhuang Fangyi 3 (4bfc, c6d8 before the Empyrean; 4bfc at
+180.58 s 1.4 s after her last Empyrean hit); Yvonne 1 (5082: 0.95 s after
+her enhanced Final Strike, the first hit not listing her P5 ultimate
+buff; in abfd Si's Finisher came first). A Finisher and an enhanced hit
+of the same operator are never within 0.45 s (rerun: `efsim zmdlogs
+census --select 'event:power_attack' --operator <op> --near
+'event:ult_attack|attack[0-9]_ult|floating_attack' --near-operator <op>
+--window -3000,3000 --list`, per operator; closest −461 ms, f879). *The
+engine* (2026-11-18): no Finisher while the attack input is such an
+enhanced attack (timing.ts `enhancedBasic`; Laevatain's own kit gate
+removed); Stagger already wasn't dealt while Staggered (resources.ts
+`dealPoise`: nothing while `isStaggered`, the 2 s recovery included).
+Scoreboard: unchanged (the replay places the logged casts, and none of
+the 14 logged Finishers of these four falls in the replay's state).
 
 ### 109. Does Si's Haste need Initial Stroke? (ready, if you have Si with talent Unsoiled Brush; lower priority since 2026-11-17: Haste doesn't speed up attacks)
 

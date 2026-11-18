@@ -110,7 +110,8 @@ frame it visits, on the state after the last press advanced to the frame:
    other rule fires meanwhile.
 3. Else the filler: the controlled operator's basic attack as soon as it
    can start (a finisher first when the enemy is Staggered, as the game's
-   attack input does: no delay), or its dive.
+   attack input does: no delay; not while the input is an enhanced basic
+   attack, in-game test 108), or its dive.
 
 A dive starts only once the current skill is past its exclusive frames,
 as the search dives. Several presses may start at one frame.
