@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, engineHits, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
 import { filterRecords, formatRecord, hitRecords } from "../packages/logs/src/hitexport.ts";
-import { readDevFixture } from "../packages/logs/src/logs.ts";
+import { devFixtures, readDevFixture, resolveFixture, shortId } from "../packages/logs/src/logs.ts";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -58,7 +58,47 @@ describe("per-hit records of the log check", () => {
     expect(formatRecord(r, false)).toContain(`logged ${r.value}`);
   });
 
+  it("gives the log's reading: the kit buffs as the log lists them, the same as the primary where the two agree", () => {
+    const agree = records.filter((r) => r.landing && !r.differences?.length && r.logReading !== undefined && r.logReading !== null);
+    expect(agree.length).toBeGreaterThan(0);
+    expect(agree.filter((r) => r.logReading === r.predicted).length / agree.length).toBeGreaterThan(0.95);
+    const differing = records.filter((r) => r.differences?.some((d) => d.kind !== "values") && r.logReading);
+    expect(differing.some((r) => r.logReading !== r.predicted)).toBe(true);
+    for (const r of records) if (r.logReading) expect(r.logError).toBeCloseTo(r.value / r.logReading - 1, 9);
+    const r = records.find((x) => x.logReading) as (typeof records)[number];
+    expect(formatRecord(r, false, "log")).toContain(`log reading ${r.logReading}`);
+  });
+
+  it("filters by the logged event key", () => {
+    const ev = records[0]?.event as string;
+    const kept = filterRecords(records, { event: new RegExp(`^${ev}$`) });
+    expect(kept.length).toBeGreaterThan(0);
+    expect(kept.every((x) => x.event === ev)).toBe(true);
+  });
+
   it("refuses a hold-out fixture", () => {
     expect(() => readDevFixture(join(ROOT, "fixtures/holdout/zmdlogs-anything.json"))).toThrow(/hold-out/);
+  });
+});
+
+describe("fixture arguments", () => {
+  it("takes a path, or a log's id or the start of it among the development logs", () => {
+    expect(resolveFixture(join(ROOT, file))).toBe(join(ROOT, file));
+    expect(resolveFixture("0eef")).toBe(join(ROOT, file));
+    expect(resolveFixture("zmdlogs-0eef2474")).toBe(join(ROOT, file));
+    expect(readDevFixture("0eef").id).toBe(fx.id);
+    expect(shortId(fx.id)).toBe("0eef");
+    expect(() => resolveFixture("0e")).toThrow(/four characters/);
+    expect(() => resolveFixture("zzzz")).toThrow(/no development log/);
+  });
+
+  it("loads the development logs for a scan, never a hold-out", () => {
+    const all = devFixtures();
+    expect(all.length).toBeGreaterThan(10);
+    expect(all.every((d) => !d.file.includes("/holdout/") && (d.dir === "verified" || d.dir === "pending"))).toBe(true);
+    expect(all.find((d) => d.short === "0eef")?.fx.id).toBe(fx.id);
+    const op = fx.team[0]?.operator as string;
+    expect(devFixtures({ withOperators: [op] }).every((d) => d.fx.team.some((b) => b.operator === op))).toBe(true);
+    expect(devFixtures({ ids: ["0eef"] }).map((d) => d.id)).toEqual([fx.id]);
   });
 });

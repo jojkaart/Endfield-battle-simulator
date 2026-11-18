@@ -228,6 +228,13 @@ export interface ReadingBasis {
   /** The engine's modifiers the primary reading keeps (without the log's, and without kit buffs the replay can't judge). */
   readonly judged: readonly Modifier[];
   readonly category: HitCategory;
+  /**
+   * The log's reading (`zmdlogs hits`' logReading): the primary reading with every team kit buff as the log lists it
+   * at the hit in place of the replay's (loggedEntries over all their logged names); the engine's statuses, Stagger,
+   * Link and the finisher kept. Off only in timing (the replay's buff windows): a build or kit value error shows under
+   * both. Not read by the check.
+   */
+  readonly logReading: () => Reading;
 }
 
 export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): ReadingBasis | { readonly landing: { readonly unknown: string } } {
@@ -350,7 +357,12 @@ export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): Read
   const boundary = [...boundarySubsets(own.boundary), ...boundarySubsets(own.boundary, true)].filter((b) => b.label !== null);
   if (boundary.length) groups.push([NONE, ...boundary.map((b): Alternative => ({ assumption: { kind: "boundary", label: b.label as string, buffs: [...new Set(b.effects.map((e) => e.buff))] }, apply: (o) => replaceMods(o, (mods) => [...mods, ...logModifiers(b.effects, category, c.caps)]) }))]);
 
-  return { landing, primary, groups, edgeToggles, judged, category };
+  const logReading = (): Reading => {
+    const nonKit = judged.filter((m) => m.kitBuff === undefined);
+    const allNames = new Set(c.names.byGameBuff.keys());
+    return { inputs, options: { ...primary.options, modifiers: [...nonKit, ...logMods(own.effects, category), ...loggedEntries(c, withoutOwnFood(c.data, c.fx, hit).effects, allNames, nonKit, category)] } };
+  };
+  return { landing, primary, groups, edgeToggles, judged, category, logReading };
 }
 
 function castFact<K extends "link" | "windowCount" | "consumed">(facts: ReplayCastFacts | { readonly unknown: string }, key: K): ReplayCastFacts[K] | { readonly unknown: string } {

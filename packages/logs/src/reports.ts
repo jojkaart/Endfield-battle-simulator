@@ -2,13 +2,15 @@
 // checks its arguments and calls these: the log check's report, the per-hit export, the buff timing report over a
 // selection of logs, the scale reports, and the diagnosis views (views.ts: casts, replay, stagger, differences, groups).
 
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
-import { exportHits, exportHitsParallel, formatRecord, type HitRecord } from "./hitexport.ts";
+import { exportHits, exportHitsParallel, filterRecords, formatRecord, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
-import { REPO_ROOT } from "@efsim/data";
-import { listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, refuseHoldoutFile } from "./logs.ts";
+import { gameDataCacheKey, REPO_ROOT } from "@efsim/data";
+import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, type ViewFilter } from "./views.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fitBuild, type BuildCandidate } from "./buildfit.ts";
@@ -22,8 +24,9 @@ export function timingFixtures(named: readonly string[], root: string = REPO_ROO
   const split = readLogSplit(root);
   const holdout = split.holdout;
   const idOf = (f: string) => basename(f).replace(/\.json$/, "");
-  const wanted = named.length ? named : split.development;
-  const files = wanted.filter((f) => !holdout.has(idOf(f))).map((f) => (f.endsWith(".json") ? f : join(root, "fixtures/pending", `${f.startsWith("zmdlogs-") ? f : `zmdlogs-${f}`}.json`)));
+  if (named.length) return { files: named.map((f) => resolveFixture(f, root)), skipped: 0 };
+  const wanted = split.development;
+  const files = wanted.filter((f) => !holdout.has(idOf(f))).map((f) => join(root, "fixtures/pending", `${f.startsWith("zmdlogs-") ? f : `zmdlogs-${f}`}.json`));
   return { files, skipped: wanted.length - files.length };
 }
 
@@ -48,26 +51,110 @@ export function checkReport(data: GameData, fx: LogFixture, opts: { readonly log
   return formatLogCheck(data, fx, verdicts, replay ?? undefined, replay && byHit ? engineReport(data, fx, replay, byHit, verdicts) : undefined);
 }
 
-/**
- * `efsim zmdlogs hits`: the per-hit records of the named logs (never a hold-out), or of every verified and pending
- * development log; on worker threads when `workers` (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called).
- */
-export async function hitsReport(data: () => GameData, named: readonly string[], opts: { readonly workers: string | undefined; readonly kind?: string; readonly operators: readonly string[]; readonly json: boolean; readonly progress: (line: string) => void }): Promise<string> {
-  const filter = { ...(opts.kind !== undefined ? { kind: opts.kind } : {}), operators: opts.operators, progress: opts.progress };
-  return (await collectRecords(data, named, opts.workers, filter)).map((r) => formatRecord(r, opts.json)).join("\n");
+/** Which logs a records command reads: the named (paths or ids), those in a --fixtures-from file, or with `all` every verified and pending development log. */
+export interface LogSelection {
+  readonly named: readonly string[];
+  readonly fixturesFrom?: string;
+  readonly all?: boolean;
 }
 
-/** The hit records of the named logs (never a hold-out), or of every verified and pending development log, on `workers` threads. */
-async function collectRecords(data: () => GameData, named: readonly string[], workersOpt: string | undefined, filter: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void }): Promise<HitRecord[]> {
-  for (const f of named) refuseHoldoutFile(f);
-  const files = named.length ? [...named] : logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
+/** The files of a selection (never a hold-out); throws when it names none and `all` isn't set (the whole set takes many minutes the first time). */
+export function selectedFiles(sel: LogSelection, command: string): string[] {
+  const named = resolveFixtures(sel.named, sel.fixturesFrom);
+  if (named.length && sel.all) throw new Error(`zmdlogs ${command}: fixtures or --all, not both`);
+  if (named.length) return named;
+  if (!sel.all) throw new Error(`zmdlogs ${command}: name fixtures (paths or ids such as 0c14; --fixtures-from <file>), or --all for every verified and pending development log (the first run checks each log: minutes per log on one worker; later runs read scratch/hits-cache/)`);
+  return logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
+}
+
+/** The records' filter of the records commands: reaction kind, operators, the logged event key. */
+export interface RecordFilter {
+  readonly kind?: string;
+  readonly operators?: readonly string[];
+  readonly event?: RegExp;
+}
+
+/**
+ * `efsim zmdlogs hits`: the per-hit records of the selected logs (never a hold-out); on worker threads when `workers`
+ * (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called); from the per-fixture cache when
+ * the code and the fixture are unchanged (hitsCacheKey). `reading` "log": the text lines also give the log's reading.
+ */
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly cache?: boolean; readonly progress: (line: string) => void }): Promise<string> {
+  const records = await collectRecords(data, selectedFiles(sel, "hits"), opts.workers, opts, opts.progress, opts.cache ?? true);
+  return records.map((r) => formatRecord(r, opts.json, opts.reading)).join("\n");
+}
+
+/**
+ * The key of the per-fixture hit-record cache's code: the game data's cache key (data, kits, the engine core it runs)
+ * and every source file of the engine and the log package. Computed once per process.
+ */
+let codeKey: string | undefined;
+export function hitsCodeKey(): string {
+  if (codeKey) return codeKey;
+  const h = createHash("sha256").update(gameDataCacheKey());
+  for (const dir of ["packages/engine/src", "packages/logs/src"]) {
+    const root = join(REPO_ROOT, dir);
+    for (const f of (readdirSync(root, { recursive: true, encoding: "utf8" }) as string[]).filter((x) => x.endsWith(".ts")).sort()) h.update(f).update(readFileSync(join(root, f)));
+  }
+  return (codeKey = h.digest("hex").slice(0, 16));
+}
+
+const HITS_CACHE = "scratch/hits-cache";
+/** Code versions whose cached records are kept (the newest by use). */
+const HITS_CACHE_KEEP = 3;
+
+function hitsCacheFile(file: string): string {
+  const fixtureHash = createHash("sha256").update(readFileSync(file)).digest("hex").slice(0, 12);
+  return join(REPO_ROOT, HITS_CACHE, hitsCodeKey(), `${basename(file, ".json")}-${fixtureHash}.json`);
+}
+
+function readHitsCache(file: string): HitRecord[] | undefined {
+  const c = hitsCacheFile(file);
+  if (!existsSync(c)) return undefined;
+  try {
+    return (JSON.parse(readFileSync(c, "utf8")) as HitRecord[]).map((r) => ({ ...r, fixture: file }));
+  } catch {
+    return undefined;
+  }
+}
+
+function writeHitsCache(file: string, records: readonly HitRecord[]): void {
+  const c = hitsCacheFile(file);
+  const dir = join(REPO_ROOT, HITS_CACHE);
+  mkdirSync(join(dir, hitsCodeKey()), { recursive: true });
+  writeFileSync(c, JSON.stringify(records));
+  const versions = readdirSync(dir).map((d) => ({ d, t: statSync(join(dir, d)).mtimeMs })).sort((a, b) => b.t - a.t);
+  for (const v of versions.slice(HITS_CACHE_KEEP)) rmSync(join(dir, v.d), { recursive: true, force: true });
+}
+
+/**
+ * The hit records of some development logs (never a hold-out), filtered: from the per-fixture cache
+ * (scratch/hits-cache/<code key>/, hitsCodeKey) where the code and the fixture are unchanged, the rest checked on
+ * `workers` threads and cached (`cache` false: neither read nor written).
+ */
+async function collectRecords(data: () => GameData, files: readonly string[], workersOpt: string | undefined, filter: RecordFilter, progress?: (line: string) => void, cache = true): Promise<HitRecord[]> {
   const workers = workersOpt === undefined ? 1 : Number(workersOpt);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
-  const records: HitRecord[] = [];
-  const out = (r: HitRecord) => records.push(r);
-  if (workers > 1) await exportHitsParallel(files, workers, out, filter);
-  else exportHits(data(), files, readLogFixture, out, filter);
-  return records;
+  const byFile = new Map<string, HitRecord[]>();
+  const todo: string[] = [];
+  for (const f of files) {
+    if (isMultiTarget(f)) progress?.(`${basename(f)}: a multi-target log: the log check doesn't run these (the engine is single-target), so its verdicts mean nothing`);
+    const cached = cache ? readHitsCache(f) : undefined;
+    if (cached) byFile.set(f, cached);
+    else todo.push(f);
+  }
+  if (cache && files.length > 1) progress?.(`hits: ${files.length - todo.length} of ${files.length} logs from the cache (${HITS_CACHE}), ${todo.length} to check`);
+  if (todo.length) {
+    const got = new Map<string, HitRecord[]>(todo.map((f) => [f, []]));
+    const out = (r: HitRecord) => got.get(r.fixture)?.push(r);
+    if (workers > 1) await exportHitsParallel(todo, workers, out, { ...(progress ? { progress } : {}) });
+    else exportHits(data(), todo, readLogFixture, out, { ...(progress ? { progress } : {}) });
+    for (const [f, rs] of got) {
+      byFile.set(f, rs);
+      if (cache) writeHitsCache(f, rs);
+    }
+  }
+  return files.flatMap((f) => filterRecords(byFile.get(f) ?? [], filter));
 }
 
 const fixtureLabel = (f: string) => basename(f).replace(/\.json$/, "");
@@ -84,8 +171,7 @@ export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter 
 
 /** `efsim zmdlogs stagger`: the Stagger runs of the named logs (or of every verified and pending development log), and a summary over them. */
 export function staggerReport(data: GameData, named: readonly string[], progress?: (line: string) => void): string {
-  for (const f of named) refuseHoldoutFile(f);
-  const files = named.length ? [...named] : logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
+  const files = named.length ? resolveFixtures(named) : logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
   const out: string[] = [];
   const runs = files.flatMap((f) => {
     progress?.(`stagger ${fixtureLabel(f)}`);
@@ -98,16 +184,17 @@ export function staggerReport(data: GameData, named: readonly string[], progress
 }
 
 /** `efsim zmdlogs differences`: where the log's listing and the replay disagree, grouped, with the damage's ratio per group. */
-export async function differencesCliReport(data: () => GameData, named: readonly string[], opts: { readonly workers: string | undefined; readonly operators: readonly string[]; readonly what?: string; readonly hits: boolean; readonly progress: (line: string) => void }): Promise<string> {
-  const records = await collectRecords(data, named, opts.workers, { operators: opts.operators, progress: opts.progress });
+export async function differencesCliReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly what?: string; readonly hits: boolean; readonly cache?: boolean; readonly progress: (line: string) => void }): Promise<string> {
+  const records = await collectRecords(data, selectedFiles(sel, "differences"), opts.workers, opts, opts.progress, opts.cache ?? true);
   return differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, fixtureLabel });
 }
 
 /** `efsim zmdlogs groups --operator <op>`: an operator's mismatches grouped (the named logs, or every development log with it). */
-export async function groupsCliReport(data: () => GameData, operator: string, named: readonly string[], opts: { readonly workers: string | undefined; readonly verbose: boolean; readonly progress: (line: string) => void }): Promise<string> {
+export async function groupsCliReport(data: () => GameData, operator: string, sel: LogSelection, opts: { readonly workers: string | undefined; readonly verbose: boolean; readonly cache?: boolean; readonly progress: (line: string) => void }): Promise<string> {
   const id = operatorNamed(data(), operator);
+  const named = resolveFixtures(sel.named, sel.fixturesFrom);
   const files = named.length ? named : listLogs({ dirs: ["verified", "pending"], withOperators: [id] }).map((l) => join(REPO_ROOT, l.file));
-  const records = await collectRecords(data, files, opts.workers, { progress: opts.progress });
+  const records = await collectRecords(data, files, opts.workers, {}, opts.progress, opts.cache ?? true);
   return groupsReport(records, id, { verbose: opts.verbose, fixtureLabel });
 }
 

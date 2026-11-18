@@ -6,6 +6,7 @@
 // what the check's "where it and the log disagree" counts).
 // The same computations as `zmdlogs check` (logBuffReplay, engineHits, checkLog, readingBasis), not a copy of them.
 
+import { basename } from "node:path";
 import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { engineCheck, logDifferences, readingBasis, type LogDifference } from "./enginecheck.ts";
@@ -31,6 +32,13 @@ export interface HitRecord {
   readonly predicted: number | null;
   /** logged / predicted − 1 (null without a prediction). */
   readonly error: number | null;
+  /**
+   * The log's reading (ReadingBasis.logReading): the hit with every team kit buff as the log lists it, in place of the
+   * replay's, rounded; and logged / it − 1. Off under both readings: the build or a kit value; off only under the
+   * primary: the replay's timing. Kit and status hits with a landing; null when no reading applies.
+   */
+  readonly logReading?: number | null;
+  readonly logError?: number | null;
   /** Why the replay has no landing for the hit. */
   readonly unknown?: string;
   /** The game buffs the log lists at the hit (its effects, one entry per buff with its instance count when above 1: "id ×2"). */
@@ -89,7 +97,8 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
     const error = predicted ? hit.value / predicted - 1 : null;
     const basis = readingBasis(c, hit, hitPlace(data, fx, placement, replay, hit));
     if ("unknown" in basis.landing) return { ...base, predicted, error, unknown: basis.landing.unknown };
-    const { landing, primary } = basis as Exclude<typeof basis, { readonly landing: { readonly unknown: string } }>;
+    const ok = basis as Exclude<typeof basis, { readonly landing: { readonly unknown: string } }>;
+    const { landing, primary } = ok;
     let d;
     try {
       d = landingDamage(data, c.target, primary.inputs, primary.options, primary.other);
@@ -98,12 +107,21 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       return { ...base, predicted, error, unknown: "no reading applies" };
     }
     const inputs = primary.inputs;
+    const lr = ok.logReading();
+    let logReading: number | null = null;
+    try {
+      logReading = roundDamage(landingDamage(data, c.target, lr.inputs, lr.options, lr.other).exact);
+    } catch (err) {
+      if (!readingDoesNotApply(err)) throw err;
+    }
     const differences = landing.inputs ? logDifferences(c, hit, landing as typeof landing & { readonly inputs: NonNullable<typeof landing.inputs> }) : [];
     return {
       ...base,
       ...(differences.length ? { differences } : {}),
       predicted: predicted ?? roundDamage(d.exact),
       error: hit.value / (predicted ?? roundDamage(d.exact)) - 1,
+      logReading,
+      logError: logReading ? hit.value / logReading - 1 : null,
       landing: {
         frame: landing.frame,
         operator: inputs.operator,
@@ -140,16 +158,17 @@ export function listedBuffs(effects: readonly { readonly buff: string }[]): stri
   return [...n].map(([b, k]) => (k > 1 ? `${b} ×${k}` : b));
 }
 
-/** The records a filter keeps: by reaction kind ("skill" for kit hits) and by operator id. */
-export function filterRecords(records: readonly HitRecord[], opts: { readonly kind?: string; readonly operators?: readonly string[] }): HitRecord[] {
-  return records.filter((r) => (opts.kind === undefined || r.kind === opts.kind) && (!opts.operators?.length || opts.operators.includes(r.operator)));
+/** The records a filter keeps: by reaction kind ("skill" for kit hits), by operator id and by the logged event key. */
+export function filterRecords(records: readonly HitRecord[], opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly event?: RegExp }): HitRecord[] {
+  return records.filter((r) => (opts.kind === undefined || r.kind === opts.kind) && (!opts.operators?.length || opts.operators.includes(r.operator)) && (!opts.event || opts.event.test(r.event)));
 }
 
-/** One line per record: JSON Lines with `json`, else a readable table row. */
-export function formatRecord(r: HitRecord, json: boolean): string {
+/** One line per record: JSON Lines with `json`, else a readable table row (`reading` "log": the log's reading beside the primary). */
+export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "log" = "primary"): string {
   if (json) return JSON.stringify(r);
-  const err = r.error === null ? "-" : `${(100 * r.error).toFixed(1)}%`;
-  return `${r.fixture}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${err}${r.unknown ? `  (${r.unknown})` : ""}`;
+  const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
+  const log = reading === "log" ? `  log reading ${r.logReading ?? "-"}  ${pct(r.logError)}` : "";
+  return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}`;
 }
 
 /** The hits of a list of fixtures, read one at a time (readFixture), each record handed to `out` as it's made. */

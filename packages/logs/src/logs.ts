@@ -11,11 +11,16 @@ import { enemiesHit, fetchBattle, zmdlogsCasts, zmdlogsHits, zmdlogsToFixture, t
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
+let compiled: { ajv: Ajv2020; validate: ReturnType<Ajv2020["compile"]> } | undefined;
+
+/** The fixture schema's validator, compiled once per process (a scan over every log read each file through it). */
 function validator() {
+  if (compiled) return compiled;
   const ajv = new Ajv2020({ allErrors: true, strict: true });
   const schema = (name: string) => JSON.parse(readFileSync(join(ROOT, "schemas", name), "utf8")) as object;
   ajv.addSchema(schema("build.schema.json"));
-  return { ajv, validate: ajv.compile(schema("log-fixture.schema.json")) };
+  compiled = { ajv, validate: ajv.compile(schema("log-fixture.schema.json")) };
+  return compiled;
 }
 
 /**
@@ -54,10 +59,73 @@ export function refuseHoldoutFile(file: string, root: string = ROOT): void {
   refuseHoldout(basename(file).replace(/\.json$/, ""), root);
 }
 
-/** A development log fixture (readLogFixture), refusing a hold-out (the CLI's `zmdlogs check` and the like). */
-export function readDevFixture(file: string): LogFixture {
-  refuseHoldoutFile(file);
-  return readLogFixture(file);
+/** A development log fixture (readLogFixture) from a path or an id (resolveFixture), refusing a hold-out (the CLI's `zmdlogs check` and the like). */
+export function readDevFixture(fileOrId: string): LogFixture {
+  return readLogFixture(resolveFixture(fileOrId));
+}
+
+/** A fixture id's short form, as the docs cite logs: the first four characters of the battle id ("0c14"). */
+export function shortId(id: string): string {
+  return id.replace(/^zmdlogs-/, "").slice(0, 4);
+}
+
+/**
+ * A development log's fixture file from what a command was given: a path (anything with a "/" or ending in .json),
+ * refused when it's a hold-out's (refuseHoldoutFile); else an id, whole or a unique start of it (zmdlogs- optional,
+ * 4+ characters: "0c14", "zmdlogs-0c14fb3c"), among the development logs only (logFixtureFiles: verified, pending,
+ * multi-target; never a hold-out).
+ */
+export function resolveFixture(arg: string, root: string = ROOT): string {
+  if (arg.includes("/") || arg.endsWith(".json")) {
+    refuseHoldoutFile(arg, root);
+    return arg;
+  }
+  const id = arg.replace(/^zmdlogs-/, "");
+  if (id.length < 4) throw new Error(`${arg}: give at least four characters of a log's id (efsim zmdlogs list)`);
+  const hits = logFixtureFiles(root).filter((f) => basename(f, ".json").startsWith(`zmdlogs-${id}`));
+  if (hits.length === 1) return hits[0] as string;
+  if (!hits.length) throw new Error(`${arg}: no development log's id starts with it (efsim zmdlogs list)`);
+  throw new Error(`${arg}: ${hits.length} development logs' ids start with it (${hits.map((f) => basename(f, ".json")).join(", ")}): give more of it`);
+}
+
+/**
+ * The files a command's fixture arguments name (each a path or an id: resolveFixture), plus those listed one per line
+ * in `fromFile` (--fixtures-from; "#" starts a comment); never a hold-out.
+ */
+export function resolveFixtures(named: readonly string[], fromFile?: string, root: string = ROOT): string[] {
+  const listed = fromFile === undefined ? [] : readFileSync(fromFile, "utf8").split("\n").map((l) => l.replace(/#.*/, "").trim()).filter(Boolean);
+  return [...named, ...listed].map((a) => resolveFixture(a, root));
+}
+
+/** Whether a fixture file is a multi-target log (fixtures/multi-target/: the log check doesn't run it, the engine being single-target). */
+export function isMultiTarget(file: string, root: string = ROOT): boolean {
+  return resolve(file).startsWith(resolve(root, LOG_DIRS.multi) + "/");
+}
+
+/** One development log for a scan over the logs (devFixtures): its file, id, short id, directory and fixture. */
+export interface DevFixture {
+  readonly file: string;
+  readonly id: string;
+  readonly short: string;
+  readonly dir: LogDir;
+  readonly fx: LogFixture;
+}
+
+/**
+ * The development logs as fixtures, for scratch scripts and scans (never a hold-out: logFixtureFiles): by default the
+ * verified and pending ones (the checked logs), `dirs` to choose (multi: the multi-target ones), `ids` to name some
+ * (resolveFixture), `withOperators` only those whose team has every one of them (operator ids).
+ */
+export function devFixtures(opts: { readonly dirs?: readonly LogDir[]; readonly ids?: readonly string[]; readonly withOperators?: readonly string[]; readonly root?: string } = {}): DevFixture[] {
+  const root = opts.root ?? ROOT;
+  const dirs = opts.dirs ?? (["verified", "pending"] as const);
+  const files = opts.ids?.length ? opts.ids.map((a) => resolveFixture(a, root)) : dirs.flatMap((d) => logFixtureFiles(root, [LOG_DIRS[d]]));
+  const dirOf = (f: string): LogDir => (isMultiTarget(f, root) ? "multi" : resolve(dirname(f)) === resolve(root, LOG_DIRS.pending) ? "pending" : "verified");
+  return files.flatMap((file) => {
+    const fx = readLogFixture(file);
+    if (opts.withOperators?.length && !opts.withOperators.every((op) => fx.team.some((b) => b.operator === op))) return [];
+    return [{ file, id: fx.id, short: shortId(fx.id), dir: dirOf(file), fx }];
+  });
 }
 
 /**

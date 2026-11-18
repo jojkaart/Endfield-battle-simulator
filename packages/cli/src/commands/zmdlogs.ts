@@ -17,6 +17,7 @@ import {
   groupsCliReport,
   hitsReport,
   importBattle,
+  operatorNamed,
   rawDetail,
   rawDir,
   readDevFixture,
@@ -36,13 +37,20 @@ export default command({
                                           enemy, hits, casts, length; the safe start of any scan over the logs
                 [--with <operator>]       Only logs whose team has it (id or part of the name; repeatable: all of them)
                 [--dir <dir>] [--json]    Only verified, pending or multi (repeatable); everything as JSON
-  efsim zmdlogs hits [fixture…]           The log check's numbers per logged hit, one line each (default: every
-                                          verified and pending development log; never a hold-out): logged value,
-                                          verdict and class, the engine's primary reading and its error; with
-                                          --json a JSON line with its scale parts, zones, modifiers, the landing's
-                                          operator and, for kit hits, the enemy's statuses (applier, level,
-                                          Arts Intensity)
-                [--kind <k>] [--operator <op>]  Only this reaction kind ("skill": kit hits) / operator (repeatable)
+  efsim zmdlogs hits <fixture…|--all>     The log check's numbers per logged hit, one line each (fixtures: paths or
+                                          ids such as 0c14; --all every verified and pending development log; never
+                                          a hold-out): logged value, verdict and class, the engine's primary reading
+                                          and its error; with --json a JSON line with its scale parts, zones,
+                                          modifiers, the log's reading (logReading: every kit buff as the log lists
+                                          it), the landing's operator and, for kit hits, the enemy's statuses
+                                          (applier, level, Arts Intensity). Cached per fixture and code in
+                                          scratch/hits-cache/ (--no-cache: neither read nor write it)
+                [--kind <k>] [--operator <op>]  Only this reaction kind ("skill": kit hits) / operator (id or name;
+                                          repeatable)
+                [--event <regex>]         Only hits whose logged event key matches
+                [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
+                [--reading log]           Text lines also give the log's reading and its error: off under both is the
+                                          build or a kit value, off only under the primary the replay's timing
                 [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1)
   efsim zmdlogs raw <fixture | id>        A battle's raw detail as ZMDLogs recorded it: buff lanes (key, target,
                                           source, start–end, effects) and events (key, value, the skill a Stagger is
@@ -97,10 +105,11 @@ export default command({
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
                                           windows and where the engine's own would have ended; with several logs
                                           (default: every development log) a summary of the shortfalls
-  efsim zmdlogs differences [fixture…]    Where the log's listing and the replay disagree (a kit buff, Stagger),
-                                          grouped, with the logged value ÷ the engine's reading per group: does the
-                                          damage side with the log or the replay? (default: every development log)
-                [--what <regex>] [--hits] Only differences about this; each hit too. --operator, --workers n as hits
+  efsim zmdlogs differences <fixture…|--all>  Where the log's listing and the replay disagree (a kit buff,
+                                          Stagger), grouped, with the logged value ÷ the engine's reading per group:
+                                          does the damage side with the log or the replay?
+                [--what <regex>] [--hits] Only differences about this; each hit too. --operator, --event, --workers n,
+                                          --fixtures-from, --no-cache as hits
   efsim zmdlogs groups --operator <op> [fixture…]  An operator's mismatches sorted into causes: team-wide (a
                                           teammate mismatches at the same ratio nearby), no landing, own by skill
                                           event and by what the log and replay disagree on (default: every
@@ -131,6 +140,11 @@ export default command({
     hits: { type: "boolean", default: false },
     assume: { type: "string", multiple: true, default: [] },
     "no-foods": { type: "boolean", default: false },
+    all: { type: "boolean", default: false },
+    event: { type: "string" },
+    "fixtures-from": { type: "string" },
+    reading: { type: "string" },
+    "no-cache": { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -148,8 +162,14 @@ export default command({
       return formatRaw(detail, { ...(values.buffs !== undefined ? { buffs: values.buffs } : {}), ...(values.events !== undefined ? { events: values.events } : {}) });
     }
     const progress = (l: string) => process.stderr.write(l + "\n");
+    // Operators by id, name or part of the id (operatorNamed), in every view.
+    const operators = values.operator.map((o) => operatorNamed(data(), o));
+    const selection = { named: args.slice(1), all: values.all, ...(values["fixtures-from"] !== undefined ? { fixturesFrom: values["fixtures-from"] } : {}) };
+    const event = values.event !== undefined ? { event: new RegExp(values.event) } : {};
     if (sub === "hits") {
-      return hitsReport(data, args.slice(1), { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators: values.operator, json: values.json, progress });
+      if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
+      const reading = values.reading === "log" ? "log" : "primary";
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, cache: !values["no-cache"], progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
@@ -162,15 +182,15 @@ export default command({
         if (!Number.isFinite(x)) throw new Error(`--${name} takes seconds`);
         return { [name]: x * 1000 };
       };
-      const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators: values.operator };
+      const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
       return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], assume: parseAssume(data(), values.assume) });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
-    if (sub === "differences") return differencesCliReport(data, args.slice(1), { workers: values.workers, operators: values.operator, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, progress });
+    if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, cache: !values["no-cache"], progress });
     if (sub === "groups") {
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
-      return groupsCliReport(data, values.operator[0] as string, args.slice(1), { workers: values.workers, verbose: values.verbose, progress });
+      return groupsCliReport(data, values.operator[0] as string, selection, { workers: values.workers, verbose: values.verbose, cache: !values["no-cache"], progress });
     }
     if (sub === "fit-build") {
       if (args.length !== 2 || !arg || values.operator.length !== 1) throw new Error("zmdlogs fit-build takes one fixture file and one --operator <op> (--top n, --no-foods)");
