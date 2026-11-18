@@ -38,6 +38,11 @@ must be something a person can do by hand while playing:
   goes to the owner only when no log records it (SP, energy, cooldowns,
   icons the log doesn't list, inputs, positions, what the screen shows),
   after the logs were tried ([in-game-tests-log-triage.md](in-game-tests-log-triage.md)).
+  Deciding from the logs: [design/data.md](design/data.md) "Common
+  misreadings" first, then "Questions and the command that answers them";
+  every count cites its selection (the `rerun:` line of `efsim zmdlogs
+  census`) and what it rests on (listing only, damage checked, engine
+  compared).
 - **Honest priorities:** say what a test needs. The owner doesn't use
   Catcher, Ember, Snowshine or Purrchena, so tests that need them are low
   priority; tests that affect every operator come first.

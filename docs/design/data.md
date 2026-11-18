@@ -436,6 +436,92 @@ detail):
   against the replay's Electrification `appliedAt`, 1,212 of 3,705 hits
   agreed within 300 ms (docs/friction-done/2026-11-17-fixture-refresh.md).
 
+**Common misreadings** (round 4, 2026-11-18: each one changed a re-triage or
+test verdict before someone checked it; read this before counting anything
+in the logs):
+- **`since` is the latest (re)application**, not the first (above): a
+  lane's runs are `efsim zmdlogs lanes <fixture> --buff <re>`.
+- **A buff's name doesn't say self or team.** A weapon's `_teamspell` and
+  `_teamatk` (Long Heritage: `buff_wpn_claym_0019_teamspell` 0.168 is the
+  wielder's own Cryo DMG, `_teamatk` 0.112 the team's ATK) are told apart
+  by the kit buff whose `gameBuff` they are; some team buffs are listed on
+  their source's own hits only. `efsim zmdlogs buffs --buff <re>` gives the
+  kit buff, the sources and whose hits list it ("only on its source's own
+  hits").
+- **A listed id may be a common affix**: an Amp or Susceptibility is often
+  listed as `buff_common_affixes_enhance_spell` /
+  `buff_common_affixes_vulnerable_<element>` with `source` the operator,
+  not as the kit's `gameBuff` file (Arcane's INT Amp); `zmdlogs buffs`
+  maps those too (enginecheck.ts `loggedNames`).
+- **Game ids count talents and potentials from 0**: `talent1` is the
+  second talent (Camille's talent 2 is `buff_chr_0033_camille_talent1_atkup`,
+  named "atkup" though it is Heat DMG).
+- **Combos log no cast event for some operators** (Liino, Avywenna,
+  Alesh, Endministrator, Arclight's battle skill): the casts are in the
+  hits only. "The casts of X" is `efsim zmdlogs instances <fixture>`
+  (`loggedSkillInstances`), never `fx.casts`.
+- **An ultimate's cast event repeats while it lasts** (Liino's every
+  ~3.5 s of Cosmovoice, Ardelia's ~3 s after hers, Typhoeus's at later
+  shots of her window): "N s after the ultimate" is measured from the
+  first event of the group (`zmdlogs instances` folds the repeats in).
+- **Si's battle-button events are mostly hitless**: every 3.2–3.6 s, often
+  while she does basic attacks; a real battle skill has its hit 400–650 ms
+  after its event. Whether the rest are presses is open (the replay makes
+  some into strokes: `withLoggedCasts`). `zmdlogs instances` lists them as
+  "an event only".
+- **Liino's stance**: her `normal_skill` events every ~3 s during Vocalist
+  Stance are its beats or End Stance presses (End Stance is never logged
+  under its own id).
+- **Arcane's Imprisonment end is logged as a combo cast** about 6.5–8 s
+  after each real combo (above, "Hidden casts"); `zmdlogs instances` marks
+  it.
+- **A hit may be logged under another operator's key** (Valiant's extra hit
+  as `chr_0015_lifeng_ultimate_skill`).
+- **A teammate's `attack1` isn't a swap**: the controlled operator is
+  shown by basic hits that deal Stagger (`efsim zmdlogs control`).
+- **Not listed at all**: Haste, shields, heals, Whirlpools; Vulnerable
+  without stack counts. A missing listing proves nothing there.
+- **Multi-target logs aren't checked** (the engine is single-target):
+  their `zmdlogs hits` verdicts mean nothing.
+- **`isEnable false` in game data means the action never runs**
+  (`efsim gamedata tree` prints DISABLED on its line).
+
+**Questions and the command that answers them** (round 4; every command
+takes a fixture's path or its id, e.g. `0c14`, and operators by name):
+
+| Question | Command |
+|---|---|
+| The casts of an operator, as the log means them | `efsim zmdlogs instances <fixture> [--operator]` |
+| How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window a,b] [--list]` |
+| What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
+| A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re>` |
+| Who is controlled when | `efsim zmdlogs control <fixture>` |
+| Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
+| A skill's frames, windows, uncuttable frames | `efsim kit <operator> [--skill <re>]` |
+| Operator ids and weapon names of the logs | `efsim zmdlogs list --ids [--with <op>]` |
+| Where the placement put each hit and cast | `efsim zmdlogs casts <fixture> [--from --to]` |
+| The replay's landings, casts made against the kit | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE) |
+| How a kit buff's expiry moved | `efsim zmdlogs replay <fixture> --trace-buff owner:id` |
+| Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
+| A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
+| An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
+| Does a change help | `npm run measure [-- --with <op>]` |
+
+`zmdlogs hits --json` records (packages/logs/src/hitexport.ts `HitRecord`):
+`value`, `class`, `predicted` and `error` (the primary reading),
+`logReading` / `logError` (every kit buff as the log lists it), `listed`,
+`differences` (`kind` engine / log / values), and under `landing`:
+`modifiers` (with `kitBuff`), `zones`, `scaleParts`, `enemy` (statuses with
+`appliedAtMs`). They are cached per fixture and code in scratch/hits-cache/.
+
+**A claim from the logs cites its selection** (round 4, after three of
+five re-triage claims fell apart on a recount): a doc that counts
+something in the logs gives the command that counted it (the `rerun:` line
+of `zmdlogs census`, or the command and its filters), and says what the
+answer rests on: "listing only", "damage checked" (the hits' values) or
+"engine compared" (against the kit's reading, with the kit hit and its
+`if` quoted). A brief that passes a claim on passes that too.
+
 **What a log check verifies** (2026-10-24, after a review found matches
 that said little). A logged hit is read many ways (crit or not, boundary
 buffs, Corrosion levels, situational parts, event counts, value
