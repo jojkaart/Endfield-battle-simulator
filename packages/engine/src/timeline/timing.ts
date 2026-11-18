@@ -329,12 +329,44 @@ export function skillAvailable(ctx: TimelineContext, state: TimelineState, opera
   return decide(skill.available, evalContext(ctx.data, build, panelAt(ctx, operator, frame), skill.skillId, situationAt(ctx, operator, then, frame)));
 }
 
+/** Per context and operator: the kit's enhanced basic attacks (enhancedBasic). */
+const enhancedCache = new WeakMap<TimelineContext, Map<string, readonly KitSkill[]>>();
+
+/**
+ * The enhanced basic attack the operator's attack input casts at a frame (the state advanced to it), or undefined: a
+ * basic attack (skillSpecification 1) that CharGrowthTable puts in the battle skill's or the ultimate's skill group,
+ * not the NormalAttack group (Laevatain's Twilight chain and Yvonne's ultimate chain in the ultimate's, Zhuang Fangyi's
+ * Empyrean chain in the ultimate's, Typhoeus's aerial attacks in the battle skill's), while its kit `available` holds
+ * or a buff maps the input to it (KitBuff.basicAttack: Yvonne's ultimate-end shot). The game switches the input to
+ * these with a buff's SwitchModeAction (modeId `ult`, `UltMode`, `floating`) or ComboCacheAction; the Finisher is the
+ * NormalAttack group's (skillSpecification 8), so none comes while the input is enhanced (the Talos Wiki's Stagger
+ * article: the first basic attack "that aren't under any active enhancement effects (such as Laevatain's Twilight)";
+ * in-game test 108: no logged Finisher while an operator's enhanced attacks run).
+ */
+export function enhancedBasic(ctx: TimelineContext, state: TimelineState, operator: string, frame: number): string | undefined {
+  let byOperator = enhancedCache.get(ctx);
+  if (!byOperator) enhancedCache.set(ctx, (byOperator = new Map()));
+  let enhanced = byOperator.get(operator);
+  if (!enhanced) {
+    const groups = ctx.data.operators[operator]?.skillGroups ?? {};
+    enhanced = (ctx.kits.get(operator)?.skills ?? []).filter((s) => s.kind === "basic" && ctx.data.skills[s.skillId]?.timing?.specification === 1 && (groups[s.skillId] ?? "basic") !== "basic");
+    byOperator.set(operator, enhanced);
+  }
+  if (enhanced.length === 0) return undefined;
+  const then = advance(ctx, state, frame);
+  const mapped = then.buffs.find((b) => b.basicAttack !== undefined && b.owner === operator && b.cast === undefined && activeAt(b, frame))?.basicAttack;
+  if (mapped !== undefined && enhanced.some((s) => s.skillId === mapped)) return mapped;
+  // Only one whose kit says when it applies: a state's chain (one without a condition would block every Finisher).
+  return enhanced.find((s) => s.available !== undefined && skillAvailable(ctx, then, operator, s.skillId, frame))?.skillId;
+}
+
 /** Rounds of startFrom's gates before a start that keeps moving is reported. */
 const MAX_GATE_ROUNDS = 16;
 
 /**
  * startFrom's gates from a frame on, in order: the cooldown (at a recovery rate, settled), the current skill's own hits,
- * the action gate (with the basic-attack input's mapping), a channel forbidding casts, a finisher's Stagger, the SP cost
+ * the action gate (with the basic-attack input's mapping), a channel forbidding casts, a finisher's Stagger and plain
+ * attack input (enhancedBasic), the SP cost
  * (waited for), availability, ultimate energy and the combo window (waited for: the first frame at which anything is due
  * that opens it). The frame they give, or an error; startFrom judges again from a frame that moved.
  */
@@ -374,8 +406,13 @@ function gatesFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   frame = gate.frame;
   // A channel that forbids casting (cantCastSkill, a finisher's disable-cast buff) holds every cast of its operator, whatever its priority.
   frame = afterCantCast(ctx, state, action.operator, frame);
-  // A finisher only on a Staggered enemy, once per stagger.
-  if (costs.timing.specification === 8 && ((then) => !isStaggered(then, frame) || then.stagger.finisherUsed)(advance(ctx, state, frame))) return { error: `${action.skill} is a finisher: the enemy isn't Staggered (or this stagger's finisher is used) at frame ${frame}` };
+  // A finisher only on a Staggered enemy, once per stagger, and only while the attack input isn't an enhanced basic attack.
+  if (costs.timing.specification === 8) {
+    const then = advance(ctx, state, frame);
+    if (!isStaggered(then, frame) || then.stagger.finisherUsed) return { error: `${action.skill} is a finisher: the enemy isn't Staggered (or this stagger's finisher is used) at frame ${frame}` };
+    const enhanced = enhancedBasic(ctx, then, action.operator, frame);
+    if (enhanced !== undefined) return { error: `${action.skill} is a finisher: the attack input is the enhanced ${enhanced} at frame ${frame}` };
+  }
   // Its SP cost at the start (attribute 45 of the caster's buffs then: judged again where the start moves).
   const costAt = (f: number) => spCostAt(ctx, ctx.costBuffs ? advance(ctx, state, f) : state, action.operator, costs, f);
   let spCost = costAt(frame);

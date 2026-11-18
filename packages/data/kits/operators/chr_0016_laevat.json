@@ -722,11 +722,6 @@
       "skillId": "chr_0016_laevat_power_attack",
       "label": "Finisher",
       "damageType": "basic",
-      "available": {
-        "not": {
-          "buffActive": "twilight"
-        }
-      },
       "hits": [
         {
           "id": "hit",
@@ -748,7 +743,7 @@
           ]
         }
       ],
-      "note": "BreakingAttackCalculation, multiplier 0.2 / 0.8 of atk_scale (mask 132: basic + finisher); its ObtainCostAction has no value (sp 0); the engine adds the finisher multiplier and SP and gates it on a Staggered enemy. Not during Twilight (in-game test 108, decided by the logs 2026-11-18): her attack input is the enhanced chain then, which has no finisher; in 7 logged Staggers with her Twilight basic attacks (2–26 hits each: 012a, 458b, 79cc, c83c, db87, f879, f978) she never Finishers, and in f879 her Finisher comes 0.46 s after her last Twilight hit (126.0 s), with none after it; outside Twilight she Finishers in each Stagger she's controlled for (458b ×2, 6339, 9c0b)."
+      "note": "BreakingAttackCalculation, multiplier 0.2 / 0.8 of atk_scale (mask 132: basic + finisher); its ObtainCostAction has no value (sp 0); the engine adds the finisher multiplier and SP and gates it on a Staggered enemy. Not during Twilight (in-game test 108, decided by the logs 2026-11-18; since 2026-11-18 the engine's general rule, timing.ts enhancedBasic: no Finisher while the attack input is a basic attack of the battle skill's or ultimate's skill group): her attack input is the enhanced chain then (ult_attack1–4, CharGrowthTable's UltimateSkill group), which has no finisher; in 7 logged Staggers with her Twilight basic attacks (2–26 hits each: 012a, 458b, 79cc, c83c, db87, f879, f978) she never Finishers, and in f879 her Finisher comes 0.46 s after her last Twilight hit (126.0 s), with none after it; outside Twilight she Finishers in each Stagger she's controlled for (458b ×2, 6339, 9c0b)."
     },
     {
       "skillId": "chr_0016_laevat_plunging_attack_end",

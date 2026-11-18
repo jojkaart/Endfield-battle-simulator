@@ -23,7 +23,8 @@ export function nextBasics(data: GameData, state: TimelineState, operator: strin
   // What a buff maps the attack input to (KitBuff.basicAttack), while it's active.
   for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && activeAt(b, state.frame)) out.add(b.basicAttack);
   for (const s of data.kits.operators[operator]?.skills ?? []) {
-    // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
+    // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy, while the input isn't an
+    // enhanced basic attack: timing.ts enhancedBasic).
     const spec = data.skills[s.skillId]?.timing?.specification;
     if (s.kind === "basic" && ((!s.chainStep && spec === 1) || spec === 8)) out.add(s.skillId);
   }
