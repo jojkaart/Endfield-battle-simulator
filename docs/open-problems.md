@@ -1137,32 +1137,74 @@ stop (a clock ~2.5% slow against the log's, or holds a little longer).
 **Next check:** in-game test 107 (Si's Amp across three ultimates); af7b
 after the placement fix.
 
-## Liino's volley doubles in 1d91
+## Liino's volley doubles in 1d91: closed 2026-11-18
 
-**Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;
-some ×1.90 / ×2.11 against the engine.
+**Shows:** 442 at 1990 ms, 886 (2.007×) at 13713 ms, later 985, 1152.
+**Cause: the team's buffs, not the volley.** Once the replay lands the
+volleys (the next entry), 1d91's 886s match the engine plainly: from its
+second volley on the volley carries Ardelia's Arts Susceptibility (0.28)
+and Tidal Murmurs' Arts DMG Taken (0.16), Arcane's WILL Susceptibility
+(0.096) and the usp02 set's DMG (0.16), ×1.28 × 1.352 × 1.16 = 2.007 the
+first's (`efsim zmdlogs hits --json` on 1d91, t=13713: plain, predicted
+886). 1d91 lists none of Liino's buffs and no teammate's on her, which is
+why the log looked unbuffed. 4360 (419 → 785) and 9090 (388 → 567) are
+the same: the first volley comes before the teammates' debuffs.
+**Left:** the first volley (1990 ms) still lands nowhere: the log's first
+battle-skill event of Liino is at that very ms (the volley's own event,
+next entry), so her stance was cast before the log began, and the replay
+makes a stance at 1.99 s instead (its projectiles and first volley land
+as the replay's own); 7910 (1898 ms) and 4d60 (1354 ms) start the same
+way. The volley at 51.0 s is ×1.11 the engine's (985 against 886), 62.2
+and 64.0 s (1152 = 886 × 1.3) are under the log's Stagger, split in two
+by a stop.
 
-**Ruled out:** nothing specific yet.
+## Liino's volleys: a 10 s timer, reaction or not (in-game test 26 from the data and the logs, 2026-11-18)
 
-**Ruled out (round 3):** two projectiles merged into one hit (14245 has
-886 and a 1329 crit at one time: separate landings, six per volley as in
-bdf2 and d774); battle-skill level (12 in all three); potential (0 in bdf2
-and 1d91); the Stagger (explains 1152 = 886 × 1.3, not the 2×); Typhoeus's
-damage taken (24670 is 886 without it). Wrong premise in this file's
-earlier entry: the log shows no stance ATK or lance layer before 1990 ms.
-
-**Found:** 442 (1990 ms) is the volley's 0.2 scale (bdf2's and d774's fit
-0.2); 886 is 2.007× it, and atk_scale 0.4 gives 883 (0.3% off).
-
-**Still possible:** these "volleys" being battle-skill projectiles (0.4)
-logged under the volley's key: the groups of 886 follow her presses
-(13713 at a press, 24670 0.96 s after one, 36754, 50920): a clue for
-in-game test 103 (do presses in the stance launch projectiles?); an
-unlisted ×2 on the enemy; volley 4 (985) a further ×1.11. The replay
-lands no volley in 1d91 at all.
-
-**Next check:** in-game test 103 with this in mind; why the replay
-lands no volley here.
+**Shows:** 9090 logged 10 volleys, the replay 1 (the kit's reading B of
+test 26: an Arts Reaction while her listener is up, then 10 s of
+cooldown); no reaction hit is logged in the 2 s before the one at 15.2 s,
+and its first comes 1.9 s after her cast, before any reaction.
+**Cause (the data):** buff spelllnfliction_extraattack (the battle skill's
+frame 45) ticks every hit_tigger = atk_trigger (10 s), the first at once
+(waitFirstTriggerInterval false), and each tick launches the volley at a
+marked enemy within 20 m; the tick's first condition, CheckBuffIdInContext
+spelllnfliction_hit (the 2 s mark an Arts Reaction leaves), has
+`isEnable false`. `efsim gamedata tree` left disabled actions out as
+defaults, so the condition read as live; it now prints `DISABLED`.
+**The logs agree:** 103 volleys in 24 Liino logs, 10.0–11.7 s of world
+time apart (time stops taken out; `scratch` count over all Liino logs,
+logcasts `worldMs`), also with no stop between (1d91 11.29, 4bfe 10.70,
+8915 11.67, a7a7 10.02, c6d8 10.70 s); a stance's first comes 1.6–2.4 s
+after its first projectile (the kit: 1.9 s), with no reaction needed.
+**Fixed:** the kit's volley_window ticks every atk_trigger from frame 45
+and fires the volley (kit-liino test). The game's clock for it runs
+slower than the replay's world time (mean gap ~10.5 s; her beats drift the
+same way, "Liino's battle-skill presses" above), so the replay takes each
+tick from its logged volley (`KitBuff.ticksShownByHits`, buffreplay
+`loggedTickLandings`): held to one up to 5 s later, brought forward to one
+up to 5 s sooner. 9090: Liino's volleys 60 logged, 58 replayed (the first
+volley's last two lie after Arcane's combo stop at 2.5 s), her totals
+−10.4 → +2.5%.
+**Ruled out:** the volley waiting for a beat (but for the 37 at 0 ms,
+below, the volleys' offsets from the last logged beat spread evenly over
+0.1–3 s); a cooldown from a reaction (9090's first volley comes before any
+reaction, and its 15.2 s one has none in the 2 s before).
+**Found, not acted on:** 37 of the 100 volleys have a Liino battle-skill
+cast event at their first hit's very ms (the beats and the volley tick on
+unrelated clocks, so these events are the volley's). Reading them as
+neither presses nor beats changed nothing but 1d91 and 7910, both worse
+(their first event is then no stance at all: plain 280 → 249, 202 → 177,
+measure 2026-11-18), so the replay still reads them as beats (or, before
+any stance, as the stance's cast).
+**Still possible:** the game's slower clock: hit-stop or a time scale on
+Liino herself (useTimeDilationDt false on the buff), or stops longer than
+the engine's; the data's listener end at frame 1691 (54.9 s; the kit ends
+it with the stance at 60 s, which no tick falls between).
+**Next check:** none for the volley. Rossi's bleed ticks (an `every 1`
+enemy buff) took the same pinning in a trial: 489c mismatch 124 → 111,
+d572, 2fd9, 99fb better, 0c14 +0.3, 4a64 −0.1 points of damage error
+(measure 2026-11-18); not kept here (outside this task), a lead for
+Rossi's kit.
 
 ## Si's Artful Intent bursts that fit no reading (6 of 40)
 
@@ -1573,39 +1615,64 @@ From the kit check before simulating the team
     landings; fc63 92–98 s: bursts logged before their shots' projectiles
     still open casts, as before).
 - **9090 (the whole team): Liino −15.0%, Perlica −13.0% in the totals**
-  (the simulation of the logged casts), with every hit-by-hit check
-  matching (Perlica 130 of 130, Liino 171 of 172). Hits under Stagger
-  145 replayed against 208 logged: Perlica's talent 1 (DMG vs Staggered)
-  and her finisher only exist while Staggered. Liino's battle-skill kind
-  −15% (her volleys). **Narrowed (2026-11-17):** the Stagger windows were
-  half of it: the replay now follows the log's Stagger (see "The replay's
-  Stagger windows" below): hits under Stagger 197 of 208, Liino −15.0 →
-  −10.4%, Perlica −13.0 → −10.7%, the fight −5.4 → −2.1%. The volleys
-  are the rest: 10 logged (6 hits each, 2.1–153.0 s, 33,159 damage)
-  against 1 replayed (53.5 s, 4,424); battle kind −15.1% unchanged. No
-  reaction hit is logged in the 2 s before the one at 15.2 s, so the kit's
-  reading B of test 26 (a reaction while the listener is up) doesn't make
-  them; they come 10–16 s apart (her listener's cooldown is 10 s).
-  Next: Liino's volley trigger against the logs (her kit, test 26's
-  reading A, or the press in Vocalist Stance: test 103).
+  (the simulation of the logged casts). **Narrowed (2026-11-17):** the
+  replay follows the log's Stagger: Liino −15.0 → −10.4%, Perlica −13.0 →
+  −10.7%, the fight −5.4 → −2.1%. **Liino closed (2026-11-18):** her
+  volleys are a 10 s timer (entry "Liino's volleys" above): 58 of 60
+  volley hits replayed, Liino −10.4 → +2.5%, her plain 100 → 148.
+  Perlica's −9.6% is left: her 130 hits all match (101 plain), so it's
+  hits the replay doesn't land or lands differently, not their values.
 - **Perlica in fc63: every hit ×0.934** from the first (4.8 s), before
-  any reaction or buff. Ruled out: her weapon at level 80 (its skills
-  allow 80–90), 2 or 3 attribute nodes, talents at 1 (each tried: worse).
-  Still possible: the export's empty artifice lists on three Pulser Labs
-  pieces read as 0 (the export gives their sub-stat values at level 0),
-  another build input the export omits. Not a kit lead (her other logs
-  fit).
+  any reaction or buff. Her ATK from 30 unbuffed hits is 3,570.8–3,571.5
+  against the engine's 3,822.0 (×0.9343), the same on every skill kind
+  (basic level 6, battle 6, combo 10, ultimate 9), so it's ATK, not a
+  skill level. Ruled out: her weapon at level 80 (its skills allow
+  80–90), 2 or 3 attribute nodes, talents at 1 (each tried: worse); the
+  enemy (eny_0120 tower015, where 9090, 4bfc and 00ae fit her); **the
+  export's empty artifice lists read as 0** (2026-11-18: missing artifice
+  only lowers the engine's stats, and the log is the lower; 4360 has the
+  same three Pulser Labs pieces at [0, 0, 0] and fits); **the weapon's
+  level and skill levels** (not in the log, assumed the highest: a
+  search over weapon level 60–90 and skills 1–9 at her logged level 90
+  comes no nearer than 3,568.9 and 3,573.9, scratch/fc63atk.ts); her
+  hand piece's variant (usp02 hand_01–_04: 4,023–4,139) and its
+  artifice. Still possible: an ATK% of 22.6% instead of 31.2% or 54 less
+  Wisd from a source the export misreads (the nearest single inputs:
+  weapon skill 2 at 7, ×0.939; skill 1 at 5–6, ×0.930 / ×0.946), her
+  operator level (the log's 90; at 80 ×0.933). Not a kit lead (her
+  other logs fit).
 - **Perlica's misfits elsewhere** (4360, 9847, 4bfc, 3aa6, d774) come in
   runs of ×1.3–1.5 (or their inverse) on basic attacks and ultimates.
-  **Ruled out (2026-11-17): the Stagger windows.** With the replay
-  following the log's Stagger, every one of her mismatches in 4360 and
-  9847 has the log and the replay agreeing on Stagger, and they stay
-  (4360 16, 9847 26; 4bfc 13 → 9, 3aa6 6, d774 3): runs of ×0.97,
-  ×1.29–1.31 and ×1.50 (9847 80.9–81.6 s, 137.9–141.9 s), ×0.62–0.68
-  (4360 62.8–64.5 s, 69.9 s) and ×1.58–1.72 (4360 74.6–75.3 s, not
-  Staggered). Still possible: her talent 1's condition (another state
-  than Stagger), a buff window of hers or a teammate's. Next: her kit's
-  talent 1 and buffs against these runs.
+  **Ruled out (2026-11-17): the Stagger windows.** **Ruled out
+  (2026-11-18): her talent 1 (DMG vs Staggered).** Where the engine gives
+  it (CheckPoiseValue = 0: Staggered), 9090's 26 and 4bfc's 22 of her
+  hits match plainly; 9847's misfits under it sit beside plain matches
+  with the same modifiers (64107, 65735 plain; 65313, 66539 ×0.972–0.973),
+  and they're **team-wide**: Gilberta, Avywenna and Liino are ×0.972–0.979
+  at 65–74 s and 139–142 s, ×1.40–1.50 at 80.9–81.9 s and ×1.29 at 138 s
+  too (zmdlogs hits on 9847; groups: 22 of 26 team-wide). So 9847's runs
+  are the enemy's or the fight's (Bigents, tower019, whose Stagger windows
+  run 18–20 s: "The replay's Stagger windows" below), not Perlica's kit.
+  **Found and fixed (2026-11-18): 4360's ×0.62–0.70 run (62.8–73.5 s) was
+  Liino's Cosmovoice.** The log lists its Amp and ATK on the team to
+  62.10 s, not from 62.76 s, with no finale, then her battle skill at
+  63.57 s (projectiles 64.41 s): she pressed End Stance (unlogged: no log
+  has an End Stance event) and recast Vocalist. The kit can't cast her
+  battle skill while End Stance holds the slot (the ultimate's
+  ChangeSkillAction, frames 77–527), but the replay made it anyway inside
+  Cosmovoice and kept the Amp. Now the replay infers the exit press after
+  the last listing (buffreplay `exitPresses`, made only while the stance
+  is on and would last past then): 4360 Perlica plain 104 → 111,
+  mismatches 16 → 12, Liino's totals +29 → +5.7%; 9847 the same at 73.1 s
+  (its Amp unlisted from 74.44 s, battle skill 75.84 s). 4d60's inferred
+  End Stance (Amp unlisted after 98 s, battle skill 101.7 s) is wrong in
+  kind, its finale is logged at 99.87 s (the stance ran out), but right in
+  effect: the replay's Cosmovoice, 1.5 s behind the log's beats, was
+  still on at the battle skill (4d60 mismatch +1, damage −0.4 points).
+  Still possible: 4360's 74.6–75.3 s (×1.58–1.72, not Staggered, 3 hits),
+  63.3 s (×1.54 now), 59.5 / 61.5 s (×0.97 under talent 1); 3aa6 ×1.16 /
+  ×1.60 under talent 1 (2 hits); d774 ×1.29 / ×1.71 (3). Next: 4360's
+  74.6 s (what the log lists there that the engine lacks).
 
 ## The replay's Stagger windows: the game's last longer than the engine's (2026-11-17)
 

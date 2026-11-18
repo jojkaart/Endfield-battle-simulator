@@ -102,3 +102,25 @@ describe("bdf223db8e49: Corrosion from the replay's landings", () => {
     expect(tried.every((v) => v.assumed.some((a) => a.includes("the replay can't say")))).toBe(true);
   });
 });
+
+describe("Liino in the replay: volleys from the log, End Stance before a battle skill in Cosmovoice (2026-11-18)", () => {
+  const L = "chr_0035_liino";
+
+  it("9090: each logged volley is replayed (its tick taken from the log: the game's clock runs slower than the replay's)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9090afbacec9.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx);
+    const volleys = fx.hits.filter((h) => h.operator === L && h.event === "chr_0035_liino_normal_skill_projhit_hit");
+    expect(volleys).toHaveLength(60);
+    const landed = volleys.filter((h) => !("unknown" in r.replay.landing(h)));
+    // All but the first volley's two after Arcane's combo stop at 2.5 s (the replay's lands 4 before it).
+    expect(landed.length).toBeGreaterThanOrEqual(58);
+  });
+
+  it("4360: Cosmovoice's Amp leaves the team where the log stops listing it (62.1 s), before the battle skill at 63.6 s, not at its own end", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-4360447193ac.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx);
+    const w = r.replay.kitWindows(`${L}:cosmovoice_amp`, "chr_0004_pelica").find((x) => x.start > 50000 && x.start < 60000);
+    expect(w?.end).toBeGreaterThan(62100);
+    expect(w?.end).toBeLessThanOrEqual(62757);
+  });
+});

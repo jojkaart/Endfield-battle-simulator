@@ -287,6 +287,10 @@ Facts from the first round re-checked against the data; these were wrong or weak
    buff_common_{cryst,fire,pulse,natural}_triggered or carries tag 1474064594. Those `_triggered` buffs are the reactions
    (journal: `buff_common_natural_triggered` is the Corrosion reaction's damage), and tag 1474064594 is the tag the weapon
    skills that say "Arts Reaction" query (sk_wpn_pistol_0008, sk_wpn_sword_0018, sk_wpn_funnel_0015 descriptions).
+   **Superseded 2026-11-18:** the reaction only marks the enemy (spelllnfliction_hit, 2 s); the volley's own tick
+   (spelllnfliction_extraattack, every `atk_trigger` 10 s, first at once) checks that mark with a CheckBuffIdInContext
+   whose `isEnable` is false, so it fires on its timer, reaction or not (the logs: 103 volleys 10.0–11.7 s apart;
+   docs/open-problems.md, "Liino's volleys").
 2. **End Stance's cooldown is 3 s, not 5.** `set_cd` isn't in SkillPatchTable at any level; the SkillData default of
    chr_0035_liino_normal_skill is 3.0.
 3. **abilityEvent 150 isn't "interrupted".** It isn't in Endaxis's native table; buff_chr_0035_liino_potential uses it to
