@@ -49,15 +49,15 @@
   ]
  },
  "arcane-will-solo.scenario.json": {
-  "total": 100743.417,
+  "total": 101647.918,
   "hits": 50,
   "casts": 14,
   "perOperator": {
-   "chr_0032_lizhiyan": 100743.417
+   "chr_0032_lizhiyan": 101647.918
   },
-  "digest": "dc7b04dc2442",
+  "digest": "a2abec693e3d",
   "windows": [
-   "2fcdb72f25d4",
+   "b655530606b9",
    "e3d045376b97"
   ]
  },
@@ -177,43 +177,43 @@
   ]
  },
  "estella-si-akekuri-arcane-zero.scenario.json": {
-  "total": 2291194.194,
+  "total": 2291651.259,
   "hits": 361,
   "casts": 191,
   "perOperator": {
    "chr_0019_karin": 181934.281,
    "chr_0036_jsspsi": 847832.555,
    "chr_0021_whiten": 1077448.146,
-   "chr_0032_lizhiyan": 183979.212
+   "chr_0032_lizhiyan": 184436.276
   },
-  "digest": "19d794e279e2",
+  "digest": "6be490102edc",
   "windows": [
-   "63c665ff5e9d",
+   "eaaf7b39c44a",
    "0a538849dc17",
    "db007395ad5d",
-   "d1f37e562505",
+   "2805add07db9",
    "d58a917554ee",
    "f41b0e73c97c"
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {
-  "total": 3472929.284,
+  "total": 3473974.331,
   "hits": 386,
   "casts": 199,
   "perOperator": {
    "chr_0019_karin": 232473.728,
-   "chr_0036_jsspsi": 1585725.335,
+   "chr_0036_jsspsi": 1586546.491,
    "chr_0021_whiten": 1398696.49,
-   "chr_0032_lizhiyan": 256033.73
+   "chr_0032_lizhiyan": 256257.622
   },
-  "digest": "569cb7fa6e5f",
+  "digest": "d85b415067d1",
   "windows": [
    "2fb93d5b4a04",
-   "d1928ba9df9c",
+   "8befe19a5766",
    "13d97b64420c",
-   "af490d09e11f",
+   "643b2eaab779",
    "8f4cbe90a115",
-   "4a545baf67c0"
+   "c58169f0c13a"
   ]
  },
  "estella-solidification.scenario.json": {
@@ -231,17 +231,17 @@
   ]
  },
  "fluorite-gilberta.scenario.json": {
-  "total": 138955.926,
+  "total": 139032.573,
   "hits": 65,
   "casts": 34,
   "perOperator": {
-   "chr_0022_bounda": 92779.157,
+   "chr_0022_bounda": 92855.803,
    "chr_0013_aglina": 46176.769
   },
-  "digest": "aaa62173ab2e",
+  "digest": "84ff1032cd94",
   "windows": [
    "f190f04d4021",
-   "6cf098289bf5",
+   "d1fc824a29cb",
    "ef7921911b25",
    "99846c1f32a9"
   ]
@@ -281,23 +281,24 @@
   ]
  },
  "ink-melt.scenario.json": {
-  "total": 3953128.917,
-  "hits": 486,
-  "casts": 173,
+  "total": 3402965.621,
+  "hits": 462,
+  "casts": 169,
   "perOperator": {
-   "chr_0016_laevat": 2295747.573,
-   "chr_0036_jsspsi": 987678.903,
-   "chr_0006_wolfgd": 387823.771,
-   "chr_0025_ardelia": 281878.67
+   "chr_0016_laevat": 2044413.08,
+   "chr_0036_jsspsi": 776967.948,
+   "chr_0006_wolfgd": 359405.259,
+   "chr_0025_ardelia": 222179.334
   },
-  "digest": "dc4c86a04dc8",
+  "digest": "7c2b8f1ef8bf",
   "windows": [
    "c5db5ea5dcf6",
-   "20fd95addbaf",
-   "1b3c9e95eaf1",
-   "ee3fb323466c",
-   "7ffc515f3bae",
-   "c07b23ed8d26"
+   "ea9d5de797b8",
+   "2328901c660b",
+   "eccc290cc2a4",
+   "dc1f95989c1a",
+   "234dcc7c3ebd",
+   "945c79502ae1"
   ]
  },
  "laevatain-solo.scenario.json": {
@@ -359,18 +360,18 @@
   ]
  },
  "mifu-dapan.scenario.json": {
-  "total": 888194.089,
+  "total": 888405.209,
   "hits": 54,
   "casts": 26,
   "perOperator": {
    "chr_0031_mifu": 799621.759,
-   "chr_0018_dapan": 88572.33
+   "chr_0018_dapan": 88783.449
   },
-  "digest": "675d9c40a946",
+  "digest": "9bbf65966957",
   "windows": [
    "9996ba1b0ad2",
    "5e477e7d0f36",
-   "590cff3de79b"
+   "2784908dd996"
   ]
  },
  "perlica-estella.scenario.json": {
@@ -418,35 +419,35 @@
   ]
  },
  "rossi-gilberta.scenario.json": {
-  "total": 955891.547,
+  "total": 960524.843,
   "hits": 171,
   "casts": 38,
   "perOperator": {
-   "chr_0028_wulfa": 915103.47,
+   "chr_0028_wulfa": 919736.767,
    "chr_0013_aglina": 40788.077
   },
-  "digest": "0aca18f28af9",
+  "digest": "0c92241f7840",
   "windows": [
    "860e09976ab7",
    "5141c2d68750",
-   "9760e4962fbd",
+   "992a3b4bb2a5",
    "b733fc633d86"
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2603569.919,
-  "hits": 164,
+  "total": 2674062.306,
+  "hits": 163,
   "casts": 64,
   "perOperator": {
-   "chr_0036_jsspsi": 691334.359,
-   "chr_0016_laevat": 1588339.105,
+   "chr_0036_jsspsi": 697629.871,
+   "chr_0016_laevat": 1650249.966,
    "chr_0035_liino": 200212.279,
-   "chr_0013_aglina": 123684.176
+   "chr_0013_aglina": 125970.189
   },
-  "digest": "3d4649d592a7",
+  "digest": "e0946407f0ea",
   "windows": [
-   "991099f731d0",
-   "e3cb614fe6a9"
+   "88532e622c0f",
+   "f61dd6edf811"
   ]
  },
  "si-laevatain.scenario.json": {
@@ -501,35 +502,35 @@
    "chr_0035_liino": 314738.402,
    "chr_0004_pelica": 600289.914
   },
-  "digest": "f4a408d624dc",
+  "digest": "f195c9550d87",
   "windows": [
-   "3b38a5dc408a",
+   "080da5f3e58c",
    "c46d9f8bf52c",
    "733ca68e8755",
    "3e1b46ee6415",
-   "c05f947ffa22",
+   "6981f7bad70a",
    "e0a1f74c6f20",
    "d0d4d9e9861c"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5615426.372,
+  "total": 5657280.254,
   "hits": 415,
   "casts": 164,
   "perOperator": {
-   "chr_0034_typhoea": 4239378.223,
-   "chr_0032_lizhiyan": 382783.024,
+   "chr_0034_typhoea": 4277257.373,
+   "chr_0032_lizhiyan": 383425.269,
    "chr_0035_liino": 281780.003,
-   "chr_0004_pelica": 711485.122
+   "chr_0004_pelica": 714817.609
   },
-  "digest": "f99bddcaf568",
+  "digest": "bd30815e9917",
   "windows": [
    "23c29201ecab",
-   "ebaab50911e0",
-   "ad06a0dd314c",
+   "03878b79b948",
+   "5364c3a4ba6f",
    "ad1b4da0a4d0",
-   "6d1650788cb9",
-   "1fbb279f7904"
+   "55f73292d4d4",
+   "7def8c73566a"
   ]
  },
  "typhoeus-gilberta.scenario.json": {
