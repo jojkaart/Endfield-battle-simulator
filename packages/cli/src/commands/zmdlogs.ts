@@ -110,6 +110,8 @@ export default command({
                                           (or "replay only"), logged hits without a landing and why, casts it
                                           couldn't make or made without the log, its Stagger windows
                 [--kit-buff owner:id[@op]] Also a kit buff's windows at an operator (default its owner; repeatable)
+                [--trace-buff owner:id]   Each change of a kit buff's expiry and the step that made it (a cast, a
+                                          pause or stop, the log's Stagger steps; repeatable)
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
@@ -177,6 +179,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     from: { type: "string" },
     to: { type: "string" },
     "kit-buff": { type: "string", multiple: true, default: [] },
+    "trace-buff": { type: "string", multiple: true, default: [] },
     what: { type: "string" },
     hits: { type: "boolean", default: false },
     assume: { type: "string", multiple: true, default: [] },
@@ -278,7 +281,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       };
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], assume: parseAssume(data(), values.assume) });
+      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: values["trace-buff"], assume: parseAssume(data(), values.assume) });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
     if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, cache: !values["no-cache"], progress });

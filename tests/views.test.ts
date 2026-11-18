@@ -3,7 +3,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { castsView, differencesReport, groupsReport, readLogFixture, replayView, staggerSummary, staggerView, type HitRecord, type StaggerRun } from "@efsim/logs";
+import { castsView, differencesReport, groupsReport, logBuffReplay, readLogFixture, replayView, staggerSummary, staggerView, type HitRecord, type StaggerRun } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -27,6 +27,23 @@ describe("the placement and replay views", () => {
     const op = fx.team[0]?.operator as string;
     const only = replayView(data, fx, { operators: [op] });
     expect(only.split("\n").slice(1).every((l) => l.includes(data.operators[op]?.name ?? op) || /STAGGER/.test(l))).toBe(true);
+  });
+
+  it("flags casts made against the kit and traces a kit buff's expiry step by step", () => {
+    const pending = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-a7a7a40c97ed.json"));
+    const { replay } = logBuffReplay(data, pending);
+    expect(replay.castFlags.some((x) => x.kind === "forced")).toBe(true);
+    expect(replay.castFlags.some((x) => x.kind === "inside")).toBe(true);
+    expect(replayView(data, pending)).toMatch(/\d+ cast\(s\) FORCED .*\n[\s\S]*FORCED .* made against its kit: its kit makes it unavailable then/);
+    const laev = readLogFixture(join(ROOT, "fixtures/zmdlogs-40d9a3c1da37.json"));
+    const text = replayView(data, laev, { trace: ["chr_0016_laevat:twilight"], to: 20000 });
+    expect(text).toMatch(/TRACE {2}chr_0016_laevat:twilight from 3\.03: expiry none → \d+\.\d\d s at cast chr_0016_laevat_ultimate_skill/);
+    expect(text).toMatch(/TRACE .* \(\+\d+ frames\) at /);
+    // Tracing doesn't change the replay.
+    const plain = logBuffReplay(data, laev).replay;
+    const traced = logBuffReplay(data, laev, undefined, { trace: ["chr_0016_laevat:twilight"] }).replay;
+    expect(traced.traces.length).toBeGreaterThan(0);
+    expect(traced.hits.map((h) => h.damage)).toEqual(plain.hits.map((h) => h.damage));
   });
 
   it("gives a log's Stagger runs and a summary", () => {

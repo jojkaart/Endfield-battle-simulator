@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, earliestStart, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
@@ -171,6 +171,41 @@ export interface BuffReplay {
   readonly staggerCuts: readonly { readonly frame: number; readonly engineUntil: number }[];
   /** The frame the replay stopped at, if it couldn't go on (BuffReplay.failed says why). */
   readonly brokenAt: number | null;
+  /**
+   * Logged casts the replay made against the kit (CastFlag): a skill its kit says isn't available then, or one started
+   * inside the operator's running action's uncuttable frames. The replay's state may be wrong from there on.
+   */
+  readonly castFlags: readonly CastFlag[];
+  /** With ReplayOptions.trace: each change of a traced kit buff's instances (start, end moved, gone), step by step. */
+  readonly traces: readonly BuffTrace[];
+}
+
+/** A logged cast the replay made against its kit (BuffReplay.castFlags). */
+export interface CastFlag {
+  readonly cast: ReplayedCast;
+  /** The skill it was made as. */
+  readonly skillId: string;
+  /** Its frame in the replay. */
+  readonly frame: number;
+  /**
+   * "forced": its kit says the skill isn't available then (KitSkill.available: a stance holds the slot), and no variant
+   * is; "inside": the operator's running action can't be cut yet (its exclusive frames), so the cast ended it early.
+   */
+  readonly kind: "forced" | "inside";
+  readonly why: string;
+}
+
+/** One change of a traced kit buff (ReplayOptions.trace) at a step of the replay: frames. */
+export interface BuffTrace {
+  /** `owner:id` and the recipient-independent instance (its start frame). */
+  readonly buff: string;
+  readonly appliedAt: number;
+  /** The step's frame and what it was (a cast, the log's Stagger steps, or time passing to a sample). */
+  readonly frame: number;
+  readonly step: string;
+  /** Its expiry before and after the step (null: it didn't exist / is gone). */
+  readonly from: number | null;
+  readonly to: number | null;
 }
 
 /** A cast that hit nothing the replay added (BuffReplay.missed). */
@@ -1165,6 +1200,34 @@ export interface ReplayOptions {
    * (timeline/assumptions.ts, e.g. control-immunity), for measuring a reading on the logs. Absent: the defaults.
    */
   readonly assume?: Readonly<Record<string, string>>;
+  /** Kit buffs (`owner:id`) whose instances' expiries to trace step by step (BuffReplay.traces; `zmdlogs replay --trace-buff`). */
+  readonly trace?: readonly string[];
+}
+
+/** Whether a logged cast made as `skillId` at `f` goes against the kit (BuffReplay.castFlags), the state advanced to `f`. */
+function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skillId: string, f: number): CastFlag | undefined {
+  if (c.missed || c.slot || c.kind === "basic") return undefined;
+  if (!skillAvailable(ctx, st, c.operator, skillId, f)) {
+    const own = [...new Set(st.buffs.filter((b) => b.owner === c.operator && activeAt(b, f)).map((b) => b.id))];
+    return { cast: c, skillId, frame: f, kind: "forced", why: `its kit makes it unavailable then (the operator's own buffs: ${own.join(", ") || "none"})` };
+  }
+  const cur = st.acting[c.operator];
+  if (!cur || cur.auto || cur.skill === skillId) return undefined;
+  const until = exclusiveUntil(ctx, st, c.operator);
+  if (until <= f + 1) return undefined;
+  const r = earliestStart(ctx, st, { operator: c.operator, skill: skillId });
+  if ("error" in r || r.frame <= f + 1) return undefined;
+  return { cast: c, skillId, frame: f, kind: "inside", why: `${r.frame - f} frame(s) before ${cur.skill} lets it start (its uncuttable frames: the kit allows it from ${((r.frame * 1000) / FPS / 1000).toFixed(2)} s)` };
+}
+
+/** A step of the replay in words, for a trace (BuffTrace.step). */
+function stepWords(s: { cast: ReplayedCast | null; recover: boolean; bar?: number; through?: number; endBar?: number | null }): string {
+  if (s.cast) return `cast ${s.cast.skillId}`;
+  if (s.recover) return "the log's Stagger recovery";
+  if (s.endBar !== undefined) return "the log's calm hit";
+  if (s.bar !== undefined) return "the log's Stagger bar";
+  if (s.through !== undefined) return "the log's Stagger listing";
+  return "time to the next sample (pauses, stops, holds)";
 }
 
 export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placement, opts: ReplayOptions = {}): BuffReplay {
@@ -1242,9 +1305,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     if (tick) return { st: tick, skillId: null, pre, windowCount };
     const skillId = c.missed ? missedStep(ctx, st, c.operator, f) : replayedSkill(ctx, st, c, f);
     if (skillId === null) return { st, skillId, pre, windowCount };
+    const flag = castFlag(ctx, st, c, skillId, f);
     // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
     st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}) });
-    return { st, skillId, pre, windowCount };
+    return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}) };
   };
   /**
    * One replay of the logged casts. Landings whose crit the log gives crit as it says (TimelineScenario.loggedCrits);
@@ -1361,7 +1425,22 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const made: Made[] = [];
     const needs: Need[] = [];
     const castErrors: { cast: ReplayedCast; error: string }[] = [];
+    const flags: CastFlag[] = [];
+    const traces: BuffTrace[] = [];
+    const traced = new Set(opts.trace ?? []);
+    let tracedNow = new Map<string, number>();
+    let prevStep: Step | null = null;
+    const trace = (s: Step) => {
+      const now = new Map<string, number>();
+      for (const b of st.buffs) if (b.cast === undefined && traced.has(`${b.owner}:${b.id}`)) now.set(`${b.owner}:${b.id}|${b.appliedAt}`, b.expiresAt);
+      for (const [k, to] of now) if (tracedNow.get(k) !== to) traces.push({ buff: k.split("|")[0] as string, appliedAt: Number(k.split("|")[1]), frame: st.frame, step: stepWords(s), from: tracedNow.get(k) ?? null, to });
+      for (const [k, from] of tracedNow) if (!now.has(k)) traces.push({ buff: k.split("|")[0] as string, appliedAt: Number(k.split("|")[1]), frame: st.frame, step: stepWords(s), from, to: null });
+      tracedNow = now;
+    };
     for (const s of steps) {
+      // The state after the step before this one: its changes are that step's.
+      if (traced.size && prevStep) trace(prevStep);
+      prevStep = s;
       st = heldTicks(st, Math.max(s.frame, st.frame), tickEvents);
       if (checkpoints.at(-1) !== st) checkpoints.push(st);
       if (s.cast) {
@@ -1370,6 +1449,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           const f = Math.max(s.frame, st.frame);
           const r = makeCast(ctx, st, c, f, list);
           if (crit === "never" && unmet(ctx, r.pre, c, f)) needs.push({ c, f });
+          if ("flag" in r && r.flag) flags.push(r.flag);
           st = r.st;
           if (r.skillId === null) continue;
           const skillId = r.skillId;
@@ -1414,12 +1494,13 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       }
       sample(s.frame);
     }
+    if (traced.size && prevStep) trace(prevStep);
     for (const rec of open.values()) close(rec.key, rec.start, brokenAt ?? rec.expiresAt, brokenAt === null && Number.isFinite(rec.expiresAt));
     for (const rec of openKit.values()) closeKit(rec.key, rec.start, brokenAt ?? rec.expiresAt, brokenAt === null && Number.isFinite(rec.expiresAt));
     const lastStagger = staggerOpen as { start: number; until: number } | null;
     if (lastStagger) staggerWindows.push({ start: lastStagger.start, end: brokenAt ?? lastStagger.until, expired: brokenAt === null });
     if (checkpoints.at(-1) !== st) checkpoints.push(st);
-    return { ctx, st, instances, brokenAt, made, needs, steps, checkpoints, castErrors, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows, staggerHolds, staggerCuts };
+    return { ctx, st, instances, brokenAt, made, needs, steps, checkpoints, castErrors, flags, traces, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows, staggerHolds, staggerCuts };
   };
   let main = kits.length > 0 ? run("never") : null;
   // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the
@@ -1560,6 +1641,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerSpans: main ? main.staggerWindows.map((w) => ({ start: w.start, end: w.end })) : [],
     staggerHolds: main?.staggerHolds ?? [],
     staggerCuts: main?.staggerCuts ?? [],
+    castFlags: main?.flags ?? [],
+    traces: main?.traces ?? [],
     brokenAt,
     statusLanding(hit) {
       const found = statusLanded.get(hit);

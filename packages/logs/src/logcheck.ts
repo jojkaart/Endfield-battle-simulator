@@ -647,7 +647,7 @@ export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: 
   return out;
 }
 
-export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), opts: Pick<ReplayOptions, "assume"> = {}): LogBuffReplay {
+export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), opts: Pick<ReplayOptions, "assume" | "trace"> = {}): LogBuffReplay {
   let replay = replayKitBuffs(data, fx, placement, opts);
   // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
   const levels = new Map<string, ReactionLevel>();

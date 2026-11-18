@@ -93,8 +93,8 @@ function landingsOf(replay: BuffReplay, fx: LogFixture): { byLanding: Map<Landed
  * the kit buffs named (`owner:id`, at the owner unless `@operator` follows); under other readings of open assumptions
  * with `assume` (as `zmdlogs check --assume`).
  */
-export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly assume?: Readonly<Record<string, string>> } = {}): string {
-  const { replay } = logBuffReplay(data, fx, undefined, f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {});
+export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+  const { replay } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(f.trace?.length ? { trace: f.trace } : {}) });
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
   for (const l of replay.hits) {
@@ -107,6 +107,17 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
   for (const x of replay.failed) if (inWindow(f, x.cast.start) && mine(f, x.cast.operator)) lines.push({ t: x.cast.start, order: 1, text: `FAILED ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) if (inWindow(f, m.start) && mine(f, m.operator)) lines.push({ t: m.start, order: 1, text: `MISSED ${label(data, m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
+  for (const x of replay.castFlags) {
+    const t = msOf(x.frame);
+    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `${x.kind === "forced" ? "FORCED" : "INSIDE"} ${label(data, x.cast.operator)} ${shortSkill(x.skillId)} made against its kit: ${x.why}` });
+  }
+  for (const x of replay.traces) {
+    const t = msOf(x.frame);
+    if (!inWindow(f, t)) continue;
+    const exp = (v: number | null) => (v === null ? "none" : v === Infinity ? "never" : `${s(msOf(v))} s`);
+    const moved = x.from !== null && x.to !== null ? ` (${x.to - x.from > 0 ? "+" : ""}${x.to - x.from} frames)` : "";
+    lines.push({ t, order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: expiry ${exp(x.from)} → ${exp(x.to)}${moved} at ${x.step}` });
+  }
   for (const w of replay.staggerSpans) {
     const [a, z] = [msOf(w.start), msOf(w.end)];
     if (z >= (f.from ?? -Infinity) && a <= (f.to ?? Infinity)) lines.push({ t: a, order: 0, text: `STAGGER the replay's window ${s(a)}–${s(z)} s` });
@@ -119,7 +130,10 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
       lines.push({ t: w.start, order: 0, text: `BUFF   ${buff} at ${label(data, operator)} ${s(w.start)}–${w.end === Infinity ? "end" : s(w.end)}${w.expired ? " (ran out)" : ""}` });
     }
   }
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}LAND its landings, NOLAND logged hits without one, FAILED / MISSED casts it couldn't make / made without the log`;
+  const forced = replay.castFlags.filter((x) => x.kind === "forced").length;
+  const inside = replay.castFlags.length - forced;
+  const flagged = replay.castFlags.length ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}LAND its landings, NOLAND logged hits without one, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry and the step that made it" : ""}`;
   return [head, render(lines)].join("\n");
 }
 
