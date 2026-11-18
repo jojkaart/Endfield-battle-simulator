@@ -37,6 +37,26 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
       "3.5s": "3.5 s: the median of the logs' gaps over 1.5 s alone (the calibration of 2026-10-28)",
     },
   },
+  {
+    id: "stagger-recovery",
+    test: "110",
+    question: "How long does a Stagger last past the enemy's PoiseRecTime (attribute 21 × 31) and the time stops in it (timeline/resources.ts staggerFrames)?",
+    default: "2s",
+    readings: {
+      none: "no longer: PoiseRecTime on the enemy's clock (the data)",
+      "2s": "2 s more on the enemy's clock, a recovery the data doesn't give (the logs' median past PoiseRecTime and the stops, 2026-11-18)",
+    },
+  },
+  {
+    id: "stagger-freeze",
+    test: "110",
+    question: "Does a freezing control status (Si's Immobilization, Tangtang's OLDEN STARE, Rossi's ultimate) hold a running Stagger's end (timeline/actions.ts runTriggers)?",
+    default: "held",
+    readings: {
+      held: "held: the Stagger runs on the enemy's clock, which the freeze stops",
+      runs: "runs on: the freeze holds the enemy's other timers, not its Stagger",
+    },
+  },
 ];
 
 /** The reading of an engine assumption a scenario runs under: its options' `assume`, else the default. */

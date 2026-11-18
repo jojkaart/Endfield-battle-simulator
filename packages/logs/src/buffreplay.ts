@@ -166,6 +166,8 @@ export interface BuffReplay {
    * frame the engine's own would have ended, or null where it had none running (it ended earlier, or never began).
    */
   readonly staggerHolds: readonly { readonly frame: number; readonly engineUntil: number | null }[];
+  /** Where the log's calm hit (or its bar back up) ended a Stagger the engine's own still had running (frames): `engineUntil`, the frame it would have ended. */
+  readonly staggerCuts: readonly { readonly frame: number; readonly engineUntil: number }[];
   /** The frame the replay stopped at, if it couldn't go on (BuffReplay.failed says why). */
   readonly brokenAt: number | null;
 }
@@ -1151,6 +1153,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // Where the log's Stagger outlasted the engine's own (loggedStaggerSteps): the frame the engine's would have ended
     // (null: the engine had none running) and the frame the hold reached; the until a hold last set, to tell them apart.
     const staggerHolds: { frame: number; engineUntil: number | null }[] = [];
+    const staggerCuts: { frame: number; engineUntil: number }[] = [];
+    const cut = () => {
+      if (isStaggered(st, st.frame) && st.stagger.until !== heldUntil) staggerCuts.push({ frame: st.frame, engineUntil: st.stagger.until as number });
+    };
     let heldUntil: number | null = null;
     let brokenAt: number | null = null;
     const firstBasic = control ? { operator: control.first } : list.find((c) => c.kind === "basic");
@@ -1276,6 +1282,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           continue;
         }
         if (s.bar !== undefined) {
+          if (s.calm === true) cut();
           st = setPoise(ctx, st, s.bar, s.calm === true);
           continue;
         }
@@ -1288,6 +1295,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           continue;
         }
         if (s.endBar !== undefined) {
+          cut();
           if (isStaggered(st, st.frame)) st = setPoise(ctx, st, s.endBar ?? Infinity, true);
           continue;
         }
@@ -1304,7 +1312,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const lastStagger = staggerOpen as { start: number; until: number } | null;
     if (lastStagger) staggerWindows.push({ start: lastStagger.start, end: brokenAt ?? lastStagger.until, expired: brokenAt === null });
     if (checkpoints.at(-1) !== st) checkpoints.push(st);
-    return { ctx, st, instances, brokenAt, made, needs, steps, checkpoints, castErrors, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows, staggerHolds };
+    return { ctx, st, instances, brokenAt, made, needs, steps, checkpoints, castErrors, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows, staggerHolds, staggerCuts };
   };
   let main = kits.length > 0 ? run("never") : null;
   // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the
@@ -1444,6 +1452,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggers: main ? main.staggerWindows.map((w) => w.start) : [],
     staggerSpans: main ? main.staggerWindows.map((w) => ({ start: w.start, end: w.end })) : [],
     staggerHolds: main?.staggerHolds ?? [],
+    staggerCuts: main?.staggerCuts ?? [],
     brokenAt,
     statusLanding(hit) {
       const found = statusLanded.get(hit);

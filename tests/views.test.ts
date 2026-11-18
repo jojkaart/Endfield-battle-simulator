@@ -32,8 +32,8 @@ describe("the placement and replay views", () => {
   it("gives a log's Stagger runs and a summary", () => {
     expect(staggerView(data, fx)).toMatch(/logged Stagger run/);
     const runs: StaggerRun[] = [
-      { start: 1000, last: 5000, next: 5200, replay: [{ start: 900, end: 4000 }], engineEnd: 4000, dealt: 50 },
-      { start: 9000, last: 12000, next: null, replay: [], engineEnd: "none", dealt: 10 },
+      { start: 1000, last: 5000, next: 5200, replay: [{ start: 900, end: 4000 }], engineEnd: 4000, engineCut: null, dealt: 50 },
+      { start: 9000, last: 12000, next: null, replay: [], engineEnd: "none", engineCut: null, dealt: 10 },
     ];
     expect(staggerSummary(runs)).toBe("2 logged Stagger runs: the engine's own ran short in 1 (shortfall quartiles 1.00 1.00 1.00 s), had none running in 0, and the replay had no window at all in 1");
   });
