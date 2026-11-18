@@ -1019,7 +1019,27 @@ ultimates come.
 on the stat panel with and without Gilberta in the team, and the same for
 a Striker or Vanguard (unchanged expected).
 
-### 41. Jade Vessel's combo bonus after Si's ultimate (ready, if you have Si with Jade Vessel)
+### 41. Jade Vessel's combo bonus after Si's ultimate (done: decided by the logs, 2026-11-18; don't ask)
+
+**Decided by the logs (2026-11-18): as the engine has: her ultimate or
+her Immobilization gives it, for 20 s (held by stops), and her next combo
+takes it.** The bonus isn't listed, so the combo's final hit (its largest)
+is the evidence: over the 86 Si combos in the verified and pending logs
+where she wears Jade Vessel (`zmdlogs hits --operator`), 37 final hits
+match plain with the engine's bonus on and 4 with it off. *The ultimate
+alone:* 6 combos with only her ultimate since the previous combo (no
+battle-skill hit, the Immobilization) match plain with it, 1.8–18.1 s
+after the ultimate (458b 93.2, 172.1, 233.3 s; 79cc 52.3 s; f978 52.0 s;
+c3c7 115.2 s). *Its end and its consumption:* the 4 without come after a
+combo that took it (9c0b 36.8 s: 14.9 s after one, 28.9 s after her
+ultimate) or long after the last source (8915 89.7 s: her battle skill
+32.6 s before, no combo between; 458b 132.1 s, 4e36 38.7 s: nothing since
+the previous combo); 458b 198.3 s, 24.6 s after her battle skill, fits
+without it (an assumed match), and abfd 106.9 s, 21.1 s after one with a
+stop between, fits with it (plain). No final hit that isn't a plain match
+(44, crits allowed) fits with the bonus toggled within 0.4%, so nothing
+says the engine has it at the wrong combo. The owner's two-step test
+would show the same.
 
 **Why:** the weapon's next-combo DMG bonus (+25–70% by level) comes from
 Immobilization and from the wielder's ultimate, for 20 s, and only on the
@@ -2018,9 +2038,11 @@ other time. The engine's replay of 67d8 (`zmdlogs hits`, a multi-target
 log the scoreboard doesn't count) has it on 222 of the 234 hits that list
 it and on 4 that don't; 88 hits under it match plain with it in (52 in
 the first lane, to 41.5 s, 36 in the second), the rest mostly this fight's
-other mismatches. So the check reads Si's Cryo Amp (the ID
-list, or the tag and the ID list), not only all-Arts Amps (batch-4 T1;
-the same reading in Grand Vision and Glorious Memory stays the data's).
+other mismatches. So CheckBuffIdInContext checkType 1 reads its ID list
+(`buff_common_affixes_enhance_crystal`, which lacks the Arts Amp tag
+486772476) as well as its tag query, not the tag query only (batch-4 T1,
+Mi Fu E11: the engine's reading). What checkType 0 does with a tag
+(Grand Vision's stray tag, Glorious Memory) this doesn't decide.
 The re-triage's lanes "0.5 s after a battle skill, listed on Si's hits
 only" are the other buff, `buff_wpn_claym_0019_teamspell` (0.168, the
 wielder's own Cryo DMG when her battle skill inflicts Cryo or Heat): it

@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15](2026-11-18-04-si-s-in-game-tests-from-the-logs-14-41-92-16-15.md)
 - [2026-11-18: Si's misfit logs and Ardelia's build: build overrides and fit-build](2026-11-18-03-si-s-misfit-logs-and-ardelia-s-build-build-overrides-and-fit.md)
 - [2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings](2026-11-18-02-improvement-round-3-measuring-views-a-fair-lock-engine.md)
 - [2026-11-18: The replay follows the log's Stagger windows](2026-11-18-01-the-replay-follows-the-log-s-stagger-windows.md)
