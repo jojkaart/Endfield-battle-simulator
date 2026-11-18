@@ -23,7 +23,8 @@
 //                       control-immunity=bosses; repeatable): the reading's effect against the reference
 //   --workers <n>       worker threads (default 3, as test:logs)
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
-//                       log-verdicts-pending.json, accuracy.md, summary.txt
+//                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
+//                       summary.txt
 //
 // It takes the test lock as a short job (scripts/testlock.ts: the side lane, beside a long rule search but not beside a
 // premerge or test suite), writes its run state to scratch/runs/measure.json and ends with `EFSIM-DONE measure pass`
@@ -37,7 +38,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { compare, readSplit, render, snapshotsAt, type Entries, type Entry, type Snapshots } from "./accuracy.ts";
+import { compare, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots } from "./accuracy.ts";
 import { atCommit } from "./at-commit.ts";
 import type { MeasureAnswer, MeasureJob } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
@@ -47,6 +48,7 @@ import { formatSnapshot } from "../tests/snapshot.ts";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const VERIFIED = "log-verdicts.json";
 const PENDING = "log-verdicts-pending.json";
+const HOLDOUT = "log-verdicts-holdout.json";
 
 /** The logs a checkout's verdict snapshots cover, as keys under fixtures/: verified, pending, hold-out. */
 export function logKeys(tree: string): string[] {
@@ -216,11 +218,13 @@ async function main(argv: string[]): Promise<number> {
   const after = overlay(before, measured, split);
 
   writeFileSync(join(out, VERIFIED), formatSnapshot(after.verified as Entries, true));
-  writeFileSync(join(out, PENDING), formatSnapshot(after.pending as Entries, true));
+  const files = splitPending(after.pending);
+  writeFileSync(join(out, PENDING), formatSnapshot(files.pending, true));
+  writeFileSync(join(out, HOLDOUT), formatSnapshot(files.holdout, true));
   writeFileSync(join(out, "accuracy.md"), render(after));
   const lines = [`Accuracy of ${what} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`, ...compare(before, after)];
   if (keys.length === logKeys(tree).length && !baseTree) {
-    const same = [VERIFIED, PENDING].every((f) => readFileSync(join(out, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
+    const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(out, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
     lines.push(same ? "The log verdict snapshots would stay as they are (byte for byte)." : "The log verdict snapshots would change: `npm run snapshots:update` before committing.");
   }
   writeFileSync(join(out, "summary.txt"), lines.join("\n") + "\n");

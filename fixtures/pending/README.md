@@ -3,7 +3,8 @@
 Imported battle logs that the check doesn't verify yet (docs/design/data.md,
 "What a log check verifies"), because something outside the kits doesn't
 match. `npm run test:logs` (tests/slow/) pins each one's current verdict
-counts per operator (tests/snapshots/log-verdicts-pending.json), so any
+counts per operator (tests/snapshots/log-verdicts-pending.json; the
+hold-outs' in log-verdicts-holdout.json, never diffed by eye), so any
 change shows. Move a file up to `fixtures/` once `efsim zmdlogs check
 <file>` says "Verified" (and move its snapshot entry: `npm run
 snapshots:update`).

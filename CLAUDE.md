@@ -169,7 +169,9 @@ complex to verify"):
   gamedata tree <id>`, `who <id>`, `find <type>`.
 
 Hold-out logs live in `fixtures/holdout/`: never open, list or grep it
-(`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout`).
+(`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout`),
+nor diff or open `tests/snapshots/log-verdicts-holdout.json` (their verdicts;
+`scripts/accuracy.ts --compare` gives the aggregates).
 `efsim zmdlogs list [--with <operator>]` lists the development logs.
 
 The lead: name the base commit (or branch) in a sub-agent's brief, and

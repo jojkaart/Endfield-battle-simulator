@@ -32,7 +32,10 @@ Part of the [design](../design.md): Fixtures, tests, snapshots and the accuracy 
   counts per operator of every verified log fixture (a ratchet: no fewer
   plain, plain + assumed or total matches, no more fallbacks), and
   `log-verdicts-pending.json` those of every pending fixture (exactly: they
-  only pin the current state). A deliberate change: `npm run
+  only pin the current state); the hold-outs' are in
+  `log-verdicts-holdout.json` (since round 4), so a diff of the pending file
+  names no hold-out: never diff or open the hold-out file, read its effect
+  in `node scripts/accuracy.ts --compare <ref>` (aggregates only). A deliberate change: `npm run
   snapshots:update` (scripts/snapshots.sh: every snapshot emptied and
   written again with `EFSIM_UPDATE_SNAPSHOTS=1`, so the result depends only
   on the code), and the file's diff goes in the commit with the reason.

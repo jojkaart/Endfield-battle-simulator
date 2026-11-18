@@ -1,6 +1,7 @@
 // Pending log fixtures (fixtures/pending/, and the hold-outs in fixtures/holdout/): not verified yet (fixtures/pending/README.md says why), so their
 // check only pins its current state: per operator, every verdict count equals the snapshot
-// (tests/snapshots/log-verdicts-pending.json, a regression baseline, not values with provenance: docs/design.md
+// (tests/snapshots/log-verdicts-pending.json, and log-verdicts-holdout.json for the hold-outs, a file of its own so a
+// diff of the pending one names none: a regression baseline, not values with provenance: docs/design.md
 // principle 11). Any change, better or worse, is to be looked at and the snapshot updated with it
 // (`npm run snapshots:update`; the diff goes in the commit). In `npm run test:logs`, in four shards
 // (logs-pending-*.test.ts) that run in parallel: all of them take minutes.
@@ -31,11 +32,15 @@ export function pendingSuite(index: number): void {
   // The hold-out logs (fixtures/holdout/) are checked here too, but only ever counted in aggregate (their group).
   const all = [...logFixtures("pending"), ...logFixtures("holdout")].sort();
   const files = shard(all, PENDING_SHARDS, index);
-  const snapshot = new Snapshot<FixtureCounts>("log-verdicts-pending.json", true);
+  const pendingSnapshot = new Snapshot<FixtureCounts>("log-verdicts-pending.json", true);
+  const holdoutSnapshot = new Snapshot<FixtureCounts>("log-verdicts-holdout.json", true);
+  const snapshotOf = (file: string) => (file.startsWith("holdout/") ? holdoutSnapshot : pendingSnapshot);
+  const storedAll: Readonly<Record<string, FixtureCounts>> = { ...pendingSnapshot.stored, ...holdoutSnapshot.stored };
   const split = readSplit();
   const moved = new Map<Group, Direction[]>();
   afterAll(() => {
-    snapshot.write((key) => existsSync(join(ROOT, "fixtures", key)));
+    pendingSnapshot.write((key) => !key.startsWith("holdout/") && existsSync(join(ROOT, "fixtures", key)));
+    holdoutSnapshot.write((key) => key.startsWith("holdout/") && existsSync(join(ROOT, "fixtures", key)));
     const summary = GROUPS.flatMap((g) => {
       const ds = moved.get(g);
       if (!ds?.length) return [];
@@ -49,8 +54,10 @@ export function pendingSuite(index: number): void {
   if (index === 0) {
     it("has a verdict snapshot for every pending fixture and none for a fixture that isn't one", () => {
       if (UPDATING) return;
-      expect(Object.keys(snapshot.stored).filter((k) => !all.includes(k)), `stale entries (${UPDATE_HINT})`).toEqual([]);
-      expect(all.filter((f) => !(f in snapshot.stored)), `fixtures without an entry (${UPDATE_HINT})`).toEqual([]);
+      // The hold-outs' file by counts only: its keys are never printed.
+      expect(Object.keys(pendingSnapshot.stored).filter((k) => !all.includes(k) || k.startsWith("holdout/")), `stale entries (${UPDATE_HINT})`).toEqual([]);
+      expect(Object.keys(holdoutSnapshot.stored).filter((k) => !all.includes(k) || !k.startsWith("holdout/")).length, `stale hold-out entries (${UPDATE_HINT})`).toBe(0);
+      expect(all.filter((f) => !(f in storedAll)).map((f) => testTitle(f)), `fixtures without an entry (${UPDATE_HINT})`).toEqual([]);
     });
   }
 
@@ -64,7 +71,7 @@ export function pendingSuite(index: number): void {
       // Its totals' errors too (the simulation of the logged casts against the log: engineReport).
       const totals = engineReport(data, fx, replay, byHit, verdicts).errors;
       const current = entry(now, totals);
-      const stored = snapshot.record(file, current);
+      const stored = snapshotOf(file).record(file, current);
       if (stored === undefined) return;
       const group = groupOf(file, split);
       const d = direction(stored as unknown as Entry, current as unknown as Entry);

@@ -1,6 +1,7 @@
 // The accuracy scoreboard (docs/accuracy.md): the log checks' aggregate accuracy, computed from the log verdict
-// snapshots (tests/snapshots/log-verdicts.json for the verified logs, log-verdicts-pending.json for the pending ones)
-// and the hold-out split (fixtures/holdout/holdout.json). Generated, never edited: `npm run snapshots:update` rewrites
+// snapshots (tests/snapshots/log-verdicts.json for the verified logs, log-verdicts-pending.json for the pending ones,
+// log-verdicts-holdout.json for the hold-outs: a file of its own, so a diff of the pending one names none) and the
+// hold-out split (fixtures/holdout/holdout.json). Generated, never edited: `npm run snapshots:update` rewrites
 // it with the snapshots, and tests/accuracy.test.ts checks it matches them, so every change to a verdict shows its
 // accuracy change in the scoreboard's diff.
 //
@@ -25,6 +26,8 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const SCOREBOARD = "docs/accuracy.md";
 const VERIFIED = "tests/snapshots/log-verdicts.json";
 const PENDING = "tests/snapshots/log-verdicts-pending.json";
+/** The hold-out logs' entries (keys holdout/…), apart from the pending ones since round 4; before, in PENDING. Never diffed by eye. */
+const HOLDOUT = "tests/snapshots/log-verdicts-holdout.json";
 const SPLIT = "fixtures/holdout/holdout.json";
 /** Where the split was before the hold-out logs got their own directory (2026-11-16): read at older refs. */
 const OLD_SPLIT = "fixtures/pending/holdout.json";
@@ -194,6 +197,7 @@ function perOperator(entries: readonly Entry[]): Map<string, OperatorAggregate> 
 
 export interface Snapshots {
   readonly verified: Entries;
+  /** The pending logs' entries and the hold-outs' (keys holdout/…: their own file, splitPending). */
   readonly pending: Entries;
   readonly split: Split;
 }
@@ -201,7 +205,13 @@ export interface Snapshots {
 export function readSnapshots(read: (path: string) => string | undefined = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), "utf8") : undefined)): Snapshots {
   const json = (p: string) => JSON.parse(read(p) ?? "{}") as Entries;
   const split = read(SPLIT) ?? read(OLD_SPLIT);
-  return { verified: json(VERIFIED), pending: json(PENDING), split: split ? readSplit(split) : { development: new Set(), holdout: new Set() } };
+  return { verified: json(VERIFIED), pending: { ...json(PENDING), ...json(HOLDOUT) }, split: split ? readSplit(split) : { development: new Set(), holdout: new Set() } };
+}
+
+/** Snapshots.pending as its two files hold it: the pending logs' entries and the hold-outs' (keys holdout/…). */
+export function splitPending(pending: Entries): { readonly pending: Entries; readonly holdout: Entries } {
+  const of = (h: boolean) => Object.fromEntries(Object.entries(pending).filter(([k]) => k.startsWith("holdout/") === h));
+  return { pending: of(false), holdout: of(true) };
 }
 
 /**
