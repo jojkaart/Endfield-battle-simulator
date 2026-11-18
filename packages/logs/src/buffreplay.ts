@@ -1050,6 +1050,11 @@ export interface ReplayOptions {
    * loggedReactionLevels finds them), at the replay's own landings of those reactions. Absent: the replay's own.
    */
   readonly reactionLevels?: TimelineScenario["loggedReactionLevels"];
+  /**
+   * Readings of open assumptions to replay under (TimelineOptions.assume): the kits' and the engine's own
+   * (timeline/assumptions.ts, e.g. control-immunity), for measuring a reading on the logs. Absent: the defaults.
+   */
+  readonly assume?: Readonly<Record<string, string>>;
 }
 
 export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placement, opts: ReplayOptions = {}): BuffReplay {
@@ -1155,7 +1160,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       target: { enemy: fx.enemy.id, level: fx.enemy.level },
       durationFrames: (sampleFrames.at(-1) ?? 0) + 1,
       rotation: [],
-      options: { crit },
+      options: { crit, ...(opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {}) },
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
       // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.

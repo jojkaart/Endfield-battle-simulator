@@ -12,6 +12,7 @@ import type { ArtsElement } from "../reactions.ts";
 import { FPS } from "../units.ts";
 import type { EnemyAction, TimelineContext, TimelineScenario } from "./state.ts";
 import { DIVE, DODGE, JUMP } from "./rules.ts";
+import { ENGINE_ASSUMPTIONS } from "./assumptions.ts";
 
 /** Operator attributes the timeline reads from the panel, whose default (GameData.attributeDefaults) holds when no line sets them. */
 const TIMELINE_ATTRS: readonly AttrType[] = [
@@ -38,16 +39,24 @@ export function kitAssumptions(data: GameData): readonly (KitAssumption & { read
   return Object.values(data.kits.operators).flatMap((k) => (k.assumptions ?? []).map((a) => ({ ...a, operator: k.operator })));
 }
 
-/** A kit with only the triggers of the chosen readings (the default reading of each assumption not chosen); unknown readings are refused. */
-function underReadings(data: GameData, kit: OperatorKit, assume: Readonly<Record<string, string>> | undefined): OperatorKit {
-  if (assume) {
-    const known = kitAssumptions(data);
-    for (const [id, reading] of Object.entries(assume)) {
-      const a = known.find((x) => x.id === id);
-      if (!a) throw new EngineError(`no kit has an assumption ${id} (${known.map((x) => x.id).join(", ") || "none"})`);
-      if (!(reading in a.readings)) throw new EngineError(`assumption ${id} has no reading ${reading} (${Object.keys(a.readings).join(", ")})`);
-    }
+/** Every open assumption: the kits' (with their operator) and the engine's own (timeline/assumptions.ts, no operator). */
+export function allAssumptions(data: GameData): readonly (KitAssumption & { readonly operator?: string })[] {
+  return [...kitAssumptions(data), ...ENGINE_ASSUMPTIONS];
+}
+
+/** Refuses readings of assumptions neither a kit nor the engine has, and readings an assumption doesn't have. */
+function checkReadings(data: GameData, assume: Readonly<Record<string, string>> | undefined): void {
+  if (!assume) return;
+  const known = allAssumptions(data);
+  for (const [id, reading] of Object.entries(assume)) {
+    const a = known.find((x) => x.id === id);
+    if (!a) throw new EngineError(`no kit or engine rule has an assumption ${id} (${known.map((x) => x.id).join(", ") || "none"})`);
+    if (!(reading in a.readings)) throw new EngineError(`assumption ${id} has no reading ${reading} (${Object.keys(a.readings).join(", ")})`);
   }
+}
+
+/** A kit with only the triggers of the chosen readings (the default reading of each assumption not chosen). */
+function underReadings(data: GameData, kit: OperatorKit, assume: Readonly<Record<string, string>> | undefined): OperatorKit {
   if (!kit.triggers.some((t) => t.reading)) return kit;
   const chosen = (id: string) => assume?.[id] ?? kitAssumptions(data).find((x) => x.id === id)?.default;
   return { ...kit, triggers: kit.triggers.filter((t) => !t.reading || chosen(t.reading.assumption) === t.reading.reading) };
@@ -55,6 +64,7 @@ function underReadings(data: GameData, kit: OperatorKit, assume: Readonly<Record
 
 export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
   if (scenario.team.length === 0 || scenario.team.length > 4) throw new EngineError("a team has 1–4 operators");
+  checkReadings(data, scenario.options.assume);
   const builds = new Map(scenario.team.map((b) => [b.operator, b]));
   if (builds.size !== scenario.team.length) throw new EngineError("an operator appears twice in the team");
   const panels = new Map(scenario.team.map((b) => [b.operator, computeStats(data, b)]));

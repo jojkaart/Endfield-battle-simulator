@@ -4,16 +4,16 @@
 // --assumptions, says whether its conclusion holds or flips under each other reading of an assumption the team has.
 
 import { existsSync } from "node:fs";
-import { kitAssumptions, type GameData, type TimelineScenario } from "@efsim/engine";
+import { allAssumptions, kitAssumptions, type GameData, type TimelineScenario } from "@efsim/engine";
 
-/** `--assume <id>=<reading>` values as readings by assumption ID (checked against the kits). */
+/** `--assume <id>=<reading>` values as readings by assumption ID (checked against the kits' and the engine's: allAssumptions). */
 export function parseAssume(data: GameData, values: readonly string[]): Readonly<Record<string, string>> {
-  const known = kitAssumptions(data);
+  const known = allAssumptions(data);
   const out: Record<string, string> = {};
   for (const v of values) {
     const [id, reading] = v.split("=");
     const a = known.find((x) => x.id === id);
-    if (!id || !reading || !a) throw new Error(`--assume takes <id>=<reading>; the kits' assumptions: ${known.map((x) => `${x.id} (${Object.keys(x.readings).join(" / ")})`).join(", ") || "none"}`);
+    if (!id || !reading || !a) throw new Error(`--assume takes <id>=<reading>; the kits' and the engine's assumptions: ${known.map((x) => `${x.id} (${Object.keys(x.readings).join(" / ")})`).join(", ") || "none"}`);
     if (!(reading in a.readings)) throw new Error(`--assume ${id}: no reading ${reading} (${Object.keys(a.readings).join(", ")})`);
     out[id] = reading;
   }

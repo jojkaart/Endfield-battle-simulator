@@ -25,6 +25,7 @@ import {
   staggerReport,
   timingReport,
 } from "@efsim/logs";
+import { parseAssume } from "../assume.ts";
 import { command } from "../command.ts";
 import { formatLogList, logDirs } from "../logtools.ts";
 
@@ -59,6 +60,9 @@ export default command({
                 [--log-buffs]             Kit buffs as the log lists them instead (the check before 2026-10-22)
                 [--simulate]              Simulate the logged casts instead and compare each hit with its landing
                                           (crits, enemy HP and effects no kit models from the log)
+                [--assume <id>=<reading>] Replay under another reading of a kit's or the engine's open assumption
+                                          (e.g. control-immunity=bosses; repeatable; scripts/measure.ts --assume for
+                                          every log)
   efsim zmdlogs timing [fixture…]         Buff timing report (a diagnostic, never scored): which kit buff's
                                           window, shifted, fits the hits the check doesn't (fallback, mismatch),
                                           as patterns across logs with mechanism candidates (default: every
@@ -118,6 +122,7 @@ export default command({
     "kit-buff": { type: "string", multiple: true, default: [] },
     what: { type: "string" },
     hits: { type: "boolean", default: false },
+    assume: { type: "string", multiple: true, default: [] },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -176,7 +181,7 @@ export default command({
     }
     if (sub === "check") {
       const fx = readDevFixture(arg);
-      return checkReport(data(), fx, { logBuffs: values["log-buffs"], simulate: values.simulate });
+      return checkReport(data(), fx, { logBuffs: values["log-buffs"], simulate: values.simulate, assume: parseAssume(data(), values.assume) });
     }
     const file = await importBattle(data(), arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail, (d) => cacheRawDetail(arg, d));
     return `wrote ${file}`;

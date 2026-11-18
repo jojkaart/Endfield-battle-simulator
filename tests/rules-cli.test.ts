@@ -51,7 +51,7 @@ describe("assumption switches", () => {
   it("refuses unknown assumptions and readings", () => {
     expect(() => parseAssume(data, ["nope=x"])).toThrow(/assumptions: .*si-haste-every-end/);
     expect(() => parseAssume(data, ["si-haste-every-end=maybe"])).toThrow(/no reading maybe/);
-    expect(() => createContext(data, { ...owner, options: { ...owner.options, assume: { nope: "x" } } })).toThrow(/no kit has an assumption nope/);
+    expect(() => createContext(data, { ...owner, options: { ...owner.options, assume: { nope: "x" } } })).toThrow(/no kit or engine rule has an assumption nope/);
   });
   it("a verdict holds, flips or is unclear under another reading", () => {
     expect(holds({ gain: 0.03, se: 0.005 }, { gain: 0.02, se: 0.005 })).toBe("holds");

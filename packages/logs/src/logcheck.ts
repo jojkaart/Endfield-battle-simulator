@@ -47,7 +47,7 @@ import { boundarySubsets, buffFile, collapseRepeats, isCorrosionBuff, kitBuffSou
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
-import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
+import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
 
 export type { Assumption, AssumptionKind } from "./assumptions.ts";
 import type { Assumption } from "./assumptions.ts";
@@ -647,8 +647,8 @@ export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: 
   return out;
 }
 
-export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): LogBuffReplay {
-  let replay = replayKitBuffs(data, fx, placement);
+export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), opts: Pick<ReplayOptions, "assume"> = {}): LogBuffReplay {
+  let replay = replayKitBuffs(data, fx, placement, opts);
   // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
   const levels = new Map<string, ReactionLevel>();
   for (let pass = 1; pass < REACTION_LEVEL_PASSES; pass++) {
@@ -656,7 +656,7 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placeme
     const shown = loggedReactionLevels(data, fx, placement, replay).filter((l) => own.get(`${l.operator}|${l.element}|${l.frame}`) !== l.level);
     if (shown.length === 0) break;
     for (const l of shown) levels.set(`${l.operator}|${l.element}|${l.frame}`, l);
-    replay = replayKitBuffs(data, fx, placement, { reactionLevels: [...levels.values()] });
+    replay = replayKitBuffs(data, fx, placement, { ...opts, reactionLevels: [...levels.values()] });
   }
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed) };

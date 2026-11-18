@@ -38,9 +38,10 @@ export function timingReport(data: () => GameData, named: readonly string[], opt
 }
 
 /** `efsim zmdlogs check`: the log check's report (the engine's replay, or the log's buff listing, or a simulation). */
-export function checkReport(data: GameData, fx: LogFixture, opts: { readonly logBuffs: boolean; readonly simulate: boolean }): string {
-  if (opts.simulate) return formatSimulatedLog(data, fx, simulateLog(data, fx));
-  const replay = opts.logBuffs ? null : logBuffReplay(data, fx);
+export function checkReport(data: GameData, fx: LogFixture, opts: { readonly logBuffs: boolean; readonly simulate: boolean; readonly assume?: Readonly<Record<string, string>> }): string {
+  const under = opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {};
+  if (opts.simulate) return formatSimulatedLog(data, fx, simulateLog(data, fx, undefined, logBuffReplay(data, fx, undefined, under)));
+  const replay = opts.logBuffs ? null : logBuffReplay(data, fx, undefined, under);
   const byHit = replay ? engineHits(data, fx, replay) : undefined;
   const verdicts = checkLog(data, fx, replay ? { replay, ...(byHit ? { engineHits: byHit } : {}) } : { buffs: "log" });
   return formatLogCheck(data, fx, verdicts, replay ?? undefined, replay && byHit ? engineReport(data, fx, replay, byHit, verdicts) : undefined);

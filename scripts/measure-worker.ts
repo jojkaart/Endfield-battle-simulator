@@ -21,13 +21,21 @@ export type MeasureAnswer =
   | { readonly key: string; readonly error: string };
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the tree's own modules, of whatever commit: typed loosely */
-const tree = (workerData as { tree: string }).tree;
+const { tree, assume } = workerData as { tree: string; assume?: Record<string, string> };
 const logs: any = await import(pathToFileURL(join(tree, "packages/logs/src/index.ts")).href);
 const dataPkg: any = await import(pathToFileURL(join(tree, "packages/data/src/index.ts")).href);
 const data = dataPkg.loadGameData();
+const under = assume && Object.keys(assume).length ? { assume } : undefined;
+if (under) {
+  // Older commits' replays take no readings: refuse rather than measure the defaults under another name.
+  const engine: any = await import(pathToFileURL(join(tree, "packages/engine/src/index.ts")).href);
+  if (typeof engine.allAssumptions !== "function") throw new Error("--assume: this commit's engine has no assumption registry (timeline/assumptions.ts)");
+  const known = engine.allAssumptions(data) as { id: string; readings: Record<string, string> }[];
+  for (const [id, r] of Object.entries(under.assume)) if (!known.some((a) => a.id === id && r in a.readings)) throw new Error(`--assume ${id}=${r}: no such reading (${known.map((a) => a.id).join(", ")})`);
+}
 
 function entryOf(fx: any): Record<string, Record<string, number | null>> {
-  const replay = logs.logBuffReplay(data, fx);
+  const replay = under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx);
   const byHit = logs.engineHits(data, fx, replay);
   const verdicts = logs.checkLog(data, fx, { replay, engineHits: byHit });
   const counts = logs.verdictCounts(fx, verdicts);

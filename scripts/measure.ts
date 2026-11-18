@@ -19,6 +19,8 @@
 //   --logs <id,…>       only these logs (ids or unique parts of them; never a hold-out)
 //   --changed placement only logs whose placed casts (placeHits) differ between the measured code and the --base /
 //                       --against ref's code (seconds per log, then only those are checked)
+//   --assume <id>=<r>   replay under another reading of a kit's or the engine's open assumption (e.g.
+//                       control-immunity=bosses; repeatable): the reading's effect against the reference
 //   --workers <n>       worker threads (default 3, as test:logs)
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, accuracy.md, summary.txt
@@ -86,12 +88,12 @@ export function overlay(base: Snapshots, measured: ReadonlyMap<string, Entry>, s
 }
 
 /** Runs jobs on worker threads loading `tree`'s code; each answer to `done` as it comes. */
-async function pool(tree: string, jobs: readonly MeasureJob[], workers: number, done: (a: MeasureAnswer) => void): Promise<void> {
+async function pool(tree: string, jobs: readonly MeasureJob[], workers: number, done: (a: MeasureAnswer) => void, assume: Readonly<Record<string, string>> = {}): Promise<void> {
   const queue = [...jobs];
   const url = new URL("./measure-worker.ts", import.meta.url);
   await Promise.all(
     Array.from({ length: Math.min(workers, queue.length) }, () => {
-      const w = new Worker(url, { workerData: { tree } });
+      const w = new Worker(url, { workerData: { tree, assume } });
       return new Promise<void>((res, rej) => {
         const next = () => {
           const job = queue.shift();
@@ -135,6 +137,7 @@ async function main(argv: string[]): Promise<number> {
       with: { type: "string", multiple: true, default: [] },
       logs: { type: "string", multiple: true, default: [] },
       changed: { type: "string" },
+      assume: { type: "string", multiple: true, default: [] },
       workers: { type: "string", default: String(Math.min(3, Math.max(1, cpus().length - 1))) },
       out: { type: "string" },
     },
@@ -149,7 +152,12 @@ async function main(argv: string[]): Promise<number> {
   const against = values.base ?? values.against ?? values.at ?? "HEAD";
   const baseTree = values.base ? resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${values.base}^{commit}`])) : undefined;
   if (values.base && baseTree) atCommit(values.base, baseTree);
-  const what = `${values.at ? `the code at ${values.at}` : "the working tree"}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
+  const assume = Object.fromEntries(values.assume.map((a) => {
+    const [id, reading] = a.split("=");
+    if (!id || !reading) throw new Error("--assume takes <id>=<reading>");
+    return [id, reading];
+  }));
+  const what = `${values.at ? `the code at ${values.at}` : "the working tree"}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
 
   // The selection.
   const split = readSplit(readFileSync(join(tree, "fixtures/holdout/holdout.json"), "utf8"));
@@ -197,7 +205,7 @@ async function main(argv: string[]): Promise<number> {
       if (!("entry" in a)) return;
       got.set(a.key, a.entry);
       say(`[${got.size}/${keys.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
-    });
+    }, t === tree ? assume : {});
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
     return got;
   };

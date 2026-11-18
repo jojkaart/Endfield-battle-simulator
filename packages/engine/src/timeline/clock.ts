@@ -5,6 +5,7 @@ import type { ActiveBuff } from "../buffs.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
+import { engineReading } from "./assumptions.ts";
 
 /**
  * A skill's global slow-downs (docs/design/timeline.md "Time"): the world (enemy
@@ -85,10 +86,22 @@ export function operatorClockDue(st: TimelineState, operator: string, from: numb
  * No table gives the tag (only Tangtang's and Si's buff files carry it, no enemy): the scenario's target says, or else
  * the enemy's `controlImmune` (set from the logs per enemy: packages/data/src/enemyFacts.ts). Every other enemy
  * freezes, bosses too (in-game test 104, the owner 2026-11-16: most bosses do; until then every Boss was taken as
- * immune). Rhodagn's five logs with a freezer check the same either way.
+ * immune). Rhodagn's five logs with a freezer check the same either way. The engine assumption `control-immunity`
+ * (timeline/assumptions.ts) switches the rule: listed (this, the default), bosses, none, all.
  */
 export function controlImmune(ctx: TimelineContext): boolean {
-  return ctx.scenario.target.controlImmune ?? ctx.data.enemies[ctx.scenario.target.enemy]?.controlImmune === true;
+  if (ctx.scenario.target.controlImmune !== undefined) return ctx.scenario.target.controlImmune;
+  const enemy = ctx.data.enemies[ctx.scenario.target.enemy];
+  switch (engineReading(ctx.scenario, "control-immunity")) {
+    case "bosses":
+      return enemy?.rank === 2;
+    case "none":
+      return false;
+    case "all":
+      return true;
+    default:
+      return enemy?.controlImmune === true;
+  }
 }
 
 /**

@@ -9,6 +9,7 @@ import { exclusiveUntil, ownHitsLanded } from "./timing.ts";
 import { runTriggers } from "./actions.ts";
 import { castSkill } from "./casting.ts";
 import { schedule } from "./schedule.ts";
+import { engineReading } from "./assumptions.ts";
 
 /**
  * A teammate's pause after a chain it finished (frames): 6.5 s, set so a teammate attacks the share of its free time
@@ -18,9 +19,16 @@ import { schedule } from "./schedule.ts";
  * after a full chain about two thirds of the next runs start within 1.5 s, the rest after a heavy-tailed wait (median
  * 3.7 s, mean 5.4 s); the share depends on the fight (the enemy: R² 0.41) and the operator (R² 0.41; ranged ones
  * higher), not on Stagger, parser version or time into the fight. 3.5 s (2026-10-28) was the median of the gaps over
- * 1.5 s alone. The steps themselves come at the chain's windows (the logs: 0.82× the steps' exclusive time).
+ * 1.5 s alone. The steps themselves come at the chain's windows (the logs: 0.82× the steps' exclusive time). The engine
+ * assumption `teammate-pause` (timeline/assumptions.ts) switches it: 6.5s (this, the default) or 3.5s.
  */
 export const TEAMMATE_PAUSE_FRAMES = 195;
+const OLD_PAUSE_FRAMES = 105;
+
+/** The teammates' pause under the scenario's reading of `teammate-pause`. */
+export function teammatePauseFrames(ctx: TimelineContext): number {
+  return engineReading(ctx.scenario, "teammate-pause") === "3.5s" ? OLD_PAUSE_FRAMES : TEAMMATE_PAUSE_FRAMES;
+}
 
 /** A teammate's chain starting at `frame` (its first step, or a pause's end). */
 export function teammateStart(operator: string, frame: number): PendingAuto {
@@ -63,6 +71,6 @@ export function teammateAttack(ctx: TimelineContext, st: TimelineState, x: Pendi
     ...(cast?.operator === op ? { casts: [...r.state.casts.slice(0, -1), { ...cast, teammate: true as const }] } : {}),
   };
   const after = s.chainNext[op];
-  s = schedule(s, [after ? { ...x, frame: Math.max(x.frame + 1, after.from), step: "next" } : teammateStart(op, exclusiveUntil(ctx, s, op) + TEAMMATE_PAUSE_FRAMES)]);
+  s = schedule(s, [after ? { ...x, frame: Math.max(x.frame + 1, after.from), step: "next" } : teammateStart(op, exclusiveUntil(ctx, s, op) + teammatePauseFrames(ctx))]);
   return runTriggers(ctx, s, r.events, r.origin);
 }
