@@ -21,7 +21,7 @@ describe("the data-file tree", () => {
     ],
   };
 
-  it("names types and enums, reads value fields, leaves out presentation and defaults", () => {
+  it("names types and enums, reads value fields, marks disabled actions, leaves out presentation and defaults", () => {
     expect(shortType("Beyond.Gameplay.Core.SpeedupAction+Data, Gameplay.Beyond")).toBe("SpeedupAction");
     const text = renderTree(dataTree(file, "buff_x"));
     expect(text).toContain("duration: key duration (default 3)");
@@ -29,8 +29,9 @@ describe("the data-file tree", () => {
     expect(text).toContain("buffEvent 0 (on start)");
     expect(text).toContain("CreateBuffAction  count: 1");
     expect(text).toContain("buffId buff_y");
-    expect(text).toContain("CompareFloat  compare 3 (>=), lhs 1");
-    expect(text).not.toMatch(/PlaySound|iconConfig|isEnable false/);
+    // A disabled action is said to be one (it does nothing in the game), not left out as a default.
+    expect(text).toContain("CompareFloat  DISABLED (isEnable false), compare 3 (>=), lhs 1");
+    expect(text).not.toMatch(/PlaySound|iconConfig/);
   });
 
   it("keeps only matching lines and their ancestors with --grep", () => {

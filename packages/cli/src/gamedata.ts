@@ -122,6 +122,9 @@ export function dataTree(v: unknown, label = ""): TreeNode {
   if (type && PRESENTATION.test(type)) return { label: `${label} ${type} (presentation)`.trim(), children: [] };
   const inline: string[] = [];
   const children: TreeNode[] = [];
+  // A disabled action (isEnable false) does nothing in the game: said first, not left out as a default (Liino's volley
+  // looked reaction-gated for months because its CheckBuffIdInContext's isEnable false wasn't shown).
+  if (type && v["isEnable"] === false) inline.push("DISABLED (isEnable false)");
   for (const [k, x] of Object.entries(v)) {
     // Enum fields and frames are shown even at 0 (buffEvent 0 is "on start").
     if (k === "$type" || SKIP_KEY.test(k) || (isDefault(x) && !((k in ENUMS || k === "_startFrame") && typeof x === "number"))) continue;
