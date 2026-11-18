@@ -231,6 +231,19 @@ instead of 3.5 s) moves it: 54,607 → **52,369** / 51,076 → **48,967**
 show). The other rows are from before. As a bot / at 0.6 s now 59,379 /
 51,427.
 
+**Liino's volley as a 10 s timer (2026-11-18; same seeds 1001–1032, the
+base 1e1e7a8 against this commit):** her stance's volley fires every 10 s
+from the battle skill's frame 45 whether or not a reaction came (the
+data's reaction check is disabled; open-problems.md "Liino's volleys"),
+where it used to wait for a reaction and then 10 s. Sustained DPS 52,374 →
+**52,529** (+0.3%) / 48,973 → **49,185** (+0.4%); as a bot 59,400 →
+59,577 / 54,907 → 55,130; Liino's share 2.5 → 2.9% (seed 1). The 60 s
+timelines (the examples): 5,615,426 → 5,649,021 (+0.6%) / 4,849,679 →
+4,855,803 (+0.1%). (The base's own numbers sit below the table's from
+the changes since 2026-11-16; the table's rows are left as they were.)
+Small: Liino deals about 3% of the team's damage, and the volleys are a
+part of hers. The rules don't change.
+
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Rule 7 fixed (2026-11-16).** It read only Vocalist Stance, so it also
