@@ -48,8 +48,10 @@ export function command<const O extends ParseArgsOptionsConfig>(c: {
 }
 
 /**
- * Every command's options as one `parseArgs` configuration. An option two commands declare must be declared the same
- * way (type, default, multiple): the parse is shared.
+ * Every command's options merged for the one parse (cli.ts): option names are global, so a name two commands use must be
+ * declared alike (type, multiple, default); its meaning and the check of its values are each command's (calc's --buff
+ * is `<id>[:<layers>]`, zmdlogs' a regex). Taken names with a shape: see the commands' `options`; a clash throws here,
+ * naming both commands.
  */
 export function mergedOptions(commands: readonly Command[], global: ParseArgsOptionsConfig): ParseArgsOptionsConfig {
   const out: Record<string, ParseArgsOptionsConfig[string]> = { ...global };

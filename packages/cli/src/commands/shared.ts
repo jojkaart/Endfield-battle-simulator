@@ -28,7 +28,7 @@ export const GLOBAL_NOTES = [
 `,
 ];
 
-/** calc and compare's options (checked for every command, as the one parse always did: calcOptions). */
+/** calc and compare's options (their values checked by calcOptions in those two commands only). */
 export const CALC_OPTIONS = optionGroup({
   enemy: { type: "string", default: "eny_0051_rodin" },
   level: { type: "string", default: "90" },

@@ -8,7 +8,7 @@ import { parseArgs } from "node:util";
 import { loadGameData, withKitFiles } from "@efsim/data";
 import { mergedOptions, usageText, type CommandContext } from "./command.ts";
 import { COMMANDS } from "./commands/index.ts";
-import { calcOptions, GLOBAL_NOTES, GLOBAL_OPTIONS } from "./commands/shared.ts";
+import { GLOBAL_NOTES, GLOBAL_OPTIONS } from "./commands/shared.ts";
 import { setWorkerKitFiles } from "./rulespool.ts";
 
 const OPTIONS = mergedOptions(COMMANDS, GLOBAL_OPTIONS);
@@ -21,8 +21,8 @@ async function main(argv: string[]): Promise<number> {
     process.stdout.write(USAGE);
     return command || values["help"] ? 0 : 1;
   }
-  // calc's options are checked whatever the command (as the one parse always has): a bad --crit fails everywhere.
-  calcOptions(values as unknown as Parameters<typeof calcOptions>[0]);
+  // Each command checks its own options' values (calc and compare: calcOptions), so another command may give a name
+  // calc uses (--buff) its own meaning (round 4); the names are shared by the one parse (command.ts mergedOptions).
   // Loaded on first use, after the arguments and input files are checked (a mistake is reported without the load's wait).
   // --kit: what-if kit files in place of the operators' own (withKitFiles); worker threads load them too.
   const kits = values["kit"] as string[];
