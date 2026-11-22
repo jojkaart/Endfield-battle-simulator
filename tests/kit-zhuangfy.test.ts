@@ -85,6 +85,12 @@ describe("Zhuang Fangyi: basic attacks, finisher, the Empyrean attacks", () => {
     expect(["attack1_ult", "attack2_ult", "attack3_ult"].map((k) => kitSkill(k)?.hits.map((h) => [h.frames, h.launch]))).toEqual([[[[15], 12]], [[[13], 10]], [[[33], 3]]]);
   });
 
+  it("Empyrean attacks 1 and 2 land under any of their four entities' keys (attack1_ult_1..4_abilityrange: the one whose shape holds the target)", () => {
+    const keys = [1, 2, 3, 4].map((n) => `${P}attack1_ult_${n}_abilityrange`);
+    expect(kitSkill("attack1_ult")?.hits[0]?.events).toEqual(keys);
+    expect(kitSkill("attack2_ult")?.hits[0]?.events).toEqual(keys);
+  });
+
   it("the Empyrean attacks are castable only in the state, the normal ones only outside it", () => {
     const ctx = createContext(data, solo());
     expect(() => apply(ctx, init(ctx), z("attack1_ult"))).toThrow(/isn't available/);
@@ -135,6 +141,20 @@ describe("Zhuang Fangyi: battle skill (Sunderblades and Thunder Strikes)", () =>
     const b = active(run(solo(), [z("normal_skill")], 10), "sunderblade")[0];
     expect(b && b.expiresAt - b.appliedAt).toBe(36 * 30);
     expect(kitSkill("normal_skill")?.hits.filter((h) => h.id.startsWith("final_")).length).toBe(9);
+  });
+
+  it("her own ultimate's stop holds the strikes (a buff's timeline, on the world's clock: d774 102.17 s, 4d60 157.42 s)", () => {
+    // Three Sunderblades (strikes at 24, 32, the last at 43); the ultimate at the cast's frame 20 stops the world for 78 frames.
+    const plain = casts({}, [0, 5, 10]);
+    const c = castsOf(plain, "normal_skill")[2] ?? NaN;
+    const ult = run(solo({}, { startEnergy: { [Z]: 1000 } }), [z("normal_skill", 0), z("normal_skill", 5), z("normal_skill", 10), { ...z("ultimate_skill"), at: c + 20 }]);
+    const rel = (s: TimelineState) => perCast(s, "normal_skill")[2]?.map((h) => h.frame - c);
+    expect(rel(plain)).toEqual([24, 32, 43]);
+    const stop = (ult.casts.find((x) => x.skill === `${Z}_ultimate_skill`)?.frame ?? NaN) - c;
+    expect(stop).toBeLessThan(24);
+    expect(rel(ult)).toEqual([24, 32, 43].map((f) => (f > stop ? f + 78 : f)));
+    expect(kitSkill("normal_skill")?.hits.every((h) => h.world === true)).toBe(true);
+    expect(kitSkill("normal_skill_ult")?.hits.some((h) => h.world)).toBe(false);
   });
 
   it("a new battle skill ends the previous one's strikes (its first frames reset the count)", () => {

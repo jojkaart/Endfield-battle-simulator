@@ -212,7 +212,11 @@ ramp gives the ×1.09 on fire. Rossi's ×1.33 after 24.97 s is crit-only
   variant, consumed 2 in the log, 1 in the replay. Ruled out: the perfect
   hit's own Vulnerable rule (perfect and late predict the same there);
   a stack expiry (none before 34.9 s; the "3 then 2" at 31.60 s is a stale
-  snapshot of Gilberta's combo's pre-state).
+  snapshot of Gilberta's combo's pre-state). 2026-11-22: the replay
+  landed both of combo 3's variants where the log has the perfect hit (the
+  late one 14 frames earlier, consuming first; "Gilberta's
+  Susceptibility: the engine's Vulnerable count" below); without the late
+  one the replay reads 4 stacks at her ultimate.
 - Rossi's crit DMG at 22–25 s (found: buff_chr_0028_wulfa_combo_criticalrate,
   combo_3, crit_damage_increase_rate 0.5, 15 s): the replay's ends at
   21.8–22.1 s, the log's zone is still 2.0 at 22.13–24.97 s and 1.5 at
@@ -1852,12 +1856,44 @@ spread against the enemy's actions (not logged).
 lands), the damage follows the log's value (86 hits against 24). Her
 windows' ends scatter −1 to +2 s around the engine's 5 s plus stops (16
 bracketed windows, median +0.4 s), the late listed hits' damage with them.
-**Still possible:** the engine's Vulnerable stacks short (a Lift or Knock
-Down it misses, a stack's expiry), or the data's count reading something
-else (every physical status); the end scatter shares a cause with the
+**Found and fixed (2026-11-22), 489c and d572 (3 against 4):** Rossi's
+sequence-2 perfect hit landed twice in the replay. The kit's combo_3 jumps
+0 → 212 without the qte_ring (the late path, its hit at real frame 15);
+the replay read no ring, took the jump, and also landed the logged hit it
+pinned as the perfect one (frame 29) 14 frames later. The late hit
+consumed the infliction, so the perfect one's Lift and extra Vulnerable
+(`consumedAtLeast 1`) didn't happen: +1 where the game gave +2. Every
+Lift of Rossi's combo 3 in d572 was 0.46 s before its logged airborne hit.
+Now the replay drops a jump that would skip a pinned landing, and the
+path it jumps to (drivers.ts `replayCast`); the four ultimates read 4,
+as listed (489c 30.02 / 92.31, d572 52.14 / 117.47 s). Of the 21
+ultimates whose Susceptibility is listed (11 logs), 18 now agree with the
+replay's stack count (a scratch census: her ultimate's listed value
+against the replay's latest Vulnerable add before it).
+**Open, 4360 and 9847 (0 / 1 against 2 / 3):** the stacks outlive 20 s.
+4360's 54.97 s ultimate lists 2 stacks 24.4 s after her last Lift (30.60
+s), 9847's 126.09 s 2 stacks 24.7 s after its last (101.43 s); 4360's
+116.00 s lists 3, so its 70.83 / 90.87 s stacks lasted past 113.40 s
+(22.5 s). The world's time between (the logged casts' stops held,
+`worldMs`) is 20.40, 21.24 and 21.64 s: 0.4–1.6 s more than the engine
+holds. Both fights are the tower bosses (kltdcap_tower016,
+bigents_tower019) with Avywenna, Perlica and Liino, where her own 5 s
+Susceptibility is listed 8.6 s (4360 54.97 s) and 8.7 / 12.5 s (9847).
+**Ruled out:** a teammate's Vulnerable the kits lack (Liino's soundwaves
+create buff_physical_no_guard only with buff_chr_0035_liino_chrdung_armorbreak,
+which nothing creates; Mi Fu's chrdg_addusp is a dungeon buff; no
+ExtendBuff or PauseBuffTime names buff_physical_no_guard or its tag
+1075718177, whose only holder is buff_physical_no_guard); another buff
+counted by the tag (none applies it); the replay's Stagger (none between
+in 9847).
+**Still possible:** an enemy-side clock these bosses run slower than the
+world's (the same open question as their 18–20 s Stagger windows,
+above); stops the engine holds shorter (the ComboSkill curve; four to six
+combos between in each case); the stack timer restarting on something
+the engine doesn't count. The end scatter shares a cause with the
 Stagger's (above).
-**Next check:** the four logs' Vulnerable stacks before her ultimate,
-replay against the listed Physical Susceptibility.
+**Next check:** an upper bound: a log with her ultimate 21–30 s of world
+time after the last Vulnerable add on another enemy.
 
 ## Smaller, not yet diagnosed
 
@@ -1875,15 +1911,29 @@ replay against the listed Physical Susceptibility.
 - d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
   2.6 s before its event (the same placement rule); her simulated total +11.3 →
   +15.4%, no verdict moved. Not looked into.
-- Zhuang Fangyi's `attack1_ult_2_abilityrange` (seen 2026-11-18 while
-  checking test 108): 32 hit groups in 5 logs (`efsim zmdlogs census
-  --select 'event:attack1_ult_2_abilityrange'`: 3aa6 10, 4bfc 10, 4d60 7,
-  d774 4, c6d8 1) under a key no kit hit names, so the placement doesn't
-  place them (replay NOLAND, e.g. 4bfc 150.07, 179.17 s). **Still
-  possible:** her Empyrean attack 2 (the kit gives attack2_ult the key
-  `attack1_ult_1_abilityrange`), or a second hit of attack1_ult. **Next
-  check:** `efsim gamedata tree chr_0030_zhuangfy_attack2_ult` for the
-  entity it spawns, and the logged key order within an Empyrean chain.
+- Zhuang Fangyi's `attack1_ult_2_abilityrange` (seen 2026-11-18; **found
+  and fixed 2026-11-22**): Empyrean attacks 1 and 2 both spawn four
+  entities, `attack1_ult_1..4_abilityrange` (SpawnAbilityEntity at 12–15
+  and 10–13), each a cylinder at its own offset and angle that hits a
+  target only without the 0.4 s marker attack1UltHitMark the one that hit
+  leaves: one hit, logged under the first entity whose shape held the
+  target (`efsim zmdlogs census --select 'event:attack1_ult_._abilityrange'`:
+  _1, _2 and _3 all seen, 50 groups). Both kit hits now name the four keys.
+  The two attacks then share every key, so the placement tells them apart
+  by attack 1's windows (attack 2 from frame 22, attack 1 from 60), past
+  her Empyrean battle skill, which keeps the chain (logcasts.ts `choose`,
+  only for steps alike in every key); 16 Empyrean hits that read ×1.4 or
+  ×0.71 (the other step) now fit. Left: the entity k lands k − 1 frames
+  after the first (the kit lands every key at the first's frame).
+- Zhuang Fangyi's Sunderblade count in d774 ("8 strikes where the log has
+  3", **explained 2026-11-22**): the log has all 8 (97.87–99.56 s and
+  102.17–102.58 s, the final at 102.89 s): her ultimate (pressed at ~99.6
+  s, logged at its end, 102.17 s) held the battle skill's strikes, which a
+  buff on her deals (normal_skill_trigger_sword). 4d60 the same: the final
+  at 157.42 s, her ultimate's logged end. The strikes are now on the
+  world's clock (KitHit.world). Left there: the log's strikes are ×1.39
+  the replay's from 97.87 s (the 8751 vs 12127 run; not looked into) and
+  the replay's strikes at 98.10 / 98.30 s fall in a 0.9 s logged gap.
 
 - Si's talent Haste after a burst without an Inksoul (2026-11-16): the
   data (only xianjing_linkline's finish and xianjing_inkboom create
@@ -1913,8 +1963,7 @@ replay against the listed Physical Susceptibility.
 - 1d91: Typhoeus's natural-triggered hits get Barrage Array's +0.10 in the
   engine, which the damage doesn't show (seen before the lance fix: recheck).
 - From the roadmap: Snowshine ×0.96
-  (04d4), Liino ×1.031 (92b4) offsets; Zhuang Fangyi's Sunderblade count
-  (d774); 3aa6's Stagger at 145.6 s; Xaihi's Amp timing (b6aa); Last
+  (04d4), Liino ×1.031 (92b4) offsets; 3aa6's Stagger at 145.6 s; Xaihi's Amp timing (b6aa); Last
   Rite's weapon buff (b6aa); Ember low by one factor. (bdf2's Si combo
   finisher ×1.456: closed 2026-11-14, see "Buffs a cast consumes".)
 - b7b3: Tangtang's waterspouts from 15927 ms are ×1.13 the log's in the

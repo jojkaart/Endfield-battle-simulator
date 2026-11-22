@@ -345,6 +345,11 @@ when the ultimate lands is one or two low: 0.39 against 0.42 in 489c and
 d572, 0.30 against 0.36 in 9847, 0.33 against 0.39 in 4360), the damage
 follows the listing: 86 hits fit the log's value, 24 the engine's
 (open-problems "Gilberta's Susceptibility: the engine's Vulnerable count").
+489c and d572 were the replay's (2026-11-22: Rossi's sequence-2 perfect
+hit landed beside its late variant, which consumed the infliction its
+extra Vulnerable needs); they read 4 now. 4360 and 9847 remain: their
+stacks outlive the 20 s by 0.4–1.6 s of world time (the logs decide it,
+not a test).
 The duration fits 5 s held by the stops: over 16 bracketed windows the
 log's end is a median +0.4 s from the engine's (from about −1 to +2 s, the
 same scatter as the Stagger's, test 110), the late listed hits' damage
@@ -2914,7 +2919,7 @@ buff; in abfd Si's Finisher came first). A Finisher and an enhanced hit
 of the same operator are never within 0.45 s (rerun: `efsim zmdlogs
 census --select 'event:power_attack' --operator <op> --near
 'event:ult_attack|attack[0-9]_ult|floating_attack' --near-operator <op>
---window -3000,3000 --list`, per operator; closest −461 ms, f879). *The
+--window=-3000,3000 --list`, per operator; closest −461 ms, f879). *The
 engine* (2026-11-18): no Finisher while the attack input is such an
 enhanced attack (timing.ts `enhancedBasic`; Laevatain's own kit gate
 removed); Stagger already wasn't dealt while Staggered (resources.ts
