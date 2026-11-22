@@ -19,6 +19,7 @@ function hitLine(h: KitHit): string {
     ...(h.poise !== undefined ? [`poise ${JSON.stringify(h.poise)}${h.poiseControlledOnly ? " (controlled only)" : ""}`] : []),
     ...(h.enemyDelay !== undefined ? [`lands ${h.enemyDelay} frames after (enemyDelay)`] : []),
     ...(h.detached ? ["detached"] : []),
+    ...(h.world ? ["on the world's clock"] : []),
     ...(h.finalStrike ? ["final strike"] : []),
     ...(h.if !== undefined ? [`if ${pred(h.if)}`] : []),
   ];

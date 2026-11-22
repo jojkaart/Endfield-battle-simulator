@@ -742,7 +742,7 @@
    "available": {
     "buffActive": "empyrean"
    },
-   "note": "Four entities (SpawnAbilityEntity 12-15), each hitting a target only without the 0.4 s marker hitMark1 the first one leaves: one hit per target, at the first entity's landing (frame 15). kit-draft's eight branch hits would land 4-8 times.",
+   "note": "Four entities (SpawnAbilityEntity 12-15: attack1_ult_1..4_abilityrange, each a cylinder at its own offset and angle), each hitting a target only without the 0.4 s marker (attack1UltHitMark) the one that hit leaves: one hit per target, logged under the first entity whose shape holds the target (logs: _1, _2 and _3 all seen, 2026-11-22). The kit lands it at the first entity's landing (frame 15); entity k lands k-1 frames later. kit-draft's eight branch hits would land 4-8 times.",
    "hits": [
     {
      "id": "range",
@@ -751,6 +751,12 @@
      ],
      "frames": [
       15
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack1_ult_1_abilityrange",
+      "chr_0030_zhuangfy_attack1_ult_2_abilityrange",
+      "chr_0030_zhuangfy_attack1_ult_3_abilityrange",
+      "chr_0030_zhuangfy_attack1_ult_4_abilityrange"
      ],
      "launch": 12
     }
@@ -763,7 +769,7 @@
    "available": {
     "buffActive": "empyrean"
    },
-   "note": "As attack1_ult: entities 10-13, one hit at 13 (logged under attack1_ult_1_abilityrange, the entity it spawns).",
+   "note": "As attack1_ult: the same four entities (attack1_ult_1..4_abilityrange, the same marker) spawned at 10-13, one hit at 13 (logged under whichever entity holds the target).",
    "hits": [
     {
      "id": "range",
@@ -772,6 +778,12 @@
      ],
      "frames": [
       13
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack1_ult_1_abilityrange",
+      "chr_0030_zhuangfy_attack1_ult_2_abilityrange",
+      "chr_0030_zhuangfy_attack1_ult_3_abilityrange",
+      "chr_0030_zhuangfy_attack1_ult_4_abilityrange"
      ],
      "launch": 10
     }
@@ -821,7 +833,7 @@
      "ratio": 1
     }
    ],
-   "note": "Its effects at frames 6 and 13 are the triggers bs_swords, bs_consumed, bs_count; the Thunder Strikes are detached from 13 (a buff on her: trigger_sword). buff_common_obtain_ultimate_sp at frame 6 in both branches (teamEnergy). One strike_N / final_N pair per Sunderblade count N (sources).",
+   "note": "Its effects at frames 6 and 13 are the triggers bs_swords, bs_consumed, bs_count; the Thunder Strikes are detached from 13 (a buff on her: trigger_sword), on the world's clock (world: a buff's timeline, which her own ultimate's stop holds too: d774 102.17 s and 4d60 157.42 s resume them at her ultimate's logged end). buff_common_obtain_ultimate_sp at frame 6 in both branches (teamEnergy). One strike_N / final_N pair per Sunderblade count N (sources).",
    "hits": [
     {
      "id": "final_1",
@@ -849,6 +861,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -894,6 +907,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -940,6 +954,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -986,6 +1001,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -1032,6 +1048,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -1079,6 +1096,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -1125,6 +1143,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -1173,6 +1192,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -1219,6 +1239,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -1268,6 +1289,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -1314,6 +1336,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -1364,6 +1387,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -1410,6 +1434,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -1461,6 +1486,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -1507,6 +1533,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {
@@ -1559,6 +1586,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "if": {
       "stack": "strike_n",
@@ -1605,6 +1633,7 @@
       "buff_chr_0030_zhuangfy_sword_triggerd"
      ],
      "launch": 13,
+     "world": true,
      "energy": "usp_extra",
      "poise": "poise",
      "if": {

@@ -459,6 +459,13 @@ export interface KitHit {
    */
   readonly launch?: number;
   /**
+   * A detached hit a buff's timeline deals (a buff the cast puts on its operator whose triggers strike): on the
+   * world's clock, so every slow-down holds it, the operator's own ultimate stop too (Zhuang Fangyi's Thunder Strikes
+   * from buff_chr_0030_zhuangfy_normal_skill_trigger_sword: the logs resume them at her ultimate's end, d774 102.17 s,
+   * 4d60 157.42 s). As a trigger's `world` hits (docs/design/timeline.md "Waiting on the enemy's clock").
+   */
+  readonly world?: true;
+  /**
    * Its damage comes this many frames after the landing, on the enemy's clock (time stops hold it): a buff the landing
    * puts on the enemy deals it once its triggerInterval has passed (Typhoeus's Power Shot burst,
    * buff_common_natural_natural_triggered_typhoea, 0.35 s). What the landing does (applications, gains, buffs, SP,
