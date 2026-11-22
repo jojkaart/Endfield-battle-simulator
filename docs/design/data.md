@@ -397,6 +397,14 @@ detail):
   under ~0.2 s, or one at a ms many hits share, isn't timing evidence;
   "uneven batches" of a periodic hit may be the log's, not the game's.
   World time between two moments: `efsim zmdlogs worldtime`.
+- **Holds no cast explains** (2026-11-22, open-problems "The buff clock"):
+  the log's ms run through world holds it records nothing of (perfect
+  dodges' 0.512 s slow-down each, never while the enemy is Staggered;
+  pauses such as 9c0b's first ten seconds). Buffs and the enemy's tick
+  timers alike run that much longer in the log's time than the placed
+  casts' stops say: a run listed past the replay's expiry is the game's
+  (the damage agrees, 802 hits against 92), and the replay keeps it on
+  (engine assumption `hidden-holds`, buffreplay.ts `heldToLoggedEnds`).
 - **Cast events** (`LogFixture.casts`: the detail's skill events without a
   damage value) are presses as the log has them, not the kit's frame 0:
   - battle skills: the event is at the placed start (within a frame or

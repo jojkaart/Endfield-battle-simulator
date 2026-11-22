@@ -143,12 +143,27 @@ is still 0.1–4.6 s longer; 2026-11-22: not Twilight's own, her Forgeborn
 buff from the same ultimate runs as far past the replay, so the next step
 is the buff clock over every log: each listed buff's natural end against
 the replay's, against dodges' SP and hit-free gaps; kit assumption
-`laevatain-twilight-clock` for what rides on it); re-search the five Si example
+`laevatain-twilight-clock` for what rides on it; done 2026-11-22, below); re-search the five Si example
 timelines with the full beams (after Haste's change they hold the old
 timeline repaired or a single-beam search: lower bounds);
 per-operator and per-fight teammate pace (the logs' R² 0.41 each) if a
 favourite's numbers lean on teammates' attacks; why an immune enemy holds
 the freezer's own debuffs (test 37).
+
+**The buff clock (2026-11-22, open-problems "The buff clock"):** every
+team's listed buffs run a median 0.5 s past their duration in world time,
+on one hidden clock per fight that the enemy's tick timers share (152 runs
+of 1,378 conflict with it, 341 with the excesses shuffled); its holds are
+about a perfect dodge's 0.512 s each and never come while the enemy is
+Staggered (tick pairs: 34 of 378 outside, 1 of 92 inside); the damage
+sides with the listing (802 hits against 92). The replay keeps a listed
+buff on to the log's end (engine assumption `hidden-holds`, default `log`:
+plain 55.7 → 57.5% but for the hold-outs, unchanged). Next: in-game test
+111 (counted perfect dodges during Si's Amp); then the holds placed once
+for every timer from the shared clock (enemy statuses, unlisted buffs, the
+dodges' SP for "Team SP"), and the dodger's own 0.315 s; simulations
+already dodge with `--dodge`, and the owner's dodge rate would decide how
+much rides on it.
 
 **Stagger windows (2026-11-17, accuracy plan B1 follow-up):** the replay
 follows the log's Stagger listing (the damage confirms it). The game's

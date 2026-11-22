@@ -255,7 +255,9 @@ stretches between them).
   at 81.2–84.8 s, d572 66.9 s ×1.48. Candidates: her own buffs held longer
   than her ultimate's 57-frame stop (~1 s in d572), overlapping stops
   holding them for their sum (489c: Gilberta's 1.73 s + hers 1.9 s against
-  their union 2.0 s), the stops' placement.
+  their union 2.0 s), the stops' placement. 2026-11-22 ("The buff clock"): the sum is ruled out (Si's Amp);
+  the runs' length is the fight's hidden holds (perfect dodges), which the replay now takes from the log's
+  listing (`hidden-holds`); its layers' restart is still the replay's.
 - **Corrosion's ramp in 489c at 30.2–32.5 s**: her stabs rise 16220 →
   16378 → 16536 and the bleed 4781 → 4894 by ~1% a second while the
   engine's Corrosion is already at its level-2 shred (17.12 → 17.6 at
@@ -1289,6 +1291,100 @@ against 3f78's); why an immune enemy still holds the freezer's own debuffs
 (no data mechanism found: Artful Intent and Arcane's will_atk have the same
 time-dilation flags).
 
+## The buff clock: unlogged world holds keep buffs past their end (2026-11-22; test 111)
+
+**Shows:** every run of a listed game buff a team kit stands for, over the 77 development logs whose listings carry the
+runs' start and owner (verified, pending, multi-target; 40d9 and 4e5e don't): its start as logged (the lane's
+`since`), its end bracketed by the last hit that lists it and the next hit of a holder that doesn't (exact at a
+boundary hit, or from the raw detail's lane end for the 19 cached), its length in world time (the placed casts' stops
+taken out, `worldMs`) against the data's duration, and against the replay's own expiry. 6,991 runs; 724 single runs
+(not refreshed in the log, bracket ≤ 1.5 s, a canonical duration, excess −1…8 s; one per log, buff, owner, start and
+end) run a median **+0.49 s** of world time past their duration (quartiles +0.03 / +1.35; within ±0.25 s: 23%).
+The commonest (scratch/bc/ in the session's worktree: lanes.ts, table.ts):
+
+| buff | owner | D (s) | runs (logs) | world excess: median (p10–p90) | no ultimate inside: median (n) | over the replay: median |
+|---|---|---|---|---|---|---|
+| equipsuit_usp_02_AddAttack | Gilberta | 15 | 81 (33) | 0.28 (−0.63–1.72) | 0.24 (52) | 0.25 |
+| equipsuit_fninflict_01_firedamageadd | Laevatain | 10 | 51 (17) | 0.66 (0.18–3.09) | 0.65 (33) | 0.57 |
+| wpn_funnel_0011_valid | Gilberta | 15 | 40 (9) | 0.36 (−0.45–1.84) | 0.37 (27) | 0.51 |
+| equipsuit_combosuit_01_adddamage | Camille | 15 | 39 (15) | 0.42 (−0.18–2.43) | 0.42 (23) | 0.48 |
+| common_affixes_enhance_crystal (Si's Amp) | Si | 12 | 32 (19) | 0.80 (−0.18–3.60) | −0.04 (4) | 0.82 |
+| common_affixes_vulnerable_spell | Gilberta | 5 | 30 (16) | 0.14 (−0.35–1.01) | 0.14 (14) | 0.14 |
+| common_affixes_vulnerable_physical | Mi Fu | 20 | 30 (13) | 0.16 (−0.65–3.03) | 0.22 (9) | 0.62 |
+| common_affixes_enhance_pulse | Zhuang Fangyi | 5 | 27 (9) | 0.02 (−0.62–0.73) | 0.10 (15) | 0.04 |
+| chr_0006_wolfgd_talent_0_effectbuff | Wulfgard | 10 | 23 (9) | 1.20 (0.02–4.56) | 1.20 (17) | 0.56 |
+| chr_0034_typhoea_combo_enemy_debuff | Typhoeus | 6 | 21 (7) | 0.36 (0.02–0.96) | 0.32 (16) | 0.37 |
+| chr_0004_pelica_potential_3_atkup | Perlica | 5 | 21 (9) | 0.17 (−0.43–1.68) | 0.02 (18) | 0.17 |
+| wpn_funnel_0008_magic_damage_taken_up | Arcane | 15 | 15 (8) | 0.75 (−0.03–1.56) | 0.75 (11) | 0.71 |
+| wpn_sword_0022_final (Wolven Blood) | Rossi | 20 | 13 (6) | 0.23 (−0.41–0.95) | 0.16 (6) | 0.80 |
+| chr_0016_laevat_ignore_fire_resist (Scorching Heart) | Laevatain | 20 | 10 (8) | 0.48 (−0.43–1.48) | 0.48 (7) | 0.47 |
+
+Si's Amp, one ultimate's 12 s buff with nothing that refreshes or extends it (`gamedata tree
+buff_chr_0036_jsspsi_atk_buff_2`), is the cleanest probe: its runs end at one ms on every holder (the raw lanes),
+whatever each holder's own stops or hits; exactly on time where no other ultimate falls inside (e989 9.5 s −0.12, f978
+49.2 s −0.16: its 12 s 10.8 s Staggered), long elsewhere (79cc +0.65, c779 +0.52, c83c +1.41, e49e +1.62, db87 +2.49,
+632c +3.60, 489c +3.81; exact ends, over the replay). Over all exact ends, by the ultimates inside: 0 → median 0.34 s,
+1 → 0.60, 2 → 1.09, 3+ → 1.83 (but a per-operator constant per ultimate fits no better: 156 → 171 of 440 within 0.3 s).
+
+**Found (what holds them):**
+- **The buffs really act there** (not a listing lag): of the hits the log lists a buff on past the replay's expiry (runs
+  ≥ 0.4 s past it), the damage fits the log's reading (buff on) at 802, the engine's (off) at 92, both 195, neither 703
+  (`zmdlogs hits --all --json`, scratch/bc/dmg.ts).
+- **One clock per fight, shared by the buffs and the enemy's ticks.** Hidden holds P(t) (what the placed stops don't
+  explain), nondecreasing, one per log: each run asks P(end) − P(start) ≈ its world excess (±0.2 s); difference
+  constraints, the conflicting run with the largest excess dropped until feasible (scratch/bc/clock2.ts). Of 1,378 runs,
+  one clock per log drops 152 (each run alone, about 106 can't be met at all: ended early); with the runs' excesses
+  shuffled among the log's runs, 341. Adding the 588 consecutive pairs of the enemy's 1 s tick series (Combustion,
+  Rossi's bleed: each pair's world gap less 1 s, ±0.15 s) costs 6 more runs and drops 28 pairs. The 8 runs a tick
+  series covers end where its ticks say: all within 0.3 s (2fd9 Mi Fu's set +0.98 against +0.99).
+- **The holds are about a perfect dodge each, and never while the enemy is Staggered.** Tick pairs with no placed stop
+  between: median residual 0, and 34 of 378 outside the log's Stagger come +0.31–0.79 s late (most +0.42–0.56 s), 1 of
+  92 inside it (scratch/bc/tickstag.ts). A perfect dodge's world slow-down (buff_common_dash_behit_listener,
+  TimeDilationAction layer 0, the dodger exempt; the engine's `--dodge` reads it) holds 0.512 s; a Staggered enemy
+  doesn't attack, so nothing is dodged. Two series see the same hold at once (489c 36.55→37.97 and 37.43→38.98 s). The
+  log records no dodge (no event, and the SP they give, 7 each, is in no log: "Team SP" below runs short).
+- 9c0b's ten seconds with no hit by anyone after Laevatain's ultimate hold about 7.5 s (one clock: Forgeborn +6–7.8 s,
+  Si's Amp from 9.5 s only +0.8 s): the world all but stood still, as in 4d60's 7.2 s (test 110): a pause the log's
+  clock runs through, not dodges.
+
+**Ruled out (each against the table, the clock or the ticks):**
+- A listing lag (the log listing a buff after it ended): the damage (802 against 92 above).
+- A clock per holder (its own hit-stops, animations, swaps): Si's Amp ends at one ms on all four holders, whose own
+  stops in its window differ by up to 2 s; HitStopAction is 0.03–0.05 s a hit and her Amp is exact in e989 and f978
+  with her hits in them.
+- Overlapping stops holding for their sum (Rossi's candidate): Si's Amp in 4f7e overlaps 2.29 s of stops and ends
+  −0.27; 458b 76.6 s none and +1.31.
+- A clock rate (excess ∝ length): free tick pairs run at 1.000 between holds; Si's Amp exact in some windows, +3.8 s
+  in others of 12 s.
+- A constant per ultimate or per combo: fits no better than none (above); Wulfgard's talent buff and Laevatain's set
+  buff run long with no ultimate inside.
+- The game timer pausing (the log's `timeSource` game_timer): e989's official timer ran 6.9 s more than its timeline,
+  so a paused game is out of the log's ms, not in it.
+
+**Fixed (2026-11-22): the replay keeps a buff on while the log lists it** (engine assumption `hidden-holds`, `log`
+default, `none` the replay before; buffreplay.ts `heldToLoggedEnds`): a timed kit buff whose single run (from its
+application ±3 s, not refreshed in the log) the log lists past the replay's expiry runs on to a frame after its last
+listed hit, before any hit of a holder past the expiry that doesn't list it, a step at a time (the replay's later
+stops don't hold it past that end), within 40% of its life (the probes' most: Si's Amp 32%, Forgeborn 39%). Measured:
+all but the hold-outs plain 55.7 → 57.5%, mismatch 18.8% unchanged, mean |damage error| 8.3 → 8.1% (development 57.8
+→ 59.9%, 16.5 → 16.4%, 9.8 → 9.2%), within 5% 33 → 31 (fc63 and c83c, which over-predict already, cross 5%);
+hold-outs unchanged; per-hit error closer in 15 of the 16 mixed logs. Simulations don't read it (they dodge with
+`--dodge`).
+
+**Still possible / open:**
+- Where in a window the holds fall (the clock's solution isn't unique); the dodger's own buffs held 0.315 s, not 0.512
+  (one clock per owner fits a little better than one per log: 118 against 152 dropped runs).
+- What else besides dodges: holds after the ultimates' stops (0.1–0.25 s per tick pair across a stop), pauses.
+- The other direction: runs that end before the replay's expiry (about 7%: a refresh or a cut the replay doesn't make,
+  or a kit's duration).
+- Liino's beats running fast (4d60 1.36 s for 1.5) are the other direction: not a hold.
+- Rossi's combo Crit DMG window both longer and shorter than the replay's; Gilberta's 5 s Susceptibility listed
+  8.6–12.5 s (beyond 40%: a refresh?); her Vulnerable stacks outliving 20 s by 0.4–1.6 s on the tower bosses: within
+  what dodges hold.
+
+**Next check:** test 111 (perfect dodges during Si's Amp, counted); then the replay placing the holds once for every
+timer (enemy statuses, unlisted buffs) from the shared clock, rather than per listed buff.
+
 ## Laevatain's Twilight runs longer than its model (tests 17, 18, 21; 2026-11-22: her buffs' clock, not Twilight's)
 
 **Shows (2026-11-18, replacing the 2026-11-16 brackets):** the 22 Twilight windows of
@@ -1385,7 +1481,12 @@ development and hold-out rows unchanged (the replay takes her enhanced casts fro
 dodges (buff_common_dash_behit_listener: a 0.6 s world TimeDilation, the dodger exempt;
 the engine has it in simulations, `--dodge`, but the log doesn't record dodges), world
 pauses at a fight's start (9c0b: 10 s with no hit by anyone after her ultimate,
-Forgeborn +6–7.8 s), hit-stops holding the hitter's own buffs in part. Liino's beats and
+Forgeborn +6–7.8 s), hit-stops holding the hitter's own buffs in part. **2026-11-22,
+"The buff clock" above:** every team's buffs run long the same way, on one clock per fight
+shared with the enemy's ticks, its holds about a perfect dodge's 0.512 s each and never while
+the enemy is Staggered; 9c0b's ten seconds a pause; hit-stops ruled out. The replay now keeps
+a listed buff on to the log's end (`hidden-holds`), Forgeborn and Scorching Heart among them;
+Twilight's own windows come from her logged casts and are unchanged. Liino's beats and
 volleys (below) and Rossi's crit DMG window (9a80) run slow the same way; cooldowns don't
 (test 18: 58 combo pairs within their cooldown), so it isn't the log's clock as a whole.
 A Twilight-only remainder within ±0.5 s (the four near misses) is not excluded.
@@ -1474,7 +1575,9 @@ neither (0 / 0 / 10), and every Susceptibility she applies refreshes it
 (funnel_0016 int_susceptibility), so its listed end may be a refresh.
 Whether a combo slow-down holds buffs by its lost frames (engine) or its
 whole length: under a second each, no log separates it. Why the log lists
-a buff 0.5–2.5 s after it stopped acting: unknown (a ZMDLogs lag?). The
+a buff 0.5–2.5 s after it stopped acting: unknown (a ZMDLogs lag?). Over every
+log (2026-11-22, "The buff clock") the damage sides with the listing past the replay's expiry (802
+hits against 92): db87's are the exception, not the rule. The
 enemy clock: db87's Combustion ticks are 1024–1025 ms apart with nothing
 between, and 90–180 ms further apart than the modelled holds across each
 stop (a clock ~2.5% slow against the log's, or holds a little longer).
@@ -1887,7 +1990,9 @@ cast).
 **Ruled out (2026-11-13):** Liino's "presses" in Vocalist Stance: her
 stance's beats (the owner), replayed as such, no SP.
 
-**Still possible:** teammates' basic attacks the replay doesn't land
+**Still possible:** perfect dodges (7 SP each, none logged; the logs'
+unexplained ~0.5 s world holds are about one each: "The buff clock",
+2026-11-22); teammates' basic attacks the replay doesn't land
 (their Final Strikes' SP; the earlier probe granted SP at every logged
 Final Strike); Purrchena's block refund (+20 at her counter, about 240
 SP, more if repeated blocks count); teammates' Final Strikes give SP too
@@ -2289,7 +2394,8 @@ counted by the tag (none applies it); the replay's Stagger (none between
 in 9847).
 **Still possible:** an enemy-side clock these bosses run slower than the
 world's (the same open question as their 18–20 s Stagger windows,
-above); stops the engine holds shorter (the ComboSkill curve; four to six
+above); the fight's unlogged holds (perfect dodges, 0.512 s each: "The buff
+clock", 2026-11-22), within which 0.4–1.6 s falls; stops the engine holds shorter (the ComboSkill curve; four to six
 combos between in each case); the stack timer restarting on something
 the engine doesn't count. The end scatter shares a cause with the
 Stagger's (above).

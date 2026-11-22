@@ -69,6 +69,7 @@ suggestions.
 | 6 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-lower-priority-since-2026-11-17-haste-doesnt-speed-up-attacks) Si's Haste without Initial Stroke | Si | the log records no Haste | `109: A no icon, B icon` |
 | 7 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-partly-decided-by-the-logs-2026-11-18-09-s-after-his-hp-falls-below-70-what-sets-it-off-ready-if-you-fight-rhodagn-lower-priority) what sets off Rhodagn's bar snapping back | anyone, vs Rhodagn | what he does isn't logged | `100: after 70%, when he jumps to the stacks` |
 | 8 | [98](#98-food-buffs-on-the-stat-panel-the-stew-decided-by-the-logs-2026-11-18-the-milk-ready-any-operator-lower-priority) Bottled Milk's DEF on the stat panel | anyone | DEF changes no logged damage | `98: DEF 140 → 167` |
+| 9 | [111](#111-do-perfect-dodges-hold-the-teams-buffs-ready-if-you-have-si-one-zmdlogs-upload) perfect dodges during Si's Amp | Si; a ZMDLogs upload | dodges aren't logged | `111: 4 perfect dodges, uploaded; 0, uploaded` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -3036,6 +3037,28 @@ elites; 10 s Rhodagn). About 1–4 s more means a Stagger lasts longer
 than its data, and the simulator adds it; the data's length with no
 attacking but more while attacking means hits extend it.
 **Reply, e.g.:** `110: Rhodagn, attacking 13 s, idle 10 s`.
+
+### 111. Do perfect dodges hold the team's buffs? (ready, if you have Si; one ZMDLogs upload)
+
+**What the logs show (2026-11-22, docs/open-problems.md "The buff clock"):** the
+operators' buffs run a median 0.5 s past their duration in world time, on one
+clock per fight that the enemy's tick timers share; the enemy's 1 s ticks come
+about 0.5 s late now and then (34 of 378 tick pairs), never while it's
+Staggered (1 of 92), and a perfect dodge's world slow-down holds 0.512 s by the
+data. The log records no dodge, so only the game can say whether they are the
+holds. The log check now keeps a buff on to where the log lists it (engine
+assumption `hidden-holds`); simulations dodge only with `--dodge`.
+**How:** record the fight with ZMDLogs. Against an enemy that attacks often,
+not Staggered: cast Si's ultimate, then do nothing but dodge its attacks until
+the Amp's icon is gone, perfectly (the slow-motion flash) exactly 4 times; no
+other ultimate, combo or battle skill meanwhile. Once more with no dodge (just
+stand or walk). Note how many perfect dodges you made each time and upload
+the log.
+**Predictions:** without a dodge, the Amp's listing lasts its 12 s of world
+time (12 s from when it's listed, with Si's stop out); with 4 perfect dodges
+about 2 s more (0.512 s each): the holds are dodges. 12 s both times: they
+aren't, and the holds are something else the fights do.
+**Reply, e.g.:** `111: 4 perfect dodges, uploaded; 0 dodges, uploaded`.
 
 ## Results
 

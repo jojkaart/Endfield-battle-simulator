@@ -47,13 +47,16 @@ below ([review-2026-10.md](review-2026-10.md)).
   test 71; tests 18, 19, 101, 104 done from the logs (2026-11-16: bosses
   freeze, Haste isn't attack speed, teammates' pause 6.5 s); tests 9, 17,
   22, 46 decided and 21, 43 partly from the logs (2026-11-18: buffs created
-  in a stop are held; Twilight still 0.1–4.6 s longer than its model, 2026-11-22: as are her other buffs, a buff-clock question); Arcane's misses grouped (2026-11-18: 908 → 866;
+  in a stop are held; Twilight still 0.1–4.6 s longer than its model, 2026-11-22: as are her other buffs, a buff-clock question;
+  the buff clock 2026-11-22: unlogged world holds, about a perfect dodge each, on one clock per fight; the
+  replay keeps a listed buff to the log's end, `hidden-holds`; next test 111, then the holds placed once for
+  every timer); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
   only game-only tests now); Rossi's bleed and ultimate crits (2026-11-22:
-  her bleed keeps only ATK, its ticks on the log's clock; next her buffs'
-  lengths across stops); Gilberta's Vulnerable count at her ultimate
+  her bleed keeps only ATK, its ticks on the log's clock; her buffs' lengths
+  are the buff clock's); Gilberta's Vulnerable count at her ultimate
   (2026-11-22: 489c / d572 fixed, Rossi's combo 3 landed twice; left 4360 /
   9847, stacks outliving 20 s on the tower bosses); build offsets fitted, not hand-set (`zmdlogs
   fit-build`, fixture `buildOverrides`, 2026-11-18; next: weapon levels
