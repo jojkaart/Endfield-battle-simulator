@@ -952,13 +952,18 @@ needs the Inksoul): a forced Final Stroke and an Edge layer the damage
 hasn't (0c14 81.7, 489c 107.6: 3 → 2, the implied count). A skill that
 needs a buff the logged hit's branch says was off is no longer inferred;
 the logged end is the buff's expiry instead (an `expires` step: it ends
-then, with no cast; bdf2's burst at 24.32 s keeps its landing). (2)
-withLoggedCasts made Laevatain's battle skill in Twilight twice when a
-stop held its hits back (db87: the `normal_skill` event at 27.13 and
+then, with no cast; bdf2's burst at 24.32 s keeps its landing). The
+engine's score: 52 / 4 / 12 → 54 / 4 / 10. **Found, not fixed:**
+withLoggedCasts makes Laevatain's battle skill in Twilight twice when a
+stop holds its hits back (db87: the `normal_skill` event at 27.13 and
 40.78 s, the `normal_skill_during_ult` placed from hits at 29.00 and
-41.57 s): the placed variant of a slot with no event of its own is now
-made at the press (db87 41.2: 3 → 2; its 29.43 s hit 65,139 → 84,681,
-logged 84,681). The engine's score: 52 / 4 / 12 → 55 / 4 / 9.
+41.57 s, across Si's ultimate stop and combo slow-down: db87 41.2 has 3,
+the damage 2). Merging the press with the placed variant at the press
+fixed db87 (41.2 → 2, plain 114 → 126; its 29.43 s hit 65,139 → 84,681,
+logged 84,681) but broke Purrchena (04d4 at 5.23 s: there the press is
+her battle skill and the placed counter its next step), and the two kits
+look alike to a static rule (`not X` / `X`): the replay's state at the
+press has to decide (reverted, 69360fd).
 
 **Left (3 of 68 for N1 + N2):** c779 43.7 fits 2 and 64.9 fits 3 where
 N1 + N2 give 3 and 2 (one layer moved between two consecutive combos;
