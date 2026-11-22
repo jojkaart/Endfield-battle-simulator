@@ -1307,11 +1307,16 @@ beat the ultimate's own at frame 77 (trigger ult_song, so the placement
 times the ultimate by it), the rest `ticksShownByHits`: the replay takes
 each from its logged beat, and the song's end with them (one clock: 4d60's
 second Cosmovoice, pinned 1.36 s apart, ran on to two replay-only beats).
-The finale is the ultimate's own hit, launched at 508 (End Stance drops it
-before), which the replay pins to its logged landing. The placement gives a
-trigger on casts one cast per anchor (logcasts.ts `anchorFree`: each later
-beat had made an `ult_song` of its own). Simulations are unchanged (the same
-frames: kit-liino test). An ultimate logged at the very end of another's
+The finale is the ultimate's own hit at 508, which the replay pins to its
+logged landing (End Stance in Cosmovoice leaves a marker, cosmovoice_cut,
+that skips it; a launch frame would have held her combo beside the
+ultimate until 508). The placement gives a trigger on casts one cast per
+anchor (logcasts.ts `anchorFree`: each later beat had made an `ult_song` of
+its own). Simulations keep the frames (kit-liino test) but the song, a buff,
+is held by every slow-down, Liino's own combo's too, where the ultimate's
+frames weren't (the example liino-laevatain: its beats from 10.6 s 0.6 s
+later, −0.05%); d774 agrees (beats 2.85 s apart across her combo and Zhuang
+Fangyi's, 1.84 s with both stops taken out). An ultimate logged at the very end of another's
 stop that covers it was pressed inside it (buffreplay.ts
 `loggedCastStart`): 4d60's Zhuang Fangyi ultimate at 157421 ms, Liino's stop
 ending at 157.47 s; her Empyrean attacks land from 158.38 s and Liino's
