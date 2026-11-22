@@ -1182,9 +1182,13 @@ function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): Timelin
       return moved;
     };
     if (early !== undefined) return move(Math.max(early, st.frame));
-    const frames = [...(events.get(key) ?? []), ...(shown ?? [])];
+    // The longer hold (TICK_HOLD_FRAMES) is for ticks logged as cast events (ticksLoggedAs); a tick its hits show
+    // (ticksShownByHits) waits at most half an interval, or a short-interval buff's tick takes the next one's hit
+    // (Rossi's bleed in 489c0be3e162).
+    const held = (events.get(key) ?? []).filter((x) => x - n <= Math.max(every / 2, TICK_HOLD_FRAMES));
+    const frames = [...held, ...(shown ?? []).filter((x) => x - n <= every / 2)];
     if (!frames.length || n > frame) return b;
-    const e = frames.filter((x) => x > n && x - n <= Math.max(every / 2, TICK_HOLD_FRAMES)).sort((x, y) => x - y)[0];
+    const e = frames.filter((x) => x > n).sort((x, y) => x - y)[0];
     if (e === undefined) return b;
     return move(e);
   });
