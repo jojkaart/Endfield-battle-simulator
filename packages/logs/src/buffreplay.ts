@@ -321,6 +321,11 @@ export interface ReplayedCast extends LoggedCast {
    * the kit allows only with it, `skill` at `at` ms. Its skill is the step the kit allows at its frame (missedStep).
    */
   readonly missed?: { readonly skill: string; readonly at: number };
+  /**
+   * A cast before the log began (castsBeforeLog; `start` < 0): none of its hits are in the log, what it left running is
+   * (its stance, its ticking buffs). The replay starts with it already made (withCastBeforeLog), not as a step.
+   */
+  readonly beforeLog?: true;
 }
 
 /** How far from a placed cast's start a logged cast event of its skill may be to be that cast (ms). */
@@ -363,12 +368,19 @@ function loggedCastStart(data: GameData | undefined, lc: { t: number; operator: 
   // Without one (e82d45c46040: Xaihi's at 3896 ms after 2315 ms, her Amp not yet on Arcane's hit at 7022 ms) the event is
   // the cast.
   if (!hits.some((h) => h.operator !== lc.operator && h.t >= lc.t - FLUSH_MS && h.t <= lc.t + RESUME_MS)) return lc.t;
-  const covered = stops.some((x) => {
+  const covering = stops.filter((x) => {
     if (x.operator === lc.operator) return false;
     const [a, b] = [(x.start * 1000) / FPS, ((x.start + x.scales.length) * 1000) / FPS];
     return Math.min(b, to) - Math.max(a, from) >= length / 2;
   });
-  return covered ? lc.t : Math.round(from);
+  if (covering.length === 0) return Math.round(from);
+  // Logged at the very end of the stop that covers it (within EDGE_MS), it waited for that stop's end to be logged, as a
+  // press during a stop is: it was pressed inside that stop and ran beside it, its own stop overlapping (4d60e7fe92c2:
+  // Zhuang Fangyi's at 157421 ms, Liino's stop ending at 157.47 s; her Empyrean basic attacks land from 158379 ms and
+  // Liino's song beats at 158.66 and 160.03 s, which a stop of 2.6 s from the event would have held). It starts a frame
+  // after the covering stop does, so that one's caster runs on to its own stop's end (clock.ts slowDown).
+  const atEnd = covering.find((x) => Math.abs(((x.start + x.scales.length) * 1000) / FPS - lc.t) <= EDGE_MS);
+  return atEnd ? Math.max(Math.round(from), Math.round(((atEnd.start + 1) * 1000) / FPS)) : lc.t;
 }
 
 /** How close to a window's edges a logged hit may be and still not count as inside it (ms; loggedCastStart). */
@@ -778,7 +790,82 @@ export function controlSwaps(placement: Placement, casts: readonly ReplayedCast[
 export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[]): ReplayedCast[] {
   if (kits.length === 0) return [];
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  return exitPresses(kits, fx, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts))))));
+  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts)))))));
+}
+
+/**
+ * Casts made before the log began: a buff a cast opens (a trigger on the cast's skill, `delay` frames on, with a `buff`
+ * action) whose ticks the log shows by their hits (KitBuff.ticksShownByHits), its first shown tick before any cast of
+ * that skill with landings could have opened it. The skill was cast before the log: at the earliest listing of a game
+ * buff its hits apply (its `since`, less that hit's frame) when the log lists one from before its start, else at the
+ * first shown tick less the trigger's delay (and an interval more without KitBuff.tickOnApply); no later than its last
+ * hit's frame before the log (the log has none of them). Liino's Vocalist Stance: 4d60e7fe92c2 lists her stance ATK
+ * since -811 ms and its first volley lands at 1354 ms, 791020039384 since -576 ms (1898 ms), 1d9198480e75 lists none
+ * of her buffs (1990 ms); the replay made the stance at the volley's cast event instead (the volley's own: an event at
+ * its first hit's ms), so its first volley landed nowhere and the stance's projectiles and volley came as its own.
+ */
+export function castsBeforeLog(kits: readonly OperatorKit[], fx: Pick<LogFixture, "hits">, placement: Placement, casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const added: ReplayedCast[] = [];
+  for (const kit of kits) {
+    for (const def of kit.buffs) {
+      if (!def.ticksShownByHits || def.every === undefined) continue;
+      const opener = kit.triggers.find((t) => t.on.event === "cast" && t.by === "self" && t.on.skills?.length === 1 && allActions(t.do).some((a) => a.kind === "buff" && a.buff === def.id));
+      const ticks = kit.triggers.filter((t) => t.on.event === "buffTick" && "buff" in t.on && t.on.buff === def.id).map((t) => `trigger:${t.id}`);
+      const skillId = opener && "skills" in opener.on ? opener.on.skills?.[0] : undefined;
+      const skill = kit.skills.find((x) => x.skillId === skillId);
+      if (!opener || !skill || ticks.length === 0) continue;
+      const shown = placement.casts.filter((c) => c.operator === kit.operator && ticks.includes(c.group)).map((c) => c.start).sort((a, b) => a - b)[0];
+      if (shown === undefined) continue;
+      const delayMs = ((opener.delay ?? 0) * 1000) / FPS;
+      if (casts.some((c) => c.operator === kit.operator && c.skillId === skill.skillId && c.landings.length > 0 && c.start <= shown - delayMs + LOGGED_CAST_MS)) continue;
+      // Its hits' buffs listed from before the log (`since` < 0): the earliest, less the hit's frame.
+      const fromListing = skill.hits.flatMap((h) => (h.buffs ?? []).flatMap((b) => {
+        const d = kit.buffs.find((x) => x.id === b.buff);
+        const names = new Set(d ? loggedNames(d) : []);
+        const frame = Math.min(...(loggedFrames(h) ?? [0]));
+        return fx.hits.flatMap((x) => x.effects.flatMap((e) => (names.has(e.buff) && e.since !== undefined && e.since < 0 ? [e.since - (frame * 1000) / FPS] : [])));
+      }));
+      const lastHit = Math.max(0, ...skill.hits.flatMap((h) => loggedFrames(h) ?? []));
+      const fromTick = shown - delayMs - (def.tickOnApply ? 0 : ((typeof def.every === "number" ? def.every : 0) * 1000));
+      const start = Math.min(fromListing.length ? Math.min(...fromListing) : fromTick, -((lastHit + 1) * 1000) / FPS);
+      if (typeof def.every !== "number" && !def.tickOnApply && !fromListing.length) continue; // an interval the replay can't read here
+      added.push({ operator: kit.operator, key: skill.skillId, group: skill.skillId, skillId: skill.skillId, kind: skill.kind, start: Math.round(start), lastHit: Math.round(start), keepPrevious: false, landings: [], beforeLog: true });
+    }
+  }
+  return added.length ? [...added, ...casts] : [...casts];
+}
+
+/**
+ * The state at the log's start with a cast made before it (ReplayedCast.beforeLog): the cast made at frame 0 of a
+ * timeline of its own and run as long as it ran before the log, then what it left of its operator's moved back that
+ * much onto `st` (the buffs it made, what it still has to do, its action and cooldowns, its operator's stacks). Its hits
+ * until then, the enemy, SP and energy stay `st`'s: the log shows none of them.
+ */
+function withCastBeforeLog(ctx: TimelineContext, st: TimelineState, c: ReplayedCast): TimelineState {
+  const n = -frameOf(c.start);
+  if (n <= 0) return st;
+  const ran = advance(ctx, replayCast(ctx, st, c.operator, c.skillId, 0, {}), n);
+  const back = (f: number) => f - n;
+  const buffs = ran.buffs.map((b) => (st.buffs.includes(b) ? b : {
+    ...b,
+    appliedAt: back(b.appliedAt),
+    expiresAt: back(b.expiresAt),
+    ...(b.nextTick !== undefined ? { nextTick: back(b.nextTick) } : {}),
+    ...(b.whileCasting ? { whileCasting: { ...b.whileCasting, until: back(b.whileCasting.until) } } : {}),
+  }));
+  const scheduled = [...st.scheduled, ...ran.scheduled.filter((x) => !st.scheduled.includes(x)).map((x) => ({ ...x, frame: back(x.frame), ...(x.launchAt !== undefined ? { launchAt: back(x.launchAt) } : {}) }))];
+  const acting = ran.acting[c.operator];
+  const moved = (a: Readonly<Record<string, number>>, b: Readonly<Record<string, number>>) => Object.fromEntries(Object.entries(b).map(([k, v]) => [k, a[k] === v ? v : back(v)]));
+  return {
+    ...st,
+    buffs,
+    scheduled,
+    casts: [...st.casts, ...ran.casts.slice(st.casts.length).map((x) => ({ ...x, frame: back(x.frame) }))],
+    ...(acting ? { acting: { ...st.acting, [c.operator]: { ...acting, frame: back(acting.frame), ...(acting.skips ? { skips: acting.skips.map((k) => ({ ...k, at: back(k.at) })) } : {}) } } } : {}),
+    readyAt: moved(st.readyAt, ran.readyAt),
+    triggerState: Object.fromEntries(Object.entries(ran.triggerState).map(([k, v]) => [k, st.triggerState[k] === v ? v : { ...v, readyAt: back(v.readyAt) }])),
+    stacks: { ...st.stacks, ...(ran.stacks[c.operator] ? { [c.operator]: ran.stacks[c.operator] as Readonly<Record<string, number>> } : {}) },
+  };
 }
 
 export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits">): ReplayedCast[] {
@@ -930,7 +1017,10 @@ interface TickEvents {
 /**
  * The state with each tick due by `frame` that comes less than half an interval before a logged event of it (loggedTickFrames) held to that event (loggedTick).
  * With `landings` (loggedTickLandings): also a tick due less than half an interval after a logged landing's start between
- * the state's frame and `frame` brought to it (no later than the state's frame), as loggedTick does at a cast event.
+ * the state's frame and `frame` brought to it (no later than the state's frame), as loggedTick does at a cast event. A
+ * buff whose ticks its hits show has its end on the same clock: it moves with the tick (Liino's Cosmovoice song, 10 beats
+ * on a clock of their own: 4d60e7fe92c2's second Cosmovoice, its beats 1.36 s apart, ran on to two replay-only beats
+ * past its ninth logged one).
  */
 function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): TimelineState {
   const { events, landings } = ticks;
@@ -942,16 +1032,17 @@ function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): Timelin
     if (n === undefined || every === undefined || b.cast !== undefined) return b;
     const shown = landings.get(key);
     const early = shown?.find((x) => x <= frame && x >= st.frame && x < n && n - x <= every / 2);
+    const moved = (to: number) => ({ ...b, nextTick: to, ...(shown && Number.isFinite(b.expiresAt) ? { expiresAt: b.expiresAt + to - n } : {}) });
     if (early !== undefined) {
       changed = true;
-      return { ...b, nextTick: Math.max(early, st.frame) };
+      return moved(Math.max(early, st.frame));
     }
     const frames = [...(events.get(key) ?? []), ...(shown ?? [])];
     if (!frames.length || n > frame) return b;
     const e = frames.filter((x) => x > n && x - n <= every / 2).sort((x, y) => x - y)[0];
     if (e === undefined) return b;
     changed = true;
-    return { ...b, nextTick: e };
+    return moved(e);
   });
   return changed ? { ...st, buffs } : st;
 }
@@ -1350,6 +1441,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     };
     const ctx = createContext(data, scenario);
     let st: TimelineState = init(ctx);
+    for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
     // The instances seen at the last sample, by identity (kit buff, owner, start, recipients, and which of several at one start).
     const open = new Map<string, { key: string; owner: string; id: string; start: number; expiresAt: number }>();
     const close = (key: string, start: number, end: number, expired: boolean) => instances.set(key, [...(instances.get(key) ?? []), { start, end, expired }]);
@@ -1417,7 +1509,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       ...recoveries.map((frame) => ({ frame, cast: null as ReplayedCast | null, recover: true })),
       ...poiseBars.map((g) => ({ frame: g.frame, cast: null as ReplayedCast | null, recover: false, bar: g.bar, calm: g.calm })),
       ...staggerState.map((g) => ({ ...g, cast: null as ReplayedCast | null, recover: false })),
-      ...list.map((c) => ({ frame: Math.max(0, frameOf(c.start)), cast: c as ReplayedCast | null, recover: false })),
+      ...list.filter((c) => !c.beforeLog).map((c) => ({ frame: Math.max(0, frameOf(c.start)), cast: c as ReplayedCast | null, recover: false })),
       ...sampleFrames.map((frame) => ({ frame, cast: null as ReplayedCast | null, recover: false })),
     ].sort((a, b) => a.frame - b.frame || rank(a) - rank(b));
     // The state after each step, for the facts' check at REPLAY_EDGE_MS either side of a cast (stateAt).

@@ -671,7 +671,7 @@ const BUFF_KEY: KeyRules<ActiveBuff> = {
   excluded: true, maxLayers: true, maxInstances: true, priority: true, consumedBy: true, cast: (i, env) => env.rel(i),
   // Read only while `frame < until` (buffs.ts modifiersAt) or to cut it shorter (casting.ts): over, it's as if it had none.
   whileCasting: (w, env) => (w.until > env.frame ? w : undefined),
-  blocksEnergy: true, every: true, nextTick: true, endsWithCast: (i, env) => env.rel(i), skipped: true, gameBuff: true, sharedTimer: true, link: true,
+  blocksEnergy: true, every: true, nextTick: true, noTickAtEnd: true, endsWithCast: (i, env) => env.rel(i), skipped: true, gameBuff: true, sharedTimer: true, link: true,
   basicAttack: true, records: true, snapshot: true,
   createdBy: "a record of the skill and press that made it, for analyses; nothing in the fight reads it",
 };

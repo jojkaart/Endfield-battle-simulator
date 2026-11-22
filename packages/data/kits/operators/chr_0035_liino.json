@@ -115,9 +115,10 @@
       "gameBuff": "buff_chr_0035_liino_ultskill_music_damage",
       "duration": "ultmusic_duration",
       "every": { "key": "ultmusic_trigger", "skill": "chr_0035_liino_ultimate_skill" },
+      "noTickAtEnd": true,
       "ticksShownByHits": true,
       "modifiers": [],
-      "note": "buff_chr_0035_liino_ultskill_music_damage (ultimate frame 77, CreateBuffAction 77–477, vfx_music_duration = ultmusic_duration 15 s, triggerInterval music_damage_trigger = ultmusic_trigger 1.5 s; waitFirstTriggerInterval false: the first at once): each tick launches a soundwave. The first (at once, at frame 77) is the ultimate's first_beat (trigger ult_song: on the cast's own frames, so the log check's placement times the ultimate by it, as its projectiles travel); the kit buff ticks from one interval on (trigger cosmovoice_beat). It outlives its creating clip: the logs have 10 beats per Cosmovoice (all ten logged in 4bfc6f3e84b8 at 55.3 s, 4d60e7fe92c2 at 82.6 s, 984748cfa662 at 53.5 s; never 11), the 10th at 482; it ends with Cosmovoice at 527, which no beat comes at (the beat's if: Cosmovoice's Amp ends first in the frame). Ended early by End Stance. The logs place the beats on a clock of their own against the ultimate's frames (logged 1.17–1.89 s apart without a time stop; 4d60e7fe92c2 a steady 1.36 s in both its Cosmovoices while its projectiles and Zhuang Fangyi's strikes keep their frames to ±15 ms, c6d80590f5ea 1.52 s): `ticksShownByHits` lets the log check's replay take each beat from its logged hit."
+      "note": "buff_chr_0035_liino_ultskill_music_damage (ultimate frame 77, CreateBuffAction 77–477, vfx_music_duration = ultmusic_duration 15 s, triggerInterval music_damage_trigger = ultmusic_trigger 1.5 s; waitFirstTriggerInterval false: the first at once): each tick launches a soundwave. The first (at once, at frame 77) is the ultimate's first_beat (trigger ult_song: on the cast's own frames, so the log check's placement times the ultimate by it, as its projectiles travel); the kit buff ticks from one interval on (trigger cosmovoice_beat). It outlives its creating clip: the logs have 10 beats per Cosmovoice (all ten logged in 4bfc6f3e84b8 at 55.3 s, 4d60e7fe92c2 at 82.6 s, 984748cfa662 at 53.5 s; never 11), the 10th at 482; it ends at 527 without the tick due then (noTickAtEnd; the engine's ticking buffs tick on their end frame by default, as Rossi's bleed does). Ended early by End Stance. The logs place the beats on a clock of their own against the ultimate's frames (logged 1.17–1.89 s apart without a time stop; 4d60e7fe92c2 a steady 1.36 s in both its Cosmovoices while its projectiles and Zhuang Fangyi's strikes keep their frames to ±15 ms, c6d80590f5ea 1.52 s): `ticksShownByHits` lets the log check's replay take each beat from its logged hit, and the song's end with them (one clock: 4d60e7fe92c2's second Cosmovoice, its beats pinned 1.36 s apart, had two replay-only beats past its ninth logged one while the song ran on to 15 s)."
     },
     {
       "id": "starry_boost",
@@ -442,16 +443,13 @@
                 "chr_0035_liino_ultimate_skill_soundwave_projhit"
               ],
               "heals": "team",
-              "if": {
-                "buffActive": "cosmovoice_amp"
-              },
               "dataOverride": { "count": "Each beat launches two soundwave projectiles (two LaunchProjectileActions in buff ultskill_music_damage's event); the logs show one hit per beat on one enemy (zmdlogs-dbaee23b801d: 4 of 4), so the kit has one." },
               "note": "A soundwave at each tick of cosmovoice_song (buff ultskill_music_damage's buffEvent 1) from the second beat on (frame 122; the first is ult_song's first_beat). Each also heals (ultimate heal tag). Only enemies in the AOE are hit: the logs have 4 beats in ~7.4 s (dbaee23) and 3 (d9e59). Verified per beat: zmdlogs-dbaee23b801d 4/4. Until 2026-11-22 fixed frames of the ultimate (122–482, 45 apart)."
             }
           ]
         }
       ],
-      "note": "Each tick of cosmovoice_song launches a beat (9: frames 122–482). The if: End Stance ends Cosmovoice (and the song) before its beats to come; at the song's end frame (527) Cosmovoice's Amp has ended first, so no 11th beat."
+      "note": "Each tick of cosmovoice_song launches a beat (9: frames 122–482). End Stance ends the song with Cosmovoice (trigger end_stance), so no beat comes after it."
     },
     {
       "id": "cosmovoice_start",
