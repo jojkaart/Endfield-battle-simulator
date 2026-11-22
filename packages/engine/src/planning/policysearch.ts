@@ -6,7 +6,7 @@
 // penalty per complexity point. A search heuristic, never part of a battle's result.
 
 import { EngineError, type GameData, type TimelineScenario } from "../core.ts";
-import { learnability, playRules, visibleBuffs, visibleStacks, resolveRuleList, stepsOf, type Learnability, type PolicyCue, type PolicyOptions, type PolicyRule, type PolicyStep, type RuleList } from "./policy.ts";
+import { learnability, playRules, visibleBuffs, visibleStacks, resolveRuleList, stepsOf, type Learnability, type PolicyCue, type PolicyOptions, type PolicyRule, type PolicyStep, type RuleList, type RuleSet } from "./policy.ts";
 
 export interface RuleSearchOptions {
   /** Lists scored at most (default 150). */
@@ -72,6 +72,8 @@ export interface Pool {
   readonly controlled: string;
   readonly cues: readonly PolicyCue[];
   readonly steps: readonly PolicyStep[];
+  /** Conditions a rule set may be active on (the enemy's statuses and their levels: setup phases, rules.md "Rule sets"). */
+  readonly setCues: readonly PolicyCue[];
 }
 
 export function rulePool(data: GameData, team: readonly string[], controlled: string): Pool {
@@ -80,7 +82,7 @@ export function rulePool(data: GameData, team: readonly string[], controlled: st
   const steps: PolicyStep[] = [];
   for (const op of team) {
     if (has(op, "combo")) cues.push({ combo: op }, { comboCooldown: op });
-    if (has(op, "ultimate")) cues.push({ ultimate: op });
+    if (has(op, "ultimate")) cues.push({ ultimate: op }, { energy: { operator: op, atLeast: 50 } }, { energy: { operator: op, below: 50 } });
     for (const stack of visibleStacks(data, op)) {
       const max = data.kits.operators[op]?.stacks?.find((s) => s.id === stack)?.max ?? 1;
       for (const n of new Set([1, Math.ceil(max / 2), max])) cues.push({ stacks: { operator: op, stack, atLeast: n } });
@@ -99,7 +101,11 @@ export function rulePool(data: GameData, team: readonly string[], controlled: st
   cues.push({ vulnerable: { atLeast: 1 } }, { staggered: true }, { staggered: false }, { finalStrikes: { atLeast: 1 } }, { finalStrikes: { atLeast: 2 } });
   for (const n of [50, 70, 85]) cues.push({ stagger: { atLeast: n } });
   cues.push({ stagger: { below: 50 } });
-  return { team, controlled, cues, steps };
+  cues.push({ ultimates: { atLeast: 2 } }, { ultimates: { below: 2 } });
+  const setCues: PolicyCue[] = [];
+  for (const status of ["corrosion", "electrification", "combustion", "solidification"]) setCues.push({ statusLevel: { status, atLeast: 4 } }, { statusLevel: { status, below: 4 } }, { status }, { not: { status } });
+  setCues.push({ statusLevel: { status: "breach", atLeast: 1 } }, { not: { statusLevel: { status: "breach", atLeast: 1 } } });
+  return { team, controlled, cues, steps, setCues };
 }
 
 const pick = <T>(rng: () => number, xs: readonly T[]): T => xs[Math.floor(rng() * xs.length)] as T;
@@ -130,7 +136,10 @@ function tweak(rng: () => number, c: PolicyCue): PolicyCue | null {
   if ("stagger" in c) return { stagger: { ...(c.stagger.atLeast !== undefined ? { atLeast: step(c.stagger.atLeast, 10, 0, 100) } : {}), ...(c.stagger.below !== undefined ? { below: step(c.stagger.below, 10, 10, 100) } : {}) } };
   if ("stacks" in c) return { stacks: { ...c.stacks, ...(c.stacks.atLeast !== undefined ? { atLeast: step(c.stacks.atLeast, 1, 0, 8) } : {}), ...(c.stacks.below !== undefined ? { below: step(c.stacks.below, 1, 1, 9) } : {}) } };
   if ("finalStrikes" in c) return { finalStrikes: { atLeast: step(c.finalStrikes.atLeast, 1, 1, 4) } };
+  if ("ultimates" in c) return { ultimates: { ...(c.ultimates.atLeast !== undefined ? { atLeast: step(c.ultimates.atLeast, 1, 1, 4) } : {}), ...(c.ultimates.below !== undefined ? { below: step(c.ultimates.below, 1, 1, 4) } : {}) } };
+  if ("energy" in c) return { energy: { ...c.energy, ...(c.energy.atLeast !== undefined ? { atLeast: step(c.energy.atLeast, 25, 25, 100) } : {}), ...(c.energy.below !== undefined ? { below: step(c.energy.below, 25, 25, 100) } : {}) } };
   if ("vulnerable" in c) return { vulnerable: { atLeast: step(c.vulnerable.atLeast ?? 1, 1, 1, 4) } };
+  if ("statusLevel" in c) return { statusLevel: { ...c.statusLevel, ...(c.statusLevel.atLeast !== undefined ? { atLeast: step(c.statusLevel.atLeast, 1, 1, 4) } : {}), ...(c.statusLevel.below !== undefined ? { below: step(c.statusLevel.below, 1, 1, 5) } : {}) } };
   if ("not" in c) {
     const t = tweak(rng, c.not);
     return t ? { not: t } : null;
@@ -147,7 +156,7 @@ function tweak(rng: () => number, c: PolicyCue): PolicyCue | null {
 export function editRuleList(rng: () => number, pool: Pool, list: RuleList, maxRules: number): RuleList {
   const rules = [...list.rules];
   const at = () => Math.floor(rng() * rules.length);
-  const kind = Math.floor(rng() * 11);
+  const kind = Math.floor(rng() * 12);
   switch (kind) {
     case 0:
       if (rules.length < maxRules) rules.splice(Math.floor(rng() * (rules.length + 1)), 0, newRule(rng, pool));
@@ -219,10 +228,60 @@ export function editRuleList(rng: () => number, pool: Pool, list: RuleList, maxR
       else if (opener.length > 0) opener[Math.floor(rng() * opener.length)] = pick(rng, pool.steps);
       return { ...list, opener, rules };
     }
+    case 11:
+      return editSets(rng, pool, list);
     default:
       return { ...list, rules, filler: list.filler === "dive" ? "basic" : "dive" };
   }
   return { ...list, rules };
+}
+
+/**
+ * A rule-set move (docs/design/rules.md "Rule sets"): without sets, a new set on a status condition (pool.setCues)
+ * with one rule moved into it; with sets, a rule moved into another set or out of its own, a set's condition changed
+ * (a threshold moved, negated, or another), or a set dissolved (its rules always read). Sets no rule names are dropped.
+ */
+export function editSets(rng: () => number, pool: Pool, list: RuleList): RuleList {
+  const rules = [...list.rules];
+  let sets = [...(list.sets ?? [])];
+  const i = Math.floor(rng() * rules.length);
+  const r = rules[i];
+  if (!r || pool.setCues.length === 0) return list;
+  const fresh = () => {
+    let n = 1;
+    while (sets.some((x) => x.name === `set ${n}`)) n++;
+    return `set ${n}`;
+  };
+  const x = rng();
+  if (sets.length === 0 || x < 0.25) {
+    const name = fresh();
+    sets.push({ name, when: pick(rng, pool.setCues) });
+    rules[i] = { ...r, set: name };
+  } else if (x < 0.6) {
+    const to = pick(rng, [undefined, ...sets.map((y) => y.name)].filter((y) => y !== r.set));
+    const { set: _old, ...rest } = r;
+    rules[i] = to === undefined ? rest : { ...rest, set: to };
+  } else if (x < 0.85) {
+    const j = Math.floor(rng() * sets.length);
+    const sj = sets[j] as RuleSet;
+    const y = rng();
+    const when = y < 0.4 ? (tweak(rng, sj.when) ?? sj.when) : y < 0.7 ? ("not" in sj.when ? sj.when.not : { not: sj.when }) : pick(rng, pool.setCues);
+    sets[j] = { ...sj, when };
+  } else {
+    const gone = (sets[Math.floor(rng() * sets.length)] as RuleSet).name;
+    sets = sets.filter((y) => y.name !== gone);
+    for (let k = 0; k < rules.length; k++) {
+      const rk = rules[k] as PolicyRule;
+      if (rk.set === gone) {
+        const { set: _s, ...rest } = rk;
+        rules[k] = rest;
+      }
+    }
+  }
+  const used = new Set(rules.flatMap((y) => (y.set === undefined ? [] : [y.set])));
+  sets = sets.filter((y) => used.has(y.name));
+  const { sets: _old, ...rest } = list;
+  return { ...rest, rules, ...(sets.length ? { sets } : {}) };
 }
 
 /** Local search over rule lists from `start` (docs/design/rules.md "Rule-based rotations"). */

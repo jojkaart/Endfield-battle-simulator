@@ -20,8 +20,19 @@
         "properties": {
           "when": { "$ref": "#/$defs/cue" },
           "do": { "oneOf": [{ "$ref": "#/$defs/step" }, { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/step" } }] },
-          "note": { "type": "string" }
+          "note": { "type": "string" },
+          "set": { "type": "string", "description": "The rule set it belongs to (sets): read only while that set's condition holds. None: always read." }
         }
+      }
+    },
+    "sets": {
+      "type": "array",
+      "description": "Conditional rule sets (docs/design/rules.md \"Rule sets\"): a rule naming a set is read only while its condition holds; the rules stay one ordered list.",
+      "items": {
+        "type": "object",
+        "required": ["name", "when"],
+        "additionalProperties": false,
+        "properties": { "name": { "type": "string", "minLength": 1 }, "when": { "$ref": "#/$defs/cue" }, "note": { "type": "string" } }
       }
     }
   },
@@ -65,6 +76,13 @@
         },
         "status": { "enum": ["solidification", "corrosion", "combustion", "electrification", "lift", "knockdown", "crush", "breach"], "description": "Rank 3: a status on the enemy." },
         "vulnerable": { "$ref": "#/$defs/range", "description": "Rank 3: the enemy's Vulnerable stacks." },
+        "statusLevel": {
+          "type": "object",
+          "required": ["status"],
+          "additionalProperties": false,
+          "description": "Rank 3: a status on the enemy at a level (0 when it isn't on; a reaction's level is the infliction stacks it consumed).",
+          "properties": { "status": { "enum": ["solidification", "corrosion", "combustion", "electrification", "lift", "knockdown", "crush", "breach"] }, "atLeast": { "type": "number", "minimum": 0 }, "below": { "type": "number", "minimum": 0 } }
+        },
         "staggered": { "type": "boolean", "description": "Rank 3: the enemy is Staggered." },
         "stagger": { "$ref": "#/$defs/range", "description": "Rank 3: how full the enemy's Stagger bar is, in percent (100 while Staggered)." },
         "buff": {
@@ -75,6 +93,14 @@
           "properties": { "operator": { "type": "string" }, "buff": { "type": "string" } }
         },
         "ultimate": { "type": "string", "description": "Rank 4: the operator's ultimate is ready." },
+        "ultimates": { "$ref": "#/$defs/range", "description": "Rank 4: how many of the team's ultimates are ready at once (whole numbers)." },
+        "energy": {
+          "type": "object",
+          "required": ["operator"],
+          "additionalProperties": false,
+          "description": "Rank 5: how full an operator's ultimate gauge is, in percent of its ultimate's cost.",
+          "properties": { "operator": { "type": "string" }, "atLeast": { "type": "number", "minimum": 0 }, "below": { "type": "number", "minimum": 0 } }
+        },
         "finalStrikes": {
           "type": "object",
           "required": ["atLeast"],

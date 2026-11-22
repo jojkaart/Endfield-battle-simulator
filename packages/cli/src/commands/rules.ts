@@ -26,7 +26,9 @@ export default command({
                 [--search-seeds k]        Seeds per list in the search (default 2)
                 [--front n]               Front lists scored again over the whole fight (default 8)
                 [--compare <rules.json>]  Another list against this one: the paired gain ± standard error on seeds
-                                          1–k and on fresh seeds 1001… (--fresh n, default 32; 0: none)
+                                          1–k and on fresh seeds 1001… (--fresh n, default 32; 0: none); with a
+                                          second start (--also, default the zero-energy companion) the verdict is
+                                          the objective across starts (their mean per seed), each start's beside it
                 [--assume <id>=<reading>] Run under another reading of a kit's open assumption (repeatable; e.g.
                                           si-haste-every-end=every-end, in-game test 109; the kits register them)
                 [--assumptions]           Also under each other reading of the team's kits' open assumptions: the
@@ -44,11 +46,14 @@ export default command({
                 [--screen-seeds k] [--confirm-seeds k] [--extend n]  Seeds each edit is screened on (default 6),
                                           the best n (default 4) are played on (default 32)
                 [--max-seeds k]           Seeds a close call (1.2 to 2 standard errors) is taken to (default 64)
-                [--also <scenario.json>]  A second start of the fight: the best edits are played on it too, and one is
-                                          kept only if it isn't worse there (by more than one standard error);
-                                          default: the zero-energy companion (<team>-zero.scenario.json) if there is
-                                          one. --assume, --assumptions (the final check under each other reading) and
-                                          --out (written as rounds keep lists, then the final one) as above
+                [--also <scenario.json>]  A second start of the fight (default: the zero-energy companion,
+                                          <team>-zero.scenario.json, if there is one; "none": no second start)
+                [--objective mean|first]  How a list is scored over the starts: mean (default) plays every list on
+                                          both and scores each seed by their mean sustained DPS (docs/design/rules.md
+                                          "The objective across starts"); first scores the given start, the second a
+                                          veto (an edit kept only if it isn't worse there by more than one standard
+                                          error). --assume, --assumptions (the final check under each other reading)
+                                          and --out (written as rounds keep lists, then the final one) as above
                 [--check-seeds k] [--workers n]  The final list against the start on k fresh seeds (default the
                                           confirm seeds; 0: none); worker threads (default: cores less one)
 `,
@@ -79,6 +84,7 @@ export default command({
     extend: { type: "string" },
     "max-seeds": { type: "string" },
     also: { type: "string" },
+    objective: { type: "string" },
     "check-seeds": { type: "string" },
   },
   run: async (ctx) => {
@@ -94,11 +100,15 @@ export default command({
     if (reaction !== undefined && !(reaction >= 0)) throw new Error("--reaction must be a number of seconds ≥ 0");
     const penalty = values.penalty === undefined ? undefined : Number(values.penalty);
     if (penalty !== undefined && !(penalty >= 0)) throw new Error("--penalty must be ≥ 0");
+    const objective = values.objective;
+    if (objective !== undefined && objective !== "mean" && objective !== "first") throw new Error("--objective is mean or first");
+    // The second start: --also, else the zero-energy companion; "none" for none.
+    const also = values.also === "none" ? undefined : (values.also ?? zeroCompanion(args[0] as string));
+    const alsoScenario = () => underAssume(withBattleOptions(values, readScenario(also as string)), parseAssume(data(), values.assume));
     if (values.guided) {
       const count = wholeAtLeast;
       const scenario = underAssume(withBattleOptions(values, readScenario(args[0] as string)), parseAssume(data(), values.assume));
       const team = scenario.team.map((b) => b.operator);
-      const also = values.also ?? zeroCompanion(args[0] as string);
       const g = await guidedSearch(data(), scenario, readRuleList(args[1] as string), {
         ...opt("seconds", positive(values.duration, "duration")),
         ...opt("reaction", reaction),
@@ -106,7 +116,9 @@ export default command({
         ...opt("confirmSeeds", count(values["confirm-seeds"], "confirm-seeds", 2)),
         ...opt("checkSeeds", count(values["check-seeds"], "check-seeds", 0)),
         ...opt("maxSeeds", count(values["max-seeds"], "max-seeds", 2)),
-        ...(also ? { also: { scenario: underAssume(withBattleOptions(values, readScenario(also)), parseAssume(data(), values.assume)), label: also } } : {}),
+        ...(also ? { also: { scenario: alsoScenario(), label: also } } : {}),
+        label: args[0] as string,
+        ...(objective ? { objective } : {}),
         assumptions: values.assumptions,
         ...(values.out ? { out: values.out } : {}),
         ...opt("extend", count(values.extend, "extend", 1)),
@@ -136,6 +148,7 @@ export default command({
       ...opt("front", positive(values.front, "front", true)),
       ...(values.out ? { out: values.out } : {}),
       ...(values.compare ? { compare: { list: readRuleList(values.compare), file: values.compare } } : {}),
+      ...(values.compare && also && objective !== "first" ? { also: { scenario: alsoScenario(), label: also } } : {}),
       ...(values.fresh !== undefined ? { fresh: Number(values.fresh) } : {}),
       ...opt("firstSeed", positive(values["first-seed"], "first-seed", true)),
       ...opt("workers", positive(values.workers, "workers", true)),

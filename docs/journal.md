@@ -4,9 +4,43 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 109 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 110 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-22: The rule search decides: an objective across starts, rule sets, setups
+
+**Goal:** the owner: "The whole point of this simulator is to discover [the rules] for each team." Three rule
+questions had been left as the owner's call because the guided search had no objective across the fight's two starts
+(full energy, the zero-energy companion). Later the same day, also from the owner: conditionally active rule sets, so a
+team with Arcane and a non-Nature inflicter can play a Corrosion setup phase.
+
+**Done** (docs/design/rules.md "The objective across starts", "Rule sets", "The search decides"):
+- **The objective:** every list played on both starts on the same seeds, each seed scored by the two starts' mean
+  sustained DPS (`startsObjective`); the guided search's default (`--objective mean`; `first` the old veto), per-start
+  gains in its report, `efsim rules --compare` the same. Chosen over one long fight from zero because both starts
+  happen in play and a fight from zero never returns to four full bars.
+- **Cues:** `ultimates` (how many ready at once, rank 4), `energy` (an ultimate's gauge, rank 5), `statusLevel` (a
+  status at a level, rank 3: Corrosion at full strength is level 4). In guideCues, the rule search's pool and its
+  threshold moves.
+- **Rule sets:** `sets: [{ name, when }]` and a rule's `set`; one ordered list, a set rule read only while its
+  condition holds (`effectiveRules`); the condition counts once in the learnability; flat lists unchanged.
+- **Search moves:** reaction setup sets (`reactionSetupEdits`: the applier at 4 stacks of another element, else the
+  inflicter, from spare SP or not, with the list's own guards), rules moved between sets (`setMoveEdits`), an edit
+  split by a start cue into two sets (`splitEdit`, after a round that keeps nothing or a kept edit that disagrees
+  between the starts), the rule search's `editSets`.
+- **Searches** (with-lock, 15–49 min each): the owner's team kept a Corrosion setup set: +1.06% ± 0.33 on 64 fresh
+  seeds with Akekuri's ultimate guard (+1.71% as found; Arcane's press alone +0.94%). Ink Melt: Laevatain's ultimate
+  waits for Corrosion, Si's for Combustion and Twilight: +3.21% ± 0.73 (64). Typhoeus's: ultimates wait for the hover,
+  Arcane's battle skill while the Stagger bar is below half: +8.62% ± 0.65 (32). Questions: Estella on Stagger no; Ink
+  Melt's rule 7 `shows` no (a loss from both starts now); the Twilight hold kept (dropping it −2.3%). Arcane INT
+  (Hot Work), each mode with its own searched list: −1.91% ± 0.60 (64): not worth farming. Examples changed; an INT variant in examples/variants/.
+
+**Problems:** the 2026-11-16 numbers behind the questions had all moved (the engine changes since): measured per start
+before designing anything. The owner's setup as found pressed Akekuri's battle skill inside her ultimate; the rules
+check in the test suite caught it, the setup move now copies the list's guards. The first INT search hit the 2 h
+background limit (queue wait included): rerun with 4 rounds from the new WILL list. `npx prettier` reformatted a file
+(no config in the repository): rebuilt from `git show HEAD`. Friction: docs/friction/2026-11-22-rule-objective.md.
 
 ## 2026-11-22: Perlica's combo hits: Pulser Labs and Wild Wanderer before the hit's damage
 
@@ -371,51 +405,3 @@ to an existing overshoot), mixed 4. Team (32 seeds): 52,374 → 52,529 / 48,973 
 volley's own, not beats: only 1d91 and 7910 moved, both worse (their stance was cast before the log). Pinning every
 ticking buff to its logged hits also fixed Rossi's bleed (489c mismatch 124 → 111) but is outside this task: opt-in
 for Liino only, a lead for Rossi's kit.
-
-## 2026-11-18: Arcane's and Akekuri's in-game tests from the logs
-
-**Goal:** decide from the logs the in-game tests on Arcane and Akekuri (the owner's team and Typhoeus's): 31, 51, 7,
-30, 4, 57, 62 (the "Logs first" rule; the claims of docs/in-game-tests-retriage-01-40.md and -41-75.md checked, not
-taken).
-
-**Decided** (each in its own section of docs/in-game-tests.md, "Decided by the logs (2026-11-18)"):
-- **31** (finishers in the array): a finisher alone is a Cluster Strike, four lasers about 0.4 s after its first hit
-  (00ae, 4d60, a7a7, 2b01, c516). The engine already had it (`cluster_strike_finisher`): the re-triage's "the engine
-  only has the Final Strike trigger" was stale; the replay lands all 20 lasers. A finisher and a Final Strike together
-  are one strike (b6aa 46.6 s, four lasers).
-- **51** (a hit's own effect on that hit): Solemn Phalanx (3 plain exact; 8915's on its stage factor) and Starry Beach
-  (11 plain exact) count on the hit that creates them. New: Solemn Phalanx's INT Arts DMG is also on the Corrosion the
-  same infliction forms (a7a7 3.86 s exactly (1.399 + 0.44) / 1.399; 8915 twice at 0.32), Hot Work's (from the
-  Corrosion) isn't.
-- **7** (INT Arcane ×2?): no; 00ae and a7a7 fit, 8915's ×1.85 is all its stage (238 of her 278 hits in the stage's
-  windows within 1% of its factor, as Si's and Wulfgard's). The Amp lasts the array, Gloompurge relists it, and the
-  second ultimate's cast replaces it with its own, gone by her next basic attack (00ae, 8915): the engine kept it up
-  to 10 s more.
-- **30** (her Susceptibility's length): 10 s from the hit (tight windows 10.4–11.8 s; none 20 s); the −1 to +3 s
-  differences are timer holds (tests 37, 110).
-- **4** (the Corrosion ramp): the engine's ramp; 1,156 of 1,897 non-crit hits under a plain-formula Corrosion within
-  0.3 points of its shred, alternatives at most 281; 743 of 936 with raised caps / forced scales / carried shreds.
-- **57** (Akekuri's Link): ×1.30, five plain exact Laevatain battle-skill hits in 458b.
-- **62, Akekuri's part**: each layer restarts the shared timer (458b: 11 plain exact basics at 167–173 s with all five
-  layers); Chen's, Yvonne's and Ember's parts stay open.
-
-**Engine changes** (both kept: no log worse without explanation, hold-out not worse):
-1. Before-damage triggers on the infliction (`inflictionApplied`: the game's abilityEvent 126, sent before it resolves
-   the infliction into a reaction) run ahead of those on the reaction, so a Corrosion's (or Combustion's) own hit sees
-   what they give (timeline/landing.ts). Only Solemn Phalanx (INT) changes a wearer's own Corrosion hit in practice.
-2. Arcane's kit: `int_amp_ult2`, the second ultimate's own Amp (ends Gloompurge's at the cast; ended by her next basic
-   attack, at most the skill's 287 frames). A first try with `endsWithCast` cut it before the ultimate's own hit in
-   a7a7 (a battle skill placed inside the cast) and made a7a7 and a hold-out worse; a7a7 also shows her battle skill
-   right after keeping it, so only a basic attack ends it.
-
-**Scoreboard** (docs/accuracy.md from `npm run snapshots:update`, against 9fa151b): development
-plain 49.5 → 49.6%, mismatch 19.3 → 19.2%, mean |damage error| 13.0 → 13.1% (00ae's total: its post-ultimate hits
-moved from −40% to −15% each, unquantified, under a total already below the log); hold-out unchanged in the
-aggregates (1 log better, none worse); 8915 plain 101 → 113, a7a7 352 → 353; Arcane's row plain 60.9 → 61.1%.
-
-**Teams:** both play Arcane in WILL, where neither change acts (Solemn Phalanx's INT trigger and the second
-ultimate's Amp need Intellect ≥ Will): the example snapshots didn't move.
-
-**Left:** 8915 after its stage (×0.986 at 92–103 s, ×0.81–1.21 steps at 104–112 s); whether a combo or battle skill
-ends the second ultimate's Amp; the 0.05 s by which Akekuri's P1 outlives the replay's end in 458b; her own finisher's
-8 SP (no log records SP).

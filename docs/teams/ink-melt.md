@@ -189,7 +189,7 @@ Ardelia:
   (24/48/96: 1.80 / 3.81 / 3.89M). Both teams' numbers are lower bounds,
   Ink Melt's looser.
 
-### Rules: what to play (2026-11-16)
+### Rules: what to play (2026-11-16; re-found 2026-11-22)
 
 A rotation to learn rather than a timeline (docs/design/rules.md "Rule-based
 rotations"; [examples/ink-melt.rules.json](../../examples/ink-melt.rules.json),
@@ -197,10 +197,11 @@ rotations"; [examples/ink-melt.rules.json](../../examples/ink-melt.rules.json),
 skill, then Laevatain's battle skill**; then at every moment do the first
 of these that applies:
 
-1. When Laevatain's ultimate is ready: Laevatain's ultimate.
+1. When Laevatain's ultimate is ready and the enemy has Corrosion:
+   Laevatain's ultimate.
 2. When Wulfgard's ultimate is ready: Wulfgard's ultimate.
-3. When Si's ultimate is ready and Laevatain is in Twilight (or her
-   ultimate is ready): Si's ultimate.
+3. When Si's ultimate is ready, the enemy has Combustion and Laevatain
+   is in Twilight: Si's ultimate.
 4. When Laevatain's combo lights up: Si's battle skill, then Laevatain's
    combo.
 5. When Si's combo lights up: Si's combo.
@@ -213,9 +214,39 @@ of these that applies:
    battle skill.
 
 Otherwise Laevatain's basic attacks. Ardelia's ultimate isn't cast.
-Learnability: 2 opener presses, 9 rules (12 presses), cue cost 32,
-complexity 46; the hardest cues are the three "ultimate ready" ones
+Learnability: 2 opener presses, 9 rules (12 presses), cue cost 33,
+complexity 47; the hardest cues are the three "ultimate ready" ones
 (rank 4).
+
+**What the search changed and decided (2026-11-22; `efsim rules
+--guided` under the objective across starts, docs/design/rules.md "The
+objective across starts"; 6 rounds, 2,780 runs, 35 min).** Kept, in
+order: Si's ultimate also waits for Combustion (+1.43% ± 0.56 on seeds
+1–32), a random edit that dropped the "or Laevatain's ultimate is ready"
+from rule 3 (+1.06% ± 0.46, 64 seeds), **Laevatain's ultimate waits for
+Corrosion** (+1.18% ± 0.53, 64 seeds: +4.28% ± 0.93 at full energy,
+−1.91% ± 0.79 from zero), and Si's ultimate waits for Twilight again
+(+2.30% ± 0.80). The new list against the old on 64 fresh seeds
+(1001–1064): **+3.21% ± 0.73** under the objective (full energy +7.47% ±
+1.10, 59,623 → 64,075; from zero −1.08% ± 0.80, 59,127 → 58,487). The
+Corrosion hold is the one right from one start and wrong from the other;
+read only while a cue that tells the starts apart holds (rule sets,
+`splitEdit`), it measures, against the old list on the same seeds, +3.16%
+± 0.69 while two or more ultimates are ready, +3.36% ± 0.72 while Si's
+gauge is at least half full (from zero −0.57% / −0.39%), −0.63% while
+fewer than two are ready: no split beats the plain hold beyond the noise
+(+0.15% for the best), so the list keeps the simpler one.
+The open questions of 2026-11-16 are decided:
+- **Rule 7 only when Si's button shows her battle skill: no.** At the
+  base commit −1.60% ± 1.23 at full energy, −1.86% ± 1.08 from zero,
+  −1.73% ± 0.80 under the objective (32 fresh seeds); in the search's
+  six rounds −0.3% to −18.5% on the screening seeds (the Finisher gate
+  and the longer Twilight since 2026-11-18 changed it).
+- **The Twilight hold: kept, and worth it now.** Dropping it from the old
+  list: −1.41% ± 1.48 at full energy, −3.28% ± 0.95 from zero, **−2.34% ±
+  0.78** under the objective (32 fresh seeds); the search put it back with
+  Combustion added. (Without the Corrosion hold the new list is −0.32% ±
+  0.54 against the old, the same 64 seeds: the hold is the gain.)
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
@@ -223,6 +254,12 @@ complexity 46; the hardest cues are the three "ultimate ready" ones
 | As a bot (0 s) / at 0.6 s | 70,347 / 66,655 | 66,705 / 60,522 |
 | First 60 s against the 60 s timeline (the examples) | 3,454,357 against 4,732,088 (−27.0%) | 2,506,673 against 4,642,409 (−46.0%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 20,900,414 against 16,406,168 (**+27.4%**) | |
+
+**The list re-found by the guided search (2026-11-22; the same seeds 1001–1032):** **63,007** (sd 3,885) at full
+energy, **57,944** (sd 3,192) from zero (the list before: 59,662 / 59,097, the numbers after "Twilight held by her own
+stop" below); as a bot / at 0.6 s 66,215 / 63,032 (full energy), 59,648 / 56,313 (from zero); the first 60 s
+4,690,138 against the repaired 60 s timeline's 3,414,967 (a lower bound) at full energy, 1,971,577 against 2,844,498
+(−30.7%) from zero. The table above and the paragraphs below are the list before.
 
 **The engine changes of 2026-11-18 (in-game tests 110 and 108 from the logs; same seeds):** a Stagger lasts about 2 s past its data: 63,347 → 62,424 / 56,123 → 57,486 (−1.5% / +2.4%, within the noise); Laevatain no longer Finishers during Twilight (the logs: 7 Staggers with her Twilight chain, no Finisher), which the rules had her do: → **59,140 / 54,421** (−5.3% / −5.3%). As a bot / at 0.6 s now 57,300 / 58,479 (full energy).
 
@@ -295,10 +332,10 @@ kept nothing. Checked further by hand:
   Ardelia's combo waits while Artful Intent is up, as the owner's team's
   rule 9 does for Si): +1.52% ± 1.42 on the search's seeds 1–32, but
   +3.93% ± 0.77 and +2.54% ± 0.86 on 64 fresh seeds each, and from zero
-  energy −3.27% ± 1.26 (32 seeds): a full-energy option, not taken (from
+  energy −3.27% ± 1.26 (32 seeds): not taken then, and a loss from both starts since (2026-11-22, above; from
   zero the skipped combos' energy is missed early). From the list before
   the Twilight hold the search found it and kept it (+3.10% ± 1.02).
-- **The Twilight hold (rule 3) measures about nothing**: the example
+- **The Twilight hold (rule 3) measured about nothing then** (2026-11-22: worth +2.3%, above): the example
   against the list without it on 64 fresh seeds, −0.11% ± 0.71; the
   +4.1% above was measured on 10 seeds, within their noise. Kept (it
   costs nothing), but it isn't the gain it looked like.

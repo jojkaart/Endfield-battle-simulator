@@ -15,6 +15,7 @@ import {
   RULE_SEARCH_PENALTY,
   critTriggers,
   cueCost,
+  describeCue,
   describeRule,
   distributionCritMode,
   describeStep,
@@ -23,6 +24,7 @@ import {
   resolveRuleList,
   searchRules,
   simulate,
+  startsObjective,
   type GameData,
   type Learnability,
   type PolicyRun,
@@ -71,6 +73,12 @@ export interface RulesOptions {
   readonly firstSeed?: number;
   /** Fresh seeds (1001…) of the comparison (default 32; 0: none). */
   readonly fresh?: number;
+  /**
+   * A second start of the fight (the team's zero-energy companion): the comparison is also played there, and its
+   * verdict is the objective across starts (the mean of the two starts' sustained DPS per seed: docs/design/rules.md
+   * "The objective across starts"), with each start's own gain beside it.
+   */
+  readonly also?: { readonly scenario: TimelineScenario; readonly label: string };
   /** Whether the result holds under each other reading of the team's kits' open assumptions (assume.ts). */
   readonly assumptions?: boolean;
   /** Worker threads (default: cores less one; 1: none). */
@@ -159,14 +167,15 @@ async function evaluate(data: GameData, scenario: TimelineScenario, list: RuleLi
 }
 
 const n0 = (x: number) => num(Math.round(x), 0);
-const RANK_WORDS: Readonly<Record<number, string>> = { 0: "none", 1: "a combo lighting up", 2: "SP or Typhoeus's arrows / Signs", 3: "the enemy's statuses or an operator's visible state", 4: "an ultimate ready", 5: "counting Final Strikes", 6: "a combo's cooldown", 7: "a timer in the head" };
+const RANK_WORDS: Readonly<Record<number, string>> = { 0: "none", 1: "a combo lighting up", 2: "SP or Typhoeus's arrows / Signs", 3: "the enemy's statuses or an operator's visible state", 4: "an ultimate ready (or how many are)", 5: "counting Final Strikes or reading an ultimate's gauge", 6: "a combo's cooldown", 7: "a timer in the head" };
 
 /** The list in the player's words: opener, numbered rules (with their cue cost), filler. */
 export function describeRuleList(data: GameData, list: RuleList, fired?: readonly number[]): string[] {
   const lines = [`Opener: ${list.opener.length ? list.opener.map((s) => describeStep(data, s)).join(", then ") : "none"}`];
+  for (const s of list.sets ?? []) lines.push(`Set ${s.name}: its rules are read only while ${describeCue(data, s.when)} [cue cost ${cueCost(s.when).cost}, once]`);
   list.rules.forEach((r, i) => {
     const c = cueCost(r.when);
-    lines.push(`  ${i + 1}. ${describeRule(data, r)}  [cue cost ${c.cost}${fired ? `; fired ${fired[i]}×` : ""}]`);
+    lines.push(`  ${i + 1}. ${describeRule(data, r, list.sets)}  [cue cost ${c.cost}${fired ? `; fired ${fired[i]}×` : ""}]`);
   });
   lines.push(`Otherwise: ${list.filler === "dive" ? "dive (jump attacks)" : "basic attacks"} with the controlled operator.`);
   return lines;
@@ -239,12 +248,34 @@ export async function rulesCommand(data: GameData, scenario: TimelineScenario, r
   if (options.compare) {
     other = resolveRuleList(data, team, options.compare.list);
     options.progress?.(`compare: ${options.compare.file} on seeds 1–${seeds}${fresh ? ` and ${FRESH_SEED}–${FRESH_SEED + fresh - 1}` : ""}`);
-    const usual = paired(start.dps, await dpsOf(other, fight, seeds, 1));
-    const freshGain = fresh > 0 ? paired(await dpsOf(list, fight, fresh, FRESH_SEED), await dpsOf(other, fight, fresh, FRESH_SEED)) : null;
+    const usualOther = await dpsOf(other, fight, seeds, 1);
+    const usual0 = paired(start.dps, usualOther);
+    const freshA = fresh > 0 ? await dpsOf(list, fight, fresh, FRESH_SEED) : [];
+    const freshB = fresh > 0 ? await dpsOf(other, fight, fresh, FRESH_SEED) : [];
+    const fresh0 = fresh > 0 ? paired(freshA, freshB) : null;
+    // With a second start, the verdict is the objective across starts (the mean per seed), each start's gain beside it.
+    let usual = usual0;
+    let freshGain = fresh0;
+    const second: string[] = [];
+    if (options.also) {
+      const alsoFight: TimelineScenario = { ...withSeconds(options.also.scenario, seconds), rotation: [] };
+      options.progress?.(`compare: the same on ${options.also.label}`);
+      const ua = await dpsOf(list, alsoFight, seeds, 1);
+      const ub = await dpsOf(other, alsoFight, seeds, 1);
+      usual = paired(startsObjective([start.dps, ua]), startsObjective([usualOther, ub]));
+      second.push(`  by start, seeds 1–${seeds}: ${gainText(usual0)} on the given start, ${gainText(paired(ua, ub))} on ${options.also.label}`);
+      if (fresh > 0) {
+        const fa = await dpsOf(list, alsoFight, fresh, FRESH_SEED);
+        const fb = await dpsOf(other, alsoFight, fresh, FRESH_SEED);
+        freshGain = paired(startsObjective([freshA, fa]), startsObjective([freshB, fb]));
+        second.push(`  by start, fresh seeds: ${gainText(fresh0 as { gain: number; se: number })} on the given start (${n0(mean(freshA))} → ${n0(mean(freshB))}), ${gainText(paired(fa, fb))} on ${options.also.label} (${n0(mean(fa))} → ${n0(mean(fb))})`);
+      }
+    }
     comparison = { usual, fresh: freshGain };
-    lines.push("", `Compared with ${options.compare.file} (its sustained DPS against this list's, paired on common seeds):`);
+    lines.push("", `Compared with ${options.compare.file} (its sustained DPS against this list's, paired on common seeds${options.also ? `; the objective across starts: the mean of the given start and ${options.also.label} per seed` : ""}):`);
     lines.push(`  seeds 1–${seeds}: ${gainText(usual)} (${verdictWords(usual)})`);
     if (freshGain) lines.push(`  fresh seeds ${FRESH_SEED}–${FRESH_SEED + fresh - 1}: ${gainText(freshGain)} (${verdictWords(freshGain)})`);
+    lines.push(...second);
     lines.push(`  ${describeLearn(start.learn)} → ${describeLearn(learnability(other))}`);
   }
 

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import {
   checkRuleRun,
+  framesOf,
   playRules,
   resolveRuleList,
 } from "@efsim/engine";
@@ -31,6 +32,29 @@ describe("event stepping", () => {
       expect(a.sustainedDps).toBe(b.sustainedDps);
       expect(a.fired).toEqual(b.fired);
     }
+  });
+});
+
+describe("event stepping with rule sets and the cues of 2026-11-22", () => {
+  it("a Corrosion setup set, the ultimates-ready count and the ultimate gauge: the same run frame by frame", () => {
+    const { sc, list: base } = example("typhoeus-arcane-liino-perlica", true);
+    const l = resolveRuleList(data, sc.team.map((b) => b.operator), {
+      ...base,
+      sets: [{ name: "setup", when: { statusLevel: { status: "corrosion", below: 4 } } }],
+      rules: [
+        { when: { all: [{ ultimates: { atLeast: 2 } }, { ultimate: "Arcane" }] }, do: { operator: "Arcane", cast: "ultimate" } },
+        { when: { energy: { operator: "Liino", atLeast: 60 } }, do: { operator: "Liino", cast: "combo" } },
+        { when: { infliction: { element: "electric", atLeast: 2 } }, do: { operator: "Arcane", cast: "battle" }, set: "setup" },
+        { when: { sp: { atLeast: 100 } }, do: { operator: "Perlica", cast: "battle" }, set: "setup" },
+        ...base.rules,
+      ],
+    });
+    const fight90 = { ...sc, durationFrames: framesOf(90), rotation: [] };
+    const a = playRules(data, fight90, l, { seed: 5 });
+    const b = playRules(data, fight90, l, { seed: 5, stepping: "frames" });
+    expect(a.rotation).toEqual(b.rotation);
+    expect(a.fired).toEqual(b.fired);
+    expect(a.fired[2]).toBeGreaterThan(0);
   });
 });
 

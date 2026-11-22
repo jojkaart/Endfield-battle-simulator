@@ -1,6 +1,6 @@
 # Rule-based rotations
 
-Part of the [design](../design.md): Rule lists played by a simulated player: the driver, the button model, the diagnosis, gear on rules, the guided search and the assumption switches.
+Part of the [design](../design.md): Rule lists played by a simulated player: the driver, the button model, the diagnosis, gear on rules, the guided search, the objective across starts, rule sets and the assumption switches.
 
 `efsim rules <scenario.json> <rules.json>` (engine `playRules`, policy.ts;
 the search `searchRules`, policysearch.ts; CLI rules.ts; 2026-11-16).
@@ -23,9 +23,14 @@ repair needed), which later makes gear comparison cheap.
 2. Typhoeus's Hunting Arrows and Signs (very easy); SP and how many
    battle skills are ready (easy).
 3. Inflictions and vulnerabilities on the enemy (relatively easy, shown
-   on the enemy).
-4. An ultimate being ready (harder: it's in the corner of the screen).
-5. Counting Final Strikes (takes practice, doable).
+   on the enemy); since 2026-11-22 also a status's level (Corrosion at
+   full strength: the infliction stacks it consumed, which the player saw
+   go in).
+4. An ultimate being ready (harder: it's in the corner of the screen);
+   since 2026-11-22 also how many are ready at once (the same corner).
+5. Counting Final Strikes (takes practice, doable); since 2026-11-22
+   also how full an ultimate's gauge is (its icon fills as energy comes:
+   a partial fill takes more reading than "ready").
 6. A combo skill's cooldown status (visible, but the owner isn't used to
    looking at it).
 7. Anything needing a timer in your head (hardest; avoid, or count
@@ -81,11 +86,15 @@ team next to its scenario):
   controlled operator does every basic attack, dive and finisher.
 - *Cues* (`when`): `combo` (lit: off cooldown, its window open,
   available; rank 1), `stacks` and `sp` (2), `infliction`, `status`
-  (reaction and physical statuses), `vulnerable`, `staggered`, `buff` (3),
-  `ultimate` (4), `finalStrikes` (the controlled operator's since the rule
-  last fired; 5), `comboCooldown` (6), `since` (seconds since an
-  operator's last press of a button: a timer; 7), and `all` / `any` /
-  `not`.
+  (reaction and physical statuses), `statusLevel` (a status at a level, 0
+  while it isn't on), `vulnerable`, `staggered`, `buff` (3), `ultimate`
+  and `ultimates` (how many are ready; 4), `energy` (an ultimate's gauge
+  in percent of its cost) and `finalStrikes` (the controlled operator's
+  since the rule last fired; 5), `comboCooldown` (6), `since` (seconds
+  since an operator's last press of a button: a timer; 7), and `all` /
+  `any` / `not`.
+- *Sets* (`sets`, a rule's `set`; 2026-11-22): rules read only while a
+  condition holds ("Rule sets" below).
 - *Rules* are ordered; `do` is one press or a short sequence (at most 3:
   "battle skill A, then combo B"). *Opener*: a few presses played first.
   *Filler*: what the controlled operator does when no rule fires, its
@@ -181,7 +190,8 @@ of the first two, and a constructed End Stance list to be caught.
 **Learnability** (`learnability`): opener presses, rules, the rules'
 presses and their **cue cost**: each cue part costs by its rank (1, 2, 3,
 then 5, 6, 7 for ranks 4–6, and 20 for a timer), a combination the sum of
-its parts; `complexity` = opener presses + rule presses + cue costs, the
+its parts, and each rule set's condition once (when a rule uses the set);
+`complexity` = opener presses + rule presses + cue costs, the
 one number the search trades DPS against. The report gives each rule's
 cost and the hardest rank used.
 
@@ -400,7 +410,7 @@ Intensity +5% a line; Si's logs' LYNX Slab loadout; Akekuri's Fiber
 Gloves: more efficiency for a bottleneck support), examples kept; Ink
 Melt +3.9% ± 1.0 (Wulfgard's efficiency, a bottleneck) but −1.5% on the
 60 s timeline, example kept; Typhoeus's team +0.9% (Perlica, damage only,
-example changed) and +5.9% for Arcane in INT mode (the owner's call). A
+example changed) and +5.9% for Arcane in INT mode (on the old list; rules against rules on 2026-11-22, −1.9%: "The search decides"). A
 60-list rule search on the owner's new gear found no better list. Runs go to worker
 threads (rulespool.ts; each loads the game data once). Since 2026-11-16 a
 command has one pool (`commandPool`: started on first use, kept for all
@@ -548,6 +558,157 @@ a player would think of, and the dead ends are measured (holding a
 window's own trigger for a multiplier loses 7–57% on every team; holding
 Liino's ultimate for Typhoeus's hover, the obvious move for the biggest
 miss of all, gains nothing).
+
+### The objective across starts (2026-11-22)
+
+The owner (2026-11-22): "The whole point of this simulator is to discover
+[the rules] for each team. If those rules are not currently possible for
+the simulator to test, then we need to add them." Three questions had been
+left to the owner because the search had no objective across the fight's
+two starts (full energy, and the zero-energy companion
+`examples/<team>-zero.scenario.json`): an edit kept at full energy could
+lose from zero, and the zero start was only a veto.
+
+**The objective:** every list is played on both starts on the same seeds,
+and each seed is scored by the **mean of the two starts' sustained DPS**
+(`startsObjective`, policyguide.ts; equal weights, an option of the
+function). It is the team's expected sustained DPS when half its fights
+start with full bars and half from zero. Why this rather than one long
+fight from zero in which the full-energy phase recurs: in play both starts
+happen (a boss after the room's trash, with bars charged; a fresh attempt
+or a retry from zero, "the harder fights" in the owner's words), and the
+player plays one list in both; a fight from zero never returns to four
+full bars at once (the bars refill one by one as SP is spent), so a long
+fight from zero would only weigh the steady state and drop the charged
+opening, which is a situation of its own. Each start is still 300 s
+against the scenario's boss (Rhodagn, Lv 90), sustained DPS after the
+opener: long enough that a setup costing early damage is judged over the
+whole fight (below). Pairing: the per-seed mean of list B minus that of
+list A, over A's mean (pairedGain on the objective's values), so the
+standard error includes both starts' noise and their correlation. The
+guided search uses it by default when the companion exists (`--objective
+mean`; `--objective first` is the old objective, the given start with the
+companion a veto; `--also none` drops the companion); the report gives
+each kept edit's gain per start beside the objective's, and the final
+check on fresh seeds per start. `efsim rules --compare` gives the same
+verdict (the objective, each start's gain beside it). The cost: twice
+the runs of a one-start search.
+
+**What tells the starts apart in play** (measured 2026-11-22, the three
+questions, the lists against the edited lists on fresh seeds 1001–1032,
+`scratch/startdiff.ts` per minute): the difference between the starts is
+in the first one or two minutes, while energy is plentiful (full start)
+or scarce (zero start); after that the two converge and the per-minute
+differences are the chaos of moved Stagger windows. Visible cues that
+say "energy is plentiful": **how many ultimates are ready at once**
+(rank 4, new: `ultimates`; four at a full start, none from zero) and
+**how full an ultimate's gauge is** (rank 5, new: `energy`, in percent of
+its cost). Neither was sayable before (an `any` of pairs of `ultimate`
+cues costs 10 a pair). A third, already sayable: another operator's
+ultimate ready earlier than this one's (`ultimate` and `not ultimate`).
+The guided search reads them among its cues (guideCues: "2 or more
+ultimates ready", each gauge at 50%), and a move uses them: an edit that
+gains from one start and loses from the other (each beyond one standard
+error) is tried next round **split by a cue** (`splitEdit`): the edited
+rule in a set read while the cue holds, the old rule in a set read while
+it doesn't; the cues are "2 or more ultimates ready" and the three visible
+cues whose share of the fight differs most between the starts. The rule
+search's pool has the new cues too.
+
+### Rule sets (2026-11-22)
+
+The owner (2026-11-22): "Many teams can benefit from longer term strategy
+against harder opponents. For example, any team with Arcane and someone
+who can do an infliction other than nature can relatively easily apply
+full strength corrosion as a setup phase in the beginning. If we add
+support for sets of rules that are conditionally active. [...] we'd have
+three sets of rules. Always active ones and then two sets for corrosion
+applied and not applied states."
+
+**The format** (schemas/rules.schema.json): `sets: [{ name, when, note? }]`
+at the top of a list, and a rule's `set: <name>`; a rule without `set` is
+always read. A list without sets is the always-active set alone (every
+older list is valid as it was).
+
+```json
+{
+  "sets": [{ "name": "corrosion setup", "when": { "statusLevel": { "status": "corrosion", "below": 4 } } }],
+  "rules": [
+    { "when": { "ultimate": "Arcane" }, "do": { "operator": "Arcane", "cast": "ultimate" } },
+    { "when": { "infliction": { "element": "heat", "atLeast": 4 } }, "do": { "operator": "Arcane", "cast": "battle" }, "set": "corrosion setup" },
+    { "when": { "not": { "infliction": { "element": "heat", "atLeast": 4 } } }, "do": { "operator": "Akekuri", "cast": "battle" }, "set": "corrosion setup" }
+  ]
+}
+```
+
+**Precedence: one ordered list.** The rules keep one priority order, the
+set rules among the others, and a set rule is read only while its set's
+condition holds (`effectiveRules`: its cue is "the set's condition and its
+own", so the reaction delay covers noticing the phase too). Why not "the
+active set's rules first, then the always-active ones": a player follows
+one priority list in which some lines apply only in a phase; "ultimate
+when ready" stays above the setup's presses, which that rule would put
+below them, and the ordered list can still put a phase's rules first
+where that's better (the search tries both places). **Learnability:** a
+set's condition counts once (by its rank, as any cue), however many rules
+it has: the player watches the phase, not each rule's copy of it.
+**Reports** print each set and, on each of its rules, `[set: while …]`.
+
+**The cue a setup needs:** `statusLevel: { status, atLeast?, below? }`
+(rank 3): a reaction's level is the infliction stacks it consumed (1–4:
+Corrosion's shred start, rate and cap; Electrification's strength),
+Breach's and Crush's the Vulnerable stacks; 0 while it isn't on.
+"Corrosion at full strength" is level 4. Its ramp to the cap (whole
+seconds) isn't visible, so not a cue. Vulnerable and infliction stacks
+were sayable already.
+
+**Search moves:** the guided search proposes **setup sets**
+(`reactionSetupEdits`): for a reaction whose element one operator's battle
+skill inflicts alone (Corrosion: Arcane's Nature) and another operator's
+battle skill inflicting one other element (Akekuri's Heat, Estella's
+Cryo, Perlica's Electric), a set read while the reaction isn't at level 4
+with two rules: at 4 stacks of that element, the applier's battle skill;
+otherwise the inflicter's (from spare SP, 200, or whenever it can); after
+the leading ultimate rules or first; with or without the list's own
+presses of the applier moved into a set read while the reaction is up (so
+they don't spend the stacks early). Reactions are tried in the order of
+what their status already adds to the windows (the losses), Corrosion
+first among equals; at most 8 a round. **Rules moved between sets**
+(`setMoveEdits`): each set rule out of its set, each always-read
+battle-skill rule into each set. The rule search's random moves gain a
+set move (`editSets`): a new set on a status condition with one rule in
+it, a rule moved between sets, a set's condition changed, a set
+dissolved. Every one is judged by play under the objective across starts,
+so a setup that costs damage early and pays later is judged over the
+whole 300 s of both starts.
+
+### The search decides (2026-11-22)
+
+The guided search under the objective across starts, with the new cues
+and moves, on the three teams (300 s, 3 workers on 4 shared cores; each
+team page's "Rules" has the list in plain words and the per-start
+numbers). Gains on fresh seeds (1001…), the objective's (the starts'
+mean), ± one standard error:
+
+| Team | Rounds / runs / time | Kept | Fresh seeds | The open question |
+|---|---|---|---|---|
+| The owner's | 3 / 1,320 / 15 min | the Corrosion setup set (Akekuri's Heat to 4 stacks from spare SP, then Arcane's Nature) | +1.06% ± 0.33 (64; with the guard on Akekuri's ultimate the rules check asked for; +1.71% as found) | Estella's ultimate only while Staggered: no (−3.8% screened; +0.5% ± 0.4 on 32 fresh seeds) |
+| Ink Melt | 6 / 2,780 / 35 min | Si's ultimate also waits for Combustion; Laevatain's ultimate waits for Corrosion; the Twilight hold back | +3.21% ± 0.73 (64; full +7.5%, zero −1.1%) | rule 7 with `shows`: no (−1.7% ± 0.8, both starts lose); the Twilight hold: kept (dropping it −2.3% ± 0.8) |
+| Typhoeus's | 6 / 3,316 / 49 min | Arcane's and Liino's ultimates wait for the hover; Arcane's battle skill while the Stagger bar is below half | +8.62% ± 0.65 (32; full +7.9%, zero +9.4%) | (none open; a Corrosion setup: no, +0.13% ± 0.32 on 64 seeds) |
+| Typhoeus's, Arcane INT (Hot Work) | 4 / 2,468 / 26 min, from the WILL list | Arcane's battle skill before Perlica's combo; flight from a 70% Stagger bar | +1.97% ± 0.81 over the WILL list on INT gear (32) | INT against WILL, each with its own list: −1.91% ± 0.60 (64): no |
+
+Each question was decided by the measurement, not the start's veto: the
+three gains of 2026-11-16 had moved with two days of engine changes (the
+owner's Estella-on-Stagger flipped sign between the starts; Ink Melt's
+`shows` edit became a loss from both), which the objective judged as
+they are now. The split by a start cue had one candidate worth trying,
+Ink Melt's Corrosion hold (+4.3% full, −1.9% zero on 64 seeds): read only
+while two or more ultimates are ready, or while Si's gauge is at least
+half full, it is +3.16% / +3.36% against the old list on the 64 fresh
+seeds, against +3.21% for the plain hold, so the simpler hold stays (the
+search's split move now also follows a kept edit that disagrees between
+the starts). The new cues earn their place in Typhoeus's list (rule 5:
+Arcane's gauge below half) and in the setup (Corrosion's level).
 
 ### Assumption switches (2026-11-16)
 

@@ -12,12 +12,14 @@ updated.
 **Rule-based rotations (2026-11-16, phases 1 and 2 done: design/rules.md
 "Rule-based rotations", `efsim rules`, `efsim diagnose`, `efsim gear
 --rules`, examples/*.rules.json, each team page's "Rules" and "Gear"):**
-next, the owner's call on the owner's team's gear (Estella's Grizzled
-Edge loadout, Si's LYNX Slab loadout, Akekuri's Fiber Gloves: +8.0% ±
-0.9 together, played by the rules) and on Arcane in INT mode for
-Typhoeus's team (Hot Work loadout, +5.9% ± 0.7: a rule search for INT
-mode first, docs/teams/typhoeus-arcane-liino-perlica.md "Gear played by
-the rules"); timeline-moving stats (Ultimate
+what's left for the owner is gear they'd have to farm: the owner's
+team's (Estella's Grizzled Edge loadout, Si's LYNX Slab loadout,
+Akekuri's Fiber Gloves: +8.0% ± 0.9 together, played by the rules of
+2026-11-16; the gear ascent on the new lists is next); Arcane in INT
+mode for Typhoeus's team is decided, rules against rules: −1.91% ± 0.60
+on 64 fresh seeds, not worth the Hot Work loadout
+(docs/teams/typhoeus-arcane-liino-perlica.md "Gear played by the rules");
+timeline-moving stats (Ultimate
 Gain Efficiency, mode-flipping attributes) are noisy even on common
 seeds (±1–2% a line at 4 seeds, ±0.6–1.3% at 16): a cheaper estimate of
 their worth (energy held / wasted against the ultimate's value per
@@ -43,13 +45,20 @@ from the ideal-combo losses: a run's achievement explains much of its
 DPS spread), the ideal combos with uptimes and cooldowns (Stagger on
 every hit can't happen), inflictions a hit consumes and SP for
 empowered skills as multipliers (they sit in a hit's scale, not its
-modifiers), the guided search re-run with `--also <zero scenario>`
-on the three teams, and the owner's call on two full-energy options
-that lose from zero (the owner's team: Estella's ultimate only while
-Staggered, +1.2–1.7% / −0.9%; Ink Melt: rule 7 only when Si's button
-shows her battle skill, +2.5–3.9% / −3.3%); Ink Melt's Twilight hold
-measured −0.11% ± 0.71 on 64 fresh seeds (keep or drop: the owner's
-call).
+modifiers). Done 2026-11-22 (design/rules.md "The objective across
+starts", "Rule sets", "The search decides"): every list scored by the
+mean of the two starts per seed; cues for what tells the starts apart
+(ultimates ready at once, an ultimate's gauge) and for setups (a
+status's level); conditional rule sets with Corrosion setups, set moves
+and a split of an edit by a start cue; the three teams re-searched, the
+open questions decided by the search (Estella's ultimate on Stagger: no;
+Ink Melt's rule 7 with `shows`: no; the Twilight hold: kept), the
+examples changed (the owner's +1.1% with a Corrosion setup, Ink Melt
++3.2%, Typhoeus's +8.6%, fresh seeds). Next there: a cheaper screening
+(shorter fights or a control variate: a search is 1,300–3,300 runs of
+300 s on both starts), a rules check inside the search (it caught a
+setup press ending Akekuri's ultimate after the search; setups now keep
+the list's own guards), and the split move judged on more teams.
 Whether Initial Stroke is worth pressing no longer hangs on Si's talent
 Haste: the logs and the owner (2026-11-17) agree it doesn't speed up
 attacks, so it's movement only (test 109 kept, lower priority, in case
