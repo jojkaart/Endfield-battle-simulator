@@ -1864,8 +1864,12 @@ pinned as the perfect one (frame 29) 14 frames later. The late hit
 consumed the infliction, so the perfect one's Lift and extra Vulnerable
 (`consumedAtLeast 1`) didn't happen: +1 where the game gave +2. Every
 Lift of Rossi's combo 3 in d572 was 0.46 s before its logged airborne hit.
-Now the replay drops a jump that would skip a pinned landing, and the
-path it jumps to (drivers.ts `replayCast`); the four ultimates read 4,
+Now the replay drops a jump that would skip a pinned landing of a hit only
+the skipped part has, and the path it jumps to (drivers.ts `replayCast`;
+it also ends Rossi's attack 4 landing both its controlled and
+uncontrolled hits in 2fd9, and sequence 2 its late hit in 4e5e), and pinned landings of one frame land
+in the log's order (9a80 32.49 s: her perfect hit consumed 2 before
+Gilberta's ultimate at 32.51 s, now 149,554 as logged); the four ultimates read 4,
 as listed (489c 30.02 / 92.31, d572 52.14 / 117.47 s). Of the 21
 ultimates whose Susceptibility is listed (11 logs), 18 now agree with the
 replay's stack count (a scratch census: her ultimate's listed value

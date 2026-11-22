@@ -237,6 +237,17 @@ describe("a later landing of a cast across time stops", () => {
     const v = r.reactions.filter((e) => e.kind === "vulnerable" && e.operator === W && near(e.frame, 39231));
     expect(v.map((e) => (e.kind === "vulnerable" ? [e.before, e.stacks] : null))).toEqual([[1, 2], [2, 3]]);
   });
+
+  it("pinned landings of one frame land in the log's order (9a80: Rossi's perfect hit at 32489 ms consumes the infliction before Gilberta's ultimate at 32511 ms, frame 975 both)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9a8097fcf351.json", import.meta.url).pathname);
+    const W = "chr_0028_wulfa";
+    const r = logBuffReplay(data, fx).replay;
+    const logged = fx.hits.find((h) => h.operator === W && h.t === 32489 && h.event === `${W}_combo_2_skill`) as LogHit;
+    const l = r.landing(logged);
+    // Two stacks consumed, as logged (149554); Gilberta's hit first would leave it none (67979).
+    expect("unknown" in l ? null : Math.round(l.damage)).toBe(logged.value);
+  });
 });
 
 describe("a trigger's landing on a skill's cast", () => {
