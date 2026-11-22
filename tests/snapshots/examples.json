@@ -375,16 +375,16 @@
   ]
  },
  "perlica-estella.scenario.json": {
-  "total": 140684.9,
+  "total": 141490.26,
   "hits": 22,
   "casts": 17,
   "perOperator": {
-   "chr_0004_pelica": 109879.704,
+   "chr_0004_pelica": 110685.064,
    "chr_0021_whiten": 30805.196
   },
-  "digest": "f4424e2a7e19",
+  "digest": "0bf49cb3d114",
   "windows": [
-   "1d52566fa401",
+   "796b9e1b5baf",
    "e4f2bdf2ff6b"
   ]
  },
@@ -493,43 +493,43 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4907268.356,
+  "total": 4921460.257,
   "hits": 516,
   "casts": 167,
   "perOperator": {
    "chr_0034_typhoea": 3788276.54,
    "chr_0032_lizhiyan": 193646.523,
    "chr_0035_liino": 325055.378,
-   "chr_0004_pelica": 600289.914
+   "chr_0004_pelica": 614481.815
   },
-  "digest": "371c8252e31e",
+  "digest": "ebfdd383f9b0",
   "windows": [
-   "6e31fc62ba54",
+   "fafcbe4cb189",
    "c46d9f8bf52c",
-   "1165cb6a6d24",
+   "e2ccee279e8f",
    "5a7a8f9cea38",
-   "0700640c897e",
+   "ba97dfd1ded3",
    "a9b6c015e060",
    "16559fd12ceb"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5705340.839,
+  "total": 5722307.494,
   "hits": 440,
   "casts": 164,
   "perOperator": {
    "chr_0034_typhoea": 4284456.131,
    "chr_0032_lizhiyan": 383425.269,
    "chr_0035_liino": 322641.83,
-   "chr_0004_pelica": 714817.609
+   "chr_0004_pelica": 731784.264
   },
-  "digest": "7dc747768959",
+  "digest": "36fbb0d85771",
   "windows": [
-   "23c29201ecab",
+   "e9a28c0b92aa",
    "03878b79b948",
-   "848b770839e3",
-   "14238fe211e5",
-   "5168e3f15846",
+   "87c6762c393f",
+   "3322bf62b830",
+   "ce090bfbf2b6",
    "06525c85da44"
   ]
  },
@@ -599,16 +599,16 @@
   ]
  },
  "zhuangfy-solo.scenario.json": {
-  "total": 1122426.466,
+  "total": 1135939.805,
   "hits": 43,
   "casts": 22,
   "perOperator": {
-   "chr_0030_zhuangfy": 1122426.466
+   "chr_0030_zhuangfy": 1135939.805
   },
-  "digest": "22fe2c625920",
+  "digest": "489733384f0e",
   "windows": [
    "ca7556dfa863",
-   "62f1b712e353",
+   "e301043b0f06",
    "effd5545798b"
   ]
  }

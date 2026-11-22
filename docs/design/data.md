@@ -481,6 +481,15 @@ in the logs):
   shown by basic hits that deal Stagger (`efsim zmdlogs control`).
 - **Not listed at all**: Haste, shields, heals, Whirlpools; Vulnerable
   without stack counts. A missing listing proves nothing there.
+- **A buff the hit itself creates isn't listed on it**, even where its
+  damage has it: Perlica's combo creates its forced Electrification
+  before its damage, and the buffs that triggers (her P3 ATK, Pulser
+  Labs' Electric DMG, Wild Wanderer's team DMG) act on that hit (exact
+  with them) but are listed only from her next hit (2026-11-22). "Log
+  only" / "engine only" on the applying hit is no evidence of timing;
+  the value is.
+- **Perlica's ultimate has no crit flag** (`crit` null on 19 of 19):
+  about a third come at ×1.5 (her P5 crit rate +0.3).
 - **Multi-target logs aren't checked** (the engine is single-target):
   their `zmdlogs hits` verdicts mean nothing.
 - **`isEnable false` in game data means the action never runs**

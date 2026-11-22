@@ -70,9 +70,14 @@ across others' time stops are placed from their cast events since
 shot anchored to her 5th's cast (fc63), 9c6e as a multi-target fixture;
 Liino's volleys done 2026-11-18 (a 10 s timer: the data's reaction
 check is disabled; 9090's Liino −10.4 → +2.5%), and 4360's Perlica run
-(an unlogged End Stance out of Cosmovoice, now inferred); left: Perlica's
-−9.6% in 9090 (every hit matches), 9847's team-wide ×0.975 / ×1.3–1.5
-runs (Bigents), fc63's Perlica ATK (3,571 against 3,822), Liino stances
+(an unlogged End Stance out of Cosmovoice, now inferred); Perlica's
+combo hits and 9090's −9.6% done 2026-11-22 (Pulser Labs' and Wild
+Wanderer's Electrification buffs act on the hit that applies it: 9090's
+Perlica −9.4 → −2.7%, the rest crit luck), fc63's ATK fitted as a build
+override (attribute nodes 2, weapon level 86; one input alone fits none);
+left: 9847's team-wide ×0.975 / ×1.3–1.5 runs (Bigents), 4d60's combos
+×1.08 (Liino's stance ATK listed, not replayed), a reaction
+Electrification with Wild Wanderer (in-game test 68's open half), Liino stances
 cast before a log starts (1d91, 7910, 4d60); gear
 chosen jointly with the rotation (a search per candidate set, not a
 replay).

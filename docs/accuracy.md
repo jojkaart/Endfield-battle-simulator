@@ -24,17 +24,17 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 72.8% | 95.5% | 0.0% | 1.7% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 52.0% | 74.0% | 18.2% | 12.6% | 13 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 67.3% | 87.0% | 6.7% | 12.1% | 6 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 48.9% | 72.9% | 23.7% | 8.3% | 9 |
-| All but the hold-outs | 60 | 28693 | 51.3% | 74.1% | 19.9% | 9.9% | 28 |
+| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 52.5% | 74.4% | 17.9% | 12.6% | 13 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 67.4% | 87.0% | 6.7% | 12.0% | 6 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 49.0% | 72.9% | 23.7% | 8.4% | 9 |
+| All but the hold-outs | 60 | 28693 | 51.6% | 74.3% | 19.7% | 9.9% | 28 |
 
 ## By operator (every log but the hold-outs)
 
 | Operator | Fights | Hits | Plain | Mismatch | Mean \|damage error\| |
 |---|---|---|---|---|---|
 | chr_0003_endminf | 3 | 472 | 13.6% | 3.4% | 47.9% |
-| chr_0004_pelica | 11 | 1076 | 58.8% | 24.1% | 18.5% |
+| chr_0004_pelica | 11 | 1076 | 66.7% | 18.8% | 19.2% |
 | chr_0005_chen | 6 | 810 | 16.5% | 35.4% | 7.0% |
 | chr_0006_wolfgd | 7 | 808 | 66.3% | 17.6% | 14.4% |
 | chr_0007_ikut | 2 | 257 | 91.8% | 2.3% | 19.9% |
