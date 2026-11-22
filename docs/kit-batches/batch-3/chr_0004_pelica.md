@@ -220,7 +220,9 @@ dash attack isn't drafted (G3).
 - **U2** forced Electrification on an enemy with a stronger one: interim
   replace (test B).
 - **U3** Wild Wanderer's abilityEvent 206: interim reactions and forced
-  both count, after the applying hit's damage (test C).
+  both count (test C). Its timing is settled (2026-11-22): before the
+  applying hit's damage (`beforeDamage`), from her combo hits in 3aa6 and
+  d774 (docs/open-problems.md, "Perlica's combo hits").
 - **U4** the e82d residuals (×1.0078 on the reaction, the battle skill
   hit's level): see Verification.
 
@@ -403,7 +405,7 @@ Re-analysis against the engine at 182f22b (batch 3's shared features
 | Row 20 (talent 1) | **done** (C1) | `enemyStaggered` judged on the enemy after the hit's own applications; whole-fight buff from `fightStart` |
 | Rows 24, 25, U1 (P3) | **interim** for the layer count | `beforeDamage` reaction trigger (test 51's question; the e82d reaction confirms it for P3); one layer per Electrification (in-game test 68 part 1). The layers' shared timer is the loader's stackingType-8 reading (B3, in-game test 62) |
 | W3 (Wild Wanderer across wielders) | **done** (B2) | `buff_wpn_funnel_0004_up` is stackingType 11 with priority key `dmg_up` and maxStackCnt 1: the loader gives the kit buff `stackGroup: buff_wpn_funnel_0004_up` from `gameBuff` alone |
-| W4, U3 (Wild Wanderer's event 206) | **interim** | reaction and forced Electrification both fire it, after the applying hit's damage (no `beforeDamage`). In-game test 68 part 2 |
+| W4, U3 (Wild Wanderer's event 206) | **interim** for the reaction half | forced Electrification fires it (the logs, test 68 part 2); before the applying hit's damage (`beforeDamage`, the logs 2026-11-22: was after it); a reaction Electrification firing it is in-game test 68 part 2's open half |
 | U4 (the e82d residuals) | **open** | below |
 | All other rows | supported | as in the table above; nothing new needed |
 

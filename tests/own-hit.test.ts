@@ -34,10 +34,12 @@ describe("a status event's own hit (OWN_HIT_SEES)", () => {
     expect(ownHitEnemy(e, after).physical.map((p) => p.status)).toEqual(["lift"]);
   });
 
-  it("electrification (ASSUMED): sees its own new Electrification (the general rule)", () => {
-    expect(OWN_HIT_SEES.electrification).toMatchObject({ sees: "own", tag: "ASSUMED" });
-    const after: EnemyStatus = { ...NO_STATUS, statuses: [status("electrification", 2, 100)] };
-    expect(ownHitEnemy(reaction("electrification"), after, NO_STATUS)).toBe(after);
+  it("electrification (ASSUMED, one hit): sees the Electrification that was on the enemy, not its own", () => {
+    expect(OWN_HIT_SEES.electrification).toMatchObject({ sees: "prior", tag: "ASSUMED" });
+    const after: EnemyStatus = { ...NO_STATUS, statuses: [status("electrification", 2, 100), status("corrosion", 1, 50)] };
+    const seen = ownHitEnemy(reaction("electrification"), after, NO_STATUS);
+    expect(seen.statuses.some((s) => s.status === "electrification")).toBe(false);
+    expect(seen.statuses.some((s) => s.status === "corrosion")).toBe(true);
   });
 
   it("leaves every other event's enemy as it is after the event", () => {

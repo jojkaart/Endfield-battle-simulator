@@ -30,7 +30,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   and the owner's call on its full-energy options; in-game tests 106, 108 (dives).
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast;
-  Perlica's −9.6% in 9090 (Liino's volleys done 2026-11-18).
+  Liino's stance ATK missing at 4d60's combos (Perlica's combo hits and
+  9090's −9.6% done 2026-11-22: Pulser Labs and Wild Wanderer before the
+  hit's damage).
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't

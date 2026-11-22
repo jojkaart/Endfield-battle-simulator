@@ -268,7 +268,7 @@ export const PHYSICAL_KEYS: Readonly<Record<PhysicalStatus, string>> = {
 export const OWN_HIT_SEES: Readonly<Record<"corrosion" | "electrification" | "breach", { readonly sees: "own" | "prior" | "none"; readonly tag: "SETTLED" | "ASSUMED"; readonly evidence: string }>> = {
   corrosion: { sees: "prior", tag: "SETTLED", evidence: "accuracy plan B7 (2026-10-28): logged ×0.91–0.94 of the prediction with its own shred, matched without it" },
   breach: { sees: "none", tag: "SETTLED", evidence: "2026-11-16 Arts Intensity review: 7e19489ae503, d4fb69b036fe exactly ÷ (1 + its own DMG Taken); c4f307cd039a without the earlier Breach the log lists" },
-  electrification: { sees: "own", tag: "ASSUMED", evidence: "the general rule; not measured apart from it" },
+  electrification: { sees: "prior", tag: "ASSUMED", evidence: "one hit (2026-11-22): e82d45c46040 at 7544 ms, Perlica's Electrification (level 3) on a Cryo infliction, logged ×0.78 of the prediction with its own Electrification, ×1.008 without it (and without Pulser Labs' DMG: landing.ts reactionHitSide); the only reaction Electrification in the development logs" },
 };
 
 /** The OWN_HIT_SEES row a status event falls under, if any (a forced reaction has no initial hit to see anything). */

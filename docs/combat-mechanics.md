@@ -284,10 +284,17 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   Fangs' Heat DMG, all three created by the same Combustion, while his
   combo's hit at the same ms has all three; one already active counts.
   [SETTLED] for those three buffs (c7790 at 9882, 22472, 42593, 63651 ms;
-  4e36 at 10580, 37063, 60764 ms; landing.ts `combustionHitSide`). Whether
+  4e36 at 10580, 37063, 60764 ms; landing.ts `reactionHitSide`). Whether
   the line is the zone (ATK in, DMG out) or the game event behind the
   trigger (abilityEvent 206 for Rational Farewell, 102 for the other two):
   [OPEN] (they differ only for Wedge's reaction DMG, abilityEvent 206).
+  Electrification's own hit follows the same line since 2026-11-22: e82d's
+  (7544 ms) fits P3's ATK and not Pulser Labs' Electric DMG, both
+  abilityEvent 102 on the Electrification tag, so the zone line, not the
+  event, is what this hit tells apart. [ASSUMED] (one hit; the only
+  reaction Electrification in the development logs). The hit that applies
+  the status takes all of them: Pulser Labs, Wild Wanderer and P3 on
+  Perlica's combo (docs/open-problems.md, "Perlica's combo hits").
 
 ### 3.3 Combustion (Heat)
 
@@ -424,7 +431,7 @@ timeline/landing.ts eventDamage), each row tested in tests/own-hit.test.ts.
 |---|---|---|---|
 | Corrosion (initial hit) | the Corrosion that was on the enemy before, not its own | SETTLED | accuracy plan B7 (2026-10-28): logged ×0.91–0.94 of the prediction with its own shred, matched without it |
 | Breach | no Breach: neither its own Physical DMG Taken nor the one it replaces | SETTLED | 2026-11-16 Arts Intensity review: 7e19489ae503, d4fb69b036fe exactly ÷ (1 + its own); c4f307cd039a without the earlier Breach the log lists |
-| Electrification (initial hit) | its own new Electrification | ASSUMED | the general rule; not measured apart from it |
+| Electrification (initial hit) | the Electrification that was on the enemy before, not its own | ASSUMED | one hit (2026-11-22): e82d45c46040 at 7544 ms, logged ×0.78 of the prediction with its own (level III), ×1.008 without it; the only reaction Electrification in the development logs (until then the general rule) |
 
 Not rows (their status changes no damage, or the question is another
 one): Combustion, Solidification, Lift, Knock Down and Crush (no damage

@@ -1718,6 +1718,54 @@ From the kit check before simulating the team
   volley hits replayed, Liino −10.4 → +2.5%, her plain 100 → 148.
   Perlica's −9.6% is left: her 130 hits all match (101 plain), so it's
   hits the replay doesn't land or lands differently, not their values.
+  **Perlica closed (2026-11-22): not missing hits, her combo's value.**
+  The replay lands all 130 (per skill: attack1 20, attack2 34, attack3
+  51, attack4 16, combo 7, ultimate 2; no NOLAND, no replay-only
+  landing: `zmdlogs replay 9090`). Her 7 combo hits matched only through
+  the log-listing fallback, each ×1.500 of the primary reading, so the
+  totals (primary readings) were short by them: Pulser Labs' Electric DMG
+  +0.5 acts on the hit whose forced Electrification makes it (entry
+  "Perlica's combo hits" below). Perlica −9.4 → −2.7%, the fight −1.5 →
+  −1.3%, her plain 104 → 110. The −2.7% left is the crits' luck: the
+  totals take expected crits, the log has three basic-attack crits and
+  one ultimate at ×1.5 (48.63 s; ZMDLogs gives no crit flag on her
+  ultimate in any log, 19 of 19 null).
+- **Perlica's combo hits ×1.10–1.50 above the engine (2026-11-22,
+  fixed).** In 4360, 9090, 9847 and fc63 every combo hit the replay made
+  without another DMG bonus was ×1.500 (fc63 ×1.401 = 1.5 × its ×0.934
+  ATK), elsewhere ×(1.5 + bonus) / (1 + bonus) (9090 ×1.431 at +0.16,
+  9847 ×1.343 at +0.46): an additive +0.5, Pulser Labs' Electric DMG
+  (the four logs are her Pulser Labs ones). In 3aa6 and d774 (Wild
+  Wanderer, no Pulser Labs) ×1.103 and ×1.142: + 0.192 and + 0.224,
+  Wild Wanderer's dmg_up at her logged skill-3 levels 8 and 9. **Cause:**
+  both triggers ran after the applying hit's damage, while P3's (the
+  same abilityEvent 102 and CheckBuffIdInContext tag 1466867135; Wild
+  Wanderer's is event 206 on the same tag) ran before it, and the combo
+  creates its forced conduct buff before its DamageAction. Now both are
+  `beforeDamage`: of her 59 combo hits in 10 logs 46 are now exactly the
+  primary reading (14 before; `zmdlogs hits <log> --operator perlica
+  --json`); development plain 52.0 →
+  52.1% (with fc63's override below 52.5%). **Ruled out:** a combo
+  multiplier (atk_scale and extra_scaling are the data's; the hits with
+  the bonus are exact), the Electrification level (the conduct buff's
+  value matches the listed one), P-levels (P5 in every log), Qingbo's
+  layers (one listed layer is ×3 entries, as the engine), the
+  consumption. ZMDLogs lists none of the three (P3, Pulser Labs, Wild
+  Wanderer) on that hit: its listing comes before the hit's own
+  applications (docs/design/data.md, "Common misreadings"). **Also from
+  this:** the reaction's own hit. e82d's Electrification hit (7544 ms,
+  the only reaction Electrification in the development logs) got the
+  +0.5 too once the trigger moved (Perlica's totals there +14.8 → +64%);
+  it fits P3's ATK without Pulser Labs' DMG and without its own
+  Electrification (×1.008), so an Electrification's own hit now takes
+  its triggers' ATK but not their DMG bonuses, as Combustion's
+  (landing.ts `reactionHitSide`), and sees the Electrification before it
+  (status.ts OWN_HIT_SEES, ASSUMED on that one hit): e82d Perlica −3.4%.
+  **Left:** 4d60's three combos ×1.07–1.08 (the log lists Liino's ATK
+  +0.1 there, the replay hasn't: Liino's stance, not Perlica's kit),
+  3aa6 147.2 s ×1.065 and 4bfc 154.3 s ×1.093 (teammates' buffs and a
+  second Qingbo layer differ there), c6d8 32.3 / 62.9 s ×0.10 (team-wide:
+  `zmdlogs groups`, 38 of 47 of her c6d8 mismatches).
 - **Perlica in fc63: every hit ×0.934** from the first (4.8 s), before
   any reaction or buff. Her ATK from 30 unbuffed hits is 3,570.8–3,571.5
   against the engine's 3,822.0 (×0.9343), the same on every skill kind
@@ -1736,7 +1784,19 @@ From the kit check before simulating the team
   Wisd from a source the export misreads (the nearest single inputs:
   weapon skill 2 at 7, ×0.939; skill 1 at 5–6, ×0.930 / ×0.946), her
   operator level (the log's 90; at 80 ×0.933). Not a kit lead (her
-  other logs fit).
+  other logs fit). **Fitted (2026-11-22): two unlogged inputs together.**
+  `efsim zmdlogs fit-build fc63 --operator perlica`: attribute nodes 2
+  with Stanza of Memorials at level 86 fit 57 of 81 hits and 20 of 21
+  clean ones (×1.0000; as exported 0); 1 node at level 89 comes next
+  (×1.0009, 47). Both give her ATK within 0.1%, so the hits can't tell
+  them apart. Nodes chr_0004_pelica_5 and _7 (Intellect 15 + 20) need
+  favorability 300 (CharGrowthTable), trust no export records, as Si's
+  two missing nodes in 0c14. Kept as the fixture's `buildOverrides` (the
+  first): fc63 plain 384 → 441, mismatch 242 → 185 hits, Perlica's 81
+  hits 0 → 68 matching. **Still possible:** any other input worth
+  ×0.934 in ATK (her operator level, a misread ATK% or Intellect line);
+  the pair is a fit, not a reading. Her ultimate at 88.0 s (×1.457) is an
+  unflagged crit (above).
 - **Perlica's misfits elsewhere** (4360, 9847, 4bfc, 3aa6, d774) come in
   runs of ×1.3–1.5 (or their inverse) on basic attacks and ultimates.
   **Ruled out (2026-11-17): the Stagger windows.** **Ruled out

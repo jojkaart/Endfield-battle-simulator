@@ -114,14 +114,18 @@ export function landingDamage(data: GameData, target: DamageTarget, inputs: Land
 }
 
 /**
- * The attacker side of a Combustion's own (initial) hit: the applier's as the forming hit's damage sees it, but its DMG
- * bonuses as before the triggers on the Combustion's application (`beforeTriggers`). pending/zmdlogs-c7790d76a4f0.json
+ * The attacker side of a reaction's own (initial) hit, Corrosion's apart (recordStatus): the applier's as the forming
+ * hit's damage sees it, but its DMG bonuses as before the triggers on the reaction's application (`beforeTriggers`).
+ * Combustion: pending/zmdlogs-c7790d76a4f0.json
  * at 9882, 42593 and 63651 ms and pending/zmdlogs-4e3651100056.json at 10580, 37063 and 60764 ms: Wulfgard's reaction
  * hits fit with Rational Farewell's ATK (+0.448), which his combo's Combustion creates, and without the Heat DMG of Hot
  * Work (+0.5) and Scorching Fangs (+0.3) that the same Combustion creates (at 42593 Fangs, already active, counts); his
- * combo's hit at the same ms has all three. Corrosion's own hit has none of them (recordStatus).
+ * combo's hit at the same ms has all three. Electrification: pending/zmdlogs-e82d45c46040.json at 7544 ms, Perlica's
+ * reaction hit fits with her P3 ATK and without Pulser Labs' Electric DMG (both abilityEvent 102 on the Electrification
+ * tag), while her combo and battle-skill hits that apply one take both (2026-11-22). Corrosion's own hit has none of
+ * them (recordStatus).
  */
-function combustionHitSide(st: TimelineState, beforeTriggers: TimelineState, operator: string, frame: number): Modifier[] {
+function reactionHitSide(st: TimelineState, beforeTriggers: TimelineState, operator: string, frame: number): Modifier[] {
   return [...attackerSide(st, operator, frame).filter((m) => m.zone !== "damageBonus"), ...attackerSide(beforeTriggers, operator, frame).filter((m) => m.zone === "damageBonus")];
 }
 
@@ -199,11 +203,11 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
     // Corrosion's own hit comes before its status (eventDamage), so before what the status's application triggers ahead
     // of the forming hit's damage (3f78ceb15bc3 at 1334 and 46994 ms, 4a64e58e75ad at 4517 ms: Hot Work's Nature DMG,
     // created on the Corrosion, is on Arcane's hit that forms it, ×1.5, not on the Corrosion's own hit). Other reactions'
-    // tagged buffs come before their own hit (e82d45c46040: Perlica's P3 ATK on her Electrification's hit), but for
-    // Combustion's own hit only their ATK, not their DMG bonuses (combustionHitSide).
+    // own hits take the ATK those triggers give, not their DMG bonuses (reactionHitSide): Combustion (Wulfgard's) and
+    // Electrification (e82d45c46040 at 7544 ms: Perlica's P3 ATK on her Electrification's hit, Pulser Labs' Electric DMG,
+    // made by the same ability event on the same tag, not).
     const own = beforeTriggers && e.kind === "reaction" && e.status === "corrosion" && e.initialHit ? beforeTriggers : st;
-    // Combustion's own hit takes the ATK those triggers give, not their DMG bonuses (combustionHitSide).
-    const side = beforeTriggers && e.kind === "reaction" && e.status === "combustion" && e.initialHit ? combustionHitSide(st, beforeTriggers, e.operator, e.frame) : undefined;
+    const side = beforeTriggers && e.kind === "reaction" && e.status !== "corrosion" && e.initialHit ? reactionHitSide(st, beforeTriggers, e.operator, e.frame) : undefined;
     const d = eventDamage(ctx, e, enemy, own, roll, prior, side);
     if (d) landed.push(d);
   }

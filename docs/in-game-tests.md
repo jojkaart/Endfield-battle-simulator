@@ -1944,7 +1944,10 @@ wielding it (3aa6, 4d60, c6d8, d774) all 21 listed starts of
 buff_wpn_funnel_0004_up (3aa6 6, 4d60 7, c6d8 4, d774 4) fall at the very
 ms of a combo hit of hers whose forced Electrification is listed from the
 same ms; none starts elsewhere (and none at Liino's ultimate bomb, a
-teammate's forced one). **Not in any log:** the reaction half. In those
+teammate's forced one). It already acts on that combo hit, though the
+log lists it only from the next (2026-11-22: 3aa6's and d774's combos
+×1.103 / ×1.142 without it, exact with it; the engine now applies it
+before the hit's damage). **Not in any log:** the reaction half. In those
 four logs Perlica never makes a reaction Electrification (her
 Electrification entries are all her combos'; her Electric bursts on
 Electric inflictions aren't Electrification), and her one reaction
