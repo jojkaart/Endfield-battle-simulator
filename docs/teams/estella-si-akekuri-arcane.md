@@ -42,6 +42,11 @@ play).
   are still from the INT build and Estella in slot 1 (full energy: an
   84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero: 81.1 s at
   40,677 DPS after 255.7 s): to be searched again.
+- Arcane's Imprisonment (2026-11-22,
+  [journal](../journal/2026-11-22-01-arcane-s-imprisonment-end-and-her-int-lasers.md)):
+  her explosion 0.5 s earlier (the seal's tick), Si's freeze no longer
+  holds the seal: rules sd 53,162 → 53,103 / 52,826 → 52,717 (full / zero,
+  −0.1% / −0.2%, within the noise), the 60 s timeline 57,900 → 57,926.
 
 ### Rules: what to play (2026-11-16)
 
