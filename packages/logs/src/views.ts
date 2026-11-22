@@ -16,7 +16,7 @@
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
-import type { BuffReplay } from "./buffreplay.ts";
+import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { castTimeStops, distinctCasts, placeHits } from "./logcasts.ts";
 import { logBuffReplay } from "./logcheck.ts";
@@ -107,6 +107,23 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
   for (const x of replay.failed) if (inWindow(f, x.cast.start) && mine(f, x.cast.operator)) lines.push({ t: x.cast.start, order: 1, text: `FAILED ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) if (inWindow(f, m.start) && mine(f, m.operator)) lines.push({ t: m.start, order: 1, text: `MISSED ${label(data, m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
+  // The log's cast events and what the cast assembly made of each (loggedCastFates).
+  for (const e of loggedCastFates(data, fx)) {
+    if (!inWindow(f, e.t) || !mine(f, e.operator)) continue;
+    const what =
+      e.fate === "placed" && e.cast
+        ? `the placed cast's at ${s(e.cast.start)} s (${s(e.cast.world)} s of world time apart)`
+        : e.fate === "tick"
+          ? `a tick of ${e.buff} (KitBuff.ticksLoggedAs)`
+          : e.fate === "press"
+            ? "a press of its own (the skill's hits show elsewhere: a slot press)"
+            : e.fate === "cast"
+              ? "a cast of its own (no hit of the skill in the log)"
+              : e.fate === "follow-up"
+                ? "a follow-up-only skill: left to the engine"
+                : "no kit skill of that id: ignored";
+    lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}` });
+  }
   for (const x of replay.castFlags) {
     const t = msOf(x.frame);
     if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `${x.kind === "forced" ? "FORCED" : "INSIDE"} ${label(data, x.cast.operator)} ${shortSkill(x.skillId)} made against its kit: ${x.why}` });
@@ -133,7 +150,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const forced = replay.castFlags.filter((x) => x.kind === "forced").length;
   const inside = replay.castFlags.length - forced;
   const flagged = replay.castFlags.length ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}LAND its landings, NOLAND logged hits without one, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry and the step that made it" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}LAND its landings, NOLAND logged hits without one, EVENT the log's cast events and what the replay made of each, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry and the step that made it" : ""}`;
   return [head, render(lines)].join("\n");
 }
 
@@ -298,6 +315,35 @@ const SAME_RATIO = 0.015;
 const NEAR_MS = 1500;
 
 /**
+ * The matches only the log's listing made (class "fallback") by skill event, each group's median logged ÷ the engine's
+ * primary reading: a fallback match counts as a match, so a missing modifier hides behind it (round 5: Perlica's combo
+ * hits, "match" at ×1.500 of the primary in three logs, Pulser Labs' +0.5 missing from the applying hit). A constant
+ * ratio away from 1 is a modifier the replay lacks or has too much of.
+ */
+export function fallbackGroups(records: readonly HitRecord[]): string[] {
+  const groups = new Map<string, number[]>();
+  const counts = new Map<string, number>();
+  for (const r of records) {
+    if (r.class !== "fallback") continue;
+    const k = shortSkill(r.event).replace(/\d+$/, "");
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+    if (r.predicted) groups.set(k, [...(groups.get(k) ?? []), r.value / r.predicted]);
+  }
+  if (!counts.size) return ["Matches only by the log's listing (fallback): none"];
+  const median = (xs: readonly number[]) => (xs.length ? ([...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) / 2)] as number) : null);
+  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  return [
+    `Matches only by the log's listing (fallback: counted as matches, though the replay's reading is off), ${total} by skill event, with the median logged ÷ primary (a constant ratio: a modifier the replay lacks):`,
+    ...[...counts]
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, n]) => {
+        const m = median(groups.get(k) ?? []);
+        return `  ${String(n).padStart(5)}  ${k}  median logged ÷ primary ${m === null ? "- (no primary reading)" : `×${m.toFixed(3)}`}`;
+      }),
+  ];
+}
+
+/**
  * `zmdlogs groups --operator`: an operator's mismatches sorted into causes. Per log: its hits, mismatches, those a
  * teammate shares (a teammate's mismatch at the same ratio within NEAR_MS: a team-wide factor, not this kit), those
  * without a landing; then the operator's own mismatches by skill event and by what the log and replay disagree on, each
@@ -355,6 +401,8 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     "",
     "Own mismatches by where the log and the replay disagree (none: they agree on every buff they both model):",
     ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
+    "",
+    ...fallbackGroups(records.filter((r) => r.operator === operator)),
   ];
   if (opts.verbose) {
     out.push("", "Each own mismatch:");

@@ -389,6 +389,14 @@ detail):
   (30 a second): `LandingFacts` statuses' `appliedAt` and `TimeStop.start`
   are frames; `LogEffect.since`, `LogHit.t`, `LogCast.t` and the placed
   casts' `start` are ms (`zmdlogs hits --json` gives `appliedAtMs` too).
+- **Timestamps are batched** (round 5, Arcane's Imprisonment and INT
+  lasers): many hits of different operators share one ms, during and
+  after time stops most of all (a7a7 48.78–50.01 s: seven timestamps for
+  about 40 hits; an `attack4`'s eight hits at frames 2–11 at one ms). The
+  log flushes in steps of about 100 ms and at a stop's end, so a residual
+  under ~0.2 s, or one at a ms many hits share, isn't timing evidence;
+  "uneven batches" of a periodic hit may be the log's, not the game's.
+  World time between two moments: `efsim zmdlogs worldtime`.
 - **Cast events** (`LogFixture.casts`: the detail's skill events without a
   damage value) are presses as the log has them, not the kit's frame 0:
   - battle skills: the event is at the placed start (within a frame or
@@ -407,6 +415,17 @@ detail):
   (docs/friction-done/2026-11-18-cast-placement.md, point 5); redo the
   measurement with `efsim zmdlogs casts <fixture>` (EVENT against CAST
   lines) after a placement change.
+- **One key, several groups** (round 5, Liino's beats): when a logged key
+  is a hit of several groups (a skill, a trigger on a cast, a trigger on a
+  buff's ticks), the placement (logcasts.ts `placeWith`) first drops a
+  trigger group already placed once since the latest cast it fires on (a
+  trigger on a cast fires once per cast: `anchorFree`), then `choose`
+  takes the group whose anchor (the skill itself, or the skill a trigger
+  fires on plus its delay) starts within ANCHOR_MS (1.5 s) and closest,
+  else the chain step after the operator's latest cast whose windows list
+  it, else the first in kit order. A kit that moves hits from a cast's
+  frames to a ticking buff meets this choice: check the placement with
+  `zmdlogs casts` (and `measure -- --changed placement`).
 - **Hidden casts logged as another skill's**: an entity's CastSkill is
   logged as a cast of the skill that spawned it. Arcane's combo appears
   again about 6 s after each real one: the CastSkill of
@@ -509,6 +528,25 @@ in the logs):
   the rest the check tries both ways ("assumed").
 - **`isEnable false` in game data means the action never runs**
   (`efsim gamedata tree` prints DISABLED on its line).
+- **A raw lane's `start–end` isn't the buff's life** (`zmdlogs raw`): the
+  end is a logged event's time near the last listed hit (c83c 73.585 s:
+  Laevatain's attack1 hit), not an expiry. A buff's listed end is
+  bracketed by its last listed and next unlisted hit (`zmdlogs lanes`).
+- **A fallback match is a match the replay didn't make**: the log's
+  listing fitted where the replay's reading didn't, so the counts look
+  fine while a modifier is missing (round 5: Perlica's combo hits matched
+  at ×1.500 of the primary reading). `zmdlogs groups --operator` ends with
+  the fallback matches by skill event and their median logged ÷ primary.
+- **`predicted` in `zmdlogs hits --json` isn't always the verdict's
+  number** (round 5, Rossi's bleed ticks: "plain" matches at −31.7%): it
+  is the primary reading of the replay's landing, with the replay's own
+  crit where the log gives none; the verdict's reading is
+  `verdictReading` (`verdictError`).
+- **The replay may take a logged cast event as another cast's**
+  (`withLoggedCasts`: a placed cast of the same skill within 2.5 s of
+  world time; a7a7's INT lasers' events were taken as Arcane's combo's):
+  `zmdlogs replay` prints an EVENT line per cast event with what it made
+  of it (the placed cast's, a buff's tick, a press, a cast, ignored).
 
 **Questions and the command that answers them** (round 4; every command
 takes a fixture's path or its id, e.g. `0c14`, and operators by name):
@@ -516,23 +554,32 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Question | Command |
 |---|---|
 | The casts of an operator, as the log means them | `efsim zmdlogs instances <fixture> [--operator]` |
-| How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window a,b] [--list]` |
+| How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window=a,b] [--list]` (the window in ms; `=` for a negative start, as the `rerun:` line prints it) |
 | What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
-| A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re>` |
+| A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
+| The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` |
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
 | Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
-| A skill's frames, windows, uncuttable frames | `efsim kit <operator> [--skill <re>]` |
+| A skill's frames, windows, uncuttable frames, skill group, what each hit inflicts | `efsim kit <operator> [--skill <re>]` |
+| Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
+| Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
+| The open assumptions `--assume` takes, their readings | `efsim assumptions [<re>]` |
 | Operator ids and weapon names of the logs | `efsim zmdlogs list --ids [--with <op>]` |
 | Where the placement put each hit and cast | `efsim zmdlogs casts <fixture> [--from --to]` |
-| The replay's landings, casts made against the kit | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE) |
+| The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE, EVENT) |
 | How a kit buff's expiry moved | `efsim zmdlogs replay <fixture> --trace-buff owner:id` |
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
 | Does a change help | `npm run measure [-- --with <op>]` |
+| Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
+| Which casts a placement change moved | `npm run measure -- --changed placement` |
 
 `zmdlogs hits --json` records (packages/logs/src/hitexport.ts `HitRecord`):
-`value`, `class`, `predicted` and `error` (the primary reading),
+`value`, `verdict` (`match` for every match class) and `class`,
+`verdictReading` / `verdictError` (the reading the verdict rests on),
+`predicted` and `error` (the primary reading of the replay's landing: not
+the verdict's where it fell back or the log gives no crit),
 `logReading` / `logError` (every kit buff as the log lists it), `listed`,
 `differences` (`kind` engine / log / values), and under `landing`:
 `modifiers` (with `kitBuff`), `zones`, `scaleParts`, `enemy` (statuses with

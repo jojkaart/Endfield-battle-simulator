@@ -25,17 +25,31 @@ export interface HitRecord {
   readonly kind: string;
   readonly value: number;
   readonly crit: boolean | null;
+  /** The verdict's kind: "match" for every match class (plain, assumed, fallback); the class is `class`. */
   readonly verdict: HitVerdict["kind"];
   /** The verdict's count class (plain, assumed, fallback, mismatch, …), as the snapshots count it. */
   readonly class: VerdictCount;
-  /** The engine's primary reading, rounded (null without a landing or when no reading applies). */
+  /**
+   * The engine's primary reading of the replay's landing (engineHits), rounded; null without a landing or when no
+   * reading applies. Not always the number the verdict rests on: a fallback match is the log listing's reading, and the
+   * landing has the replay's own crit where the log gives none (`crit: null`), the verdict the logged one. That one is
+   * `verdictReading` (round 5: Rossi's ticks read −31.7% here while their verdict was a plain match).
+   */
   readonly predicted: number | null;
-  /** logged / predicted − 1 (null without a prediction). */
+  /** logged / predicted − 1 (null without a prediction). Not the verdict's error: `verdictError`. */
   readonly error: number | null;
+  /**
+   * The reading the verdict rests on: a match's, an unquantified or unvalued hit's predicted value; a mismatch's nearest
+   * reading tried (its first); null for an uncovered hit.
+   */
+  readonly verdictReading?: number | null;
+  /** logged / verdictReading − 1 (a mismatch: its ratio − 1; null without one). */
+  readonly verdictError?: number | null;
   /**
    * The log's reading (ReadingBasis.logReading): the hit with every team kit buff as the log lists it, in place of the
    * replay's, rounded; and logged / it − 1. Off under both readings: the build or a kit value; off only under the
-   * primary: the replay's timing. Kit and status hits with a landing; null when no reading applies.
+   * primary: the replay's timing. Kit and status hits with a landing; null when no reading applies. A ticking buff's
+   * hit is read at its tick, with no snapshot of the buffs at its application but a Combustion's.
    */
   readonly logReading?: number | null;
   readonly logError?: number | null;
@@ -90,6 +104,7 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       crit: hit.crit,
       verdict: v.kind,
       class: verdictCount(v),
+      ...verdictReadingOf(v),
       listed: listedBuffs(hit.effects),
     };
     const e = byHit.get(hit);
@@ -149,6 +164,13 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       },
     };
   });
+}
+
+/** The reading a verdict rests on and the logged value's error against it (HitRecord.verdictReading, verdictError). */
+export function verdictReadingOf(v: HitVerdict): { verdictReading: number | null; verdictError: number | null } {
+  if (v.kind === "uncovered") return { verdictReading: null, verdictError: null };
+  if (v.kind === "mismatch") return { verdictReading: v.predicted[0] ?? null, verdictError: v.ratio - 1 };
+  return { verdictReading: v.predicted, verdictError: v.predicted ? v.hit.value / v.predicted - 1 : null };
 }
 
 /** The game buffs a hit's effects list, each once with its instance count when above 1 ("id ×2"), in listing order. */

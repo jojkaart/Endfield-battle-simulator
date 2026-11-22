@@ -3,7 +3,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { castsView, differencesReport, groupsReport, logBuffReplay, readLogFixture, replayView, staggerSummary, staggerView, type HitRecord, type StaggerRun } from "@efsim/logs";
+import { castsView, differencesReport, fallbackGroups, groupsReport, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerSummary, staggerView, type HitRecord, type StaggerRun } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -27,6 +27,17 @@ describe("the placement and replay views", () => {
     const op = fx.team[0]?.operator as string;
     const only = replayView(data, fx, { operators: [op] });
     expect(only.split("\n").slice(1).every((l) => l.includes(data.operators[op]?.name ?? op) || /STAGGER/.test(l))).toBe(true);
+  });
+
+  it("says what the replay made of each of the log's cast events (EVENT lines)", () => {
+    // a7a7: Arcane's INT lasers' events at 42.13 and 48.89 s are ticks of her Imprisonment, not her combo's own events.
+    const pending = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-a7a7a40c97ed.json"));
+    const fates = loggedCastFates(data, pending);
+    expect(fates).toHaveLength(pending.casts?.length ?? 0);
+    const laser = fates.find((e) => e.operator === "chr_0032_lizhiyan" && Math.abs(e.t - 42128) < 5);
+    expect(laser).toMatchObject({ fate: "tick", buff: "imprisonment" });
+    expect(fates.some((e) => e.fate === "placed" && e.cast !== undefined && e.cast.world >= 0)).toBe(true);
+    expect(replayView(data, pending, { from: 42000, to: 42300 })).toMatch(/EVENT {2}Arcane combo_skill \(the log's cast event\): a tick of imprisonment/);
   });
 
   it("flags casts made against the kit and traces a kit buff's expiry step by step", () => {
@@ -95,5 +106,14 @@ describe("hit records grouped by cause", () => {
     expect(text).toMatch(/^a: 4 hits in 1 logs, 3 mismatches: 1 team-wide .*, 0 without a landing, 2 own/);
     expect(text).toMatch(/2 {2}attack {2}median ratio 1\.300/);
     expect(text).toMatch(/2 {2}Stagger \(log only\) {2}median ratio 1\.300/);
+    expect(text).toContain("Matches only by the log's listing (fallback): none");
+  });
+
+  it("groups the fallback matches by skill event with their median logged ÷ primary", () => {
+    const base = records[0] as HitRecord;
+    const fb = [1.5, 1.5, 1.4].map((q, i): HitRecord => ({ ...base, operator: "p", event: "chr_0001_test_combo_skill", class: "fallback", verdict: "match", value: Math.round(1000 * q), predicted: 1000, t: i }));
+    const lines = fallbackGroups(fb);
+    expect(lines[0]).toMatch(/^Matches only by the log's listing .*3 by skill event/);
+    expect(lines[1]).toMatch(/3 {2}combo_skill {2}median logged ÷ primary ×1\.500/);
   });
 });

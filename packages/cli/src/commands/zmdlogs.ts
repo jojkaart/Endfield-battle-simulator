@@ -13,6 +13,7 @@ import {
   devFixtures,
   instancesView,
   lanesView,
+  worldTimeView,
   parseSelector,
   checkReactions,
   castsReport,
@@ -64,8 +65,10 @@ export default command({
                 [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1)
   efsim zmdlogs raw <fixture | id>        A battle's raw detail as ZMDLogs recorded it: buff lanes (key, target,
                                           source, start–end, effects) and events (key, value, the skill a Stagger is
-                                          credited to). From the git-ignored cache (filled by import and refresh),
-                                          else fetched once; never a hold-out
+                                          credited to). A lane's end is a logged event's time near its last listed
+                                          hit, not the buff's expiry (zmdlogs lanes brackets it). From the
+                                          git-ignored cache (filled by import and refresh), else fetched once; never
+                                          a hold-out
                 [--buffs <regex>] [--events <regex>]  Only buff lanes / events whose key matches
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
@@ -150,6 +153,10 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
   efsim zmdlogs lanes <fixture> [--buff <regex>]  Each run of a listed buff (one per source and since): since,
                                           first and last listed hit, the next hit of its hitters that doesn't list
                                           it, values (since is the lane's start as logged: a refresh may move it)
+                [--world]                 Each run's length in world time too (the placed casts' stops taken out)
+  efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the placed
+                                          casts' time stops, and the stops between (operator, skill, frames, lowest
+                                          scale)
   efsim zmdlogs control <fixture>         Who the log shows controlled when (a basic hit with Stagger is the
                                           controlled operator's: controlledFromLog) and every cast, logged or
                                           inferred from hits, with who was controlled at its start; --operator
@@ -197,6 +204,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     window: { type: "string" },
     list: { type: "boolean", default: false },
     buff: { type: "string", multiple: true, default: [] },
+    world: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -218,13 +226,18 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     const operators = values.operator.map((o) => operatorNamed(data(), o));
     const selection = { named: args.slice(1), all: values.all, ...(values["fixtures-from"] !== undefined ? { fixturesFrom: values["fixtures-from"] } : {}) };
     const event = values.event !== undefined ? { event: new RegExp(values.event) } : {};
+    if (sub === "worldtime") {
+      const [from, to] = [Number(args[2]), Number(args[3])];
+      if (args.length !== 4 || !arg || !Number.isFinite(from) || !Number.isFinite(to)) throw new Error("zmdlogs worldtime takes one fixture and two times in seconds: <fixture> <from s> <to s>");
+      return worldTimeView(data(), readDevFixture(arg), from * 1000, to * 1000);
+    }
     if (sub === "instances" || sub === "control" || sub === "lanes") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture (a path or an id such as 0c14)`);
       const fx = readDevFixture(arg);
       if (sub === "instances") return instancesView(data(), fx, { operators, ...(values.kind !== undefined ? { kind: values.kind } : {}) });
       if (sub === "control") return controlView(data(), fx, { operators });
       if (values.buff.length > 1) throw new Error("zmdlogs lanes takes one --buff <regex>");
-      return lanesView(data(), fx, values.buff[0] !== undefined ? new RegExp(values.buff[0]) : undefined);
+      return lanesView(data(), fx, values.buff[0] !== undefined ? new RegExp(values.buff[0]) : undefined, { world: values.world });
     }
     if (sub === "census" || sub === "buffs" || sub === "cadence") {
       const named = args.slice(1);

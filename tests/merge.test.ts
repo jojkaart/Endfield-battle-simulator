@@ -5,7 +5,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { classify, mergeBranch } from "../scripts/merge.ts";
+import { classify, mergeBranch, sharedCode } from "../scripts/merge.ts";
 import { ROOT } from "./logverdicts.ts";
 
 const tmp = mkdtempSync(join(tmpdir(), "efsim-merge-"));
@@ -70,5 +70,15 @@ describe("merging a branch (scripts/merge.ts)", () => {
       snapshots: ["tests/snapshots/examples.json", "docs/accuracy.md"],
       left: ["packages/x.ts"],
     });
+  });
+});
+
+describe("the code both sides of a merge changed (scripts/merge.ts sharedCode)", () => {
+  it("takes either side's source files in a package both changed, and files both changed", () => {
+    // Round 5: one branch's tick hold in buffreplay.ts, the other's kit and replay change: both touch packages/logs.
+    const ours = ["packages/logs/src/buffreplay.ts", "packages/engine/src/x.ts", "scripts/a.ts", "docs/x.md"];
+    const theirs = ["packages/logs/src/query.ts", "packages/data/kits/k.json", "scripts/a.ts", "docs/x.md"];
+    expect(sharedCode(ours, theirs)).toEqual(["packages/logs/src/buffreplay.ts", "packages/logs/src/query.ts", "scripts/a.ts"]);
+    expect(sharedCode(["packages/engine/src/x.ts"], ["packages/logs/src/y.ts"])).toEqual([]);
   });
 });

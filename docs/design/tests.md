@@ -94,6 +94,18 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   code's, `--assume <id>=<reading>` an open reading (the kits' or the
   engine's). On a clean tree it ends "The log verdict snapshots would stay
   as they are (byte for byte)".
+- **The code is fixed at queue time** (round 5): a measure that waits
+  for the lock runs a snapshot of the working tree as it was when queued
+  (scripts/at-commit.ts `snapshotCommit`: a commit made with a temporary
+  index, tracked changes and new files, the branch and index untouched),
+  in its own worktree under scratch/at/, removed after; so keep editing
+  while it waits. `--live` reads the tree when the run starts instead.
+  team-ab does the same.
+- **Which hits moved:** `--hits` lists, for each development log whose
+  entry moved, the hits whose verdict changed (time, operator, event,
+  verdict and logged ÷ primary before and after): a few per kind of
+  change in the summary, all in `hits.txt` beside it. `--changed
+  placement` also names the casts placed only before (-) and only now (+).
 - **Against other code:** `--at <ref>` measures a commit in its own
   worktree (scripts/at-commit.ts), so the working tree stays editable;
   `--base <ref>` measures two commits' code on the same logs (an A/B that
@@ -109,15 +121,18 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   <scenario> --write` for an example that stops playing.
 - **Team numbers:** `node scripts/team-ab.ts --base <ref>` compares each team
   page's example (every hit of its timeline, one 300 s rules seed, full
-  energy and from zero) at the base code and here; identical means the
-  32-seed runs can't move and are skipped, otherwise (or `--force`) it runs
-  them at both codes in one locked job and prints the table.
+  energy and from zero) at the base code and here, as a short job (the
+  side lane); identical means the 32-seed runs can't move and are skipped,
+  otherwise (or `--force`) it runs them at both codes as a long job, only
+  for the teams whose fight moved, and prints the table.
 - **Verifying a commit while editing:** `node scripts/verify-at.ts [<ref>]
   [--steps typecheck,lint,test]` runs premerge's steps in the commit's
   worktree.
 - **The shared lock** (scripts/testlock.ts) is a queue in arrival order;
   premerge, test suites and short jobs go ahead of long jobs (with-lock)
-  that arrived up to 20 min before them. Short jobs (measure, `with-lock
+  that arrived up to 20 min before them, and a worktree's second, third, …
+  waiting job (or short job) counts as arriving 20 min later each, so one
+  agent's batch of rule searches doesn't hold everyone else's (round 5). Short jobs (measure, `with-lock
   --kind short`: minutes) have a side lane: they run beside a long job,
   never beside a premerge, a test suite, another short job or a
   `--exclusive` job (timing runs: `with-lock --exclusive npm run bench`).
@@ -126,10 +141,29 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   `node scripts/with-lock.ts --status` shows the queue. Wrap each job on
   its own, never a batch script, and never in `timeout` (the wait counts
   against it): background mode with the Bash tool's own limit.
+- **Limits** (round 5: runs killed in the queue before doing any work):
+  the Bash tool's background limit starts with the command, so the queue's
+  wait counts. Start every locked job (measure, smoke, snapshots, team-ab,
+  premerge, with-lock) in background mode from the start, never in the
+  foreground, with the maximum limit (2 h, 7200000 ms) unless you know the
+  queue is empty; the first waiting line gives the estimated wait plus run
+  and warns when it passes 2 h. A kill in the queue ends with `EFSIM-DONE
+  <job> killed (in the queue after N min: nothing ran)`: a resubmit, not a
+  failure. Narrow a measure (`--logs`, `--with`) when the queue is long.
+- **Merging** (the lead): `npm run merge -- <branch>…` merges one branch
+  or a batch in order (snapshot conflicts taken from our side and
+  regenerated once: `--snapshots`), then runs `npx vitest related --run`
+  on the code both sides changed (source files of a package both touched,
+  and files both touched; `--no-test` prints the command): branches that
+  each pass premerge can still break each other (round 5's batch: a tick
+  hold from one, hit-shown bleed ticks from the other).
 - **Long runs end with one line** `EFSIM-DONE <job> pass|fail`
-  (snapshots, premerge, measure, verify-at; with-lock `EFSIM-DONE <name>
-  exit <n>`, name from `--name`) and `EFSIM-DONE <job> killed` when a
-  signal stops measure, snapshots or with-lock (waiting included). They
+  (snapshots, premerge, measure, verify-at, team-ab, smoke; with-lock
+  `EFSIM-DONE <name> exit <n>`, name from `--name`) and `EFSIM-DONE <job>
+  killed` when a signal stops measure, snapshots, premerge, team-ab or
+  with-lock (waiting included). premerge's "pass" comes only from its own
+  end with every step passed (scripts/done-line.sh; round 5, after a
+  premerge killed by its limit printed "pass" over a failed test step). They
   keep a state file (`node scripts/runstate.ts` lists them: started, at
   which code, finished or interrupted by a restart). Wait for your job's
   own name, since a script around several jobs prints several lines:

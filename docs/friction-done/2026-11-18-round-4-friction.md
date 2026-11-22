@@ -64,3 +64,12 @@ Points already in docs/friction/2026-11-18-backlog-after-round-4.md aren't repea
   check safe to land on its own; team-ab reused at-commit in an hour.
 - `tests/views.test.ts` and `tests/hitexport.test.ts` gave a ready pattern for testing views on a real development
   log without naming a hold-out.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (a measure reads the working tree while it runs): done (d98b497), more than suggested: measure fixes the code when it is queued (scripts/at-commit.ts `snapshotCommit`: a commit of the working tree made with a temporary index, measured in its own worktree, removed after) and says which code it measured; `--live` keeps the old behaviour.
+- 2 (no command lists the open assumptions): done (c9247da): `efsim assumptions [<re>]`, every kit and engine assumption with its question, readings, default and in-game test.
+- 3 (`grep -r` names the hold-out snapshot file): done the cheap way (c9247da): CLAUDE.md's rule is now `grep -r --exclude-dir=holdout --exclude='*holdout*'`; moving the file into a directory of its own (three paths in accuracy.ts, measure.ts and tests/slow/pending.ts, and snapshots.sh's glob) was judged not worth the risk to the hold-out handling.
+- 4 (the worktree guard and heredocs): done (c9247da): CLAUDE.md's first worktree rule now gives the commit recipe that always works (write scratch/msg.txt with the Write tool, `git commit -F scratch/msg.txt -- <paths>`).

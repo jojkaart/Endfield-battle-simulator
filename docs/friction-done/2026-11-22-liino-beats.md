@@ -83,3 +83,12 @@ branch of the worktree agent-a1e557f67dbc37926.
 `zmdlogs cadence` (world-time gaps with the stops named) found the beats'
 clock in minutes; `measure --at <ref>` let me keep editing while a measure
 waited; `scripts/at-commit.ts` gave a base CLI for old/new replay diffs.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (the lock made every measurement a 10–15 min wait): done (d98b497): (a) measure fixes its code at queue time (a snapshot commit of the working tree, no WIP commit needed), so the wait is free; (b) fair shares between worktrees in the queue order instead of a hard one-job-per-agent cap (a cap would idle the machine when only one agent has work).
+- 2 (a pinned tick's schedule and a buff's holds in the replay): not done, carried over to the round-5 backlog (`--trace-buff` with `nextTick` and the holds behind a new buff; merged with Rossi's `zmdlogs ticks`).
+- 3 (how the placement picks among groups sharing a key): done (c9247da): "One key, several groups" in docs/design/data.md (anchorFree, then choose's anchor, chain step, kit order).
+- 4 (a launch frame changes what the planner waits for): done as documentation (c9247da): KitHit.launch's doc comment says it delays the operator's next cast (ownHitsLanded) and names the tests that caught it; exempting `beside` casts would change engine behaviour: not done, needs an accuracy task (lead: timing.ts `ownHitsLanded` and `beside` casts, with smoke and team-ab).

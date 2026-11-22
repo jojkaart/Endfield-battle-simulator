@@ -457,6 +457,11 @@ export interface KitHit {
    * or a jump over the launch drops it and a jump before it moves it; after
    * it, it lands whatever happens. Implies `detached`; without it, a detached
    * hit is on its way from the cast's frame 0.
+   *
+   * It also delays the operator's next cast: another cast may cut this one only once its own launches are out
+   * (timing.ts ownHitsLanded waits for them, `beside` casts included), so a late launch holds back every later cast of
+   * the operator until then (round 5: a `launch: 508` tried on Liino's finale kept her combo beside the ultimate from
+   * starting before frame 678, failing kit-camille, kit-antal and policy-stepping).
    */
   readonly launch?: number;
   /**

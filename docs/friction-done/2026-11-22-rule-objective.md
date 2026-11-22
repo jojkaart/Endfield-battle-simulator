@@ -71,3 +71,12 @@ phases, a Corrosion setup) its open questions needed, and let it settle the owne
   local changes: `playMany` over starts, the same `judgeEdit` on the per-seed objective.
 - Common random numbers keyed by a rule's cue and presses meant a rule moved into a set keeps comparable delays.
 - `--stepping frames` as a reference made the new cues' event stepping a one-test check.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (documented rule verdicts go stale): not done, carried over to the round-5 backlog (open rule questions as data, re-measured by team-ab).
+- 2 (no formatter config, `npx prettier` runs anyway): done (c9247da): `.prettierignore` with `*` (prettier now touches nothing) and a CLAUDE.md line, "no code formatter: format by hand"; restoring one file: `git show HEAD:<path> > scratch/x` then the Write tool (the worktree rules already give it).
+- 3 (long guided searches queue behind each other): partly (d98b497): the queue-time line with the estimated wait plus run against the 2 h limit (and a warning past it), the kill-in-queue DONE line, fair shares. A cheaper screening stage, a shared-workers lock kind and resumable guided searches are search work: not done, needs a search task (lead: roadmap "cheaper variance", policyguide.ts's screen stage).
+- 4 (which button inflicts which element): done (c9247da): `efsim kit` lists each hit's applications (infliction element and stacks, statuses, forced reactions, conditions); a team table in `kit-census` is carried over to the round-5 backlog.

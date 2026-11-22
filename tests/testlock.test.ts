@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estimateWait, expectedMs, jobLabel, mayGo, PRIORITY_MS, queueOrder, waitingFor, type LockKind, type Ticket } from "../scripts/testlock.ts";
+import { estimateWait, expectedMs, FAIR_MS, jobLabel, limitAdvice, mayGo, PRIORITY_MS, queueOrder, waitingFor, type LockKind, type Ticket } from "../scripts/testlock.ts";
 import { batchWarning } from "../scripts/with-lock.ts";
 
 const MIN = 60_000;
@@ -21,6 +21,34 @@ describe("the test lock's queue", () => {
     expect(order([ticket(1, "job", 0), ticket(2, "premerge", PRIORITY_MS + MIN)])).toEqual([1, 2]);
     // A stream of premerges: the job is passed by those arriving within the head start only.
     expect(order([ticket(1, "job", 0), ticket(2, "premerge", 5 * MIN), ticket(3, "premerge", PRIORITY_MS + 5 * MIN)])).toEqual([2, 1, 3]);
+  });
+});
+
+describe("fair shares between worktrees", () => {
+  const of = (pid: number, kind: LockKind, arrival: number, worktree: string, claimed?: number) => ticket(pid, kind, arrival, claimed, { worktree });
+
+  it("puts other worktrees' jobs between one worktree's batch of jobs", () => {
+    // w1 queued three rule searches at once; w2's job arrived a minute later and goes second, not fourth.
+    expect(order([of(1, "job", 0, "w1"), of(2, "job", 0, "w1"), of(3, "job", 0, "w1"), of(4, "job", 1 * MIN, "w2")])).toEqual([1, 4, 2, 3]);
+    // The same for short jobs (measures).
+    expect(order([of(1, "short", 0, "w1"), of(2, "short", 1 * MIN, "w1"), of(3, "short", 5 * MIN, "w2")])).toEqual([1, 3, 2]);
+  });
+
+  it("doesn't count the worktree's running job, and leaves premerges and test suites alone", () => {
+    expect(order([of(1, "job", 0, "w1", 1), of(2, "job", 1 * MIN, "w1"), of(3, "job", 2 * MIN, "w2")])).toEqual([1, 2, 3]);
+    expect(order([of(1, "premerge", 0, "w1"), of(2, "premerge", 1 * MIN, "w1"), of(3, "premerge", 2 * MIN, "w2")])).toEqual([1, 2, 3]);
+  });
+
+  it("still serves a worktree's later job once others' have waited less than the share", () => {
+    expect(order([of(1, "job", 0, "w1"), of(2, "job", 0, "w1"), of(3, "job", FAIR_MS + MIN, "w2")])).toEqual([1, 2, 3]);
+  });
+});
+
+describe("the background-limit advice", () => {
+  it("names a limit with a margin, and warns when the estimate is over the 2 h maximum", () => {
+    expect(limitAdvice("measure", 30 * MIN, 2 * MIN)).toContain("at least ~48 min");
+    expect(limitAdvice("measure", 0, 2 * MIN)).toContain("at least ~10 min");
+    expect(limitAdvice("rules", 100 * MIN, 30 * MIN)).toContain("may be killed in the queue");
   });
 });
 

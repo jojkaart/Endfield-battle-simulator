@@ -55,3 +55,12 @@ lasers in a7a7 (worktree branch from 1ab4647).
 `efsim gamedata tree` (trigger_time and the seal's tick were one read away), `zmdlogs lanes` (the Susceptibility's
 `since` gave the seal's real start and end), `zmdlogs casts` with STOP lines, `--trace-buff`, and `scripts/at-commit.ts`
 for a base-code run beside the working tree.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (log ms are batched, nothing says so): done (c9247da): "Timestamps are batched" in docs/design/data.md "What the log records" (a residual under ~0.2 s, or at a shared ms, isn't timing evidence); `worldtime` and `lanes --world` repeat the warning. The "batched" column in `casts` / `replay` is carried over to the round-5 backlog.
+- 2 (a per-window timing table, per-hit verdict diffs): done (d98b497, cec2dd6): `efsim zmdlogs worldtime <fixture> <from s> <to s>` (real and world time, the stops between), and `npm run measure -- --hits` (the hits whose verdict changed per development log, before and after, all of them in hits.txt). `census --list --world` wasn't added: worldtime answers the same question for one pair.
+- 3 (`withLoggedCasts` swallows entity events): done (cec2dd6): `zmdlogs replay` prints an EVENT line per logged cast event (the placed cast's with the world time between, a buff's tick, a press, a cast, ignored), from `loggedCastFates`, which shares withLoggedCasts' matcher (`loggedCastMatcher`, extracted unchanged: measure byte for byte).
+- 4 (the lock queue dominated wall time): done in part (d98b497): fair shares between worktrees (a worktree's n-th waiting job counts as arriving n × 20 min later), and the wait made free time by fixing measure's code at queue time; letting measure skip ahead of every job regardless of arrival was not done: short jobs already run beside long ones, and what held them was other short jobs and premerges, which fair shares and the snapshot address.

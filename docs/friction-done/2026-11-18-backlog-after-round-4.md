@@ -268,3 +268,14 @@ docs/friction-done/ with an "Outcome (round 4)" section.
 The reports' episodes named the exact functions and files, so most fixes started from a working scratch prototype or
 a precise reading of the code; `npm run measure` answering "byte for byte" in a minute made every refactor of the
 replay and the check safe to land one at a time.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (game-data file reads), 2 (status landing facts), 3 (status modifiers by kind), 4 (test helpers), 5 (the SP anchor), 6 (search times), 7 (prose citations), 8 (an A/B harness for CLI output), 9 (status log keys), 10 (an importer test), 11 (a pace measure), 13 (the replay's step list), 14 (cast-table gaps and units), 16 (the breakthrough table: needs the lead), 17 (the `inUltimate` cue: moves team numbers), 19 (`expectLasts`), 20 (loop tests pinning readings), 23 (test texts in step with kits), 24 (kit notes on disabled actions), 25 (who wears what): not done, carried over to the round-5 backlog unchanged.
+- 12 (`--assumptions` runs the engine's readings): not done; `efsim assumptions` now lists both kinds with their readings (c9247da), which is the listing half; running them in `alternatives()` is carried over to the round-5 backlog.
+- 15 (Imprisonment's logged end as timing facts): done by the Arcane branch merged before this round (fbac1dd: `ticksLoggedAs`, `endFollowsTick`, COMBO_EVENT_MS); this round adds `zmdlogs replay`'s EVENT lines (cec2dd6), which show what the replay made of each such event.
+- 18 (Liino's beats as a ticking buff): done by the Liino branch merged before this round (29cd4b6, feca370: her song's beats are `cosmovoice_beat` ticks pinned to the log); the placement rule it needed is now in docs/design/data.md ("One key, several groups", c9247da).
+- 21 (kit-buff windows with the engine's own end and the log's lanes): partly: `zmdlogs lanes --world` gives each listed run's world-time length (cec2dd6); the joined `zmdlogs windows` view is carried over to the round-5 backlog (merged with the Twilight and Rossi reports' versions).
+- 22 (groups and casts showing the replay's doubts): partly: `zmdlogs groups` ends with the fallback matches by skill event and their median logged ÷ primary, and `zmdlogs replay` marks each logged cast event with what the replay made of it (cec2dd6); splitting own mismatches by both readings is carried over to the round-5 backlog.

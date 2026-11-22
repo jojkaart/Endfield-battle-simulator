@@ -15,7 +15,8 @@
 // (2026-11-16) may need EFSIM_DATA_DIR=<main checkout>/data, printed here.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mainCheckoutOf } from "../packages/data/src/checkout.ts";
@@ -45,11 +46,42 @@ export function atCommit(ref: string, dir: string, patch?: string): string {
   return commit;
 }
 
+/**
+ * A commit of the working tree as it is now (tracked changes and untracked files that aren't git-ignored), made with
+ * a temporary index, so the real index, the files and the branch stay untouched; HEAD itself when nothing differs.
+ * For a job that waits in the test lock's queue and should run the code of the moment it was queued (measure,
+ * team-ab: round 5), not whatever is on disk when its turn comes.
+ */
+export function snapshotCommit(root = ROOT): { readonly commit: string; readonly head: string; readonly dirty: boolean } {
+  const head = git(["rev-parse", "HEAD"], root);
+  const dir = mkdtempSync(join(tmpdir(), "efsim-snapshot-"));
+  try {
+    const env = { ...process.env, GIT_INDEX_FILE: join(dir, "index") };
+    const run = (args: readonly string[]) => {
+      const r = spawnSync("git", args, { cwd: root, encoding: "utf8", env, maxBuffer: 64 << 20 });
+      if (r.status !== 0) throw new Error(`git ${args.join(" ")}: ${(r.stderr || r.stdout).trim()}`);
+      return r.stdout.trim();
+    };
+    run(["read-tree", "HEAD"]);
+    run(["add", "-A", "--", "."]);
+    const tree = run(["write-tree"]);
+    if (tree === git(["rev-parse", "HEAD^{tree}"], root)) return { commit: head, head, dirty: false };
+    return { commit: run(["commit-tree", tree, "-p", head, "-m", "a snapshot of the working tree (scripts/at-commit.ts snapshotCommit)"]), head, dirty: true };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Removes a worktree made by atCommit (git worktree remove --force). */
+export function removeAtCommit(dir: string): void {
+  git(["worktree", "remove", "--force", resolve(dir)]);
+}
+
 function main(argv: string[]): number {
   if (argv[0] === "--remove") {
     const dir = argv[1];
     if (!dir) throw new Error("--remove takes the directory");
-    git(["worktree", "remove", "--force", resolve(dir)]);
+    removeAtCommit(dir);
     process.stdout.write(`at-commit: removed ${dir}\n`);
     return 0;
   }

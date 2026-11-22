@@ -16,12 +16,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–4
-  done (round 4, 2026-11-18: a query layer over the logs, `zmdlogs
-  instances | census | buffs | lanes | control | cadence`, `efsim kit`,
-  `efsim repair`, `npm run smoke`, `team-ab`, a short lane in the test
-  lock, the hold-outs' own snapshot file); the backlog
-  ([2026-11-18-backlog-after-round-4.md](friction/2026-11-18-backlog-after-round-4.md))
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–5
+  done (round 5, 2026-11-22: fair shares in the test lock, measure and
+  team-ab fixing their code at queue time, premerge's "pass" only on a
+  real pass, `merge` running related tests and taking a batch, `zmdlogs
+  worldtime`, `measure --hits`, the replay's EVENT lines); the backlog
+  ([2026-11-22-backlog-after-round-5.md](friction/2026-11-22-backlog-after-round-5.md))
   joins the next round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,

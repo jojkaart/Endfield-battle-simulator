@@ -72,3 +72,12 @@ winning rule (branch `worktree-agent-a91601bd8d49ff1f6`, from 1ab4647).
 `efsim gamedata tree` on the four set buffs settled the data side in minutes (aura, detector, stacking, the clear);
 `zmdlogs replay --trace-buff owner:id` showed every add with its cast, which found the forced Final Strokes;
 `zmdlogs census --list` gave the press-before-burst pattern with rerun lines ready to cite.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (a consumed buff's layers per cast, the log reading's parts): not done, carried over to the round-5 backlog (`logReading` as an object in hitexport.ts, `zmdlogs consumed`).
+- 2 (`zmdlogs instances` misses casts the replay makes): partly (cec2dd6): `zmdlogs replay`'s EVENT lines say what the replay made of each cast event; the instances view's replay column is carried over to the round-5 backlog.
+- 3 (long waits for a one-minute measure; can't edit meanwhile): done (d98b497): measure fixes its code at queue time.
+- 4 (which skill a press is gets decided in two places): not done: needs an accuracy task (lead: buffreplay.ts withLoggedCasts / makeCast, `alternativeOf` on a press, db87's double Twilight battle skill and 04d4's Purrchena counter as the two cases; measure moves).

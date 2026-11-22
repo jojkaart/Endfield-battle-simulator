@@ -9,6 +9,8 @@
 //   - then by arrival time less a head start for merge-blocking and short kinds: "premerge", "tests" (test suites,
 //     snapshots.sh) and "short" go ahead of "job"s (long runs: with-lock) that arrived up to PRIORITY_MS before them,
 //     but a job that has waited longer than that goes first, so a stream of premerges can't starve it;
+//   - a worktree's second, third, … waiting job (or short job) counts as arriving FAIR_MS later each (round 5), so one
+//     agent's batch of jobs doesn't hold everyone else's;
 //   - ties by arrival, then pid.
 // Two lanes (round 4, after one-minute measures waited an hour behind long rule searches): a "short" job (measure, or
 // with-lock --kind short: a few minutes at most) runs in a side lane beside a long "job", never beside a premerge, a
@@ -61,13 +63,31 @@ export interface Ticket {
   readonly exclusive?: true;
 }
 
-/** The queue in order: the holder (claimed) first, then by arrival less the kind's head start; ties by arrival, pid. */
+/**
+ * Fair shares between worktrees (round 5, after one agent's chain of a dozen rule searches held every other agent's
+ * jobs for an hour): a worktree's n-th waiting job (or short job) counts as arriving n × FAIR_MS later, so other
+ * worktrees' jobs that arrived within that go between them. Premerges and test suites aren't spread (one at a time
+ * per worktree anyway).
+ */
+export const FAIR_MS = PRIORITY_MS;
+
+/** How many waiting tickets of the same worktree and kind arrived before this one (the fair-share rank). */
+function fairRank(tickets: readonly Ticket[], t: Ticket): number {
+  if (t.claimed !== undefined || (t.kind !== "job" && t.kind !== "short")) return 0;
+  return tickets.filter((o) => o.claimed === undefined && o.kind === t.kind && o.worktree === t.worktree && (o.arrival < t.arrival || (o.arrival === t.arrival && o.pid < t.pid))).length;
+}
+
+/**
+ * The queue in order: the holder (claimed) first, then by arrival less the kind's head start plus the worktree's fair
+ * share (FAIR_MS per earlier waiting ticket of its own); ties by arrival, pid.
+ */
 export function queueOrder(tickets: readonly Ticket[]): Ticket[] {
+  const key = new Map(tickets.map((t) => [t, t.arrival - HEAD_START[t.kind] + fairRank(tickets, t) * FAIR_MS]));
   return [...tickets].sort(
     (a, b) =>
       (a.claimed !== undefined ? 0 : 1) - (b.claimed !== undefined ? 0 : 1) ||
       (a.claimed ?? 0) - (b.claimed ?? 0) ||
-      a.arrival - HEAD_START[a.kind] - (b.arrival - HEAD_START[b.kind]) ||
+      (key.get(a) as number) - (key.get(b) as number) ||
       a.arrival - b.arrival ||
       a.pid - b.pid,
   );
@@ -207,6 +227,21 @@ export function liveTickets(dir: string): { file: string; ticket: Ticket }[] {
 
 const minutes = (ms: number) => `${Math.max(0, Math.round(ms / 60_000))} min`;
 
+/** The Bash tool's longest background limit (ms): a queued job's wait counts against it. */
+export const BACKGROUND_LIMIT_MS = 120 * 60_000;
+
+/**
+ * The line a waiter prints once, when it starts waiting: the estimated wait plus its own run against the Bash tool's
+ * background limit, which starts when the command does, not when the lock is taken (round 5: runs killed in the queue
+ * before doing any work).
+ */
+export function limitAdvice(who: string, waitMs: number, runMs: number): string {
+  const total = waitMs + runMs;
+  const base = `${who}: wait plus run estimated at ~${minutes(total)}; the Bash tool's background limit counts the wait`;
+  if (total > BACKGROUND_LIMIT_MS) return `${base}, and this is over its 2 h maximum: the job may be killed in the queue (EFSIM-DONE … killed); try later, or narrow it (measure --logs / --with)`;
+  return `${base}: give it a limit of at least ~${minutes(Math.max(total * 1.5, 10 * 60_000))} (the maximum, 2 h, is always safe)`;
+}
+
 /** One line on a ticket for the others: "<worktree> (<kind>: <command>)". */
 export function describeTicket(t: Ticket): string {
   const cmd = t.command.length > 70 ? `${t.command.slice(0, 67)}…` : t.command;
@@ -285,10 +320,12 @@ class Waiter {
       const holder = order[0];
       const held = holder?.claimed !== undefined ? `held by ${describeTicket(holder)} for ${minutes(now - holder.claimed)}` : holder ? `next: ${describeTicket(holder)}` : "held";
       const list = ahead.map((t) => `${t.label ?? jobLabel(t.command.split(" "))} ~${minutes(expectedMs(this.history, t))}`).join(", ");
+      const wait = estimateWait(order, this.mine, this.history, now);
       say(
         `${this.opts.who}: waiting ${minutes(now - this.mine.arrival)} for the test lock (${this.opts.kind}); ${held}; ${ahead.length} ahead of this one${list ? ` (${list})` : ""}, ` +
-          `estimated ~${minutes(estimateWait(order, this.mine, this.history, now))} more (node scripts/with-lock.ts --status; EFSIM_NO_TEST_LOCK=1 skips the lock)`,
+          `estimated ~${minutes(wait)} more (node scripts/with-lock.ts --status; EFSIM_NO_TEST_LOCK=1 skips the lock)`,
       );
+      if (!this.announced) say(limitAdvice(this.opts.who, wait, expectedMs(this.history, this.mine)));
       this.announced = true;
       this.lastBeat = now;
     }
@@ -353,8 +390,10 @@ export async function runLockedAsync(command: readonly string[], opts: LockOptio
   const onSignal = (sig: keyof typeof SIGNALS) => {
     w?.finish(claimed);
     if (child && child.exitCode === null) child.kill(sig);
-    if (opts.done) process.stdout.write(`EFSIM-DONE ${opts.done} killed\n`);
-    process.stderr.write(`${opts.who}: killed by ${sig}${claimed === undefined && w ? " while waiting for the test lock" : ""}\n`);
+    const queued = claimed === undefined && w !== undefined;
+    const where = queued ? ` (in the queue after ${minutes(Date.now() - w.mine.arrival)}: nothing ran; the background limit counts the wait)` : "";
+    if (opts.done) process.stdout.write(`EFSIM-DONE ${opts.done} killed${where}\n`);
+    process.stderr.write(`${opts.who}: killed by ${sig}${queued ? " while waiting for the test lock" : ""}\n`);
     process.exit(128 + SIGNALS[sig]);
   };
   for (const sig of Object.keys(SIGNALS) as (keyof typeof SIGNALS)[]) process.on(sig, onSignal);
