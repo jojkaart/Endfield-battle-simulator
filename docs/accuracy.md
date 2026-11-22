@@ -23,17 +23,17 @@ commit, and how many logs got better or worse.
 
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
-| Verified (fixtures/) | 6 | 804 | 72.8% | 95.5% | 0.0% | 1.7% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 52.0% | 74.0% | 18.2% | 12.6% | 13 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 67.3% | 87.0% | 6.7% | 12.1% | 6 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 48.9% | 72.9% | 23.7% | 8.3% | 9 |
-| All but the hold-outs | 60 | 28693 | 51.3% | 74.1% | 19.9% | 9.9% | 28 |
+| Verified (fixtures/) | 6 | 804 | 72.8% | 95.5% | 0.0% | 2.0% | 6 |
+| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 52.1% | 74.1% | 18.2% | 12.4% | 14 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 67.5% | 87.0% | 6.7% | 12.2% | 6 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 50.2% | 73.3% | 23.6% | 8.6% | 10 |
+| All but the hold-outs | 60 | 28693 | 51.9% | 74.4% | 19.9% | 9.9% | 30 |
 
 ## By operator (every log but the hold-outs)
 
 | Operator | Fights | Hits | Plain | Mismatch | Mean \|damage error\| |
 |---|---|---|---|---|---|
-| chr_0003_endminf | 3 | 472 | 13.6% | 3.4% | 47.9% |
+| chr_0003_endminf | 3 | 472 | 13.8% | 3.4% | 57.8% |
 | chr_0004_pelica | 11 | 1076 | 58.8% | 24.1% | 18.5% |
 | chr_0005_chen | 6 | 810 | 16.5% | 35.4% | 7.0% |
 | chr_0006_wolfgd | 7 | 808 | 66.3% | 17.6% | 14.4% |
@@ -54,13 +54,13 @@ commit, and how many logs got better or worse.
 | chr_0025_ardelia | 11 | 1470 | 57.3% | 13.1% | 4.8% |
 | chr_0026_lastrite | 4 | 156 | 59.0% | 0.6% | 4.8% |
 | chr_0027_tangtang | 2 | 265 | 44.9% | 22.6% | 6.2% |
-| chr_0028_wulfa | 9 | 2173 | 23.4% | 27.3% | 17.9% |
+| chr_0028_wulfa | 9 | 2173 | 24.0% | 27.1% | 21.4% |
 | chr_0029_pograni | 5 | 649 | 29.9% | 19.3% | 2.5% |
-| chr_0030_zhuangfy | 5 | 1392 | 36.7% | 28.2% | 15.5% |
-| chr_0031_mifu | 5 | 471 | 24.8% | 37.8% | 10.2% |
-| chr_0032_lizhiyan | 39 | 5575 | 61.7% | 15.5% | 14.2% |
-| chr_0033_camille | 10 | 1004 | 70.1% | 7.5% | 14.4% |
+| chr_0030_zhuangfy | 5 | 1392 | 38.9% | 29.0% | 13.6% |
+| chr_0031_mifu | 5 | 471 | 45.0% | 35.0% | 7.1% |
+| chr_0032_lizhiyan | 39 | 5575 | 61.8% | 15.5% | 14.3% |
+| chr_0033_camille | 10 | 1004 | 73.1% | 7.3% | 14.3% |
 | chr_0034_typhoea | 12 | 2081 | 61.4% | 11.6% | 4.6% |
 | chr_0035_liino | 19 | 1469 | 56.1% | 18.7% | 18.2% |
-| chr_0036_jsspsi | 28 | 2993 | 59.6% | 10.3% | 8.4% |
+| chr_0036_jsspsi | 28 | 2993 | 59.8% | 10.3% | 8.5% |
 | chr_0038_purrche | 3 | 290 | 62.1% | 29.7% | 25.5% |
