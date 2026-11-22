@@ -271,3 +271,18 @@ describe("489c0be3e162: Rossi's ultimate crits the log leaves out, and her bleed
     }
   });
 });
+
+describe("b6aa15281db4: a buff the log lists past the replay's expiry (engine assumption hidden-holds)", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-b6aa15281db4.json", import.meta.url).pathname);
+  const placement = placeHits(data, fx);
+  const end = (reading: string) => logBuffReplay(data, fx, placement, { assume: { "hidden-holds": reading } }).replay.kitWindows("chr_0011_seraph:cryo_fragility", "chr_0036_jsspsi").find((w) => Math.abs(w.start - 28200) < 100)?.end;
+
+  it("runs on to its last listed hit (43.78 s), not past the first hit without it (43.88 s), held by the stops between (log)", () => {
+    // The run from 28.21 s: listed to 43.78 s on four operators' hits, the next hit without it at 43.88 s; the replay's own
+    // expiry 39.77 s. Kept a step at a time, Last Rite's ultimate stop at 40.9 s doesn't hold it past the log's end.
+    const log = end("log") as number;
+    expect(log).toBeGreaterThan(43780);
+    expect(log).toBeLessThan(43880);
+    expect(Math.abs((end("none") as number) - 39767)).toBeLessThan(40);
+  });
+});

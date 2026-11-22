@@ -79,6 +79,16 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "hidden-holds",
+    test: "111",
+    question: "What holds the operators' buffs past their modelled end in some windows (docs/open-problems.md \"The buff clock\")? The logs show unlogged world holds of about a perfect dodge's 0.512 s (enemy tick series, never while the enemy is Staggered) that hold buffs and the enemy's ticks alike. The log check's replay can't place the dodges; this decides whether it takes a decided buff's end from the log's listing where that runs later (packages/logs buffreplay.ts heldToLoggedEnds). Simulations place dodges themselves (--dodge) and don't read it.",
+    default: "log",
+    readings: {
+      log: "a buff the log lists past the replay's expiry (a single run from its application, not refreshed, no hit of a holder past the expiry without it) runs on to its last listed hit, up to 40% of its life (HIDDEN_HOLD_SHARE); measured against none 2026-11-22: all but the hold-outs plain 55.7 → 57.5%, mean |damage error| 8.3 → 8.1%; the hold-outs unchanged",
+      none: "the replay's own expiry: holds only by the casts it places (the replay until 2026-11-22)",
+    },
+  },
+  {
     id: "stagger-freeze",
     test: "110",
     question: "Does a freezing control status (Si's Immobilization, Tangtang's OLDEN STARE, Rossi's ultimate) hold a running Stagger's end (timeline/actions.ts runTriggers)?",
