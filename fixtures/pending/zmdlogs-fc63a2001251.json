@@ -18,7 +18,8 @@
    "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-22, buildOverrides): Perlica's attribute nodes 2 and weapon level 86, fitted with efsim zmdlogs fit-build; the team entry is as exported."
   ]
  },
  "enemy": {
@@ -245,6 +246,18 @@
      ]
     }
    ]
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0004_pelica",
+   "set": {
+    "attributeNodes": 2,
+    "weapon": {
+     "level": 86
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-22): 57 of 81 landed hits within \u00b11, 20 of 21 clean (as exported 0, every hit \u00d70.9343 on every skill kind: her ATK 3,571 against 3,822). One input alone doesn't fit (a weapon level 60\u201390, skill levels 1\u20139, 0\u20133 attribute nodes, a food: docs/open-problems.md, \"Perlica in fc63\"); two do: attribute nodes 2 (chr_0004_pelica_5 and _7, \u221235 Intellect, missing: CharGrowthTable gives both favorability 300, trust the export doesn't record; as Si's in 0c14fb3ce77d) with Stanza of Memorials at level 86 (\u00d71.0000), or 1 node at level 89 (\u00d71.0009, 47 of 81). Both give her ATK within 0.1%, so the hits don't tell them apart; the first is taken. The remaining misfits are Stagger, Corrosion and teammates' buffs (zmdlogs groups)."
   }
  ],
  "hits": [
