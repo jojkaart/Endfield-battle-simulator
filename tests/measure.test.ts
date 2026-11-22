@@ -3,7 +3,7 @@
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { mixedPerHit, overlay, selectLogs } from "../scripts/measure.ts";
+import { hitChanges, mixedPerHit, movedCasts, overlay, selectLogs } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -51,5 +51,24 @@ describe("measure's overlay", () => {
     expect(lines[2]).toBe("  hold-out: 0 closer, 1 further, 0 the same");
     expect(lines.join("\n")).not.toMatch(/cccc/);
     expect(mixedPerHit([], new Map(), new Map())).toEqual([]);
+  });
+});
+
+describe("measure --hits", () => {
+  it("lists the hits whose verdict changed, counted by change, a few examples each", () => {
+    const before = new Map([["pending/zmdlogs-a.json", [[1000, "op", "attack1", "plain", 1] as const, [2500, "op", "skill", "mismatch", 1.2] as const, [3000, "op", "skill", "mismatch", 1.3] as const]]]);
+    const after = new Map([["pending/zmdlogs-a.json", [[1000, "op", "attack1", "plain", 1] as const, [2500, "op", "skill", "plain", 1] as const, [3000, "op", "skill", "assumed", 1] as const]]]);
+    const { summary, full } = hitChanges(["pending/zmdlogs-a.json"], before, after, 1);
+    expect(summary[1]).toBe("  pending/zmdlogs-a.json: 2 hits: mismatch → plain 1, mismatch → assumed 1");
+    expect(summary).toContain("    2.50 s op skill: mismatch ×1.200 → plain ×1.000");
+    expect(full).toHaveLength(3);
+    expect(hitChanges([], before, after).summary).toEqual(["Hits whose verdict changed (--hits; development logs whose entry moved): none (no development log's entry moved)"]);
+  });
+});
+
+describe("measure --changed placement", () => {
+  it("names the casts placed only before and only now", () => {
+    const lines = movedCasts(["a.json", "b.json"], new Map([["a.json", ["1.00 s op skill", "2.00 s op combo"]], ["b.json", ["1.00 s op skill"]]]), new Map([["a.json", ["1.00 s op skill", "2.10 s op combo"]], ["b.json", ["1.00 s op skill"]]]));
+    expect(lines).toEqual(["  a.json: 1 cast(s) only before, 1 only now", "    - 2.00 s op combo", "    + 2.10 s op combo", "  b.json: the same casts; some hits moved between them"]);
   });
 });

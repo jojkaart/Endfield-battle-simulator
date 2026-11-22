@@ -18,13 +18,24 @@
 //   --with <operator>   only logs whose team has it (operator id, or part of the id or name; repeatable: any of them)
 //   --logs <id,…>       only these logs (ids or unique parts of them; never a hold-out)
 //   --changed placement only logs whose placed casts (placeHits) differ between the measured code and the --base /
-//                       --against ref's code (seconds per log, then only those are checked)
+//                       --against ref's code (seconds per log, then only those are checked); prints, per
+//                       development log, the casts placed only before (-) and only now (+)
 //   --assume <id>=<r>   replay under another reading of a kit's or the engine's open assumption (e.g.
 //                       control-immunity=bosses; repeatable): the reading's effect against the reference
 //   --workers <n>       worker threads (default 3, as test:logs)
+//   --hits              also list, for each development log whose entry moved, the hits whose verdict changed
+//                       (time, operator, event, verdict and logged ÷ primary before and after; the reference's code
+//                       is measured for those logs when there is no --base): a few per change in the summary, every
+//                       one in <out>/hits.txt. Hold-outs never.
+//   --live              read the working tree when the run starts (after the queue's wait), not as it was queued
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
 //                       summary.txt
+//
+// The working tree is measured as it was when the run was queued: a snapshot commit of it (tracked changes and new
+// files, scripts/at-commit.ts snapshotCommit; the branch and index untouched) in its own worktree under scratch/at/,
+// removed after; so edits during the queue's wait don't reach the run (round 5). Run it in the background (CLAUDE.md
+// "Long runs") and keep working.
 //
 // It takes the test lock as a short job (scripts/testlock.ts: the side lane, beside a long rule search but not beside a
 // premerge or test suite), writes its run state to scratch/runs/measure.json and ends with `EFSIM-DONE measure pass`
@@ -39,8 +50,8 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
 import { compare, direction, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots } from "./accuracy.ts";
-import { atCommit } from "./at-commit.ts";
-import type { MeasureAnswer, MeasureJob, PerHit } from "./measure-worker.ts";
+import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
+import type { HitRow, MeasureAnswer, MeasureJob, PerHit } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
@@ -143,6 +154,10 @@ async function main(argv: string[]): Promise<number> {
       assume: { type: "string", multiple: true, default: [] },
       workers: { type: "string", default: String(Math.min(3, Math.max(1, cpus().length - 1))) },
       out: { type: "string" },
+      hits: { type: "boolean", default: false },
+      live: { type: "boolean", default: false },
+      snapshot: { type: "string" },
+      "snapshot-head": { type: "string" },
     },
   });
   if (values.changed !== undefined && values.changed !== "placement") throw new Error("--changed takes placement");
@@ -150,9 +165,17 @@ async function main(argv: string[]): Promise<number> {
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const say = (l: string) => process.stdout.write(l + "\n");
 
-  const tree = values.at ? resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${values.at}^{commit}`])) : ROOT;
-  if (values.at) atCommit(values.at, tree);
-  const against = values.base ?? values.against ?? values.at ?? "HEAD";
+  // The code: --at's commit, the snapshot taken when the run was queued (the entry point below), or the tree as it is now.
+  const at = values.at ?? values.snapshot;
+  const tree = at ? resolve(ROOT, "scratch/at", `${values.at ? "" : "measure-"}${git(["rev-parse", "--short=9", "--verify", `${at}^{commit}`])}`) : ROOT;
+  const ownTree = values.at === undefined && values.snapshot !== undefined && !existsSync(tree);
+  if (at) atCommit(at, tree);
+  if (ownTree) {
+    // The snapshot's worktree goes when the run ends, a signal included (testlock.ts passes a kill on).
+    process.on("exit", () => removeAtCommit(tree));
+    for (const sig of ["SIGTERM", "SIGINT", "SIGHUP"] as const) process.on(sig, () => process.exit(1));
+  }
+  const against = values.base ?? values.against ?? values.at ?? values["snapshot-head"] ?? "HEAD";
   const baseTree = values.base ? resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${values.base}^{commit}`])) : undefined;
   if (values.base && baseTree) atCommit(values.base, baseTree);
   const assume = Object.fromEntries(values.assume.map((a) => {
@@ -160,7 +183,16 @@ async function main(argv: string[]): Promise<number> {
     if (!id || !reading) throw new Error("--assume takes <id>=<reading>");
     return [id, reading];
   }));
-  const what = `${values.at ? `the code at ${values.at}` : "the working tree"}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
+  const short = (ref: string) => git(["rev-parse", "--short=9", ref]);
+  const snapshot = values.snapshot && !values.at ? values.snapshot : undefined;
+  const code = values.at
+    ? `the code at ${values.at}`
+    : snapshot
+      ? snapshot === values["snapshot-head"]
+        ? `the code at HEAD (${short(snapshot)}; the tree was clean when queued)`
+        : `the working tree as queued (snapshot ${short(snapshot)} on ${short(values["snapshot-head"] ?? "HEAD")})`
+      : "the working tree";
+  const what = `${code}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
 
   // The selection.
   const split = readSplit(readFileSync(join(tree, "fixtures/holdout/holdout.json"), "utf8"));
@@ -176,17 +208,18 @@ async function main(argv: string[]): Promise<number> {
     const other = baseTree ?? resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${against}^{commit}`]));
     if (!baseTree) atCommit(against, other);
     const sig = async (t: string) => {
-      const out = new Map<string, string>();
-      await pool(t, keys.map((key) => ({ key, what: "placement" as const })), workers, (a) => {
+      const out = new Map<string, { placement: string; casts?: readonly string[] }>();
+      await pool(t, keys.map((key) => ({ key, what: "placement" as const, ...(isHoldout(key) ? {} : { hits: true }) })), workers, (a) => {
         if ("error" in a) throw new Error(`placement of ${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
-        if ("placement" in a) out.set(a.key, a.placement);
+        if ("placement" in a) out.set(a.key, a);
       });
       return out;
     };
     const [now, then] = [await sig(tree), await sig(other)];
     const before = keys.length;
-    keys = keys.filter((k) => now.get(k) !== then.get(k));
+    keys = keys.filter((k) => now.get(k)?.placement !== then.get(k)?.placement);
     say(`measure: ${keys.length} of ${before} logs' placed casts differ from ${values.base ?? against}'s code`);
+    for (const l of movedCasts(keys.filter((k) => !isHoldout(k)), new Map([...then].map(([k, v]) => [k, v.casts ?? []])), new Map([...now].map(([k, v]) => [k, v.casts ?? []])))) say(l);
   }
   if (!keys.length) {
     say("measure: no log selected");
@@ -201,16 +234,20 @@ async function main(argv: string[]): Promise<number> {
   const cost = costs(tree, keys);
   const order = [...keys].sort((a, b) => (cost.get(b) as number) - (cost.get(a) as number) || a.localeCompare(b));
   const perHit = new Map<string, Map<string, PerHit>>();
+  const hitRows = new Map<string, Map<string, readonly HitRow[]>>();
   const measureTree = async (t: string, label: string, which: readonly string[] = order) => {
     const got = new Map<string, Entry>();
-    const fits = new Map<string, PerHit>();
+    const fits = perHit.get(t) ?? new Map<string, PerHit>();
     perHit.set(t, fits);
+    const rows = hitRows.get(t) ?? new Map<string, readonly HitRow[]>();
+    hitRows.set(t, rows);
     const start = performance.now();
-    await pool(t, which.map((key) => ({ key, what: "entry" as const })), workers, (a) => {
+    await pool(t, which.map((key) => ({ key, what: "entry" as const, ...(values.hits && !isHoldout(key) ? { hits: true } : {}) })), workers, (a) => {
       if ("error" in a) throw new Error(`${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
       if (!("entry" in a)) return;
       got.set(a.key, a.entry);
       if (a.perHit) fits.set(a.key, a.perHit);
+      if (a.hits) rows.set(a.key, a.hits);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
     }, t === tree ? assume : {});
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
@@ -226,22 +263,31 @@ async function main(argv: string[]): Promise<number> {
     const [a, b] = [entryOf(before, k), entryOf(after, k)];
     return a !== undefined && b !== undefined && direction(a, b) === "mixed";
   });
-  let refFits: Map<string, PerHit> | undefined = baseTree ? perHit.get(baseTree) : undefined;
-  if (mixed.length && !refFits) {
-    const refTree = resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${against}^{commit}`]));
+  // --hits: the development logs whose entry moved, hit by hit.
+  const moved = values.hits ? keys.filter((k) => !isHoldout(k) && JSON.stringify(entryOf(before, k)) !== JSON.stringify(entryOf(after, k))) : [];
+  let refTree = baseTree;
+  if ((mixed.length || moved.length) && !baseTree) {
+    refTree = resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${against}^{commit}`]));
     atCommit(against, refTree);
-    say(`measure: ${mixed.length} mixed log(s): their per-hit fit at ${against}'s code`);
-    await measureTree(refTree, `reference ${against}: `, mixed);
-    refFits = perHit.get(refTree);
+    const which = [...new Set([...mixed, ...moved])];
+    say(`measure: ${which.length} log(s) mixed${values.hits ? " or moved (--hits)" : ""}: their per-hit fit at ${against}'s code`);
+    await measureTree(refTree, `reference ${against}: `, which);
   }
-  const mixedLines = mixedPerHit(mixed, refFits ?? new Map(), perHit.get(tree) ?? new Map());
+  const mixedLines = mixedPerHit(mixed, (refTree && perHit.get(refTree)) || new Map(), perHit.get(tree) ?? new Map());
+  const hitLines = values.hits ? hitChanges(moved, (refTree && hitRows.get(refTree)) || new Map(), hitRows.get(tree) ?? new Map()) : undefined;
+  if (hitLines?.full.length) writeFileSync(join(out, "hits.txt"), hitLines.full.join("\n") + "\n");
 
   writeFileSync(join(out, VERIFIED), formatSnapshot(after.verified as Entries, true));
   const files = splitPending(after.pending);
   writeFileSync(join(out, PENDING), formatSnapshot(files.pending, true));
   writeFileSync(join(out, HOLDOUT), formatSnapshot(files.holdout, true));
   writeFileSync(join(out, "accuracy.md"), render(after));
-  const lines = [`Accuracy of ${what} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`, ...compare(before, after), ...mixedLines];
+  const lines = [
+    `Accuracy of ${what} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
+    ...compare(before, after),
+    ...mixedLines,
+    ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(out, "hits.txt")})`] : [])] : []),
+  ];
   if (keys.length === logKeys(tree).length && !baseTree) {
     const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(out, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
     lines.push(same ? "The log verdict snapshots would stay as they are (byte for byte)." : "The log verdict snapshots would change: `npm run snapshots:update` before committing.");
@@ -275,6 +321,59 @@ export function mixedPerHit(mixed: readonly string[], before: ReadonlyMap<string
   return out;
 }
 
+/**
+ * --changed placement: per development log whose placement changed, the casts only the reference's code places (-)
+ * and only the measured code's (+), at most `limit` each (a cast whose hits alone moved shows in neither: the
+ * signature covers each hit's cast and frame).
+ */
+export function movedCasts(logs: readonly string[], before: ReadonlyMap<string, readonly string[]>, after: ReadonlyMap<string, readonly string[]>, limit = 8): string[] {
+  const out: string[] = [];
+  for (const k of logs) {
+    const [a, b] = [new Set(before.get(k) ?? []), new Set(after.get(k) ?? [])];
+    const gone = [...a].filter((c) => !b.has(c));
+    const added = [...b].filter((c) => !a.has(c));
+    out.push(`  ${k}: ${gone.length || added.length ? `${gone.length} cast(s) only before, ${added.length} only now` : "the same casts; some hits moved between them"}`);
+    for (const [sign, cs] of [["-", gone], ["+", added]] as const) {
+      for (const c of cs.slice(0, limit)) out.push(`    ${sign} ${c}`);
+      if (cs.length > limit) out.push(`    ${sign} … ${cs.length - limit} more`);
+    }
+  }
+  return out;
+}
+
+/**
+ * measure --hits: per development log whose entry moved, the hits whose verdict changed (time, operator, event,
+ * verdict and logged ÷ primary before and after), counted by change in the summary (a few examples each) and listed
+ * in full for hits.txt. Hold-outs are never passed in.
+ */
+export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, readonly HitRow[]>, after: ReadonlyMap<string, readonly HitRow[]>, examples = 5): { summary: string[]; full: string[] } {
+  const summary = [`Hits whose verdict changed (--hits; development logs whose entry moved)${logs.length ? ":" : ": none (no development log's entry moved)"}`];
+  const full: string[] = [];
+  const ratio = (r: number | null) => (r === null ? "-" : `×${r.toFixed(3)}`);
+  for (const k of logs) {
+    const [a, b] = [before.get(k), after.get(k)];
+    if (!a || !b || a.length !== b.length) {
+      summary.push(`  ${k}: per-hit verdicts not comparable (${!a || !b ? "not measured" : "the fixture's hits differ"})`);
+      continue;
+    }
+    const changed = b.flatMap((h, i) => (h[3] !== (a[i] as HitRow)[3] ? [{ was: a[i] as HitRow, now: h }] : []));
+    if (!changed.length) {
+      summary.push(`  ${k}: no hit's verdict changed (only values within a verdict, e.g. the totals)`);
+      continue;
+    }
+    const kinds = new Map<string, typeof changed>();
+    for (const c of changed) {
+      const kind = `${c.was[3]} → ${c.now[3]}`;
+      kinds.set(kind, [...(kinds.get(kind) ?? []), c]);
+    }
+    summary.push(`  ${k}: ${changed.length} hits: ${[...kinds].sort((x, y) => y[1].length - x[1].length).map(([kind, cs]) => `${kind} ${cs.length}`).join(", ")}`);
+    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}`;
+    for (const [, cs] of kinds) for (const c of cs.slice(0, examples)) summary.push(`    ${line(c)}`);
+    full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`));
+  }
+  return { summary, full };
+}
+
 const readTracked = (tree: string, rel: string) => (existsSync(join(tree, rel)) ? readFileSync(join(tree, rel), "utf8") : "");
 
 function git(args: readonly string[]): string {
@@ -286,7 +385,17 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (testLockFile()) {
     // Under the test lock as a job (a queue: premerges and test suites go first), then this script again inside it.
     // A short job: the side lane, beside a long rule search, never beside a premerge or test suite (testlock.ts).
-    void runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...argv], { kind: "short", who: "measure", done: "measure" }).then((c) => (process.exitCode = c));
+    // The code is fixed now, at queue time (round 5: agents idled through 10-60 min waits because the run would read
+    // the tree when its turn came): a commit of the working tree (at-commit.ts snapshotCommit), measured in its own
+    // worktree under scratch/at/ and removed after. --at names a commit itself; --live reads the tree at the start.
+    const own = argv.some((a) => a === "--at" || a.startsWith("--at=") || a === "--live" || a === "--snapshot" || a.startsWith("--snapshot="));
+    const args = [...argv];
+    if (!own) {
+      const snap = snapshotCommit(ROOT);
+      args.push("--snapshot", snap.commit.slice(0, 12), "--snapshot-head", snap.head.slice(0, 12));
+      process.stderr.write(`measure: the code is fixed at queue time (${snap.dirty ? `a snapshot of the working tree, ${snap.commit.slice(0, 9)}` : `HEAD ${snap.head.slice(0, 9)}, the tree is clean`}): keep editing while it waits (--live reads the tree when the run starts)\n`);
+    }
+    void runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...args], { kind: "short", who: "measure", done: "measure" }).then((c) => (process.exitCode = c));
   } else {
     startRun("measure", argv.join(" "));
     main(argv).then(
