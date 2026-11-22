@@ -262,6 +262,12 @@ Sustained DPS 52,529 → **52,563** (+0.06%) / 49,185 → **49,206**
 unchanged (no Liino ultimate in the first 60 s from zero). The rules
 don't change.
 
+**Liino's beats as her song's ticks (2026-11-22; `scripts/team-ab.ts --base
+1ab4647`):** the beats are the song buff's ticks (open-problems.md "Liino's
+Cosmovoice beats"), which her own combo's slow-down holds: sustained DPS
+unchanged (52,949 / 50,194, the same 32 seeds), the 60 s timeline 95,089 →
+95,074 DPS (−0.02%) at full energy, unchanged from zero.
+
 **Buffs created inside a running stop are held (2026-11-18, in-game tests 18, 21, 46 from the
 logs; same seeds 1001–1032, against `--assume buff-in-stop=runs` at the same code, after Liino's ten
 beats):** engine assumption `buff-in-stop`
