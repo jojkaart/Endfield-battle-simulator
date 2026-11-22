@@ -249,6 +249,12 @@ repaired (Laevatain's steps in the extra 2 s as their Twilight forms): 3,990,549
 second ultimate (48.6 s) no longer fits in 60 s, a lower bound until a re-search. `--assume
 buff-in-stop=runs` gives the earlier reading.
 
+**Twilight's remaining excess in the logs (2026-11-22):** not Twilight's own (her Forgeborn buff from the
+same ultimate runs as far past the replay: open-problems "Laevatain's Twilight runs longer than its
+model"), so the kit keeps the data's length and the numbers above stand. What rides on it: kit
+assumption `laevatain-twilight-clock=forgeborn` (Twilight and show_weapon 1.8 s longer) gives 61,930
+(**+3.80% ± 1.30**, paired seeds, full energy; `efsim rules … --assumptions`).
+
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Re-tuned for the fixed driver? No change found (2026-11-16).** The fix

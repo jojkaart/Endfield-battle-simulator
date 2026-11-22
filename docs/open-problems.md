@@ -1121,7 +1121,9 @@ Heart's natural ends outside Twilight run 0.2–1.5 s past the replay in 8 of 9 
 `efsim zmdlogs raw <log> --buffs ignore_fire_resist`). No change to the kit: a longer
 Twilight would put a world-clock effect into one kit. Kit assumption
 `laevatain-twilight-clock` (reading `forgeborn`: +1.8 s, the median of Forgeborn's) is
-the switch for how much rides on it (Ink Melt's team page).
+the switch for how much rides on it (Ink Melt: +3.80% ± 1.30 sustained DPS, 32 paired seeds).
+Measured as a kit change (Twilight 17 s on every Laevatain log): no verdict moves, the
+development and hold-out rows unchanged (the replay takes her enhanced casts from the log).
 
 **Ruled out (2026-11-22), each against the nine brackets:**
 - A constant on top of the model: c83c needs ≥3.08, f879 45.4 ≤1.15 (and Twilight 16 s,

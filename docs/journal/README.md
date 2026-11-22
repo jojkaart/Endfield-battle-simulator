@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-22: Twilight's excess is her buffs' clock, not Twilight's](2026-11-22-01-twilight-s-excess-is-her-buffs-clock-not-twilight-s.md)
 - [2026-11-18: The Finisher gated on every enhanced basic attack (test 108, the Talos Wiki)](2026-11-18-06-the-finisher-gated-on-every-enhanced-basic-attack-test-108.md)
 - [2026-11-18: Improvement round 4: a query layer over the logs](2026-11-18-05-improvement-round-4-a-query-layer-over-the-logs.md)
 - [2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15](2026-11-18-04-si-s-in-game-tests-from-the-logs-14-41-92-16-15.md)
