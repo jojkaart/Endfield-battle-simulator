@@ -21,9 +21,11 @@ export const ZMDLOGS_ZONES: Readonly<Record<string, Zone>> = {
 /**
  * Zones that act on the target's side. A buff on an operator with one of
  * these is about damage the operator takes (e.g. Endministrator's talent,
- * `vuln_taken` on allies), so it doesn't change the operator's hits.
+ * `vuln_taken` on allies), so it doesn't change the operator's hits. An
+ * effect with one of them on a hit is the enemy's debuff (buffreplay.ts
+ * loggedLaneEnds).
  */
-const TARGET_SIDE_ZONES: ReadonlySet<Zone> = new Set(["susceptibility", "damageTaken", "multiplicative"]);
+export const TARGET_SIDE_ZONES: ReadonlySet<Zone> = new Set(["susceptibility", "damageTaken", "multiplicative"]);
 
 export interface LogEffect {
   readonly buff: string;
