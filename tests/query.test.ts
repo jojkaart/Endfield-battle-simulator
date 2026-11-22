@@ -15,11 +15,15 @@ import {
   controlView,
   devFixtures,
   instancesView,
+  lanesView,
   listedGameBuffs,
   loggedSkillInstances,
   parseSelector,
   placeHits,
   selectItems,
+  worldMs,
+  castTimeStops,
+  worldTimeView,
 } from "@efsim/logs";
 
 const data = loadGameData();
@@ -111,5 +115,22 @@ describe("control and cadence", () => {
     const text = cadenceView(data, [a], "chr_0036_jsspsi", /combo_skill/);
     expect(text).toMatch(/group\(s\)/);
     expect(text).toMatch(/world-time gaps: \d+|no two groups/);
+  });
+});
+
+describe("world time in a log (zmdlogs worldtime, lanes --world)", () => {
+  it("gives the real and the world time between two moments, and the stops between", () => {
+    const text = worldTimeView(data, a.fx, 2000, 8000);
+    const world = worldMs(2000, 8000, castTimeStops(data, placeHits(data, a.fx).casts));
+    expect(world).toBeLessThan(6000);
+    expect(text.split("\n")[0]).toContain(`real 6.00 s, world ${(world / 1000).toFixed(2)} s`);
+    expect(text).toMatch(/frame\(s\), lowest scale/);
+    expect(() => worldTimeView(data, a.fx, 8000, 2000)).toThrow(/to after from/);
+  });
+
+  it("adds each listed run's world-time length", () => {
+    const text = lanesView(data, a.fx, /liino_atkup$/, { world: true });
+    expect(text).toMatch(/world time from since: to the last listed \d+\.\d\d s \(real \d+\.\d\d\)/);
+    expect(lanesView(data, a.fx, /liino_atkup$/)).not.toContain("world time");
   });
 });

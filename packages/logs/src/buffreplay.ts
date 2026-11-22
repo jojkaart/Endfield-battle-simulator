@@ -17,7 +17,7 @@ import {
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
-import { castTimeStops, distinctCasts, loggedFrames, mergeMs, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -443,10 +443,11 @@ const FLUSH_MS = 15;
 /** How soon after an ultimate's cast event another's hit says the team resumed from its stop (ms; loggedCastStart). */
 const RESUME_MS = 500;
 
-export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[], data?: GameData, stops: readonly TimeStop[] = []): ReplayedCast[] {
-  if (!fx.casts?.length) return [...casts];
-  const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
-  const added: ReplayedCast[] = [];
+/**
+ * Whether a placed cast `c` is the logged cast event `lc` of `skill` (withLoggedCasts; loggedCastFates shows the
+ * result per event).
+ */
+function loggedCastMatcher(kits: readonly OperatorKit[], stops: readonly TimeStop[]): (c: ReplayedCast, lc: { t: number; operator: string }, skill: string) => boolean {
   // A placed cast is the logged one within LOGGED_CAST_MS of the world's time: the log's times run on through time stops
   // (a7a7a40c97ed: Arcane's battle skill pressed at 37415 ms, placed from its hits at 40523 ms, 351 ms later across
   // Wulfgard's and her own ultimates' stops).
@@ -457,9 +458,16 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
   // at 37.08 s and before the one at 51.5 s).
   // Only for a skill a buff's ticks are logged under (KitBuff.ticksLoggedAs): elsewhere such events stay with the cast.
   const ticked = new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
-  const near = (c: ReplayedCast, lc: { t: number; operator: string }, skill: string) =>
+  return (c, lc, skill) =>
     c.operator === lc.operator && c.skillId === skill && worldMs(Math.min(c.start, lc.t), Math.max(c.start, lc.t), stops) <= LOGGED_CAST_MS &&
     !(c.kind === "combo" && ticked.has(`${c.operator}|${skill}`) && (worldMs(Math.min(lc.t, c.start), c.start, stops) > COMBO_EVENT_MS || worldMs(c.lastHit, Math.max(lc.t, c.lastHit), stops) > COMBO_EVENT_MS));
+}
+
+export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[], data?: GameData, stops: readonly TimeStop[] = []): ReplayedCast[] {
+  if (!fx.casts?.length) return [...casts];
+  const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
+  const added: ReplayedCast[] = [];
+  const near = loggedCastMatcher(kits, stops);
   for (const lc of fx.casts) {
     const skill = kits.find((k) => k.operator === lc.operator)?.skills.find((x) => x.skillId === lc.skill);
     if (!skill || skill.followUpOnly) continue;
@@ -868,6 +876,50 @@ export function controlSwaps(placement: Placement, casts: readonly ReplayedCast[
     swaps.push({ at: start.start, operator: e.operator, evidence: { t: e.t, event: e.event } });
   }
   return { first: first.operator, firstEvidence: { t: first.t, event: first.event }, swaps };
+}
+
+/** What the replay made of one of the log's cast events (loggedCastFates; `zmdlogs replay`'s EVENT lines). */
+export interface LoggedCastFate {
+  readonly t: number;
+  readonly operator: string;
+  readonly skill: string;
+  /**
+   * "placed": a placed cast's own event (`cast`: its start and the world time between, ms); "tick": a tick of a buff
+   * (KitBuff.ticksLoggedAs) or "press" / "cast": added as a cast of its own (a slot press when the skill's hits show
+   * elsewhere); "follow-up": a follow-up-only skill, left to the engine; "unknown": no kit skill of that id.
+   */
+  readonly fate: "placed" | "tick" | "press" | "cast" | "follow-up" | "unknown";
+  readonly cast?: { readonly start: number; readonly world: number };
+  readonly buff?: string;
+}
+
+/**
+ * Each of the log's cast events with what the replay's cast assembly made of it (withLoggedCasts' choice, the same
+ * matcher): a placed cast's own, a buff's tick, a press or cast of its own, or nothing. Round 5: Arcane's INT lasers'
+ * events were silently taken as her combo's (2.4 s of world time away), found only with a debug print.
+ */
+export function loggedCastFates(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): LoggedCastFate[] {
+  const kits = fx.team.flatMap((b) => {
+    const k = effectiveKit(data, b);
+    return k ? [k] : [];
+  });
+  const followUps = new Set(kits.flatMap((k) => k.skills.filter((x) => x.followUpOnly).map((x) => `${k.operator}|${x.skillId}`)));
+  const placed = replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`));
+  const stops = castTimeStops(data, placement.casts);
+  const near = loggedCastMatcher(kits, stops);
+  return (fx.casts ?? []).map((lc): LoggedCastFate => {
+    const base = { t: lc.t, operator: lc.operator, skill: lc.skill };
+    const kit = kits.find((k) => k.operator === lc.operator);
+    const skill = kit?.skills.find((x) => x.skillId === lc.skill);
+    if (!skill) return { ...base, fate: "unknown" };
+    if (skill.followUpOnly) return { ...base, fate: "follow-up" };
+    const c = placed.find((x) => near(x, lc, lc.skill));
+    if (c) return { ...base, fate: "placed", cast: { start: c.start, world: Math.max(0, worldMs(Math.min(c.start, lc.t), Math.max(c.start, lc.t), stops)) } };
+    const tick = kit?.buffs.find((d) => d.ticksLoggedAs === lc.skill);
+    if (tick) return { ...base, fate: "tick", buff: tick.id };
+    const shownElsewhere = skill.hits.some((h) => h.events.some((e) => fx.hits.some((x) => x.operator === lc.operator && x.event === e)));
+    return { ...base, fate: shownElsewhere ? "press" : "cast" };
+  });
 }
 
 /**

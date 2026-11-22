@@ -175,14 +175,41 @@ export function buffLanes(fx: LogFixture, buff?: RegExp): BuffLane[] {
     .sort((a, b) => (a.since ?? a.firstListed) - (b.since ?? b.firstListed) || a.buff.localeCompare(b.buff));
 }
 
-/** `zmdlogs lanes`: a fight's runs of the listed buffs matching `buff`. */
-export function lanesView(data: GameData, fx: LogFixture, buff?: RegExp): string {
+/** `zmdlogs lanes`: a fight's runs of the listed buffs matching `buff`; with `world`, each run's length in world time too. */
+export function lanesView(data: GameData, fx: LogFixture, buff?: RegExp, opts: { readonly world?: boolean } = {}): string {
   const lanes = buffLanes(fx, buff);
+  const stops = opts.world ? castTimeStops(data, placeHits(data, fx).casts) : [];
   const lines = lanes.map((l) => {
     const end = l.nextUnlisted === null ? "listed to the fight's end" : `next unlisted hit ${s(l.nextUnlisted)}`;
-    return `  ${l.buff} from ${l.source ? operatorLabel(data, l.source) : "?"}: since ${l.since === null ? "?" : s(l.since)}, listed ${s(l.firstListed)}–${s(l.lastListed)} on ${l.listedHits} hit(s)${l.boundaryOnly ? " (boundary only)" : ""} of ${l.hitters.map((h) => operatorLabel(data, h)).join(", ")}, ${end}; value(s) ${l.values.join(", ")}`;
+    const from = l.since ?? l.firstListed;
+    const world = opts.world
+      ? `; world time from ${l.since === null ? "the first listed hit" : "since"}: to the last listed ${s(worldMs(from, l.lastListed, stops))} s (real ${s(l.lastListed - from)})${l.nextUnlisted === null ? "" : `, to the next unlisted ${s(worldMs(from, l.nextUnlisted, stops))} s (real ${s(l.nextUnlisted - from)})`}`
+      : "";
+    return `  ${l.buff} from ${l.source ? operatorLabel(data, l.source) : "?"}: since ${l.since === null ? "?" : s(l.since)}, listed ${s(l.firstListed)}–${s(l.lastListed)} on ${l.listedHits} hit(s)${l.boundaryOnly ? " (boundary only)" : ""} of ${l.hitters.map((h) => operatorLabel(data, h)).join(", ")}, ${end}; value(s) ${l.values.join(", ")}${world}`;
   });
-  return [`${fx.id}: ${lanes.length} run(s) of listed buffs${buff ? ` matching /${buff.source}/` : ""} (one per source and since; times in s; since is the lane's start as the log has it: a refresh may move it)`, ...lines].join("\n");
+  const note = opts.world ? "; world time takes the placed casts' time stops out (worldMs; the log's ms are batched, so under ~0.2 s isn't evidence)" : "";
+  return [`${fx.id}: ${lanes.length} run(s) of listed buffs${buff ? ` matching /${buff.source}/` : ""} (one per source and since; times in s; since is the lane's start as the log has it: a refresh may move it${note})`, ...lines].join("\n");
+}
+
+/**
+ * `zmdlogs worldtime`: the world's time between two moments of a log (ms), under the placed casts' time stops
+ * (castTimeStops, worldMs), and the stops between with their frames and lowest scale. The first number of every "lasts
+ * longer than its duration" question (round 5: three agents wrote it as a scratch script).
+ */
+export function worldTimeView(data: GameData, fx: LogFixture, from: number, to: number): string {
+  if (!(to > from)) throw new Error("zmdlogs worldtime takes <from s> <to s> with to after from");
+  const stops = castTimeStops(data, placeHits(data, fx).casts);
+  const [a, b] = [Math.round((from * FPS) / 1000), Math.round((to * FPS) / 1000)];
+  const between = stops.filter((st) => st.start < b && st.start + st.scales.length > a).sort((x, y) => x.start - y.start);
+  const world = worldMs(from, to, stops);
+  return [
+    `${fx.id}: ${s(from)}–${s(to)} s: real ${s(to - from)} s, world ${s(world)} s (held ${s(to - from - world)} s by ${between.length} time stop(s) of the placed casts; times in s, a stop's frames at 30 a second)`,
+    ...between.map((st) => {
+      const inside = Math.min(b, st.start + st.scales.length) - Math.max(a, st.start);
+      return `  ${s(msOf(st.start)).padStart(7)}  ${operatorLabel(data, st.operator)} ${shortSkill(st.skillId)}${st.kind ? ` (${st.kind})` : ""}: ${st.scales.length} frame(s), lowest scale ${Math.min(...st.scales)}, ${inside} frame(s) inside the window`;
+    }),
+    "Overlapping stops count once per frame, at the lowest scale then; the log's ms are batched (docs/design/data.md \"What the log records\"), so a difference under ~0.2 s isn't timing evidence.",
+  ].join("\n");
 }
 
 /** What a listed game buff stands for (listedGameBuffs). */
