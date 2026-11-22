@@ -84,10 +84,14 @@ combo hits and 9090's −9.6% done 2026-11-22 (Pulser Labs' and Wild
 Wanderer's Electrification buffs act on the hit that applies it: 9090's
 Perlica −9.4 → −2.7%, the rest crit luck), fc63's ATK fitted as a build
 override (attribute nodes 2, weapon level 86; one input alone fits none);
+Liino's stances cast before a log starts and her Cosmovoice beats on their
+own clock done 2026-11-22 (open-problems.md "Liino's Cosmovoice beats");
 left: 9847's team-wide ×0.975 / ×1.3–1.5 runs (Bigents), 4d60's combos
 ×1.08 (Liino's stance ATK listed, not replayed), a reaction
-Electrification with Wild Wanderer (in-game test 68's open half), Liino stances
-cast before a log starts (1d91, 7910, 4d60); gear
+Electrification with Wild Wanderer (in-game test 68's open half), the
+replay's stops around some beats (Perlica's ultimate in 4d60 at 92.8 s),
+Cosmovoice ending before its logged finale (9090, 8915, 4bfc), a pinned
+beat ordered after another's hit at its frame (9847 60.77 s); gear
 chosen jointly with the rotation (a search per candidate set, not a
 replay).
 

@@ -66,3 +66,23 @@ describe("Liino: Vocalist Stance's volley is a 10 s timer, not a reaction's (in-
     expect(firsts).toEqual([45 + 24, 345 + 24, 645 + 24, 945 + 24]);
   });
 });
+
+describe("Liino: Cosmovoice's beats are its song's ticks (buff ultskill_music_damage)", () => {
+  // Ticks every ultmusic_trigger (1.5 s) from frame 77, first at once; ten (the logs': 4bfc6f3e84b8, 4d60e7fe92c2,
+  // 984748cfa662), none at Cosmovoice's end (527); the finale at the ultimate's frame 508.
+  // The first beat is the ultimate's own (trigger ult_song at frame 77, first_beat), the rest the song buff's ticks.
+  const of = (s: TimelineState, ...hitIds: string[]) => s.hits.filter((h) => h.operator === LI && hitIds.includes(h.hitId)).map((h) => h.frame);
+
+  it("ten beats 45 frames apart from frame 77, then the finale at 508", () => {
+    const s = run([act(LI, "ultimate_skill", 0)], 20 * 30);
+    expect(of(s, "first_beat")).toEqual([77]);
+    expect(of(s, "first_beat", "beats")).toEqual([77, 122, 167, 212, 257, 302, 347, 392, 437, 482]);
+    expect(of(s, "finale")).toEqual([508]);
+  });
+
+  it("End Stance ends them: no beat after it, no finale", () => {
+    const s = run([act(LI, "ultimate_skill", 0), act(LI, "normal_skill_end", 8)], 20 * 30);
+    expect(of(s, "first_beat", "beats")).toEqual([77, 122, 167, 212]);
+    expect(of(s, "finale")).toEqual([]);
+  });
+});

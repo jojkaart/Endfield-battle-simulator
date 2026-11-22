@@ -53,6 +53,8 @@ export interface ActiveBuff {
   /** Periodic: frames between ticks (KitBuff.every), and the next tick's frame. */
   readonly every?: number;
   readonly nextTick?: number;
+  /** No tick on its end frame (KitBuff.noTickAtEnd). */
+  readonly noTickAtEnd?: true;
   /** Ends with its owner's cast of this index (KitBuff.endsWithCast). */
   readonly endsWithCast?: number;
   /** Frames its cast's jumps took from it (it ends that much sooner): counted as time it had left when it ends. */
@@ -213,7 +215,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(priority !== undefined ? { priority } : {}),
     ...(buff.consumedBy ? { consumedBy: buff.consumedBy } : {}),
     ...(buff.blocksEnergy ? { blocksEnergy: true } : {}),
-    ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every) } : {}),
+    ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every), ...(buff.noTickAtEnd ? { noTickAtEnd: true as const } : {}) } : {}),
     ...(buff.records ? { records: { rate: resolveValue(data, build, panel, skillId, buff.records.rate, situation), total: 0 } } : {}),
   };
 }

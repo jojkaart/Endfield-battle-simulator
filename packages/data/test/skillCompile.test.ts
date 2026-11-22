@@ -251,9 +251,9 @@ describe("kits against the compiled SkillData", () => {
 
   it("matches a cast trigger's hits and actions as its skill's", () => {
     const liino = JSON.parse(readFileSync(join(KITS, "chr_0035_liino.json"), "utf8")) as { triggers: { id: string; do: { kind: string; hits?: Record<string, unknown>[] }[] }[] };
-    const finale = liino.triggers.find((t) => t.id === "ult_song")?.do[0]?.hits?.find((h) => h["id"] === "finale") as Record<string, unknown>;
-    finale["frames"] = [509];
-    expect(() => loadOperatorKitFile(data, "chr_0035_liino.json", liino)).toThrow(/ult_song\/finale frames: kit \[509\], data \[508\]/);
+    const beat = liino.triggers.find((t) => t.id === "ult_song")?.do[0]?.hits?.find((h) => h["id"] === "first_beat") as Record<string, unknown>;
+    beat["frames"] = [78];
+    expect(() => loadOperatorKitFile(data, "chr_0035_liino.json", liino)).toThrow(/ult_song\/first_beat frames: kit \[78\]/);
   });
 
   it("checks an equipment kit's triggered hits against its skill's landings", () => {

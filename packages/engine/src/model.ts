@@ -695,6 +695,12 @@ export interface KitBuff {
   /** The first tick comes when it's applied (default: one interval later). */
   readonly tickOnApply?: boolean;
   /**
+   * No tick on its end frame: it ends before a tick due then (default: that tick comes first, as Rossi's 25 s bleed
+   * ticking every 1 s from its application logs 26 ticks). Liino's Cosmovoice song, 15 s ticking every 1.5 s from its
+   * start: the logs have 10 beats, never 11.
+   */
+  readonly noTickAtEnd?: boolean;
+  /**
    * A skill of the kit whose cast-event key a battle log records each tick under, without damage (Liino's Vocalist
    * Stance beats under her battle skill): the log check's replay reads such an event while the buff is on as a tick
    * there, not a press (cli buffreplay.ts). The engine doesn't read it.

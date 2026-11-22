@@ -237,10 +237,10 @@ describe("a7a7a40c97ed: Liino's battle-skill events in Vocalist Stance are its b
   const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-a7a7a40c97ed.json", import.meta.url).pathname);
   const r = logBuffReplay(data, fx).replay;
   const L = "chr_0035_liino";
-  it("casts only the stance's first event: no projectiles from the nine beats after it (5405 ms to 35353 ms)", () => {
-    const own = r.hits.filter((h) => h.operator === L && h.skillId === `${L}_normal_skill` && h.hitId !== "volley").map((h) => (h.frame * 1000) / FPS);
-    expect(own.length).toBeGreaterThan(0);
-    expect(Math.max(...own)).toBeLessThan(5000);
+  it("casts none of them: the stance began before the log (its ATK listed since -1776 ms), so no projectiles from 2205 ms to 35353 ms, and no volley before the log's first at 12.58 s", () => {
+    const own = r.hits.filter((h) => h.operator === L && h.skillId === `${L}_normal_skill`).map((h) => ({ s: (h.frame * 1000) / FPS, hit: h.hitId }));
+    expect(own.filter((h) => h.hit !== "volley" && h.s < 36000)).toEqual([]);
+    expect(Math.min(...own.filter((h) => h.hit === "volley").map((h) => h.s))).toBeGreaterThan(12000);
   });
   it("takes Arcane's press at 37415 ms for the battle skill placed at 40523 ms (351 ms later in the world's time): no Corrosion before her ultimate's at 40865 ms", () => {
     const corrosions = r.reactions.filter((x) => x.kind === "reaction" && x.status === "corrosion" && x.frame >= 38 * FPS && x.frame <= 43 * FPS).map((x) => (x.frame * 1000) / FPS);

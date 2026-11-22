@@ -222,6 +222,10 @@
             "type": "boolean",
             "description": "The first tick comes when it's applied (default: one interval later)."
           },
+          "noTickAtEnd": {
+            "type": "boolean",
+            "description": "No tick on its end frame: it ends before a tick due then (default: that tick comes first, as Rossi's bleed). Needs `every`."
+          },
           "ticksLoggedAs": {
             "type": "string",
             "description": "A skill of the kit whose cast-event key a battle log records each of this buff's ticks under, without damage (Liino's Vocalist Stance beats under her battle skill). The log check's replay reads such an event of the buff's owner while the buff is on as a tick at that time, not a press; the engine doesn't read it. Needs `every`."

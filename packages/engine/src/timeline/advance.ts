@@ -23,20 +23,21 @@ import { teammateAttack } from "./teammates.ts";
  * The earliest periodic tick of an active buff at or before `frame`. A tick
  * on the buff's end frame happens (before the buff ends): Rossi's 25 s bleed
  * ticking every 1 s from its application logs 26 ticks (zmdlogs-4e5e), as
- * the enemy's statuses tick on their end frame too (status.ts nextTick).
+ * the enemy's statuses tick on their end frame too (status.ts nextTick);
+ * not a buff's with ActiveBuff.noTickAtEnd.
  */
 function nextBuffTick(buffs: readonly ActiveBuff[], frame: number): { b: ActiveBuff; frame: number } | null {
   let next: { b: ActiveBuff; frame: number } | null = null;
   for (const b of buffs) {
     const t = b.nextTick;
-    if (t !== undefined && t <= frame && t <= b.expiresAt && (next === null || t < next.frame)) next = { b, frame: t };
+    if (t !== undefined && t <= frame && tickDueBeforeEnd(b) && (next === null || t < next.frame)) next = { b, frame: t };
   }
   return next;
 }
 
-/** Whether a buff still has a periodic tick due at or before its end (it ends after that tick). */
+/** Whether a buff still has a periodic tick due before its end, or at it (it ends after that tick; not with noTickAtEnd). */
 function tickDueBeforeEnd(b: ActiveBuff): boolean {
-  return b.nextTick !== undefined && b.nextTick <= b.expiresAt;
+  return b.nextTick !== undefined && (b.noTickAtEnd ? b.nextTick < b.expiresAt : b.nextTick <= b.expiresAt);
 }
 
 /** Earliest frame at or before `frame` when an active buff ends (one with a tick still due by then waits for it), or null. */
@@ -134,7 +135,7 @@ export function nextEventAfter(st: TimelineState, frame: number): number | null 
   for (const x of st.enemy.statuses) if (x.nextTickAt !== undefined && x.nextTickAt <= x.expiresAt) consider(x.nextTickAt);
   for (const b of st.buffs) {
     consider(b.expiresAt);
-    if (b.nextTick !== undefined && b.nextTick <= b.expiresAt) consider(b.nextTick);
+    if (tickDueBeforeEnd(b)) consider(b.nextTick);
   }
   return next;
 }

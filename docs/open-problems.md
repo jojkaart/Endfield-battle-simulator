@@ -1199,12 +1199,9 @@ first's (`efsim zmdlogs hits --json` on 1d91, t=13713: plain, predicted
 886). 1d91 lists none of Liino's buffs and no teammate's on her, which is
 why the log looked unbuffed. 4360 (419 → 785) and 9090 (388 → 567) are
 the same: the first volley comes before the teammates' debuffs.
-**Left:** the first volley (1990 ms) still lands nowhere: the log's first
-battle-skill event of Liino is at that very ms (the volley's own event,
-next entry), so her stance was cast before the log began, and the replay
-makes a stance at 1.99 s instead (its projectiles and first volley land
-as the replay's own); 7910 (1898 ms) and 4d60 (1354 ms) start the same
-way. The volley at 51.0 s is ×1.11 the engine's (985 against 886), 62.2
+**Left:** the first volley (1990 ms) landed nowhere: her stance was cast
+before the log began (fixed 2026-11-22: next entry, "stances cast before
+the log"). The volley at 51.0 s is ×1.11 the engine's (985 against 886), 62.2
 and 64.0 s (1152 = 886 × 1.3) are under the log's Stagger, split in two
 by a stop.
 
@@ -1239,13 +1236,37 @@ volley's last two lie after Arcane's combo stop at 2.5 s), her totals
 below, the volleys' offsets from the last logged beat spread evenly over
 0.1–3 s); a cooldown from a reaction (9090's first volley comes before any
 reaction, and its 15.2 s one has none in the 2 s before).
-**Found, not acted on:** 37 of the 100 volleys have a Liino battle-skill
-cast event at their first hit's very ms (the beats and the volley tick on
-unrelated clocks, so these events are the volley's). Reading them as
-neither presses nor beats changed nothing but 1d91 and 7910, both worse
-(their first event is then no stance at all: plain 280 → 249, 202 → 177,
-measure 2026-11-18), so the replay still reads them as beats (or, before
-any stance, as the stance's cast).
+**Decided (2026-11-22): the events at a volley's first hit are beats.**
+30 of 104 volleys have a Liino battle-skill event at their first hit's ms;
+every one comes 2.5–6 s after her previous event (3.0–3.5 s most), and her
+next event 3 s or more after it, where the volleys without one come 0–2.9 s
+after her last event (`scratch` count over every Liino log): a beat due then
+is logged at the volley. 10 of 25 of them in logs listing her weapon's heal
+ATK have a heal at the event's ms, as 174 of 258 plain beat events do.
+Read as no beat (1d91: plain 328 → 331, no other log moved; after the
+stances before the log, below) they'd lose those heals; kept as beats.
+**Fixed (2026-11-22): stances cast before the log.** 1d91, 7910, 4d60 (and
+a7a7, af7b) begin inside a Vocalist Stance: 4d60 lists its ATK since
+-811 ms, 7910 since -576 ms, a7a7 -1776, af7b -1444; 1d91 lists none, its
+first volley at 1990 ms with the volley's own event. The replay made a
+stance at the first event instead, so its first volley landed nowhere and
+the stance's projectiles and volley came as its own. Now (buffreplay.ts
+`castsBeforeLog`, `withCastBeforeLog`) a stance whose buff's listing starts
+before the log, or whose first shown volley no cast could have opened, was
+cast before it: its timer and beats run from there, its hits and the
+volley launched before the log (the fight hadn't begun) aren't replayed.
+Development plain 52.0 → 56.1% with the beats' fixes (scoreboard; 4d60
+386 → 677, af7b 105 → 414, 1d91 280 → 328). Liino's damage error: 1d91
++14.8 → +11.6% (the rest: its last Cosmovoice's beats, never logged), 7910
+−7.9 → −7.1%, 4d60 −6.4 → +8.5% (two replay-only beats and a finale after
+her last logged hit at 170.9 s), a7a7 +7.5 → +0.2%; af7b's teammates (her
+stance ATK from the start): Typhoeus −7.8 → −4.6%, Ardelia −6.0 → −2.0%,
+Arcane −7.2 → −4.5%, its Liino −5.8 → +10.5% (her volleys now land; two
+replay-only ones at 47.1 and 57.7 s where the log has none: her ultimate,
+whose Cosmovoice the log lists from 56.50 s, is placed at 57.4 s from its
+projectiles, which flew 3.4 s; the 47 s one is due on the kit's 10 s where
+her logged volleys came 11.7 and 11.5 s apart, its tick then inside her
+combo at 47.97 s, which drops a volley still to launch).
 **Still possible:** the game's slower clock: hit-stop or a time scale on
 Liino herself (useTimeDilationDt false on the buff), or stops longer than
 the engine's; the data's listener end at frame 1691 (54.9 s; the kit ends
@@ -1256,44 +1277,69 @@ d572, 2fd9, 99fb better, 0c14 +0.3, 4a64 −0.1 points of damage error
 (measure 2026-11-18); not kept here (outside this task), a lead for
 Rossi's kit.
 
-## Liino's Cosmovoice beats: logged at other moments than the replay's (2026-11-18)
+## Liino's Cosmovoice beats: logged at other moments than the replay's (2026-11-18; 2026-11-22)
 
 **Shows:** of her ultimate's 572 checked hits (in-game test 6, decided:
-the values hold, 332 plain, dbae 25 of 25), 21 are beats or finales the
-replay lands nowhere, beside beats it lands where the log has none: 4d60
-82.6–99.9 s (logged 1.35–1.38 s apart, the replay 1.5 s: 86.69, 89.86,
-91.22, 98.19 s and the finale at 99.87 s unlanded), 7910 59.0–62.1 s (the
-replay's beat at 55.70 s falls before the stop of 55.1–58.5 s the log's
-beats skip), 9090 (finale logged 79.82 s, the replay's 79.03 s; no beat
-logged 68.5–75.8 s), 8915, 9847 one each. Cosmovoice's Amp is listed on
-teammates' hits up to the logged finale where the replay's has ended
-(8915 104.65–105.88 s, 9090 79.71–79.82 s: `zmdlogs differences --what
-cosmovoice_amp`, 35 log-only hits, 5 mismatches).
-**Cause: not known.** Logged gaps between consecutive beats (scratch over
-the 16 single-target Liino logs, gaps under 1.9 s): 1.17–1.89 s, most
-1.35–1.55; 4d60 a steady 1.36, c6d8 1.52, 9847 1.44–1.55. Not every beat
-is logged (gaps of 3–7 s with no stop that long, e.g. d774's second
-Cosmovoice: 2 beats).
-**Fixed: ten beats, not nine.** The three Cosmovoices logged with every
-beat (4bfc 55.3 s, 4d60 82.6 s, 9847 53.5 s; scratch count over every
-Liino log) have ten each and none has eleven; the kit ended the beats'
-buff with its creating clip (77–477: 9). Now it ticks at 482 too and ends
-at its 15 s duration (527) without a tick there (measure 2026-11-18:
-development plain 51.4 → 51.5%, 4d60, 9847, 9c6e better; 8915 worse, its
-stage factor; d774 worse, its replay-only beats; hold-out 2 better, 0
-worse). The finale is logged at 3 × a beat (4d60 13043 / 4348, 9090 7294
-/ 2431), as the kit.
-**Ruled out:** the values (test 6); the beats' damage where they land
-(plain or team-wide); nine beats.
-**Still possible:** the beats on a clock of their own, as her volleys'
-(which runs ~5% slower, "Liino's volleys" above), here sometimes faster
-(4d60 a steady 1.36 s, which would also fit ten ticks inside the 477
-clip); other operators' stops placed differently from the game's (7910,
-4bfc 152–155 s); beats that miss an enemy out of reach going unlogged.
-**Next check:** pinning
-the beats to their logged landings as the volley ticks are
-(`ticksShownByHits` needs the beats as a ticking buff, not fixed frames),
-then the finale from the last pinned beat.
+the values hold, 332 plain, dbae 25 of 25), 21 were beats or finales the
+replay landed nowhere, beside beats it landed where the log has none: 4d60
+82.6–99.9 s (logged 1.35–1.38 s apart, the replay 1.5 s), 7910 59.0–62.1 s,
+9090 (finale logged 79.82 s, the replay's 79.03 s), 8915, 9847 one each.
+**Cause (2026-11-22): the beats run on a clock of their own, the finale on
+the ultimate's timeline.** The data: buff ultskill_music_damage (frame 77,
+vfx_music_duration = ultmusic_duration 15 s, triggerInterval
+music_damage_trigger = ultmusic_trigger 1.5 s, first tick at once) launches
+a soundwave projectile each tick; the finale (soundwave_02) is launched at
+the ultimate's frame 508. The logs: without a time stop between, 4d60's
+beats are a steady 1.36 s apart in both its Cosmovoices (`zmdlogs cadence
+--operator liino --event ultimate_skill_soundwave`), 4bfc's 1.36–1.59,
+7910's 1.38–1.55, c6d8's 1.52, while in the same logs the ultimate's
+projectiles (fixed frames) keep the kit's to ±15 ms and Zhuang Fangyi's
+Empyrean strikes (6 frames) are 189–230 ms apart (4d60 a mean 195, c6d8
+234). The song's clock isn't the log's (4d60's 10 beats took 13.0 s of world
+time, the kit 13.5) and differs per log; its volleys' timer runs off it the
+same way (4d60 9.0–9.4 s, others 10.3–11.7 s). The finale comes 14.3–14.75 s
+of world time after the first beat (4d60, 4bfc, 8915; the kit 14.37 s): the
+ultimate's timeline, not the song's.
+**Fixed (2026-11-22):** the kit's beats are the song's ticks: kit buff
+cosmovoice_song (`every` ultmusic_trigger, `noTickAtEnd`: ten beats, never
+an eleventh at its 15 s end, as the logs; End Stance ends it), its first
+beat the ultimate's own at frame 77 (trigger ult_song, so the placement
+times the ultimate by it), the rest `ticksShownByHits`: the replay takes
+each from its logged beat, and the song's end with them (one clock: 4d60's
+second Cosmovoice, pinned 1.36 s apart, ran on to two replay-only beats).
+The finale is the ultimate's own hit at 508, which the replay pins to its
+logged landing (End Stance in Cosmovoice leaves a marker, cosmovoice_cut,
+that skips it; a launch frame would have held her combo beside the
+ultimate until 508). The placement gives a trigger on casts one cast per
+anchor (logcasts.ts `anchorFree`: each later beat had made an `ult_song` of
+its own). Simulations keep the frames (kit-liino test) but the song, a buff,
+is held by every slow-down, Liino's own combo's too, where the ultimate's
+frames weren't (the example liino-laevatain: its beats from 10.6 s 0.6 s
+later, −0.05%); d774 agrees (beats 2.85 s apart across her combo and Zhuang
+Fangyi's, 1.84 s with both stops taken out). An ultimate logged at the very end of another's
+stop that covers it was pressed inside it (buffreplay.ts
+`loggedCastStart`): 4d60's Zhuang Fangyi ultimate at 157421 ms, Liino's stop
+ending at 157.47 s; her Empyrean attacks land from 158.38 s and Liino's
+beats at 158.66 and 160.03 s, which a 2.6 s stop from the event would have
+held (her strikes there now match plainly).
+**Left:** the replay's own stops still differ from the game's around some
+beats (4d60 91.2–95.0 s: a replay beat at 92.73 s before Perlica's ultimate
+stop, placed at 92.80 s from its hit, where the log has none until 95.01 s;
+9847 139.5–142.0 s); a pinned beat at the same frame as another's hit is
+ordered by operator id, not the log's order (9847 60.77 s: Gilberta's
+ultimate's Arts Susceptibility on the beat, ×1.5). Where the finale lands
+at its logged time, the replay's Cosmovoice has already ended (9090 79.82 s,
+8915 104.88 s, 4bfc 76.07 s: ×0.64–0.70 without its Amp): the replay holds
+Liino's buffs and her timeline differently across the stops in between.
+Beats the log never shows (1d91's last Cosmovoice from 67.5 s, its
+projectiles logged; af7b's after 70.5 s; d774's two): an enemy out of reach.
+**Ruled out:** the values (test 6); nine beats; the log's ms running at
+another rate than the game's (the projectiles keep their frames to ±15 ms in
+4d60, whose beats run 9% fast); adopting each log's shown interval for the
+next unshown tick (mean |damage error| over the Liino logs 10.44 → 10.41,
+plain ±1: af7b's Liino +10.5 → +2.9%, 9847's +10.2 → +15.6%; not kept).
+**Still possible:** what sets the song's clock (frame pacing on the
+player's device, a time scale on Liino; nothing in the data).
 
 ## Si's Artful Intent bursts that fit no reading (6 of 40)
 
