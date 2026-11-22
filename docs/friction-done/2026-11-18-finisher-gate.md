@@ -70,3 +70,12 @@ pointer to the Talos Wiki's Stagger article. Branch: the worktree of agent a4a64
   casts, and none of the 14 logged Finishers fell in the replay's state).
 - `zmdlogs replay --trace-buff` showed where the replay's Empyrean ended against her logged Empyrean hits; `npm run
   smoke` (109 s) and the Finisher's single gate in `gatesFrom` made the engine change small and safe.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (interval selectors for census: `stagger:`, `control:`, `--inside`): not done, carried over to the round-5 backlog (a moderate change to query.ts; no report of this round needed it again).
+- 2 (a skill's group and the game's mode from the CLI): done (c9247da): `efsim kit` prints a skill's group when it isn't its kind ("basic; skill group ultimate: an enhanced basic attack"), and data.md's question table has rows for `gamedata find <type>` and `gamedata who <id>`.
+- 3 (team-ab's 32 seeds only for moved teams): done (6032c21): the seeds run only for the teams whose fight moved, "unchanged" rows for the rest, `--force` for all.
+- 4 (`earliestStart` with `at` is a lower bound): done (c9247da): its doc comment says so and names canStartAt.

@@ -96,3 +96,13 @@ worktree branch from 1ab4647.
   one line (two hits at +0 ms of the ultimate's event).
 - `npm run measure --base` with the hold-out aggregates made every step's
   effect clear.
+
+## Outcome (round 5)
+
+2026-11-22, improvement round 5 (docs/friction-done/2026-11-22-round-5.md); what's left is in docs/friction/2026-11-22-backlog-after-round-5.md.
+
+- 1 (a view of the replay's enemy statuses): not done, carried over to the round-5 backlog (`zmdlogs statuses`).
+- 2 (a cast's two variants both landing): the jump fix was the branch's own; the "both-variants" CastFlag is carried over to the round-5 backlog (it touches the replay's flags; needs its own measure).
+- 3 (census's rerun line with a negative window): the rerun line was fixed on the branch; the unit (ms) and the `=` form are now in data.md's question table (c9247da).
+- 4 (world time between two log moments): done (cec2dd6): `efsim zmdlogs worldtime`.
+- 5 (a placement change touches other operators silently): done (d98b497): `npm run measure -- --changed placement` names, per development log, the casts placed only before (-) and only now (+).
