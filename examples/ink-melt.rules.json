@@ -1,16 +1,16 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "Ink Melt (2026-11-16): `efsim rules --search` from a hand-written list (ultimates when ready, every combo when it lights up, Laevatain's battle skill in Twilight and with SP to spare), two searches of 150 and 200 lists, the best cleaned of rules that never fired: 66,058 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,088), the hand-written list 51,674 (the old delay draws; with common random numbers, 2026-11-16: 65,922, sd 1,750). Its finds: pre-empt Laevatain's and Ardelia's combos with Si's battle skill and Wulfgard's with Ardelia's, Laevatain's battle skill from 150 SP, Ardelia's ultimate never. Si's ultimate held for Laevatain's Twilight (2026-11-16, from the owner's question about a one-off spike at 80 s: Si's Heat Amp, a Stagger and Wulfgard's and Ardelia's debuffs had lined up on Twilight by chance): 68,609 sustained (sd 1,627) against 65,922, same seeds. With the fixed driver (2026-11-16; 32 fresh seeds, 1001–1032): 69,668 (sd 2,657), from zero 61,716 (sd 2,408); re-tuning for it found no better list.",
-  "opener": [{ "operator": "Si", "cast": "battle" }, { "operator": "Laevatain", "cast": "battle" }],
+  "description": "Ink Melt (2026-11-16; re-found by efsim rules --guided under the objective across starts, 2026-11-22). Laevatain's ultimate only while the enemy has Corrosion (Ardelia's; her Twilight attacks then shred resistance); Si's ultimate only while the enemy has Combustion and Laevatain is in Twilight (both on the Twilight attacks: the Twilight hold, kept); Wulfgard's ultimate when ready; Si's battle skill before Laevatain's and Ardelia's combos, Ardelia's before Wulfgard's; Laevatain's battle skill in Twilight and from 150 SP. Against the list before (the Twilight hold without Combustion, Laevatain's ultimate when ready), 64 fresh seeds (1001–1064, 300 s, 0.3 s reaction), the objective across starts (the mean of full energy and from zero per seed): +3.21% ± 0.73 (full energy +7.47% ± 1.10, 59,623 → 64,075; from zero −1.08% ± 0.80, 59,127 → 58,487).",
+  "opener": [{"operator": "Si", "cast": "battle"}, {"operator": "Laevatain", "cast": "battle"}],
   "rules": [
-    { "when": { "ultimate": "Laevatain" }, "do": { "operator": "Laevatain", "cast": "ultimate" } },
-    { "when": { "ultimate": "Wulfgard" }, "do": { "operator": "Wulfgard", "cast": "ultimate" } },
-    { "when": { "all": [{ "ultimate": "Si" }, { "any": [{ "buff": { "operator": "Laevatain", "buff": "twilight" } }, { "ultimate": "Laevatain" }] }] }, "do": { "operator": "Si", "cast": "ultimate" } },
-    { "when": { "combo": "Laevatain" }, "do": [{ "operator": "Si", "cast": "battle" }, { "operator": "Laevatain", "cast": "combo" }] },
-    { "when": { "combo": "Si" }, "do": { "operator": "Si", "cast": "combo" } },
-    { "when": { "combo": "Wulfgard" }, "do": [{ "operator": "Ardelia", "cast": "battle" }, { "operator": "Wulfgard", "cast": "combo" }] },
-    { "when": { "combo": "Ardelia" }, "do": [{ "operator": "Si", "cast": "battle" }, { "operator": "Ardelia", "cast": "combo" }] },
-    { "when": { "buff": { "operator": "Laevatain", "buff": "twilight" } }, "do": { "operator": "Laevatain", "cast": "battle" } },
-    { "when": { "sp": { "atLeast": 150 } }, "do": { "operator": "Laevatain", "cast": "battle" } }
+    {"when": {"all": [{"ultimate": "Laevatain"}, {"status": "corrosion"}]}, "do": {"operator": "Laevatain", "cast": "ultimate"}},
+    {"when": {"ultimate": "Wulfgard"}, "do": {"operator": "Wulfgard", "cast": "ultimate"}},
+    {"when": {"all": [{"ultimate": "Si"}, {"status": "combustion"}, {"buff": {"operator": "Laevatain", "buff": "twilight"}}]}, "do": {"operator": "Si", "cast": "ultimate"}},
+    {"when": {"combo": "Laevatain"}, "do": [{"operator": "Si", "cast": "battle"}, {"operator": "Laevatain", "cast": "combo"}]},
+    {"when": {"combo": "Si"}, "do": {"operator": "Si", "cast": "combo"}},
+    {"when": {"combo": "Wulfgard"}, "do": [{"operator": "Ardelia", "cast": "battle"}, {"operator": "Wulfgard", "cast": "combo"}]},
+    {"when": {"combo": "Ardelia"}, "do": [{"operator": "Si", "cast": "battle"}, {"operator": "Ardelia", "cast": "combo"}]},
+    {"when": {"buff": {"operator": "Laevatain", "buff": "twilight"}}, "do": {"operator": "Laevatain", "cast": "battle"}},
+    {"when": {"sp": {"atLeast": 150}}, "do": {"operator": "Laevatain", "cast": "battle"}}
   ]
 }

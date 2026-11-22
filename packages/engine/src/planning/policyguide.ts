@@ -775,13 +775,24 @@ export function reactionSetupEdits(data: GameData, list: RuleList, level = 4): G
         if ((list.sets ?? []).some((y) => y.name === setName)) continue;
         const setup: RuleSet = { name: setName, when: { statusLevel: { status, below: level } } };
         const up: RuleSet = { name: `${status} up`, when: { statusLevel: { status, atLeast: level } } };
-        const rApply: PolicyRule = { when: { infliction: { element: x, atLeast: level } }, do: { operator: ap, cast: "battle" }, set: setName };
+        // The list's own guards on those presses (a visible state of the operator it waits out: Akekuri's battle skill
+        // not in her ultimate, which it would end), kept on the setup's presses.
+        const guards = (who: string) => {
+          const out: PolicyCue[] = [];
+          for (const r of list.rules) {
+            if (!pressesFirst(r, who, "battle")) continue;
+            for (const c of "all" in r.when ? r.when.all : [r.when]) if ("not" in c && "buff" in c.not && c.not.buff.operator === who && !out.some((y) => cueKey(y) === cueKey(c))) out.push(c);
+          }
+          return out;
+        };
+        const guarded = (c: PolicyCue, who: string): PolicyCue => (guards(who).length ? { all: [...("all" in c ? c.all : [c]), ...guards(who)] } : c);
+        const rApply: PolicyRule = { when: guarded({ infliction: { element: x, atLeast: level } }, ap), do: { operator: ap, cast: "battle" }, set: setName };
         for (const thrift of [true, false])
         for (const at of new Set([afterUlts, 0])) {
           for (const hold of [false, true]) {
             // Thrifty: the stacks built only from spare SP (200), so the team's own battle skills keep theirs.
             const notYet: PolicyCue = { not: { infliction: { element: x, atLeast: level } } };
-            const rBuild: PolicyRule = { when: thrift ? { all: [notYet, { sp: { atLeast: 200 } }] } : notYet, do: { operator: op, cast: "battle" }, set: setName };
+            const rBuild: PolicyRule = { when: guarded(thrift ? { all: [notYet, { sp: { atLeast: 200 } }] } : notYet, op), do: { operator: op, cast: "battle" }, set: setName };
             const base = hold ? list.rules.map((r) => (r.set === undefined && stepsOf(r).some((y) => y.operator === ap && y.cast === "battle") ? { ...r, set: up.name } : r)) : list.rules;
             if (hold && base.every((r, i) => r === list.rules[i])) continue;
             const rules = [...base.slice(0, at), rApply, rBuild, ...base.slice(at)];

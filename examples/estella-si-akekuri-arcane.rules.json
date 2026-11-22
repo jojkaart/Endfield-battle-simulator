@@ -1,17 +1,20 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "The owner's team (2026-11-16). Si's battle skill only when her button shows it (Artful Intent isn't up), no Initial Stroke (2026-11-17: Haste is movement speed only, the game's glossary and the logs); her Artful Intent then runs its full 20 s and bursts by itself (the owner: ending it early wastes SP). Spare SP (200) goes to Akekuri's battle skill. Ultimates when ready; combos when lit; Estella's battle skill after Arcane's combo. 56,423 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,039), against 55,462 (sd 2,929) for the earlier list that ended Artful Intent early at every 100 SP (the old delay draws; with common random numbers, 2026-11-16: 57,096, sd 1,402). With the fixed driver (2026-11-16; 32 fresh seeds, 1001–1032): 56,493 (sd 1,913), from zero 56,055 (sd 1,309). After the engine changes of 2026-11-16 (bosses freeze, Haste not on attacks, teammates' pause) and without Initial Stroke (2026-11-17): 53,781 (sd 1,194), from zero 52,740 (sd 1,539), same seeds. With the 2 s Stagger recovery (2026-11-18, test 110) and Akekuri's battle skill kept out of her own ultimate (the rules check): 52,937 (sd 1,539), from zero 52,850 (sd 1,629).",
-  "opener": [{ "operator": "Si", "cast": "battle" }],
+  "description": "The owner's team (2026-11-16; the Corrosion setup set found by efsim rules --guided, 2026-11-22). While the enemy hasn't Corrosion at level 4: at 4 Heat stacks Arcane's battle skill (her Nature on 4 stacks forms a full-strength Corrosion), else Akekuri's battle skill from 200 SP (her Heat builds the stacks). Then ultimates when ready, combos when lit, Estella's battle skill after Arcane's combo, Si's battle skill only when her button shows it (Artful Intent isn't up; no Initial Stroke), spare SP (200) to Akekuri's battle skill outside her ultimate. Against the list without the set, on 64 fresh seeds (1001–1064, 300 s, 0.3 s reaction) and the objective across starts (the mean of full energy and from zero per seed): +1.71% ± 0.30 (full energy +2.16% ± 0.49, 53,243 → 54,393; from zero +1.25% ± 0.46, 52,745 → 53,406). Arcane's press alone (without Akekuri's setup press): +0.94% ± 0.27; moving the spare-SP rule to the top alone: −0.07% ± 0.06. Level-4 Corrosion is up 0–33% of a fight (about 33 s each, 0–3 a fight): 4 Heat stacks are rare beside Si's and Estella's Cryo.",
+  "sets": [{"name": "corrosion setup", "when": {"statusLevel": {"status": "corrosion", "below": 4}}}],
+  "opener": [{"operator": "Si", "cast": "battle"}],
   "rules": [
-    { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },
-    { "when": { "ultimate": "Estella" }, "do": { "operator": "Estella", "cast": "ultimate" } },
-    { "when": { "ultimate": "Arcane" }, "do": { "operator": "Arcane", "cast": "ultimate" } },
-    { "when": { "ultimate": "Akekuri" }, "do": { "operator": "Akekuri", "cast": "ultimate" } },
-    { "when": { "combo": "Si" }, "do": { "operator": "Si", "cast": "combo" } },
-    { "when": { "combo": "Estella" }, "do": { "operator": "Estella", "cast": "combo" } },
-    { "when": { "combo": "Arcane" }, "do": [{ "operator": "Arcane", "cast": "combo" }, { "operator": "Estella", "cast": "battle" }] },
-    { "when": { "combo": "Akekuri" }, "do": { "operator": "Akekuri", "cast": "combo" } },
-    { "when": { "all": [{ "sp": { "atLeast": 115 } }, { "not": { "buff": { "operator": "Si", "buff": "artful_intent" } } }] }, "do": { "operator": "Si", "cast": "battle" } },
-    { "when": { "all": [{ "sp": { "atLeast": 200 } }, { "not": { "buff": { "operator": "Akekuri", "buff": "zone_hold" } } }] }, "do": { "operator": "Akekuri", "cast": "battle" } }
+    {"when": {"infliction": {"element": "heat", "atLeast": 4}}, "do": {"operator": "Arcane", "cast": "battle"}, "set": "corrosion setup"},
+    {"when": {"all": [{"not": {"infliction": {"element": "heat", "atLeast": 4}}}, {"sp": {"atLeast": 200}}, {"not": {"buff": {"operator": "Akekuri", "buff": "zone_hold"}}}]}, "do": {"operator": "Akekuri", "cast": "battle"}, "set": "corrosion setup"},
+    {"when": {"ultimate": "Si"}, "do": {"operator": "Si", "cast": "ultimate"}},
+    {"when": {"ultimate": "Estella"}, "do": {"operator": "Estella", "cast": "ultimate"}},
+    {"when": {"ultimate": "Arcane"}, "do": {"operator": "Arcane", "cast": "ultimate"}},
+    {"when": {"ultimate": "Akekuri"}, "do": {"operator": "Akekuri", "cast": "ultimate"}},
+    {"when": {"combo": "Si"}, "do": {"operator": "Si", "cast": "combo"}},
+    {"when": {"combo": "Estella"}, "do": {"operator": "Estella", "cast": "combo"}},
+    {"when": {"combo": "Arcane"}, "do": [{"operator": "Arcane", "cast": "combo"}, {"operator": "Estella", "cast": "battle"}]},
+    {"when": {"combo": "Akekuri"}, "do": {"operator": "Akekuri", "cast": "combo"}},
+    {"when": {"all": [{"sp": {"atLeast": 115}}, {"not": {"buff": {"operator": "Si", "buff": "artful_intent"}}}]}, "do": {"operator": "Si", "cast": "battle"}},
+    {"when": {"all": [{"sp": {"atLeast": 200}}, {"not": {"buff": {"operator": "Akekuri", "buff": "zone_hold"}}}]}, "do": {"operator": "Akekuri", "cast": "battle"}}
   ]
 }

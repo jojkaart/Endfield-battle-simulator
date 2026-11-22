@@ -43,12 +43,19 @@ play).
   84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero: 81.1 s at
   40,677 DPS after 255.7 s): to be searched again.
 
-### Rules: what to play (2026-11-16)
+### Rules: what to play (2026-11-16; the Corrosion setup 2026-11-22)
 
 A rotation to learn rather than a timeline (docs/design/rules.md "Rule-based
 rotations"; [examples/estella-si-akekuri-arcane.rules.json](../../examples/estella-si-akekuri-arcane.rules.json),
 `efsim rules`). Estella controlled, no swaps. Start with **Si's battle
 skill**; then at every moment do the first of these that applies:
+
+- **While the enemy hasn't Corrosion at level 4** (the setup set; rule
+  sets: docs/design/rules.md "Rule sets"):
+  - When the enemy has 4 Heat stacks: Arcane's battle skill (her Nature
+    on 4 stacks forms a full-strength Corrosion).
+  - Otherwise, when SP is at least 200: Akekuri's battle skill (her Heat
+    builds the stacks).
 
 1. When Si's ultimate is ready: Si's ultimate.
 2. When Estella's ultimate is ready: Estella's ultimate.
@@ -66,9 +73,32 @@ skill**; then at every moment do the first of these that applies:
    run its 20 s and burst by itself.
 10. When SP is at least 200: Akekuri's battle skill.
 
-Otherwise Estella's basic attacks. Learnability: 1 opener press, 10 rules
-(11 presses), cue cost 31, complexity 43; the hardest cues are the four
-"ultimate ready" ones (rank 4).
+Otherwise Estella's basic attacks. Learnability: 1 opener press, 12 rules
+(13 presses), cue cost 45 (the set's condition counted once), complexity
+59; the hardest cues are the four "ultimate ready" ones (rank 4).
+
+**The setup and the questions the search decided (2026-11-22; `efsim
+rules --guided` under the objective across starts, docs/design/rules.md
+"The objective across starts"; 92 edits over 3 rounds, 15 min).** Kept in
+round 1: the Corrosion setup set above, +1.67% ± 0.61 on seeds 1–32 (the
+mean of the two starts). On 64 fresh seeds (1001–1064, `efsim rules
+… --compare`): **+1.71% ± 0.30** (full energy +2.16% ± 0.49, 53,243 →
+54,393; from zero +1.25% ± 0.46, 52,745 → 53,406). Where it comes from:
+Arcane's press at 4 Heat stacks alone is +0.94% ± 0.27; moving the
+spare-SP rule to the top without the set is −0.07% ± 0.06 (the same
+seeds). A level-4 Corrosion lasts about 33 s here (Arcane's talent) and
+comes 0–3 times a fight (up 0–33% of it, seeds 1001–1008): four Heat
+stacks are rare beside Si's and Estella's Cryo. The same set placed after
+the ultimate rules passed too (+1.64%); building with every battle skill
+Akekuri can afford, or with Estella's Cryo, loses 14–21% on the screening
+seeds. Rounds 2–3 kept nothing (moving rules in or out of the set, a
+Combustion or Solidification setup: all lose).
+**Estella's ultimate only while Staggered** (the question left open on
+2026-11-16) is decided: no. At the base commit it measured −0.40% ± 0.74
+at full energy and +1.44% ± 0.60 from zero (32 fresh seeds; the signs of
+2026-11-16 had flipped with the engine changes since), +0.52% ± 0.43
+under the objective, and in the search −3.77% ± 0.94 on the screening
+seeds (the 70% Stagger bar variant −3.19%): not taken.
 
 **Why rule 9 changed (2026-11-16).** The first list pressed Si's battle
 skill at every 100 SP, so it ran on through Initial and Final Stroke and
@@ -99,6 +129,12 @@ full energy, +0.66% ± 0.52 from zero (noise), and one press fewer.
 | As a bot (0 s) / at 0.6 s | 57,835 / 55,713 | 56,552 / 55,928 |
 | First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
+
+**With the Corrosion setup (2026-11-22; the same seeds 1001–1032, `efsim rules … --first-seed 1001 --seeds 32`):**
+**54,557** (sd 1,816) at full energy, **53,004** (sd 1,287) from zero (the list before: 53,162 / 52,826); as a bot /
+at 0.6 s 57,351 / 53,825 (full energy), 54,530 / 52,762 (from zero); the first 60 s 3,556,038 against the repaired
+60 s timeline's 3,473,974 (+2.4%) at full energy, 2,984,748 against 2,291,651 (+30.2%, a lower-bound timeline) from
+zero. The table above and the paragraphs below are the list before.
 
 **Arcane's and Akekuri's tests from the logs (2026-11-18; in-game tests 4, 7, 30, 31, 51, 57, 62):** the Corrosion
 ramp, her Susceptibility's 10 s, the finisher's Cluster Strike, Akekuri's ×1.30 Link and her P1 timer were already
@@ -143,9 +179,9 @@ Akekuri's ultimate ATK. Over the fight the team gets 71% of its windows'
 ideal combos, the best of the three teams. 70 edits over four rounds
 (20 min): one passed, **Estella's ultimate only while the enemy is
 Staggered**: +1.70% ± 0.80 on seeds 1–32, +1.20% ± 0.66 on 32 fresh
-seeds, but from zero energy −0.94% ± 0.47 (32 seeds): the example keeps
-the list (a full-energy option: rule 2 "when Estella's ultimate is ready
-and the enemy is Staggered", complexity 47). Holding Si's ultimate for
+seeds, but from zero energy −0.94% ± 0.47 (32 seeds): the example kept
+the list then (decided on 2026-11-22 by the search under the objective
+across starts: no; above). Holding Si's ultimate for
 her combo or Solidification loses 2–5% (her Amp lasts long enough as
 it is; waiting costs casts); every hold of a combo for a Stagger loses
 7–12%; Si's battle skill with `shows` changes nothing here (+0.10% ±

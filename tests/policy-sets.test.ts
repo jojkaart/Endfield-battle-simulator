@@ -38,7 +38,10 @@ const typhoeus = readScenario(join(ROOT, "examples/typhoeus-arcane-liino-perlica
 const team = owner.team.map((b) => b.operator);
 const fight = (sc: TimelineScenario, seconds: number): TimelineScenario => ({ ...sc, durationFrames: framesOf(seconds), rotation: [] });
 const list = (raw: RuleList) => resolveRuleList(data, team, raw);
-const ownerList = list(readRuleList(join(ROOT, "examples/estella-si-akekuri-arcane.rules.json")));
+// The owner's example without its setup set (the flat list it was until 2026-11-22).
+const ownerExample = list(readRuleList(join(ROOT, "examples/estella-si-akekuri-arcane.rules.json")));
+const { sets: _ownerSets, ...ownerRest } = ownerExample;
+const ownerList: RuleList = { ...ownerRest, rules: ownerExample.rules.filter((r) => r.set === undefined) };
 
 describe("rule sets", () => {
   const corrosionUp = { statusLevel: { status: "corrosion", atLeast: 4 } } as const;
@@ -104,6 +107,9 @@ describe("setups and splits in the guided search", () => {
     const tList = resolveRuleList(data, tTeam, readRuleList(join(ROOT, "examples/typhoeus-arcane-liino-perlica.rules.json")));
     const t = reactionSetupEdits(data, tList).filter((c) => c.target?.multiplier === "status:corrosion");
     expect(t.some((c) => /Perlica's battle skill/.test(c.text))).toBe(true);
+    // The list's own guard on Akekuri's battle skill (not in her ultimate, which it would end) stays on the setup's press.
+    const ake = own.find((c) => /Akekuri's battle skill/.test(c.text));
+    expect(JSON.stringify(ake?.list.rules.find((r) => r.set === "corrosion setup" && JSON.stringify(r.do).includes("chr_0019_karin"))?.when)).toContain("zone_hold");
     // The variant holding the list's own Arcane battle skills for the "up" set.
     expect(t.some((c) => c.list.rules.some((r) => r.set === "corrosion up"))).toBe(true);
   });
