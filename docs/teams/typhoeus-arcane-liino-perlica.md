@@ -281,6 +281,13 @@ Finisher first); now she shoots on and Finishers once the hover is over. Sustain
 1,909); as a bot unchanged (60,340 / 54,768), at 0.6 s 52,292 → 52,622 / 49,512 → 50,081; shares (seed 1001)
 Typhoeus 82.2 → 83.0%. The 60 s timelines (the examples) unchanged. The rules don't change.
 
+**Pulser Labs on Perlica's combo hit (2026-11-22, the logs; same seeds 1001–1032, `node scripts/team-ab.ts --base
+1ab4647`):** her Pulser Labs Electric DMG (+50%) now acts on the combo hit whose forced Electrification makes it, as P3
+does (open-problems.md, "Perlica's combo hits": her logged combos were ×1.5 the engine's). Sustained DPS 52,949 →
+**53,173** (+0.42%) at full energy, 50,194 → **50,417** (+0.44%) from zero (sd 1,805 / 1,914); as a bot 60,340 →
+60,565 / 54,768 → 54,999, at 0.6 s 52,622 → 52,839 / 50,081 → 50,302; shares (seed 1001) Perlica 9.0 → 9.4% / 9.1 →
+9.5%. The 60 s timelines 5,705,341 → 5,722,307 (+0.30%) / 4,907,268 → 4,921,460 (+0.29%). The rules don't change.
+
 The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Rule 7 fixed (2026-11-16).** It read only Vocalist Stance, so it also

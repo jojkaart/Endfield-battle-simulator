@@ -39,6 +39,10 @@ over-predicted, now right, the fight's shortfall is elsewhere). Perlica's row: p
 18.8%, mean |damage error| 18.5 → 19.2% (c6d8 +137.8 → +163.7%, a team-wide ×0.1 log; fc63 −0.5 → −6.1%, where the
 ATK offset had hidden the missing combo bonus, now both right, the rest an unflagged ultimate crit and Stagger runs).
 
+**Team (team-ab, seeds 1001–1032):** Typhoeus's team sustained DPS 52,949 → 53,173 (+0.42%) at full energy, 50,194
+→ 50,417 (+0.44%) from zero; the 60 s timelines +0.30% / +0.29% (docs/teams/typhoeus-arcane-liino-perlica.md); Estella's
+team unchanged.
+
 **Dead ends:** none kept. Left: 4d60's combos ×1.08 (Liino's stance ATK listed, not replayed), a reaction
 Electrification with Wild Wanderer (in-game test 68's open half), the Electrification reaction rule rests on one hit.
 
