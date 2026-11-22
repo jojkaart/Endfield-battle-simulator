@@ -723,7 +723,12 @@ id, test, question, default, readings }]` on the kit, and a trigger with
 the chosen ones, each assumption's default otherwise). The first one is
 Si's `si-haste-every-end` (test 109): `data` (the default: the Haste only
 on the Inksoul's path) or `every-end` (Artful Intent ending with no
-Inksoul gives it too: trigger `artful_intent_haste`).
+Inksoul gives it too: trigger `artful_intent_haste`). Laevatain's
+`laevatain-twilight-clock` (test 21, 2026-11-22): `model` (the default:
+the data's 15 s after her stop plus the holds the engine counts) or
+`forgeborn` (1.8 s more, trigger `twilight_clock_excess`: the logs'
+window-clock excess, which her other buffs show too; a sensitivity, not a
+mechanism).
 
 `efsim rules`, `diagnose`, `gear --rules` and the guided search take
 `--assume <id>=<reading>` (run under it) and `--assumptions`: for each

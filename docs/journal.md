@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 115 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 116 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -41,6 +41,51 @@ combos don't decide anything (her Razorhorn ATK was fitted on the same hits).
 **Left:** c779's moved layer, 0c14 166.7 (two layers and Jade Vessel short); the replay's stroke reading (Final
 Stroke only with a press just before the burst; Initial Stroke at the first press). In-game test 106 now asks only
 (e) a pause / leaving combat and (d) whether Final Stroke gives a stack.
+
+## 2026-11-22: Twilight's excess is her buffs' clock, not Twilight's
+
+**Goal:** why Laevatain's Twilight still lasts 0.1–4.6 s longer than modelled in the
+closed windows (open-problems "Laevatain's Twilight runs longer than its model", in-game
+tests 18 and 21), and fix it.
+
+**Done:** every Twilight window of the 18 Laevatain logs bracketed again (last enhanced
+cast, first plain cast, from `zmdlogs instances`), with the replay's holds counted from a
+run with Twilight 45 s long (so holds after the modelled end count). Then each candidate
+tested per window (open-problems has the table): a constant, show_weapon's 16 s, the
+battle skill's full 115-frame pause, a combo hold other than 1.9 s, every 1- and
+2-feature linear model over her combos, battle skills, others' ultimates and combos,
+her hit-stops, a clock rate, others' stops longer than their UltimateTimeAction (bounded
+by the hit-free gaps), the Stagger, P5's kill extension, refreshes by a combo or a
+Scorching Heart start, a later start, an enhanced step after the end. None fits all
+windows: c83c needs ≥3.1 s where f879 45.4 s allows ≤1.2 s. The game data has no
+mechanism beyond the engine's (`gamedata who buff_chr_0016_laevat_ult_end`: her combo's
+channel, potential_5 and show_weapon's start).
+
+The decisive probe: Forgeborn Scathe's 20 s buff (`buff_wpn_sword_0006_valid`, listed on
+her hits), created by the same ultimate and with none of Twilight's own pauses, runs past
+the replay by about as much in the same windows (0.9–2.8 s in the closed ones, 3–8 s in
+3440 and 9c0b). Twilight less Forgeborn contains 0 in five of nine windows and misses it by
+0.09–0.43 s in four, both ways. So Twilight's model holds; what runs long is her buffs'
+clock in those windows (Scorching Heart's natural ends outside Twilight too: 0.2–1.5 s in
+8 of 9). Measured Twilight 17 s (+2) on every Laevatain log: no verdict moves at all, the
+development and hold-out rows unchanged.
+
+**Decision:** no kit change (a longer Twilight would put a world-clock effect into one
+kit, and the accuracy doesn't ask for it). Registered kit assumption
+`laevatain-twilight-clock` (test 21): `model` (default) or `forgeborn` (+1.8 s, Forgeborn's
+median excess; trigger `twilight_clock_excess`), the switch for what rides on it: Ink Melt
+59,662 → 61,930 (+3.80% ± 1.30, seeds 1001–1032, full energy, `efsim rules …
+--assumptions`). Scoreboard unchanged (development 52.0% plain, hold-out 67.3%); team-ab
+against 1ab4647 identical (the default is the old kit). Smoke: one failure, the timeline
+test's list of her kit triggers (fixed). Docs: open-problems (table, ruled out, still possible),
+in-game tests 18 and 21, design/rules.md's assumption list, roadmap.
+
+**Left open:** what holds her buffs (and not cooldowns, test 18): perfect dodges' 0.6 s
+world slow-down (the log records no dodges), pauses at a fight's start (9c0b: 10 s with no
+hit, Forgeborn +6–7.8 s), hit-stops in part. Next: the buff clock over every log, each
+listed buff's natural end against the replay's. Friction report
+docs/friction/2026-11-22-twilight.md (a `--long` trace and a lane-end view would have
+found the probe in minutes).
 
 ## 2026-11-22: The rule search decides: an objective across starts, rule sets, setups
 
@@ -346,36 +391,3 @@ energy). Scoreboard unchanged.
 
 **Problems:** the worktree guard refused heredocs and multi-line commands from about a third of the way in (the same
 shapes had passed before); everything after went through scratch files, as CLAUDE.md says.
-
-## 2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15
-
-**Goal:** decide from the logs the in-game tests on Si (14, 41, 92), the basic-attack cancel (16) and the swap
-lock (15), checking the re-triage's claims (docs/in-game-tests-retriage-*.md), fixing the engine where it's wrong.
-
-**Done** (each test's own section in docs/in-game-tests.md):
-- **14 decided:** Si's battle skill inflicts Heat with a Heat operator first, Cryo otherwise, as the engine has:
-  her 11 `fire_fire` and 9 `cryst_cryst` bursts (`checkReactions`) fall on that split, every predicted one with the
-  engine's element, none against it.
-- **41 decided:** Jade Vessel's next-combo bonus comes from her ultimate or her Immobilization, lasts 20 s (held by
-  stops) and goes with the next combo, as the engine has: 37 final hits plain with it, 4 without; 6 ultimate-only
-  combos plain with it; no non-plain final hit fits with it toggled.
-- **92 decided, the re-triage reversed:** Long Heritage's team Arts DMG (`teamatk`, 0.112) starts with Si's Amp at all
-  four of her ultimates (632c, 67d8), on every member: her Cryo Amp counts (checkType 1 reads its ID list), the
-  engine's reading. The re-triage had read `teamspell` (0.168, the wielder's own Cryo DMG from her battle skill),
-  which is hers alone by design. The kit notes say so.
-- **16 partly:** the re-triage's Final Strikes "after her battle-skill cast" follow her hitless battle-button events
-  (282 of 370 events have no battle-skill hit; test 106's open part), not battle skills; no real cast (73) has a
-  basic hit of hers between its event and its hit. Whether a press drops an unlanded hit leaves no trace: still the
-  owner's. Added to open-problems ("Type 50 Yinglung's Edge"): the events don't end her basic attack.
-- **15 not decidable:** Gilberta is never the controlled operator in any development log (none of her 371
-  Final-Strike hits deals Stagger, a controlled-only mark), so her 3.7 s lock never had anything to hold; the
-  re-triage's "fresh chains" are the controlled operator's and teammates' own attacks.
-
-**No engine change**, so the scoreboard and the team numbers don't move (snapshots:update: nothing changed).
-
-**Decisions:** Si's Final Stroke has a `switchToBuffConfig` with `asSkillCast` and a buff (as Last Rite's beside cast),
-so it may run beside her basic attack; left as a note in test 16, since no log tells a stroke from the hitless
-events. Test 10 left to the queue agent.
-
-**Dead ends:** a teammate's `attack1` as a swap marker (teammates attack on their own); the Jade Vessel enemy-debuff
-lane's `since` as an Immobilization marker (whether it moves on a refresh is open: data.md).

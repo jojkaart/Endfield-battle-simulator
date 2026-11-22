@@ -47,7 +47,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   test 71; tests 18, 19, 101, 104 done from the logs (2026-11-16: bosses
   freeze, Haste isn't attack speed, teammates' pause 6.5 s); tests 9, 17,
   22, 46 decided and 21, 43 partly from the logs (2026-11-18: buffs created
-  in a stop are held; Twilight still 0.1–4.6 s longer than its model); Arcane's misses grouped (2026-11-18: 908 → 866;
+  in a stop are held; Twilight still 0.1–4.6 s longer than its model, 2026-11-22: as are her other buffs, a buff-clock question); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds

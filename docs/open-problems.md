@@ -1289,7 +1289,7 @@ against 3f78's); why an immune enemy still holds the freezer's own debuffs
 (no data mechanism found: Artful Intent and Arcane's will_atk have the same
 time-dilation flags).
 
-## Laevatain's Twilight runs longer than its model (tests 17, 18, 21)
+## Laevatain's Twilight runs longer than its model (tests 17, 18, 21; 2026-11-22: her buffs' clock, not Twilight's)
 
 **Shows (2026-11-18, replacing the 2026-11-16 brackets):** the 22 Twilight windows of
 the 18 Laevatain logs, each bracketed by her last enhanced cast and her first plain cast
@@ -1317,16 +1317,83 @@ engine assumption `buff-in-stop`).
 - A constant on top of 17.03 s, or show_weapon's 16 s as Twilight's length: f879 45.4 s
   allows at most +1.2 s, f879 97.8 s and 0206 need at least +1.8 s, c83c +3.1 s.
 
-**Still possible:** her combo's hold being other than 1.9 s (the residual falls with the
-number of her combos in the window: 1 combo 1.8–4.6 s, 2 combos 0.1–2.7 s; but it
-doesn't fit a single value either); others' stops held longer than their
-UltimateTimeAction frames (the casts' animations); placement error in the brackets
-(±0.3 s) and in others' stops (c83c's three ultimates); a hold the engine doesn't model
-(hit-stop, T10).
+**Diagnosed (2026-11-22): the excess isn't Twilight's.** Her weapon's 20 s buff,
+Forgeborn Scathe's `buff_wpn_sword_0006_valid` (listed on her hits; created by the same
+ultimate, at its stop's end, with none of Twilight's own pauses: no combo channel, no
+battle-skill pause), runs past the replay by about as much in the same windows. Each
+window's bracket, as the residual over the replay's end with every hold the replay
+counts (holds taken from a run with the buff's duration set long; instances' starts, not
+the placed casts, so the numbers differ a little from those above; Forgeborn's end
+bracketed by its last listed hit and the next hit of hers that doesn't list it, `efsim
+zmdlogs lanes <log> --buff sword_0006`; scripts scratch/twl/both.ts, fit.ts, fg.ts):
 
-**Next check:** her combo's ChannelingAction ticks (0.1 s, frames 0–57) against the
-combo's own slow-down: do they run on her clock or the world's (a combo pressed inside
-another's stop)?
+| window (press) | Twilight's residual | Forgeborn's | Twilight − Forgeborn | her combos, battle skills, others' ultimates |
+|---|---|---|---|---|
+| 0206 41.7 s | 2.19–2.71 | 0.16–3.31 | −1.12–2.55 | 2, 2, 4 |
+| 458b 80.3 s | 0.55–2.54 | 1.09–2.11 | −1.56–1.45 | 2, 1, 1 |
+| 458b 156.3 s | 1.77–2.41 | 0.89–1.34 | 0.43–1.52 | 2, 2, 1 |
+| c83c 42.5 s | 3.08–4.59 | 1.66–2.80 | 0.28–2.93 | 1, 0, 3 |
+| e49e 55.2 s | 0.94–2.01 (its combo pressed before the ultimate, 2.3 s, taken out) | 0.58–1.73 | −0.79–1.43 | 2, 2, 3 |
+| f879 45.4 s | 0.05–1.15 | 1.27–2.27 | −2.22–−0.12 | 2, 1, 2 |
+| f879 97.8 s | 1.84–2.54 | 1.73–3.07 | −1.23–0.81 | 1, 1, 1 |
+| 3440 43.4 s (bracket 4.7 s wide) | 1.32–3.74 | 3.12–5.01 | −3.69–0.62 | 1, 1, 1 |
+| 9c0b 2.9 s (no hit for its first 10 s) | 4.45–5.97 | 6.06–7.77 | −3.32–−0.09 | 1, 1, 3 |
+
+Twilight's residual spreads over 0.05–4.6 s; with Forgeborn's taken off, what is left
+contains 0 in five of the nine windows and misses it by 0.09–0.43 s in four, both ways
+(458b 156.3 and c83c a little long, f879 45.4 and 9c0b a little short), about the
+brackets' placement error (±0.3 s). So Twilight's own model (15 s after her stop, her
+combos' 1.9 s channel plus slow-down, her battle skill's pause with the jumps skipping)
+holds; what runs long is the clock of her buffs in these windows (all of them: Scorching
+Heart's natural ends outside Twilight run 0.2–1.5 s past the replay in 8 of 9 lanes,
+`efsim zmdlogs raw <log> --buffs ignore_fire_resist`). No change to the kit: a longer
+Twilight would put a world-clock effect into one kit. Kit assumption
+`laevatain-twilight-clock` (reading `forgeborn`: +1.8 s, the median of Forgeborn's) is
+the switch for how much rides on it (Ink Melt: +3.80% ± 1.30 sustained DPS, 32 paired seeds).
+Measured as a kit change (Twilight 17 s on every Laevatain log): no verdict moves, the
+development and hold-out rows unchanged (the replay takes her enhanced casts from the log).
+
+**Ruled out (2026-11-22), each against the nine brackets:**
+- A constant on top of the model: c83c needs ≥3.08, f879 45.4 ≤1.15 (and Twilight 16 s,
+  show_weapon's, is +1: misses 0206, 458b 156.3, c83c, f879 97.8, 9c0b).
+- Per combo, per battle skill, per other ultimate or combo, and any two of them with a
+  constant (scratch/twl/fit.ts, a grid over the coefficients: no 1- or 2-feature model
+  fits all eight closed windows); her combo's hold other than 1.9 s (one combo: c83c
+  ≥3.08 over the model, two: f879 45.4 ≤1.15).
+- Her attacker hit-stops (HitStopAction in ult_attack1–4, the battle skill, the combo:
+  2.1–3.1 s per window) at any fixed fraction: 458b 156.3 allows ≤0.80 of them, c83c
+  needs ≥1.45.
+- A clock rate (residual ∝ window length): f879 45.4 ≤3.9%, c83c ≥10.5%.
+- Others' stops longer than their UltimateTimeAction: the hit-free gaps around them
+  bound it (c83c's three at most +1.6 s, it needs 3.1; f879 97.8's Camille +0.1, it
+  needs 1.8).
+- The Stagger (and its 2 s recovery): c83c and f879 45.4 each have one ~14 s Stagger,
+  residuals 3.1+ against ≤1.2.
+- P5's kill extension (potential_5: +extend_duration per kill in Twilight): c83c is the
+  only P5 window and a single enemy with no kill.
+- A refresh of Twilight: by a combo to 15 s (458b 156.3 would end 5 s after its
+  bracket), by a Scorching Heart (re)start or Melting Flame (no data mechanism: `efsim
+  gamedata who buff_chr_0016_laevat_ult_end` names only her combo, potential_5 and
+  show_weapon's start; per-start fits disagree, c83c 1.54–2.30 s, 0206 1.10–1.36).
+- The window starting later than the press: her own stop's hit-free gaps are 2.14–2.54
+  s (2.03 modelled); c83c's press is already the latest its cast event allows.
+- An enhanced step after the end (each ult_attack checks ring_start_asset at its frame
+  0 for the next step's ComboCacheAction): taking the bracket's low end back one step
+  still leaves c83c ≥2.39 against f879 45.4 ≤1.15.
+
+**Still possible (the buff clock, not Twilight's):** holds the replay can't see: perfect
+dodges (buff_common_dash_behit_listener: a 0.6 s world TimeDilation, the dodger exempt;
+the engine has it in simulations, `--dodge`, but the log doesn't record dodges), world
+pauses at a fight's start (9c0b: 10 s with no hit by anyone after her ultimate,
+Forgeborn +6–7.8 s), hit-stops holding the hitter's own buffs in part. Liino's beats and
+volleys (below) and Rossi's crit DMG window (9a80) run slow the same way; cooldowns don't
+(test 18: 58 combo pairs within their cooldown), so it isn't the log's clock as a whole.
+A Twilight-only remainder within ±0.5 s (the four near misses) is not excluded.
+
+**Next check:** the buff clock over every log, not Laevatain's: each listed buff with a
+natural end against the replay's (Forgeborn and Scorching Heart here), the excess per
+window against the team's dodge SP (perfect dodges give SP) and against the hit-free
+gaps.
 
 ## Arcane's Array Arcana on a knife edge (0206, b6aa): closed 2026-11-13
 

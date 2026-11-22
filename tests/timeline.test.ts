@@ -395,6 +395,7 @@ describe("timeline: kit triggers", () => {
       ["twilight_paused_by_battle_skill", "cast", "self"],
       ["twilight_pause_cut", "buffEnded", "self"],
       ["twilight_paused_by_combo", "cast", "self"],
+      ["twilight_clock_excess", "cast", "self"],
       ["final_strike_absorb", "hit", "controlled"],
       ["combo_window", "reaction", "anyone"],
       ["scorching_heart", "stackAtLeast", "self"],

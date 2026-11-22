@@ -47,6 +47,9 @@ describe("assumption switches", () => {
     const held = twilightEnd(inkMelt);
     expect(held).toBeDefined();
     expect((held ?? 0) - (twilightEnd(underAssume(inkMelt, parseAssume(data, ["buff-in-stop=runs"]))) ?? 0)).toBe(61);
+    // laevatain-twilight-clock (2026-11-22): the data's length by default; `forgeborn` adds the logs' window-clock excess, 1.8 s.
+    expect(kitAssumptions(data).find((x) => x.id === "laevatain-twilight-clock")?.default).toBe("model");
+    expect((twilightEnd(underAssume(inkMelt, parseAssume(data, ["laevatain-twilight-clock=forgeborn"]))) ?? 0) - (held ?? 0)).toBe(54);
   });
   it("refuses unknown assumptions and readings", () => {
     expect(() => parseAssume(data, ["nope=x"])).toThrow(/assumptions: .*si-haste-every-end/);
