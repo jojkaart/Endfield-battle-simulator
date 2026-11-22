@@ -49,15 +49,15 @@
   ]
  },
  "arcane-will-solo.scenario.json": {
-  "total": 101647.918,
+  "total": 102481.363,
   "hits": 50,
   "casts": 14,
   "perOperator": {
-   "chr_0032_lizhiyan": 101647.918
+   "chr_0032_lizhiyan": 102481.363
   },
-  "digest": "a2abec693e3d",
+  "digest": "cb909a742ae7",
   "windows": [
-   "b655530606b9",
+   "807e1683abba",
    "e3d045376b97"
   ]
  },
@@ -177,43 +177,43 @@
   ]
  },
  "estella-si-akekuri-arcane-zero.scenario.json": {
-  "total": 2291651.259,
+  "total": 2291096.6,
   "hits": 361,
   "casts": 191,
   "perOperator": {
    "chr_0019_karin": 181934.281,
-   "chr_0036_jsspsi": 847832.555,
+   "chr_0036_jsspsi": 847878.527,
    "chr_0021_whiten": 1077448.146,
-   "chr_0032_lizhiyan": 184436.276
+   "chr_0032_lizhiyan": 183835.645
   },
-  "digest": "6be490102edc",
+  "digest": "75a00d626857",
   "windows": [
-   "eaaf7b39c44a",
+   "8f570b4db458",
    "0a538849dc17",
-   "db007395ad5d",
-   "2805add07db9",
+   "8d351d28028c",
+   "963fc8afc73b",
    "d58a917554ee",
    "f41b0e73c97c"
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {
-  "total": 3473974.331,
+  "total": 3475567.655,
   "hits": 386,
   "casts": 199,
   "perOperator": {
    "chr_0019_karin": 232473.728,
-   "chr_0036_jsspsi": 1586546.491,
+   "chr_0036_jsspsi": 1586605.695,
    "chr_0021_whiten": 1398696.49,
-   "chr_0032_lizhiyan": 256257.622
+   "chr_0032_lizhiyan": 257791.741
   },
-  "digest": "d85b415067d1",
+  "digest": "7d5d43ad77de",
   "windows": [
-   "2fb93d5b4a04",
-   "8befe19a5766",
+   "a07202a1a6b0",
+   "4ec080c55221",
    "13d97b64420c",
-   "643b2eaab779",
+   "30c48f31522d",
    "8f4cbe90a115",
-   "c58169f0c13a"
+   "7c941262757f"
   ]
  },
  "estella-solidification.scenario.json": {
@@ -493,43 +493,43 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4921460.257,
+  "total": 4922502.718,
   "hits": 516,
   "casts": 167,
   "perOperator": {
    "chr_0034_typhoea": 3788276.54,
-   "chr_0032_lizhiyan": 193646.523,
+   "chr_0032_lizhiyan": 194688.984,
    "chr_0035_liino": 325055.378,
    "chr_0004_pelica": 614481.815
   },
-  "digest": "fadc07b28103",
+  "digest": "9e9bf92ad85d",
   "windows": [
-   "fafcbe4cb189",
+   "1819783c5e19",
    "c46d9f8bf52c",
    "e2ccee279e8f",
    "5a7a8f9cea38",
-   "ba97dfd1ded3",
+   "ec8445c824c4",
    "1d93a4c638c5",
    "16559fd12ceb"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5721401.885,
+  "total": 5722829.245,
   "hits": 440,
   "casts": 164,
   "perOperator": {
    "chr_0034_typhoea": 4284456.131,
-   "chr_0032_lizhiyan": 383425.269,
+   "chr_0032_lizhiyan": 384852.63,
    "chr_0035_liino": 321736.221,
    "chr_0004_pelica": 731784.264
   },
-  "digest": "5f2d0bb85ba6",
+  "digest": "067abfa48427",
   "windows": [
    "10005e4cadde",
-   "2c9f2369a596",
+   "d04988f2ba1b",
    "1a183f74db8a",
    "3322bf62b830",
-   "ce090bfbf2b6",
+   "0b8577668ae2",
    "06525c85da44"
   ]
  },
