@@ -79,14 +79,17 @@ Otherwise Estella's basic attacks. Learnability: 1 opener press, 12 rules
 
 **The setup and the questions the search decided (2026-11-22; `efsim
 rules --guided` under the objective across starts, docs/design/rules.md
-"The objective across starts"; 92 edits over 3 rounds, 15 min).** Kept in
+"The objective across starts"; 68 edits over 3 rounds, 1,320 runs, 15 min).** Kept in
 round 1: the Corrosion setup set above, +1.67% ± 0.61 on seeds 1–32 (the
-mean of the two starts). On 64 fresh seeds (1001–1064, `efsim rules
-… --compare`): **+1.71% ± 0.30** (full energy +2.16% ± 0.49, 53,243 →
-54,393; from zero +1.25% ± 0.46, 52,745 → 53,406). Where it comes from:
-Arcane's press at 4 Heat stacks alone is +0.94% ± 0.27; moving the
-spare-SP rule to the top without the set is −0.07% ± 0.06 (the same
-seeds). A level-4 Corrosion lasts about 33 s here (Arcane's talent) and
+mean of the two starts), +1.71% ± 0.30 on 64 fresh seeds (1001–1064).
+The rules check (`checkRuleRun`) then caught the setup's Akekuri press
+ending her own ultimate (the found rule lacked the list's "not in her
+ultimate" guard); with the guard, as in the example and as the setup
+move now proposes it: **+1.06% ± 0.33** on the same 64 fresh seeds
+(full energy +1.31% ± 0.53, 53,243 → 53,941; from zero +0.82% ± 0.41,
+52,745 → 53,176). Where it comes from: Arcane's press at 4 Heat stacks
+alone is +0.94% ± 0.27; moving the spare-SP rule to the top without the
+set is −0.07% ± 0.06 (the same seeds). A level-4 Corrosion lasts about 33 s here (Arcane's talent) and
 comes 0–3 times a fight (up 0–33% of it, seeds 1001–1008): four Heat
 stacks are rare beside Si's and Estella's Cryo. The same set placed after
 the ultimate rules passed too (+1.64%); building with every battle skill
@@ -131,9 +134,9 @@ full energy, +0.66% ± 0.52 from zero (noise), and one press fewer.
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
 
 **With the Corrosion setup (2026-11-22; the same seeds 1001–1032, `efsim rules … --first-seed 1001 --seeds 32`):**
-**54,557** (sd 1,816) at full energy, **53,004** (sd 1,287) from zero (the list before: 53,162 / 52,826); as a bot /
-at 0.6 s 57,351 / 53,825 (full energy), 54,530 / 52,762 (from zero); the first 60 s 3,556,038 against the repaired
-60 s timeline's 3,473,974 (+2.4%) at full energy, 2,984,748 against 2,291,651 (+30.2%, a lower-bound timeline) from
+**54,039** (sd 1,835) at full energy, **53,338** (sd 1,233) from zero (the list before: 53,162 / 52,826); as a bot /
+at 0.6 s 57,055 / 53,735 (full energy), 54,530 / 52,691 (from zero); the first 60 s 3,551,167 against the repaired
+60 s timeline's 3,473,974 (+2.2%) at full energy, 2,985,372 against 2,291,651 (+30.3%, a lower-bound timeline) from
 zero. The table above and the paragraphs below are the list before.
 
 **Arcane's and Akekuri's tests from the logs (2026-11-18; in-game tests 4, 7, 30, 31, 51, 57, 62):** the Corrosion

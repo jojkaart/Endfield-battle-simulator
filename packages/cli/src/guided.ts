@@ -422,7 +422,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
 const n0 = (x: number) => num(Math.round(x), 0);
 const signed = (x: number, d = 2) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(d)}%`;
 const pm = (g: { readonly gain: number; readonly se: number }) => `${signed(g.gain)} ± ${(g.se * 100).toFixed(2)}`;
-const RANK_WORDS: Readonly<Record<number, string>> = { 0: "none", 1: "a combo lighting up", 2: "SP or Typhoeus's arrows / Signs", 3: "the enemy's state or an operator's visible state", 4: "an ultimate ready", 5: "counting Final Strikes", 6: "a combo's cooldown", 7: "a timer" };
+const RANK_WORDS: Readonly<Record<number, string>> = { 0: "none", 1: "a combo lighting up", 2: "SP or Typhoeus's arrows / Signs", 3: "the enemy's state or an operator's visible state", 4: "an ultimate ready (or how many are)", 5: "counting Final Strikes or reading an ultimate's gauge", 6: "a combo's cooldown", 7: "a timer" };
 const learnWords = (l: Learnability) => `complexity ${l.complexity} (${l.rules} rules, ${l.ruleSteps} presses, cue cost ${l.cueCost}; hardest cue: rank ${l.hardestRank}, ${RANK_WORDS[l.hardestRank]})`;
 
 /** The ideal combos: each window, what it deals, its ideal's gain, the multipliers it misses most and the cues that come with it. */

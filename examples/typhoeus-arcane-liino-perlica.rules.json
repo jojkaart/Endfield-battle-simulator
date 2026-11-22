@@ -1,17 +1,18 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "Typhoeus, Arcane, Liino, Perlica (2026-11-16): `efsim rules --search` from hand-written lists (Typhoeus's battle skill whenever she's on the ground, ultimates when ready, every combo when it lights up, Liino's stance), two searches of 150 and 200 lists, the best cleaned of rules that never fired: 53,302 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,080), the first hand-written list 46,069 (the old delay draws; with common random numbers and Perlica's gear of 2026-11-16: 52,561, sd 1,913). Its finds: Typhoeus's ultimate and combo while she hovers (they restart her shots), Perlica's ultimate just before a grounded Typhoeus combo, Liino's stance kept up with an Arcane battle skill before it, ground basic attacks instead of dives. Rule 7 (2026-11-16, after the owner's note that Liino goes straight from her stance to her ultimate): it also waits while she is in Cosmovoice, and its Liino press only if her button shows her battle skill; before, it pressed End Stance (once just before her first ultimate, and three times cutting Cosmovoice short): 54,771 sustained (sd 1,812) against 52,561 on seeds 1–10; +2.6% ± 0.5 paired on 64 fresh seeds. With the fixed driver (2026-11-16; 32 fresh seeds, 1001–1032): 54,607 (sd 1,566), from zero 51,076 (sd 1,602).",
-  "opener": [{ "operator": "Liino", "cast": "battle" }],
+  "description": "Typhoeus, Arcane, Liino, Perlica (2026-11-16; re-found by efsim rules --guided under the objective across starts, 2026-11-22). Liino's, Arcane's and Typhoeus's ultimates only while Typhoeus hovers; Typhoeus's ultimate also when Arcane's gauge is below half; Typhoeus's combo while hovering, or on the ground after Perlica's ultimate; Perlica's and Arcane's combos when lit; while the enemy's Stagger bar is below half, Arcane's battle skill, then Liino's battle skill only if her button shows it (never End Stance); Typhoeus takes flight (battle skill) and uses her combo whenever she's on the ground. Against the list before, 32 fresh seeds (1001–1032, 300 s, 0.3 s reaction), the objective across starts (the mean of full energy and from zero per seed): +8.62% ± 0.65 (full energy +7.85% ± 0.76, 52,949 → 57,103; from zero +9.44% ± 1.08, 50,194 → 54,932).",
+  "opener": [{"operator": "Liino", "cast": "battle"}],
   "rules": [
-    { "when": { "ultimate": "Liino" }, "do": { "operator": "Liino", "cast": "ultimate" } },
-    { "when": { "ultimate": "Arcane" }, "do": { "operator": "Arcane", "cast": "ultimate" } },
-    { "when": { "all": [{ "ultimate": "Typhoeus" }, { "buff": { "operator": "Typhoeus", "buff": "hovering" } }] }, "do": { "operator": "Typhoeus", "cast": "ultimate" } },
-    { "when": { "all": [{ "combo": "Typhoeus" }, { "buff": { "operator": "Typhoeus", "buff": "hovering" } }] }, "do": { "operator": "Typhoeus", "cast": "combo" } },
-    { "when": { "combo": "Typhoeus" }, "do": [{ "operator": "Perlica", "cast": "ultimate" }, { "operator": "Typhoeus", "cast": "combo" }] },
-    { "when": { "combo": "Perlica" }, "do": { "operator": "Perlica", "cast": "combo" } },
-    { "when": { "all": [{ "not": { "buff": { "operator": "Liino", "buff": "vocalist_stance" } } }, { "not": { "buff": { "operator": "Liino", "buff": "cosmovoice_amp" } } }] }, "do": [{ "operator": "Arcane", "cast": "battle" }, { "operator": "Liino", "cast": "battle", "shows": "Battle skill" }] },
-    { "when": { "combo": "Arcane" }, "do": { "operator": "Arcane", "cast": "combo" } },
-    { "when": { "not": { "buff": { "operator": "Typhoeus", "buff": "hovering" } } }, "do": { "operator": "Typhoeus", "cast": "battle" } },
-    { "when": { "not": { "buff": { "operator": "Typhoeus", "buff": "hovering" } } }, "do": { "operator": "Typhoeus", "cast": "combo" } }
+    {"when": {"all": [{"ultimate": "Liino"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Liino", "cast": "ultimate"}},
+    {"when": {"all": [{"ultimate": "Arcane"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Arcane", "cast": "ultimate"}},
+    {"when": {"all": [{"ultimate": "Typhoeus"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Typhoeus", "cast": "ultimate"}},
+    {"when": {"all": [{"combo": "Typhoeus"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Typhoeus", "cast": "combo"}},
+    {"when": {"energy": {"operator": "Arcane", "below": 50}}, "do": {"operator": "Typhoeus", "cast": "ultimate"}},
+    {"when": {"combo": "Typhoeus"}, "do": [{"operator": "Perlica", "cast": "ultimate"}, {"operator": "Typhoeus", "cast": "combo"}]},
+    {"when": {"combo": "Perlica"}, "do": {"operator": "Perlica", "cast": "combo"}},
+    {"when": {"stagger": {"below": 50}}, "do": [{"operator": "Arcane", "cast": "battle"}, {"operator": "Liino", "cast": "battle", "shows": "Battle skill"}]},
+    {"when": {"combo": "Arcane"}, "do": {"operator": "Arcane", "cast": "combo"}},
+    {"when": {"not": {"buff": {"operator": "Typhoeus", "buff": "hovering"}}}, "do": {"operator": "Typhoeus", "cast": "battle"}},
+    {"when": {"not": {"buff": {"operator": "Typhoeus", "buff": "hovering"}}}, "do": {"operator": "Typhoeus", "cast": "combo"}}
   ]
 }

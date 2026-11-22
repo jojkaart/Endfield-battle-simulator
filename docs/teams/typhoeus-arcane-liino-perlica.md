@@ -184,7 +184,7 @@ Liino's ultimate) and Perlica's Stanza ATK. The logs' teams agree in kind:
 in 9090 (this team, 165 s against Tower 15's boss) Typhoeus dealt 82% of
 the damage.
 
-### Rules: what to play (2026-11-16)
+### Rules: what to play (2026-11-16; re-found 2026-11-22)
 
 A rotation to learn rather than a timeline (docs/design/rules.md "Rule-based
 rotations"; [examples/typhoeus-arcane-liino-perlica.rules.json](../../examples/typhoeus-arcane-liino-perlica.rules.json),
@@ -192,30 +192,55 @@ rotations"; [examples/typhoeus-arcane-liino-perlica.rules.json](../../examples/t
 battle skill** (her stance); then at every moment do the first of these
 that applies:
 
-1. When Liino's ultimate is ready: Liino's ultimate.
-2. When Arcane's ultimate is ready: Arcane's ultimate (her second part
-   too, when its button lights up).
+1. When Liino's ultimate is ready and Typhoeus is hovering: Liino's
+   ultimate.
+2. When Arcane's ultimate is ready and Typhoeus is hovering: Arcane's
+   ultimate (her second part too, when its button lights up).
 3. When Typhoeus's ultimate is ready and she's hovering: Typhoeus's
    ultimate.
 4. When Typhoeus's combo lights up and she's hovering: Typhoeus's combo
    (both restart her five shots).
-5. When Typhoeus's combo lights up (she's on the ground): Perlica's
+5. When Arcane's ultimate gauge is below half: Typhoeus's ultimate (if
+   it's ready).
+6. When Typhoeus's combo lights up (she's on the ground): Perlica's
    ultimate, then Typhoeus's combo.
-6. When Perlica's combo lights up: Perlica's combo.
-7. When Liino is in neither stance (her button shows her battle skill,
-   not End Stance): Arcane's battle skill, then Liino's battle skill, but
-   only if her button still shows it. Never press End Stance: her
-   ultimate goes straight on from Vocalist Stance (the owner,
-   2026-11-16).
-8. When Arcane's combo lights up: Arcane's combo.
-9. When Typhoeus is on the ground: Typhoeus's battle skill (take flight).
-10. When Typhoeus is on the ground: Typhoeus's combo (if it's ready).
+7. When Perlica's combo lights up: Perlica's combo.
+8. When the enemy's Stagger bar is below half: Arcane's battle skill,
+   then Liino's battle skill, but only if her button shows it. Never
+   press End Stance: her ultimate goes straight on from Vocalist Stance
+   (the owner, 2026-11-16).
+9. When Arcane's combo lights up: Arcane's combo.
+10. When Typhoeus is on the ground: Typhoeus's battle skill (take flight).
+11. When Typhoeus is on the ground: Typhoeus's combo (if it's ready).
 
 Otherwise Typhoeus's basic attacks (her aerial shots while she hovers).
-Learnability: 1 opener press, 10 rules (12 presses), cue cost 37,
-complexity 50; the hardest cues are the "ultimate ready" ones (rank 4);
-"hovering" and "Vocalist Stance" are states the game shows on the
-character and the skill button (rank 3).
+Learnability: 1 opener press, 11 rules (13 presses), complexity 57; the
+hardest cue is Arcane's gauge (rank 5: a partial fill), then the
+"ultimate ready" ones (rank 4); "hovering" and the Stagger bar are rank 3.
+
+**What the search changed (2026-11-22; `efsim rules --guided` under the
+objective across starts, docs/design/rules.md "The objective across
+starts"; 6 rounds, 3,316 runs, 49 min).** Kept, in order: Arcane's
+ultimate only while Typhoeus hovers (+2.01% ± 0.56 on seeds 1–32, +2.64%
+/ +1.35% by start: the edit of 2026-11-16 that didn't hold on fresh
+seeds then holds now), a random edit adding rule 5 (+0.40% ± 0.19), a
+random edit that changed rule 8's cue from "Liino in neither stance" to
+"the Stagger bar below half" (**+5.99% ± 0.76**, +3.68% / +8.42% by
+start: Arcane's battle skill is pressed about 14 times in 300 s instead
+of 4, Typhoeus takes flight 28 times instead of 37–40; the `shows` keeps
+Liino's press off End Stance), and Liino's ultimate only while Typhoeus
+hovers (+0.86% ± 0.28; +1.85% / −0.14% by start). The new list against
+the old on 32 fresh seeds (1001–1032): **+8.62% ± 0.65** under the
+objective (full energy +7.85% ± 0.76, 52,949 → 57,103; from zero +9.44% ±
+1.08, 50,194 → 54,932). The rules check finds no press of a changed
+button and no cut ultimate (seeds 1–3, both starts).
+**A Corrosion setup** (Perlica's Electric to 4 stacks, then Arcane's
+Nature) **doesn't pay here:** its best variant +0.13% ± 0.32 on seeds
+1–64 (round 4), the others −0.1% to −17% on the screening seeds; an
+Electrification setup (Arcane's Nature, then Perlica's Electric) −0.4% to
+−26%. No Corrosion forms in the new list's fights at all (seeds
+1001–1004), nor in the old list's: Arcane's battle skill doesn't land
+on Electric stacks in this list's rhythm (not diagnosed further).
 
 | Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
@@ -306,7 +331,7 @@ edits over three rounds (24 min): one passed on its seeds, **Arcane's
 ultimate only while Typhoeus hovers (or her ultimate is ready)**,
 +1.40% ± 0.52 on seeds 1–32, but on 32 fresh seeds only +0.57% ± 0.79
 (from zero energy +0.11% ± 0.51), and it costs 8 complexity points: not
-taken. Holding Liino's ultimate
+taken then (kept on 2026-11-22 under the objective across starts, above). Holding Liino's ultimate
 for the hover (the obvious move for the largest miss) gains nothing
 (+0.36% ± 0.40): her ultimate already lands in a hover most of the time,
 and waiting costs Cosmovoice time; holding Typhoeus's flight for

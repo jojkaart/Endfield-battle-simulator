@@ -682,6 +682,33 @@ dissolved. Every one is judged by play under the objective across starts,
 so a setup that costs damage early and pays later is judged over the
 whole 300 s of both starts.
 
+### The search decides (2026-11-22)
+
+The guided search under the objective across starts, with the new cues
+and moves, on the three teams (300 s, 3 workers on 4 shared cores; each
+team page's "Rules" has the list in plain words and the per-start
+numbers). Gains on fresh seeds (1001…), the objective's (the starts'
+mean), ± one standard error:
+
+| Team | Rounds / runs / time | Kept | Fresh seeds | The open question |
+|---|---|---|---|---|
+| The owner's | 3 / 1,320 / 15 min | the Corrosion setup set (Akekuri's Heat to 4 stacks from spare SP, then Arcane's Nature) | +1.06% ± 0.33 (64; with the guard on Akekuri's ultimate the rules check asked for; +1.71% as found) | Estella's ultimate only while Staggered: no (−3.8% screened; +0.5% ± 0.4 on 32 fresh seeds) |
+| Ink Melt | 6 / 2,780 / 35 min | Si's ultimate also waits for Combustion; Laevatain's ultimate waits for Corrosion; the Twilight hold back | +3.21% ± 0.73 (64; full +7.5%, zero −1.1%) | rule 7 with `shows`: no (−1.7% ± 0.8, both starts lose); the Twilight hold: kept (dropping it −2.3% ± 0.8) |
+| Typhoeus's | 6 / 3,316 / 49 min | Arcane's and Liino's ultimates wait for the hover; Arcane's battle skill while the Stagger bar is below half | +8.62% ± 0.65 (32; full +7.9%, zero +9.4%) | (none open; a Corrosion setup: no, +0.13% ± 0.32 on 64 seeds) |
+
+Each question was decided by the measurement, not the start's veto: the
+three gains of 2026-11-16 had moved with two days of engine changes (the
+owner's Estella-on-Stagger flipped sign between the starts; Ink Melt's
+`shows` edit became a loss from both), which the objective judged as
+they are now. The split by a start cue had one candidate worth trying,
+Ink Melt's Corrosion hold (+4.3% full, −1.9% zero on 64 seeds): read only
+while two or more ultimates are ready, or while Si's gauge is at least
+half full, it is +3.16% / +3.36% against the old list on the 64 fresh
+seeds, against +3.21% for the plain hold, so the simpler hold stays (the
+search's split move now also follows a kept edit that disagrees between
+the starts). The new cues earn their place in Typhoeus's list (rule 5:
+Arcane's gauge below half) and in the setup (Corrosion's level).
+
 ### Assumption switches (2026-11-16)
 
 The architecture review's item 10: a recommendation is only as good as

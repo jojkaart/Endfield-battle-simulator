@@ -167,7 +167,7 @@ async function evaluate(data: GameData, scenario: TimelineScenario, list: RuleLi
 }
 
 const n0 = (x: number) => num(Math.round(x), 0);
-const RANK_WORDS: Readonly<Record<number, string>> = { 0: "none", 1: "a combo lighting up", 2: "SP or Typhoeus's arrows / Signs", 3: "the enemy's statuses or an operator's visible state", 4: "an ultimate ready", 5: "counting Final Strikes", 6: "a combo's cooldown", 7: "a timer in the head" };
+const RANK_WORDS: Readonly<Record<number, string>> = { 0: "none", 1: "a combo lighting up", 2: "SP or Typhoeus's arrows / Signs", 3: "the enemy's statuses or an operator's visible state", 4: "an ultimate ready (or how many are)", 5: "counting Final Strikes or reading an ultimate's gauge", 6: "a combo's cooldown", 7: "a timer in the head" };
 
 /** The list in the player's words: opener, numbered rules (with their cue cost), filler. */
 export function describeRuleList(data: GameData, list: RuleList, fired?: readonly number[]): string[] {
