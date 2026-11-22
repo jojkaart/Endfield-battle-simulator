@@ -249,6 +249,12 @@ on Electric stacks in this list's rhythm (not diagnosed further).
 | First 60 s against the 60 s timeline (the examples) | 4,226,194 against 5,774,076 (−26.8%) | 2,858,065 against 5,019,331 (−43.1%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,382,151 against 16,925,847 (−3.2%) | |
 
+**The list re-found by the guided search (2026-11-22; the same seeds 1001–1032):** **57,103** (sd 1,860) at full
+energy, **54,932** (sd 3,403) from zero (the list before: 52,949 / 50,194, the last paragraph's numbers below); as a
+bot / at 0.6 s 57,735 / 58,129 (full energy), 56,429 / 55,062 (from zero): the reaction delay costs it little now;
+the first 60 s 3,979,747 against the 60 s timeline's 5,705,341 (−30.3%) at full energy, 2,927,105 against 4,907,268
+(−40.4%) from zero. The table above and the paragraphs below are the list before.
+
 **Arcane's INT fixes (2026-11-18, in-game tests 51 and 7 from the logs):** Solemn Phalanx's INT Arts DMG on the
 Corrosion its infliction forms, and her second ultimate's own Amp, need Intellect ≥ Will; this Arcane plays WILL, so
 neither acts. The same seeds at 9384cb0: **52,374 / 48,973** (sd 1,567 / 1,570), within 0.01% of the row above

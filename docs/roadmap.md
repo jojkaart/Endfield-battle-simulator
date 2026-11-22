@@ -23,11 +23,13 @@ below ([review-2026-10.md](review-2026-10.md)).
   lock, the hold-outs' own snapshot file); the backlog
   ([2026-11-18-backlog-after-round-4.md](friction/2026-11-18-backlog-after-round-4.md))
   joins the next round once about five new reports have collected.
-- **Rule-based rotations** (phases 1 and 2 done): the owner's call on the
-  owner's team's gear (+8.0%) and on Arcane in INT mode for Typhoeus's team
-  (+5.9%, a rule search for INT first); a cheaper worth for timeline-moving
-  stats; the guided rule search's limit is noise (cheaper variance next),
-  and the owner's call on its full-energy options; in-game tests 106, 108 (dives).
+- **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
+  decides its own questions: the objective across starts, rule sets,
+  setups, new cues): for the owner only gear to farm (the owner's team's
+  +8.0%; Arcane's Hot Work loadout for INT mode, INT_GAIN_SHORT rules
+  against rules) and in-game tests 106, 108 (dives); next a cheaper
+  variance for the guided search (most of a day's runs), the gear ascent
+  on the new lists, a cheaper worth for timeline-moving stats.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast;
   Perlica's −9.6% in 9090 (Liino's volleys done 2026-11-18).
