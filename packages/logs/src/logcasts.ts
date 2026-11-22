@@ -419,7 +419,26 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         }
         const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
         const late = joinDelayed(candidates, h, slots, opened, stops, free);
-        const g: Group = late?.g ?? choose(candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
+        // A trigger on casts fires once per cast: no new cast of its group once one was placed since the anchor before
+        // the latest one it could be (a cast of the skills it fires on, plus its delay, placed up to the skill's duration
+        // after where this cast would start: an ultimate's casts placed from its keys merge within it), while another
+        // candidate is left (Liino's ultimate's first beat, trigger ult_song at frame 77, and her song's later beats,
+        // cosmovoice_beat's ticks: each later beat made an ult_song of its own, so no tick was pinned to its logged beat;
+        // a7a7a40c97ed's first beat at 45.64 s comes 3.1 s before the projectiles its ultimate is placed from,
+        // 984748cfa662's at 129.37 s 2.0 s before, and each is still that ultimate's).
+        const anchorFree = (g: Group) => {
+          if (!g.anchor || !starts) return true;
+          const a = g.anchor;
+          const start = h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
+          const reach = (s: string) => Math.max(ANCHOR_MS, msOf(data.skills[s]?.timing?.durationFrames ?? 0));
+          const refs = a.skills.flatMap((s) => (starts.get(s) ?? []).map((t) => ({ at: t + msOf(a.delay), reach: reach(s) }))).filter((r) => r.at <= start + r.reach).sort((x, y) => x.at - y.at);
+          if (refs.length === 0) return true;
+          const prev = refs.at(-2);
+          const since = prev ? prev.at + prev.reach : -Infinity;
+          return !(opened.get(g.id) ?? []).some((c) => c.start > since);
+        };
+        const eligible = candidates.filter(anchorFree);
+        const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
         const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: castStart(h.t, first?.frame ?? 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
