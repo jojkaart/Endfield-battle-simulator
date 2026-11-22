@@ -388,8 +388,6 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
   if (!fx.casts?.length) return [...casts];
   const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
   const added: ReplayedCast[] = [];
-  /** Placed casts that are a logged press of another variant of their slot, and that press's time. */
-  const moved = new Map<ReplayedCast, number>();
   // A placed cast is the logged one within LOGGED_CAST_MS of the world's time: the log's times run on through time stops
   // (a7a7a40c97ed: Arcane's battle skill pressed at 37415 ms, placed from its hits at 40523 ms, 351 ms later across
   // Wulfgard's and her own ultimates' stops).
@@ -398,19 +396,6 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
     const skill = kits.find((k) => k.operator === lc.operator)?.skills.find((x) => x.skillId === lc.skill);
     if (!skill || skill.followUpOnly) continue;
     if (casts.some((c) => near(c, lc, lc.skill))) continue;
-    // The press of a slot whose variant then is placed from its hits soon after, with no cast event of its own: that cast
-    // is the press, made at the press (db8711232de9: Laevatain's battle skill in Twilight, logged as `normal_skill` at
-    // 27.13 and 40.78 s, its hits as `normal_skill_during_ult` placed at 29.00 s, across Si's ultimate stop, and 41.57 s,
-    // across Si's combo slow-down; made twice, two Yinglung's Edge layers for one press, the second after Si's combo).
-    const kitOf = kits.find((k) => k.operator === lc.operator);
-    const variant = skill.available === undefined ? undefined : casts.find((c) => {
-      const v = kitOf?.skills.find((k) => k.skillId === c.skillId);
-      return v !== undefined && v.skillId !== lc.skill && v.kind === skill.kind && v.available !== undefined && c.landings.length > 0 && c.start >= lc.t && !moved.has(c) && near(c, lc, c.skillId) && !fx.casts?.some((x) => x.operator === c.operator && x.skill === c.skillId && Math.abs(x.t - c.start) <= LOGGED_CAST_MS);
-    });
-    if (variant) {
-      moved.set(variant, lc.t);
-      continue;
-    }
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)));
     const own = new Set(skill.hits.flatMap((h) => h.events));
     const kit = kits.find((k) => k.operator === lc.operator);
@@ -425,8 +410,7 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
     const start = shownElsewhere ? lc.t : loggedCastStart(data, lc, skill.kind, fx.hits, stops);
     added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}) });
   }
-  if (!added.length && !moved.size) return [...casts];
-  return ordered([...casts.map((c) => (moved.has(c) ? { ...c, start: moved.get(c) as number } : c)), ...added]);
+  return added.length ? ordered([...casts, ...added]) : [...casts];
 }
 
 /** Casts in time order, each keeping its operator's previous cast's hits when the log shows them after it started. */
