@@ -72,12 +72,13 @@ describe("Perlica's kit", () => {
     expect(s.energy[K] ?? 0).toBeGreaterThan(0);
   });
 
-  it("battle skill on Cryo: an Electrification reaction at its hit, whose initial hit takes the new status (engine interim, open list A6)", () => {
+  it("battle skill on Cryo: an Electrification reaction at its hit; the battle skill's hit takes the new status, the reaction's own hit doesn't (open list A6; e82d45c46040, 2026-11-22)", () => {
     const s = run(scenario({}), opening, 60);
     expect(s.reactions.filter((r) => r.kind === "reaction")).toEqual([expect.objectContaining({ frame: 43, operator: K, status: "electrification", consumed: "cryst", level: 1 })]);
     const initial = mine(s).find((h) => h.skillId.startsWith("reaction:"));
     expect(initial?.frame).toBe(43);
-    expect(from(initial, "Electrification level 1")).toHaveLength(1);
+    expect(from(initial, "Electrification level 1")).toHaveLength(0);
+    expect(from(hitsOf(s, "normal_skill")[0], "Electrification level 1")).toHaveLength(1);
   });
 
   it("combo: one projectile at frame 24 (1.8), forcing Electrification I before its own hit: 8.75 s at P1 (5 s below), ×1.33 strength at P4 (×1 below); usp 10 energy", () => {
@@ -173,10 +174,12 @@ describe("Perlica's kit", () => {
 });
 
 describe("Perlica's equipment kits", () => {
-  it("Wild Wanderer: the wielder's Electrification gives the team Physical and Electric DMG +0.224 for 15 s, from the next hit on (interim U3)", () => {
+  it("Wild Wanderer: the wielder's Electrification gives the team Physical and Electric DMG +0.224 for 15 s, from the applying hit on (its reaction half interim U3; beforeDamage: 3aa6, d774, 2026-11-22)", () => {
     const s = run(scenario({}), [...opening, op("attack1"), { operator: E, skill: "swap" }, estella("attack1")], 200);
     const ww = (h: LandedHit | undefined) => from(h, "Wild Wanderer").map((m) => [m.element, m.value]);
-    expect(ww(hitsOf(s, "normal_skill")[0])).toEqual([]);
+    expect(ww(hitsOf(s, "normal_skill")[0])).toEqual([["pulse", expect.closeTo(0.224, 6)]]);
+    // Not the reaction's own hit: its triggers' DMG bonuses come after it (landing.ts reactionHitSide).
+    expect(ww(mine(s).find((h) => h.skillId.startsWith("reaction:")))).toEqual([]);
     expect(ww(hitsOf(s, "attack1")[0])).toEqual([["pulse", expect.closeTo(0.224, 6)]]);
     // On a teammate too: Estella's Physical attack.
     const e = s.hits.find((h) => h.operator === E && h.skillId === `${E}_attack1`);
