@@ -309,6 +309,12 @@ export interface ReplayedCast extends LoggedCast {
   /** A slot cast whose first landing would come where the log has no hit by anyone within QUIET_MS (no enemy to hit). */
   readonly unseen?: true;
   /**
+   * No cast: the logged end of `whileBuff`'s buff is its expiry, which the replay's clock has later (castsFromBuffEnds:
+   * the logged hit's trigger branch rules out the cast that ends it). Made by ending the buff then (it expires at the
+   * frame), with no cast event (no battle-skill cast for a trigger by skill type).
+   */
+  readonly expires?: true;
+  /**
    * Inferred from a logged hit of a trigger on this buff's end (castsFromBuffEnds), at `endsAt` ms: cast only while the
    * buff is active and would last past that end by itself (else its expiry is the end: bdf223db8e49's burst at 24321 ms
    * is Artful Intent's own expiry, its mark projectile, not Final Stroke's).
@@ -461,10 +467,14 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
       const skill = kit.skills.find((x) => x.skillId === skillId);
       if (!skill) continue;
       // A skill castable only with a buff can't have ended it where the logged hits come from the branch without that
-      // buff: its expiry did (Si's Final Stroke needs the Inksoul; the mark's own burst, inkmark_projhit, is Artful
-      // Intent's end without one: 0c14fb3ce77d at 66.37 s, 489c0be3e162 at 100.2 s, each a Final Stroke against its kit
-      // and a Yinglung's Edge layer the combo's damage doesn't have).
-      if (branches.length && branches.every((a) => excludes(a.if, skill.available))) continue;
+      // buff: its expiry did, which the replay's clock has later (Si's Final Stroke needs the Inksoul; the mark's own
+      // burst, inkmark_projhit, is Artful Intent's end without one: 0c14fb3ce77d at 66.37 s, 489c0be3e162 at 100.2 s,
+      // each made a Final Stroke against its kit and a Yinglung's Edge layer the combo's damage doesn't have;
+      // bdf223db8e49 at 24.32 s). The buff ends at the logged end, with no cast.
+      if (branches.length && branches.every((a) => excludes(a.if, skill.available))) {
+        added.push({ operator: pc.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start: pc.start, lastHit: pc.start, keepPrevious: false, landings: [], whileBuff: { buff, endsAt: pc.start }, expires: true });
+        break;
+      }
       const start = pc.start - ((e.delay ?? 0) * 1000) / FPS;
       if ([...casts, ...added].some((c) => c.operator === pc.operator && e.on.event === "cast" && (e.on.skills ?? []).includes(c.skillId) && c.start <= pc.start && c.start >= start - LOGGED_CAST_MS)) continue;
       added.push({ operator: pc.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], whileBuff: { buff, endsAt: pc.start } });
@@ -978,6 +988,18 @@ function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): Timelin
   return changed ? { ...st, buffs } : st;
 }
 
+/**
+ * An `expires` step: the operator's active instance of its buff (whileBuff) set to expire at the frame, when it would
+ * outlast the logged end by more than EXPIRY_MARGIN_FRAMES (else its own expiry is the end); the next advance ends it.
+ */
+function expiredAt(st: TimelineState, c: ReplayedCast, f: number): TimelineState {
+  const w = c.whileBuff;
+  if (!w) return st;
+  const end = Math.round((w.endsAt * FPS) / 1000) + EXPIRY_MARGIN_FRAMES;
+  const hit = (b: ActiveBuff) => b.id === w.buff && b.owner === c.operator && activeAt(b, f) && b.expiresAt > end;
+  return st.buffs.some(hit) ? { ...st, buffs: st.buffs.map((b) => (hit(b) ? { ...b, expiresAt: f } : b)) } : st;
+}
+
 function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): string | null {
   const startsBy = (skill: string) => {
     const r = earliestStart(ctx, st, { operator: c.operator, skill });
@@ -1325,6 +1347,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const pre = st;
     const tick = c.missed ? null : loggedTick(ctx, st, c, f);
     if (tick) return { st: tick, skillId: null, pre, windowCount };
+    if (c.expires) return { st: expiredAt(st, c, f), skillId: null, pre, windowCount };
     const skillId = c.missed ? missedStep(ctx, st, c.operator, f) : replayedSkill(ctx, st, c, f);
     if (skillId === null) return { st, skillId, pre, windowCount };
     const flag = castFlag(ctx, st, c, skillId, f);
