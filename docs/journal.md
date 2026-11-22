@@ -4,9 +4,42 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 108 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 109 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-22: Yinglung's Edge stack counts: hypotheses against 68 combos
+
+**Goal:** the owner's brief: list deterministic causes for the Type 50 Yinglung's Edge count diverging from the
+logs (about a third of combos, both ways), score each against every wearer combo in the development logs, iterate
+on the misfits, implement a winner.
+
+**Done:** the set's data (`gamedata tree` on its four buffs: an aura's detector on every member, a layer to the
+wearer on that member's battle-skill cast, cap 3, no duration, the wearer's combo takes all). Per combo the layers
+the damage implies (both readings' DMG-bonus gap in 0.2 units; Jade Vessel's 0.3–0.7 separates as it isn't a
+multiple of 0.2): 68 Si and Bounda combos decided, the rest left out with named non-Edge causes. Thirteen first
+hypotheses and two new ones scored (open-problems.md "Type 50 Yinglung's Edge", the table): the engine 52 exact /
+4 first-combo lower bound / 12 wrong; every logged cast 58 / 0 / 10; without Si's hitless presses 55 / 4 / 9;
+expiries, own-only, teammates-only, ultimates, any wearer's combo clearing, first-hit timing all worse. The
+misfits suggested two new causes: **N2** Si's first press after her battle skill counts (Initial Stroke under
+Artful Intent) and her other periodic presses don't; **N1** layers are lost over a pause with no hit (3f78 and 4a64
+after ~20 s, 7b54 after 5.9 s; abfd keeps them over 4.9 s): together 64 / 1 / 3.
+
+**Replay fixes (buffreplay.ts), each a cause of an engine misfit:** a Final Stroke inferred from the mark's own
+burst (the kit's no-Inksoul branch, where Final Stroke can't be cast) is now an expiry (an `expires` step, no
+cast): 0c14 81.7 and 489c 107.6 3 → 2; Laevatain's Twilight battle skill made twice when a stop holds its hits
+back (the `normal_skill` event and the placed `normal_skill_during_ult`) is made once, at the press: db87 41.2
+3 → 2. The scoreboard: see the commits' measure (snapshots updated once).
+
+**Decisions:** N1 and N2 not built into the engine: N1 needs "leaving battle", which the log doesn't record and the
+simulator's fights don't have (test 106 (e) asks the owner); N2 in the replay means making every press under
+Artful Intent the stroke the slot holds, and the replay's Artful Intent outlasts the game's (its Inksoul-burst
+Final Strokes 2–3 s after the last press fit the expiry better), so it waits on that. Estella's five single-hit
+combos don't decide anything (her Razorhorn ATK was fitted on the same hits).
+
+**Left:** c779's moved layer, 0c14 166.7 (two layers and Jade Vessel short); the replay's stroke reading (Final
+Stroke only with a press just before the burst; Initial Stroke at the first press). In-game test 106 now asks only
+(e) a pause / leaving combat and (d) whether Final Stroke gives a stack.
 
 ## 2026-11-18: The Finisher gated on every enhanced basic attack (test 108, the Talos Wiki)
 
@@ -381,42 +414,3 @@ ultimate's Amp need Intellect ≥ Will): the example snapshots didn't move.
 **Left:** 8915 after its stage (×0.986 at 92–103 s, ×0.81–1.21 steps at 104–112 s); whether a combo or battle skill
 ends the second ultimate's Amp; the 0.05 s by which Akekuri's P1 outlives the replay's end in 458b; her own finisher's
 8 SP (no log records SP).
-
-## 2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings
-
-**Goal:** the third friction round (docs/friction/README.md): seven open reports (the round-2 backlog and
-friction, the fixture refresh, tests from logs, Arcane's mismatches, cast placement, Stagger windows), ranked by the
-time they cost accuracy work, behaviour-preserving. Summary: docs/friction-done/2026-11-18-round-3.md.
-
-**Done** (a commit each):
-- `npm run measure` (scripts/measure.ts): the log checks on worker threads into scratch/, the scoreboard change and
-  each log's direction printed, nothing tracked written. All 73 logs in 64 s on a quiet machine, against 5-10 min for
-  `snapshots:update`; `--with`, `--logs`, `--changed placement`, `--at <ref>`, `--base <ref>`, `--assume`.
-- The test lock is a queue (arrival order, premerge and test suites ahead of jobs that arrived up to 20 min before,
-  no starvation), with a heartbeat, `with-lock --status`, a batch-script warning; snapshots.sh holds it once;
-  `EFSIM-DONE <job> pass|fail` lines; run states in scratch/runs/ (`node scripts/runstate.ts`);
-  `snapshots:update -- --costs` alone rewrites pending-costs.json; `scripts/verify-at.ts` verifies a commit while
-  editing goes on.
-- `efsim zmdlogs casts | replay | stagger | differences | groups`, built from the agents' scratch prototypes;
-  `zmdlogs hits --json` gains `listed`, `differences`, physical statuses and `appliedAtMs`.
-- Engine assumptions (timeline/assumptions.ts): `control-immunity` (listed / bosses / none / all) and
-  `teammate-pause` (6.5s / 3.5s) switch with `--assume`, in `zmdlogs check` and `measure` too (c3c7 under
-  `control-immunity=none` gives test 104's Si 120 → 110 plain again).
-- The inert Haste speed plumbing (hasteFrames, Acting.speed) removed.
-- `efsim gamedata find <type>`; abilityEvent numbers tabled (docs/game-data-format.md) and named by `gamedata tree`.
-- Docs: data.md "What the replay takes from the log" and "What the log records" (cast events by kind, hidden casts,
-  status keys, ms vs frames); tests.md "Measuring a change"; open-problems' header (a cause cites its check; first
-  steps `zmdlogs groups` / `differences`); `.ignore` and counter titles keep hold-outs off screen; CLAUDE.md.
-
-**Behaviour:** `npm run snapshots:update` at 0bb1a1a left every snapshot and docs/accuracy.md as they were ("No log's
-verdicts moved", no file changed); `npm run measure` agreed byte for byte; the default suite passed at 2d96fc3
-(after the Haste removal) through verify-at. Scoreboard unchanged.
-
-**Decisions:** measure compares against committed snapshots by default (they are HEAD's measurement), and keeps
-unmeasured logs at the reference's entry on both sides, so a selection shows only its own moves. The lock's priority
-is a fixed head start rather than a count of passes, so it needs no shared mutable state. Haste got no engine reading:
-its alternative had no code left worth keeping; the evidence moved to castSkill's comment. `--assumptions` still runs
-only the kits' alternatives (backlog point 14).
-
-**Left:** docs/friction/2026-11-18-backlog-after-round-3.md (17 points: the round-2 code-quality items, a CLI / A/B
-harness, citation checks, a status-key table in code, example repair, the teammate-pace measure, a cast table, …).
