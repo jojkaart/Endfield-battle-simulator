@@ -59,8 +59,12 @@ export type BattleEvent =
    * `gameBuff`: the BuffData buff it stands for.
    */
   | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number; readonly recorded?: number; readonly consumed?: boolean; readonly gameBuff?: string }
-  /** A periodic tick of one of the operator's kit buffs (KitBuff.every); `snapshot`: the attacker side it took when applied, for tick hits with an ATK snapshot. */
-  | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string; readonly snapshot?: readonly Modifier[] }
+  /**
+   * A periodic tick of one of the operator's kit buffs (KitBuff.every); `snapshot`: the attacker side it took when
+   * applied, for tick hits with an ATK snapshot; `first`: the tick at its application (KitBuff.tickOnApply), whose hits
+   * don't see the buff's own modifiers.
+   */
+  | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string; readonly snapshot?: readonly Modifier[]; readonly first?: true }
   /** `operator` healed `target` (no amounts: what matters is who, and when). */
   | { readonly type: "heal"; readonly frame: number; readonly operator: string; readonly target: string; readonly kind: SkillType | "none" }
   /** The fight starts (permanent auras, start-of-fight effects); `operator` is the controlled one. */

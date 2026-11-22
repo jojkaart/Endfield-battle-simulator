@@ -193,6 +193,12 @@ export interface PendingHit extends ScheduledHeader {
   readonly fixed?: number;
   /** A periodic hit with an ATK snapshot (KitHit.atkSnapshot): its owner's attacker-side modifiers when the ticking buff was applied. */
   readonly snapshot?: readonly Modifier[];
+  /**
+   * A hit of a ticking buff's tick at its application (KitBuff.tickOnApply): its damage doesn't see that buff instance's
+   * modifiers (Rossi's bleed: the first tick of each application lacks the bleed's own DMG Taken +0.12 in every log
+   * that has one, pending/zmdlogs-d5720d9ceb94.json 13751, 46554, 114924 ms ×1/1.12; its other ticks have it).
+   */
+  readonly firstTickOf?: { readonly owner: string; readonly id: string; readonly appliedAt: number };
   /** A replayed landing's reference (replayCast `landings`): its LandedHit carries it, with the facts it was computed on. */
   readonly ref?: string;
   /** A delayed hit's damage (KitHit.enemyDelay), due on the enemy's clock: what its landing consumed, which the damage reads. */

@@ -59,6 +59,22 @@ export type Zone = (typeof ZONES)[number];
  */
 export const SNAPSHOT_ZONES: ReadonlySet<Zone> = new Set(["atk", "attribute", "damageBonus", "amp", "critRate", "critDamage", "artsIntensity"]);
 
+/**
+ * What a kit's tick hit with an ATK snapshot (KitHit.atkSnapshot: a ticking
+ * buff's DamageAction `takeAtkSnapshot`, Rossi's bleed) keeps from the
+ * buff's application: ATK only (its modifiers and the attributes it comes
+ * from); its DMG bonus, Amp and crit are read at each tick. Evidence: in
+ * pending/zmdlogs-d5720d9ceb94.json one bleed (applied at 13751 ms) ticks
+ * ×1.0972 lower after Camille's set DMG +0.16 ends (1750 → 1595 at
+ * 21830 / 23781 ms: (1.80 − 0.16) / 1.80), ×1.614 lower when Wolven Blood's
+ * max-stack bonus and 15 of its layers end (1363 → 844 at 28829 /
+ * 30739 ms), then rises tick by tick with the new layers (1287, 1346, 1386,
+ * 1426, 1466); its crits go from ×2.0 to ×1.5 when the combo's Crit DMG
+ * ends; yet it stays 1595 when Camille's weapon ATK +0.096 ends between
+ * 26731 and 27792 ms.
+ */
+export const ATK_SNAPSHOT_ZONES: ReadonlySet<Zone> = new Set(["atk", "attribute"]);
+
 /** What kind of damage a hit is: its skill type, or a reaction kind for reaction damage. */
 /** `none`: a hit of no skill type (some triggered hits, e.g. from weapons or gear sets). */
 export type HitKind = SkillType | "none" | "burst" | "reaction" | "combustionTick" | "lift" | "knockdown" | "crush" | "breach" | "shatter";

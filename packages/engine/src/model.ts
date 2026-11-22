@@ -387,11 +387,12 @@ export interface KitHit {
   readonly zoneScale?: readonly { readonly zone: Zone; readonly value: ValueExpr }[];
   /**
    * A periodic hit with the applier's side snapshotted (DamageAction
-   * `takeAtkSnapshot`): a `buffTick` trigger's hit takes the attacker-side
-   * modifiers (SNAPSHOT_ZONES: ATK, DMG bonus, Amp, crit, Arts Intensity) its
-   * owner had when the ticking buff was applied, not at the tick; the
-   * enemy's side is read at the tick. Combustion does the same by itself
-   * (status.ts).
+   * `takeAtkSnapshot`): a `buffTick` trigger's hit takes the ATK modifiers
+   * (effects.ts ATK_SNAPSHOT_ZONES: ATK and the attributes behind it) its
+   * owner had when the ticking buff was applied, not at the tick; its DMG
+   * bonus, Amp, crit and the enemy's side are read at the tick (Rossi's
+   * bleed, until 2026-11-22 snapshotted whole). Combustion keeps the whole
+   * attacker side by itself (status.ts, SNAPSHOT_ZONES).
    */
   readonly atkSnapshot?: boolean;
   /** A Final Strike (SkillData decorate-mask bit 2097152, set by the data loader). */

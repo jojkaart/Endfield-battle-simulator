@@ -161,7 +161,7 @@
               "damageType": "none",
               "atkSnapshot": true,
               "events": ["buff_chr_0028_wulfa_normal_bleed"],
-              "note": "buff_chr_0028_wulfa_normal_bleed buffEventAction: DamageAction Physical on atk_scale_bleed (assigned from the battle skill: talent 1's value), decorate mask 0x90000000 (no skill type: no Battle Skill DMG bonus, no Link, not a battle-skill hit for triggers), takeAtkSnapshot true (the attacker's side from the application, batch-4 V2)."
+              "note": "buff_chr_0028_wulfa_normal_bleed buffEventAction: DamageAction Physical on atk_scale_bleed (assigned from the battle skill: talent 1's value), decorate mask 0x90000000 (no skill type: no Battle Skill DMG bonus, no Link, not a battle-skill hit for triggers), takeAtkSnapshot true: ATK from the application (batch-4 V2), the DMG bonus, crit and the enemy's side at each tick (engine effects.ts ATK_SNAPSHOT_ZONES: d572's ticks follow Wolven Blood's layers and Camille's set DMG tick by tick, 2026-11-22). The tick at the application lacks the bleed's own DMG Taken (engine PendingHit.firstTickOf)."
             }
           ]
         }

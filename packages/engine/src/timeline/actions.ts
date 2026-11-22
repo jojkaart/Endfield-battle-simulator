@@ -394,6 +394,8 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
               ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}), ...(h.fixedDamage !== undefined ? { fixed: evaluate(h.fixedDamage, ec()) } : {}),
               // A tick's hit with an ATK snapshot keeps the attacker side its buff took when applied.
               ...(h.atkSnapshot && e.type === "buffTick" && e.snapshot ? { snapshot: e.snapshot } : {}),
+              // The tick at its buff's application lands before the buff's own modifiers act (KitBuff.tickOnApply).
+              ...(e.type === "buffTick" && e.first ? { firstTickOf: { owner: e.operator, id: e.buff, appliedAt: e.frame } } : {}),
             };
             (a.now && f === 0 ? landNow : pending).push(p);
           });

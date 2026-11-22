@@ -169,7 +169,7 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
         const b = due.buff;
         const every = b.every as number;
         st = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: at + every } : x)) };
-        st = runTriggers(ctx, st, [{ type: "buffTick", frame: at, operator: b.owner, buff: b.id, ...(b.snapshot ? { snapshot: b.snapshot } : {}) }], null);
+        st = runTriggers(ctx, st, [{ type: "buffTick", frame: at, operator: b.owner, buff: b.id, ...(b.snapshot ? { snapshot: b.snapshot } : {}), ...(at === b.appliedAt ? { first: true as const } : {}) }], null);
         break;
       }
       case "scheduled":
