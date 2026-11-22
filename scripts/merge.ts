@@ -8,10 +8,22 @@
 // - Any other conflict is left for you; the merge is then not committed.
 // A clean merge whose built journal is stale gets the rebuild as its own commit.
 //
-// Usage: node scripts/merge.ts <branch> [--snapshots]     (from the checkout that merges)
+// Branches that each pass premerge can still break each other (round 5: one branch's 30-frame tick hold reached the
+// other's newly hit-shown bleed ticks; only a hand-run `vitest related` caught it). So after the merges, the tests
+// related to the code both sides changed run (`npx vitest related --run`, under the test lock): the source files
+// either side changed inside a package (packages/<name>/) both sides changed, and any file both changed. --no-test
+// prints the command instead.
+//
+// Several branches in one go (a batch: `npm run merge -- a b c`): merged in order, stopping at the first that needs a
+// hand resolution; snapshot conflicts take our side and are committed, to be regenerated once at the end
+// (--snapshots runs `npm run snapshots:update` then and commits it; otherwise the last line says to), and the related
+// tests run once over every pair's shared code. No running snapshots job has to be stopped to add a branch.
+//
+// Usage: node scripts/merge.ts <branch>… [--snapshots] [--no-test]     (from the checkout that merges)
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const JOURNAL = ["docs/journal.md", "docs/journal/README.md"];
@@ -36,7 +48,36 @@ export function classify(conflicted: readonly string[]): { journal: string[]; sn
   };
 }
 
-export function mergeBranch(root: string, branch: string, opts: { readonly snapshots?: boolean; readonly log?: (line: string) => void } = {}): MergeResult {
+/** The package directory of a path (packages/<name>/), or undefined. */
+const packageOf = (f: string) => /^packages\/[^/]+\//.exec(f)?.[0];
+
+/**
+ * The files whose related tests a merge must run: the source files (.ts) either side changed inside a package both
+ * sides changed, and every .ts file both sides changed (scripts, tests). Sorted, without duplicates.
+ */
+export function sharedCode(ours: readonly string[], theirs: readonly string[]): string[] {
+  const pkgs = (fs: readonly string[]) => new Set(fs.map(packageOf).filter((p): p is string => p !== undefined));
+  const [a, b] = [pkgs(ours), pkgs(theirs)];
+  const both = new Set([...a].filter((p) => b.has(p)));
+  const theirSet = new Set(theirs);
+  const out = new Set<string>();
+  for (const f of [...ours, ...theirs]) {
+    if (!f.endsWith(".ts")) continue;
+    const p = packageOf(f);
+    if ((p !== undefined && both.has(p)) || (ours.includes(f) && theirSet.has(f))) out.add(f);
+  }
+  return [...out].sort();
+}
+
+/** The files each side changed since the merge base of HEAD and the branch (before merging it). */
+export function sides(root: string, branch: string): { ours: string[]; theirs: string[] } {
+  const git = (...args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  const base = git("merge-base", "HEAD", branch);
+  const files = (to: string) => git("diff", "--name-only", base, to).split("\n").filter(Boolean);
+  return { ours: files("HEAD"), theirs: files(branch) };
+}
+
+export function mergeBranch(root: string, branch: string, opts: { readonly snapshots?: boolean; readonly log?: (line: string) => void; readonly snapshotsLater?: boolean } = {}): MergeResult {
   const log = opts.log ?? ((l: string) => process.stdout.write(l + "\n"));
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   const journal = (...args: string[]) => execFileSync("node", ["scripts/journal.ts", ...args], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -77,21 +118,65 @@ export function mergeBranch(root: string, branch: string, opts: { readonly snaps
     log(`merge: resolve by hand, then commit: ${c.left.join(", ")}`);
     return { merged: false, committed: false, rebuiltJournal, snapshots: c.snapshots, left: c.left };
   }
-  if (c.snapshots.length && !opts.snapshots) {
+  if (c.snapshots.length && !opts.snapshots && !opts.snapshotsLater) {
     log(`merge: took our side of ${c.snapshots.join(", ")}: run npm run snapshots:update, git add them, then commit (or rerun with --snapshots)`);
     return { merged: false, committed: false, rebuiltJournal, snapshots: c.snapshots, left: [] };
   }
+  if (c.snapshots.length && opts.snapshotsLater) log(`merge: took our side of ${c.snapshots.join(", ")} (stale until the batch's snapshots:update)`);
   git("commit", "-q", "--no-edit");
   log(`merge: committed the merge of ${branch}`);
   return { merged: true, committed: true, rebuiltJournal, snapshots: c.snapshots, left: [] };
 }
 
+/** The related tests of the shared code, under the test lock; or only the command, with `run` false. */
+function relatedTests(root: string, files: readonly string[], run: boolean, log: (l: string) => void): boolean {
+  const present = files.filter((f) => existsSync(join(root, f)));
+  if (!present.length) {
+    log("merge: no source file in code both sides changed: no related tests to run");
+    return true;
+  }
+  const command = ["npx", "vitest", "related", "--run", ...present];
+  log(`merge: code both sides changed (${present.length} file(s): ${present.join(", ")}); its related tests: ${command.join(" ")}`);
+  if (!run) {
+    log("merge: --no-test: run that before pushing");
+    return true;
+  }
+  const r = spawnSync("node", ["scripts/testlock.ts", "--kind", "tests", "--who", "merge", "--", ...command], { cwd: root, stdio: "inherit" });
+  log(r.status === 0 ? "merge: the related tests passed" : "merge: the related tests FAILED on the merged code: the branches break each other; fix before pushing");
+  return r.status === 0;
+}
+
 function main(argv: readonly string[]): number {
-  const branch = argv.find((a) => !a.startsWith("--"));
-  if (!branch) throw new Error("usage: node scripts/merge.ts <branch> [--snapshots]");
+  const branches = argv.filter((a) => !a.startsWith("--"));
+  const unknown = argv.filter((a) => a.startsWith("--") && !["--snapshots", "--no-test"].includes(a));
+  if (!branches.length || unknown.length) throw new Error("usage: node scripts/merge.ts <branch>… [--snapshots] [--no-test]");
   const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-  const r = mergeBranch(root, branch, { snapshots: argv.includes("--snapshots") });
-  return r.committed ? 0 : 1;
+  const log = (l: string) => process.stdout.write(l + "\n");
+  const regenerate = argv.includes("--snapshots");
+  const batch = branches.length > 1;
+  const shared = new Set<string>();
+  const stale = new Set<string>();
+  for (const branch of branches) {
+    const { ours, theirs } = sides(root, branch);
+    for (const f of sharedCode(ours, theirs)) shared.add(f);
+    const r = mergeBranch(root, branch, batch ? { snapshotsLater: true, log } : { snapshots: regenerate, log });
+    for (const f of r.snapshots) stale.add(f);
+    if (!r.committed) {
+      if (batch) log(`merge: stopped at ${branch}; not merged yet: ${branches.slice(branches.indexOf(branch) + 1).join(", ") || "none"}`);
+      return 1;
+    }
+  }
+  if (batch && stale.size) {
+    if (regenerate) {
+      log("merge: regenerating the snapshots once for the batch (npm run snapshots:update, minutes)");
+      const s = spawnSync("npm", ["run", "snapshots:update"], { cwd: root, stdio: "inherit" });
+      if (s.status !== 0) throw new Error("npm run snapshots:update failed: the merges are committed, the snapshots stale");
+      execFileSync("git", ["add", "tests/snapshots", "docs/accuracy.md"], { cwd: root });
+      execFileSync("git", ["commit", "-q", "-m", `Snapshots and scoreboard for the merged batch (${branches.join(", ")})`], { cwd: root });
+      log("merge: committed the batch's snapshots");
+    } else log(`merge: the batch's snapshots are stale (${[...stale].join(", ")}): npm run snapshots:update once, then commit them`);
+  }
+  return relatedTests(root, [...shared].sort(), !argv.includes("--no-test"), log) ? 0 : 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
