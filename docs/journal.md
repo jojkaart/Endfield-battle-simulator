@@ -4,9 +4,43 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 113 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 114 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-22: Yinglung's Edge stack counts: hypotheses against 68 combos
+
+**Goal:** the owner's brief: list deterministic causes for the Type 50 Yinglung's Edge count diverging from the
+logs (about a third of combos, both ways), score each against every wearer combo in the development logs, iterate
+on the misfits, implement a winner.
+
+**Done:** the set's data (`gamedata tree` on its four buffs: an aura's detector on every member, a layer to the
+wearer on that member's battle-skill cast, cap 3, no duration, the wearer's combo takes all). Per combo the layers
+the damage implies (both readings' DMG-bonus gap in 0.2 units; Jade Vessel's 0.3–0.7 separates as it isn't a
+multiple of 0.2): 68 Si and Bounda combos decided, the rest left out with named non-Edge causes. Thirteen first
+hypotheses and two new ones scored (open-problems.md "Type 50 Yinglung's Edge", the table): the engine 52 exact /
+4 first-combo lower bound / 12 wrong; every logged cast 58 / 0 / 10; without Si's hitless presses 55 / 4 / 9;
+expiries, own-only, teammates-only, ultimates, any wearer's combo clearing, first-hit timing all worse. The
+misfits suggested two new causes: **N2** Si's first press after her battle skill counts (Initial Stroke under
+Artful Intent) and her other periodic presses don't; **N1** layers are lost over a pause with no hit (3f78 and 4a64
+after ~20 s, 7b54 after 5.9 s; abfd keeps them over 4.9 s): together 64 / 1 / 3.
+
+**Replay fix (buffreplay.ts):** a Final Stroke inferred from the mark's own burst (the kit's no-Inksoul branch,
+where Final Stroke can't be cast) is now an expiry (an `expires` step, no cast): 0c14 81.7 and 489c 107.6 3 → 2;
+the engine 54 / 4 / 10. Scoreboard (`npm run snapshots:update`): verified and hold-out unchanged, development plain
+52.0%, earlier pending 48.9 → 49.0% plain; 489c mismatches 120 → 113, 0c14 plain 123 → 133; no log worse. Tried and reverted: making Laevatain's Twilight battle skill once where the replay makes it
+twice (the `normal_skill` event and the placed `normal_skill_during_ult`, db87 41.2 3 → 2, plain 114 → 126): the
+same static rule broke Purrchena's battle skill and counter (04d4); the replay's state has to decide.
+
+**Decisions:** N1 and N2 not built into the engine: N1 needs "leaving battle", which the log doesn't record and the
+simulator's fights don't have (test 106 (e) asks the owner); N2 in the replay means making every press under
+Artful Intent the stroke the slot holds, and the replay's Artful Intent outlasts the game's (its Inksoul-burst
+Final Strokes 2–3 s after the last press fit the expiry better), so it waits on that. Estella's five single-hit
+combos don't decide anything (her Razorhorn ATK was fitted on the same hits).
+
+**Left:** c779's moved layer, 0c14 166.7 (two layers and Jade Vessel short); the replay's stroke reading (Final
+Stroke only with a press just before the burst; Initial Stroke at the first press). In-game test 106 now asks only
+(e) a pause / leaving combat and (d) whether Final Stroke gives a stack.
 
 ## 2026-11-22: The rule search decides: an objective across starts, rule sets, setups
 
@@ -335,66 +369,3 @@ data name; test 66's verdict stands, but for a reason it didn't give.
 **Left:** the beats' timing (logged 1.35–1.55 s apart, other operators' stops; open-problems.md "Liino's Cosmovoice
 beats", next: pinning them to their logged landings as the volleys are); Perlica's combo hits ×1.15–1.40 above the
 engine in fc63, 3aa6, 4d60, 4360, 9847 (seen, not followed).
-
-## 2026-11-18: Typhoeus's and Laevatain's in-game tests from the logs; buffs created in a stop are held
-
-**Goal:** decide from the logs in-game tests 9, 43, 46 (Typhoeus) and 17, 21, 22 (Laevatain's
-Twilight and Scorching Heart), checking the re-triage's claims (docs/in-game-tests-retriage-*.md).
-
-**Decided** (each in its test's section of docs/in-game-tests.md):
-- 9: the ×1.3 on her Power Shot's burst after a consumed Nature Infliction fits (41 plain matches
-  with it, none at ×1/1.3; the misses are other causes).
-- 43, partly: the re-triage misread the engine. Her controlled 5th shot is a Power Shot with a
-  burst and no arrow used (data and kit); every logged 5th is the controlled one
-  (`floating_attack5_01_projhit`) and is followed by its burst. No log has an off-field 5th: that
-  half stays for the game.
-- 46: one rain per shot, at most five, the 5th empowered (7 ultimates; the re-triage's 13 counted
-  the log's repeated `ultimate_skill` events). d9e5's 5th rain needed the window held by two
-  teammates' stops that were already running when it began.
-- 17 (Laevatain's variant): the jumps skip: explosion to extra hit 0.97–1.17 s (no skip: 2.7 s),
-  battle skill to next attack 1.2–1.4 s (3.8 s).
-- 22: `since` is the latest (re)application (it moves at every re-creation, f879 92.49 s 12 s into
-  an instance); in 25 empowered casts at 4 Melting Flame it never moves at the capped gain: no
-  restart, as the engine has.
-- 21 and 18's Twilight part, partly: every closed Twilight window outlasts 15 s from the press plus
-  the engine's holds by 2.1–6.6 s, so her own stop holds Twilight; with that it's still 0.1–4.6 s
-  short in all 7, and no single extra term fits (open-problems). No log has a combo cutting her
-  enhanced battle skill short.
-
-**Engine and replay changes:**
-- Engine assumption `buff-in-stop` (default `held`; timeline/clock.ts `heldFromNow`, actions.ts
-  `addBuff`): a buff created while a time stop or slow-down runs is held by the rest of it, as the
-  running buffs were when it began (the same rule as an Arts Burst's clock, T14). It replaces the
-  kit assumption `laevatain-twilight-own-stop` (removed with its trigger).
-- `loggedCastStart` (buffreplay.ts): another's hit within 0.5 s after an ultimate's cast event, not
-  only at it, says the event is the stop's end (Laevatain's ultimate in 17 of 22 windows, was 11).
-- `efsim zmdlogs replay --assume <id>=<reading>`.
-
-**Scoreboard** (`npm run snapshots:update`): development plain 49.5 → 50.0%, mismatch 19.3 → 19.3%, mean
-|damage error| 13.0 → 12.7% (18 better, 3 worse, 2 mixed); hold-out plain 65.0 → 66.1%, mismatch 7.4 → 6.9%,
-damage 12.5 → 12.1% (7 better, 2 worse); earlier pending plain 47.2 → 47.4%, damage 8.2 → 8.4%; verified
-unchanged. Worse: db87 (plain 152 → 114: the placement fix makes Laevatain's stop overlap Camille's combo
-slow-down, so Arcane's Corrosion ramp is held 0.5 s less; open-problems), d774 (totals +11.6 → +16.7%, Zhuang
-Fangyi's ultimate 2.6 s earlier, no verdict moved), 1d91 (two of Ardelia's assumed matches), and 0.1-point totals
-(4360, 0c14, c3c7), b6aa one plain hit.
-
-**Examples:** the Ink Melt and Si-Laevatain-Liino-Gilberta timelines repaired (Laevatain's steps in Twilight's
-extra 2 s as its forms): Ink Melt's 60 s 3,953,129 → 3,402,966 (−13.9%: its second ultimate no longer fits, as
-show_weapon blocks her energy and starts her cooldown 2 s later); Si-Laevatain-Liino-Gilberta +2.7%; Typhoeus's
-team's 60 s +0.75%.
-
-**Teams** (`efsim rules`, 32 seeds from 1001, against `--assume buff-in-stop=runs` at the same code): Ink Melt
-63,347 → 62,377 (−1.5%) at full energy, 56,123 → 59,917 (+6.8%) from zero (a longer Twilight, but her energy
-blocked and her ultimate's cooldown started 2 s later); Typhoeus's team 52,374 → 52,641 (+0.5%) / 48,973 → 49,095
-(+0.2%). Team pages updated.
-
-**Tests:** kit tests whose buffs are created inside a stop or a combo's slow-down now expect the rest of it
-(Akekuri, Ardelia, Lifeng, Mi Fu, Rossi, Wulfgard, Yvonne, Zhuang Fangyi, Laevatain); the search test re-pinned
-(Laevatain alone +12.6%). The loop-search tests run Laevatain alone under `buff-in-stop=runs`: with the
-longer Twilight she finds no loop in 12 rounds at beam 6 (a lead for the loop search). Holding by ultimates'
-stops only (reading `ultimates`) measured worse than by every slow-down (development plain 50.0 → 49.8%,
-hold-out 66.1 → 65.9%).
-
-**Dead ends:** see open-problems "Laevatain's Twilight runs longer than its model" (a constant,
-show_weapon's 16 s, the full 115-frame pause, a smaller combo hold). Two small Typhoeus misfits
-noted there (1cd1 40.12 s, d9e5 11.73 s).

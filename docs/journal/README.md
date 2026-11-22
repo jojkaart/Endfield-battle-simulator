@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-22: Yinglung's Edge stack counts: hypotheses against 68 combos](2026-11-22-01-yinglung-s-edge-stack-counts-hypotheses-against-68-combos.md)
 - [2026-11-22: The rule search decides: an objective across starts, rule sets, setups](2026-11-22-01-the-rule-search-decides-an-objective-across-starts-rule-sets.md)
 - [2026-11-22: Rossi's bleed keeps only ATK; its ticks on the log's clock; her ultimate's crits](2026-11-22-01-rossi-s-bleed-keeps-only-atk-its-ticks-on-the-log-s-clock.md)
 - [2026-11-22: Perlica's combo hits: Pulser Labs and Wild Wanderer before the hit's damage](2026-11-22-01-perlica-s-combo-hits-pulser-labs-and-wild-wanderer-before.md)

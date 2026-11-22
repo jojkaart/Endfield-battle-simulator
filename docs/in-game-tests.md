@@ -61,7 +61,7 @@ suggestions.
 
 | # | test | needs | why only the game | reply, e.g. |
 |---|---|---|---|---|
-| 1 | [106](#106-type-50-yinglungs-edge-which-battle-skills-give-a-stack-and-how-long-it-lasts-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge stacks | Estella and Si with 3 pieces each | the buff's icon: the log doesn't list it | `106: anyone's battle skill +1 to every wearer; no expiry` |
+| 1 | [106](#106-type-50-yinglungs-edge-does-leaving-combat-clear-the-stacks-does-final-stroke-give-one-partly-decided-by-the-logs-2026-11-22-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge after a pause; Final Stroke | Estella and Si with 3 pieces each | leaving combat and presses aren't logged; the buff isn't listed | `106: leaving combat clears them, 8 s idle keeps them; Final Stroke counts` |
 | 2 | [16](#16-does-a-skill-cancel-the-basic-attack-it-interrupts-ready-optional-variant-with-ardelia-the-logs-partly-2026-11-18) a skill pressed during attack 5 | Si (or anyone) | presses aren't logged, and a dropped hit leaves no trace | `16: the Final Strike's number still appears / is gone` |
 | 3 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | jumps and dashes aren't logged; players never dive | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
 | 4 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-decided-by-the-logs-2026-11-18-for-the-tap-yes-but-not-under-an-enhanced-attack-eg-laevatains-twilight-generalised-2026-11-18-from-the-talos-wiki-the-dive-part-ready-any-operator-lower-priority) a dive on a Staggered enemy | anyone | no logged dive on a Staggered enemy | `108: a dive isn't the Finisher` |
@@ -376,27 +376,33 @@ level 12 below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks (hits ×1.30
 … ×1.42). From P2: 0.36, 0.42, 0.48, 0.54, 0.54. A 0.48 at 3 stacks from
 P2 would mean the data's check is "fewer than 3", not "3 or fewer".
 
-### 106. Type 50 Yinglung's Edge: which battle skills give a stack, and how long it lasts (ready, if a team member wears 3 pieces; higher priority: the owner's team has two wearers)
+### 106. Type 50 Yinglung's Edge: does leaving combat clear the stacks, does Final Stroke give one (partly decided by the logs, 2026-11-22; ready, if a team member wears 3 pieces; higher priority: the owner's team has two wearers)
 
 **Why:** the set gives its wearer a stack when a battle skill is cast (up
 to 3), and the wearer's next combo deals +20% per stack and clears them.
-The logs don't list the buff; their damage fits the engine's count in
-about two thirds of combos and not in the rest, both ways (open-problems,
-"Type 50 Yinglung's Edge"). The buff icon's stack count on the wearer
-settles it.
-**How:** Estella and Si both wearing 3 pieces (as your team). Watch the
-Edge icon's number on each: (a) cast Si's battle skill: does Estella's
-count go up, Si's, or both? Then Arcane's or Akekuri's battle skill: same
-question. (b) Build 3 stacks on Estella, wait 10 s, then 30 s: do they
-stay? (c) With stacks on both, cast Si's combo: do Estella's stacks stay?
-(d) Si's battle-skill strokes (Initial / Final Stroke): does each count?
-**Reply, e.g.:** `106: anyone's battle skill +1 to every wearer; no expiry; Si's combo clears only Si's; strokes count`.
-**The logs can't decide it (tried 2026-11-14 and 2026-11-18):** ZMDLogs
-never lists the buff, and the combo damage over 34 logs fits the engine's
-count in about 25 of 37 combo groups and misses both ways in the rest; the
-casts the stacks would come from are partly inferred from hits (Si's
-strokes, Laevatain's during-ultimate skill), so the damage can't tell the
-readings apart. The icon's count is what only the game shows.
+The logs don't list the buff; the combo damage, per combo, says how many
+stacks it had (open-problems, "Type 50 Yinglung's Edge").
+**Decided by the logs (2026-11-22, 68 combos of Si and Bounda):** any
+team member's battle skill gives a stack to every wearer (ad7f, abfd: both
+wearers count the same casts); stacks don't expire inside a fight (an
+18–24 s old stack still counts: c83c, 0c14); one wearer's combo leaves the
+other's stacks; ultimates give none; Si's periodic battle-button events
+give none, except her first press after her battle skill (Initial Stroke,
+under Artful Intent). Don't ask (a)–(c) of the old version.
+**Left (what no log shows):** (e) the logs fit one or two stacks fewer
+after a pause with no damage (3f78, 4a64: about 20 s; 7b54: 6 s; abfd's
+5 s pause keeps them): leaving combat is the likely cause, which the log
+doesn't record. (d) Whether Si's Final Stroke gives a stack too (the logs
+can't tell it from her other presses).
+**How:** Estella and Si both wearing 3 pieces (as your team). (e) Build 3
+stacks on Estella (three battle skills), then walk away from the enemy
+until the fight ends (the combat music / HUD goes), come back: is the
+Edge icon's number still 3? Then, in a fight, 3 stacks and 6–8 s without
+attacking (stand still next to the enemy): still 3? (d) With Estella at 0
+(after her combo), cast Si's battle skill, then Initial Stroke, then Final
+Stroke: Estella's count after each (expected 1, 2, then 3 if Final Stroke
+counts).
+**Reply, e.g.:** `106: leaving combat clears them, 8 s idle keeps them; Final Stroke counts`.
 
 ### 105. Arcane on the mode line: INT's cooldown with WILL's skills? (answered, 2026-11-13: no; 0206 is game 1.5)
 

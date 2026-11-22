@@ -907,7 +907,9 @@ f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
   4.15) fewer, more, fewer than the engine's 2, 2, 3 (scratch edge fit on
   `zmdlogs hits --json`; Jade Vessel's 0.7 and the P2 ATK the engine has
   fit). Her first combo (9.5 s) wants one more too (engine 2). Which casts
-  count: "Type 50 Yinglung's Edge" below.
+  count: "Type 50 Yinglung's Edge" below (2026-11-22: all five fit there
+  with her first press after her battle skill counting and her other
+  hitless presses not; the engine's replay doesn't make those presses).
 - **f978 Ardelia: found (2026-11-18).** Her weapon at level 60 (the third
   breakthrough's cap; c3c7's is at 60 too): `efsim zmdlogs fit-build`
   fits 107 of 139 hits, all 55 clean ones (0 as exported); the earlier
@@ -968,67 +970,139 @@ resistance).
 
 ## Type 50 Yinglung's Edge: how many stacks a combo gets (Estella, Si)
 
-**Shows (sonnet, 2026-11-14):** the log never lists the buff; rescaling
-each wearer's combo hits to 0–3 stacks (fit within 0.4%) over 34 logs:
-about 25 combo groups fit the engine's count, about 12 don't, both ways.
-Estella's ad7f 38169 and a27b 63630 fit 0 stacks (engine 3 and 1); Si
-over-counted in 3f78 47327, 4a64 54283, db87 41669, 7b54 15595, a7a7
-22503 (fits 1–2, engine 3) and under-counted in e989 7387 / 9408, 489c
-14288, 4f7e 4590 (fits 3, engine 2). Data: a team aura adds a layer to
-the wearer on a battle-skill cast (stackingType 2, no duration); the
-wearer's combo turns them into a one-cast +0.2 × stacks and clears them;
-cap 3 (SkillPatch; the owner agrees: up to three).
+**Data (`efsim gamedata tree buff_equipsuit_atk_02`, `_aruadetect`,
+`_addcombodamage`):** the wearer's aura puts a detector on every team
+member (no stackingSettings: each wearer's aura its own); a member's own
+battle-skill cast (ability event 30, CheckSkillType [2]) adds a layer to
+the aura's source, the wearer (stackingType 2, max `max_stack` 3,
+lifeType 1, no duration); the wearer's combo cast ([6]) turns the layers
+into a one-cast +0.2 × layers (CheckSkillCastId) and finishes them all.
+`finishWithNextSkillIfNotInherited` is on every CreateBuff in the data
+(Estella's batch notes), so it decides nothing. The log never lists the
+buff.
 
-**Ruled out:** another cap (fits reach 3 often); "any wearer's combo
-clears everyone's" (ad7f: Estella fits 3 after Si's combo); expiry alone
-(ad7f: Si fits 3 with a 6.2 s old cast, Estella 0 on the same casts).
+**The test (2026-11-22, the hypothesis brief):** for every combo of a
+wearer in the development logs (Si in 26 logs, Estella in a27b, ad7f,
+a9d7, Chen in 7e19, a9d7, Bounda in abfd), the layers its damage implies:
+per combo hit, the DMG bonus the log's own reading lacks (every listed
+buff as listed, the unlisted consumed ones out: Edge and Jade Vessel's
+next-combo 0.3–0.7, not a multiple of 0.2, so the two separate) and the
+same from the replay's reading; a combo is decided when a reading's
+median over its hits sits within 0.05 layer of a count (two exact
+readings that differ leave it open). Decided: 68 Si and Bounda combos.
+Left out with their non-Edge causes: a9d7 (a stage factor on every
+operator), 8915 to 86.8 s (the stage's shields), 7b54's split combos,
+7e19's Chen (the readings disagree), 4e36 11.6, 9c0b 71.5 (two exact
+readings: the replay's ATK buff and one layer, or neither and two), 489c
+50.5, a7a7 45.4; Estella's five single-hit combos (the Razorhorn ATK on
+that hit was fitted on the same hits: two unknowns, one hit). Each
+hypothesis is a rule on the log's casts (`zmdlogs instances`: placed
+casts and cast events; Laevatain's event and her during-ultimate hits
+one press; Last Rite's battle skill from her phantom's keys), scored
+exact / first-combo lower bound (layers from before the log may add) /
+wrong, of 68. Scripts: scratch/edge-export.ts, edge-score.py,
+edge-search.py (not committed: scratch).
 
-**Still possible:** which battle-skill casts count (the replay infers
-casts from hits; Laevatain's during-ultimate and Si's strokes, test 29);
-an expiry (3f78: only the casts in the last 3.5 s count, once); Estella's
-combo bound to its own cast id, or landing inside another cast.
+| Hypothesis | Exact | Lower | Wrong |
+|---|---|---|---|
+| H0 the engine's replay (base 1ab4647) | 52 | 4 | 12 |
+| H1 every logged battle cast and cast event, anyone | 58 | 0 | 10 |
+| H2 only casts with a battle-skill hit | 41 | 9 | 18 |
+| H3 H1 without Si's hitless presses | 55 | 4 | 9 |
+| H4 H3 + every ultimate | 41 | 4 | 23 |
+| H5 the wearer's own casts only (not the set text, not the aura) | 6 | 23 | 39 |
+| H6 teammates' casts only | 27 | 20 | 21 |
+| H7 H3, layers taken at the combo's first hit | 47 | 6 | 15 |
+| H8 H3, layers added at the battle skill's first hit | 50 | 8 | 10 |
+| H9 H3 with an expiry of 5 / 10 / 15 / 20 / 30 s | 11 / 21 / 28 / 39 / 48 | | |
+| H10 H3, the cap keeps the newest | 51 | 6 | 11 |
+| H11 H3, any wearer's combo clears everyone's | 47 | 7 | 14 |
+| H12 H3, the wearer's ultimate clears | 43 | 9 | 16 |
+| H13 H3, a hitless combo event consumes | 51 | 6 | 11 |
+| **N1** H3 + layers lost over a pause in the fight (no hit for 5 s / 10 s) | 57 / 56 | 4 | 7 / 8 |
+| **N2** H3 + Si's first hitless press within 20 s after her battle-skill hit (her stroke under Artful Intent) | 61 | 1 | 6 |
+| **N1 + N2** (5 s) | **64** | 1 | **3** |
+| N1 + N2 (10 s) | 63 | 1 | 4 |
 
-**Si's strokes as a switch (2026-11-18):** the engine assumption
-`battle-sub-skills` (timeline/assumptions.ts; skills of SkillData
-normalSkillSubType 1, which the data's CheckSkillType gives
-`normalSkillSubTypeFilter` 0 everywhere, so the data doesn't say) reads
-`main-only` as "a sub-skill's cast isn't seen by triggers by skill type".
-`npm run measure -- --assume battle-sub-skills=main-only` (on the build
-overrides of the same day): c83c mismatches 31 → 22, 9555 11 → 1, 0c14
-plain 123 → 133, 489c 124 → 117 mismatches; 9a80 +1 mismatch, a27b and
-c7790 a few plain fewer; the hold-out row plain 65.0 → 64.8%, mismatch
-7.4 → 7.6%. Mixed, so the default stays `count`. Per combo it fits neither
-reading: c83c's fitted layers 3, 3, 1, 3, 2 (engine 2, 3, 2, 2, 3); her
-battle-button events come every 3.2–3.6 s (26 in 99 s, most with no hit
-and while she attacks), so most of them aren't strokes the replay can
-place; in the window before 55.6 s (Laevatain's battle skill and four
-such events) only one layer counts, before 82.8 s three (Si's battle
-skill, Laevatain's and the events). 0c14 (82.2 s one fewer, 122.5 s one
-more), 9555 (39.7 and 92.8 s one fewer) alike.
+(N2 with the first two presses, or within 10 s: the same counts; all her
+presses within 20 s: 60 / 1 / 7, wrong 9555 92.3 and c83c 55.1.)
 
-**Still possible (added):** what Si's periodic battle-button events are
-(like Liino's stance beats, `ticksLoggedAs`?) and whether some are presses
-that count; a layer lost or kept across her own ultimate (c83c's 55.6 s
-combo right after it at 54.4 s fits 1).
+**Decided by the logs:** anyone's battle skill feeds every wearer (H5, H6
+out; abfd: Si's and Bounda's counts from the same casts, ad7f Si's 3 and
+3); no expiry inside a fight (H9: c83c 55.1 keeps Laevatain's 18.3 s old
+layer, 0c14 59.3 Rossi's 23.9 s old one); one wearer's combo leaves the
+other's layers (H11 worse: abfd); casts count at their press, combos take
+them at their cast (H7, H8 no better); ultimates don't count (H4); Si's
+periodic hitless presses don't count (H1's misses: c83c 55.1 fits 1 with
+five of them in the window, 0c14 81.7, 4e36 37.4, c83c 97.9 alike), but
+her first press after her battle skill does (N2: c83c 35.8, 82.3, 0c14
+122.1, e989 53.0 need it; the press in Artful Intent's 20 s is Initial
+Stroke). Pauses: 3f78 (no hit 22.7–43.5 s) and 4a64 (29.2–51.3 s) fit
+one layer fewer than a cast before the pause gives, 7b54 (21.1–27.0 s)
+two fewer; abfd's 4.9 s pause keeps them (so 5–5.9 s, if it is a time;
+leaving battle, which the log doesn't record, is the likelier cause).
 
-**The events and her basic attack (test 16, 2026-11-18; counted over
-every development log with Si, multi-target
-included):** 282 of her 370 battle-skill cast events have no battle-skill
-hit (`normal_skill_abilityrange_1`) within 1.5 s; a real cast's hit comes
-400–650 ms after its event (73 casts). Her Final Strike lands 0–0.98 s
-after 28 of the hitless events (none with a battle-skill hit after it),
-so whatever they are, they don't end her basic attack: no timeline that
-replaces the current action starts. *Ruled out:* that they're battle
-skills interrupting the attack (no hit follows); that they're all
-strokes (most have no stroke hit: `inkmark_projhit` or `inkmove_2` follow
-only 8 of the 28, within 2.5 s). *Still possible:* presses the game switches to a buff
-(SkillData `switchToBuffConfig` with `asSkillCast`: her Final Stroke's
-has the buff xianjing_inkboom, as Last Rite's beside cast) or a periodic
-internal cast (`canDummyCast` is set on all three of her battle skills).
+**Fixed (2026-11-22), the replay (buffreplay.ts):** (1) castsFromBuffEnds
+inferred Si's Final Stroke from every Artful Intent burst the replay's
+mark outlasted, also from the mark's own burst (`inkmark_projhit`, the
+kit's branch without an Inksoul), where Final Stroke can't be cast (it
+needs the Inksoul): a forced Final Stroke and an Edge layer the damage
+hasn't (0c14 81.7, 489c 107.6: 3 → 2, the implied count). A skill that
+needs a buff the logged hit's branch says was off is no longer inferred;
+the logged end is the buff's expiry instead (an `expires` step: it ends
+then, with no cast; bdf2's burst at 24.32 s keeps its landing). The
+engine's score: 52 / 4 / 12 → 54 / 4 / 10. **Found, not fixed:**
+withLoggedCasts makes Laevatain's battle skill in Twilight twice when a
+stop holds its hits back (db87: the `normal_skill` event at 27.13 and
+40.78 s, the `normal_skill_during_ult` placed from hits at 29.00 and
+41.57 s, across Si's ultimate stop and combo slow-down: db87 41.2 has 3,
+the damage 2). Merging the press with the placed variant at the press
+fixed db87 (41.2 → 2, plain 114 → 126; its 29.43 s hit 65,139 → 84,681,
+logged 84,681) but broke Purrchena (04d4 at 5.23 s: there the press is
+her battle skill and the placed counter its next step), and the two kits
+look alike to a static rule (`not X` / `X`): the replay's state at the
+press has to decide (reverted, 69360fd).
 
-**Next check:** in-game test 106 (the buff's stack count on screen; its
-(d) is the strokes question).
+**Left (3 of 68 for N1 + N2):** c779 43.7 fits 2 and 64.9 fits 3 where
+N1 + N2 give 3 and 2 (one layer moved between two consecutive combos;
+which cast is the odd one the log can't say: the aura's reach isn't in
+it); 0c14 166.7 fits 3 with Jade Vessel's bonus, the engine has neither
+(two layers short after the 17.9 s pause). **The engine's replay, for
+N2:** it makes a press a stroke only where the log shows what it leads to
+(an inferred Final Stroke): it misses c83c 82.3's and 0c14 122.1's
+presses, makes a slot press there (c83c 51.8 s), and infers Final Strokes
+from Inksoul bursts (c83c 87.1, 9555 84.7 s) that come 2–3 s after the
+last press, which fits Artful Intent's expiry with the Inksoul up (its
+burst on that branch) better than Final Stroke (the Inksoul's burst is
+0.77–1.45 s after a press in 19 of 34, below): each a layer the damage
+hasn't. So a Final Stroke wants a press just before the burst; without
+one the end is the expiry (as (1)); not built.
 
+**Si's presses and Artful Intent's bursts (censuses):** 243 battle-skill
+instances of hers, 68 with a battle-skill hit 0–1.5 s after (rerun: `efsim
+zmdlogs census --select 'cast:jsspsi_normal_skill$' --operator
+chr_0036_jsspsi --near 'event:normal_skill_abilityrange_1' --near-operator
+chr_0036_jsspsi --window 0,1500`); 118 of them 1–20 s after one (`--window
+-20000,-1000`). The mark's own burst comes 0.42–1.16 s after a hitless
+press in 16 of 21 (rerun: `efsim zmdlogs census --select
+'event:normal_skill_inkmark_projhit' --operator chr_0036_jsspsi --near
+'cast:jsspsi_normal_skill$' --near-operator chr_0036_jsspsi --window
+-2000,0`), the Inksoul's in 19 of 34 (0.77–1.45 s; same with
+`event:normal_skill_inkmove_2`), never after a battle-skill hit within
+2 s: so a press can end Artful Intent without an Inksoul, which the kit
+can't (its only end before expiry is Final Stroke); 0c14 81.7 says that
+press gives no layer. Her basic attack: 28 hitless presses have her Final
+Strike 0–0.98 s after (test 16), so they replace no action.
+
+**Still possible:** what ends Artful Intent at a press without an Inksoul
+(Initial Stroke failing to pull it: its SkillData ChangeSkillAction
+`failActions`), and whether Final Stroke counts (`switchToBuffConfig`
+`asSkillCast`); a pause clearing the layers (leaving battle) — not
+modelled: the simulator's fights have no pause; c779's moved layer.
+
+**Next check:** in-game test 106 (b) and (d); in the engine, N2 in the
+replay (each press under Artful Intent as the stroke the slot holds) and
+Laevatain's press made once.
 ## Estella's Razorhorn ATK: on the Shattering hit; Lifts get about half
 
 **Fixed 2026-11-14 (sonnet diagnosis):** wpn_lance_0013's atk_up (+0.336)
@@ -1515,8 +1589,10 @@ low); for Si either alone (two inputs, above).
 and max-stack timing (the log lists two entries per layer), Si's ultimate
 window, the Endministrator's ATK buff and Razor Clawmark timing (the
 engine has Razor Clawmark's 0.12 at 52–60 s, the log doesn't). Si: her
-combos' Yinglung's Edge count (82.2 s one layer fewer, 122.5 s one more,
-167.1 s one more and Jade Vessel's next-combo bonus the engine hasn't: "Type 50 Yinglung's
+combos' Yinglung's Edge count (82.2 s one layer fewer: fixed 2026-11-22,
+a Final Stroke the replay inferred from the mark's own burst; 122.5 s one
+more: her press 7.7 s after her battle skill; 167.1 s one more and Jade
+Vessel's next-combo bonus the engine hasn't, open: "Type 50 Yinglung's
 Edge"). Alesh: ×1.146 at 26 s (the log lists her ATK buff twice, the
 engine once), ×1.38–1.44 at 59–60 s, her ultimates ×1.34 and ×1.90.
 For the replay: a cast inferred from a buff only it gives (a logged

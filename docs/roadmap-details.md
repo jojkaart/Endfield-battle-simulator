@@ -125,7 +125,10 @@ next to the owner's team under the same assumptions; the buff timing
 report's leads (`efsim zmdlogs timing`, done 2026-11-15; open-problems
 "Buff timing leads": Yvonne's MI Security on unlogged crits in 5082,
 Si's hitless ultimate in 9c0b, Hot Work on Combustion ticks); the loop's long openers and a 2-round loop; in-game tests 106
-(Yinglung's Edge) and 107 (Si's Amp across ultimates).
+(Yinglung's Edge: now only a pause / leaving combat and Final Stroke; the logs decided the rest, 2026-11-22) and 107
+(Si's Amp across ultimates); the replay's reading of Si's strokes (open-problems "Type 50 Yinglung's Edge": her first
+press after her battle skill counts, Final Strokes only with a press just before the burst) and Laevatain's Twilight
+battle skill the replay makes twice across a stop (db87; decided by the replay's state at the press, not statically).
 
 ## Engine accuracy
 
