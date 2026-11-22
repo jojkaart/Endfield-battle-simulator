@@ -407,8 +407,12 @@ mismatch against teammates' mismatches within 1.5 s at the same ratio
    48.89 s; 8915 9.24, 33.44 s; 00ae, d9e5); a combo's own event is one
    within 1.5 s of it (buffreplay.ts COMBO_EVENT_MS, for skills a buff's
    ticks are logged under), and a due tick waits up to 1 s for one
-   (TICK_HOLD_FRAMES). a7a7's three windows land within 0.1 s (was 0.2,
-   0.4 and 1.1 s off).
+   (TICK_HOLD_FRAMES). a7a7's lasers at 5.4 and 23.0 s land within 0.06 s
+   (were 0.2 and 0.4 s off); at 48.9 s they start at the logged start, the
+   log's batches at 49.37–50.01 s (one ms shared with every hit then) can't
+   say more (were 1.1 s early). Scoreboard: development plain 52.0 → 52.7%,
+   hold-out 67.3 → 68.7% (mismatch 6.7%, mean |damage error| 12.1 →
+   11.9%); Arcane's mismatches 863 → 854.
 
 The 8915 share of the stage logs (323) is the stage's own factor on her
 hits (test 7: 238 of her 278 hits in its windows within 1% of it, as
