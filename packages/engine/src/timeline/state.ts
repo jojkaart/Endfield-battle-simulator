@@ -162,6 +162,8 @@ export interface ScheduledHeader {
   readonly launchAt?: number;
   /** It stays at its frame whatever its clock or cast does (a replayed landing at its logged frame: the log's time has the slow-downs and jumps in already). */
   readonly pinned?: true;
+  /** A pinned landing's logged time (ms): pinned landings due in one frame land in the log's order (schedule.ts dueBefore). */
+  readonly loggedMs?: number;
 }
 
 /** A hit on its way: it lands at its frame (landing.ts landHit). */
