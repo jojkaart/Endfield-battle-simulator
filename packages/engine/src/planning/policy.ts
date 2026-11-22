@@ -45,6 +45,13 @@ export type PolicyCue =
   | { readonly status: string }
   /** Rank 3: the enemy's Vulnerable stacks. */
   | { readonly vulnerable: { readonly atLeast?: number; readonly below?: number } }
+  /**
+   * Rank 3: a status on the enemy at a level (0 when it isn't on): a reaction's level is the infliction stacks it
+   * consumed (1–4: Corrosion's strength, Electrification's), Breach's and Crush's the Vulnerable stacks; the player saw
+   * the stacks go in and the status's icon shows it. "Corrosion at full strength" is `{ status: "corrosion", atLeast: 4 }`.
+   * 2026-11-22.
+   */
+  | { readonly statusLevel: { readonly status: string; readonly atLeast?: number; readonly below?: number } }
   /** Rank 3: the enemy is Staggered (its bar shows it). */
   | { readonly staggered: boolean }
   /** Rank 3: how full the enemy's Stagger bar is, in percent (100 while it is Staggered). */
@@ -53,6 +60,16 @@ export type PolicyCue =
   | { readonly buff: { readonly operator: string; readonly buff: string } }
   /** Rank 4: the operator's ultimate is ready (energy full, off cooldown, available). */
   | { readonly ultimate: string }
+  /**
+   * Rank 4: how many of the team's ultimates are ready at once (each as the `ultimate` cue reads it), the icons in the
+   * same corner: "two or more ultimates lit" (a full-energy start, energy piling up). 2026-11-22.
+   */
+  | { readonly ultimates: { readonly atLeast?: number; readonly below?: number } }
+  /**
+   * Rank 5: how full an operator's ultimate gauge is, in percent of its ultimate's cost (its icon fills as energy comes;
+   * 100 when full, whether or not the ultimate can be cast): reading a partial gauge takes practice. 2026-11-22.
+   */
+  | { readonly energy: { readonly operator: string; readonly atLeast?: number; readonly below?: number } }
   /** Rank 5: the controlled operator's Final Strikes since this rule last fired (or since the fight started). */
   | { readonly finalStrikes: { readonly atLeast: number } }
   /** Rank 6: the operator's combo is off cooldown (lit or not). */
@@ -69,14 +86,34 @@ export interface PolicyRule {
   readonly do: PolicyStep | readonly PolicyStep[];
   /** What the rule is for, in the player's words (shown in reports). */
   readonly note?: string;
+  /** The rule set it belongs to (RuleList.sets): it is read only while that set's condition holds. None: always read. */
+  readonly set?: string;
+}
+
+/**
+ * A conditional rule set (docs/design/rules.md "Rule sets", the owner 2026-11-22: "sets of rules that are conditionally
+ * active", e.g. one while Corrosion is up at full strength and one while it isn't): its rules (those naming it in
+ * `set`) are read only while `when` holds, a cue of the same language the player watches. Its condition counts once in
+ * the list's learnability, however many rules it has.
+ */
+export interface RuleSet {
+  readonly name: string;
+  readonly when: PolicyCue;
+  readonly note?: string;
 }
 
 export interface RuleList {
   readonly description?: string;
   /** A few presses at the fight's start, each as soon as it can start, before any rule is read. */
   readonly opener: readonly PolicyStep[];
-  /** Ordered: at each moment the first rule whose cue the player has seen (after the reaction delay) and whose first press can start fires. */
+  /**
+   * Ordered: at each moment the first rule whose cue the player has seen (after the reaction delay) and whose first
+   * press can start fires. A rule of a set (PolicyRule.set) is in this one order too, read only while its set is active:
+   * one priority list with lines that apply only in a phase.
+   */
   readonly rules: readonly PolicyRule[];
+  /** The conditional rule sets its rules may name (none: every rule is always read; a list without sets is the always-active set alone). */
+  readonly sets?: readonly RuleSet[];
   /**
    * What the controlled operator does when no rule fires: its basic attacks (default) or dives (jump attacks, each once
    * the current skill is past its exclusive frames).
@@ -89,7 +126,7 @@ export interface RuleList {
  * up, 2 Typhoeus's arrows and Signs, SP, 3 the enemy's inflictions and statuses, 4 an ultimate ready (corner of the
  * screen), 5 counting Final Strikes, 6 a combo's cooldown, 7 a timer in the head.
  */
-export const POLICY_CUE_RANKS = { combo: 1, stacks: 2, sp: 2, infliction: 3, status: 3, vulnerable: 3, staggered: 3, stagger: 3, buff: 3, ultimate: 4, finalStrikes: 5, comboCooldown: 6, since: 7 } as const;
+export const POLICY_CUE_RANKS = { combo: 1, stacks: 2, sp: 2, infliction: 3, status: 3, vulnerable: 3, staggered: 3, stagger: 3, buff: 3, statusLevel: 3, ultimate: 4, ultimates: 4, energy: 5, finalStrikes: 5, comboCooldown: 6, since: 7 } as const;
 
 /** What a cue of each rank costs to learn and watch: the rank itself up to 3, steeper after; a timer counts heavily (owner: "avoid, or count heavily against"). */
 export const POLICY_RANK_COST: Readonly<Record<number, number>> = { 1: 1, 2: 2, 3: 3, 4: 5, 5: 6, 6: 7, 7: 20 };
@@ -149,7 +186,9 @@ export interface Learnability {
 }
 
 export function learnability(list: RuleList): Learnability {
-  const costs = list.rules.map((r) => cueCost(r.when));
+  // Each set's condition counts once (the player watches it as the phase, not per rule), when a rule uses the set.
+  const used = new Set(list.rules.flatMap((r) => (r.set === undefined ? [] : [r.set])));
+  const costs = [...list.rules.map((r) => cueCost(r.when)), ...(list.sets ?? []).filter((x) => used.has(x.name)).map((x) => cueCost(x.when))];
   const ruleSteps = list.rules.reduce((a, r) => a + stepsOf(r).length, 0);
   const cue = costs.reduce((a, c) => a + c.cost, 0);
   return { openerSteps: list.opener.length, rules: list.rules.length, ruleSteps, cueCost: cue, hardestRank: Math.max(0, ...costs.map((c) => c.rank)), complexity: list.opener.length + ruleSteps + cue };
@@ -186,10 +225,19 @@ export function describeCue(data: GameData, cue: PolicyCue): string {
   if ("not" in cue) {
     if ("buff" in cue.not) return buffWords(data, cue.not.buff, false);
     if ("staggered" in cue.not) return describeCue(data, { staggered: !cue.not.staggered });
+    if ("statusLevel" in cue.not && cue.not.statusLevel.below === undefined && cue.not.statusLevel.atLeast !== undefined) return describeCue(data, { statusLevel: { status: cue.not.statusLevel.status, below: cue.not.statusLevel.atLeast } });
+    if ("status" in cue.not) return `the enemy hasn't ${cue.not.status[0]?.toUpperCase()}${cue.not.status.slice(1)}`;
     return `not (${describeCue(data, cue.not)})`;
   }
   if ("combo" in cue) return `${name(cue.combo)}'s combo lights up`;
   if ("ultimate" in cue) return `${name(cue.ultimate)}'s ultimate is ready`;
+  if ("ultimates" in cue) {
+    const r = cue.ultimates;
+    if (r.below === undefined) return `${r.atLeast} or more ultimates are ready`;
+    if (r.atLeast === undefined) return r.below === 1 ? "no ultimate is ready" : `fewer than ${r.below} ultimates are ready`;
+    return `${rangeWords(r)} ultimates are ready`;
+  }
+  if ("energy" in cue) return `${name(cue.energy.operator)}'s ultimate gauge is ${rangeWords(cue.energy)}% full`;
   if ("comboCooldown" in cue) return `${name(cue.comboCooldown)}'s combo is off cooldown`;
   if ("stacks" in cue) return `${name(cue.stacks.operator)}'s ${data.kits.operators[cue.stacks.operator]?.stacks?.find((s) => s.id === cue.stacks.stack)?.label ?? cue.stacks.stack}: ${rangeWords(cue.stacks)}`;
   if ("sp" in cue) return `SP ${rangeWords(cue.sp)}`;
@@ -198,6 +246,13 @@ export function describeCue(data: GameData, cue: PolicyCue): string {
     return cue.infliction.atLeast === undefined && cue.infliction.below === undefined ? `the enemy has ${el} infliction` : `the enemy has ${el} infliction, ${rangeWords(cue.infliction)} stacks`;
   }
   if ("status" in cue) return `the enemy has ${cue.status[0]?.toUpperCase()}${cue.status.slice(1)}`;
+  if ("statusLevel" in cue) {
+    const n = `${cue.statusLevel.status[0]?.toUpperCase()}${cue.statusLevel.status.slice(1)}`;
+    const r = cue.statusLevel;
+    if (r.atLeast !== undefined && r.below === undefined) return r.atLeast <= 1 ? `the enemy has ${n}` : `the enemy has ${n} at level ${r.atLeast} or more`;
+    if (r.atLeast === undefined && r.below !== undefined) return r.below <= 1 ? `the enemy hasn't ${n}` : `the enemy hasn't ${n} at level ${r.below} or more`;
+    return `the enemy has ${n} at level ${rangeWords(r)}`;
+  }
   if ("vulnerable" in cue) return `the enemy's Vulnerable stacks ${rangeWords(cue.vulnerable)}`;
   if ("staggered" in cue) return cue.staggered ? "the enemy is Staggered" : "the enemy isn't Staggered";
   if ("stagger" in cue) return `the enemy's Stagger bar is ${rangeWords(cue.stagger)}% full`;
@@ -207,10 +262,31 @@ export function describeCue(data: GameData, cue: PolicyCue): string {
   return JSON.stringify(cue);
 }
 
-/** A rule as the player would say it ("When Arcane's combo lights up: Estella's battle skill, then Arcane's combo"). */
-export function describeRule(data: GameData, r: PolicyRule): string {
+/** A rule as the player would say it ("When Arcane's combo lights up: Estella's battle skill, then Arcane's combo"); a rule of a set says its set's condition first. */
+export function describeRule(data: GameData, r: PolicyRule, sets?: readonly RuleSet[]): string {
   const when = describeCue(data, r.when);
-  return `When ${when}: ${stepsOf(r).map((s) => describeStep(data, s)).join(", then ")}`;
+  const set = r.set === undefined ? undefined : sets?.find((x) => x.name === r.set);
+  const phase = r.set === undefined ? "" : `[${r.set}${set ? `: while ${describeCue(data, set.when)}` : ""}] `;
+  return `${phase}When ${when}: ${stepsOf(r).map((s) => describeStep(data, s)).join(", then ")}`;
+}
+
+/**
+ * The list as the driver reads it: each rule of a set with its set's condition joined to its cue (all of both), in the
+ * list's order, the sets dropped. A flat list is itself. Rule i of the result is rule i of the list.
+ */
+export function effectiveRules(list: RuleList): RuleList {
+  if (!list.sets?.length && !list.rules.some((r) => r.set !== undefined)) return list;
+  const cond = new Map((list.sets ?? []).map((x) => [x.name, x.when]));
+  const { sets: _s, ...rest } = list;
+  return {
+    ...rest,
+    rules: list.rules.map(({ set, ...r }) => {
+      if (set === undefined) return r;
+      const c = cond.get(set);
+      if (c === undefined) throw new EngineError(`a rule names the set ${set}, which the list doesn't define`);
+      return { ...r, when: { all: [c, ...("all" in r.when ? r.when.all : [r.when])] } };
+    }),
+  };
 }
 
 // --- Checking a list against a team ----------------------------------------------
@@ -245,6 +321,17 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
     if ("not" in c) return { not: cue(c.not, `${where}.not`) };
     if ("combo" in c) return { combo: opId(c.combo, where) };
     if ("ultimate" in c) return { ultimate: opId(c.ultimate, where) };
+    if ("ultimates" in c) {
+      range(c.ultimates, where);
+      for (const v of [c.ultimates.atLeast, c.ultimates.below]) if (v !== undefined && !(Number.isInteger(v) && v >= 0 && v <= team.length + 1)) throw new EngineError(`${where}: a count of ultimates is a whole number from 0 to ${team.length + 1}`);
+      return c;
+    }
+    if ("energy" in c) {
+      const op = opId(c.energy.operator, where);
+      range(c.energy, where);
+      for (const v of [c.energy.atLeast, c.energy.below]) if (v !== undefined && !(v >= 0 && v <= 101)) throw new EngineError(`${where}: an ultimate gauge is 0 to 100 (%)`);
+      return { energy: { ...c.energy, operator: op } };
+    }
     if ("comboCooldown" in c) return { comboCooldown: opId(c.comboCooldown, where) };
     if ("stacks" in c) {
       const op = opId(c.stacks.operator, where);
@@ -254,6 +341,11 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
     }
     if ("sp" in c) return range(c.sp, where), c;
     if ("vulnerable" in c) return range(c.vulnerable, where), c;
+    if ("statusLevel" in c) {
+      if (![...REACTIONS, ...PHYSICALS].includes(c.statusLevel.status as ReactionStatus)) throw new EngineError(`${where}: unknown status ${c.statusLevel.status} (${[...REACTIONS, ...PHYSICALS].join(", ")})`);
+      range(c.statusLevel, where);
+      return c;
+    }
     if ("infliction" in c) {
       if (c.infliction.element !== undefined && !(c.infliction.element in ELEMENTS)) throw new EngineError(`${where}: unknown element ${c.infliction.element} (heat, electric, cryo, nature)`);
       return c;
@@ -281,6 +373,12 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
     throw new EngineError(`${where}: unknown cue ${keys[0]}`);
   };
   if (list.filler !== undefined && list.filler !== "basic" && list.filler !== "dive") throw new EngineError(`filler must be basic or dive, not ${String(list.filler)}`);
+  const names = new Set<string>();
+  const sets = (list.sets ?? []).map((x, i) => {
+    if (!x.name || names.has(x.name)) throw new EngineError(`sets[${i}]: each set has a name of its own (${x.name || "none"})`);
+    names.add(x.name);
+    return { name: x.name, when: cue(x.when, `sets[${i}].when`), ...(x.note !== undefined ? { note: x.note } : {}) };
+  });
   return {
     ...(list.description !== undefined ? { description: list.description } : {}),
     ...(list.filler !== undefined ? { filler: list.filler } : {}),
@@ -288,8 +386,10 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
     rules: list.rules.map((r, i) => {
       const steps = stepsOf(r);
       if (steps.length < 1 || steps.length > 3) throw new EngineError(`rules[${i}]: do has 1 to 3 presses, not ${steps.length}`);
-      return { when: cue(r.when, `rules[${i}].when`), do: steps.map((s, j) => step(s, `rules[${i}].do[${j}]`)), ...(r.note !== undefined ? { note: r.note } : {}) };
+      if (r.set !== undefined && !names.has(r.set)) throw new EngineError(`rules[${i}]: set ${r.set} isn't one of the list's sets (${[...names].join(", ") || "none"})`);
+      return { when: cue(r.when, `rules[${i}].when`), do: steps.map((s, j) => step(s, `rules[${i}].do[${j}]`)), ...(r.note !== undefined ? { note: r.note } : {}), ...(r.set !== undefined ? { set: r.set } : {}) };
     }),
+    ...(sets.length ? { sets } : {}),
   };
 }
 
@@ -471,6 +571,15 @@ function comboLit(env: CueEnv, op: string, needWindow: boolean): boolean {
   return !needWindow || !needsWindow(ctx, op, kitSkill(ctx, op, id)) || windowOpen(st, op, windowKey(ctx, op, id), frame);
 }
 
+/** The operator's ultimate is ready: the skill its button shows off cooldown, its energy full (the `ultimate` cue). */
+function ultimateReady(env: CueEnv, op: string): boolean {
+  const { ctx, st, frame } = env;
+  const id = buttonSkill(ctx, st, op, "ultimate", frame);
+  if (id === null || (st.readyAt[id] ?? 0) > frame) return false;
+  const cost = skillCosts(ctx, op, id, frame).energyCost;
+  return (st.energy[op] ?? 0) >= Math.min(cost, maxEnergy(ctx, op)) - 1e-9;
+}
+
 function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
   const { ctx, st, frame } = env;
   if ("all" in cue) return cue.all.every((c) => cueHolds(env, c));
@@ -478,12 +587,13 @@ function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
   if ("not" in cue) return !cueHolds(env, cue.not);
   if ("combo" in cue) return comboLit(env, cue.combo, true);
   if ("comboCooldown" in cue) return comboLit(env, cue.comboCooldown, false);
-  if ("ultimate" in cue) {
-    const op = cue.ultimate;
-    const id = buttonSkill(ctx, st, op, "ultimate", frame);
-    if (id === null || (st.readyAt[id] ?? 0) > frame) return false;
-    const cost = skillCosts(ctx, op, id, frame).energyCost;
-    return (st.energy[op] ?? 0) >= Math.min(cost, maxEnergy(ctx, op)) - 1e-9;
+  if ("ultimate" in cue) return ultimateReady(env, cue.ultimate);
+  if ("ultimates" in cue) return inRange(ctx.scenario.team.filter((b) => ultimateReady(env, b.operator)).length, cue.ultimates);
+  if ("energy" in cue) {
+    const max = maxEnergy(ctx, cue.energy.operator);
+    // Percent of the gauge, snapped to a hundredth of a percent (energy comes in fractions: no 49.99999 at a half).
+    const full = max > 0 ? Math.round((10000 * (st.energy[cue.energy.operator] ?? 0)) / max) / 100 : 0;
+    return inRange(full, cue.energy);
   }
   if ("stacks" in cue) return inRange(st.stacks[cue.stacks.operator]?.[cue.stacks.stack] ?? 0, cue.stacks);
   if ("sp" in cue) return inRange(spAt(st, frame), cue.sp);
@@ -498,6 +608,11 @@ function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
     return st.enemy.statuses.some((x) => x.status === s && x.expiresAt > frame) || st.enemy.physical.some((x) => x.status === s && x.expiresAt > frame);
   }
   if ("vulnerable" in cue) return inRange(st.enemy.vulnerable && st.enemy.vulnerable.expiresAt > frame ? st.enemy.vulnerable.stacks : 0, cue.vulnerable);
+  if ("statusLevel" in cue) {
+    const x = cue.statusLevel.status;
+    const on = [...st.enemy.statuses, ...st.enemy.physical].find((y) => y.status === x && y.expiresAt > frame);
+    return inRange(on ? on.level : 0, cue.statusLevel);
+  }
   if ("staggered" in cue) return isStaggered(st, frame) === cue.staggered;
   if ("stagger" in cue) {
     const max = maxPoise(ctx);
@@ -548,7 +663,9 @@ function cueClocks(list: RuleList): { readonly sp: readonly number[]; readonly s
  * hits. The driver visits only the frames where something can change (stepping `events`, the default; module comment
  * at nextWake); `frames` visits every frame and gives the same run (tests/policy.test.ts).
  */
-export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rotation">, list: RuleList, options: PolicyOptions = {}): PolicyRun {
+export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rotation">, given: RuleList, options: PolicyOptions = {}): PolicyRun {
+  // A rule of a set is read with its set's condition (effectiveRules); rule i is still the list's rule i.
+  const list = effectiveRules(given);
   const ctx = memoised(createContext(data, { ...scenario, rotation: [] }));
   const reaction = Math.round((options.reactionSeconds ?? POLICY_REACTION_SECONDS) * FPS);
   const jitter = options.jitter ?? POLICY_JITTER;

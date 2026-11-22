@@ -21,7 +21,7 @@
 // judged by play on common random numbers (the CLI's guided search). A planning aid, never part of a fight's result.
 
 import { EngineError, kitSkill, panelAt, SP, spAt, FPS, type Modifier, type Zone, type GameData, type LandedHit, type TimelineScenario, type StatPanel } from "../core.ts";
-import { describeCue, describeStep, playRules, visibleBuffs, visibleStacks, stepsOf, type PolicyCue, type PolicyFrameView, type PolicyOptions, type PolicyRule, type PolicyRun, type PolicyStep, type RuleList } from "./policy.ts";
+import { describeCue, describeStep, playRules, visibleBuffs, visibleStacks, stepsOf, type PolicyCue, type PolicyFrameView, type PolicyOptions, type PolicyRule, type PolicyRun, type PolicyStep, type RuleList, type RuleSet } from "./policy.ts";
 
 // --- Multipliers ------------------------------------------------------------------------------------------------
 
@@ -147,6 +147,10 @@ export function guideCues(data: GameData, team: readonly string[]): PolicyCue[] 
   for (const status of ["solidification", "corrosion", "combustion", "electrification", "breach", "lift", "knockdown", "crush"]) cues.push({ status });
   for (const element of ["heat", "electric", "cryo", "nature"]) cues.push({ infliction: { element } });
   cues.push({ vulnerable: { atLeast: 1 } }, { sp: { atLeast: 100 } }, { sp: { atLeast: 200 } });
+  // What tells the fight's starts apart (2026-11-22): ultimates piling up, how full each gauge is; and the reactions' full strength.
+  cues.push({ ultimates: { atLeast: 2 } });
+  for (const op of team) if (has(data, op, "ultimate")) cues.push({ energy: { operator: op, atLeast: 50 } });
+  for (const status of ["corrosion", "electrification"]) cues.push({ statusLevel: { status, atLeast: 4 } });
   return cues;
 }
 
@@ -498,7 +502,7 @@ export function summariseGuide(runs: readonly GuideRun[]): GuideSummary {
 
 // --- Directed edits -------------------------------------------------------------------------------------------
 
-export type GuidedEditKind = "hold-giver" | "chain" | "start-window" | "save-sp" | "shows" | "spare-sp" | "move-up" | "random";
+export type GuidedEditKind = "hold-giver" | "chain" | "start-window" | "save-sp" | "shows" | "spare-sp" | "move-up" | "setup" | "move-set" | "by-start" | "random";
 
 export interface GuidedCandidate {
   readonly list: RuleList;
@@ -564,6 +568,8 @@ export interface GuidedEditOptions {
   readonly randomEdit?: (rng: () => number, list: RuleList) => RuleList;
   /** Lists already judged (resolved JSON): not proposed again. */
   readonly tried?: ReadonlySet<string>;
+  /** Setup sets (reactionSetupEdits) proposed (default true). */
+  readonly setups?: boolean;
 }
 
 /**
@@ -694,8 +700,24 @@ export function guidedEdits(data: GameData, list: RuleList, s: GuideSummary, opt
       push({ list: withRules([...list.rules, rule]), kind: "spare-sp", text: `New last rule: SP at least 200: ${name(op)}'s battle skill (SP at the cap ${(s.spAtCapShare * 100).toFixed(0)}% of the fight)` });
     }
   }
+  // A setup phase for a reaction (a rule set while it isn't up at full strength), and rules moved between sets.
+  const extra: GuidedCandidate[] = [];
+  const add = (c: GuidedCandidate) => {
+    const k = JSON.stringify(c.list);
+    if (keys.has(k)) return;
+    keys.add(k);
+    extra.push(c);
+  };
+  if (options.setups !== false) {
+    // Reactions by what their status already adds to the windows (its losses), Corrosion first among equals.
+    const weight = (c: GuidedCandidate) => s.losses.filter((l) => l.multiplier === c.target?.multiplier).reduce((a, l) => a + l.lossDps, 0);
+    const setups = reactionSetupEdits(data, list).map((c, i) => ({ c, i, w: weight(c) }));
+    setups.sort((a, b) => b.w - a.w || a.i - b.i);
+    setups.slice(0, 8).forEach((x) => add(x.c));
+  }
+  setMoveEdits(data, list).slice(0, 4).forEach(add);
   const max = options.max ?? 28;
-  const guided = out.slice(0, max);
+  const guided = [...out.slice(0, Math.max(0, max - extra.length)), ...extra];
   // The rule search's random moves, as a complement.
   if (options.randomEdit && options.rng) {
     for (let i = 0, made = 0; made < (options.random ?? 4) && i < 40; i++) {
@@ -710,6 +732,120 @@ export function guidedEdits(data: GameData, list: RuleList, s: GuideSummary, opt
   return guided;
 }
 
+// --- Rule sets: setups, moves, an edit split by the start -----------------------------------------------------
+
+const REACTION_ELEMENT: Readonly<Record<string, string>> = { corrosion: "natural", electrification: "pulse", combustion: "fire", solidification: "cryst" };
+const CUE_ELEMENT: Readonly<Record<string, string>> = { natural: "nature", pulse: "electric", fire: "heat", cryst: "cryo" };
+
+/** The concrete elements a button's skills inflict (kit hits' `applies`), by operator and button. */
+export function buttonInflictions(data: GameData, op: string, cast: "battle" | "combo" | "ultimate"): string[] {
+  const els = new Set<string>();
+  for (const k of data.kits.operators[op]?.skills ?? []) {
+    if (k.kind !== cast || k.followUpOnly) continue;
+    for (const h of k.hits) for (const a of h.applies ?? []) if (a.kind === "infliction" && typeof a.element === "string" && a.element in CUE_ELEMENT) els.add(a.element);
+  }
+  return [...els];
+}
+
+/**
+ * Setup sets for a reaction (the owner, 2026-11-22: "any team with Arcane and someone who can do an infliction other
+ * than Nature can relatively easily apply full strength Corrosion as a setup phase"): a set read while the reaction
+ * isn't up at level `level` (4: full strength, the stacks it consumes), with two rules: when another element's
+ * infliction has `level` stacks, the reaction's applier (a battle skill inflicting its element: Arcane's Nature);
+ * otherwise that element's inflicter (a battle skill inflicting only it: Akekuri's Heat, Perlica's Electric), from
+ * spare SP only (200: the team's own battle skills keep theirs) or whenever it can. The set goes after the list's
+ * leading ultimate rules or first; with or without the list's own presses of the applier moved
+ * into a set read while the reaction is up (so they don't spend the stacks too early). Judged by play like any edit.
+ */
+export function reactionSetupEdits(data: GameData, list: RuleList, level = 4): GuidedCandidate[] {
+  const name = (op: string) => data.operators[op]?.name ?? op;
+  const team = [...new Set([...list.opener, ...list.rules.flatMap(stepsOf)].map((x) => x.operator))];
+  const out: GuidedCandidate[] = [];
+  const lead = list.rules.findIndex((r) => !pressesFirst(r, (stepsOf(r)[0] as PolicyStep).operator, "ultimate"));
+  const afterUlts = lead < 0 ? list.rules.length : lead;
+  for (const [status, el] of Object.entries(REACTION_ELEMENT)) {
+    const appliers = team.filter((op) => buttonInflictions(data, op, "battle").join() === el);
+    for (const ap of appliers) {
+      for (const op of team) {
+        if (op === ap) continue;
+        const els = buttonInflictions(data, op, "battle");
+        if (els.length !== 1 || els[0] === el) continue;
+        const x = CUE_ELEMENT[els[0] as string] as string;
+        const setName = `${status} setup`;
+        if ((list.sets ?? []).some((y) => y.name === setName)) continue;
+        const setup: RuleSet = { name: setName, when: { statusLevel: { status, below: level } } };
+        const up: RuleSet = { name: `${status} up`, when: { statusLevel: { status, atLeast: level } } };
+        const rApply: PolicyRule = { when: { infliction: { element: x, atLeast: level } }, do: { operator: ap, cast: "battle" }, set: setName };
+        for (const thrift of [true, false])
+        for (const at of new Set([afterUlts, 0])) {
+          for (const hold of [false, true]) {
+            // Thrifty: the stacks built only from spare SP (200), so the team's own battle skills keep theirs.
+            const notYet: PolicyCue = { not: { infliction: { element: x, atLeast: level } } };
+            const rBuild: PolicyRule = { when: thrift ? { all: [notYet, { sp: { atLeast: 200 } }] } : notYet, do: { operator: op, cast: "battle" }, set: setName };
+            const base = hold ? list.rules.map((r) => (r.set === undefined && stepsOf(r).some((y) => y.operator === ap && y.cast === "battle") ? { ...r, set: up.name } : r)) : list.rules;
+            if (hold && base.every((r, i) => r === list.rules[i])) continue;
+            const rules = [...base.slice(0, at), rApply, rBuild, ...base.slice(at)];
+            const sets = [...(list.sets ?? []), setup, ...(hold ? [up] : [])];
+            out.push({
+              list: { ...list, rules, sets },
+              kind: "setup",
+              target: { window: "", multiplier: `status:${status}` },
+              text: `Setup set while the enemy hasn't ${status} at level ${level}: ${name(op)}'s battle skill${thrift ? " from 200 SP" : ""} until ${level} ${x} stacks, then ${name(ap)}'s battle skill${at === 0 ? ", first" : ", after the ultimates"}${hold ? `; ${name(ap)}'s other battle-skill presses only while it's up` : ""}`,
+            });
+          }
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/** A list's rules moved between its sets: each rule of a set out of it (always read), and each always-read battle-skill rule into each set. */
+export function setMoveEdits(data: GameData, list: RuleList): GuidedCandidate[] {
+  const sets = list.sets ?? [];
+  if (sets.length === 0) return [];
+  const out: GuidedCandidate[] = [];
+  list.rules.forEach((r, i) => {
+    const targets: (string | undefined)[] = r.set !== undefined ? [undefined, ...sets.map((x) => x.name).filter((n) => n !== r.set)] : stepsOf(r).some((x) => x.cast === "battle") ? sets.map((x) => x.name) : [];
+    for (const to of targets) {
+      const { set: _s, ...rest } = r;
+      const rules: PolicyRule[] = list.rules.map((y, j) => (j === i ? (to === undefined ? rest : { ...rest, set: to }) : y));
+      const used = new Set(rules.flatMap((y) => (y.set === undefined ? [] : [y.set])));
+      const kept = sets.filter((x) => used.has(x.name));
+      const { sets: _old, ...l } = list;
+      out.push({ list: { ...l, rules, ...(kept.length ? { sets: kept } : {}) }, kind: "move-set", text: `Rule ${i + 1} (${describeStep(data, stepsOf(r)[0] as PolicyStep)}) ${to === undefined ? `out of set ${r.set}: always read` : `into set ${to}`}` });
+    }
+  });
+  return out;
+}
+
+/**
+ * An edit of `base` read only while `cue` holds, the old rule while it doesn't (a set each: the decision of an edit
+ * that is right from one start and wrong from the other, by a cue that tells them apart in play). An in-place edit of
+ * rules: each changed rule in a set on the cue, the old one beside it in a set on its negation; an added rule: in the
+ * set on the cue. Null for other edits (rules removed or moved), or when base already has sets of those names.
+ */
+export function splitEdit(base: RuleList, edited: RuleList, cue: PolicyCue, name: string): RuleList | null {
+  const same = (x: unknown, y: unknown) => JSON.stringify(x) === JSON.stringify(y);
+  const on: RuleSet = { name, when: cue };
+  const off: RuleSet = { name: `not ${name}`, when: { not: cue } };
+  if ((base.sets ?? []).some((x) => x.name === on.name || x.name === off.name) || !same(base.opener, edited.opener) || base.filler !== edited.filler) return null;
+  const n = base.rules.length;
+  if (edited.rules.length === n) {
+    const changed = base.rules.map((r, i) => (same(r, edited.rules[i]) ? -1 : i)).filter((i) => i >= 0);
+    if (changed.length === 0 || changed.some((i) => base.rules[i]?.set !== undefined || edited.rules[i]?.set !== undefined)) return null;
+    const rules = base.rules.flatMap((r, i) => (changed.includes(i) ? [{ ...(edited.rules[i] as PolicyRule), set: on.name }, { ...r, set: off.name }] : [r]));
+    return { ...base, rules, sets: [...(base.sets ?? []), on, off] };
+  }
+  if (edited.rules.length === n + 1) {
+    const at = edited.rules.findIndex((r, i) => !same(r, base.rules[i]));
+    if (!same(edited.rules.slice(at + 1), base.rules.slice(at))) return null;
+    const rules = edited.rules.map((r, i) => (i === at ? { ...r, set: on.name } : r));
+    return { ...base, rules, sets: [...(base.sets ?? []), on] };
+  }
+  return null;
+}
+
 /**
  * Two edits of `base` together, when each only changed rules in place (same opener, filler and number of rules) and
  * they changed different rules: `a` with `b`'s changed rules; null otherwise.
@@ -717,7 +853,7 @@ export function guidedEdits(data: GameData, list: RuleList, s: GuideSummary, opt
 export function mergeEdits(base: RuleList, a: RuleList, b: RuleList): RuleList | null {
   const same = (x: unknown, y: unknown) => JSON.stringify(x) === JSON.stringify(y);
   const n = base.rules.length;
-  if (a.rules.length !== n || b.rules.length !== n || !same(a.opener, base.opener) || !same(b.opener, base.opener) || a.filler !== base.filler || b.filler !== base.filler) return null;
+  if (a.rules.length !== n || b.rules.length !== n || !same(a.opener, base.opener) || !same(b.opener, base.opener) || a.filler !== base.filler || b.filler !== base.filler || !same(a.sets, base.sets) || !same(b.sets, base.sets)) return null;
   const changed = (l: RuleList) => base.rules.map((r, i) => (same(r, l.rules[i]) ? -1 : i)).filter((i) => i >= 0);
   const ca = changed(a);
   const cb = changed(b);
@@ -748,6 +884,22 @@ export function pairedGain(base: readonly number[], other: readonly number[]): {
   const m = d.reduce((a, x) => a + x, 0) / n;
   const sd = n > 1 ? Math.sqrt(d.reduce((a, x) => a + (x - m) ** 2, 0) / (n - 1)) : Infinity;
   return { gain: m / b, se: sd / Math.sqrt(n) / b };
+}
+
+/**
+ * The rule search's objective over several starts of one fight (docs/design/rules.md "The objective across starts"):
+ * per seed, the mean of the starts' sustained DPS (each start's run on that seed), weighted (default: equally). A
+ * list's score is the team's expected sustained DPS when its fights start each way that often; two lists compared on
+ * these per-seed values are paired on every start at once (pairedGain, judgeEdit). Seeds beyond the shortest start's
+ * runs are dropped.
+ */
+export function startsObjective(perStart: readonly (readonly number[])[], weights?: readonly number[]): number[] {
+  if (perStart.length === 0) throw new EngineError("no starts");
+  const w = weights ?? perStart.map(() => 1);
+  if (w.length !== perStart.length || w.some((x) => !(x >= 0)) || !(w.reduce((a, x) => a + x, 0) > 0)) throw new EngineError("one weight ≥ 0 per start, not all 0");
+  const W = w.reduce((a, x) => a + x, 0);
+  const n = Math.min(...perStart.map((xs) => xs.length));
+  return Array.from({ length: n }, (_, i) => perStart.reduce((a, xs, s) => a + (w[s] as number) * (xs[i] as number), 0) / W);
 }
 
 /**

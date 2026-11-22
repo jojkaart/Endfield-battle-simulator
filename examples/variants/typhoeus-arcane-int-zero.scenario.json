@@ -1,0 +1,234 @@
+{
+  "$schema": "../../schemas/scenario.schema.json",
+  "description": "Typhoeus, Arcane, Liino, Perlica (docs/teams/typhoeus-arcane-liino-perlica.md \"Gear played by the rules\") with Arcane on the logs' Hot Work loadout (Hot Work Exo-Rig, Hot Work Hands PPE, Hot Work Insulation Slab, LYNX Slab; full artifice): Intellect above Will, so INT mode. The team page's example otherwise (no ultimate energy at the start). For rule lists only (efsim rules, --guided): no timeline rotation.",
+  "team": [
+    {
+      "operator": "chr_0034_typhoea",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_funnel_0019",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          4
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_combo_cd01_edc_02",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_spellburst_body_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_spellburst_edc_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_spellburst_hand_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_funnel_0016",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          4
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_fire_natr01_body_02",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_fire_natr01_hand_04",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_fire_natr01_edc_04",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_heal01_edc_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "operator": "chr_0035_liino",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_lance_0014",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          4
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_usp02_body_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_heal01_hand_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_heal01_edc_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_heal01_edc_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_funnel_0005",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          9
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_heal01_edc_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_pulse_cryst01_body_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_pulse_cryst01_edc_02",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_pulse_cryst01_hand_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    }
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "controlled": "chr_0034_typhoea",
+  "durationSeconds": 60,
+  "crit": "expected",
+  "rotation": []
+}
