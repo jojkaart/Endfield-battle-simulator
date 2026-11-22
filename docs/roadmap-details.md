@@ -144,7 +144,7 @@ SP the replay still lacks (open-problems "Team SP": teammates' unlanded
 basic attacks, Purrchena's blocks; Liino's beats done 2026-11-13, 1d91's
 extra heal left);
 next the screened logs' leads ([open-problems.md](open-problems.md):
-what each has ruled out and what still stands; Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
+what each has ruled out and what still stands; Rossi's ultimate ×1.081 in 2fd9 (9a80's fits since before 2026-11-22), Mi Fu ×1.11 in Hard
 27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
 eny_0134 logs' food in de6a (0c14's: Kunst Tube on all but Alesh, 2026-11-18); Yvonne −23% in 5082 and
 Ardelia's sheep ×1.407 in 791, both unmasked 2026-11-14), diagnosed in parallel (small
@@ -186,7 +186,10 @@ and stays one battle), then `--percentile` from the distribution.
 **Log check leads** (design/data.md "The log check's rule"; the report names
 them, largest first): Stagger the log has that no logged hit explains
 (4e5e: 68 over 53.2–55.4 s in three steps, two not whole numbers:
-Solidification or Shatter?), Rossi's Wolven Blood layers, Typhoeus's hover through
+Solidification or Shatter?), Rossi's Wolven Blood max-stack bonus and combo Crit DMG lasting
+0.5–2.5 s longer or shorter than the replay's (2026-11-22: her bleed keeps only ATK, its first
+tick lacks its DMG Taken, its ticks follow the log's clock, her ultimate's crits come from
+the logged Seething Blood extras: open-problems "Rossi: her bleed"), Typhoeus's hover through
 her combo, Arcane's Solemn Phalanx WILL buffs, Camille's weapon ATK the
 log stops listing, the replay's inflictions against the log's reactions
 (one enemy replay instead of reactioncheck.ts's own; reaction levels
