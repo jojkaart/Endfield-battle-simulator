@@ -191,6 +191,12 @@ ultimate cost cut is gone, so the rotations can't be replayed; a
 energy and 3,194,605 from zero, against 5,205,516 and 3,932,836 at P5 by
 the same search (−8.4% and −18.8%).
 
+Arcane's Imprisonment (2026-11-22,
+[journal](../journal/2026-11-22-01-arcane-s-imprisonment-end-and-her-int-lasers.md)):
+her explosion 0.5 s earlier (the seal's tick): rules sd 52,949 → 52,955 /
+50,194 → 50,177 (full / zero, within the noise), the 60 s timeline 95,089 →
+95,113.
+
 Typhoeus's share is the hover: her aerial basic attacks and their forced
 Nature Bursts (Power Shots), under Liino's Cosmovoice Amp and weapon ATK,
 Arcane's Susceptibility and WILL debuffs, Electrification (Perlica's combo,

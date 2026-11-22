@@ -77,14 +77,40 @@
           ]
         }
       },
+      "every": {
+        "if": {
+          "attrAtLeast": [
+            41,
+            42
+          ]
+        },
+        "then": {
+          "sum": [
+            "duration_pre",
+            "duration",
+            -0.5
+          ]
+        },
+        "else": {
+          "sum": [
+            "duration_pre",
+            "duration_will",
+            -0.5
+          ]
+        }
+      },
+      "ticksLoggedAs": "chr_0032_lizhiyan_combo_skill",
+      "endFollowsTick": true,
+      "runsThroughFreeze": true,
       "modifiers": [],
       "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_seal",
-      "note": "buff_chr_0032_lizhiyan_combo_skill_seal from seal_total frame 9: INT duration_pre + duration (4.633 s), WILL duration_pre + duration_will (6.633 s). Its slow-down of the enemy's clock isn't modelled (open list Ti1b, test 37)."
+      "note": "buff_chr_0032_lizhiyan_combo_skill_seal from seal_total frame 2: INT duration_pre + duration (4.633 s), WILL duration_pre + duration_will (6.633 s). Its natural end's explosion isn't at its end: the combo sets trigger_time = duration_final − 0.5 (SimpleCalcBB), and the seal's one tick (triggerInterval trigger_time, waitFirstTriggerInterval, maxTriggerCnt 1; buffEvent 1) casts abilityentity_end, whose hit lands 14 frames later, 0.03 s before the seal ends (`every`: trigger explosion). The log records that CastSkill as a combo cast (docs/design/data.md \"What the log records\"): 4.0 s (INT) / 6.0 s (WILL) after the touch where nothing holds it (b6aa 5972 / 5961 ms, 1d91 5987 ms). abilityEvent 8 (its holder defeated), 1403 and 1601 (only here and in combo_skill_precheck: the holder removed or handed over, docs/game-data-format.md) cast the same end early, guarded by has_finished; none happens against one boss. Si's freeze doesn't hold it (`runsThroughFreeze`: b6aa at 19.56 s, Si's freeze inside, ends on time; ad7f at 3.91 s 0.37 s after the unheld time, the replay had held it 2.4 s). The log check's replay takes the logged end as the tick (`ticksLoggedAs`; `endFollowsTick`: the seal ends 0.5 s after it). Its slow-down of the enemy's clock isn't modelled (open list Ti1b, test 37)."
     },
     {
       "id": "doubles_susceptibility",
       "label": "Tactical Doubles Susceptibility",
       "target": "enemy",
+      "runsThroughFreeze": true,
       "duration": {
         "if": {
           "attrAtLeast": [
@@ -105,6 +131,7 @@
           ]
         }
       },
+      "childOf": "imprisonment",
       "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable_pre",
       "modifiers": [
         {
@@ -144,13 +171,12 @@
           ]
         }
       ],
-      "note": "…_spell_vulnerable_pre, asChildBuff of the seal: rate_pre (P1 +0.06 in WILL), plus in WILL min(spell_vul_per_will × Will, max_spell_vul_will)."
+      "note": "…_spell_vulnerable_pre, asChildBuff of the seal (its duration_vul ← the seal's duration): rate_pre (P1 +0.06 in WILL), plus in WILL min(spell_vul_per_will × Will, max_spell_vul_will). A child ends with its parent (the seal's duration, `childOf`): where the log check's replay moves the seal's end, its end moves too (its logged lane ends 0.5 s after the logged end cast: 4d60 at 38.32 s, b6aa, 1d91, af7b, fc63)."
     },
     {
       "id": "post_susceptibility_int",
       "label": "Post-Imprisonment Susceptibility (INT)",
       "target": "enemy",
-      "duration": 1.933,
       "modifiers": [
         {
           "zone": "susceptibility",
@@ -162,15 +188,69 @@
         }
       ],
       "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable",
-      "note": "…_combo_skill_spell_vulnerable from seal_again (INT early end only): rate_final = rate_pre in INT; its duration_vul has no blackboard, so the default 12 s, ended by seal_finisher_wisd's final laser 58 frames after the early end."
+      "note": "…_combo_skill_spell_vulnerable from seal_again (INT early end only): rate_final = rate_pre in INT; its duration_vul has no blackboard, so the default 12 s, ended by seal_finisher_wisd's final laser (its frame 17). Until the lasers start (laser_wait's tick), then post_susceptibility_lasers to the final laser."
     },
     {
-      "id": "early_end_marker",
-      "label": "Imprisonment ended early",
-      "target": "self",
-      "duration": 0.1,
+      "id": "post_susceptibility_lasers",
+      "label": "Post-Imprisonment Susceptibility (INT), during the lasers",
+      "target": "enemy",
+      "duration": 0.567,
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": "rate_pre",
+          "elements": [
+            "natural",
+            "cryst"
+          ]
+        }
+      ],
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable",
+      "note": "post_susceptibility_int's last part: from the lasers' start (seal_finisher_wisd's frame 0) to its final laser at frame 17, which ends it."
+    },
+    {
+      "id": "post_susceptibility_late",
+      "label": "Post-Imprisonment Susceptibility (INT), after a late hit",
+      "target": "enemy",
+      "duration": 12,
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": "rate_pre",
+          "elements": [
+            "natural",
+            "cryst"
+          ]
+        }
+      ],
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable",
+      "note": "A battle-skill hit after the natural INT end while the seal still lasts (its last 0.5 s, after the tick): bunshin_end_listener finishes itself early, which seal_listener (alive as long as the seal: duration_final) hears (abilityEvent 204 with bunshin_end_listener in its list) and casts seal_again on the clones; its frame 0 creates …_spell_vulnerable (duration_vul unassigned: the default 12 s). Its lasers would come at seal_again's frame 41, after abilityentity_end's frame 44 has finished the clones: none, and no final laser ends it. btl_upload_891566c224f8: late hit at 109.94 s, a new Susceptibility listed from 109.94 s to the fight's end at 111.99 s, no lasers."
+    },
+    {
+      "id": "laser_wait",
+      "label": "INT early end: the lasers' start",
+      "target": "enemy",
+      "every": 1.367,
+      "ticksLoggedAs": "chr_0032_lizhiyan_combo_skill",
+      "runsThroughFreeze": true,
       "modifiers": [],
-      "note": "Keeps the natural-end explosion quiet when Imprisonment was ended by the INT battle skill (the game's timed markers)."
+      "note": "From the early end to seal_finisher_wisd's creation: seal_again's frame 41 (1.367 s), its one tick (trigger int_lasers). The log records the lasers' start as a combo cast (the clones' CastSkill, logged under the combo's id): 0–4 frames before the first laser in every INT log (a7a7 5.41 / 22.93 / 48.89 s, 8915 9.24 / 33.44 s, 00ae, d9e5), 1.29–2.49 s after the hit where no time stop is between, against 41 frames plus the slow-downs: the log check's replay takes the logged one (ticksLoggedAs)."
+    },
+    {
+      "id": "early_end_window",
+      "label": "Imprisonment's early end (INT)",
+      "target": "enemy",
+      "duration": {
+        "sum": [
+          "duration_pre",
+          "duration",
+          -0.5
+        ]
+      },
+      "runsThroughFreeze": true,
+      "modifiers": [],
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_seal2",
+      "note": "buff_…_combo_skill_seal2 (INT; inert in WILL, its abilityEvent 101 handler checks isWisd): created at seal_total frame 6, 4 frames after the seal, for duration_seal2 ← the combo's `duration` (4 s), so it ends with the seal's natural-end tick (duration_pre + duration − 0.5 after the seal: applied with it here). While it lasts her battle skill's hit ends Imprisonment early (trigger int_early_end); after it, bunshin_end_listener's handler takes the hit (it checks that no seal2 is left: int_late_hit)."
     },
     {
       "id": "int_after_end",
@@ -384,6 +464,16 @@
         {
           "kind": "buff",
           "buff": "doubles_susceptibility"
+        },
+        {
+          "kind": "buff",
+          "buff": "early_end_window",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         }
       ],
       "note": "seal_total frame 2 (cast + 11): teammates' hits from then see the Susceptibility."
@@ -406,7 +496,7 @@
             ]
           },
           {
-            "buffActive": "imprisonment"
+            "buffActive": "early_end_window"
           }
         ]
       },
@@ -417,8 +507,8 @@
           "value": "atb_return_wisd"
         },
         {
-          "kind": "buff",
-          "buff": "early_end_marker"
+          "kind": "endBuff",
+          "buff": "early_end_window"
         },
         {
           "kind": "endBuff",
@@ -449,7 +539,41 @@
               "events": [
                 "buff_chr_0032_lizhiyan_combo_skill_seal2"
               ]
-            },
+            }
+          ]
+        },
+        {
+          "kind": "buff",
+          "buff": "laser_wait"
+        }
+      ],
+      "note": "seal2 abilityEvent 101 → seal_listener 204 → combo_skill_abilityentity_seal_again (cast by her clones), whose frame 41 creates seal_finisher_wisd: the lasers wait on laser_wait (trigger int_lasers)."
+    },
+    {
+      "id": "int_lasers",
+      "on": {
+        "event": "buffTick",
+        "buff": "laser_wait"
+      },
+      "by": "self",
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "laser_wait"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "post_susceptibility_int"
+        },
+        {
+          "kind": "buff",
+          "buff": "post_susceptibility_lasers"
+        },
+        {
+          "kind": "hits",
+          "world": true,
+          "hits": [
             {
               "id": "laser",
               "scale": [
@@ -457,10 +581,10 @@
               ],
               "count": 4,
               "frames": [
-                43,
-                46,
-                49,
-                52
+                2,
+                5,
+                8,
+                11
               ],
               "damageType": "combo",
               "events": [
@@ -473,7 +597,7 @@
                 "atk_scale_laser2"
               ],
               "frames": [
-                58
+                17
               ],
               "damageType": "combo",
               "poise": 10,
@@ -484,20 +608,15 @@
           ]
         }
       ],
-      "note": "seal2 abilityEvent 101 → seal_listener 204 → combo_skill_abilityentity_seal_again → seal_finisher_wisd. Frames from the battle-skill hit. The lasers are seal_finisher_wisd's buff timeline, on the world's clock (`world`): her own ultimate's stop holds them too (btl_upload_a7a7a40c97ed: early end at 52.9 s, Gloompurge Arcana cast ~54.3 s, the lasers logged at 55.99–56.47 s after its stop, not at 54.3–54.8 s)."
+      "note": "seal_finisher_wisd's timeline: lasers at its frames 2, 5, 8, 11 and the final one at 17, on the world's clock (`world`; her own ultimate's stop holds them too: btl_upload_a7a7a40c97ed's lasers at 55.99–56.47 s after Gloompurge Arcana's stop)."
     },
     {
       "id": "explosion",
       "on": {
-        "event": "buffEnded",
+        "event": "buffTick",
         "buff": "imprisonment"
       },
       "by": "self",
-      "if": {
-        "not": {
-          "buffActive": "early_end_marker"
-        }
-      },
       "skill": "chr_0032_lizhiyan_combo_skill",
       "do": [
         {
@@ -530,7 +649,7 @@
           }
         }
       ],
-      "note": "combo_skill_abilityentity_end: explosion at its frame 14; under INT also the bunshin_end_listener (frame 10)."
+      "note": "The seal's one tick (trigger_time = duration_final − 0.5) casts combo_skill_abilityentity_end: explosion at its frame 14; under INT also the bunshin_end_listener (frame 10). An early end (int_early_end) finishes the seal first, so no tick comes."
     },
     {
       "id": "int_late_hit",
@@ -554,7 +673,7 @@
           },
           {
             "not": {
-              "buffActive": "imprisonment"
+              "buffActive": "early_end_window"
             }
           }
         ]
@@ -568,6 +687,13 @@
         {
           "kind": "endBuff",
           "buff": "int_after_end"
+        },
+        {
+          "kind": "buff",
+          "buff": "post_susceptibility_late",
+          "if": {
+            "buffActive": "imprisonment"
+          }
         },
         {
           "kind": "hits",

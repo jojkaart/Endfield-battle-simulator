@@ -721,6 +721,25 @@ export interface KitBuff {
    */
   readonly ticksShownByHits?: boolean;
   /**
+   * Its end is a fixed time after its tick: one game timer gives both (Arcane's Imprisonment, whose one tick at
+   * trigger_time = duration − 0.5 s casts its explosion). Where the log check's replay moves a tick to the log's
+   * (ticksLoggedAs, ticksShownByHits), its end moves as far (cli buffreplay.ts loggedTick, heldTicks). The engine
+   * doesn't read it.
+   */
+  readonly endFollowsTick?: boolean;
+  /**
+   * An enemy buff whose timer and ticks run on through a freezing control status on the enemy (Si's Immobilization,
+   * which holds the other debuffs: timeline/actions.ts runTriggers). Arcane's Imprisonment: b6aa15281db4 at 19.56 s
+   * (Si's freeze inside it) and ad7f5ee2c91c at 3.91 s end on time, not 1–1.5 s later.
+   */
+  readonly runsThroughFreeze?: boolean;
+  /**
+   * A child of another buff of the kit (CreateBuffAction asChildBuff in the parent's game buff): applied with it for the
+   * same time. Where the log check's replay moves the parent's end (endFollowsTick), an instance that ended with it
+   * moves too (cli buffreplay.ts movedTick). The engine doesn't read it: the kit gives both the same duration.
+   */
+  readonly childOf?: string;
+  /**
    * Ends with the action that applied it (CreateBuffAction autoFinishByAction):
    * when its owner's current skill ends or the owner starts another one.
    * Applied while its owner isn't in a skill, it isn't applied.

@@ -52,6 +52,8 @@ export interface ActiveBuff {
   readonly blocksEnergy?: boolean;
   /** Periodic: frames between ticks (KitBuff.every), and the next tick's frame. */
   readonly every?: number;
+  /** A freeze of the enemy doesn't hold it (KitBuff.runsThroughFreeze). */
+  readonly runsThroughFreeze?: boolean;
   readonly nextTick?: number;
   /** No tick on its end frame (KitBuff.noTickAtEnd). */
   readonly noTickAtEnd?: true;
@@ -215,6 +217,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(priority !== undefined ? { priority } : {}),
     ...(buff.consumedBy ? { consumedBy: buff.consumedBy } : {}),
     ...(buff.blocksEnergy ? { blocksEnergy: true } : {}),
+    ...(buff.runsThroughFreeze ? { runsThroughFreeze: true } : {}),
     ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every), ...(buff.noTickAtEnd ? { noTickAtEnd: true as const } : {}) } : {}),
     ...(buff.records ? { records: { rate: resolveValue(data, build, panel, skillId, buff.records.rate, situation), total: 0 } } : {}),
   };

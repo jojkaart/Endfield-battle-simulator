@@ -14,6 +14,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 - [2026-11-22: Perlica's combo hits: Pulser Labs and Wild Wanderer before the hit's damage](2026-11-22-01-perlica-s-combo-hits-pulser-labs-and-wild-wanderer-before.md)
 - [2026-11-22: Liino's Cosmovoice beats on their own clock; stances cast before the log](2026-11-22-01-liino-s-cosmovoice-beats-on-their-own-clock-stances-cast.md)
 - [2026-11-22: Gilberta's Vulnerable count, Zhuang Fangyi's Empyrean entity keys](2026-11-22-01-gilberta-s-vulnerable-count-zhuang-fangyi-s-empyrean-entity.md)
+- [2026-11-22: Arcane's Imprisonment end and her INT lasers](2026-11-22-01-arcane-s-imprisonment-end-and-her-int-lasers.md)
 - [2026-11-18: The Finisher gated on every enhanced basic attack (test 108, the Talos Wiki)](2026-11-18-06-the-finisher-gated-on-every-enhanced-basic-attack-test-108.md)
 - [2026-11-18: Improvement round 4: a query layer over the logs](2026-11-18-05-improvement-round-4-a-query-layer-over-the-logs.md)
 - [2026-11-18: Si's in-game tests from the logs: 14, 41, 92, 16, 15](2026-11-18-04-si-s-in-game-tests-from-the-logs-14-41-92-16-15.md)

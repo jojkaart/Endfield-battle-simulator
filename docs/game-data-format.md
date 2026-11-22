@@ -178,7 +178,7 @@ here (and to `ENUMS`) when a kit decodes one; `efsim gamedata tree <id>
 |---|---|---|
 | 1 | the owner's HP reaches 0 (OnOwnerHpZero) | kit notes |
 | 6 | entering battle | Liino, Perlica (stances) |
-| 8 | the owner is defeated? | one note; Arcane's Imprisonment (buff_chr_0032_lizhiyan_combo_skill_seal) ends on 8, 1403 and 1601 (open: the likeliest cause of 4d60's 1 s short windows) |
+| 8 | the owner is defeated? | one note; Arcane's Imprisonment (buff_chr_0032_lizhiyan_combo_skill_seal) and combo_skill_precheck cast her explosion on 8, 1403 and 1601, guarded by has_finished: an end when the holder goes, not a timer (2026-11-22: the logs' ends fit the seal's tick, below) |
 | 9 | a buff added to the holder (OnAddedBuff) | Purrchena, Camille, Catcher, weapons |
 | 12 | takes damage? | Ember (one file) |
 | 13 | deals damage (a landing of the holder's) | Catcher P1, Da Pan |
@@ -212,7 +212,16 @@ here (and to `ENUMS`) when a kit decodes one; `efsim gamedata tree <id>
 | 302 | deals damage (OnBeforeOutputDamage) | Last Rite, Xaihi, weapons |
 | 401 | applies a physical status | weapons, gear |
 | 402 | applies a physical status? | one note |
+| 1401 | the holder removed from the field? | one file: Wulfgard's combo_usetimer finishes itself |
+| 1402 | the owner's spawned entities are to go? | Arcane's passive and combo_skill_seal_total: FinishOwnerAction on her clones (spawned objects with tag −1480463572) |
+| 1403 | the holder removed from the field? | Arcane's seal and combo_skill_precheck (CheckTargetsEqual: the holder is the event's subject) cast her explosion early |
+| 1601 | the holder handed over to another entity? | the same two (SaveTransferredSource, then CheckTargetsEqual on it) |
 
-Seen without a reading: 21, 31 (resets `EntityBB_isCombo`), 155, 204,
-1403, 1601.
+The 14xx / 1601 readings come from Arcane's files and one of Wulfgard's
+(2026-11-22): all four clean up after an entity that leaves; none fires
+against one boss mid-fight (her Imprisonment's logged ends fit the seal's
+one tick at `trigger_time`, its duration − 0.5 s, wherever nothing holds
+it: the kit note of chr_0032_lizhiyan `imprisonment`).
+
+Seen without a reading: 21, 31 (resets `EntityBB_isCombo`), 155, 204.
 
