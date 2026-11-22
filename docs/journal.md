@@ -33,8 +33,8 @@ team with Arcane and a non-Nature inflicter can play a Corrosion setup phase.
   seeds with Akekuri's ultimate guard (+1.71% as found; Arcane's press alone +0.94%). Ink Melt: Laevatain's ultimate
   waits for Corrosion, Si's for Combustion and Twilight: +3.21% ± 0.73 (64). Typhoeus's: ultimates wait for the hover,
   Arcane's battle skill while the Stagger bar is below half: +8.62% ± 0.65 (32). Questions: Estella on Stagger no; Ink
-  Melt's rule 7 `shows` no (a loss from both starts now); the Twilight hold kept (dropping it −2.3%). Arcane INT:
-  INT_RESULT. Examples changed; an INT variant in examples/variants/.
+  Melt's rule 7 `shows` no (a loss from both starts now); the Twilight hold kept (dropping it −2.3%). Arcane INT
+  (Hot Work), each mode with its own searched list: −1.91% ± 0.60 (64): not worth farming. Examples changed; an INT variant in examples/variants/.
 
 **Problems:** the 2026-11-16 numbers behind the questions had all moved (the engine changes since): measured per start
 before designing anything. The owner's setup as found pressed Akekuri's battle skill inside her ultimate; the rules

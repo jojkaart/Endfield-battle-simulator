@@ -1,0 +1,19 @@
+{
+  "$schema": "../../schemas/rules.schema.json",
+  "description": "Typhoeus's team with Arcane in INT mode (her Hot Work loadout: examples/variants/typhoeus-arcane-int.scenario.json), found by efsim rules --guided (2026-11-22, 4 rounds, the objective across starts) from the team's WILL-mode list: Arcane's battle skill also before Perlica's combo, and Typhoeus takes flight only once the enemy's Stagger bar is at least 70% full. On 32 fresh seeds (1001–1032, 300 s, 0.3 s reaction), against the WILL list on the same INT gear: +1.97% ± 0.81 (full energy 55,004 → 56,628, from zero 53,227 → 53,730). Against the WILL team with its own list (examples/typhoeus-arcane-liino-perlica.*), rules against rules on 64 fresh seeds (1001–1064) and the objective across starts: −1.91% ± 0.60 (docs/teams/typhoeus-arcane-liino-perlica.md \"Gear played by the rules\").",
+  "opener": [{"operator": "Liino", "cast": "battle"}],
+  "rules": [
+    {"when": {"all": [{"ultimate": "Liino"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Liino", "cast": "ultimate"}},
+    {"when": {"all": [{"ultimate": "Arcane"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Arcane", "cast": "ultimate"}},
+    {"when": {"all": [{"ultimate": "Typhoeus"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Typhoeus", "cast": "ultimate"}},
+    {"when": {"all": [{"combo": "Typhoeus"}, {"buff": {"operator": "Typhoeus", "buff": "hovering"}}]}, "do": {"operator": "Typhoeus", "cast": "combo"}},
+    {"when": {"energy": {"operator": "Arcane", "below": 50}}, "do": {"operator": "Typhoeus", "cast": "ultimate"}},
+    {"when": {"combo": "Perlica"}, "do": [{"operator": "Arcane", "cast": "battle"}, {"operator": "Perlica", "cast": "combo"}]},
+    {"when": {"combo": "Typhoeus"}, "do": [{"operator": "Perlica", "cast": "ultimate"}, {"operator": "Typhoeus", "cast": "combo"}]},
+    {"when": {"combo": "Perlica"}, "do": {"operator": "Perlica", "cast": "combo"}},
+    {"when": {"stagger": {"below": 50}}, "do": [{"operator": "Arcane", "cast": "battle"}, {"operator": "Liino", "cast": "battle", "shows": "Battle skill"}]},
+    {"when": {"combo": "Arcane"}, "do": {"operator": "Arcane", "cast": "combo"}},
+    {"when": {"all": [{"not": {"buff": {"operator": "Typhoeus", "buff": "hovering"}}}, {"stagger": {"atLeast": 70}}]}, "do": {"operator": "Typhoeus", "cast": "battle"}},
+    {"when": {"not": {"buff": {"operator": "Typhoeus", "buff": "hovering"}}}, "do": {"operator": "Typhoeus", "cast": "combo"}}
+  ]
+}

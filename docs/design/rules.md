@@ -410,7 +410,7 @@ Intensity +5% a line; Si's logs' LYNX Slab loadout; Akekuri's Fiber
 Gloves: more efficiency for a bottleneck support), examples kept; Ink
 Melt +3.9% ± 1.0 (Wulfgard's efficiency, a bottleneck) but −1.5% on the
 60 s timeline, example kept; Typhoeus's team +0.9% (Perlica, damage only,
-example changed) and +5.9% for Arcane in INT mode (the owner's call). A
+example changed) and +5.9% for Arcane in INT mode (on the old list; rules against rules on 2026-11-22, −1.9%: "The search decides"). A
 60-list rule search on the owner's new gear found no better list. Runs go to worker
 threads (rulespool.ts; each loads the game data once). Since 2026-11-16 a
 command has one pool (`commandPool`: started on first use, kept for all
@@ -695,6 +695,7 @@ mean), ± one standard error:
 | The owner's | 3 / 1,320 / 15 min | the Corrosion setup set (Akekuri's Heat to 4 stacks from spare SP, then Arcane's Nature) | +1.06% ± 0.33 (64; with the guard on Akekuri's ultimate the rules check asked for; +1.71% as found) | Estella's ultimate only while Staggered: no (−3.8% screened; +0.5% ± 0.4 on 32 fresh seeds) |
 | Ink Melt | 6 / 2,780 / 35 min | Si's ultimate also waits for Combustion; Laevatain's ultimate waits for Corrosion; the Twilight hold back | +3.21% ± 0.73 (64; full +7.5%, zero −1.1%) | rule 7 with `shows`: no (−1.7% ± 0.8, both starts lose); the Twilight hold: kept (dropping it −2.3% ± 0.8) |
 | Typhoeus's | 6 / 3,316 / 49 min | Arcane's and Liino's ultimates wait for the hover; Arcane's battle skill while the Stagger bar is below half | +8.62% ± 0.65 (32; full +7.9%, zero +9.4%) | (none open; a Corrosion setup: no, +0.13% ± 0.32 on 64 seeds) |
+| Typhoeus's, Arcane INT (Hot Work) | 4 / 2,468 / 26 min, from the WILL list | Arcane's battle skill before Perlica's combo; flight from a 70% Stagger bar | +1.97% ± 0.81 over the WILL list on INT gear (32) | INT against WILL, each with its own list: −1.91% ± 0.60 (64): no |
 
 Each question was decided by the measurement, not the start's veto: the
 three gains of 2026-11-16 had moved with two days of engine changes (the

@@ -26,8 +26,8 @@ below ([review-2026-10.md](review-2026-10.md)).
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's
-  +8.0%; Arcane's Hot Work loadout for INT mode, INT_GAIN_SHORT rules
-  against rules) and in-game tests 106, 108 (dives); next a cheaper
+  +8.0%; Arcane in INT mode is decided: −1.9% rules against rules, not worth
+  the Hot Work loadout) and in-game tests 106, 108 (dives); next a cheaper
   variance for the guided search (most of a day's runs), the gear ascent
   on the new lists, a cheaper worth for timeline-moving stats.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with

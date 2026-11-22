@@ -15,9 +15,10 @@ updated.
 what's left for the owner is gear they'd have to farm: the owner's
 team's (Estella's Grizzled Edge loadout, Si's LYNX Slab loadout,
 Akekuri's Fiber Gloves: +8.0% ± 0.9 together, played by the rules of
-2026-11-16; the gear ascent on the new lists is next) and Arcane's Hot
-Work loadout for INT mode on Typhoeus's team (INT_GAIN_LONG,
-docs/teams/typhoeus-arcane-liino-perlica.md "Gear played by the rules");
+2026-11-16; the gear ascent on the new lists is next); Arcane in INT
+mode for Typhoeus's team is decided, rules against rules: −1.91% ± 0.60
+on 64 fresh seeds, not worth the Hot Work loadout
+(docs/teams/typhoeus-arcane-liino-perlica.md "Gear played by the rules");
 timeline-moving stats (Ultimate
 Gain Efficiency, mode-flipping attributes) are noisy even on common
 seeds (±1–2% a line at 4 seeds, ±0.6–1.3% at 16): a cheaper estimate of

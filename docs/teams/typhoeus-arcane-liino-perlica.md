@@ -61,15 +61,29 @@ line for main attribute +26.9%, an Agility line for more Intellect): **+0.87% ±
 on 8 fresh seeds (damage only, so nearly exact), and +0.3% / +0.6% on the
 examples' 60 s rotations replayed (5,774,076 / 5,019,331).
 
-**For the owner to decide: Arcane in INT mode.** The ascent's biggest
+**Arcane in INT mode, rules against rules (2026-11-22): no.** With each
+mode's own searched list, the INT team loses: **−1.91% ± 0.60** on 64
+fresh seeds (1001–1064) under the objective across starts (full energy
+57,238 → 56,376, −1.51% ± 0.71; from zero 55,249 → 53,962, −2.33% ±
+0.87). The INT list ([examples/variants/typhoeus-arcane-int.rules.json](../../examples/variants/typhoeus-arcane-int.rules.json),
+on [examples/variants/typhoeus-arcane-int.scenario.json](../../examples/variants/typhoeus-arcane-int.scenario.json))
+was found by the guided search from the WILL list (4 rounds, 26 min):
+Arcane's battle skill also before Perlica's combo, and Typhoeus's flight
+only once the Stagger bar is at least 70% full, +1.97% ± 0.81 over the
+WILL list on the same INT gear (32 fresh seeds); the WILL list on INT
+gear is −3.40% ± 0.78 against the WILL team (32). The +5.9% below was
+the old WILL list's (before the searches of 2026-11-22, which gained
++8.6% on WILL), so the Hot Work loadout isn't worth farming for this
+team. The example stays WILL.
+
+**Measured 2026-11-16 (superseded above): Arcane in INT mode.** The ascent's biggest
 gain is Arcane on the logs' Hot Work loadout (Exo-Rig, Hands PPE,
 Insulation Slab + LYNX Slab, 3 logs): Intellect 813 against Will 363,
 so INT mode. **+5.9% ± 0.7** on 24 fresh seeds (52,441 → 55,542): her
 own damage rises from 7% to 23% of the team's, Typhoeus's falls 11%
 (her WILL Susceptibility and burst Arts DMG Taken are gone), and her
 energy waste drops from 35% to 16%. The list was searched for WILL mode,
-so a list searched for INT mode may gain more. The example keeps WILL
-mode (the team as the owner described it) until the owner decides.
+so a list searched for INT mode may gain more (it doesn't: above).
 
 ## Gear from the logs and guide sites
 

@@ -40,12 +40,16 @@ phases, a Corrosion setup) its open questions needed, and let it settle the owne
 
 - **What happened:** four guided searches (each now plays both starts: twice the runs) were queued with
   `with-lock`; they run one at a time behind other agents' measure and short jobs, on a machine at load 7–8. The
-  searches took most of the session's wall time, and each fresh-seed confirmation queues again behind them.
+  searches took most of the session's wall time, and each fresh-seed confirmation queues again behind them. The
+  fourth (Arcane INT) waited 82 min in the queue, then hit the Bash tool's 2 h background limit (the wait counts) in
+  its second round and was killed; it had to be rerun with fewer rounds.
 - **Cause:** the lock serialises all long jobs; a guided search is ~2,000–4,000 300 s runs; the objective across starts
   doubled that by design.
 - **Suggestion:** a cheaper screening stage for the guided search (screen on 120 s fights or a control variate from the
   ideal-combo losses, roadmap "cheaper variance"), and a `--kind` for jobs that can share the machine at reduced
-  workers (e.g. two guided searches at 2 workers each beside each other).
+  workers (e.g. two guided searches at 2 workers each beside each other). `with-lock` could also print, at queue
+  time, the estimated start against the caller's limit ("queued behind ~80 min: a 2 h background job may not finish"),
+  and the guided search's `--out` partial could carry the round's state so a killed run resumes instead of restarting.
 - **Why it helps:** the search's results come back in an hour instead of an afternoon; the cost is a second, noisier
   screening stage to validate.
 
