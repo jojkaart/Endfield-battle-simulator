@@ -3,7 +3,7 @@
 import type { SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";
 import { computeHit, computeReaction, decide, finisherModifier, type DamageOptions, type DamageTarget, evalContext, fixedHit, type HitDamage, hitDecorations, type Situation, skillValue } from "../damage.ts";
-import type { Modifier } from "../effects.ts";
+import { ATK_SNAPSHOT_ZONES, type Modifier } from "../effects.ts";
 import { EngineError } from "../errors.ts";
 import { type EventSource, type GameData, type KitHit, type KitSkill, landedCountsAt, resolveApplication } from "../model.ts";
 import { type BattleEvent, causeMatches, eventMatches, type KitTrigger, triggerActionAt } from "../events.ts";
@@ -437,7 +437,10 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // A replayed fight's logged crit for this landing (TimelineScenario.loggedCrits), which decides it.
   const loggedCrit = hit.fixed === undefined && withDamage ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame, hit.ref) : undefined;
   const decorations = hitDecorations(kitHit, finisher);
-  const options = hit.fixed !== undefined || !withDamage ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot);
+  // The first tick of a ticking buff lands before the buff's own modifiers act (PendingHit.firstTickOf).
+  const first = hit.firstTickOf;
+  const seen = first ? { ...st, buffs: st.buffs.filter((b) => !(b.owner === first.owner && b.id === first.id && b.appliedAt === first.appliedAt)) } : st;
+  const options = hit.fixed !== undefined || !withDamage ? null : damageOptions(ctx, seen, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot, ATK_SNAPSHOT_ZONES);
   const inputs: LandingInputs | null = !options ? null : { kind: "hit", operator: hit.operator, build, panel, skill, hit: kitHit, options: {
     ...options,
     decorations,

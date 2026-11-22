@@ -178,11 +178,105 @@ is one buff absent across it (3 above), not two shifts.
 **Next check:** 1 (replay the unknown crits' bound), 2 (why the replay
 skips the logged ultimate), 7 (whether Hot Work refreshes on ticks).
 
+## Rossi: her bleed, her ultimate's crits and what remains (2026-11-22)
+
+**Shows:** Rossi had 594 mismatches in her 9 development logs (`efsim
+zmdlogs groups --operator Rossi`), 402 of them in 2fd9 and 99fb (Hard 27:
+every hit, "Hard 27" below); in the others her bleed ticks and Seething
+Blood extras led (113 and 144), with 116 hits without a landing.
+
+**Found and fixed:**
+1. **The bleed keeps only ATK from its application.** One d572 bleed
+   (applied 13751 ms) ticks 1750 → 1595 when Camille's set DMG +0.16 ends
+   ((1.80 − 0.16) / 1.80 = ×1/1.0972), 1363 → 844 when Wolven Blood's
+   max-stack bonus and its layers end (×1/1.614), then 1287, 1346, 1386,
+   1426, 1466 as new layers come; its crits go ×2.0 → ×1.5 as the combo's
+   Crit DMG ends; it stays 1595 when Camille's weapon ATK +0.096 ends
+   (`zmdlogs hits d572 --operator Rossi --event bleed --json`, listing per
+   tick: scratch). So `takeAtkSnapshot` on the bleed keeps ATK (and the
+   attributes behind it), not the whole attacker side as Combustion does
+   (engine effects.ts ATK_SNAPSHOT_ZONES). measure: 489c, d572, 9a80, 4e5e
+   plain up, mismatches down.
+2. **A tick at its buff's application doesn't see the buff's own
+   modifiers** (`tickOnApply`): every bleed's first tick lacks its +12%
+   DMG Taken (d572 13751, 46554, 114924 ms ×1/1.12; 489c 25917, 60612;
+   9a80, 4e5e, 2fd9, 99fb alike), as its end-frame tick does (timeline
+   PendingHit.firstTickOf).
+3. **The bleed's clock is the log's** (`KitBuff.ticksShownByHits`, as
+   Liino's volleys). Logged ticks against the unpinned replay's
+   (scratch: each logged tick's offset from the nearest replayed one):
+   ±0.1 s of jitter tick to tick, and steps of 0.3–0.6 s at other casts'
+   time stops and slow-downs (489c 30.6 s after Gilberta's and Rossi's
+   overlapping ultimates −368 ms; 52.2 s after three combos +310; 4e5e,
+   2fd9, 99fb likewise), a few without a placed stop (489c 37.97 s +420 ms
+   by Rossi's attack 5 and Arcane's laser; 55.7 s by her finisher). The
+   bleed runs through Rossi's own combo slow-down in the log and in the
+   replay alike (2fd9 20.2–22.3 s, 99fb 22.7–25.8 s: ~1 s apart through
+   it). No kit timer explains the steps; they follow where the replay
+   places others' stops, which it can't know better, so the replay takes
+   each tick from its logged one. 489c mismatches 108 → 95 with 1 and 2
+   in (measure).
+4. **Crits the log leaves out of her ultimate.** Every development log
+   gives Rossi's ultimate stabs (and the hits during them) no crit (crit
+   null: 489c 54 stabs, d572 54, 4a64 54, 3f78 53, 0c14 64; scratch count
+   over the fixtures), so the replay's main run critted none and landed
+   none of the Seething Blood extras, which the log has at each crit
+   stab's very ms. The replay now counts as crits the largest m of an
+   operator's crit-less hits at a moment where a trigger on crits logs m
+   hits (buffreplay.ts shownCrits). measure (with 3): development plain
+   52.0 → 52.4%, mismatch 18.2 → 17.7%, mean |damage error| 12.6 →
+   10.1% (489c −12.6 → −0.7%, 9a80 −14.7 → −0.4%, 3f78 −32.2 → −6.2%,
+   4a64 −30.9 → +7.2%); hold-out 1 better, 0 worse (12.1 → 11.7%); 0c14's
+   total +8.5 → +10.4% (it over-predicts already: Si and Alesh, "0c14"
+   below; its per-hit error closer, 36.1 → 35.3%).
+
+**Ruled out:** the bleed snapshotting its DMG bonus or crit (1 above);
+Rossi's own combo slow-down holding the bleed's ticks (3); a kit-side
+tick timer for the steps (none fits both the steps and the steady
+stretches between them).
+
+**Still possible / open:**
+- **Hard 27** (2fd9, 99fb): 402 of the 546 left, the enemy-wide term below.
+- **The combo's Crit DMG window** (combo_crit, 15 s): in world time (time
+  stops out, castTimeStops) from the combo_3 cast, the game's ends between
+  Rossi's last ×2.0 crit and her first ×1.5 one: 489c (16.21, 16.43),
+  (14.95, 15.96), (14.13, 14.37) s; 9a80 (16.48, 16.49); d572 (14.78,
+  15.45), (14.02, 14.38); the replay's are 14.57 each (scratch: per cast,
+  the crit zone each crit hit implies). Longer and shorter than 15 s by up
+  to 1.9 s: the stops' placement again, or a hold the replay lacks (489c's
+  and 9a80's long ones hold no ultimate of hers, so not her ultimate).
+- **Wolven Blood at max stacks** (wpn_sword_0022.final, 20 s): the log's
+  runs last 19.5–20.3 s of world time where no ultimate of hers falls
+  inside (d572 three runs, 2fd9, 99fb), but 21.9–22.3 s in 489c's first
+  (her ultimate overlapping Gilberta's) and 20.55–20.8 s in d572's second
+  (her ultimate alone); the replay's are ~19.6 s. Its layers then restart
+  ~2.5–3.5 s early in the replay (489c 43.9 s against the log's 46.6 s,
+  74.0 against 77.5 s): 489c's ×0.95 / ×1.12 at 47.0–48.8 s and ×0.72–0.78
+  at 81.2–84.8 s, d572 66.9 s ×1.48. Candidates: her own buffs held longer
+  than her ultimate's 57-frame stop (~1 s in d572), overlapping stops
+  holding them for their sum (489c: Gilberta's 1.73 s + hers 1.9 s against
+  their union 2.0 s), the stops' placement.
+- **Corrosion's ramp in 489c at 30.2–32.5 s**: her stabs rise 16220 →
+  16378 → 16536 and the bleed 4781 → 4894 by ~1% a second while the
+  engine's Corrosion is already at its level-2 shred (17.12 → 17.6 at
+  30.80 s): the ramp later or slower in the game (under the ultimates'
+  stops), the bleed ticks at 30.6 and 31.6 s mismatching.
+- 0c14: her Combustion ticks ×1.55–1.68 at 28.7–37.6 s, Lifts ×0.61 (58.1
+  s), ×1.49 (132.4 s), ×1.60 (179.9 s); not looked into.
+
+**Next check:** the final's and the combo window's runs against every
+stop in their windows (which stop's placement or hold moves them), in
+489c and d572.
+
 ## Rossi's ultimate ×1.090 (9a80) and ×1.081 (2fd9)
 
 **Shows:** every ultimate hit low by one factor, crits and non-crits alike
 (9a80: 16058 logged vs 14727, crits 46567 vs 42708). Matches in 4e5e,
-489c, 4a64.
+489c, 4a64. **2026-11-22:** 9a80's stabs fit plain at commit 1ab4647
+already (non-crit 16058 predicted 16058, `zmdlogs hits 9a80 --operator
+Rossi --event 'ultimate_skill$'` there; fixed by an earlier change, not
+traced); 2fd9's ×1.081 on non-crits remains, with every hit of that log
+(Hard 27, below).
 
 **Ruled out:** the kit's per-hit scale and hit count (SkillData and
 SkillPatchTable; 27 per cast, as logged); the crit zone (the crit ratio is
@@ -1275,11 +1369,8 @@ combo at 47.97 s, which drops a volley still to launch).
 Liino herself (useTimeDilationDt false on the buff), or stops longer than
 the engine's; the data's listener end at frame 1691 (54.9 s; the kit ends
 it with the stance at 60 s, which no tick falls between).
-**Next check:** none for the volley. Rossi's bleed ticks (an `every 1`
-enemy buff) took the same pinning in a trial: 489c mismatch 124 → 111,
-d572, 2fd9, 99fb better, 0c14 +0.3, 4a64 −0.1 points of damage error
-(measure 2026-11-18); not kept here (outside this task), a lead for
-Rossi's kit.
+**Next check:** none for the volley. Rossi's bleed ticks take the same
+pinning since 2026-11-22 ("Rossi: her bleed" above).
 
 ## Liino's Cosmovoice beats: logged at other moments than the replay's (2026-11-18; 2026-11-22)
 
@@ -1434,7 +1525,8 @@ castsFromBuffEnds for ends): not built; Alesh's combo here is its first
 case.
 
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
-window by window.
+window by window (2026-11-22: the max-stack bonus's length is the open
+part, "Rossi: her bleed" above).
 
 ## 3f78 and 4a64: −36.5% after food
 

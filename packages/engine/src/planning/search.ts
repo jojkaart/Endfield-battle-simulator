@@ -645,7 +645,7 @@ const branchKey = (b: string, env: KeyEnv) => b.replace(/^(\d+):/, (_, i: string
 const SCHEDULED_KEY: { readonly [K in Scheduled["kind"]]: KeyRules<Extract<Scheduled, { kind: K }>> } = {
   hit: {
     ...HEADER_KEY, operator: true, skillId: true, hitId: true, sp: true, spKind: true, spSource: true, usesUp: true, eventCount: true, eventSource: true,
-    controlledAtCast: (c, env) => (env.loose ? undefined : c), trigger: true, branch: branchKey, fixed: true, snapshot: true, ref: "a replayed landing's reference, which no search sets",
+    controlledAtCast: (c, env) => (env.loose ? undefined : c), trigger: true, branch: branchKey, fixed: true, snapshot: true, firstTickOf: true, ref: "a replayed landing's reference, which no search sets",
     deferred: true, damageFrame: "a replayed landing's damage frame, which no search sets", landedOf: true,
   },
   action: { ...HEADER_KEY, owner: true, trigger: true, event: eventKey, origin: true, awaited: true, afterHits: true },

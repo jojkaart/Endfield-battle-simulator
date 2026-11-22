@@ -498,6 +498,11 @@ in the logs):
   about a third come at ×1.5 (her P5 crit rate +0.3).
 - **Multi-target logs aren't checked** (the engine is single-target):
   their `zmdlogs hits` verdicts mean nothing.
+- **A hit's crit is often not logged** (`crit: null`): every log gives
+  Rossi's ultimate stabs none, and some hits around them. The replay
+  counts as crits those a trigger on crits shows by its own logged hits
+  at the same ms (buffreplay.ts shownCrits: her Seething Blood extras);
+  the rest the check tries both ways ("assumed").
 - **`isEnable false` in game data means the action never runs**
   (`efsim gamedata tree` prints DISABLED on its line).
 

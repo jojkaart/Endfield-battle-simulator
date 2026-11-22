@@ -51,7 +51,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   Imprisonment's end from the log); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
-  only game-only tests now); Gilberta's Vulnerable count at her ultimate
+  only game-only tests now); Rossi's bleed and ultimate crits (2026-11-22:
+  her bleed keeps only ATK, its ticks on the log's clock; next her buffs'
+  lengths across stops); Gilberta's Vulnerable count at her ultimate
   (2026-11-22: 489c / d572 fixed, Rossi's combo 3 landed twice; left 4360 /
   9847, stacks outliving 20 s on the tower bosses); build offsets fitted, not hand-set (`zmdlogs
   fit-build`, fixture `buildOverrides`, 2026-11-18; next: weapon levels

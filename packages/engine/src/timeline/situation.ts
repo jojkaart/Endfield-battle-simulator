@@ -3,7 +3,7 @@
 import type { SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";
 import { activeModifiers, evalContext, type Situation } from "../damage.ts";
-import { type Modifier, SNAPSHOT_ZONES, zoneSum } from "../effects.ts";
+import { type Modifier, SNAPSHOT_ZONES, type Zone, zoneSum } from "../effects.ts";
 import type { EventSource } from "../model.ts";
 import type { BattleEvent } from "../events.ts";
 import { evaluate } from "../expr.ts";
@@ -43,9 +43,10 @@ export function retakeCombustionSnapshots(st: TimelineState, events: readonly St
 /**
  * `cast`: the hit's cast, for buffs a cast consumed (they act on its hits
  * only). `snapshot`: the attacker-side modifiers taken at an earlier
- * application (attackerSide), used instead of the buffs' current ones there.
+ * application (attackerSide), used instead of the buffs' current ones in
+ * `zones` (a Combustion's SNAPSHOT_ZONES; a kit tick's ATK_SNAPSHOT_ZONES).
  */
-export function damageOptions(ctx: TimelineContext, st: TimelineState, operator: string, enemy: EnemyStatus, frame: number, cast?: number, snapshot?: readonly Modifier[]) {
+export function damageOptions(ctx: TimelineContext, st: TimelineState, operator: string, enemy: EnemyStatus, frame: number, cast?: number, snapshot?: readonly Modifier[], zones: ReadonlySet<Zone> = SNAPSHOT_ZONES) {
   const staggered = isStaggered(st, frame);
   const buffs = buffModifiers(st.buffs, operator, frame, cast);
   return {
@@ -57,7 +58,7 @@ export function damageOptions(ctx: TimelineContext, st: TimelineState, operator:
     modifiers: [
       ...(ctx.modifiers.get(operator) ?? []),
       ...statusModifiers(enemy, frame),
-      ...(snapshot ? [...buffs.filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...snapshot] : buffs),
+      ...(snapshot ? [...buffs.filter((m) => !zones.has(m.zone)), ...snapshot.filter((m) => zones.has(m.zone))] : buffs),
     ],
   };
 }
