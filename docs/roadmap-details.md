@@ -118,7 +118,11 @@ through others' ultimate stops (settled); Haste doesn't speed attacks (the
 engine no longer plays hasted casts faster); teammates' pause 6.5 s. Left:
 Laevatain's Twilight runs past its model (open-problems; since
 2026-11-18 her own stop holds it, engine assumption `buff-in-stop`, and it
-is still 0.1–4.6 s longer); re-search the five Si example
+is still 0.1–4.6 s longer; 2026-11-22: not Twilight's own, her Forgeborn
+buff from the same ultimate runs as far past the replay, so the next step
+is the buff clock over every log: each listed buff's natural end against
+the replay's, against dodges' SP and hit-free gaps; kit assumption
+`laevatain-twilight-clock` for what rides on it); re-search the five Si example
 timelines with the full beams (after Haste's change they hold the old
 timeline repaired or a single-beam search: lower bounds);
 per-operator and per-fight teammate pace (the logs' R² 0.41 each) if a
