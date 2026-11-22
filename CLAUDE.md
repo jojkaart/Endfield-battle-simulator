@@ -125,7 +125,8 @@ In a git worktree (sub-agents' `.claude/worktrees/…`), run
 links the worktree's own packages, which the CLI refuses to run without.
 Vitest does it itself; the game data is found in the main checkout. Before
 merging a branch into `main`, run `scripts/premerge.sh`: about 15–20 min
-(more under load), so run it in the background with a limit of 40 min. It
+(more under load and the lock's queue), so run it in the background with a
+limit of 2 h. It
 runs every step (but skips the test suites when typecheck or lint
 fails), re-runs files that only timed out, waits for other worktrees'
 suites (a shared lock) and ends with a pass/fail table. A game-data
@@ -140,15 +141,17 @@ complex to verify"):
   No `source`, no `cd … && git …` chains, no loops or pipes around `git`,
   no `git -C`. `git show <ref>:<path> > scratch/x`, then process the file.
   A sequence mixing `git` with other commands goes into `scratch/x.sh`,
-  run with `bash scratch/x.sh`. Commit by pathspec (`git commit -F msg --
-  <paths>`): `git mv` / `git rm` stage on their own.
+  run with `bash scratch/x.sh`. Commit messages: write `scratch/msg.txt`
+  with the Write tool, then `git commit -F scratch/msg.txt -- <paths>`
+  (by pathspec; `git mv` / `git rm` stage on their own).
 - Never a heredoc or a multi-line `python3 -c`, even where one has worked
   before: the guard judges the whole text, so the same form passes once
   and is refused the next time. Write the file with the Write tool, then
   run it with one plain command. File edits with the Write/Edit tools; a
   batch of replacements: `scratch/patch.py` (plain Python strings, `assert
   old in s` before each replace) run with `python3 -I scratch/patch.py`,
-  never TypeScript inlined in `python3 -c`.
+  never TypeScript inlined in `python3 -c`. No code formatter
+  (`.prettierignore` keeps `npx prettier` off): format by hand.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
   `scripts/scratch-template.ts`, run `node scratch/x.ts`. Times go through
@@ -160,7 +163,10 @@ complex to verify"):
   `until grep -q '^EFSIM-DONE <job> ' scratch/x.log; do sleep 15; done`
   with the job's own name (snapshots, premerge, measure, verify-at end with
   `EFSIM-DONE <job> pass|fail|killed`, with-lock `EFSIM-DONE <--name>
-  exit <n>`; a foreground `sleep` is refused). Minutes of CPU (seed
+  exit <n>`; a foreground `sleep` is refused). Every job that takes the
+  test lock (measure too) runs this way from the start, with the 2 h limit:
+  the queue's wait counts against it ([limits](docs/design/tests.md#measuring-a-change)).
+  measure and team-ab fix the code when queued: keep editing meanwhile. Minutes of CPU (seed
   tables, `gear --rules`): `node scripts/with-lock.ts --name <job>
   <command>`, one job per wrap, never a batch script, never inside
   `timeout`: a queue behind premerges and test suites (measure and
@@ -180,14 +186,16 @@ complex to verify"):
   gamedata tree <id>`, `who <id>`, `find <type>`.
 
 Hold-out logs live in `fixtures/holdout/`: never open, list or grep it
-(`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout`),
+(`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout
+--exclude='*holdout*'`),
 nor diff or open `tests/snapshots/log-verdicts-holdout.json` (their verdicts;
 `scripts/accuracy.ts --compare` gives the aggregates).
 `efsim zmdlogs list [--with <operator>]` lists the development logs.
 
 The lead: name the base commit (or branch) in a sub-agent's brief, and
-merge with `npm run merge -- <branch>` (rebuilds the journal; says when
-snapshots need `npm run snapshots:update`).
+merge with `npm run merge -- <branch>…` (one or a batch; rebuilds the
+journal, runs the tests related to code both sides changed, says when
+snapshots need `npm run snapshots:update`: once per batch).
 
 ## Friction reports
 

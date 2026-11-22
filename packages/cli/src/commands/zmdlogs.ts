@@ -65,8 +65,10 @@ export default command({
                 [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1)
   efsim zmdlogs raw <fixture | id>        A battle's raw detail as ZMDLogs recorded it: buff lanes (key, target,
                                           source, start–end, effects) and events (key, value, the skill a Stagger is
-                                          credited to). From the git-ignored cache (filled by import and refresh),
-                                          else fetched once; never a hold-out
+                                          credited to). A lane's end is a logged event's time near its last listed
+                                          hit, not the buff's expiry (zmdlogs lanes brackets it). From the
+                                          git-ignored cache (filled by import and refresh), else fetched once; never
+                                          a hold-out
                 [--buffs <regex>] [--events <regex>]  Only buff lanes / events whose key matches
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)

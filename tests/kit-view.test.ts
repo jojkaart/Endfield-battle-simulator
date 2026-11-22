@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { landingFrames } from "@efsim/logs";
 import { kitView } from "../packages/cli/src/commands/kit.ts";
+import { assumptionsList } from "../packages/cli/src/commands/assumptions.ts";
 
 const data = loadGameData();
 
@@ -18,5 +19,24 @@ describe("efsim kit", () => {
     expect(text).not.toMatch(/^Buffs:/m);
     expect(kitView(data, "chr_0036_jsspsi")).toMatch(/^Buffs:\n {2}\S+ "/m);
     expect(() => kitView(data, "nobody-at-all")).toThrow(/no such operator/);
+  });
+});
+
+describe("efsim kit: skill groups and applications", () => {
+  it("marks an enhanced basic attack by its skill group and lists each hit's applications", () => {
+    const text = kitView(data, "Laevatain", /ult_attack[13]$/);
+    expect(text).toContain("chr_0016_laevat_ult_attack1 (basic; skill group ultimate: an enhanced basic attack)");
+    expect(text).toMatch(/applies infliction fire/);
+  });
+});
+
+describe("efsim assumptions", () => {
+  it("lists every open assumption with its readings and default, filtered by a regex", () => {
+    const all = assumptionsList(data);
+    expect(all).toMatch(/^\d+ open assumption\(s\)/);
+    expect(all).toMatch(/^control-immunity {2}\(the engine \(timeline\/assumptions\.ts\); waits on \d+\)$/m);
+    expect(all).toMatch(/^ {2}\* \S+: /m);
+    const one = assumptionsList(data, /^buff-in-stop$/);
+    expect(one).toMatch(/^1 open assumption/);
   });
 });

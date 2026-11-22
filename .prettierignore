@@ -1,0 +1,5 @@
+# No code formatter: the code is formatted by hand at about 200 columns, and `npm run lint` checks it. Prettier is
+# reachable through `npx` (a transitive dependency) and, without a config, rewrites a whole file at 80 columns
+# (round 5: 1,050 changed lines in a 900-line engine file). This file keeps `npx prettier --write` from touching
+# anything here.
+*

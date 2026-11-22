@@ -250,6 +250,10 @@ export function afterCantCast(ctx: TimelineContext, state: TimelineState, operat
  * reason it can't. When the operator's kit can end its own action
  * (`endAction`), the action the gate waits on may end sooner: then it's
  * judged from the frame that happens.
+ *
+ * `action.at` is a lower bound, not "exactly then": the gates may move the
+ * start later (a battle skill holding the input until an idle hover ends).
+ * Whether it can start at exactly a frame: canStartAt.
  */
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   // A start not before a later frame (`at`) is judged on the state then: everything due by that frame happens whatever
