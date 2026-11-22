@@ -319,19 +319,39 @@ mismatch against teammates' mismatches within 1.5 s at the same ratio
   missing in the placement (db87 16.4 s: Laevatain's attack 5, lasers
   logged at 18.98 s after her ultimate, whose stop the placement lacks;
   9c0b 21 s): cast placement across stops, not her kit.
-- **INT early-end lasers** in a7a7 (8: 23.0–23.5 s and 49.4–50.0 s): the
-  replay lands them 0.4 s and 1.1 s before the log, the log's in uneven
-  batches (two at 49.37 s, two at 49.79 s, the final at 50.01 s). Not
-  explained.
-- **The combo's explosion** (`abilityentity_end`; 8 mismatches, 39 of 82
-  logged without a landing): the log records the natural end as a combo
-  "cast" (the CastSkill of `abilityentity_end`), ~0.45 s before each
-  explosion, so it gives Imprisonment's end. Against it the replay's
-  Imprisonment ends later: median +0.3 s, 58 of 118 more than 0.3 s late,
-  24 earlier (scratch/imprison-ends.ts). Cases: 4d60 +1.0 s on every
-  window (the game's 5.6 s from cast + 11 against 6.633 s), ad7f +2.5 s
-  (Si's Immobilization at 4.9 s holds it 1.5 s in the replay, then
-  teammates' combo slow-downs; the log's end at 10.28 s fits no hold).
+- **INT early-end lasers** (a7a7 23.0–23.5 s and 49.4–50.0 s, landed
+  0.4 s and 1.1 s early): explained and pinned 2026-11-22 (below, Fixed
+  4). Left: why `seal_again`'s frame 41 comes 0.2–1.1 s later than the
+  hit + 41 frames + the world's holds (a7a7 3.86 s: +0.18 s, 20.54 s:
+  +1.0 s, 41.19 s: its start logged at 42.13 s, 0.94 s after the hit;
+  8915 6.79 s +1.1 s, 31.01 s +1.1 s; 00ae 79.05 s +0.48 s with no stop
+  between; 00ae 7.41 s and d9e5 +0.0): not in the data decoded so far
+  (the clones' skill `combo_skill_abilityentity_seal`, exclusive to its
+  frame 150, would hold it 2–4 s, too long).
+- **The combo's explosion and Imprisonment's natural end**: decoded and
+  fixed 2026-11-22 (below, Fixed 4). Left: the seal's tick, where nothing
+  between holds it, comes 5.4–6.6 s after the touch against 6.0 s (WILL;
+  the ends: `efsim zmdlogs census --select 'event:combo_skill_seal_total'
+  --operator chr_0032_lizhiyan --near 'cast:combo_skill$' --near-operator
+  chr_0032_lizhiyan --window 5000,9500 --list`; the world's time from the
+  touch − 4 frames to each end under every placed stop, logcasts.ts
+  worldMs: median 6057 ms over 85 natural ends, 16 within ±150 ms of
+  6133): 4d60 −0.55 s at 38.4 and
+  57.1 s (its Susceptibility lane ends with it, ~6.1 s after its `since`:
+  the whole seal ran short), 1d91 / af7b / fc63 +0.3–0.45 s. Ruled out:
+  potentials and skill levels (`duration_will` 6, `duration` 4 at every
+  level, no potential touches them), abilityEvents 8 / 1403 / 1601 (they
+  cast the end but don't shorten the seal, whose child lane ends 0.5 s
+  later), the touch's lag behind the seal (since → touch 80–210 ms
+  everywhere). Still possible: hit-stops or the enemy's own time scale
+  reaching the seal's timer in a way `useTimeDilationDt: false` doesn't
+  say; the replay takes the logged end as a fact meanwhile. e9896c8d02be
+  at 62.4 s: the combo pressed before her own ultimate (cast event
+  62.06 s, Susceptibility since 62.41 s), placed after its stop at
+  63.58 s; the logged end at 69.07 s is 6.66 s after the seal (her own
+  stop didn't hold the tick) while its Susceptibility is listed to 70.93 s
+  (held): with the end moved to the log's, its hits at 70.0–70.9 s turn
+  log-listing fallbacks (Arcane, Si: plain 252 → 246).
 - Small: 9c6e 51–52.5 s ×0.729 (its second target), cryst bursts without
   a landing (489c, 9a80), 1cd1's touch at 38 s (placement).
 
@@ -357,6 +377,38 @@ mismatch against teammates' mismatches within 1.5 s at the same ratio
    Gloompurge Arcana's Amp with its own, gone by her next basic attack
    (00ae, 8915; was up to 10 s more), kit `int_amp_ult2`. 8915's basics at
    99–104 s ×0.84 → ×0.986 (the residue left).
+
+**Fixed (2026-11-22, Imprisonment's end and the INT lasers):**
+4. The seal's natural end isn't its end: the combo sets `trigger_time` =
+   duration_final − 0.5 (SimpleCalcBB), and the seal's one tick
+   (`triggerInterval trigger_time`, `waitFirstTriggerInterval`,
+   `maxTriggerCnt 1`, buffEvent 1) casts `abilityentity_end`, whose
+   explosion lands 14 frames later, 0.03 s before the seal and its child
+   Susceptibility end. The kit cast it at the seal's end, 0.5 s late
+   (kit `imprisonment` `every`, trigger `explosion` on its `buffTick`).
+   Where nothing holds it the logged end is 6.0 s after the touch (b6aa
+   5972 / 5961 ms, 1d91 5987 ms, 012a 5965 ms), and the Susceptibility's
+   logged lane ends 0.5 s after it (4d60, b6aa, 1d91, af7b, fc63).
+   abilityEvents 8 / 1403 / 1601 cast the same end when the holder goes
+   (docs/game-data-format.md): none mid-fight. The replay takes the logged
+   end as a timing fact (`ticksLoggedAs` on the seal, `endFollowsTick`,
+   `childOf` for the Susceptibility): its explosions land within 0.1 s of
+   the log's in 67 of 77 (was 10), within 0.02 s of the end event + 0.467
+   in 82 of 83. Freezes don't hold the seal (`runsThroughFreeze`: b6aa
+   19.56 s with Si's freeze inside ends on time, ad7f 3.91 s 0.37 s late
+   where the replay had 2.4 s). INT: seal2 (the early end's window) ends
+   with the tick (`early_end_window`); a battle-skill hit in the seal's
+   last 0.5 s after the tick still casts `seal_again` (seal_listener lasts
+   as long as the seal): its 12 s Susceptibility (`post_susceptibility_late`;
+   8915 109.94 s, listed to the fight's end) and no lasers (the clones go
+   at the end's frame 44). The early end's lasers wait on their own timer
+   (`laser_wait`, 41 frames, `ticksLoggedAs`): the log's combo event 0–4
+   frames before the first laser is the lasers' start (a7a7 5.41, 22.93,
+   48.89 s; 8915 9.24, 33.44 s; 00ae, d9e5); a combo's own event is one
+   within 1.5 s of it (buffreplay.ts COMBO_EVENT_MS, for skills a buff's
+   ticks are logged under), and a due tick waits up to 1 s for one
+   (TICK_HOLD_FRAMES). a7a7's three windows land within 0.1 s (was 0.2,
+   0.4 and 1.1 s off).
 
 The 8915 share of the stage logs (323) is the stage's own factor on her
 hits (test 7: 238 of her 278 hits in its windows within 1% of it, as

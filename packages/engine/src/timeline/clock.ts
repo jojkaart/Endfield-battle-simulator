@@ -155,13 +155,13 @@ export function shiftEnemy(st: TimelineState, start: number, n: number): Timelin
 }
 
 /**
- * The debuffs on the enemy (enemy-target buffs) after `start`, all or only `owner`'s, end `n` frames later. Every buff
- * has an owner (the operator whose kit, weapon or gear set applied it: buffs.ts ActiveBuff.owner), so none is left
- * undecided.
+ * The debuffs on the enemy (enemy-target buffs) after `start`, all or only `owner`'s, end `n` frames later (a freeze:
+ * not those that run through one, KitBuff.runsThroughFreeze). Every buff has an owner (the operator whose kit, weapon
+ * or gear set applied it: buffs.ts ActiveBuff.owner), so none is left undecided.
  */
 export function shiftDebuffs(st: TimelineState, start: number, n: number, owner?: string): TimelineState {
   if (n <= 0) return st;
-  return { ...st, buffs: st.buffs.map((b) => (b.target === "enemy" && (owner === undefined || b.owner === owner) ? shiftBuff(b, start, n) : b)) };
+  return { ...st, buffs: st.buffs.map((b) => (b.target === "enemy" && !b.runsThroughFreeze && (owner === undefined || b.owner === owner) ? shiftBuff(b, start, n) : b)) };
 }
 
 function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {

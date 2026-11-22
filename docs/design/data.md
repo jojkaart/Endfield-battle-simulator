@@ -403,12 +403,16 @@ detail):
   lines) after a placement change.
 - **Hidden casts logged as another skill's**: an entity's CastSkill is
   logged as a cast of the skill that spawned it. Arcane's combo appears
-  again about 6.5 s after each real one: the CastSkill of
-  `combo_skill_abilityentity_end` at Imprisonment's natural end (an
-  explosion follows about 0.45 s later), so the log gives Imprisonment's
-  end; her INT twin's `seal_again` is logged under the combo's id too. The
-  placement and `withLoggedCasts` treat such events as presses (which then
-  fail on cooldown); none is used as a timing fact yet.
+  again about 6 s after each real one: the CastSkill of
+  `combo_skill_abilityentity_end` at the seal's one tick (`trigger_time`,
+  its duration − 0.5 s: an explosion follows about 0.45 s later, the seal
+  and its Susceptibility end 0.5 s later); in INT the lasers' start
+  (`seal_finisher_wisd`, 0–4 frames before the first laser) and sometimes
+  `seal_again`'s start are logged under the combo's id too. The replay
+  takes them as timing facts (2026-11-22): a kit buff's `ticksLoggedAs`
+  brings or holds its tick to such an event (`endFollowsTick` moves its end,
+  `childOf` its children's), and a combo's own event is one within 1.5 s
+  of its start or last landing (`withLoggedCasts` COMBO_EVENT_MS).
 - **Status keys** (event keys of a status's own hit; effect keys of its
   debuff lane at later hits), as the development logs have them:
 
@@ -472,9 +476,9 @@ in the logs):
 - **Liino's stance**: her `normal_skill` events every ~3 s during Vocalist
   Stance are its beats or End Stance presses (End Stance is never logged
   under its own id).
-- **Arcane's Imprisonment end is logged as a combo cast** about 6.5–8 s
-  after each real combo (above, "Hidden casts"); `zmdlogs instances` marks
-  it.
+- **Arcane's Imprisonment end is logged as a combo cast** about 6–9 s
+  after each real combo (above, "Hidden casts"): the seal's tick, 0.5 s
+  before the seal ends, not its end; `zmdlogs instances` marks it.
 - **A hit may be logged under another operator's key** (Valiant's extra hit
   as `chr_0015_lifeng_ultimate_skill`).
 - **A teammate's `attack1` isn't a swap**: the controlled operator is
