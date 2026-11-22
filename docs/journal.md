@@ -4,9 +4,49 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 108 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 109 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-22: Liino's Cosmovoice beats on their own clock; stances cast before the log
+
+**Goal:** Liino on Typhoeus's team: her Cosmovoice beats logged 1.35–1.55 s apart against the kit's 1.5 s; her
+stances cast before a log began (1d91, 7910, 4d60), whose first volley never landed; the volleys with a battle-skill
+event at their first hit's ms.
+
+**The beats' clock.** The data's beats are a buff's ticks (ultskill_music_damage, every ultmusic_trigger 1.5 s,
+first at once, 15 s), the finale the ultimate's frame 508. In the logs the song's clock differs per log (4d60 a steady
+1.36 s in both its Cosmovoices, c6d8 1.52 s, the volley timer likewise: 4d60 9.0–9.4 s) while the same logs keep the
+ultimate's projectiles to ±15 ms of their frames, and the finale comes 14.3–14.75 s of world time after the first
+beat (the kit 14.37 s): the song runs on a clock of its own, the finale on the ultimate's. So the kit's beats are now
+kit buff cosmovoice_song's ticks (`noTickAtEnd`: ten, never eleven; its first beat the ultimate's own at frame 77 so
+the placement still times the ultimate by it), `ticksShownByHits`: the replay takes each beat from its logged hit and
+moves the song's end with them. The finale is the ultimate's own hit, pinned to its logged landing; End Stance skips
+it through a marker (a launch frame would have held her combo beside the ultimate until 508). The placement gives a
+trigger on casts one cast per anchor (every later beat had been an `ult_song` of its own). An ultimate logged at the
+very end of another's stop that covers it was pressed inside it (4d60's Zhuang Fangyi at 157.42 s: her Empyrean
+attacks from 158.38 s and Liino's beats at 158.66 s rule out a 2.6 s stop from the event).
+
+**Stances before the log.** `castsBeforeLog` infers a cast before the log where the stance's buff is listed from
+before it (4d60 since −811 ms, 7910 −576, a7a7 −1776, af7b −1444) or the first shown volley comes before any cast
+could have opened it (1d91); `withCastBeforeLog` runs it on a timeline of its own and moves what it left onto the
+replay's start, without its hits or the volley it launched before the fight. The 37 (now 30 of 104) events at a
+volley's first hit are beats: each comes 2.5–6 s after her last event, the next 3 s on, and 10 of 25 carry a heal at
+that ms like plain beats; reading them as no beat moved only 1d91 (+3 plain).
+
+**Scoreboard** (docs/accuracy.md): development plain 52.0 → 56.1%, mismatch 18.2 → 17.4%, mean |damage error| 12.6 →
+12.4%; hold-out plain 67.3 → 67.4%, mismatch 6.7 → 6.7%, error 12.1 → 12.1%; development logs 7 better, 0 worse, 3
+mixed (4d60 plain 386 → 677, af7b 105 → 414, 1d91 280 → 328). Liino's error: 1d91 +14.8 → +11.6%, 7910 −7.9 →
+−7.1%, a7a7 +7.5 → +0.2%. Simulations: the song, a buff, is held by Liino's own combo's slow-down where the ultimate's
+frames weren't (liino-laevatain −0.05%; d774's beats agree).
+
+**Dead ends:** adopting each log's shown interval as the clock for the next unshown tick (af7b's Liino +10.5 →
++2.9%, 9847's +10.2 → +15.6%, Liino logs' mean error 10.44 → 10.41): not kept. A `launch` on the finale: the
+engine waits for a cast's own launches before any other cast of its operator, her combo beside the ultimate too.
+
+**Left** (open-problems.md, "Liino's Cosmovoice beats"): the replay's stops around some beats (Perlica's ultimate in
+4d60 at 92.8 s); Cosmovoice ending before its logged finale in the replay (9090, 8915, 4bfc: the finale ×0.64–0.70);
+a pinned beat ordered after another's hit at its frame (9847 60.77 s); beats never logged (an enemy out of reach).
 
 ## 2026-11-18: The Finisher gated on every enhanced basic attack (test 108, the Talos Wiki)
 
@@ -381,42 +421,3 @@ ultimate's Amp need Intellect ≥ Will): the example snapshots didn't move.
 **Left:** 8915 after its stage (×0.986 at 92–103 s, ×0.81–1.21 steps at 104–112 s); whether a combo or battle skill
 ends the second ultimate's Amp; the 0.05 s by which Akekuri's P1 outlives the replay's end in 458b; her own finisher's
 8 SP (no log records SP).
-
-## 2026-11-18: Improvement round 3: measuring, views, a fair lock, engine readings
-
-**Goal:** the third friction round (docs/friction/README.md): seven open reports (the round-2 backlog and
-friction, the fixture refresh, tests from logs, Arcane's mismatches, cast placement, Stagger windows), ranked by the
-time they cost accuracy work, behaviour-preserving. Summary: docs/friction-done/2026-11-18-round-3.md.
-
-**Done** (a commit each):
-- `npm run measure` (scripts/measure.ts): the log checks on worker threads into scratch/, the scoreboard change and
-  each log's direction printed, nothing tracked written. All 73 logs in 64 s on a quiet machine, against 5-10 min for
-  `snapshots:update`; `--with`, `--logs`, `--changed placement`, `--at <ref>`, `--base <ref>`, `--assume`.
-- The test lock is a queue (arrival order, premerge and test suites ahead of jobs that arrived up to 20 min before,
-  no starvation), with a heartbeat, `with-lock --status`, a batch-script warning; snapshots.sh holds it once;
-  `EFSIM-DONE <job> pass|fail` lines; run states in scratch/runs/ (`node scripts/runstate.ts`);
-  `snapshots:update -- --costs` alone rewrites pending-costs.json; `scripts/verify-at.ts` verifies a commit while
-  editing goes on.
-- `efsim zmdlogs casts | replay | stagger | differences | groups`, built from the agents' scratch prototypes;
-  `zmdlogs hits --json` gains `listed`, `differences`, physical statuses and `appliedAtMs`.
-- Engine assumptions (timeline/assumptions.ts): `control-immunity` (listed / bosses / none / all) and
-  `teammate-pause` (6.5s / 3.5s) switch with `--assume`, in `zmdlogs check` and `measure` too (c3c7 under
-  `control-immunity=none` gives test 104's Si 120 → 110 plain again).
-- The inert Haste speed plumbing (hasteFrames, Acting.speed) removed.
-- `efsim gamedata find <type>`; abilityEvent numbers tabled (docs/game-data-format.md) and named by `gamedata tree`.
-- Docs: data.md "What the replay takes from the log" and "What the log records" (cast events by kind, hidden casts,
-  status keys, ms vs frames); tests.md "Measuring a change"; open-problems' header (a cause cites its check; first
-  steps `zmdlogs groups` / `differences`); `.ignore` and counter titles keep hold-outs off screen; CLAUDE.md.
-
-**Behaviour:** `npm run snapshots:update` at 0bb1a1a left every snapshot and docs/accuracy.md as they were ("No log's
-verdicts moved", no file changed); `npm run measure` agreed byte for byte; the default suite passed at 2d96fc3
-(after the Haste removal) through verify-at. Scoreboard unchanged.
-
-**Decisions:** measure compares against committed snapshots by default (they are HEAD's measurement), and keeps
-unmeasured logs at the reference's entry on both sides, so a selection shows only its own moves. The lock's priority
-is a fixed head start rather than a count of passes, so it needs no shared mutable state. Haste got no engine reading:
-its alternative had no code left worth keeping; the evidence moved to castSkill's comment. `--assumptions` still runs
-only the kits' alternatives (backlog point 14).
-
-**Left:** docs/friction/2026-11-18-backlog-after-round-3.md (17 points: the round-2 code-quality items, a CLI / A/B
-harness, citation checks, a status-key table in code, example repair, the teammate-pace measure, a cast table, …).
