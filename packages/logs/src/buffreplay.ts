@@ -885,8 +885,20 @@ function loggedTick(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f:
   if (!b || b.every === undefined) return null;
   const every = b.every;
   const due = b.nextTick !== undefined && b.nextTick - f <= every / 2;
-  const next = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: due ? f : f + every } : x)) };
+  const follows = (ctx.kits.get(c.operator)?.buffs ?? []).some((d) => d.id === b.id && d.endFollowsTick);
+  const moved = movedTick(b, due ? f : f + every, follows && due);
+  const next = { ...st, buffs: st.buffs.map((x) => (x === b ? moved : x)) };
   return due ? advance(ctx, next, f) : next;
+}
+
+/**
+ * A buff with its next tick at `to`; with `endFollows` (KitBuff.endFollowsTick: one game timer gives both, Arcane's
+ * Imprisonment) its end moves as far as a due tick does (not past a tick it has already had).
+ */
+function movedTick(b: ActiveBuff, to: number, endFollows: boolean): ActiveBuff {
+  const from = b.nextTick;
+  if (!endFollows || from === undefined || from > b.expiresAt || !Number.isFinite(b.expiresAt)) return { ...b, nextTick: to };
+  return { ...b, nextTick: to, expiresAt: b.expiresAt + (to - from) };
 }
 
 /** The frames of the logged cast events that may be ticks of a buff (KitBuff.ticksLoggedAs), per `owner|buff`. */
@@ -925,6 +937,13 @@ function loggedTickLandings(kits: readonly OperatorKit[], placement: Placement):
 interface TickEvents {
   readonly events: ReadonlyMap<string, readonly number[]>;
   readonly landings: ReadonlyMap<string, readonly number[]>;
+  /** The `owner|buff` keys whose end follows their tick (KitBuff.endFollowsTick). */
+  readonly endFollows?: ReadonlySet<string>;
+}
+
+/** The `owner|buff` keys of the buffs whose end follows their tick (KitBuff.endFollowsTick). */
+function endFollowsTick(kits: readonly OperatorKit[]): Set<string> {
+  return new Set(kits.flatMap((k) => k.buffs.filter((d) => d.endFollowsTick).map((d) => `${k.operator}|${d.id}`)));
 }
 
 /**
@@ -942,16 +961,17 @@ function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): Timelin
     if (n === undefined || every === undefined || b.cast !== undefined) return b;
     const shown = landings.get(key);
     const early = shown?.find((x) => x <= frame && x >= st.frame && x < n && n - x <= every / 2);
+    const follows = ticks.endFollows?.has(key) ?? false;
     if (early !== undefined) {
       changed = true;
-      return { ...b, nextTick: Math.max(early, st.frame) };
+      return movedTick(b, Math.max(early, st.frame), follows);
     }
     const frames = [...(events.get(key) ?? []), ...(shown ?? [])];
     if (!frames.length || n > frame) return b;
     const e = frames.filter((x) => x > n && x - n <= every / 2).sort((x, y) => x - y)[0];
     if (e === undefined) return b;
     changed = true;
-    return { ...b, nextTick: e };
+    return movedTick(b, e, follows);
   });
   return changed ? { ...st, buffs } : st;
 }
@@ -1288,7 +1308,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const logged = control?.casts ?? assembled;
   // With the casts that hit nothing the log needs (missedCasts), added below.
   let casts: readonly ReplayedCast[] = logged;
-  const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement) };
+  const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */

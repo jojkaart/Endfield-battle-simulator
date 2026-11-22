@@ -77,15 +77,7 @@
           ]
         }
       },
-      "modifiers": [],
-      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_seal",
-      "note": "buff_chr_0032_lizhiyan_combo_skill_seal from seal_total frame 9: INT duration_pre + duration (4.633 s), WILL duration_pre + duration_will (6.633 s). Its slow-down of the enemy's clock isn't modelled (open list Ti1b, test 37)."
-    },
-    {
-      "id": "doubles_susceptibility",
-      "label": "Tactical Doubles Susceptibility",
-      "target": "enemy",
-      "duration": {
+      "every": {
         "if": {
           "attrAtLeast": [
             41,
@@ -95,16 +87,28 @@
         "then": {
           "sum": [
             "duration_pre",
-            "duration"
+            "duration",
+            -0.5
           ]
         },
         "else": {
           "sum": [
             "duration_pre",
-            "duration_will"
+            "duration_will",
+            -0.5
           ]
         }
       },
+      "ticksLoggedAs": "chr_0032_lizhiyan_combo_skill",
+      "endFollowsTick": true,
+      "modifiers": [],
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_seal",
+      "note": "buff_chr_0032_lizhiyan_combo_skill_seal from seal_total frame 2: INT duration_pre + duration (4.633 s), WILL duration_pre + duration_will (6.633 s). Its natural end's explosion isn't at its end: the combo sets trigger_time = duration_final − 0.5 (SimpleCalcBB), and the seal's one tick (triggerInterval trigger_time, waitFirstTriggerInterval, maxTriggerCnt 1; buffEvent 1) casts abilityentity_end, whose hit lands 14 frames later, 0.03 s before the seal ends (`every`: trigger explosion). The log records that CastSkill as a combo cast (docs/design/data.md \"What the log records\"): 4.0 s (INT) / 6.0 s (WILL) after the touch where nothing holds it (b6aa 5972 / 5961 ms, 1d91 5987 ms). abilityEvent 8 (its holder defeated), 1403 and 1601 (only here and in combo_skill_precheck: the holder removed or handed over, docs/game-data-format.md) cast the same end early, guarded by has_finished; none happens against one boss. No useTimeDilationDt: Si's freeze doesn't hold it (`ownClock`; ad7f). Its slow-down of the enemy's clock isn't modelled (open list Ti1b, test 37)."
+    },
+    {
+      "id": "doubles_susceptibility",
+      "label": "Tactical Doubles Susceptibility",
+      "target": "enemy",
       "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable_pre",
       "modifiers": [
         {
@@ -144,7 +148,7 @@
           ]
         }
       ],
-      "note": "…_spell_vulnerable_pre, asChildBuff of the seal: rate_pre (P1 +0.06 in WILL), plus in WILL min(spell_vul_per_will × Will, max_spell_vul_will)."
+      "note": "…_spell_vulnerable_pre, asChildBuff of the seal (its duration_vul ← the seal's duration): rate_pre (P1 +0.06 in WILL), plus in WILL min(spell_vul_per_will × Will, max_spell_vul_will). A child ends with its parent: no duration of its own, ended with Imprisonment (trigger imprisonment_end), so it follows the seal where the log moves the seal's end (its logged lane ends 0.5 s after the logged end cast: 4d60 at 38.32 s, b6aa, 1d91, af7b, fc63)."
     },
     {
       "id": "post_susceptibility_int",
@@ -165,12 +169,19 @@
       "note": "…_combo_skill_spell_vulnerable from seal_again (INT early end only): rate_final = rate_pre in INT; its duration_vul has no blackboard, so the default 12 s, ended by seal_finisher_wisd's final laser 58 frames after the early end."
     },
     {
-      "id": "early_end_marker",
-      "label": "Imprisonment ended early",
-      "target": "self",
-      "duration": 0.1,
+      "id": "early_end_window",
+      "label": "Imprisonment's early end (INT)",
+      "target": "enemy",
+      "duration": {
+        "sum": [
+          "duration_pre",
+          "duration",
+          -0.5
+        ]
+      },
       "modifiers": [],
-      "note": "Keeps the natural-end explosion quiet when Imprisonment was ended by the INT battle skill (the game's timed markers)."
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_seal2",
+      "note": "buff_…_combo_skill_seal2 (INT; inert in WILL, its abilityEvent 101 handler checks isWisd): created at seal_total frame 6, 4 frames after the seal, for duration_seal2 ← the combo's `duration` (4 s), so it ends with the seal's natural-end tick (duration_pre + duration − 0.5 after the seal: applied with it here). While it lasts her battle skill's hit ends Imprisonment early (trigger int_early_end); after it, bunshin_end_listener's handler takes the hit (it checks that no seal2 is left: int_late_hit)."
     },
     {
       "id": "int_after_end",
@@ -384,6 +395,16 @@
         {
           "kind": "buff",
           "buff": "doubles_susceptibility"
+        },
+        {
+          "kind": "buff",
+          "buff": "early_end_window",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         }
       ],
       "note": "seal_total frame 2 (cast + 11): teammates' hits from then see the Susceptibility."
@@ -406,7 +427,7 @@
             ]
           },
           {
-            "buffActive": "imprisonment"
+            "buffActive": "early_end_window"
           }
         ]
       },
@@ -417,8 +438,8 @@
           "value": "atb_return_wisd"
         },
         {
-          "kind": "buff",
-          "buff": "early_end_marker"
+          "kind": "endBuff",
+          "buff": "early_end_window"
         },
         {
           "kind": "endBuff",
@@ -489,15 +510,10 @@
     {
       "id": "explosion",
       "on": {
-        "event": "buffEnded",
+        "event": "buffTick",
         "buff": "imprisonment"
       },
       "by": "self",
-      "if": {
-        "not": {
-          "buffActive": "early_end_marker"
-        }
-      },
       "skill": "chr_0032_lizhiyan_combo_skill",
       "do": [
         {
@@ -530,7 +546,23 @@
           }
         }
       ],
-      "note": "combo_skill_abilityentity_end: explosion at its frame 14; under INT also the bunshin_end_listener (frame 10)."
+      "note": "The seal's one tick (trigger_time = duration_final − 0.5) casts combo_skill_abilityentity_end: explosion at its frame 14; under INT also the bunshin_end_listener (frame 10). An early end (int_early_end) finishes the seal first, so no tick comes."
+    },
+    {
+      "id": "imprisonment_end",
+      "on": {
+        "event": "buffEnded",
+        "buff": "imprisonment"
+      },
+      "by": "self",
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "doubles_susceptibility"
+        }
+      ],
+      "note": "The seal's child …_spell_vulnerable_pre (asChildBuff) ends with it."
     },
     {
       "id": "int_late_hit",
@@ -554,7 +586,7 @@
           },
           {
             "not": {
-              "buffActive": "imprisonment"
+              "buffActive": "early_end_window"
             }
           }
         ]

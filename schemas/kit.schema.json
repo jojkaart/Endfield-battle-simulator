@@ -230,6 +230,10 @@
             "type": "boolean",
             "description": "A battle log shows each of this buff's ticks by the hits a trigger on them (`buffTick`) fires (Liino's volleys): the log check's replay holds a tick due up to half an interval before such a logged cast's start to it, and brings one due up to half an interval after it forward (its own clock drifts from the game's); the engine doesn't read it. Needs `every`."
           },
+          "endFollowsTick": {
+            "type": "boolean",
+            "description": "Its end is a fixed time after its tick (one game timer gives both: Arcane's Imprisonment). Where the log check's replay moves a tick to the log's (ticksLoggedAs, ticksShownByHits), its end moves as far; the engine doesn't read it. Needs `every`."
+          },
           "endsWithCast": {
             "type": "boolean",
             "description": "Ends with the action that applied it (CreateBuffAction autoFinishByAction): when its owner's current skill ends or the owner starts another; not applied outside a skill."

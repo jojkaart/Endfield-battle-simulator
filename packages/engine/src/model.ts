@@ -707,6 +707,13 @@ export interface KitBuff {
    */
   readonly ticksShownByHits?: boolean;
   /**
+   * Its end is a fixed time after its tick: one game timer gives both (Arcane's Imprisonment, whose one tick at
+   * trigger_time = duration − 0.5 s casts its explosion). Where the log check's replay moves a tick to the log's
+   * (ticksLoggedAs, ticksShownByHits), its end moves as far (cli buffreplay.ts loggedTick, heldTicks). The engine
+   * doesn't read it.
+   */
+  readonly endFollowsTick?: boolean;
+  /**
    * Ends with the action that applied it (CreateBuffAction autoFinishByAction):
    * when its owner's current skill ends or the owner starts another one.
    * Applied while its owner isn't in a skill, it isn't applied.
