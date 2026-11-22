@@ -12,7 +12,7 @@
 
 import {
   activeAt, advance, allActions, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
-  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
+  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type Predicate, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
@@ -429,6 +429,20 @@ function ordered(casts: readonly ReplayedCast[]): ReplayedCast[] {
 /** How much longer than a logged buff end the replay's buff must last for an inferred cast to be what ended it (castsFromBuffEnds). */
 const EXPIRY_MARGIN_FRAMES = 6;
 
+/** The buffs a predicate needs active (a `buffActive`, alone or in an `all`). */
+function neededBuffs(p: Predicate | undefined): string[] {
+  if (!p) return [];
+  if ("buffActive" in p) return [p.buffActive];
+  if ("all" in p) return p.all.flatMap(neededBuffs);
+  return [];
+}
+
+/** Whether a branch's condition (`not` a buff active) rules out a skill whose availability needs that buff. */
+function excludes(branch: Predicate | undefined, available: Predicate | undefined): boolean {
+  const without = branch && "not" in branch ? neededBuffs(branch.not) : [];
+  return without.length > 0 && neededBuffs(available).some((b) => without.includes(b));
+}
+
 export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Placement, casts: readonly ReplayedCast[]): ReplayedCast[] {
   const added: ReplayedCast[] = [];
   const leads = new Map<number, string>();
@@ -438,11 +452,19 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
     const t = kit?.triggers.find((x) => `trigger:${x.id}` === pc.group);
     if (!kit || !t || t.on.event !== "buffEnded" || !("buff" in t.on)) continue;
     const buff = t.on.buff;
+    // The trigger's actions the logged hits come from: their conditions say which state the buff ended in.
+    const ids = new Set([...placement.hits].flatMap(([h, p]) => (p.cast === pc ? p.hits.filter((k) => k.events.length === 0 || k.events.includes(h.event)).map((k) => k.id) : [])));
+    const branches = allActions(t.do).filter((a) => a.kind === "hits" && a.hits.some((k) => ids.has(k.id)));
     for (const e of kit.triggers) {
       if (e.on.event !== "cast" || !e.on.skills?.length || !allActions(e.do).some((a) => a.kind === "endBuff" && a.buff === buff)) continue;
       const skillId = e.on.skills[0] as string;
       const skill = kit.skills.find((x) => x.skillId === skillId);
       if (!skill) continue;
+      // A skill castable only with a buff can't have ended it where the logged hits come from the branch without that
+      // buff: its expiry did (Si's Final Stroke needs the Inksoul; the mark's own burst, inkmark_projhit, is Artful
+      // Intent's end without one: 0c14fb3ce77d at 66.37 s, 489c0be3e162 at 100.2 s, each a Final Stroke against its kit
+      // and a Yinglung's Edge layer the combo's damage doesn't have).
+      if (branches.length && branches.every((a) => excludes(a.if, skill.available))) continue;
       const start = pc.start - ((e.delay ?? 0) * 1000) / FPS;
       if ([...casts, ...added].some((c) => c.operator === pc.operator && e.on.event === "cast" && (e.on.skills ?? []).includes(c.skillId) && c.start <= pc.start && c.start >= start - LOGGED_CAST_MS)) continue;
       added.push({ operator: pc.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], whileBuff: { buff, endsAt: pc.start } });
