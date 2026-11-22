@@ -419,19 +419,19 @@
   ]
  },
  "rossi-gilberta.scenario.json": {
-  "total": 960524.843,
+  "total": 928582.324,
   "hits": 171,
   "casts": 38,
   "perOperator": {
-   "chr_0028_wulfa": 919736.767,
+   "chr_0028_wulfa": 887794.247,
    "chr_0013_aglina": 40788.077
   },
-  "digest": "0c92241f7840",
+  "digest": "9fd2d9ae573e",
   "windows": [
    "860e09976ab7",
-   "5141c2d68750",
-   "992a3b4bb2a5",
-   "b733fc633d86"
+   "5b188f39f8ed",
+   "72430cc4b020",
+   "72fcc6374f35"
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
