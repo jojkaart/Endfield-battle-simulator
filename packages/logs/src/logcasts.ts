@@ -433,8 +433,15 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           const reach = (s: string) => Math.max(ANCHOR_MS, msOf(data.skills[s]?.timing?.durationFrames ?? 0));
           const refs = a.skills.flatMap((s) => (starts.get(s) ?? []).map((t) => ({ at: t + msOf(a.delay), reach: reach(s) }))).filter((r) => r.at <= start + r.reach).sort((x, y) => x.at - y.at);
           if (refs.length === 0) return true;
-          const prev = refs.at(-2);
-          const since = prev ? prev.at + prev.reach : -Infinity;
+          // One cast placed from several keys is one anchor (4bfc6f3e84b8: Liino's ultimate at 52.70, 52.84 and 55.40 s).
+          const anchors: { first: number; last: number; reach: number }[] = [];
+          for (const r of refs) {
+            const cur = anchors.at(-1);
+            if (cur && r.at - cur.last <= cur.reach) cur.last = r.at;
+            else anchors.push({ first: r.at, last: r.at, reach: r.reach });
+          }
+          const prev = anchors.at(-2);
+          const since = prev ? prev.last + prev.reach : -Infinity;
           return !(opened.get(g.id) ?? []).some((c) => c.start > since);
         };
         const eligible = candidates.filter(anchorFree);

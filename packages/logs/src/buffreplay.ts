@@ -1036,26 +1036,8 @@ interface TickEvents {
  * the state's frame and `frame` brought to it (no later than the state's frame), as loggedTick does at a cast event. A
  * buff whose ticks its hits show has its end on the same clock: it moves with the tick (Liino's Cosmovoice song, 10 beats
  * on a clock of their own: 4d60e7fe92c2's second Cosmovoice, its beats 1.36 s apart, ran on to two replay-only beats
- * past its ninth logged one). Its interval from then on is the last one shown, a logged tick to the one before it, where
- * that is within CLOCK_RATE of the interval it had (a tick the log doesn't show comes on the same clock: af7b7f865906's
- * volleys 11.7 and 11.5 s apart, the next due at 47.6 s inside her combo at 47.97 s, which drops a volley still to
- * launch; the kit's 10 s put a replay-only one at 47.1 s).
+ * past its ninth logged one).
  */
-/** The world's frames the time stops and slow-downs took from `from` to `to` (the lowest scale where they overlap; buffs wait them out: shiftWorld). */
-function heldBetween(st: TimelineState, from: number, to: number): number {
-  const over = st.slowdowns.filter((x) => x.start < to && x.start + x.scales.length > from);
-  let held = 0;
-  for (let f = Math.max(from, Math.min(...over.map((x) => x.start))); f < to && over.length; f++) {
-    let m = 1;
-    for (const x of over) if (f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
-    held += 1 - m;
-  }
-  return Math.round(held);
-}
-
-/** How far a buff's shown interval may be from the one it has to be its clock's (heldTicks): a factor either way. */
-const CLOCK_RATE = 1.25;
-
 function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): TimelineState {
   const { events, landings } = ticks;
   if (events.size === 0 && landings.size === 0) return st;
@@ -1066,13 +1048,7 @@ function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): Timelin
     if (n === undefined || every === undefined || b.cast !== undefined) return b;
     const shown = landings.get(key);
     const early = shown?.find((x) => x <= frame && x >= st.frame && x < n && n - x <= every / 2);
-    const moved = (to: number) => {
-      if (!shown) return { ...b, nextTick: to };
-      const prev = shown.filter((x) => x < to).at(-1);
-      const gap = prev === undefined ? null : to - prev - heldBetween(st, prev, to);
-      const rate = gap !== null && gap >= every / CLOCK_RATE && gap <= every * CLOCK_RATE ? { every: gap } : {};
-      return { ...b, nextTick: to, ...rate, ...(Number.isFinite(b.expiresAt) ? { expiresAt: b.expiresAt + to - n } : {}) };
-    };
+    const moved = (to: number) => ({ ...b, nextTick: to, ...(shown && Number.isFinite(b.expiresAt) ? { expiresAt: b.expiresAt + to - n } : {}) });
     if (early !== undefined) {
       changed = true;
       return moved(Math.max(early, st.frame));
