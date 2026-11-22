@@ -98,7 +98,7 @@
           "buff": "show_weapon"
         }
       ],
-      "note": "ultimate_skill frame 0: CreateBuff show_weapon, which creates ult_end (Twilight). Created inside her own 61-frame UltimateTimeAction, they are held by the rest of it like any buff created inside a running stop (engine assumption buff-in-stop, reading held: 15 s after the stop, about 17 s from the press; until 2026-11-18 the kit's assumption laevatain-twilight-own-stop, default unheld). The logs (in-game tests 18, 21): in all 7 closed Twilight windows the game's Twilight outlasts the unheld reading by 2.1-6.6 s, and the held one is never too long."
+      "note": "ultimate_skill frame 0: CreateBuff show_weapon, which creates ult_end (Twilight). Created inside her own 61-frame UltimateTimeAction, they are held by the rest of it like any buff created inside a running stop (engine assumption buff-in-stop, reading held: 15 s after the stop, about 17 s from the press; until 2026-11-18 the kit's assumption laevatain-twilight-own-stop, default unheld). The logs (in-game tests 18, 21): in all 7 closed Twilight windows the game's Twilight outlasts the unheld reading by 2.1-6.6 s, and the held one is never too long. What it still runs past the held one (0.05-4.6 s) her Forgeborn buff from the same ultimate runs too (2026-11-22, open-problems): her buffs' clock, not Twilight's (assumption laevatain-twilight-clock)."
     },
     {
       "id": "ultimate_cooldown",
@@ -206,6 +206,30 @@
       "note": "combo_skill ChannelingAction (frames 0–57, every 0.1 s, only while ult_end is on) re-creates show_weapon and ult_end with duration 0.1 (stacking type 5, assumed to add time: in-game test 21): +1.9 s."
     },
     {
+      "id": "twilight_clock_excess",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0016_laevat_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "reading": { "assumption": "laevatain-twilight-clock", "reading": "forgeborn" },
+      "do": [
+        {
+          "kind": "extendBuff",
+          "buff": "twilight",
+          "seconds": 1.8
+        },
+        {
+          "kind": "extendBuff",
+          "buff": "show_weapon",
+          "seconds": 1.8
+        }
+      ],
+      "note": "Only under assumption laevatain-twilight-clock's alternative (reading forgeborn): Twilight and show_weapon 1.8 s longer from the ultimate, the median excess of Forgeborn Scathe's 20 s buff (buff_wpn_sword_0006_valid) over the replay in the logs' Twilight windows. Not a data mechanism: the logs' excess is the clock of all her buffs in those windows (open-problems \"Laevatain's Twilight runs longer than its model\"), so the default leaves Twilight as the data has it."
+    },
+    {
       "id": "final_strike_absorb",
       "on": {
         "event": "hit",
@@ -310,6 +334,18 @@
         }
       ],
       "note": "Talent 1 (buff_chr_0016_laevat_passive): Scorching Heart when Melting Flame reaches 4 (the data's energy_icon_5 gate: it starts on reaching 4, refreshes on reaching 4 again after spending, and a gain capped at 4 doesn't restart it; stackAtLeast fires only when the count changes)."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "laevatain-twilight-clock",
+      "test": "21",
+      "question": "Does Twilight last longer than the data's 15 s after her stop plus the holds the engine counts? In the logs it runs 0.05-4.6 s past the replay, but her weapon's 20 s buff from the same ultimate runs as far past it (0.9-2.8 s in the closed windows): the excess is her buffs' clock in those windows, not Twilight's (2026-11-22).",
+      "default": "model",
+      "readings": {
+        "model": "the data's: 15 s after her own stop, held by her combos (1.9 s each), her battle skill's pause and every stop and slow-down the engine models",
+        "forgeborn": "1.8 s more from the ultimate (Forgeborn's median excess in the logs' Twilight windows), Twilight and show_weapon both: how much rides on the window's clock"
+      }
     }
   ],
   "skills": [

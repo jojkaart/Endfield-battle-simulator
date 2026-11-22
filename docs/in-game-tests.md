@@ -689,7 +689,7 @@ without about 5.3 s.
   ultimate's frame 0: in all 7 closed Twilight windows the game's Twilight
   outlasts 15 s from the press plus every hold the engine counts, by 2.1–6.6
   s, so her own stop holds it (+2.03 s; test 21's entry has the windows and
-  what is still longer). Typhoeus's Hail of Arrows window, created at her
+  what is still longer, 2026-11-22: the clock of all her buffs, not Twilight's). Typhoeus's Hail of Arrows window, created at her
   ultimate's frame 61 inside Gilberta's and Arcane's stops: d9e5's 5th rain
   needs it held by them (test 46). Now the engine's rule for every buff
   (engine assumption `buff-in-stop`, reading `held`; `runs` is the old
@@ -815,7 +815,16 @@ never too long (458b 0.6–2.6 and 1.8–2.4 s, f879 0.1–1.2 and 1.8–2.5 s, 
 ultimate, left out: the replay counts it inside). No single further term fits all seven: a constant, show_weapon's 16 s, the
 battle skill's full 115-frame pause (no skips: four windows would end after the log's
 first plain cast) or a smaller combo hold each leave some windows outside their brackets.
-What's left is in open-problems "Laevatain's Twilight runs longer than its model". The
+**What the rest is (2026-11-22): not Twilight's.** Her weapon's 20 s Forgeborn Scathe buff,
+created by the same ultimate and listed on her hits, has none of Twilight's own pauses and
+runs past the replay by about as much in the same windows (0.9–2.8 s in the closed ones;
+458b 156.3 s 0.9–1.3, c83c 1.7–2.8, f879 45.4 s 1.3–2.3): Twilight less Forgeborn contains 0
+in five of nine windows and misses it by 0.09–0.43 s in four, both ways. So the model of
+Twilight itself (her stop, the combo's 1.9 s, the battle skill's pause with skips) holds; the
+excess is her buffs' clock in those windows (holds the log can't show: perfect dodges' world
+slow-down, pauses), open-problems "Laevatain's Twilight runs longer than its model" (the
+table, and each term ruled out). The kit stays; kit assumption `laevatain-twilight-clock`
+(reading `forgeborn`, +1.8 s) shows what rides on it. Nothing here for the owner to time. The
 cut-short case (a combo pressed during her enhanced battle skill, ending its pause) isn't
 in any log: her combos come 2.1–3.5 s after an enhanced battle skill (17 cases), after its
 2.13 s pause. That half stays the test below; a log of it would decide it too.
