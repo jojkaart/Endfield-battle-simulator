@@ -44,6 +44,7 @@ interface RawHit {
   heals?: "self" | "controlled" | "team";
   detached?: boolean;
   launch?: number;
+  world?: true;
   enemyDelay?: number;
   poise?: ValueExpr;
   poiseControlledOnly?: boolean;
@@ -645,6 +646,7 @@ function kitChecker(scope: KitScope) {
         // A hit dealt from another SkillData file (a projectile or ability entity) is on its way and survives an interrupt.
         ...((h.detached ?? (h.launch !== undefined || (src.defaultEvent !== undefined && events.length > 0 && !events.includes(src.defaultEvent)))) ? { detached: true } : {}),
         ...(h.launch !== undefined ? { launch: h.launch } : {}),
+        ...(h.world ? { world: true as const } : {}),
         ...(h.enemyDelay !== undefined ? { enemyDelay: h.enemyDelay } : {}),
         ...(h.if ? { if: h.if } : {}),
         ...(h.branch ? { branch: h.branch } : {}),

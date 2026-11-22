@@ -141,6 +141,18 @@ describe("variants by a stack range (Zhuang Fangyi's strike_N / final_N by Sunde
     expect(new Set(strikes.map((h) => p.hits.get(h)?.cast)).size).toBe(1);
     expect(strikes.map((h) => p.hits.get(h)?.index)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
+
+  it("her Empyrean attacks 1 and 2, alike in every key (attack1_ult_1..4_abilityrange), are told apart by attack 1's windows, past her Empyrean battle skill (it keeps the chain)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-d774d0ce7bd3.json", import.meta.url).pathname);
+    const Z = "chr_0030_zhuangfy";
+    const p = placeHits(data, fx);
+    const step = (t: number) => p.hits.get(fx.hits.find((h) => h.operator === Z && h.t === t) as LogHit)?.cast.skillId.replace(`${Z}_`, "");
+    // 17231 / 17896 ms: attack 1, then attack 2 in its window from frame 22 (the log's damage ×1.4 the first's); 24821 /
+    // 26504 ms: the same with her Empyrean battle skill cast between (25.08 s).
+    expect([17231, 17896, 24821, 26504].map(step)).toEqual(["attack1_ult", "attack2_ult", "attack1_ult", "attack2_ult"]);
+    // The entities' keys beyond the first are placed (attack1_ult_2 / _3_abilityrange: 32 groups unplaced before).
+    expect(fx.hits.filter((h) => h.operator === Z && /attack1_ult_[2-4]_abilityrange$/.test(h.event)).every((h) => p.hits.has(h))).toBe(true);
+  });
 });
 
 describe("an ultimate placed from several keys", () => {
@@ -210,6 +222,31 @@ describe("a later landing of a cast across time stops", () => {
     expect(cast(106391, `buff_${W}_combo_2_damage`)).toBe(cast(104058, `${W}_combo_2_skill`));
     // Its follow-up's perfect hit at 107319 ms, logged under combo 2's key, after an attack 3 at 104058 ms.
     expect(cast(107319, `${W}_combo_2_skill`)?.skillId).toBe(`${W}_combo_3_skill`);
+  });
+
+  it("a logged landing a jump would skip: the replay drops the jump and its path (d572: Rossi's sequence-2 perfect hit at 39.23 s, its Lift and extra Vulnerable, no late hit)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-d5720d9ceb94.json", import.meta.url).pathname);
+    const W = "chr_0028_wulfa";
+    const r = logBuffReplay(data, fx).replay;
+    const near = (f: number, t: number) => Math.abs((f * 1000) / 30 - t) < 100;
+    // No late hit beside the perfect one (it landed 14 frames earlier, consuming the infliction the perfect one needs).
+    expect(r.hits.filter((h) => h.operator === W && h.hitId === "late" && h.frame > 1140 && h.frame < 1190)).toHaveLength(0);
+    // Its Lift at the logged airborne hit, and two Vulnerable stacks (the Lift's and the perfect hit's own): 1 → 3.
+    expect(r.reactions.some((e) => e.kind === "physical" && e.operator === W && e.status === "lift" && near(e.frame, 39231))).toBe(true);
+    const v = r.reactions.filter((e) => e.kind === "vulnerable" && e.operator === W && near(e.frame, 39231));
+    expect(v.map((e) => (e.kind === "vulnerable" ? [e.before, e.stacks] : null))).toEqual([[1, 2], [2, 3]]);
+  });
+
+  it("pinned landings of one frame land in the log's order (9a80: Rossi's perfect hit at 32489 ms consumes the infliction before Gilberta's ultimate at 32511 ms, frame 975 both)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9a8097fcf351.json", import.meta.url).pathname);
+    const W = "chr_0028_wulfa";
+    const r = logBuffReplay(data, fx).replay;
+    const logged = fx.hits.find((h) => h.operator === W && h.t === 32489 && h.event === `${W}_combo_2_skill`) as LogHit;
+    const l = r.landing(logged);
+    // Two stacks consumed, as logged (149554); Gilberta's hit first would leave it none (67979).
+    expect("unknown" in l ? null : Math.round(l.damage)).toBe(logged.value);
   });
 });
 

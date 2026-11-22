@@ -171,8 +171,8 @@ leads (B8: the build offsets the log check
 reports without an explanation (04d4's Snowshine ×0.96,
 92b4's Liino ×1.031), and those it can't see (flat ATK buffs spread the
 ratio: 4e36 / c3c7's Ardelia, set by hand; now `efsim zmdlogs fit-build`, still
-to be bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
-(d774: 8 strikes where the log has 3); Si's build in 9555 (found
+to be bounded by the weapon's logged skill levels), 458b's Combustion ticks (Zhuang Fangyi's Sunderblade count in d774:
+explained 2026-11-22, her ultimate's stop holds the strikes); Si's build in 9555 (found
 2026-11-18: no attribute nodes, a fixture buildOverride; 0c14's Si and
 f978's Ardelia too); logged presses with no damage of their own while the enemy is
 there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),

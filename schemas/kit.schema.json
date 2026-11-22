@@ -3514,6 +3514,10 @@
           "minimum": 0,
           "description": "A detached hit's launch frame (its LaunchProjectile or SpawnAbilityEntity): until then the cast's own (a cut cast or a jump over it drops it; a jump before it moves it); after it, it lands whatever happens. Implies detached."
         },
+        "world": {
+          "const": true,
+          "description": "A detached hit a buff's timeline deals (a buff the cast puts on its operator, whose triggers strike): on the world's clock, so every slow-down holds it, the operator's own ultimate stop too (Zhuang Fangyi's Thunder Strikes). As a trigger's `world` hits."
+        },
         "poise": {
           "$ref": "#/$defs/valueExpr",
           "description": "Stagger damage (SkillData damage units of damageAttributeType 1, e.g. the skill's poise key)."

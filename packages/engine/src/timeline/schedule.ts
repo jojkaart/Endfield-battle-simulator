@@ -42,6 +42,9 @@ export function dueBefore(a: Scheduled, b: Scheduled): boolean {
   const ra = IN_FRAME_RANK[stepOf(a)];
   const rb = IN_FRAME_RANK[stepOf(b)];
   if (ra !== rb) return ra < rb;
+  // Pinned landings in the log's order (9a8097fcf351: Rossi's perfect hit at 32489 ms consumes the infliction before
+  // Gilberta's ultimate at 32511 ms, both in frame 975).
+  if (a.loggedMs !== undefined && b.loggedMs !== undefined && a.loggedMs !== b.loggedMs) return a.loggedMs < b.loggedMs;
   // Hits, and teammates' attacks, by their operator's ID (not the team's order).
   return ((a.kind === "hit" && b.kind === "hit") || (a.kind === "auto" && b.kind === "auto")) && a.operator < b.operator;
 }

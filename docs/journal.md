@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 111 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 112 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -119,6 +119,42 @@ engine waits for a cast's own launches before any other cast of its operator, he
 **Left** (open-problems.md, "Liino's Cosmovoice beats"): the replay's stops around some beats (Perlica's ultimate in
 4d60 at 92.8 s); Cosmovoice ending before its logged finale in the replay (9090, 8915, 4bfc: the finale ×0.64–0.70);
 a pinned beat ordered after another's hit at its frame (9847 60.77 s); beats never logged (an enemy out of reach).
+
+## 2026-11-22: Gilberta's Vulnerable count, Zhuang Fangyi's Empyrean entity keys
+
+**Goal:** two accuracy leads: the replay's Vulnerable count one or two low at Gilberta's ultimate (4360, 489c, 9847,
+d572; her Susceptibility is 0.30 × (1 + 0.1 × stacks)), and Zhuang Fangyi's `attack1_ult_2_abilityrange`, a logged key
+no kit hit named (32 unplaced groups), with her d774 Sunderblade lead.
+
+**Zhuang Fangyi (data):** Empyrean attacks 1 and 2 each spawn four entities `attack1_ult_1..4_abilityrange`, cylinders
+at their own offsets; each hits only without the 0.4 s marker the one that hit leaves, so one hit per attack, logged
+under whichever entity held the target (_1, _2, _3 all in the logs). Both kit hits name the four keys. The two attacks
+then share every key; the placement told them apart by kit order only (attack 2's hits read ×1.4), so `choose` now
+picks, for steps alike in every key, the one whose window of the latest cast lies nearest, past a skill that keeps the
+chain (her Empyrean battle skill). A first, general version moved Ardelia's, Typhoeus's and Rossi's casts in five
+logs: restricted to steps alike in every key. **The Sunderblade lead was a misreading:** d774's battle skill at 97.24 s
+has all 8 strikes, the last 3 and the final after her ultimate's stop (her ultimate is logged at its end, 102.17 s;
+4d60 157.42 s the same). Her strikes come from a buff on her, so her own stop holds them: a skill hit can now be on the
+world's clock (`KitHit.world`, as trigger hits could); her Empyrean strikes (an entity's) keep their pace through her
+own combo slow-down in 4bfc and stay on hers.
+
+**Gilberta:** in 489c and d572 the replay landed Rossi's combo 3 twice: the late path's hit (the kit's jump 0 → 212
+without the ring) and the logged perfect hit pinned 14 frames later; the late one consumed the infliction the perfect
+one's Lift and extra Vulnerable need (+1 where the game gave +2). The replay now drops a jump that would skip a pinned
+landing of a hit only the skipped part has (not Pogranichnik's combo, whose slashes land on both paths: a first version
+cost c4f3 17 plain hits), with its path; that also ends Rossi's attack 4 landing its controlled and uncontrolled hits
+both (2fd9, 99fb). Then 9a80's perfect hit lost its consumption to Gilberta's ultimate landing in the same frame first
+(by operator id): pinned landings of a frame now land in the log's order (`loggedMs`). The four ultimates read 4 as
+listed; 18 of the 21 listed ultimates agree. **Open:** 4360 and 9847 (tower bosses), where the stacks outlive 20 s by
+0.4–1.6 s of world time (open-problems.md, with what's ruled out).
+
+**Numbers (scoreboard):** development plain 52.0 → 52.1%, mismatch 18.2%, damage error 12.6 → 12.4%; earlier pending
+plain 48.9 → 50.2%, damage error 8.3 → 8.6%; hold-out plain 67.3 → 67.5%, mismatch 6.7%, damage error 12.1 → 12.2%;
+verified 4e5e −1.7 → −3.8%. d572 plain 655 → 788. The totals that fall (4e5e, 4a64, 2fd9, 99fb, 489c, 0c14) lose
+phantom "replay only" hits of Rossi's (late, hit_ai) that the log doesn't have; d774 and c6d8 rise as her Empyrean hits
+now land (d774's ×1.39 strikes from 97.87 s not looked into).
+
+**Also:** census's rerun line prints `--window=a,b` (a negative window failed as printed).
 
 ## 2026-11-18: The Finisher gated on every enhanced basic attack (test 108, the Talos Wiki)
 
@@ -375,42 +411,3 @@ an engine issue: its Vulnerable count at Gilberta's ultimate is one or two low i
 follows the listed value 86 to 24; open-problems). Also found: 4d60 has a 7.2 s whole-game pause (no hit from
 anyone, a teammate's chain continuing after it), which the log's clock runs through; bigents' Staggers run 11–14 s
 past the data.
-
-## 2026-11-18: Si's misfit logs and Ardelia's build: build overrides and fit-build
-
-**Goal:** the misfits of Si (0c14, 9555, c83c) and Ardelia (f978, 1d91): build offsets or kit rules, and build
-offsets fitted from the hits instead of by hand (the roadmap's "build fitter with structured buildOverrides").
-
-**Done:**
-- **Build overrides and a fitter.** A fixture's `buildOverrides` sets fields over the exported `team` when it is
-  read (`readLogFixture`; `readLogFixtureRaw` and `zmdlogs refresh` keep the file as written), each with its
-  evidence. `efsim zmdlogs fit-build <fixture> --operator <op>` (packages/logs/src/buildfit.ts) scores every
-  attribute-node count, weapon level and food by the operator's landed kit hits within ±1 of the primary reading
-  recomputed with the candidate's panel (clean hits counted apart), so foods' DMG lines and crit-null hits count.
-  docs/design/data.md, the log check's rule.
-- **Fits** (open-problems): 0c14 Si = Kunst Tube (her teammates' food) and two attribute nodes: her ratio was
-  ×1.1543 without Alesh's +0.16 DMG and ×1.1322 with it, which only an additive DMG (+0.247) with ATK ×0.962 fits;
-  46 of 191 hits, 25 of 25 clean. 9555 Si = no attribute node (×0.9397). f978 Ardelia = weapon at level 60 (the
-  earlier "no pair fits" read the ATK ratio, inside the hits' rounding): 107 of 139, all 55 clean.
-- **0c14's step ×1.0965 at 13.25 s:** Alesh's P3 ATK and Thermite Cutter's team ATK, listed from a combo whose hits
-  the log hasn't; the replay can't cast it (left: a cast inferred from a buff only it gives).
-- **c83c's late combos:** now one Yinglung's Edge layer off each way (the +21% went with the consumed-buff fix).
-  The engine assumption `battle-sub-skills` (main-only: sub-skills unseen by skill-type triggers) measured mixed
-  (c83c 31 → 22 and 9555 11 → 1 mismatches, the hold-out row 7.4 → 7.6%), so it stays a switch; Si's
-  battle-button events every 3.2–3.6 s (most hitless) are the open part (test 106).
-- **1d91's Ardelia:** not a build: Liino's Medicant layers reach her later than the engine's every-beat heal
-  (1 layer to 18 s, none at 23–32 s, 2–4 after), Typhoeus and Arcane at other times: the soundwave's area is the
-  candidate (positions, not modelled).
-
-**Scoreboard** (`npm run snapshots:update`, docs/accuracy.md): development plain 49.5 → 50.2%, mismatch
-19.3 → 18.4%; earlier pending plain 47.2 → 47.8%, mismatch 26.1 → 23.9%; all but the hold-outs mismatch
-21.5 → 20.1%, mean |damage error| 10.1 → 10.0%; hold-out unchanged; 1 log better, 2 mixed (0c14, f978: plain up,
-mismatches down, their simulated totals +1.0 and −0.2 points), none worse. Si's mismatches 18.6 → 10.0%,
-Ardelia's 22.2 → 12.9%. Example and kit snapshots unchanged.
-
-**Decisions:** the fits are overrides, not edits of `team`, so a later fitter (weapon levels bounded by their
-logged skill levels: WeaponBreakThroughTemplateTable isn't loaded yet) can redo them; the older hand fits stay in
-`team` with notes (not migrated). No kit default changed, so the team numbers don't move.
-
-**Dead ends:** a food alone or a node count alone for 0c14's Si (it takes both); replaying the food search through
-the whole check per candidate (minutes per log; the fitter recomputes the primary reading instead, seconds).

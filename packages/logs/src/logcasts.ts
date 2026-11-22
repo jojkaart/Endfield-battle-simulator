@@ -554,7 +554,9 @@ const ANCHOR_MS = 1500;
  * cast fires the trigger, plus the delay) started closest to where this
  * cast would start; else the chain step after the operator's latest cast
  * whose windows list a candidate starting within its action plus
- * CAST_SLACK_MS (`prev`: Rossi's chain steps share keys; a follow-up after
+ * CAST_SLACK_MS (for steps alike in every key, the one whose window lies
+ * nearest its start, past a skill that keeps the chain) (`prev`: Rossi's
+ * chain steps share keys; a follow-up after
  * a basic attack cast during its skill: Wulfgard's combo 3); else the
  * first in kit order. Steps gated by the kit's state rather than windows (Typhoeus's
  * hover attacks): the replay casts the step the engine allows
@@ -576,11 +578,37 @@ function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<str
   // The latest first. Within a cast's action in the world's time: other casts' time stops hold it (489c0be3e162:
   // Wulfgard's combo 2 at 103625 ms, its ticks after Li Zhiyan's ultimate, an attack 3 at 103925 ms, then combo 3's
   // perfect hit at 107319 ms).
+  // Steps alike in every key (the same keys, one landing each: Zhuang Fangyi's Empyrean attacks 1 and 2, whose four
+  // entities are the same files) only the windows tell apart.
+  const keys = (g: Group) => [...new Set(g.hits.flatMap((x) => x.events))].sort().join(" ");
+  const alike = candidates.length > 1 && candidates.every((g) => g.kind === "basic" && g.hits.length === 1 && g.hits[0]?.count === 1 && keys(g) === keys(candidates[0] as Group));
   for (const prev of [...prevs].sort((a, b) => b.cast.start - a.cast.start)) {
     if (!prev.timing) continue;
-    const listed = new Set(prev.timing.windows.flatMap((w) => w.skills));
+    const timing = prev.timing;
     const held = stops.filter((s) => s.operator !== prev.cast.operator || s.skillId !== prev.cast.skillId);
-    const next = candidates.find((g) => g.kind !== null && listed.has(g.skillId) && start(g) >= prev.cast.start && worldMs(prev.cast.start, start(g), held) <= msOf(prev.timing?.durationFrames ?? 0) + CAST_SLACK_MS);
+    if (alike) {
+      // A skill that keeps the basic-attack chain (dontInterruptCombo) doesn't decide its next step; the step before it
+      // does (her Empyrean battle skill between her Empyrean attacks 1 and 2: d774d0ce7bd3 26504 ms).
+      if (timing.keepsChain) continue;
+      // The one whose window of the latest cast lies nearest its start (in it, or the least outside it), the kit's order
+      // between equals: attack 1's windows list attack 2 from frame 22 and attack 1 from 60 (d774d0ce7bd3's 17896 ms is
+      // attack 2's, its damage x1.4 attack 1's; 3aa6ab93bad4's 120691 ms 0.43 s of the world's time after attack 1).
+      let near: { g: Group; d: number } | null = null;
+      for (const g of candidates) {
+        if (start(g) < prev.cast.start) continue;
+        const at = worldMs(prev.cast.start, start(g), held);
+        if (at > msOf(timing.durationFrames) + CAST_SLACK_MS) continue;
+        for (const w of timing.windows) {
+          if (!w.skills.includes(g.skillId)) continue;
+          const d = Math.max(0, msOf(w.from) - at, at - msOf(w.to));
+          if (!near || d < near.d) near = { g, d };
+        }
+      }
+      if (near) return near.g;
+      continue;
+    }
+    const listed = new Set(timing.windows.flatMap((w) => w.skills));
+    const next = candidates.find((g) => g.kind !== null && listed.has(g.skillId) && start(g) >= prev.cast.start && worldMs(prev.cast.start, start(g), held) <= msOf(timing.durationFrames) + CAST_SLACK_MS);
     if (next) return next;
   }
   return candidates[0] as Group;

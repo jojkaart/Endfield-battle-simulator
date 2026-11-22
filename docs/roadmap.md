@@ -52,7 +52,8 @@ below ([review-2026-10.md](review-2026-10.md)).
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
   only game-only tests now); Gilberta's Vulnerable count at her ultimate
-  (test 12's leftover); build offsets fitted, not hand-set (`zmdlogs
+  (2026-11-22: 489c / d572 fixed, Rossi's combo 3 landed twice; left 4360 /
+  9847, stacks outliving 20 s on the tower bosses); build offsets fitted, not hand-set (`zmdlogs
   fit-build`, fixture `buildOverrides`, 2026-11-18; next: weapon levels
   bounded by their skill levels, the old hand fits moved over); then the
   screened logs' leads

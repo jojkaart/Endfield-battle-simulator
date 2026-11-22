@@ -252,7 +252,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
         ...(dirs ? dirs.map((d) => `--dir ${d}`) : []),
         `--select '${values.select}'`,
         ...operators.map((o) => `--operator ${o}`),
-        ...(values.near !== undefined ? [`--near '${values.near}'`, ...nearOps.map((o) => `--near-operator ${o}`), `--window ${window.join(",")}`] : []),
+        ...(values.near !== undefined ? [`--near '${values.near}'`, ...nearOps.map((o) => `--near-operator ${o}`), `--window=${window.join(",")}`] : []),
       ].join(" ");
       return census(data(), logs, {
         select: parseSelector(values.select),

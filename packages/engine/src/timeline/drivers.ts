@@ -142,15 +142,15 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const own = new Map<string, PendingHit[]>();
     for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
     for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
-    const moved = new Map<PendingHit, { frame: number; ref?: string }>();
+    const moved = new Map<PendingHit, { frame: number; ref?: string; loggedMs?: number }>();
     for (const l of opts.landings) {
       const h = own.get(l.hitId)?.[l.nth];
-      if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}) });
+      if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms } : {}) });
     }
     // A pinned landing was launched by its logged frame (a detached one's launch, KitHit.launch, is on the kit's timeline, which jumps shorten).
     // A delayed hit's logged frame is its damage's (KitHit.enemyDelay): its landing stays at its kit frame.
     const delayed = new Set(skill.hits.filter((h) => h.enemyDelay !== undefined).map((h) => h.id));
-    const pin = (h: PendingHit, m: { frame: number; ref?: string }): PendingHit =>
+    const pin = (h: PendingHit, m: { frame: number; ref?: string; loggedMs?: number }): PendingHit =>
       delayed.has(h.hitId)
         ? { ...h, damageFrame: Math.max(m.frame, h.frame), ...(m.ref !== undefined ? { ref: m.ref } : {}) }
         : { ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) };
@@ -158,7 +158,21 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     // didn't (5082ceaffad1: 10 of Ardelia's 14 sheep). Not one that carries SP or uses stacks up.
     const random = new Set(skill.hits.filter((h) => h.landedCount !== undefined).map((h) => h.id));
     const unlanded = new Set([...own].filter(([id]) => random.has(id)).flatMap(([, list]) => list.filter((h) => !moved.has(h) && h.sp === 0 && !h.usesUp)));
-    st = { ...st, scheduled: st.scheduled.filter((h) => h.kind !== "hit" || !unlanded.has(h)).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
+    // A jump of the cast that would skip a landing the log shows wasn't taken (its condition read otherwise in the game):
+    // it goes, and with it the landings of the path it would have jumped to, which the cast didn't play (Rossi's
+    // sequence 2: its perfect hit logged 14 frames after the late path's landing, d5720d9ceb94 39.23 s and 489c0be3e162
+    // 19.73 s; both landed, the late one consuming the infliction the perfect one's Lift and extra Vulnerable need).
+    // Only where the landing is the skipped part's own: a kit hit with no landing past the jump's target (a hit that
+    // lands on both paths, Pogranichnik's combo slashes at 23 / 223, may have been the jumped path's, the placement
+    // matching it by kit frame).
+    const contradicted = ofKind(st.scheduled, "jump").filter((j) => {
+      if (j.end || !ofCast(j, operator, index)) return false;
+      const target = j.frame + (j.to - j.from);
+      const skipped = [...moved.keys()].filter((h) => h.frame >= j.frame && h.frame < target);
+      return skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
+    });
+    const jumpedTo = new Set(contradicted.flatMap((j) => [...own.values()].flat().filter((h) => !moved.has(h) && h.frame >= j.frame + (j.to - j.from))));
+    st = { ...st, scheduled: st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
   }
   return runTriggers(ctx, st, r.events, r.origin);
 }
@@ -171,7 +185,7 @@ export interface ReplayCastOptions {
    * Landings at their logged frames: the `nth` landing (0: the first, in frame order) of the cast's kit hit `hitId` lands at `frame`;
    * with `ref`, its LandedHit carries the reference and its facts (LandingFacts).
    */
-  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string }[];
+  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string; readonly ms?: number }[];
   /** A teammate's own basic attack (the log shows someone else controlled): the controlled operator stays. */
   readonly teammate?: boolean;
   /**

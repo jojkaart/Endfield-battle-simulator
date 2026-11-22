@@ -288,7 +288,7 @@ export interface ReplayedCast extends LoggedCast {
   /** The operator's cast before it keeps its hits to come: the log has them landing after this one started (replayCast keepPrevious). */
   readonly keepPrevious: boolean;
   /** Its landings at their logged frames (replayCast landings): each logged hit of the cast whose kit landing the placement knows. */
-  readonly landings: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref: string }[];
+  readonly landings: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref: string; readonly ms: number }[];
   /**
    * A logged cast event of a skill whose damage the log shows elsewhere, kept only for the slot it stands for: the replay
    * makes it only when the skill can't start there and another of the operator's skills of its kind can (replayedSkill:
@@ -891,7 +891,7 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
   // Its own cast, else the one it merged into (distinctCasts: the same skill placed from another key, within mergeMs).
   const ofCast = (c: LoggedCast): LoggedCast | undefined => (casts.includes(c) ? c : casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= mergeMs(placement, c.skillId)));
   const last = new Map<LoggedCast, number>();
-  const landings = new Map<LoggedCast, { hitId: string; nth: number; frame: number; ref: string }[]>();
+  const landings = new Map<LoggedCast, { hitId: string; nth: number; frame: number; ref: string; ms: number }[]>();
   const used = new Map<string, Set<number>>();
   for (const [h, p] of [...placement.hits].sort((a, b) => a[0].t - b[0].t)) {
     const d = ofCast(p.cast);
@@ -908,7 +908,7 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
       if (nth < 0) continue;
       taken.add(nth);
       used.set(key, taken);
-      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: frameOf(h.t), ref: String(hitIndex.get(h)) }]);
+      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: frameOf(h.t), ref: String(hitIndex.get(h)), ms: h.t }]);
     }
   }
   const out: ReplayedCast[] = [];

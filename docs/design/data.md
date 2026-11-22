@@ -158,7 +158,13 @@ buffs from the events that trigger them, not from the log's listing).
 (logcasts.ts) starts at its logged frame without a rotation's checks, its
 logged landings land at their logged frames (pinned: later time stops
 don't move them, the log's time has them in), an operator's earlier cast
-keeps its hits when the log shows them after the next cast started. The
+keeps its hits when the log shows them after the next cast started, and a
+jump of the cast that would skip a pinned landing of a hit only the
+skipped part has isn't taken, nor the path it jumps to (2026-11-22:
+Rossi's sequence 2 and attack 4, whose late and uncontrolled variants had
+landed beside the logged perfect and controlled ones; not Pogranichnik's
+combo, whose slashes land on both paths; drivers.ts `replayCast`).
+Pinned landings due in one frame land in the log's order (`loggedMs`). The
 kits' triggers, the enemy's statuses and SP then run as in a simulation,
 and the kit buffs that stand for a game buff the log lists
 (`KitBuff.gameBuff`) are read off the state: their instances per

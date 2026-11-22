@@ -139,7 +139,12 @@ hits a buff's or an ability entity's timeline deals, as Arcane's Cluster
 Strike lasers and her INT early end's lasers): they run on the world's
 clock, so the owner's own ultimate stop holds them too, where hits on the
 owner's clock aren't (2026-11-18: a7a7a40c97ed's lasers after her
-Gloompurge Arcana's stop). An Arts Burst lands `burstDelayFrames` (1 s)
+Gloompurge Arcana's stop). A skill's detached hit can be marked `world`
+the same way (KitHit.world: a buff the cast puts on its operator deals
+it; Zhuang Fangyi's Thunder Strikes, which the logs resume at her
+ultimate's end, d774 102.17 s and 4d60 157.42 s, 2026-11-22). Her
+Empyrean strikes, an ability entity's, aren't: in 4bfc at 73.2–73.7 s
+they keep their 0.2 s pace through her own combo's slow-down. An Arts Burst lands `burstDelayFrames` (1 s)
 after the infliction that made it, on its operator's clock: others' time
 stops and slow-downs hold it, also ones already running when it's made
 (`operatorClockDue`), its own operator's don't, nor a freeze (its buff
