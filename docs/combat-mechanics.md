@@ -800,6 +800,18 @@ reaction has no initial hit.
   (Combustion, Rossi's bleed, `atkSnapshot` hits) keeps the attacker side
   from application. Every other hit reads the buffs active at its landing.
   [SETTLED] (test 77; effects.ts `SNAPSHOT_ZONES`)
+- **Rossi's bleed keeps only ATK** (its ATK modifiers and the attributes
+  behind them); its DMG bonus, Amp and crit are read at each tick, as the
+  defender side is. [SETTLED] (d572: one application's ticks follow Wolven
+  Blood's layers and Camille's set DMG tick by tick, and its crits go from
+  ×2.0 to ×1.5 when the combo's Crit DMG ends, while Camille's weapon ATK
+  ending changes nothing; effects.ts `ATK_SNAPSHOT_ZONES`, 2026-11-22.)
+  Combustion's whole-side snapshot rests on its own evidence (above).
+- **A ticking buff's tick at its application** (`tickOnApply`) doesn't see
+  the buff's own modifiers: the first tick of every Rossi bleed lacks its
+  +12% DMG Taken (d572 13751, 46554, 114924 ms; 489c, 9a80, 4e5e alike),
+  as the tick on its end frame does. [SETTLED] (timeline PendingHit
+  `firstTickOf`)
 
 ### 8.4 Before or after the hit's damage
 

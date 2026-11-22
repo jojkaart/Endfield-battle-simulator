@@ -2165,7 +2165,9 @@ log's three ticks fit only with the DMG bonuses from the reaction (batch
 4, V2), but no log shows ATK changing mid-burn. If ATK is read at each
 tick instead, every Combustion that starts before a team ATK buff (or
 outlasts one) is off by that buff's share. Rossi's bleed has the same
-flag.
+flag, but its logs show it keeps only ATK (its DMG bonus and crit follow
+the tick: combat-mechanics.md 8.3, 2026-11-22), so the flag alone doesn't
+say what Combustion keeps.
 **How:** on a training dummy, Laevatain with 4 Melting Flame: her
 empowered battle skill forces Combustion. Ticks don't crit, so they all
 show the same number. Note two or three ticks, then swap to Liino and cast

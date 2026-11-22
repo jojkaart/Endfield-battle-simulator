@@ -17,6 +17,7 @@
       "duration": { "key": "duration_bleed", "skill": "chr_0028_wulfa_normal_skill" },
       "every": 1,
       "tickOnApply": true,
+      "ticksShownByHits": true,
       "modifiers": [
         { "zone": "damageTaken", "elements": ["physical", "fire"], "value": { "key": "damage_up", "skill": "chr_0028_wulfa_normal_skill" } }
       ],

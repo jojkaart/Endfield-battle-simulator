@@ -61,6 +61,51 @@ function healsControlled(kit: OperatorKit): boolean {
 }
 
 /**
+ * Crits the log leaves out (LogHit.crit null) that a trigger on crits shows by its own logged hits, per logged hit
+ * index. Every development log leaves the crit out of Rossi's ultimate stabs (and of hits during it), yet logs the
+ * Seething Blood extra each crit stab fires on a Clawmarked enemy at the stab's very ms (pending/zmdlogs-489c0be3e162.json
+ * 94430 ms: one stab of 16604 and one extra; 95000 ms: stabs of 16604, 16604 and 6386 and two extras): at a moment with
+ * m such hits (less the logged crits that may have fired them), the m largest of the operator's hits there of the
+ * trigger's kinds with no logged crit are crits, when they stand apart from the rest (crit and non-crit values of one
+ * key differ by the crit zone, ×1.5 or more). Without the inference the replay's main run lands none of the extras and
+ * the Wolven Blood layers those crits add.
+ */
+function shownCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement): Map<number, boolean> {
+  const out = new Map<number, boolean>();
+  const index = new Map(fx.hits.map((h, i) => [h, i]));
+  for (const k of kits) for (const t of k.triggers) {
+    if (t.on.event !== "hit" || t.on.crit !== true || t.by !== "self") continue;
+    const kinds = t.on.kinds;
+    const keys = new Set(allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits.flatMap((h) => h.events) : [])));
+    if (keys.size === 0) continue;
+    const byMs = new Map<number, { shown: number; known: number; open: LogHit[] }>();
+    const at = (t: number) => byMs.get(t) ?? byMs.set(t, { shown: 0, known: 0, open: [] }).get(t) as { shown: number; known: number; open: LogHit[] };
+    for (const h of fx.hits) {
+      if (h.operator !== k.operator) continue;
+      if (keys.has(h.event)) {
+        at(h.t).shown++;
+        continue;
+      }
+      const kind = placement.hits.get(h)?.cast.kind;
+      if (!kind || (kinds && !kinds.includes(kind as SkillType))) continue;
+      if (h.crit === true) at(h.t).known++;
+      else if (h.crit === null) at(h.t).open.push(h);
+    }
+    for (const g of byMs.values()) {
+      const m = g.shown - g.known;
+      if (m <= 0 || g.open.length === 0) continue;
+      const sorted = [...g.open].sort((a, b) => b.value - a.value);
+      const crits = sorted.slice(0, Math.min(m, sorted.length));
+      const rest = sorted.slice(crits.length);
+      const lowest = crits.at(-1) as LogHit;
+      if (rest.length > 0 && lowest.value < 1.4 * (rest[0] as LogHit).value) continue;
+      for (const h of crits) out.set(index.get(h) as number, true);
+    }
+  }
+  return out;
+}
+
+/**
  * The triggers on crits behind one of a kit's buffs: those that apply it on a crit, and those behind a buff a trigger
  * that applies it listens to (to a depth of a few links). Whose hits each listens to (KitTrigger.by).
  */
@@ -1289,6 +1334,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // With the casts that hit nothing the log needs (missedCasts), added below.
   let casts: readonly ReplayedCast[] = logged;
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement) };
+  const shown = shownCrits(kits, fx, placement);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */
@@ -1341,7 +1387,11 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
       // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.
-      loggedCrits: fx.hits.flatMap((h, i) => (h.crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit: h.crit, ref: String(i) }])),
+      // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits) count as logged.
+      loggedCrits: fx.hits.flatMap((h, i) => {
+        const crit = h.crit ?? shown.get(i) ?? null;
+        return crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit, ref: String(i) }];
+      }),
       ...(opts.loggedModifiers ? { loggedModifiers: fx.hits.flatMap((h) => {
         const modifiers = (opts.loggedModifiers as NonNullable<ReplayOptions["loggedModifiers"]>)(h);
         return modifiers.length ? [{ operator: h.operator, event: h.event, frame: frameOf(h.t), modifiers }] : [];

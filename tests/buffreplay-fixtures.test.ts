@@ -248,3 +248,26 @@ describe("a7a7a40c97ed: Liino's battle-skill events in Vocalist Stance are its b
     expect(Math.min(...corrosions)).toBeGreaterThan(40800);
   });
 });
+
+describe("489c0be3e162: Rossi's ultimate crits the log leaves out, and her bleed's ticks (2026-11-22)", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-489c0be3e162.json", import.meta.url).pathname);
+  const r = logBuffReplay(data, fx);
+  const rossi = (event: string, from: number, to: number) => fx.hits.filter((h) => h.operator === "chr_0028_wulfa" && h.event === event && h.t >= from && h.t <= to);
+
+  it("lands the Seething Blood extras her crit stabs fire: the log gives the stabs no crit, but logs each extra at its stab's ms (shownCrits)", () => {
+    const stabs = rossi("chr_0028_wulfa_ultimate_skill", 94000, 96200);
+    expect(stabs.every((h) => h.crit === null)).toBe(true);
+    const extras = rossi("buff_chr_0028_wulfa_normal_bleed_crit_extra_damage", 94000, 96200);
+    expect(extras.length).toBeGreaterThan(20);
+    expect(extras.every((h) => !("unknown" in r.replay.landing(h)))).toBe(true);
+  });
+
+  it("takes each bleed tick from its logged one (KitBuff.ticksShownByHits): the replay's clock runs 0.3–0.6 s off the log's within one application", () => {
+    // Unpinned, the replay ticked 368 ms after the first two and had none within 0.5 s of the third.
+    for (const t of [30565, 31564, 41667]) {
+      const tick = rossi("buff_chr_0028_wulfa_normal_bleed", t, t)[0] as LogHit;
+      const landing = r.replay.landing(tick);
+      expect("unknown" in landing ? null : Math.abs((landing.frame * 1000) / FPS - t)).toBeLessThan(40);
+    }
+  });
+});
