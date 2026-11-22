@@ -72,8 +72,13 @@ Liino's volleys done 2026-11-18 (a 10 s timer: the data's reaction
 check is disabled; 9090's Liino −10.4 → +2.5%), and 4360's Perlica run
 (an unlogged End Stance out of Cosmovoice, now inferred); left: Perlica's
 −9.6% in 9090 (every hit matches), 9847's team-wide ×0.975 / ×1.3–1.5
-runs (Bigents), fc63's Perlica ATK (3,571 against 3,822), Liino stances
-cast before a log starts (1d91, 7910, 4d60); gear
+runs (Bigents), fc63's Perlica ATK (3,571 against 3,822); Liino's
+stances cast before a log starts and her Cosmovoice beats on their own
+clock done 2026-11-22 (development plain 52.0 → 56.1%; open-problems.md
+"Liino's Cosmovoice beats"); left there: the replay's stops around some
+beats (Perlica's ultimate in 4d60 at 92.8 s), Cosmovoice ending before its
+logged finale (9090, 8915, 4bfc), a pinned beat ordered after another's hit
+at its frame (9847 60.77 s); gear
 chosen jointly with the rotation (a search per candidate set, not a
 replay).
 

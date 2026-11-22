@@ -229,7 +229,7 @@ are at 30 FPS.
 - B19. Buffs and amps of the same zone add within the zone; buffs of different zones multiply (D1).
 - B20. Buffs carrying Strength / Agility / Intellect / Will (points or % of the panel line) raise ATK through the attribute bonus, floored. [DATA]
 - B21. Snapshot: only Combustion and `atkSnapshot` periodic hits (Rossi's bleed) keep the attacker side (ATK%, attributes, DMG bonus, Amp, crit rate, crit DMG, Arts Intensity) from application. [SETTLED]
-- B22. A periodic buff ticks every `every` seconds from application (or at once with `tickOnApply`), including a tick on its end frame. [DATA]
+- B22. A periodic buff ticks every `every` seconds from application (or at once with `tickOnApply`), including a tick on its end frame (not with `noTickAtEnd`: Liino's Cosmovoice song, ten beats in 15 s at 1.5 s, never eleven in the logs). [DATA]
 - B23. Ultimate-gain efficiency (44), SP cost (45), Stagger efficiency (26), Haste (92) and combo recovery (93) on buffs are read where the game reads them, not as damage zones. [DATA]
 - B24. Electrification's, Corrosion's and Breach's strengths are fixed at application by the applier's AI, not updated later. [SETTLED]
 
