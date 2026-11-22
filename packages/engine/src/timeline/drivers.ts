@@ -162,7 +162,15 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     // it goes, and with it the landings of the path it would have jumped to, which the cast didn't play (Rossi's
     // sequence 2: its perfect hit logged 14 frames after the late path's landing, d5720d9ceb94 39.23 s and 489c0be3e162
     // 19.73 s; both landed, the late one consuming the infliction the perfect one's Lift and extra Vulnerable need).
-    const contradicted = ofKind(st.scheduled, "jump").filter((j) => !j.end && ofCast(j, operator, index) && [...moved.keys()].some((h) => h.frame >= j.frame && h.frame < j.frame + (j.to - j.from)));
+    // Only where the landing is the skipped part's own: a kit hit with no landing past the jump's target (a hit that
+    // lands on both paths, Pogranichnik's combo slashes at 23 / 223, may have been the jumped path's, the placement
+    // matching it by kit frame).
+    const contradicted = ofKind(st.scheduled, "jump").filter((j) => {
+      if (j.end || !ofCast(j, operator, index)) return false;
+      const target = j.frame + (j.to - j.from);
+      const skipped = [...moved.keys()].filter((h) => h.frame >= j.frame && h.frame < target);
+      return skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
+    });
     const jumpedTo = new Set(contradicted.flatMap((j) => [...own.values()].flat().filter((h) => !moved.has(h) && h.frame >= j.frame + (j.to - j.from))));
     st = { ...st, scheduled: st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
   }
