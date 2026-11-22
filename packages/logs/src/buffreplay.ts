@@ -799,7 +799,9 @@ export function assembleCasts(data: GameData, fx: LogFixture, placement: Placeme
  * that skill with landings could have opened it. The skill was cast before the log: at the earliest listing of a game
  * buff its hits apply (its `since`, less that hit's frame) when the log lists one from before its start, else at the
  * first shown tick less the trigger's delay (and an interval more without KitBuff.tickOnApply); no later than its last
- * hit's frame before the log (the log has none of them). Liino's Vocalist Stance: 4d60e7fe92c2 lists her stance ATK
+ * hit's frame before the log (the log has none of them). Not where a cast of the skill (its hits placed, or a logged
+ * cast event that isn't the tick's own, at its first hit's ms) could have opened it (c6d80590f5ea: Liino's battle skill
+ * logged at 2020 ms, its stance ATK listed from 2497 ms, its projectiles hitting nothing). Liino's Vocalist Stance: 4d60e7fe92c2 lists her stance ATK
  * since -811 ms and its first volley lands at 1354 ms, 791020039384 since -576 ms (1898 ms), 1d9198480e75 lists none
  * of her buffs (1990 ms); the replay made the stance at the volley's cast event instead (the volley's own: an event at
  * its first hit's ms), so its first volley landed nowhere and the stance's projectiles and volley came as its own.
@@ -814,10 +816,6 @@ export function castsBeforeLog(kits: readonly OperatorKit[], fx: Pick<LogFixture
       const skillId = opener && "skills" in opener.on ? opener.on.skills?.[0] : undefined;
       const skill = kit.skills.find((x) => x.skillId === skillId);
       if (!opener || !skill || ticks.length === 0) continue;
-      const shown = placement.casts.filter((c) => c.operator === kit.operator && ticks.includes(c.group)).map((c) => c.start).sort((a, b) => a - b)[0];
-      if (shown === undefined) continue;
-      const delayMs = ((opener.delay ?? 0) * 1000) / FPS;
-      if (casts.some((c) => c.operator === kit.operator && c.skillId === skill.skillId && c.landings.length > 0 && c.start <= shown - delayMs + LOGGED_CAST_MS)) continue;
       // Its hits' buffs listed from before the log (`since` < 0): the earliest, less the hit's frame.
       const fromListing = skill.hits.flatMap((h) => (h.buffs ?? []).flatMap((b) => {
         const d = kit.buffs.find((x) => x.id === b.buff);
@@ -826,9 +824,24 @@ export function castsBeforeLog(kits: readonly OperatorKit[], fx: Pick<LogFixture
         return fx.hits.flatMap((x) => x.effects.flatMap((e) => (names.has(e.buff) && e.since !== undefined && e.since < 0 ? [e.since - (frame * 1000) / FPS] : [])));
       }));
       const lastHit = Math.max(0, ...skill.hits.flatMap((h) => loggedFrames(h) ?? []));
-      const fromTick = shown - delayMs - (def.tickOnApply ? 0 : ((typeof def.every === "number" ? def.every : 0) * 1000));
-      const start = Math.min(fromListing.length ? Math.min(...fromListing) : fromTick, -((lastHit + 1) * 1000) / FPS);
-      if (typeof def.every !== "number" && !def.tickOnApply && !fromListing.length) continue; // an interval the replay can't read here
+      const before = -((lastHit + 1) * 1000) / FPS;
+      let start: number;
+      if (fromListing.length) {
+        // Not when a cast with hits in the log made it (9090afbacec9: Liino's projectiles at 275 ms, her stance ATK listed
+        // since -185 ms).
+        start = Math.min(...fromListing, before);
+        if (casts.some((c) => c.operator === kit.operator && c.skillId === skill.skillId && c.landings.length > 0 && c.start <= start + LOGGED_CAST_MS)) continue;
+      } else {
+        const first = placement.casts.filter((c) => c.operator === kit.operator && ticks.includes(c.group)).sort((x, y) => x.start - y.start)[0];
+        if (first === undefined || (!def.tickOnApply && typeof def.every !== "number")) continue;
+        const shown = first.start;
+        // The tick's own landing: a cast event at its first logged hit's ms is the tick's (Liino's volley), not a cast.
+        const landsAt = Math.min(...[...placement.hits].filter(([, p]) => p.cast === first).map(([h]) => h.t));
+        const delayMs = ((opener.delay ?? 0) * 1000) / FPS;
+        // Any cast of the skill that could have opened it (a logged event or placed hits) up to its first shown tick.
+        if (casts.some((c) => c.operator === kit.operator && c.skillId === skill.skillId && c.start <= shown - delayMs + LOGGED_CAST_MS && Math.abs(c.start - landsAt) > 1000 / FPS)) continue;
+        start = Math.min(shown - delayMs - (def.tickOnApply ? 0 : (def.every as number) * 1000), before);
+      }
       added.push({ operator: kit.operator, key: skill.skillId, group: skill.skillId, skillId: skill.skillId, kind: skill.kind, start: Math.round(start), lastHit: Math.round(start), keepPrevious: false, landings: [], beforeLog: true });
     }
   }
@@ -839,7 +852,10 @@ export function castsBeforeLog(kits: readonly OperatorKit[], fx: Pick<LogFixture
  * The state at the log's start with a cast made before it (ReplayedCast.beforeLog): the cast made at frame 0 of a
  * timeline of its own and run as long as it ran before the log, then what it left of its operator's moved back that
  * much onto `st` (the buffs it made, what it still has to do, its action and cooldowns, its operator's stacks). Its hits
- * until then, the enemy, SP and energy stay `st`'s: the log shows none of them.
+ * until then, the enemy, SP and energy stay `st`'s: the log shows none of them. So are the hits it launched before the
+ * log and still on their way: the fight hadn't begun (a7a7a40c97ed: Liino's stance from about -2.2 s, its volley timer
+ * from -0.7 s; the volley that tick launched, due at 0.1–0.4 s, isn't in the log, which has its first at 12.58 s, the
+ * timer's next tick; a volley launches only while the squad is in a fight).
  */
 function withCastBeforeLog(ctx: TimelineContext, st: TimelineState, c: ReplayedCast): TimelineState {
   const n = -frameOf(c.start);
@@ -853,7 +869,7 @@ function withCastBeforeLog(ctx: TimelineContext, st: TimelineState, c: ReplayedC
     ...(b.nextTick !== undefined ? { nextTick: back(b.nextTick) } : {}),
     ...(b.whileCasting ? { whileCasting: { ...b.whileCasting, until: back(b.whileCasting.until) } } : {}),
   }));
-  const scheduled = [...st.scheduled, ...ran.scheduled.filter((x) => !st.scheduled.includes(x)).map((x) => ({ ...x, frame: back(x.frame), ...(x.launchAt !== undefined ? { launchAt: back(x.launchAt) } : {}) }))];
+  const scheduled = [...st.scheduled, ...ran.scheduled.filter((x) => !st.scheduled.includes(x) && x.kind !== "hit").map((x) => ({ ...x, frame: back(x.frame), ...(x.launchAt !== undefined ? { launchAt: back(x.launchAt) } : {}) }))];
   const acting = ran.acting[c.operator];
   const moved = (a: Readonly<Record<string, number>>, b: Readonly<Record<string, number>>) => Object.fromEntries(Object.entries(b).map(([k, v]) => [k, a[k] === v ? v : back(v)]));
   return {
@@ -1020,8 +1036,26 @@ interface TickEvents {
  * the state's frame and `frame` brought to it (no later than the state's frame), as loggedTick does at a cast event. A
  * buff whose ticks its hits show has its end on the same clock: it moves with the tick (Liino's Cosmovoice song, 10 beats
  * on a clock of their own: 4d60e7fe92c2's second Cosmovoice, its beats 1.36 s apart, ran on to two replay-only beats
- * past its ninth logged one).
+ * past its ninth logged one). Its interval from then on is the last one shown, a logged tick to the one before it, where
+ * that is within CLOCK_RATE of the interval it had (a tick the log doesn't show comes on the same clock: af7b7f865906's
+ * volleys 11.7 and 11.5 s apart, the next due at 47.6 s inside her combo at 47.97 s, which drops a volley still to
+ * launch; the kit's 10 s put a replay-only one at 47.1 s).
  */
+/** The world's frames the time stops and slow-downs took from `from` to `to` (the lowest scale where they overlap; buffs wait them out: shiftWorld). */
+function heldBetween(st: TimelineState, from: number, to: number): number {
+  const over = st.slowdowns.filter((x) => x.start < to && x.start + x.scales.length > from);
+  let held = 0;
+  for (let f = Math.max(from, Math.min(...over.map((x) => x.start))); f < to && over.length; f++) {
+    let m = 1;
+    for (const x of over) if (f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
+    held += 1 - m;
+  }
+  return Math.round(held);
+}
+
+/** How far a buff's shown interval may be from the one it has to be its clock's (heldTicks): a factor either way. */
+const CLOCK_RATE = 1.25;
+
 function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): TimelineState {
   const { events, landings } = ticks;
   if (events.size === 0 && landings.size === 0) return st;
@@ -1032,7 +1066,13 @@ function heldTicks(st: TimelineState, frame: number, ticks: TickEvents): Timelin
     if (n === undefined || every === undefined || b.cast !== undefined) return b;
     const shown = landings.get(key);
     const early = shown?.find((x) => x <= frame && x >= st.frame && x < n && n - x <= every / 2);
-    const moved = (to: number) => ({ ...b, nextTick: to, ...(shown && Number.isFinite(b.expiresAt) ? { expiresAt: b.expiresAt + to - n } : {}) });
+    const moved = (to: number) => {
+      if (!shown) return { ...b, nextTick: to };
+      const prev = shown.filter((x) => x < to).at(-1);
+      const gap = prev === undefined ? null : to - prev - heldBetween(st, prev, to);
+      const rate = gap !== null && gap >= every / CLOCK_RATE && gap <= every * CLOCK_RATE ? { every: gap } : {};
+      return { ...b, nextTick: to, ...rate, ...(Number.isFinite(b.expiresAt) ? { expiresAt: b.expiresAt + to - n } : {}) };
+    };
     if (early !== undefined) {
       changed = true;
       return moved(Math.max(early, st.frame));
