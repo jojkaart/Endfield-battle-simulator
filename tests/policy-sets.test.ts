@@ -54,7 +54,8 @@ describe("rule sets", () => {
   });
 
   it("reads a set's rules only while its condition holds: the same run as the condition written into each rule", () => {
-    const inline: RuleList = { ...withSet, sets: undefined, rules: withSet.rules.map(({ set, ...r }) => (set ? { ...r, when: { all: [{ not: corrosionUp }, r.when] } } : r)) } as RuleList;
+    const { sets: _sets, ...noSets } = withSet;
+    const inline: RuleList = { ...noSets, rules: withSet.rules.map(({ set, ...r }) => (set ? { ...r, when: { all: [{ not: corrosionUp }, r.when] } } : r)) };
     const a = playRules(data, fight(owner, 40), withSet, { seed: 3 });
     const b = playRules(data, fight(owner, 40), list(inline), { seed: 3 });
     expect(a.rotation).toEqual(b.rotation);
@@ -65,7 +66,8 @@ describe("rule sets", () => {
 
   it("counts a set's condition once, however many rules it has; a flat list is unchanged", () => {
     const l = learnability(withSet);
-    const flat = learnability({ ...withSet, sets: undefined, rules: withSet.rules.map(({ set: _s, ...r }) => r) });
+    const { sets: _sets, ...noSets } = withSet;
+    const flat = learnability({ ...noSets, rules: withSet.rules.map(({ set: _s, ...r }) => r) });
     expect(l.cueCost).toBe(flat.cueCost + cueCost({ not: corrosionUp }).cost);
     expect(effectiveRules(ownerList)).toBe(ownerList);
     expect(describeRule(data, withSet.rules[1] as never, withSet.sets)).toMatch(/^\[setup: while the enemy hasn't Corrosion at level 4 or more\] When/);

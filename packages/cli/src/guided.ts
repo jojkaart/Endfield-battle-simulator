@@ -239,10 +239,12 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
   const rounds: GuidedRound[] = [];
   let widen = false;
   let alsoBase: number[] | null = null;
-  // Edits of the current list that gained from one start and lost from the other (each beyond one standard error):
-  // the next round tries each read only while a cue that tells the starts apart holds (splitEdit; rules.md "The
-  // objective across starts").
-  let split: Tried[] = [];
+  // Edits that gained from one start and lost from the other (each beyond one standard error), with the list they
+  // edited: the next round tries each read only while a cue that tells the starts apart holds (splitEdit; rules.md
+  // "The objective across starts"). After a round that kept nothing, its disagreeing edits of the current list; after
+  // one that kept a disagreeing edit, that edit (the split of it is then an edit of the new list too).
+  let split: { readonly base: RuleList; readonly t: Tried }[] = [];
+  const disagrees = (t: Tried) => t.perStart !== undefined && t.perStart.length > 1 && t.perStart.some((g) => g.gain > g.se) && t.perStart.some((g) => g.gain < -g.se);
   for (let round = 1; round <= (o.rounds ?? 6); round++) {
     let curDps = objectiveOf(curRuns);
     const summary = summariseGuide(guidesOf(curRuns, C));
@@ -257,9 +259,9 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
     const cands: { text: string; kind: GuidedEditKind | "merge"; list: RuleList }[] = [];
     if (split.length && starts.length > 1) {
       const cues = startCues(curRuns);
-      for (const t of split.slice(0, 2))
+      for (const { base, t } of split.slice(0, 2))
         for (const c of cues) {
-          const l = splitEdit(cur, t.list, c, describeCue(data, c));
+          const l = splitEdit(base, t.list, c, describeCue(data, c));
           if (l) raw.push({ list: l, kind: "by-start", text: `${t.text}, only while ${describeCue(data, c)}` });
         }
     }
@@ -358,7 +360,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
     const kept = passed.length ? passed.reduce((a, b) => (score(b) > score(a) ? b : a)) : null;
     rounds.push({ round, base: mean(curDps), tried: triedRound.map(({ runs: _r, ...t }) => t), kept: kept ? { ...kept, runs: [] } : null, alternatives: passed.filter((t) => t !== kept).map(({ runs: _r, ...t }) => t) });
     if (!kept) {
-      split = triedRound.filter((t) => t.perStart && t.perStart.length > 1 && t.perStart.some((g) => g.gain > g.se) && t.perStart.some((g) => g.gain < -g.se)).sort((a, b) => b.screen.gain - a.screen.gain);
+      split = triedRound.filter(disagrees).sort((a, b) => b.screen.gain - a.screen.gain).map((t) => ({ base: cur, t }));
       o.progress?.(`round ${round}: nothing clears the bar (${elapsed()})${split.length ? `; ${split.length} edit${split.length === 1 ? "" : "s"} split by the start next` : ""}`);
       // Once more with more losses aimed at, then stop.
       if (widen) break;
@@ -367,6 +369,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
     }
     widen = false;
     o.progress?.(`round ${round}: kept "${kept.text}" ${signed((kept.judged as EditJudgement).gain)} ± ${((kept.judged as EditJudgement).se * 100).toFixed(2)}${kept.perStart ? ` (${kept.perStart.map(pm).join(" / ")} by start)` : ""} (${elapsed()})`);
+    if (disagrees(kept)) split = [{ base: cur, t: kept }];
     cur = kept.list;
     curRuns = kept.runs as Played;
     alsoBase = kept.alsoRuns ? [...kept.alsoRuns] : null;
