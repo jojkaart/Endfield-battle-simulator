@@ -20,7 +20,8 @@
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-24, buildOverrides): Liino's weapon level 80, fitted with efsim zmdlogs fit-build (a per-operator factor constant over the fight, found from every development log's per-operator medians; docs/open-problems.md \"Fight totals\")."
   ]
  },
  "enemy": {
@@ -10239,6 +10240,17 @@
    "t": 10997,
    "operator": "chr_0032_lizhiyan",
    "skill": "chr_0032_lizhiyan_combo_skill"
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0035_liino",
+   "set": {
+    "weapon": {
+     "level": 80
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 12 landed hits within ±1 (×0.9364); weapon level 80 alone fits 9 of 12 (9 of 9 clean, median ×0.9994): her weapon's skill 1 at 9 needs breakthrough 4, levels 80–90 (docs/accuracy-plan.md \"The weapon's level\")."
   }
  ]
 }

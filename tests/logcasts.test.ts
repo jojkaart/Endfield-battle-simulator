@@ -131,6 +131,39 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     expect(counted.simulated.damage / counted.logged.damage - 1).toBeGreaterThan(0.2);
   });
 
+  it("a fight whose last hit is capped ends in a kill whatever the data's HP: no replay-only landing at the killing frame counts (4360: tower016's HP is the data's ×5.5; Avywenna's four returning lances in the killing batch were +6.5%); the shares add up to the error", async () => {
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
+    const { totalsShares } = await import("../packages/logs/src/enginecheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-4360447193ac.json", import.meta.url).pathname);
+    const replay = logBuffReplay(data, fx);
+    const t = engineReport(data, fx, replay, engineHits(data, fx, replay)).totals;
+    expect(t.logged.killMs).toBe(119235);
+    const A = "chr_0012_avywen";
+    expect(t.parts.filter((p) => p.operator === A && !p.logged)).toHaveLength(0);
+    expect(Math.abs(t.simulated.damage / t.logged.damage - 1)).toBeLessThan(0.02);
+    const s = totalsShares(fx.hits, t);
+    expect(s.matched + s.replayOnly + s.logOnly).toBeCloseTo(s.error, 6);
+  });
+
+  it("an ultimate with fewer logged landings than slots places them by their time (3f78: Rossi's at 18.98 s, a stab short; her two slashes in the slashes' slots, frames 122 and 131)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-3f78ceb15bc3.json", import.meta.url).pathname);
+    const p = placeHits(data, fx);
+    const slash = (v: number) => p.hits.get(fx.hits.find((h) => h.event === "chr_0028_wulfa_ultimate_skill" && h.value === v) as LogHit)?.frame;
+    expect([slash(245394), slash(736182)]).toEqual([122, 131]);
+  });
+
+  it("Typhoeus's shots: an off-field hit isn't placed while the log shows her controlled, and a burst's cast isn't joined by the next shot's arrow (fc63 88–93 s: her 4th shot was placed as the 5th, every burst a shot early)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-fc63a2001251.json", import.meta.url).pathname);
+    const p = placeHits(data, fx);
+    const at = (t: number, key: string) => p.hits.get(fx.hits.find((h) => h.operator === T && h.t === t && h.event.endsWith(key)) as LogHit);
+    expect(at(89238, "floating_attack1_01_projhit")?.cast.skillId).toBe(`${T}_floating_attack1`);
+    const burst = at(92871, "natural_triggered_typhoea");
+    expect(burst?.cast.skillId).toBe(`${T}_floating_attack5`);
+    expect(burst?.cast).toBe(at(90525, "floating_attack5_01_projhit")?.cast);
+    // A shot's arrow and its burst 0.32 s later are one cast.
+    expect(at(88029, "floating_attack1_01_projhit")?.cast).toBe(at(88351, "natural_triggered_typhoea")?.cast);
+  });
+
   it("an Originium Crystals shatter at a teammate's Lift is the crystals' trigger, not an ultimate (0c14: seven shatters at Rossi's Lifts, two logged ultimates)", () => {
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-0c14fb3ce77d.json", import.meta.url).pathname);
     const ults = distinctCasts(placeHits(data, fx)).filter((c) => c.skillId === "chr_0003_endminf_ultimate_skill");

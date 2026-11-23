@@ -487,8 +487,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
   const hits = new Map<LogHit, PlacedHit>();
   const casts: LoggedCast[] = [];
   const sorted = [...fx.hits].sort((a, b) => a.t - b.t);
+  const teamGroups = new Map(fx.team.map((b) => [b.operator, groupsOf(data, b, computeStats(data, b), fx)]));
+  const controlled = controlEvidence(fx, teamGroups);
   for (const build of fx.team) {
-    const groups = groupsOf(data, build, computeStats(data, build), fx);
+    const groups = teamGroups.get(build.operator) ?? [];
     if (groups.length === 0) continue;
     const mine = sorted.filter((h) => h.operator === build.operator);
     const others = stops.filter((x) => x.operator !== build.operator);
@@ -498,7 +500,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       if (!slotCache.has(k)) slotCache.set(k, slotsOf(g, key));
       return slotCache.get(k) ?? null;
     };
-    const groupsWith = (key: string) => groups.filter((g) => g.hits.some((h) => h.events.includes(key)));
+    // A hit of a key that happens only off-field isn't a candidate while the log shows its operator controlled
+    // (fc63a2001251: Typhoeus's 4th shot at 89.24 s, keyed as her shots 1–4, taken for her 5th shot's off-field arrow,
+    // which made the 5th shot's burst a shot of its own and shifted every shot after it).
+    const offField = (h: KitHit) => JSON.stringify(h.if) === JSON.stringify({ not: { controlled: true } });
+    const groupsWith = (key: string, t?: number) =>
+      groups.filter((g) => g.hits.some((h) => h.events.includes(key) && !(t !== undefined && offField(h) && controlled(build.operator, t))));
     const kitSkills = new Set(groups.filter((g) => g.kind !== null).map((g) => g.skillId));
     // Not one logged at another operator's time-stopping cast's event: pressed during its stop, the log has it at the
     // stop's end (5082ceaffad1: Yvonne's and Ardelia's combos at Seraph's ultimate's 33.71 s; e82d45c46040: Li Zhiyan's at
@@ -516,7 +523,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       // whose windows list one).
       const skillCasts: LoggedCast[] = [];
       for (const h of mine) {
-        const candidates = groupsWith(h.event);
+        const candidates = groupsWith(h.event, h.t);
         if (candidates.length === 0) continue;
         if (!starts && candidates.length > 1) continue; // the first pass places only keys of one group
         const cur = current.get(h.event);
@@ -562,6 +569,11 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           continue;
         }
         const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
+        // A cast with a landing of a later frame logged already, a delayed one (a burst after its arrow), isn't joined
+        // by a landing of an earlier frame: that landing is a later cast's (fc63a2001251 87–97 s: each of Typhoeus's
+        // bursts opened a cast that the next shot's arrow joined, a shot late; tried 2026-11-18 without the off-field
+        // rule, when bdf2 and 00ae lost a shot to it).
+        const landedLater = (c: LoggedCast, frame: number) => [...placed].some(([x, p]) => p.cast === c && x.t < h.t && p.frame !== undefined && p.frame > frame && p.hits.some((k) => k.enemyDelay !== undefined));
         const late = joinDelayed(candidates, h, slots, opened, stops, free);
         // A trigger on casts fires once per cast: no new cast of its group once one was placed since the anchor before
         // the latest one it could be (a cast of the skills it fires on, plus its delay, placed up to the skill's duration
@@ -592,7 +604,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
+        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
@@ -606,11 +618,97 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     const starts = new Map<string, number[]>();
     for (const p of new Set([...first.values()].map((x) => x.cast))) starts.set(p.group, [...(starts.get(p.group) ?? []), p.start]);
     const placed = pass(starts);
+    realignUltimates(placed, (c, key) => {
+      const g = groups.find((x) => x.id === c.group);
+      return g && exactSlots(g, key) ? slots(g, key) : null;
+    }, others);
     for (const [h, p] of placed) hits.set(h, p);
     casts.push(...new Set([...placed.values()].map((p) => p.cast)));
   }
   return { hits, casts };
 }
+
+/**
+ * Whether the log shows an operator controlled at a time (ms), from the log alone: the logged hit with Stagger nearest
+ * that time among the kit hits whose Stagger only the controlled operator deals (poiseControlledOnly: basic attacks,
+ * as buffreplay.ts controlSwaps reads them) is the operator's, within CONTROL_EVIDENCE_MS. False without such a hit
+ * (unknown).
+ */
+function controlEvidence(fx: LogFixture, groups: ReadonlyMap<string, readonly Group[]>): (operator: string, t: number) => boolean {
+  const keys = new Map<string, Set<string>>();
+  for (const [op, gs] of groups) keys.set(op, new Set(gs.flatMap((g) => (g.kind === "basic" ? g.hits.filter((h) => h.poise !== undefined && h.poiseControlledOnly).flatMap((h) => h.events) : []))));
+  const shown = fx.hits.filter((h) => h.poise !== undefined && keys.get(h.operator)?.has(h.event));
+  return (operator, t) => {
+    let best: LogHit | undefined;
+    for (const h of shown) if (!best || Math.abs(h.t - t) < Math.abs(best.t - t)) best = h;
+    return best !== undefined && best.operator === operator && Math.abs(best.t - t) <= CONTROL_EVIDENCE_MS;
+  };
+}
+
+/** How far from a time a hit showing control may be and still say who was controlled then (controlEvidence). */
+const CONTROL_EVIDENCE_MS = 10_000;
+
+/**
+ * An ultimate's landings of a key fewer than its slots: the landings take the slots their world time from the first
+ * landing fits best (in order, the first keeping its slot), not the first ones in turn. An ultimate isn't cut, so a
+ * landing the log lacks may be any of them (3f78ceb15bc3: Rossi's at 18.98 s, 26 of her 27 landings logged, a stab
+ * missing: her two slashes, ×10–30 a stab, took the last stab's and slash 1's slots, 9 and 11 frames off their own).
+ * Applied only when it fits better than the turn order by REALIGN_MS in all; `slotsOf` gives a cast's key's slots when
+ * all are known (exactSlots), else null.
+ */
+function realignUltimates(placed: Map<LogHit, PlacedHit>, slotsOf: (c: LoggedCast, key: string) => readonly Slot[] | null, stops: readonly TimeStop[]): void {
+  const byCast = new Map<string, { cast: LoggedCast; key: string; hits: LogHit[] }>();
+  for (const [h, p] of placed) {
+    if (p.cast.kind !== "ultimate" || p.sameAs) continue;
+    const k = `${p.cast.group}|${p.cast.start}|${h.event}`;
+    const e = byCast.get(k) ?? { cast: p.cast, key: h.event, hits: [] };
+    e.hits.push(h);
+    byCast.set(k, e);
+  }
+  for (const { cast, key, hits } of byCast.values()) {
+    const s = slotsOf(cast, key);
+    // Not hits whose landings are a random count off their frames (KitHit.landedCount: Ardelia's sheep, 5082 af7b).
+    if (!s || hits.length < 2 || hits.length >= s.length || s.some((x) => x.hits.some((k) => k.landedCount !== undefined))) continue;
+    const list = [...hits].sort((a, b) => a.t - b.t);
+    const j0 = (placed.get(list[0] as LogHit) as PlacedHit).index;
+    if (list.length > s.length - j0) continue;
+    const base = (s[j0] as Slot).frame;
+    const w = list.map((h) => worldMs((list[0] as LogHit).t, h.t, stops));
+    const cost = (i: number, j: number) => Math.abs((w[i] as number) - msOf((s[j] as Slot).frame - base));
+    // best[i][j]: the least cost of landings 1..i with landing i at slot j (slots after j0, in order).
+    const n = list.length;
+    const best: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(Infinity));
+    const from: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(-1));
+    (best[0] as number[])[j0] = 0;
+    for (let i = 1; i < n; i++) {
+      for (let j = j0 + i; j <= s.length - (n - i); j++) {
+        for (let k = j0 + i - 1; k < j; k++) {
+          const c = (best[i - 1] as number[])[k] as number;
+          // Ties keep the earlier slot (the turn order's).
+          if (c + cost(i, j) < ((best[i] as number[])[j] as number) - 1e-9) {
+            (best[i] as number[])[j] = c + cost(i, j);
+            (from[i] as number[])[j] = k;
+          }
+        }
+      }
+    }
+    const last = best[n - 1] as number[];
+    let jEnd = -1;
+    for (let j = 0; j < s.length; j++) if (Number.isFinite(last[j] as number) && (jEnd < 0 || (last[j] as number) < (last[jEnd] as number) - 1e-9)) jEnd = j;
+    const turn = list.reduce((a, _h, i) => a + (i === 0 ? 0 : cost(i, j0 + i)), 0);
+    if (jEnd < 0 || (last[jEnd] as number) > turn - REALIGN_MS) continue;
+    const at: number[] = new Array<number>(n);
+    for (let i = n - 1, j = jEnd; i >= 0; j = (from[i] as number[])[j] as number, i--) at[i] = j;
+    list.forEach((h, i) => {
+      const p = placed.get(h) as PlacedHit;
+      const slot = s[at[i] as number] as Slot;
+      placed.set(h, { ...p, index: at[i] as number, hits: slot.hits, frame: slot.frame });
+    });
+  }
+}
+
+/** How much better (ms, summed over the landings) a realigned ultimate's slots must fit than the turn order (realignUltimates). */
+const REALIGN_MS = 150;
 
 /**
  * The cast of the same skill, placed from another key, that a key's first logged landing belongs to: the latest that

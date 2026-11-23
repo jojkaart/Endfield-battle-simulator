@@ -3,7 +3,7 @@
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs } from "../scripts/measure.ts";
+import { hitChanges, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs, sharesLines } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -51,6 +51,20 @@ describe("measure's overlay", () => {
     expect(lines[2]).toBe("  hold-out: 0 closer, 1 further, 0 the same");
     expect(lines.join("\n")).not.toMatch(/cccc/);
     expect(mixedPerHit([], new Map(), new Map())).toEqual([]);
+  });
+});
+
+describe("measure's totals by where the error lives", () => {
+  it("averages the shares per group, the hold-outs only as a group, before → after with a base", () => {
+    const split = { development: new Set(["zmdlogs-bbbb11112222"]), holdout: new Set(["zmdlogs-cccc11112222"]) };
+    const s = (error: number, matched: number, replayOnly: number, logOnly: number) => ({ error, matched, replayOnly, logOnly });
+    const after = new Map([["pending/zmdlogs-bbbb11112222.json", s(-4, -2, 1, -3)], ["holdout/zmdlogs-cccc11112222.json", s(10, 1, 12, -3)]]);
+    const before = new Map([["pending/zmdlogs-bbbb11112222.json", s(-8, -6, 1, -3)], ["holdout/zmdlogs-cccc11112222.json", s(10, 1, 12, -3)]]);
+    const lines = sharesLines(after, split, before, "base x");
+    expect(lines[1]).toBe("  development: 1 fight(s), |error| 8.0 → 4.0%, |matched| 6.0 → 2.0%, replay-only 1.0 → 1.0%, log-only 3.0 → 3.0%, one-sided 0 → 1");
+    expect(lines[2]).toBe("  holdout: 1 fight(s), |error| 10.0 → 10.0%, |matched| 1.0 → 1.0%, replay-only 12.0 → 12.0%, log-only 3.0 → 3.0%, one-sided 1 → 1");
+    expect(lines.join("\n")).not.toMatch(/cccc/);
+    expect(sharesLines(new Map(), split)).toEqual([]);
   });
 });
 

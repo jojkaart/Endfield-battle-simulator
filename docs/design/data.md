@@ -287,7 +287,10 @@ So are, by rule, the replay's landings no logged hit stands for inside a
 stretch of 6 s or more with no logged hit at all (engine assumption
 `enemy-away`, read only here: a boss phase, Si's 20–24 s and 13–14 s
 ones; `zmdlogs totals` names the stretches) and, in a fight that ends in
-a kill, at the killing blow's frame or after it (2026-11-23). A landing
+a kill, at the killing blow's frame or after it (2026-11-23): a kill is a
+logged total equal to the data's HP, or a capped last hit (the stages scale
+the data's HP: tower016 ×5.5, tower015 ×7.6; 2026-11-24), and the killing
+frame is the replay's landing of a killing hit when sooner. A landing
 of a logged hit without a reading (Si's burst, Fixed DMG) is that hit's
 part at the replay's own damage. An enemy status the log lists with no
 giver in a fixture that names givers is the stage's (Hard 27's
@@ -623,7 +626,8 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE: uncuttable frames; CUTS: a legal interrupt cancelling pending hits; EVENT; `[crit …: source]` on a landing the log gives no crit) |
 | How a kit buff's expiry moved; which window a refresh replaced | `efsim zmdlogs replay <fixture> --trace-buff owner:id`; `--kit-buff owner:id` ("refreshes the one from") |
 | An enemy status's life in the replay: applications, holds (a moved application), expiry, beside the log's runs | `efsim zmdlogs replay <fixture> --trace-buff status:<status>` (`status:*` every one) |
-| Which landings make a total: matched (predicted vs logged), replay only, log only | `efsim zmdlogs totals <fixture> [--operator <op>]`; between two commits with `node scripts/cli-ab.ts <ref> -- zmdlogs totals …` |
+| Which landings make a total: matched (predicted vs logged), replay only, log only | `efsim zmdlogs totals <fixture> [--operator <op>] [--by event]`; between two commits with `node scripts/cli-ab.ts <ref> -- zmdlogs totals …` |
+| Every fight's total by where its error lives (matched, replay-only, log-only shares), largest first, and each group's means | `efsim zmdlogs totals --all --workers 3` (development logs); the hold-outs' means only in `npm run measure`'s summary ("Totals by where the error lives") |
 | Does a kit buff run long or short: each instance's first expiry, its expiry on the replay's own clock (no hidden holds, no log ends), how it ended there and in the check's replay, the log's run and the lateness past the own expiry | `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (default every development log with the owner; `kitBuffClock` in a script). The check's window (`replay --kit-buff`) is already cut or held to the log's end: not the buff's natural end |
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | Which zone or modifier moved at each hit between two commits | `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` |

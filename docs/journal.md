@@ -4,9 +4,48 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 132 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 133 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Fight totals 2: an all-fights view, kills from capped hits, missing foods, Typhoeus's shots
+
+**Goal:** the previous round's leads on the fight totals: an all-fights view first, then 4360's kill, fc63's bursts,
+3f78's Rossi ultimate slots, a9d7's fight-wide factor.
+
+**Done** (docs/open-problems.md "Fight totals", items 6–9):
+- **The view.** `efsim zmdlogs totals --all [--workers n]` (or several fixtures): every fight's error as matched,
+  replay-only and log-only shares of its logged total (enginecheck.ts `totalsShares`), largest first, the operators
+  carrying it and each group's means; `zmdlogs totals <fx> --by event`. measure's summary gives the same means per
+  group, the hold-outs' only view: 12 of 13 hold-outs are one-sided (replay-only 7.3%, log-only 6.2%, |matched| 2.5%).
+- **Build offsets.** a9d7's "fight-wide factor" was its team's food (Jakub's Legacy; no log against Si's boss lists
+  food, and this one alone had none by hand): fit-build, fixture `buildOverrides`. A screen of every log's per-operator
+  median (scratch) found six more: d9e5 every operator's food, 012a, 92b4, c3c7, ad7f, d4fb a node count or weapon
+  level, each confirmed by fit-build with its clean hits.
+- **Kills.** A capped last hit makes a fight a kill (the stages scale the data's HP), and the killing frame is the
+  replay's landing of a killing hit when sooner (4360's returning lances +6.5%).
+- **Placement.** An ultimate's fewer landings take their slots by time (3f78: Rossi's slashes); an off-field-only hit
+  isn't placed while the log shows its operator controlled, and a cast with a delayed landing logged isn't joined by an
+  earlier frame's landing (Typhoeus's 4th shot read as her 5th in seven logs).
+
+**Scoreboard** (`npm run snapshots:update`): development plain 66.4 → 67.1%, matched 80.7 → 83.4%, mismatch 14.4 →
+11.7%, mean |damage error| 8.1 → 7.3%, within 5% 21 → 24; hold-out 77.5%, 91.8%, 6.3 → 6.2%, 9.1% (2 better, 1 mixed);
+earlier pending 60.4 → 62.7%, 81.7 → 84.9%, 17.7 → 14.8%, 5.3 → 4.9%, within 5% 17 → 18; verified 99.1 → 99.3% matched,
+1.8 → 2.0%; all but the hold-outs 6.5 → 5.9%, within 5% 44 → 48. Better: a9d7 −18.5 → −5.0%, d9e5 −11.5 → +0.2%, 4360
++6.9 → +0.5%, 3f78 −8.0 → −3.4%, fc63 +7.2 → +6.8%, d4fb, 012a, c3c7, ad7f, 92b4 by plain. Worse, each explained:
+2fd9 −13.1 → −15.6% (replay-only landings at the kill's frame had hidden Mi Fu's Crush ×1.90), dbae −2.3 → −2.6%
+(the kill likewise), bdf2 −0.1 → −0.7% and 9090 −0.6 → −0.9% (the 5th shot's burst now placed right, without the
+Hovering ATK the log gives it: open).
+
+**Decisions:** build offsets as fixture overrides only with fit-build's clean-hit counts (Chen in a9d7 has no clean
+hit: her teammates' food, said so). Hold-out aggregates only in measure (the CLI keeps refusing hold-outs). No engine
+or kit change: no team fight moves, so no team-ab.
+
+**Left:** the hold-outs' one-sided landings; 2fd9's Crush stacks; fc63's arrows after the hovering ultimate; the 5th
+shot's burst's Hovering ATK; Chen's readings (d4fb, a9d7); e82d's Si combo listing.
+
+**Problems:** one multi-line `python3 -c` slipped through (friction report); with-lock's done line went into a
+redirected stdout JSONL, so a wait on the stderr log would never have ended.
 
 ## 2026-11-23: Fight totals: the enemy away, the Endministrator's shatters, Hard 27's Electrification
 
@@ -387,39 +426,3 @@ not fixed (open-problems "Ink Melt logs").
 **Dead ends:** per-cluster brackets of the hold across a stop from the ramp (a step is 1 s wide: brackets of ±1 s,
 uninformative); the readings with the application as one end (they mix in the application's logged-ms errors: the
 pairwise test without it separates them).
-
-## 2026-11-23: Improvement round 6: a kit buff's clock, probes, the split
-
-**Goal:** the sixth friction round (docs/friction/README.md) over the six open reports (round 5's backlog and its own
-report, the buff clock, Artful Intent, hidden holds, the four smaller leads) and the lead's list, behaviour-preserving;
-on main at 235d717. Summary: docs/friction-done/2026-11-23-round-6.md.
-
-**Done:**
-- `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (packages/logs/src/clockview.ts): per instance the first
-  expiry, the expiry on the replay's own clock (`hidden-holds=none`, before any shortening step), how it ended there
-  and in the check's replay, the log's run and the lateness in real and world time; four agents had scripted it.
-- scripts/probes/<topic>/ with an index and a rule (a scratch script a doc cites moves there in that commit); eleven
-  cited probes promoted from other worktrees' scratch and run at this code; open-problems points at them.
-- `node scripts/holdout-split.ts add-development <fixture>` (the development array's text alone, the parse checked,
-  nothing of the hold-out list shown); 207f registered.
-- World-time views (worldtime, lanes --world, cadence) on the stops of the replay's casts (query.ts `replayTimeStops`:
-  db87's Laevatain ultimate placed from its cast event was missing); `measure` reads a log new since the reference
-  commit from the measured tree; `zmdlogs hits --assume`; census `origin:<re>`.
-- `operatorId(data, "Arcane")` (@efsim/data), `efsim find --operators`, devFixtures by name.
-- The backlog: closed-by lines and a parked list (docs/friction/README.md), scripts/friction.ts `outcomes` / `carry`;
-  round 5's points 1–21 parked; docs/friction/2026-11-23-backlog-after-round-6.md has 20 live points.
-
-**Scoreboard** (`npm run snapshots:update`: no log's verdicts moved; only the groups): development 31 → 32 fights,
-plain 63.2 → 62.5%, mismatch 15.4 → 15.6%, |damage| 9.1 → 9.4%; earlier pending 24 → 23 fights, 56.1 → 56.9%,
-18.8 → 18.7%, 8.4 → 8.0%; verified, hold-outs and all but the hold-outs unchanged.
-
-**Decisions:** the split edited as text, not re-serialised (a whole-file rewrite would put hold-out ids in the
-diff). `zmdlogs clock` as a consumer of the replay's traces under two readings, so nothing in logBuffReplay moved
-while the hidden-holds clocks agent works in it; its run() refactor, the enemy-status trace view and the Corrosion
-reader left to that agent (the backlog's "Taken" section). Probes not typechecked or linted: they age, and the
-README's "last run" column says when one was last seen working. Points carried through two rounds without a new
-report parked rather than re-read.
-
-**Left:** the backlog's 20 points (`zmdlogs clock` from casts and over every buff, the kit windows' instance chain,
-pinned expiries, origin columns, the hold-out field count, round 5's carried views); friction report
-docs/friction/2026-11-23-round-6-friction.md.

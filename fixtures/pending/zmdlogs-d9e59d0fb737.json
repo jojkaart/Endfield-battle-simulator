@@ -20,7 +20,8 @@
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-24, buildOverrides): every operator's food Ginseng Meat Stew, fitted with efsim zmdlogs fit-build: the log lists no food, and every operator's hits were ×1.12–1.22 the replay's (docs/open-problems.md \"Fight totals\")."
   ]
  },
  "enemy": {
@@ -13989,6 +13990,36 @@
    "t": 13829,
    "operator": "chr_0032_lizhiyan",
    "skill": "chr_0032_lizhiyan_combo_skill"
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0034_typhoea",
+   "set": {
+    "food": "item_corp3_animal_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 47 landed hits within ±1 (×1.1585); Ginseng Meat Stew alone fits 38 of 47 (1 of 1 clean, median ×1.0000), as it does each teammate (the log lists no food)."
+  },
+  {
+   "operator": "chr_0035_liino",
+   "set": {
+    "food": "item_corp3_animal_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 24 within ±1 (×1.2025); Ginseng Meat Stew alone fits 24 of 24 (no clean hit, median ×1.0002), the food her teammates fit."
+  },
+  {
+   "operator": "chr_0013_aglina",
+   "set": {
+    "food": "item_corp3_animal_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 8 within ±1 (×1.2171); Ginseng Meat Stew alone fits 8 of 8 (1 of 1 clean, median ×1.0000), the food her teammates fit."
+  },
+  {
+   "operator": "chr_0032_lizhiyan",
+   "set": {
+    "food": "item_corp3_animal_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 16 within ±1 (×1.1160); Ginseng Meat Stew alone fits 14 of 16 (no clean hit, median ×1.0000), the food her teammates fit."
   }
  ]
 }

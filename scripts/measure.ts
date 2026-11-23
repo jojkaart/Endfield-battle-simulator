@@ -66,9 +66,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { compare, direction, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots } from "./accuracy.ts";
+import { compare, direction, GROUPS, groupOf, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
-import type { HitRow, MeasureAnswer, MeasureJob, NegativeCount, PerHit } from "./measure-worker.ts";
+import type { HitRow, MeasureAnswer, MeasureJob, NegativeCount, PerHit, Shares } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
@@ -263,6 +263,7 @@ async function main(argv: string[]): Promise<number> {
   };
   const perHit = new Map<string, Map<string, PerHit>>();
   const hitRows = new Map<string, Map<string, readonly HitRow[]>>();
+  const sharesBy = new Map<string, Map<string, Shares>>();
   // Per tree and readings (`slot`: a --variant's measurements of the same tree apart).
   const measureTree = async (t: string, label: string, which: readonly string[] = order, readings: Readonly<Record<string, string>> = t === tree ? assume : {}, slot = t) => {
     const got = new Map<string, Entry>();
@@ -270,6 +271,8 @@ async function main(argv: string[]): Promise<number> {
     perHit.set(slot, fits);
     const rows = hitRows.get(slot) ?? new Map<string, readonly HitRow[]>();
     hitRows.set(slot, rows);
+    const shares = sharesBy.get(slot) ?? new Map<string, Shares>();
+    sharesBy.set(slot, shares);
     const start = performance.now();
     // A log new since that commit (an import on this branch): its code reads the measured tree's copy of the fixture.
     const fresh = new Set(t === tree ? [] : which.filter((k) => !existsSync(join(t, "fixtures", k))));
@@ -286,6 +289,7 @@ async function main(argv: string[]): Promise<number> {
       if (a.untimed) untimed.add(a.key);
       if (a.perHit) fits.set(a.key, a.perHit);
       if (a.hits) rows.set(a.key, a.hits);
+      if (a.shares) shares.set(a.key, a.shares);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
     }, readings);
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
@@ -358,6 +362,7 @@ async function main(argv: string[]): Promise<number> {
       ...compare(before, after),
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
+      ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
     ];
@@ -372,6 +377,29 @@ async function main(argv: string[]): Promise<number> {
   say("");
   for (const l of allLines) say(l);
   return 0;
+}
+
+/**
+ * The measured fights' totals by where the error lives (TotalsShares: matched scale, replay-only and log-only landings,
+ * as % of each fight's logged total), averaged per scoreboard group: the hold-outs' only view of it (never per log).
+ * With `before` (a --base measurement) each mean as before → after. `zmdlogs totals --all` gives the development rows.
+ */
+export function sharesLines(after: ReadonlyMap<string, Shares>, split: Split, before?: ReadonlyMap<string, Shares>, beforeLabel?: string): string[] {
+  if (!after.size) return [];
+  const agg = (m: ReadonlyMap<string, Shares>, g: string) => {
+    const xs = [...m].filter(([k]) => groupOf(k, split) === g).map(([, x]) => x);
+    const mean = (f: (x: Shares) => number) => (xs.length ? xs.reduce((a, x) => a + f(x), 0) / xs.length : 0);
+    return { n: xs.length, error: mean((x) => Math.abs(x.error)), matched: mean((x) => Math.abs(x.matched)), replayOnly: mean((x) => x.replayOnly), logOnly: mean((x) => -x.logOnly), oneSided: xs.filter((x) => x.replayOnly - x.logOnly > Math.abs(x.matched)).length };
+  };
+  const out = [`Totals by where the error lives (mean shares of each fight's logged total: |error|, |matched|, replay-only, log-only; one-sided: replay-only + log-only over |matched|; zmdlogs totals --all for the development rows)${before ? `, ${beforeLabel ?? "base"} → measured` : ""}:`];
+  for (const g of GROUPS) {
+    const a = agg(after, g);
+    if (!a.n) continue;
+    const b = before ? agg(before, g) : undefined;
+    const f = (k: "error" | "matched" | "replayOnly" | "logOnly") => `${b && b.n ? `${b[k].toFixed(1)} → ` : ""}${a[k].toFixed(1)}%`;
+    out.push(`  ${g}: ${a.n} fight(s), |error| ${f("error")}, |matched| ${f("matched")}, replay-only ${f("replayOnly")}, log-only ${f("logOnly")}, one-sided ${b && b.n ? `${b.oneSided} → ` : ""}${a.oneSided}`);
+  }
+  return out;
 }
 
 /** `<id>=<reading>` pairs as readings (--assume, --variant). */

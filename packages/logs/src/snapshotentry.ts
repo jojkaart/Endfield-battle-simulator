@@ -7,6 +7,7 @@ import type { GameData } from "@efsim/engine";
 import type { ReplayOptions } from "./buffreplay.ts";
 import { checkLog, engineHits, engineReport, logBuffReplay, verdictCounts, type EngineHits, type HitVerdict, type LogBuffReplay } from "./logcheck.ts";
 import type { LogFixture } from "./zmdlogs.ts";
+import { totalsShares, type TotalsShares } from "./enginecheck.ts";
 
 /** The key of a snapshot entry that holds the totals' errors instead of an operator's counts. */
 export const SNAPSHOT_TOTALS_KEY = "totals";
@@ -16,6 +17,8 @@ export interface SnapshotEntry {
   readonly entry: Record<string, Record<string, number | null>>;
   readonly counts: ReturnType<typeof verdictCounts>;
   readonly totals: ReturnType<typeof engineReport>["errors"];
+  /** The totals' error by where it lives (not in the snapshots: measure's aggregates, `zmdlogs totals --all`). */
+  readonly shares: TotalsShares;
   /** What it was computed from, for tests that check more of the same log. */
   readonly replay: LogBuffReplay;
   readonly byHit: EngineHits;
@@ -28,6 +31,7 @@ export function snapshotEntry(data: GameData, fx: LogFixture, opts: Pick<ReplayO
   const byHit = engineHits(data, fx, replay);
   const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
   const counts = verdictCounts(fx, verdicts);
-  const totals = engineReport(data, fx, replay, byHit, verdicts).errors;
-  return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, replay, byHit, verdicts };
+  const report = engineReport(data, fx, replay, byHit, verdicts);
+  const totals = report.errors;
+  return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares: totalsShares(fx.hits, report.totals), replay, byHit, verdicts };
 }

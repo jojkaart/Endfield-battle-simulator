@@ -3,7 +3,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { castsView, differencesReport, fallbackGroups, groupsReport, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerSummary, staggerView, type HitRecord, type StaggerRun } from "@efsim/logs";
+import { castsView, differencesReport, fallbackGroups, groupsReport, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerSummary, staggerView, totalsAllView, type HitRecord, type StaggerRun } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -134,5 +134,22 @@ describe("hit records grouped by cause", () => {
     const lines = fallbackGroups(fb);
     expect(lines[0]).toMatch(/^Matches only by the log's listing .*3 by skill event/);
     expect(lines[1]).toMatch(/3 {2}combo_skill {2}median logged ÷ primary ×1\.500/);
+  });
+});
+
+describe("zmdlogs totals --all", () => {
+  it("lists fights by |error| with their shares and operators, then each group's means", () => {
+    const shares = (error: number, matched: number, replayOnly: number, logOnly: number) => ({
+      logged: 1e6, error, matched, replayOnly, logOnly, awayLeftOut: 0, awaySeconds: 0,
+      perOperator: [{ operator: "chr_0036_jsspsi", matched, replayOnly, logOnly, shifts: 0 }],
+    });
+    const text = totalsAllView(data, [
+      { short: "aaaa", group: "development", shares: shares(2, 1, 2, -1) },
+      { short: "bbbb", group: "earlier", shares: shares(-9, -8, 0, -1) },
+    ]);
+    const rows = text.split("\n").filter((l) => /^[ab]{4} /.test(l));
+    expect(rows.map((l) => l.slice(0, 4))).toEqual(["bbbb", "aaaa"]);
+    expect(rows[0]).toMatch(/earlier +-9\.0 +-8\.0 +\+0\.0 +-1\.0 .*Si -8\.0\/\+0\.0\/-1\.0/);
+    expect(text).toContain("  development: 1 fight(s), mean |error| 2.0% (within 5%: 1); mean |matched| 1.0%, replay-only 2.0%, log-only 1.0%; one-sided (replay-only + log-only over |matched|) 1");
   });
 });
