@@ -16,6 +16,11 @@ export interface MeasureJob {
   readonly what: "entry" | "placement";
   /** With an entry: each hit's verdict too (measure --hits); with a placement: its casts (--changed placement). Never asked for a hold-out. */
   readonly hits?: boolean;
+  /**
+   * Where to read the fixture (an absolute fixtures/ directory) when not the code tree's own: a log new since the
+   * reference (or --base) commit is read from the measured tree, so the older code measures the same file.
+   */
+  readonly fixtures?: string;
 }
 /** One hit's verdict for measure --hits: time (s), operator, event, verdict count (plain, mismatch, ...), logged ÷ primary. */
 export type HitRow = readonly [t: number, operator: string, event: string, verdict: string, ratio: number | null];
@@ -82,7 +87,7 @@ function placementOf(fx: any, withCasts = false): { placement: string; casts?: s
 parentPort?.on("message", (job: MeasureJob) => {
   const start = performance.now();
   try {
-    const fx = logs.readLogFixture(join(tree, "fixtures", job.key));
+    const fx = logs.readLogFixture(join(job.fixtures ?? join(tree, "fixtures"), job.key));
     const seconds = () => (performance.now() - start) / 1000;
     parentPort?.postMessage(job.what === "entry" ? { key: job.key, ...entryOf(fx, job.hits === true), seconds: seconds() } : { key: job.key, ...placementOf(fx, job.hits === true), seconds: seconds() });
   } catch (e) {

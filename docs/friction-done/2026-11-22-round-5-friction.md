@@ -42,3 +42,11 @@ docs/friction/2026-11-22-backlog-after-round-5.md aren't repeated.
 The reports' episodes were exact enough to implement from (Perlica's premerge guess was right to the line);
 `npm run measure` with the new queue-time snapshot let me keep editing while it ran; the free lock this time made
 every check fast.
+
+## Outcome (round 6)
+
+2026-11-23, improvement round 6 (docs/friction-done/2026-11-23-round-6.md); what's left is in docs/friction/2026-11-23-backlog-after-round-6.md.
+
+- 1 (the backlog only grows): done (568990c): docs/friction/README.md, a branch that closes a point says so under it, a point carried twice without a new report is parked; the round-6 backlog parks round 5's points 1–21 (37 live points → 20, plus three taken by another agent).
+- 2 (outcome lines by hand): done (568990c): `node scripts/friction.ts outcomes <report…> --round n` (a skeleton per numbered point) and `carry <backlog> <n,…>` (points renumbered, From lines extended); this round's carried points came from it.
+- 3 (script edits make the editor tools refuse the next edit): done (95adc49): CLAUDE.md, a new scratch/patch-<n>.py per batch, never rewriting one a shell command touched.

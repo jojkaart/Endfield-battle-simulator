@@ -86,9 +86,11 @@ export interface HitRecord {
 }
 
 /** Every logged hit of a fixture as a record (the multi-target fixtures aren't checked: single-target engine). */
-export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.id): HitRecord[] {
+export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.id, assume: Readonly<Record<string, string>> = {}): HitRecord[] {
   const placement = placeHits(data, fx);
-  const replay = logBuffReplay(data, fx, placement);
+  // Under other readings of open assumptions (`zmdlogs hits --assume`; round 6: it ignored the option and printed the
+  // defaults' verdicts), as measure and the check replay them (snapshotentry.ts).
+  const replay = Object.keys(assume).length ? logBuffReplay(data, fx, placement, { assume }) : logBuffReplay(data, fx, placement);
   const byHit = engineHits(data, fx, replay, placement);
   const verdicts = new Map(checkLog(data, fx, { replay, engineHits: byHit }).map((v) => [v.hit, v]));
   const c = engineCheck(data, fx, replay.replay);
@@ -194,11 +196,11 @@ export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "
 }
 
 /** The hits of a list of fixtures, read one at a time (readFixture), each record handed to `out` as it's made. */
-export function exportHits(data: GameData, files: readonly string[], readFixture: (file: string) => LogFixture, out: (r: HitRecord) => void, opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void } = {}): number {
+export function exportHits(data: GameData, files: readonly string[], readFixture: (file: string) => LogFixture, out: (r: HitRecord) => void, opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void; readonly assume?: Readonly<Record<string, string>> } = {}): number {
   let n = 0;
   for (const f of files) {
     opts.progress?.(`hits ${f}`);
-    for (const r of filterRecords(hitRecords(data, readFixture(f), f), opts)) {
+    for (const r of filterRecords(hitRecords(data, readFixture(f), f, opts.assume), opts)) {
       out(r);
       n++;
     }
@@ -210,7 +212,7 @@ export function exportHits(data: GameData, files: readonly string[], readFixture
  * As exportHits, on `workers` worker threads (hitsworker.ts), each loading the game data once: a fixture's records
  * arrive together, in the order fixtures finish.
  */
-export async function exportHitsParallel(files: readonly string[], workers: number, out: (r: HitRecord) => void, opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void } = {}): Promise<number> {
+export async function exportHitsParallel(files: readonly string[], workers: number, out: (r: HitRecord) => void, opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void; readonly assume?: Readonly<Record<string, string>> } = {}): Promise<number> {
   const { Worker } = await import("node:worker_threads");
   const queue = [...files];
   let n = 0;
@@ -224,7 +226,7 @@ export async function exportHitsParallel(files: readonly string[], workers: numb
           return;
         }
         opts.progress?.(`hits ${file}`);
-        w.postMessage({ file, ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.operators?.length ? { operators: [...opts.operators] } : {}) });
+        w.postMessage({ file, ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.operators?.length ? { operators: [...opts.operators] } : {}), ...(opts.assume && Object.keys(opts.assume).length ? { assume: { ...opts.assume } } : {}) });
       };
       w.on("message", (m: { file: string; records?: HitRecord[]; error?: string }) => {
         if (m.error !== undefined) {

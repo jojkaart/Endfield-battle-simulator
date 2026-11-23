@@ -63,3 +63,12 @@ apply them in the log check's replay as world holds for every timer (engine assu
 - `efsim zmdlogs replay <fixture> --from --to --assume` made the one-frame knife edge (bdf2's Nature burst) visible in
   a diff of two runs.
 - The shared lock's short-job lane let my scratch probes run beside other agents' long jobs.
+
+## Outcome (round 6)
+
+2026-11-23, improvement round 6 (docs/friction-done/2026-11-23-round-6.md); what's left is in docs/friction/2026-11-23-backlog-after-round-6.md.
+
+- 1 (the previous round's analysis only in another worktree's scratch/): done (95adc49): scripts/probes/<topic>/ with an index (scripts/probes/README.md: question, command, last run), the rule in CLAUDE.md and the README (a scratch script a doc cites for a number the next step builds on moves there in that commit); eleven cited probes promoted (buff-clock, hidden-holds, corrosion, edge, stagger) and open-problems' citations pointed at them.
+- 2 ("whose clock" questions need a replay pass the API doesn't offer): not done: the hidden-holds clocks agent is refactoring logBuffReplay's run() now (the round-6 backlog, "Taken by the hidden-holds clocks agent").
+- 3 (measuring a code variant needs a temporary reading): done (3e89a2b): docs/design/tests.md "Measuring a change", two variants are a WIP commit and the working tree with `measure -- --base HEAD` (or a commit each), never a reading added for one measurement.
+- 4 (kit ids vs names when scripting): done (56a190e): `operatorId(data, "Arcane")` in @efsim/data (refuses an unknown or ambiguous name), `efsim find --operators`, `devFixtures({ withOperators })` taking names; the scratch template, CLAUDE.md and open-problems' header say so.

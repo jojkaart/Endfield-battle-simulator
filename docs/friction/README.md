@@ -19,6 +19,17 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    doing.
 3. Accuracy rules still apply to improvement rounds: tests stay green,
    snapshots only move with a reason, `scripts/premerge.sh` before merging.
+4. **The backlog stays short** (round 6): a branch that closes a backlog
+   point (any task, not only an improvement round) adds one line under it
+   in the same branch: "Closed by <branch>, <commit>: how". A point carried
+   through two rounds without a new report hitting it moves to the
+   backlog's "Parked" list (one line: title, where its full text is); a
+   new report that hits it again brings it back, its text from there.
+5. **The paperwork:** `node scripts/friction.ts outcomes <report.md…>
+   --round <n>` prints each report's "Outcome (round n)" skeleton (a line
+   per numbered point), `node scripts/friction.ts carry <backlog.md> <n,…>
+   --start <k> --label "<name>,"` the points carried into the next backlog,
+   renumbered, their **From:** lines extended.
 
 ## What a report contains
 

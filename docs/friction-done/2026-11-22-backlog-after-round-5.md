@@ -415,3 +415,46 @@ names where they began); 21 on are round 5's, the first three of them remainders
 
 The round-5 reports named their scratch prototypes and functions; `npm run measure` (byte for byte in a minute) kept
 the replay refactor safe.
+
+## Outcome (round 6)
+
+2026-11-23, improvement round 6 (docs/friction-done/2026-11-23-round-6.md); what's left is in docs/friction/2026-11-23-backlog-after-round-6.md.
+
+- 1 (game-data file reads scattered): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 2 (status-event landings record no facts): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 3 (status and Stagger modifiers by source text): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 4 (test files carry copies of helpers): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 5 (SP kept path-independent by a snap): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 6 (fixed-length search times): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 7 (prose citations not checked): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 8 (no CLI-output A/B harness): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report); two code variants' verdicts: docs/design/tests.md now says how with measure --base (3e89a2b).
+- 9 (status log keys only in a doc table): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 10 (the importer has no test): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 11 (teammates' attack share): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 12 (the replay's step list inside buffreplay.ts): not done: the hidden-holds clocks agent is refactoring logBuffReplay's run() now; parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report), and named under the replayOnce point taken by that agent.
+- 13 (the cast table's gaps and units): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 14 (the weapon breakthrough table): not done (needs the lead's main checkout), parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 15 (an "in her ultimate" rules cue): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 16 (kit tests pin absolute expiries): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 17 (loop tests depend on unrelated readings): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 18 (test texts in step with the kits): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 19 (kit notes on disabled actions): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 20 (who wears what, event keys): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 21 (--assumptions doesn't run the engine's readings): not done, parked (the round-6 backlog's Parked list: carried through rounds 4 and 5 without a new report).
+- 22 (kit-buff windows joined with the log's lanes): done for the listed-lane case (7204f27): `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (packages/logs/src/clockview.ts), each instance's first and own-clock expiry, how it ended there and in the check's replay, the log's run and the lateness; --on/--off brackets from casts and the every-buff table carried (the round-6 backlog point 15).
+- 23 (groups: off under both readings or the replay's only): not done, carried (the round-6 backlog point 1).
+- 24 (census interval selectors): not done, carried (the round-6 backlog point 2).
+- 25 (ticks logged against replayed): not done, carried (the round-6 backlog point 3).
+- 26 (the replay's enemy statuses have no view): not done: the hidden-holds clocks agent is building the enemy-status trace view; the round-6 backlog, "Taken by the hidden-holds clocks agent".
+- 27 (both-variants flag): not done, carried (the round-6 backlog point 4).
+- 28 (one skill's hits with their zones): not done, carried (the round-6 backlog point 5).
+- 29 (differences blames the applying hit): not done, carried (the round-6 backlog point 6).
+- 30 (a no-landing reason hiding an unlogged crit): not done, carried (the round-6 backlog point 7).
+- 31 (open rule questions go stale): not done, carried (the round-6 backlog point 8).
+- 32 (who inflicts what, as a team table): not done, carried (the round-6 backlog point 9).
+- 33 (a buff's holds past its modelled end need a kit edit): not done, carried (the round-6 backlog point 10); `zmdlogs clock` gives the own-clock expiry and the lateness, not an instance kept alive past it.
+- 34 (the log reading's parts, consumed layers): not done, carried (the round-6 backlog point 11).
+- 35 (instances and the replay's casts disagree): not done, carried (the round-6 backlog point 12).
+- 36 (a batched mark on log times): not done, carried (the round-6 backlog point 13).
+- 37 (smoke and snapshots read the tree late): not done, carried (the round-6 backlog point 14).
+- The three accuracy or search leads: unchanged in the round-6 backlog's last section.

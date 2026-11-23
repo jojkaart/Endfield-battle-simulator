@@ -397,6 +397,13 @@ detail):
   under ~0.2 s, or one at a ms many hits share, isn't timing evidence;
   "uneven batches" of a periodic hit may be the log's, not the game's.
   World time between two moments: `efsim zmdlogs worldtime`.
+- **A hit's Stagger origin** (`LogHit.poise.origin`, imports and refreshes
+  since 2026-11-16; 2026-11-23, Si's strokes): the skill whose cast the
+  hit's Stagger is credited to, the skill id the hit's own skill inherits
+  its cast from. It tells hits of one event key apart by what launched
+  them: Si's ink burst after a Final Stroke (origin `normal_skill_2`) from
+  one at an Inksoul's expiry (`normal_skill_inkmove_2`). Only on hits that
+  dealt Stagger. `efsim zmdlogs census --select 'origin:<re>'` counts them.
 - **A hit inside its own cast's stop** (2026-11-23) is logged where the
   stop ends, not at its frame: Liino's combo hit 1 (frame 9, the world at
   0.01 to frame 10) comes 0.1–0.9 s (median 0.23 s) before hit 2 (frame
@@ -578,7 +585,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window=a,b] [--list]` (the window in ms; `=` for a negative start, as the `rerun:` line prints it) |
 | What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
-| The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` |
+| The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` (the stops of the replay's casts: placed, from a cast event, inferred; `replayTimeStops` in a script, not `castTimeStops`, which has the placed casts' only) |
 | The fight's hidden holds (unlogged dodges, pauses) the replay places: each 0.512 s unit, its earliest and latest time, the clocks spanning it | `efsim zmdlogs holds <fixture> [--verbose]` |
 | Corrosion's ramp as the hits read it: each hit's fitting step against the replay's, the hidden hold that allows against the one placed | `efsim zmdlogs ramp <fixture> [--verbose]` |
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
@@ -591,6 +598,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Where the placement put each hit and cast | `efsim zmdlogs casts <fixture> [--from --to]` |
 | The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE, EVENT) |
 | How a kit buff's expiry moved | `efsim zmdlogs replay <fixture> --trace-buff owner:id` |
+| Does a kit buff run long or short: each instance's first expiry, its expiry on the replay's own clock (no hidden holds, no log ends), how it ended there and in the check's replay, the log's run and the lateness past the own expiry | `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (default every development log with the owner; `kitBuffClock` in a script). The check's window (`replay --kit-buff`) is already cut or held to the log's end: not the buff's natural end |
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |

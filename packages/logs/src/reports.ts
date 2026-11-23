@@ -79,8 +79,11 @@ export interface RecordFilter {
  * (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called); from the per-fixture cache when
  * the code and the fixture are unchanged (hitsCacheKey). `reading` "log": the text lines also give the log's reading.
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly cache?: boolean; readonly progress: (line: string) => void }): Promise<string> {
-  const records = await collectRecords(data, selectedFiles(sel, "hits"), opts.workers, opts, opts.progress, opts.cache ?? true);
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+  // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
+  const assume = opts.assume ?? {};
+  const under = Object.keys(assume).length > 0;
+  const records = await collectRecords(data, selectedFiles(sel, "hits"), opts.workers, opts, opts.progress, (opts.cache ?? true) && !under, assume);
   return records.map((r) => formatRecord(r, opts.json, opts.reading)).join("\n");
 }
 
@@ -132,7 +135,7 @@ function writeHitsCache(file: string, records: readonly HitRecord[]): void {
  * (scratch/hits-cache/<code key>/, hitsCodeKey) where the code and the fixture are unchanged, the rest checked on
  * `workers` threads and cached (`cache` false: neither read nor written).
  */
-async function collectRecords(data: () => GameData, files: readonly string[], workersOpt: string | undefined, filter: RecordFilter, progress?: (line: string) => void, cache = true): Promise<HitRecord[]> {
+async function collectRecords(data: () => GameData, files: readonly string[], workersOpt: string | undefined, filter: RecordFilter, progress?: (line: string) => void, cache = true, assume: Readonly<Record<string, string>> = {}): Promise<HitRecord[]> {
   const workers = workersOpt === undefined ? 1 : Number(workersOpt);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const byFile = new Map<string, HitRecord[]>();
@@ -147,8 +150,8 @@ async function collectRecords(data: () => GameData, files: readonly string[], wo
   if (todo.length) {
     const got = new Map<string, HitRecord[]>(todo.map((f) => [f, []]));
     const out = (r: HitRecord) => got.get(r.fixture)?.push(r);
-    if (workers > 1) await exportHitsParallel(todo, workers, out, { ...(progress ? { progress } : {}) });
-    else exportHits(data(), todo, readLogFixture, out, { ...(progress ? { progress } : {}) });
+    if (workers > 1) await exportHitsParallel(todo, workers, out, { ...(progress ? { progress } : {}), assume });
+    else exportHits(data(), todo, readLogFixture, out, { ...(progress ? { progress } : {}), assume });
     for (const [f, rs] of got) {
       byFile.set(f, rs);
       if (cache) writeHitsCache(f, rs);

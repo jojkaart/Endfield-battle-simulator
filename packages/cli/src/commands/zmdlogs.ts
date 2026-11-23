@@ -9,6 +9,7 @@ import {
   cacheRawDetail,
   cadenceView,
   census,
+  clockView,
   controlView,
   devFixtures,
   instancesView,
@@ -61,6 +62,7 @@ export default command({
                 [--kind <k>] [--operator <op>]  Only this reaction kind ("skill": kit hits) / operator (id or name;
                                           repeatable)
                 [--event <regex>]         Only hits whose logged event key matches
+                [--assume <id>=<reading>] Under another reading of an open assumption, as check's (not cached)
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
                 [--reading log]           Text lines also give the log's reading and its error: off under both is the
                                           build or a kit value, off only under the primary the replay's timing
@@ -140,7 +142,9 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                                           verified and pending development log); the output's first lines record the
                                           selection and the command that reruns it: cite them with a claim.
                                           <sel>: cast:<regex> (skill instances), event:<regex> (hit groups of a logged
-                                          event key, a gap over 1 s starts one), buff:<regex> (runs of a listed buff)
+                                          event key, a gap over 1 s starts one), buff:<regex> (runs of a listed buff),
+                                          origin:<regex> (hit groups whose Stagger the log credits to a matching
+                                          skill: poise.origin, imports since 2026-11-16)
                 [--operator <op>]         Only these operators' items (repeatable)
                 [--near <sel>] [--near-operator <op>]  Also whether an item of this selection is near each item…
                 [--within ms | --window from,to]  …within ±ms (default 1000), or from..to ms relative to it (0,700:
@@ -155,10 +159,18 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
   efsim zmdlogs lanes <fixture> [--buff <regex>]  Each run of a listed buff (one per source and since): since,
                                           first and last listed hit, the next hit of its hitters that doesn't list
                                           it, values (since is the lane's start as logged: a refresh may move it)
-                [--world]                 Each run's length in world time too (the placed casts' stops taken out)
-  efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the placed
-                                          casts' time stops, and the stops between (operator, skill, frames, lowest
-                                          scale)
+                [--world]                 Each run's length in world time too (the stops of the replay's casts
+                                          taken out: placed, from cast events, inferred)
+  efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the time
+                                          stops of the replay's casts (placed, from cast events, inferred), and the
+                                          stops between (operator, skill, frames, lowest scale)
+  efsim zmdlogs clock --kit-buff owner:id [fixture…]  Each instance of a kit buff: the expiry the replay first
+                                          gave it, its expiry on the replay's own clock (no hidden holds, no log
+                                          ends) and how it ended there, how it ended in the check's replay, the
+                                          log's run of it (since, last listed, next unlisted hit) and the last
+                                          listed hit's lateness past the own expiry (real and world time); default
+                                          every development log with the owner, then the lateness's spread
+                [--assume <id>=<reading>] The check's replay under another reading
   efsim zmdlogs holds <fixture>           The fight's hidden holds the replay places (hidden-holds placed): the
                                           least total, each 0.512 s unit with its earliest and latest time and the
                                           clocks spanning it, the bounds dropped; --verbose every bound
@@ -255,6 +267,13 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (values.buff.length > 1) throw new Error("zmdlogs lanes takes one --buff <regex>");
       return lanesView(data(), fx, values.buff[0] !== undefined ? new RegExp(values.buff[0]) : undefined, { world: values.world });
     }
+    if (sub === "clock") {
+      if (values["kit-buff"].length !== 1) throw new Error("zmdlogs clock takes one --kit-buff owner:id (efsim kit <operator> lists its buffs) and optional fixtures");
+      const kitBuff = values["kit-buff"][0] as string;
+      const named = args.slice(1);
+      const logs = devFixtures({ ...(named.length ? { ids: named } : { withOperators: [kitBuff.split(":")[0] as string] }) });
+      return clockView(data(), logs, kitBuff, parseAssume(data(), values.assume));
+    }
     if (sub === "census" || sub === "buffs" || sub === "cadence") {
       const named = args.slice(1);
       const ids = [...named, ...(values["fixtures-from"] !== undefined ? readFileSync(values["fixtures-from"], "utf8").split("\n").map((l) => l.replace(/#.*/, "").trim()).filter(Boolean) : [])];
@@ -270,7 +289,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
         if (operators.length !== 1 || values.event === undefined) throw new Error("zmdlogs cadence takes one --operator <op> and --event <regex>");
         return cadenceView(data(), logs, operators[0] as string, new RegExp(values.event));
       }
-      if (values.select === undefined) throw new Error("zmdlogs census takes --select <cast:|event:|buff:regex>");
+      if (values.select === undefined) throw new Error("zmdlogs census takes --select <cast:|event:|buff:|origin:regex>");
       const window = values.window !== undefined ? values.window.split(",").map(Number) : values.within !== undefined ? [-Number(values.within), Number(values.within)] : [-1000, 1000];
       if (window.length !== 2 || window.some((x) => !Number.isFinite(x))) throw new Error("--within takes ms, --window from,to (ms)");
       const nearOps = values["near-operator"].map((o) => operatorNamed(data(), o));
@@ -295,7 +314,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     if (sub === "hits") {
       if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
       const reading = values.reading === "log" ? "log" : "primary";
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, cache: !values["no-cache"], progress });
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
