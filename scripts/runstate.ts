@@ -9,6 +9,11 @@
 // Usage: node scripts/runstate.ts                       every job's last run: started, code, finished / interrupted
 //        node scripts/runstate.ts start <job> [note…]   (the scripts call these)
 //        node scripts/runstate.ts end <job> <result>
+//        node scripts/runstate.ts --touching [base]   per other worktree (agents' .claude/worktrees/…, not scratch/at/),
+//                                                the files its branch changed since its merge base with base (main
+//                                                by default) and its uncommitted ones: what a parallel agent is in
+//                                                (read-only; round 8: a refactor shrunk on a guess). Hold-out
+//                                                fixtures only as a count.
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -79,13 +84,47 @@ export function describeRuns(now = codeId()): string[] {
     });
 }
 
+/** Paths to print, a hold-out fixture's only as a count (CLAUDE.md, hold-out logs). */
+function shown(paths: readonly string[]): string[] {
+  const hidden = paths.filter((p) => p.startsWith("fixtures/holdout/")).length;
+  return [...paths.filter((p) => !p.startsWith("fixtures/holdout/")), ...(hidden ? [`(${hidden} file(s) under fixtures/holdout/, not named)`] : [])];
+}
+
+/** Per other worktree: its branch, the files it changed since its merge base with `base`, and its uncommitted ones. */
+export function touching(base = "main", here = ROOT): string[] {
+  const list = git(["worktree", "list", "--porcelain"]).split("\n\n").filter(Boolean);
+  const out: string[] = [];
+  let idle = 0;
+  for (const block of list) {
+    const dir = /^worktree (.+)$/m.exec(block)?.[1];
+    const head = /^HEAD (\w+)$/m.exec(block)?.[1];
+    const branch = /^branch refs\/heads\/(.+)$/m.exec(block)?.[1] ?? "(detached)";
+    if (!dir || !head || resolve(dir) === resolve(here) || dir.includes("/scratch/at/")) continue;
+    const mb = git(["merge-base", base, head]).trim();
+    const committed = mb ? git(["diff", "--name-only", mb, head]).split("\n").filter(Boolean) : [];
+    const dirty = spawnSync("git", ["status", "--porcelain"], { cwd: dir, encoding: "utf8" }).stdout?.split("\n").filter(Boolean).map((l) => l.slice(3)) ?? [];
+    if (!committed.length && !dirty.length) {
+      idle++;
+      continue;
+    }
+    out.push(`${dir} (${branch} at ${head.slice(0, 9)}): ${committed.length} file(s) changed since ${base}${dirty.length ? `, ${dirty.length} uncommitted` : ""}`);
+    for (const f of shown(committed)) out.push(`  ${f}`);
+    for (const f of shown(dirty)) out.push(`  ${f} (uncommitted)`);
+  }
+  return [...out, `${out.length ? "and " : ""}${idle} other worktree(s) with nothing beyond ${base}`];
+}
+
 function main(argv: string[]): number {
   const [cmd, job, ...rest] = argv;
+  if (cmd === "--touching") {
+    process.stdout.write(touching(job).join("\n") + "\n");
+    return 0;
+  }
   if (cmd === "start" && job) startRun(job, rest.join(" ") || undefined, process.ppid);
   else if (cmd === "end" && job && rest[0]) endRun(job, rest[0]);
   else if (cmd === undefined) process.stdout.write(describeRuns().join("\n") + "\n");
   else {
-    process.stderr.write("usage: node scripts/runstate.ts [start <job> [note…] | end <job> <result>]\n");
+    process.stderr.write("usage: node scripts/runstate.ts [start <job> [note…] | end <job> <result> | --touching [base]]\n");
     return 2;
   }
   return 0;

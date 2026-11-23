@@ -581,7 +581,12 @@ nothing on a server. API documented in
     (node_modules/.cache/efsim/zmdlogs/) by `zmdlogs import` and `refresh`;
     `efsim zmdlogs raw <fixture> [--buffs re] [--events re]` prints its
     lanes, fetching a missing one once (never a hold-out). The cache holds
-    player names: never copy it into the repository.
+    player names: never copy it into the repository. A detail takes up to
+    a minute to download (about 45 s each for the 13 hold-outs,
+    2026-11-23), far more than the 3.5 s gap: run more than two in the
+    background, and don't restart a slow one (a second set of downloads).
+    A refused `zmdlogs refresh` prints, under its reason, the fixture's
+    and the detail's values at the first differing hits.
   - The Endministrator can appear as the game's virtual ID
     `chr_9000_endmin`, without skill levels (the importer reads it as
     `chr_0003_endminf` with 12 and says so in the notes).

@@ -311,7 +311,19 @@ const KEPT_UNQUANTIFIED_NOTE =
 export type RefreshedField = keyof typeof REFRESH_NOTES;
 
 /** A refresh refused: the detail isn't what the fixture was imported from (or the importer reads it differently now). */
-export class RefreshMismatch extends Error {}
+export class RefreshMismatch extends Error {
+  /**
+   * What differs at the first differing hits, the fixture's value against the detail's (JSON, cut at 300 characters):
+   * not in the message, so a caller that must not show a fixture's content (scripts/holdout-refresh.ts, blind) prints
+   * only the category; `zmdlogs refresh` (development fixtures only: refreshFromDetail) prints them (round 8: a refusal
+   * over `unquantified` took a scratch script and a fresh download to diagnose).
+   */
+  readonly values: readonly string[];
+  constructor(message: string, values: readonly string[] = []) {
+    super(message);
+    this.values = values;
+  }
+}
 
 export interface RefreshResult {
   readonly casts: number;
@@ -376,6 +388,11 @@ export function refreshFixture(file: string, detail: unknown, keepDetail?: (deta
   const lacking = new Set<RefreshedField>(hitFields.filter((f) => !has(f, fx.hits)));
   const differing = new Map<string, number>();
   const examples: string[] = [];
+  const values: string[] = [];
+  const json = (v: unknown) => {
+    const t = v === undefined ? "absent" : JSON.stringify(v);
+    return t.length > 300 ? `${t.slice(0, 300)}…` : t;
+  };
   fx.hits.forEach((h, i) => {
     const a = comparable(h, lacking) as Record<string, unknown>;
     const b = comparable(fresh[i] as LogHit, lacking) as Record<string, unknown>;
@@ -383,6 +400,7 @@ export function refreshFixture(file: string, detail: unknown, keepDetail?: (deta
     const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((k) => !isDeepStrictEqual(a[k], b[k]));
     for (const k of keys) differing.set(k, (differing.get(k) ?? 0) + 1);
     if (examples.length < 3) examples.push(`hit ${i} (${h.t} ms ${h.event}): ${keys.join(", ")}`);
+    if (values.length < 4) for (const k of keys) values.push(`hit ${i} ${k}: fixture ${json(a[k])} / detail ${json(b[k])}`);
   });
   let keptUnquantified = 0;
   fx.hits.forEach((h, i) => {
@@ -392,10 +410,11 @@ export function refreshFixture(file: string, detail: unknown, keepDetail?: (deta
     else {
       differing.set("unquantified", (differing.get("unquantified") ?? 0) + 1);
       if (examples.length < 3) examples.push(`hit ${i} (${h.t} ms ${h.event}): unquantified`);
+      if (values.length < 4) values.push(`hit ${i} unquantified: new in the detail ${json(now.filter((u) => !h.unquantified.some((v) => isDeepStrictEqual(u, v))))}`);
     }
   });
   if (differing.size > 0) {
-    throw new RefreshMismatch(`the detail's hits differ from the fixture's: ${[...differing].map(([k, n]) => `${k} on ${n} hit(s)`).join(", ")}; e.g. ${examples.join("; ")}`);
+    throw new RefreshMismatch(`the detail's hits differ from the fixture's: ${[...differing].map(([k, n]) => `${k} on ${n} hit(s)`).join(", ")}; e.g. ${examples.join("; ")}`, values);
   }
   const hits = fresh.map((h, i) => ({ ...h, unquantified: (fx.hits[i] as LogHit).unquantified }));
   const casts = zmdlogsCasts(detail, fx.team.map((b) => b.operator));

@@ -5,7 +5,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { classify, mergeBranch, sharedCode } from "../scripts/merge.ts";
+import { classify, mergeBranch, sharedCode, shownPaths } from "../scripts/merge.ts";
 import { ROOT } from "./logverdicts.ts";
 
 const tmp = mkdtempSync(join(tmpdir(), "efsim-merge-"));
@@ -80,5 +80,13 @@ describe("the code both sides of a merge changed (scripts/merge.ts sharedCode)",
     const theirs = ["packages/logs/src/query.ts", "packages/data/kits/k.json", "scripts/a.ts", "docs/x.md"];
     expect(sharedCode(ours, theirs)).toEqual(["packages/logs/src/buffreplay.ts", "packages/logs/src/query.ts", "scripts/a.ts"]);
     expect(sharedCode(["packages/engine/src/x.ts"], ["packages/logs/src/y.ts"])).toEqual([]);
+  });
+});
+
+describe("paths merge prints (scripts/merge.ts shownPaths)", () => {
+  it("never names a hold-out fixture, only counts them (round 8)", () => {
+    const shown = shownPaths(["docs/a.md", "fixtures/holdout/zmdlogs-x.json", "fixtures/holdout/zmdlogs-y.json"]);
+    expect(shown).toEqual(["docs/a.md", "2 file(s) under fixtures/holdout/ (not named)"]);
+    expect(shown.join(" ")).not.toMatch(/zmdlogs-[xy]/);
   });
 });

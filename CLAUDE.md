@@ -150,7 +150,9 @@ complex to verify"):
   with the Write tool, then `git commit -F scratch/msg.txt -- <paths>`
   (by pathspec; `git mv` / `git rm` stage on their own, but only the
   index's text: move first, edit after, and commit by the pathspecs of
-  both folders, `-- docs/friction docs/friction-done`). The words
+  both folders, `-- docs/friction docs/friction-done`). Commit in a
+  call of its own once the checks passed, never chained after them (`…
+  | head && git commit` commits on head's exit status). The words
   `source`, `eval` and `exec` are refused anywhere in a command, as an
   argument too (`node scratch/x.ts source` was): name things otherwise.
 - Never a heredoc or a multi-line `python3 -c`, even where one has worked
@@ -205,10 +207,17 @@ Hold-out logs live in `fixtures/holdout/`: never open, list or grep it
 (`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout
 --exclude='*holdout*'`),
 nor diff or open `tests/snapshots/log-verdicts-holdout.json` (their verdicts;
-`scripts/accuracy.ts --compare` gives the aggregates).
+`scripts/accuracy.ts --compare` gives the aggregates). Git names files too:
+after a commit that touched `fixtures/holdout/`, no `git status`, `git
+diff --stat|--name-only`, `git show --stat`, `git log --stat` or `git
+merge` with its diffstat over it without `-- . ':!fixtures/holdout'` (or
+`--no-stat`); `npm run merge` and premerge print hold-out paths as a
+count only.
 `efsim zmdlogs list [--with <operator>]` lists the development logs.
 
 The lead: name the base commit (or branch) in a sub-agent's brief, and
+the files each parallel agent is expected to edit (`node scripts/runstate.ts
+--touching` lists what other worktrees' branches changed so far), and
 merge with `npm run merge -- <branch>…` (one or a batch; rebuilds the
 journal, runs the tests related to code both sides changed, says when
 snapshots need `npm run snapshots:update`: once per batch).
