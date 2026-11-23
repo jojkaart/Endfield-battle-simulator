@@ -16,17 +16,17 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–8
-  done (round 8, 2026-11-23: the replay's run as `replayOnce` with its
-  steps and record in modules of their own; `zmdlogs totals`, `replay
-  --stops` / `--trace-buff status:<s>`, kit window chains, crit sources and
-  `hits --zones`, CUTS apart from INSIDE, `holds --why`'s log-end side,
-  `measure --patch`, held frames per slow-down, `runstate --touching`,
-  hold-out-safe merge and premerge); the backlog
-  ([2026-11-23-backlog-after-round-8.md](friction/2026-11-23-backlog-after-round-8.md),
-  1 live point, the layers views) joins the next round once about five new
-  reports have collected; its accuracy list's reset reach, Purrchena's stops
-  and pinned expiries done 2026-11-23.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–9
+  done (round 9, 2026-11-23: `zmdlogs offsets` and the log suites' offset
+  check, `scripts/edit.ts` with the doc damage check and
+  `scripts/bash-guard.ts` (a hook for the owner to wire), measure's field
+  kinds and hold units, shares in the scoreboard, `zmdlogs stops`, the
+  slow-downs' dilation index, docs/tried/); the backlog
+  ([2026-11-23-backlog-after-round-9.md](friction/2026-11-23-backlog-after-round-9.md),
+  3 live points: the dilation index through the stop lists, a kit form
+  naming the engine's hold, a twins test) joins the next round once about
+  five new reports have collected; next for the lead: the bash-guard hook
+  with the owner (round 9's summary in friction-done/).
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

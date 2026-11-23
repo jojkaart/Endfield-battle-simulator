@@ -73,3 +73,28 @@ Task: continue the fight-totals accuracy work (an all-fights totals view first, 
 - `zmdlogs fit-build` settled every build offset with counts of clean hits, so each override carries its evidence.
 - `measure --changed placement --hits` showed exactly which Typhoeus hits moved from fallback to plain and which lost
   Hovering ATK, which made the trade-off of the placement fix explicit.
+
+## Outcome (round 9)
+
+- 1 (No screen for "one operator off by one factor all fight"): done (db87ceb). `efsim zmdlogs offsets
+  <fixture…|--all>` (packages/logs/src/buildoffsets.ts: per log and operator the median of logged ÷ primary over
+  non-crit kit hits with a reading, the share within 1%, candidates `*` at ≥ 20 hits, ≥ 3% off, ≥ 60% tight, with
+  the fit-build command), and the check in tests/logs.test.ts and tests/slow/pending.ts (development logs only),
+  failing on a candidate no buildOverride and no OFFSETS_EXPLAINED entry accounts for. Over every development log
+  today 6 candidates: three stage logs (c6d8 Perlica, 7b54 and 6339 Arcane), Purrchena's level 1 in 99fb, Catcher's
+  weapon in 04d4 (known), and one new lead, Snowshine in 04d4 (×0.962 on 77% of her hits; fit-build's best needs two
+  inputs: undecided), entered with their reasons. The stage logs don't need a list of their own: their loose medians
+  aren't tight, and the tight ones are entered.
+- 2 (Hold-out share aggregates came for free in measure, but only there): done (723eb98). Every snapshot entry's
+  totals carry `share matched`, `share replay-only`, `share log-only` (snapshotentry.ts SHARE_KEYS, 0.1%), and
+  docs/accuracy.md has "Where the total's error lives" per group, the hold-outs' included; `direction` leaves the
+  keys out (not verdicts), so their arrival moved no log.
+- 3 (A multi-line `python3 -c` slipped through again): done mechanically, as the fight totals report's point 3 and
+  round 8's point 4: scripts/edit.ts, the doc damage check, scripts/bash-guard.ts (the hook refusing a heredoc, an
+  inline script over lines or with a backtick, a multi-line `git commit -m`, a live backtick), for the owner to wire.
+- 4 (The placement's history of failed tries is only prose): done (723eb98): docs/tried/README.md (a dropped
+  change's diff with its measure in a header, which git apply skips; named in its open-problems paragraph;
+  re-measured with `measure --patch docs/tried/<file>`), in CLAUDE.md, tests.md and open-problems.md. No old diff to
+  seed it with (fc63's tries weren't kept; the pinned expiries were adopted).
+- 5 (`with-lock`'s done line goes to stdout): done (84e1676): with-lock's EFSIM-DONE line and its killed line go to
+  stderr; CLAUDE.md and tests.md say which stream each job's line is on.

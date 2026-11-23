@@ -29,6 +29,20 @@ commit, and how many logs got better or worse.
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 62.7% | 84.9% | 14.8% | 4.9% | 18 |
 | All but the hold-outs | 61 | 29035 | 65.6% | 84.5% | 12.6% | 5.9% | 48 |
 
+## Where the total's error lives
+
+Each fight's simulated total against its logged one, split (`efsim zmdlogs totals --all`): the landings standing for
+logged hits (|matched|: predicted − logged), the landings no logged hit stands for (replay-only) and the logged hits
+without one (log-only), as means of % of each fight's logged total. One-sided: replay-only and log-only together
+over |matched|, so the error is in what lands, not in its scale.
+
+| Logs | Fights | \|Matched\| | Replay-only | Log-only | One-sided |
+|---|---|---|---|---|---|
+| Verified (fixtures/) | 6 | 2.2% | 0.7% | 0.3% | 2 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 5.4% | 6.3% | 3.9% | 24 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.5% | 7.1% | 6.2% | 11 |
+| Earlier pending (imported before the hold-out split) | 23 | 4.3% | 2.9% | 1.9% | 15 |
+
 ## By operator (every log but the hold-outs)
 
 | Operator | Fights | Hits | Plain | Mismatch | Mean \|damage error\| |

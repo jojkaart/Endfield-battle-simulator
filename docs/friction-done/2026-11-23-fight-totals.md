@@ -61,3 +61,20 @@ worktree branch on main at 4850b50.
 - `zmdlogs totals`, `zmdlogs casts` and `zmdlogs hits --json` answered every per-fight question; the casts view made
   the phantom ultimates obvious (CAST ... key buff_common_originum_frozen).
 - team-ab's identity check confirmed in a minute that no team's fight moved.
+
+## Outcome (round 9)
+
+- 1 (No multi-log view of a total's parts): already done by the fight totals round 2 (`zmdlogs totals --all`, `--by
+  event`).
+- 2 (Replay-only and log-only twins of one hit looked like two errors): the rule is in; the test (no fight with a
+  replay-only part and a log-only hit of one operator at one ms beyond a few) is backlog point 3 of round 9: it reads
+  fightTotals' parts, the subject of the accuracy agent working in parallel (which landings end up one-sided).
+- 3 (Shell-quoting traps in one-off edits): done (84e1676): scripts/edit.ts is the one-command form (an edits file
+  with `@@@ <path>` and `<<<<<<<` / `=======` / `>>>>>>>` blocks, `end` to append, `@@@ new` to create; exact, all or
+  nothing, a miss named with the nearest line), in CLAUDE.md in place of scratch/patch-<n>.py; the damage's shapes in
+  a doc fail `npm test` (tests/edit-guard.test.ts over every doc).
+- 4 (Hold-out movements can't be attributed even by kind): done (c5dab99): measure's and snapshots:update's
+  hold-out lines say what kind of field moved per direction and how many moved hold-outs have each operator ("moved
+  hold-outs by operator (how many have each; never which log): chr_0032_lizhiyan 2 (1 better, 1 worse); …"), never a
+  fixture id. A decision for the lead: whether the owner wants operator counts of moved hold-outs printed (round 9's
+  summary).
