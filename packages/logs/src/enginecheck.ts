@@ -658,6 +658,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const away = engineReadingOf(c.replay.assume, "enemy-away") === "away" ? awayWindows(fx) : [];
   const isAway = (frame: number) => away.some((w) => (frame * 1000) / 30 > w.from + AWAY_EDGE_MS && (frame * 1000) / 30 < w.to - AWAY_EDGE_MS);
   let awayLeftOut = 0;
+  const killFrame = Math.round((logged.last * 30) / 1000);
   const counted = new Set<LandedHit>();
   const parts: TotalPart[] = [];
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
@@ -670,6 +671,9 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
       awayLeftOut++;
       continue;
     }
+    // A fight that ends in a kill has no HP left for a landing no logged hit stands for at the killing blow's frame or
+    // after it (4360447193ac: Avywenna's four returning lances at the kill's 119.20 s, 0.29M, 6.5% of the fight).
+    if (kill !== null && !m && !capped && l.frame >= killFrame) continue;
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined || killing.has(m.hit) ? m.hit.value : Infinity);
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;

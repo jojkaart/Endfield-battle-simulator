@@ -114,6 +114,38 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     expect(report.totals.absent).toEqual({ leftOut: 1, unmatched: [] });
     expect(Math.abs(report.errors[`operator ${LR}`] as number)).toBeLessThan(10);
   });
+
+  it("landings no logged hit stands for inside a stretch of 6 s without any logged hit aren't counted (enemy-away `away`; d774: Si's phases at 30.6–54.6 and 124.5–137.8 s, Zhuang Fangyi's strikes there), and are under `counted`", async () => {
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-d774d0ce7bd3.json", import.meta.url).pathname);
+    const report = (assume: Record<string, string>) => {
+      const replay = logBuffReplay(data, fx, undefined, { assume });
+      return engineReport(data, fx, replay, engineHits(data, fx, replay)).totals;
+    };
+    const away = report({});
+    expect(away.away.windows.map((w) => [w.from, w.to])).toEqual([[30626, 54588], [124499, 137779]]);
+    expect(away.away.leftOut).toBeGreaterThan(20);
+    expect(Math.abs(away.simulated.damage / away.logged.damage - 1)).toBeLessThan(0.06);
+    const counted = report({ "enemy-away": "counted" });
+    expect(counted.away).toEqual({ windows: [], leftOut: 0 });
+    expect(counted.simulated.damage / counted.logged.damage - 1).toBeGreaterThan(0.2);
+  });
+
+  it("an Originium Crystals shatter at a teammate's Lift is the crystals' trigger, not an ultimate (0c14: seven shatters at Rossi's Lifts, two logged ultimates)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-0c14fb3ce77d.json", import.meta.url).pathname);
+    const ults = distinctCasts(placeHits(data, fx)).filter((c) => c.skillId === "chr_0003_endminf_ultimate_skill");
+    expect(ults.map((c) => Math.round(c.start / 1000))).toEqual([21, 170]);
+  });
+
+  it("an enemy status the log lists with no giver is the stage's and read from the log (Hard 27's Electrification, 207f: Rossi's ultimate stabs ×1.18 without it)", async () => {
+    const { checkLog, verdictCount } = await import("../packages/logs/src/logcheck.ts");
+    const { logOnly, teamBuffNames } = await import("../packages/logs/src/enginecheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-207fff414d82.json", import.meta.url).pathname);
+    const stab = fx.hits.find((h) => h.t === 41240 && h.event === "chr_0028_wulfa_ultimate_skill") as LogHit;
+    expect(logOnly(data, fx, teamBuffNames(data, fx), stab).effects.map((e) => e.buff)).toContain("buff_common_pulse_pulse_conduct_triggered_do");
+    const v = checkLog(data, fx).find((x) => x.hit === stab);
+    expect(v && verdictCount(v)).toBe("plain");
+  });
 });
 
 describe("Si's strokes and Artful Intent's burst (accuracy plan A2)", () => {
