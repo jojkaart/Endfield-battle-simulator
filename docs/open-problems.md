@@ -1023,7 +1023,15 @@ the 21 Combustion logs 52 ticks plain that weren't, 1 the other way (f978 23.68 
 log's 22.62 s one, so its tick before is another). Left in 458b: 86.69 s (×1.28, the replay's tick before comes
 before Akekuri's ultimate in its timing), 227.60 s (×1.49, a first tick). **458b's damage 6.1 → 7.5% isn't the
 ticks:** the snapshots' history puts it at 74bc686 (Si's strokes merged onto the placed holds), all in Laevatain's
-total (9.0 → 11.3%; Wulfgard −0.1%); this fix moves 458b 7.8 → 7.9%. Not traced.
+total (9.0 → 11.3%; Wulfgard −0.1%); this fix moves 458b 7.8 → 7.9%. **Traced and fixed (2026-11-23, remaining leads):**
+74bc686 made her enhanced battle skills at 92.9–94.3 s right (70,033 / 78,522 / 225,834 → the logged 91,043 / 102,079 /
+293,585), which took away an under-prediction that had hidden two replay-only landings: her finisher's hit_2 at
+156.93 s (225,802) and 223.27 s (281,334), which the log never shows. The replay kept the finisher's hits because her
+ultimate (156.27 s, 223.17 s) came inside the finisher's disable-cast buff (frames 0–42), which held every cast. Every
+logged ultimate inside a finisher's frames cut it (458b ×2; d572 121.89 s, Rossi's placed from its own hits 17 frames
+into hers, whose window runs to 65: neither her frame-15 hit nor hit_2 logged): engine assumption `finisher-ultimate`,
+`cuts` (timing.ts afterCantCast; SkillTiming channels' `finisher`). 458b damage 8.0 → 0.8%, d572 4.2 → 2.1%; teams
+unchanged. 6339's missing hit_2 (Laevatain at 21.60 s, no own cast before 22.31 s) is something else: open.
 
 **Still possible (ticks left):** which Combustion a logged tick belongs to where two overlap (db87's swapped ratios);
 ticks the log drops or the engine adds under time stops (c7790's 7 against 10); 4e36's Wulfgard ticks (×1.1315 with
@@ -1623,15 +1631,17 @@ keeps a listed buff to its listing's end.
   - **Left (ramp-pairs.ts, 150 ms a side, readings inside stops left out):** Rossi's combos in 3f78 (combo_2 at
     5.77 s and combo_3 at 7.80 s: 0.87 s held where the pairs allow 0.72 s) and 4a64 (combo_3 at 8.93 s: 0.35 s where
     0.14 s), her combo_3 carrying two dilations at frame 0 (0.4 s in priority −361293424, 0.633 s in the combo
-    priority) that the engine takes at the lowest scale; Zhuang Fangyi's ultimate in 4d60 placed from its cast event
-    (73.63 s: 2.60 s held, 2.43 s allowed).
+    priority) that the engine takes at the lowest scale (2026-11-23: either alone holds only 1.5–2.2 frames less,
+    3f78's excess 167 → 114–135 ms: "3f78 and 4a64", not built); Zhuang Fangyi's ultimate in 4d60 placed from its cast
+    event (73.63 s: 2.60 s held, 2.43 s allowed).
 
 **Still possible / open:**
 - Where in a window the holds fall: half the units are placed only to 3 s or worse; the least total misses dodges no
   clock sees.
 - Which combo slow-downs hold Corrosion's ramp less than the engine: answered in part (above, 2026-11-23: freezes,
   Arcane's reset, the application's logged ms); left Rossi's two-dilation combo_3 (whether one priority outranks the
-  other, or the latest replaces the earlier: the data names the tags, not their order) and whether one combo's
+  other, or the latest replaces the earlier: the data names the tags, not their order; worth 1.5–2.2 frames either
+  way, 2026-11-23) and whether one combo's
   dilation replaces another's in general (latest wins) rather than the lowest scale (the logs' steps can't tell them
   apart: the curves differ by tens of ms). Si's hits keep her own cadence while Arcane's combo slow-down runs in
   3f78's opener (2.10–2.73 s): a combo's caster may not be held by another's combo slow-down at all.
@@ -2222,7 +2232,19 @@ combo priority: "The buff clock", What over-holds it): the opener holds
 Rossi's combo_2 and combo_3 (3f78 5.77–8.43 s, 4a64 8.93 s) still hold
 about 0.15–0.2 s more than the steps allow.
 
-**Next check:** Rossi's combo_3's two dilations; then the Will buffs'
+**Rossi's combo_3's two dilations (2026-11-23, remaining leads): not the
+0.15–0.2 s.** One replacing the other changes the hold by 1.5–2.2 frames, not
+7: the 19-frame combo-priority one ramps up from its frame 8 (held time: both
+at the lowest scale 14.1 frames, the 12-frame one alone 11.9, the combo one
+alone 12.5). ramp-pairs (150 ms a side, inside stops dropped): 3f78's excess
+167 ms → 114 (the 12-frame alone) or 135 ms (the combo one alone); 4a64 isn't
+infeasible there. Only Rossi's combo_3 has two world dilations at one frame
+(`efsim gamedata dilations`), so the data can't order the priorities; with one
+slot per priority and the higher one counting, only "the combo priority
+outranks −361293424" differs from now (the combo one alone), measured on the
+Rossi logs: 3f78 damage −5.0 → −5.2%, 489c plain 579 → 571, hold-outs 1
+better. Not built. **Next check:** the rest of 3f78's 0.1–0.17 s (Rossi's
+combo_2 at 5.77 s pressed inside another's slow-down?); then the Will buffs'
 instances in 3f78's second window.
 
 ## The slow-down rule's reach (2026-11-11)
@@ -2781,9 +2803,16 @@ bound builders there were another agent's).
   `valueCrits`): 5082 −8.2 → +0.7%. (2) Xaihi's weapon team ATK (`wpn_funnel_0010.atk`, ×1.18 on Arcane's hits from
   50.51 s and Yvonne's power attack at 51.11 s): the instance from 27.37 s is listed on Arcane and Yvonne to 51.1 s,
   1.67 s of world time past its own expiry (49.43 s), over INSTANCE_LATE_MS (1 s), so it isn't a clock; the placed holds
-  give it 1.04 s (ends 50.47 s). With the cap at 2 s, 2.17 s of holds fit every clock (none dropped). **Still possible:**
-  more hidden holds in 27.4–51.1 s (nothing bounds them from above); a refresh the replay doesn't make. Not changed:
-  the cap's other evidence (4d60's Arcane runs, 7.7 s) says refreshes in place, and one log doesn't move it.
+  give it 1.04 s (ends 50.47 s). With the cap at 2 s, 2.17 s of holds fit every clock (none dropped). **Fixed
+  (2026-11-23, remaining leads):** a refresh in place needs a reapplication on the holder inside the run, and the 27.37 s
+  instance is Xaihi's last: INSTANCE_LATE_MS now applies only where the replay reapplies the buff inside the run (the
+  22.53 s instance's runs, 2.9–3.6 s late, still skipped: the 27.37 s one may have refreshed them); otherwise the run is
+  a clock up to HIDDEN_HOLD_SHARE (buffreplay.ts runBounds). Arcane's hits from 50.51 s plain; 5082 plain 224 → 247,
+  4d60 697 → 703 (Arcane's last will_dmg / will_atk runs from 97.4 / 98.5 s, 2.7–3.0 s late, now clocks: 3.0 s of holds
+  in 98.5–131.8 s, which also hold her level-4 Corrosion past the log's end at 102.98 s, 15 hits plain → fallback: a
+  Corrosion end read from the hits isn't a bound yet), af7b +2, c3c7 +1; hold-outs plain 77.6 → 77.7% (one mixed).
+  **Still possible:** a reapplication the replay doesn't make (an Arcane burst it misses) passing for holds; the cap's
+  1 s where a reapplication exists.
 - db87 after the ultimate-placement fix (2026-11-18): Laevatain's ultimate now
   starts at 16.60 s (its event at 18.62 s, the last hit 2.19 s before it, the team
   resuming 0.36 s after, her first enhanced cast at 19.01 s, which the old start
@@ -2826,7 +2855,17 @@ bound builders there were another agent's).
   (its reaction, a trigger's hit), lands at its kit frame (logcasts.ts `beforeStopStart`, LoggedCast.beforeStop;
   buffreplay.ts `batchedFrame`). a7a7's Corrosion from 2.97 s: ramp readings off the replay's step 15 → 4. Not 489c's
   49.31 s: there Arcane's event (48.11 s) puts the hit inside Rossi's combo slow-down (48.37–49.00 s), logged 0.31 s
-  after it, so the placement's held start (48.21 s) stays; 48 of its 204 readings are off a step.
+  after it, so the placement's held start (48.21 s) stays; 48 of its 204 readings are off a step. **Diagnosed
+  (2026-11-23, remaining leads): 49.31 s is right.** The held start fits it (48.21 s + 20 frames + the 0.42 s Rossi's
+  combo_2 slow-down takes = 49.29 s). The readings "ahead" at 49.77–50.00 s are Rossi's combo_2 afterhits, ×1.013 for a
+  reason that isn't Corrosion: every Rossi hit from 47.00 s (before this Corrosion) is ×1.013 and the log's reading of
+  the kit buffs fits them (her weapon's layers, `wpn_sword_0022.layer`, listed as one more +0.016 than the replay has),
+  so they read one shred step too many (dropped as bounds already). The real residual runs the other way: from 55 s the
+  log's ramp is a step behind the replay's (0.4–0.6 s more hold asked, 0.12 s placed), its bounds dropped against
+  Rossi's bleed tick series 52.18⇒59.72 s (≤ 0.09 s), whose ticks after 55.72 s may be a new application's (a 1.54 s
+  gap). One cause found and fixed: the stop lists put a phantom 0.42 s stop at 58.97 s, combo_3's frame-212 slow-down
+  on its perfect path, which ends at frame 211 (logcasts.ts pathOf: the stops follow the path the landings show): 489c
+  plain 579 → 589, mismatch 31 → 23. **Next check:** Rossi's bleed tick series across a reapplication (52.18–59.72 s).
 - d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
   2.6 s before its event (the same placement rule); her simulated total +11.3 →
   +15.4%, no verdict moved. Not looked into.
