@@ -126,6 +126,14 @@ export interface SkillTiming {
   /** InterruptCurSkillAction on its own timeline: the action ends at these frames, unless a jump skips them. */
   readonly ends: readonly number[];
   /**
+   * CastSkill of another of the operator's own skills on its own timeline, with no check before it in its sequence:
+   * the new cast takes the operator's action there, so a slow-down after it on that path never comes (clock.ts
+   * pathSlowdowns), as after an end. The kit makes the new cast (a trigger): only the path's slow-downs read these.
+   * Purrchena's shielded combo casts its loop at frame 250 (the path from its jump to 210) and 309 (from 270), so the
+   * 210 path never reaches the frame-270 slow-down.
+   */
+  readonly recasts?: readonly number[];
+  /**
    * MarkCanInterrupt on its own timeline, in frame order (one per path of a
    * skill whose jumps choose the path): once the playhead reaches the first
    * one no taken jump skipped, the cast counts as past its exclusive frame.

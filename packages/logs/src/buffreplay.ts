@@ -1602,26 +1602,21 @@ function nearestRun(r: LoggedLaneEnd, S: number, runs: readonly LoggedLaneEnd[])
  * and end within HIDDEN_HOLD_SHARE of the instance's life past it. Its end (loggedEndOf) is a frame after the last
  * listed hit before any hit past the expiry that doesn't list it on a holder the instance reaches (one instance stands
  * for every holder's run: where one holder's ends first, its hits' damage follows that end: btl_upload_b6aa15281db4 at
- * 43.9 s). The instance is kept a step at a time (to the step's frame and one more), never past that end: the log's
- * time already holds every stop up to it, which a single extension would have the replay's later stops hold again (and
- * where they hold it past the end anyway, it ends there).
+ * 43.9 s). The instance's expiry is set to that end once and pinned (ActiveBuff.pinned: the clock's shifts leave it,
+ * timeline/clock.ts shiftBuff): the log's time already holds every stop up to it, which the replay's later stops mustn't
+ * hold again. (Until 2026-11-23 it was kept a step at a time, to the step's frame and one more, and clamped at the end
+ * where a stop held it past: the same ends, measured on every log, one hold-out entry "other", none better or worse.)
  */
 function heldToLoggedEnds(st: TimelineState, frame: number, ends: LoggedLaneEnds, defs: ReadonlyMap<string, KitBuff>): TimelineState {
   if (ends.runs.size === 0) return st;
   let changed = false;
   const buffs = st.buffs.map((b) => {
-    if (b.cast !== undefined || !Number.isFinite(b.expiresAt) || b.expiresAt <= st.frame) return b;
-    if (b.expiresAt > frame) {
-      // Kept on by the log, then held past its end by a stop the replay places longer than the game's: the log's end.
-      const kept = ends.decided.get(`${b.owner}|${b.id}|${b.appliedAt}`);
-      if (!kept || frame < kept.end) return b;
-      changed = true;
-      return { ...b, expiresAt: Math.max(kept.end, st.frame + 1) };
-    }
+    if (b.cast !== undefined || b.pinned || !Number.isFinite(b.expiresAt) || b.expiresAt <= st.frame || b.expiresAt > frame) return b;
     const kept = loggedEndOf(b, ends, defs);
     if (kept === null || kept.end <= b.expiresAt) return b;
     changed = true;
-    return { ...b, expiresAt: Math.min(kept.end, frame + 1) };
+    // Pinned: the log's end already holds every stop up to it, which the replay's later stops mustn't hold again.
+    return { ...b, expiresAt: kept.end, pinned: true as const };
   });
   return changed ? { ...st, buffs } : st;
 }

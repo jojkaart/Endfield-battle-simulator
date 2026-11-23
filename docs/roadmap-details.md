@@ -185,10 +185,15 @@ rule: freezes (the ramp runs on: `freeze-ramp`), Arcane's combo reset at
 its frame 9 (a RESETto1 dilation in the combo priority: `combo-reset`,
 every stop list cut the same way), the application's logged ms (a
 battle-skill hit before a stop logged at its end: a7a7), Rossi's combo_3
-(two dilations). Next: test 111; castStart from a battle skill's event
-when its hit falls just before a stop; Rossi's combo_3; Rossi's bleed
-ticks the replay lands off the log's (489c 46.60 s for 47.13 s, 52.18 s
-none: her final 1.1 s late);
+(two dilations). The reset's reach (2026-11-23): a combo pressed inside
+Arcane's first 9 frames ends at her frame 9 too (`combo-reset` `reaches`;
+9555's Imprisonment burst on time, 7910 +15 plain). Next: test 111;
+castStart from a battle skill's event when its hit falls just before a
+stop; Rossi's combo_3 (489c's bleed ticks at 52.18 s ask 0.19 s less hold
+across it, as 3f78 and 4a64 do); 489c's hold at 54.2–55.7 s, asked by the
+bleed ticks and the ramp alike, dropped because a unit at 49.4–53.0 s and
+it exceed the ramp's cap; Rossi's bleed ticks the replay lands off the
+log's (489c 46.60 s for 47.13 s, 52.18 s none: her final 1.1 s late);
 pauses and overlapping ultimates' stops (489c), which a dodge can't be;
 simulations already dodge with `--dodge`, and the owner's dodge rate
 would decide how much rides on it.

@@ -244,6 +244,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
   const group = obj(j["actionGroupData"] ?? {}, at(ctx, "actionGroupData"));
   const jumps: { at: number; to: number; conditional: boolean }[] = [];
   const ends: number[] = [];
+  const recasts: number[] = [];
   const interruptibleFrom: number[] = [];
   for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) {
     const from = Number(ta["_startFrame"]);
@@ -261,6 +262,8 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
         jumps.push({ at: from, to: Number(a["destFrame"]), conditional: gated || cond.length > 0 });
       }
       if (type.includes("InterruptCurSkillAction")) ends.push(from);
+      // A cast of another of the operator's own skills, its caster the skill's owner (targetSource 4), unchecked.
+      if (!gated && type.includes("CastSkill+Data") && ownCast(a, skillId)) recasts.push(from);
       if (type.includes("MarkCanInterrupt")) interruptibleFrom.push(from);
       // A jump in a top-level IfElse's branches is a conditional jump at this frame (the kit says when: KitSkill.jumps).
       if (type.includes("IfElseAction")) for (const to of branchJumps(a)) if (to > from) jumps.push({ at: from, to, conditional: true });
@@ -278,10 +281,22 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     ...(resets.length ? { resets: resets.sort((a, b) => a.at - b.at) } : {}),
     jumps: jumps.filter((j, i) => jumps.findIndex((k) => k.at === j.at && k.to === j.to && k.conditional === j.conditional) === i).sort((a, b) => a.at - b.at),
     ends: ends.sort((a, b) => a - b),
+    ...(recasts.length ? { recasts: [...new Set(recasts)].sort((a, b) => a - b) } : {}),
     ...(interruptibleFrom.length ? { interruptibleFrom: [...new Set(interruptibleFrom)].sort((a, b) => a - b) } : {}),
     ...(inputMap.size ? { inputMap: [...inputMap].sort() } : {}),
   };
   return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j), switchCasts: switchCastsOf(j), dilations };
+}
+
+/**
+ * A CastSkill action that casts another of the same operator's skills (a literal skill ID with the skill's own
+ * `chr_XXXX_name_` prefix) with the skill's owner as the caster (targetSource 4): the operator's next action (SkillTiming.recasts).
+ */
+function ownCast(a: Record<string, unknown>, skillId: string): boolean {
+  const sid = a["skillId"] as { useBlackboardKey?: unknown; value?: unknown } | undefined;
+  const caster = a["caster"] as { targetSource?: unknown } | undefined;
+  const prefix = skillId.split("_").slice(0, 3).join("_") + "_";
+  return sid?.useBlackboardKey !== true && typeof sid?.value === "string" && sid.value !== skillId && sid.value.startsWith(prefix) && caster?.targetSource === 4;
 }
 
 /** The skills a skill file's switchToBuffConfig buffs cast (their enabled CastSkill actions with a literal skill ID). */

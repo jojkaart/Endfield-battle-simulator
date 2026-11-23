@@ -165,7 +165,7 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
   const statusTraces: StatusTrace[] = [];
   let tracedNow = new Map<string, number>();
   let statusesNow = new Map<string, TracedStatus>();
-  const stops = new Map<string, AppliedStop>();
+  const stops = new Map<string, { readonly first: number; stop: AppliedStop }[]>();
   return {
     sample(st, frame) {
       const seen = new Map<string, Open>();
@@ -232,11 +232,27 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
       for (const [k, v] of seen) open.set(k, v);
     },
     step(st, words) {
+      // Per start, caster, priority and kind; a cast may start two there (Purrchena's shielded combo: its frame-0
+      // slow-down and its path's, 20 and 18 frames), each matched to the record first seen at least as long.
+      const groups = new Map<string, TimelineState["slowdowns"][number][]>();
       for (const x of st.slowdowns) {
         const k = `${x.start}|${x.exempt ?? ""}|${x.priority ?? ""}|${x.ultimate ? 1 : 0}`;
-        const cur = stops.get(k);
-        // A reset cuts a running one short: the shortest the steps saw is what the timeline applied.
-        if (!cur || x.scales.length < cur.scales.length) stops.set(k, { start: x.start, scales: x.scales, operator: x.exempt ?? null, ultimate: x.ultimate === true, ...(x.priority !== undefined ? { priority: x.priority } : {}) });
+        groups.set(k, [...(groups.get(k) ?? []), x]);
+      }
+      for (const [k, xs] of groups) {
+        const recs = stops.get(k) ?? [];
+        const free = new Set(recs);
+        for (const x of [...xs].sort((a, b) => a.scales.length - b.scales.length)) {
+          const rec = recs.filter((r) => free.has(r) && r.first >= x.scales.length).sort((a, b) => a.first - b.first)[0];
+          const stop: AppliedStop = { start: x.start, scales: x.scales, operator: x.exempt ?? null, ultimate: x.ultimate === true, ...(x.priority !== undefined ? { priority: x.priority } : {}) };
+          // A reset cuts a running one short: the shortest the steps saw is what the timeline applied.
+          if (!rec) recs.push({ first: x.scales.length, stop });
+          else {
+            free.delete(rec);
+            if (x.scales.length < rec.stop.scales.length) rec.stop = stop;
+          }
+        }
+        stops.set(k, recs);
       }
       if (traced.size) {
         const now = new Map<string, number>();
@@ -267,7 +283,7 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         staggerWindows,
         traces,
         statusTraces,
-        appliedStops: [...stops.values()].sort((a, b) => a.start - b.start),
+        appliedStops: [...stops.values()].flatMap((recs) => recs.map((r) => r.stop)).sort((a, b) => a.start - b.start),
         changes: countChanges(instances, o.edge),
         kitChanges: countChanges(kitInstances, o.edge),
       };

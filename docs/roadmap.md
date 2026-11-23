@@ -25,9 +25,8 @@ below ([review-2026-10.md](review-2026-10.md)).
   hold-out-safe merge and premerge); the backlog
   ([2026-11-23-backlog-after-round-8.md](friction/2026-11-23-backlog-after-round-8.md),
   1 live point, the layers views) joins the next round once about five new
-  reports have collected; its accuracy list has the engine's combo-reset
-  reach (a slow-down starting before Arcane's frame 9 isn't cut) and
-  pinned expiries, measured.
+  reports have collected; its accuracy list's reset reach, Purrchena's stops
+  and pinned expiries done 2026-11-23.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's
@@ -62,7 +61,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   batched at a stop's end 2026-11-23 (5082 −8.2 → +0.7%, a7a7 376 → 405); an ultimate cuts a finisher, late instance
   runs without a reapplication as clocks, the stop lists along a cast's path 2026-11-23 (458b 8.0 → 0.8%, 5082 +23,
   489c +10; Rossi's combo_3 dilations worth 2 frames, not built); next test 111, Rossi's bleed tick series across a
-  reapplication (489c 52–60 s), a Corrosion end read from the hits as a bound (4d60 102.98 s), 6339's missing hit_2); Arcane's misses grouped (2026-11-18: 908 → 866;
+  reapplication (489c 52–60 s), a Corrosion end read from the hits as a bound (4d60 102.98 s), 6339's missing hit_2);
+  Arcane's reset reaches a combo pressed inside her first 9 frames, Purrchena's combo paths end at her loop's cast
+  2026-11-23 (7910 +15 plain, 9555 +9; 489c's bleed series isn't a reapplication: a hold-unit conflict under the
+  ramp's cap, next); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds

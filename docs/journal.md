@@ -4,9 +4,47 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 130 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 131 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Arcane's reset reaches a combo inside her first 9 frames; Purrchena's stops; pinned expiries
+
+**Goal:** round 8's accuracy list: the combo reset's reach (the engine against the log tools' stop lists), Purrchena's
+one-sided stops, pinned expiries re-measured, then 489c's bleed tick series.
+
+**Found and done:**
+- **The reset's reach:** a teammate's combo slow-down starting between Arcane's combo and her frame 9 ran whole in the
+  engine (24–27 frames) where the lists cut it (2–4). The logs side with the lists: 9555's Imprisonment burst comes
+  1.46 s after her cast, as with no teammate's combo (1.48 s at 81.53 s; held, 1.84 s), and the hits after it carry her
+  Susceptibility and gear-set bonus as logged (assumed ×1.07–1.41 → plain); 7910 and c83c likewise; 1d91's Liino volleys
+  0.5 s late → on time. Engine: TimelineState.resets, a reset still to come cuts a slow-down of its priority that starts
+  before it, which doesn't hold the reset's caster (clock.ts slowDown); `combo-reset` default `reaches`.
+- **Purrchena's combo:** no hits of its own, so the lists kept all three slow-downs (0, 210, 270) for every cast: now the
+  path with no conditional jump when no landing shows one (logcasts.ts pathOf). The engine's 210 path reached the
+  frame-270 slow-down past her loop's cast at 250: SkillTiming.recasts (a CastSkill of her own skill on the timeline) end
+  a path's slow-downs (pathSlowdowns); her shield extension 41 − 13. The replay's record kept one slow-down per start and
+  priority, which hid a jump's own slow-down beside the frame-0 one (Purrchena, Rossi's combo_3, Pogranichnik); now kept
+  apart, `replay --stops` calls the covered ones "covered (the same holds)". No length difference left.
+- **Pinned expiries:** round 8's diff re-measured on this code: verified, development, earlier pending unchanged, one
+  hold-out "other". Adopted (the log's end already holds every stop up to it; simpler than the step-at-a-time keep).
+- **489c's bleed series:** not a reapplication (1.00 s ticks either side of the 1.54 s gap; the gap's +0.54 s is what the
+  ramp asks too). The hold is dropped because a unit at 49.4–53.0 s and it exceed the ramp's cap from 49.31 s; its first
+  tick, inside Rossi's combo_3, asks −0.19 s (her combo_3 over-hold again). Dropping tick anchors inside slow-downs
+  measured worse (489c 590 → 580 plain): not adopted.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 65.7 → 65.8%, matched 80.4%, mismatch 14.8%, mean
+|damage error| 8.6 → 8.7%; hold-out 77.4 → 77.3%, 91.9 → 91.8%, 6.3%, 10.2% (1 better, 1 worse, 1 other); earlier pending
+58.5 → 58.6%, 17.8%, 8.1%; verified unchanged. Better: 7910 (324 → 339), 1d91 (336 → 341), c83c (563 → 569), 489c, db87;
+9555 mixed (261 → 270 plain, per hit closer). Worse: 8915 −6 plain (hidden holds placed again: a unit at 90–95 s holds an
+unlisted Corrosion, ×1.015), fc63 +2 mismatch (her Susceptibility now on two hits the log reads without it, among
+replay-only Typhoeus combo landings), 6339 damage 35.7 → 37.5% (a lost landing in a log a third off).
+
+**Teams** (team-ab against 6ddacfa): Typhoeus's team unchanged; Estella's at zero energy +0.08% sustained (+0.64% as a
+bot, −0.32% at 0.6 s), full energy −0.05%, both 60 s timelines unchanged: within the seed spread.
+
+**Problems:** finding every case took a scratch loop over 80 fixtures (no multi-log `--stops`); a kit number written as
+"the data's length minus the engine's hold" had to follow the engine fix by hand (friction report).
 
 ## 2026-11-23: Improvement round 8: the replay split, views on its record
 
@@ -387,35 +425,3 @@ negative control found 34 chance matches of 167 in bdf2 at ×0.97 (none with one
 
 **Left:** test 111; the combo slow-downs that over-hold the ramp; crits a buff's listed layers show (Wolven Blood); the
 replay's own stops for every view and bound (friction report docs/friction/2026-11-23-hold-clocks.md).
-
-## 2026-11-23: Si's strokes from the log: Initial Stroke at the first press, the burst's origin
-
-**Goal:** the brief after the Yinglung's Edge hypotheses (2026-11-22): what each of Si's logged presses is and when
-Artful Intent ends, then whether N2 (her first press counts for the set) follows; and whether anything in the logs or
-the data marks leaving combat (N1).
-
-**Done:** the bursts' `poise.origin` tells how each Artful Intent ended: `normal_skill_2` Final Stroke (26), the
-Inksoul returning by itself at expiry `normal_skill_inkmove_2` (22), the mark's burst (`inkmark_projhit`, 26: no
-Inksoul, ended at its one press 20–34 s after the hit). Initial Stroke is the first press after the battle skill; her
-other presses under Artful Intent (269 of her 276 hitless events, every ~3.3 s) do nothing the log shows. Built in the
-replay (2a9a267): castsFromBuffEnds infers Final Stroke only from a burst credited to it (or to nothing); pullingPresses
-makes the first press Initial Stroke (ReplayedCast.as) unless the mark's burst ends that Artful Intent; the kit's
-initial_stroke trigger detached (the Inksoul comes from the entity spawned at frame 0). The engine's Edge score 54 / 4 /
-10 → 61 / 2 / 5 of 68 (N2 follows from the strokes). Scoreboard: development plain 59.9 → 60.1%, mismatch 16.4 →
-16.2%, mean |damage error| 9.2 → 9.3%; earlier pending 53.1 → 53.2%; verified and hold-out unchanged; c83c mismatches
-31 → 0, 9555 11 → 1; 7b54 damage 48.2 → 49.0% (a combo out of the Edge test, an Initial Stroke layer more). Team
-numbers unchanged (team-ab against 6b117c1: every team's own fight identical), so the owner's rules need no re-search. The detached Initial Stroke broke
-examples/ink-melt-zero (its second Initial Stroke at 6.67 s, after one cut by her combo at 3.8 s, now finds the
-Inksoul up): that step dropped by hand (`repair --write` dropped 80 steps instead), total 2,844,498 → 2,853,256. c83c,
-e989 and 0c14's mean |damage error| +0.1–0.3 points with the layers their combos imply.
-
-**Decisions:** Final Stroke's layer stays counted as the kit has it: no log tells (always past the cap or before the
-same combo). N1 not built: the set's buffs handle no battle exit in the data (ability event 7 only in six buffs, Si's
-normal_skill_check among them), the layer is the caster detector's child buff but the wearer's own layers go too; the
-two clear cases are the boss Si's half-HP pause (3f78, 4a64), 7b54's is ambiguous (Jade Vessel or Camille's hitless
-press). Test 106 (e) now asks about that phase change.
-
-**Dead ends / found:** a Stagger bar back to full after a pause marks nothing (every ~5 s pause refills it). 0c14
-166.7 and its ×0.288 burst: a battle skill at 157.42 s whose hit the log lacks restarted the record (0.17 × the hits
-from 158.76 s = the logged 90,026). Why Artful Intent without Initial Stroke lasts until a press, and what the later
-presses are, stay open.

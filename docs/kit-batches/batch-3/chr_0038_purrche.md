@@ -523,16 +523,17 @@ Prezzie at P5 (0.3), 0.212 at P0 (0.2), 0.613 at P5 with three layers
 
 - **S3 residue** (timing): `plannedSlowdowns` keeps a slow-down starting
   exactly at a jump's frame (the combo's frame-0 one on both shielded
-  paths, where the data's IfElse at 0 leaves it at once), and can't drop
-  one after an end that a kit's `cast` makes (the 270 slow-down on the 210
-  path, after the CastSkill at 250). About 3 / 11 world frames too many per
-  shielded combo.
+  paths, where the data's IfElse at 0 leaves it at once). About 1 / 3
+  world frames too many per shielded combo (210 / 270 path). The 270
+  slow-down on the 210 path, after the CastSkill at 250, is dropped since
+  2026-11-23 (SkillTiming.recasts: a CastSkill of her own skill on the
+  timeline ends the path's slow-downs).
 - **The caster's own buffs under her own slow-downs**: the engine holds
   every buff for what a slow-down costs the world, the caster's too. The
   data pauses Purrchena's aura during the shielded combo (pause_block) and
   her skill change during her ultimate (pause_change_skill_buff), which
   suggests (doesn't prove) her own buffs aren't held. The kit's pauses are
-  written as the data's length minus what the engine holds (41 − 23,
+  written as the data's length minus what the engine holds (41 − 13,
   40 − 13, 78 − 69), so the totals are the data's either way; the tests
   pin them, so a change in either engine rule shows.
 - **Random outcomes miss `choose`**: `randomOutcomes` (search.ts) lists
