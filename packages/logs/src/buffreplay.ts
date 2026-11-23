@@ -383,6 +383,8 @@ export interface ReplayedCast extends LoggedCast {
 export const LOGGED_CAST_MS = 2500;
 /** A combo's own cast event comes at most this long of the world's time before its placed start or after its last landing (ms; withLoggedCasts). */
 const COMBO_EVENT_MS = 1500;
+/** How far after a combo's last landing its own cast event may be, in the world's time (ms; loggedCastMatcher). */
+const COMBO_EVENT_AFTER_MS = 1000;
 
 /**
  * The replay's casts with the casts the log records without damage (LogFixture.casts) that it lacks: a logged cast of
@@ -451,16 +453,18 @@ function loggedCastMatcher(kits: readonly OperatorKit[], stops: readonly TimeSto
   // A placed cast is the logged one within LOGGED_CAST_MS of the world's time: the log's times run on through time stops
   // (a7a7a40c97ed: Arcane's battle skill pressed at 37415 ms, placed from its hits at 40523 ms, 351 ms later across
   // Wulfgard's and her own ultimates' stops).
-  // A combo's own event is within COMBO_EVENT_MS of the world's time before its start or after its last landing (it lags
-  // frame 0 by 0.3–0.7 s; e82d45c46040: Arcane's press at 3896 ms, her combo placed at 6.52 s after two ultimates'
+  // A combo's own event is within COMBO_EVENT_MS of the world's time before its start or COMBO_EVENT_AFTER_MS after its
+  // last landing (it lags frame 0 by 0.3–0.7 s; e82d45c46040: Arcane's press at 3896 ms, her combo placed at 6.52 s after two ultimates'
   // stops): one further off is an entity's CastSkill logged under its id, though within LOGGED_CAST_MS of its start
   // (a7a7a40c97ed: Arcane's INT lasers' events at 42128 and 48886 ms, 2.4 s of the world's time after her combo's touch
-  // at 37.08 s and before the one at 51.5 s).
+  // at 37.08 s and before the one at 51.5 s; with Liino's combo stop placed from its end, 2026-11-23, the one at 42128 ms
+  // is 1.35 s of the world's time after the touch: after the last landing the window is COMBO_EVENT_AFTER_MS, the
+  // event's lag behind frame 0 (0.3–0.7 s) less the touch's frame 15, with the log's batching).
   // Only for a skill a buff's ticks are logged under (KitBuff.ticksLoggedAs): elsewhere such events stay with the cast.
   const ticked = new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
   return (c, lc, skill) =>
     c.operator === lc.operator && c.skillId === skill && worldMs(Math.min(c.start, lc.t), Math.max(c.start, lc.t), stops) <= LOGGED_CAST_MS &&
-    !(c.kind === "combo" && ticked.has(`${c.operator}|${skill}`) && (worldMs(Math.min(lc.t, c.start), c.start, stops) > COMBO_EVENT_MS || worldMs(c.lastHit, Math.max(lc.t, c.lastHit), stops) > COMBO_EVENT_MS));
+    !(c.kind === "combo" && ticked.has(`${c.operator}|${skill}`) && (worldMs(Math.min(lc.t, c.start), c.start, stops) > COMBO_EVENT_MS || worldMs(c.lastHit, Math.max(lc.t, c.lastHit), stops) > COMBO_EVENT_AFTER_MS));
 }
 
 export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[], data?: GameData, stops: readonly TimeStop[] = []): ReplayedCast[] {
