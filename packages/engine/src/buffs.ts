@@ -54,6 +54,8 @@ export interface ActiveBuff {
   readonly every?: number;
   /** A freeze of the enemy doesn't hold it (KitBuff.runsThroughFreeze). */
   readonly runsThroughFreeze?: boolean;
+  /** Its expiry was taken from a log (the log check's replay: heldToLoggedEnds): the clock's shifts leave it (timeline/clock.ts shiftBuff). */
+  readonly pinned?: true;
   readonly nextTick?: number;
   /** No tick on its end frame (KitBuff.noTickAtEnd). */
   readonly noTickAtEnd?: true;

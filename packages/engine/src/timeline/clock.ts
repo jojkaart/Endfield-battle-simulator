@@ -318,7 +318,8 @@ export function shiftDebuffs(st: TimelineState, start: number, n: number, owner?
 
 function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {
   const later = moved(start, n);
-  return b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b;
+  // An expiry taken from the log already holds every stop up to it (ActiveBuff.pinned).
+  return b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: b.pinned ? b.expiresAt : later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b;
 }
 
 /** Everything on the world's clock after `start` happens `n` frames later: the enemy's, every buff, combo windows, energy blocks. */
