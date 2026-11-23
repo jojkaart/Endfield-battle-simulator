@@ -2753,6 +2753,11 @@ bound builders there were another agent's).
 
 ## Smaller, not yet diagnosed
 
+- 5082 after the hold bounds moved to the replay's own stops (2026-11-23, with main's instance-buff clocks): damage
+  −2.1 → −8.2%. A 0.77 s hidden-hold unit moves from 38.14 to 36.77 s (Yvonne's ultimate counted at its stop, not at its
+  38.16 s event); at her ultimate finisher (49.78 s, 0.6 and 1.2 M) and Arcane's hits at 50.51 s the log is ×1.17–1.18
+  above the replay, as a second layer of Arcane's weapon Arts DMG Taken (listed ×2) would be. Next: that buff's
+  instances there (`zmdlogs clock --kit-buff`), and whether the moved unit cut one short.
 - db87 after the ultimate-placement fix (2026-11-18): Laevatain's ultimate now
   starts at 16.60 s (its event at 18.62 s, the last hit 2.19 s before it, the team
   resuming 0.36 s after, her first enhanced cast at 19.01 s, which the old start
