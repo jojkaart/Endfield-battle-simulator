@@ -91,16 +91,20 @@ round 7's scripts/cli-ab.ts, 12 by round 8's replaysteps.ts):
   frame 9 runs whole in the engine (1d91 50.30 s: 25 frames; the lists' 3), against the one-dilation-per-priority rule
   the lists follow. An engine timing change (clock.ts slowDown: a pending reset of the priority cuts a slow-down that
   starts before it): smoke, team-ab, measure.
+  Closed by worktree-agent-a432f82c25a7b4d6b, 95917d1: TimelineState.resets, combo-reset `reaches` (default).
 - **The log tools' stop lists from the timeline's applied slow-downs** (docs/friction-done/2026-11-23-remaining-leads.md
   point 3): BuffReplay.appliedStops has them since round 8; replayedCastStops (the hold bounds' and views' list) could
   read the first run's, so a cast cut early or a kit trigger's jump shows; Purrchena's combo has 30 list-only stops
   (04d4, 99fb). Moves the placement: measure.
+  Purrchena's part closed by worktree-agent-a432f82c25a7b4d6b, 95917d1: no landing → the path with no conditional jump
+  (pathOf), SkillTiming.recasts end a path's slow-downs; the lists from appliedStops in general stay open.
 - **Pinned expiries** (docs/friction-done/2026-11-23-backlog-after-round-7.md point 4): an `ActiveBuff.pinned` set by
   heldToLoggedEnds at the log's end once, which shiftBuff leaves alone, in place of the step-at-a-time keep and its
   clamp. Measured in round 8 with `measure --patch`: every verified and development entry unchanged, one hold-out entry
   "other" (neither better nor worse). Simpler code for the next "take X's end from the log" rule; it needs a snapshot
   update, so the next accuracy task in heldToLoggedEnds can take it (three edits: buffs.ts, clock.ts shiftBuff,
   buffreplay.ts heldToLoggedEnds; search.ts BUFF_KEY `pinned: true`).
+  Closed by worktree-agent-a432f82c25a7b4d6b, 5db22a6: re-measured on current code (same result), adopted.
 - **Ramp readings anchored on the application's logged ms** (docs/friction-done/2026-11-23-ramp-slowdowns.md point 2):
   every ramp bound runs from `since`; where the applying hit landed before a stop and was logged at its end (a7a7
   3.86 s, 489c 49.31 s) every reading of the instance looks over-held. Pair bounds between consecutive readings of one

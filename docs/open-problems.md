@@ -1618,16 +1618,36 @@ keeps a listed buff to its listing's end.
     event at 34.70 s, which the replay casts at 35.70 s; an event's time is the press, so its reset is no time to cut
     at (logcasts.ts placeHits says so). A test now keeps the stop lists on skillStops + withResets
     (tests/stops-source.test.ts); `efsim gamedata dilations` lists what the compiler drops (204 switched off, 49 on
-    layer 1, no unknown curve). **Open (round 8, `zmdlogs replay --stops`):** the engine applies a reset only to the
-    slow-downs running when the resetting cast starts (slowDown cuts at its own call), so a teammate's combo slow-down
-    that starts between Arcane's combo and her frame 9 runs whole in the timeline, while the views' lists (withResets)
-    cut it at the reset as the one-dilation-per-priority rule says: 1d91 at 50.30 s (Typhoeus's combo, 25 frames in
-    the timeline, 3 in the lists), 7910 at 4.90 s (Ardelia's, 24 against 4), 9555 at 31.73 s (Xaihi's, 27 against 2);
-    of 21 length differences between the timeline's applied slow-downs and the lists over the development and verified
-    logs most are this. Not fixed (an improvement round): cutting a slow-down at a pending reset of its priority when
-    it starts (an engine change: smoke, team-ab, measure). Also seen there: Purrchena's combo (04d4, 99fb) has 30 stops
-    in the lists the timeline never applied and 6 the other way (her casts made as other skills or paths; not
-    diagnosed).
+    layer 1, no unknown curve). **The reset's reach (round 8 found it, fixed 2026-11-23):** the engine applied a reset
+    only to the slow-downs running when the resetting cast started, so a teammate's combo slow-down starting between
+    Arcane's combo and her frame 9 ran whole (1d91 at 50.30 s: Typhoeus's, 25 frames; 7910 at 4.90 s: Ardelia's, 24;
+    9555 at 31.73 s: Xaihi's, 27), where the log tools' lists cut it (3, 4, 2 frames). **The logs side with the
+    lists:** 9555's Imprisonment burst (on the world's clock from Arcane's cast + 11 frames) is logged 1.46 s after her
+    cast, as with no teammate's combo (81.53 s: 1.48 s), where the whole slow-down put it 1.84 s after (−382 ms); her
+    touch, Xaihi's and Last Rite's hits after it carry her Susceptibility and gear-set bonus at the logged values
+    (assumed ×1.07–1.41 → plain); 7910's touch, Tangtang's and Ardelia's hits likewise (×1.18–1.30 → plain), its burst
+    −200 → 0 ms; 1d91's Liino volleys 0.5 s late → within 0.08 s, its burst −292 → −25 ms. A reset still to come
+    (TimelineState.resets) now cuts a slow-down of its priority that starts before it, which then doesn't hold the
+    reset's caster (her frame 9 comes on time): engine assumption `combo-reset`, default `reaches` (`resets` the old
+    rule). The lists already cut so (withResets). `replay --stops` over the development and verified logs since: no
+    length difference left; one-sided only a skill's own slow-down at its jump's frame beside the frame-0 one (Rossi's
+    combo_3 judged late, Pogranichnik's combo, Purrchena's shielded combo: "covered", the same holds), 3f78's Rossi cast
+    at 50.13 s (not in the lists), and Liino's ultimate at −2 s in two multi-target logs (7b4e, dd08). Measured: development 5 better (7910 plain 324 → 339, 1d91 336 → 341, c83c
+    563 → 569, 489c, db87), 3 worse (8915 −6 plain: the hidden holds placed again move a unit to 90–95 s, where it holds
+    a Corrosion the log doesn't list, ×1.015; fc63 +2 mismatch at 107.97–108.33 s, where her Susceptibility now covers
+    two hits the log reads without it, among five replay-only Typhoeus combo landings; 6339 damage 35.7 → 37.5%,
+    Laevatain's 35.70 s battle skill lost its landing in a log already off by a third); earlier pending 9555 mixed
+    (plain 261 → 270, per hit closer); hold-outs 1 better, 1 worse. **Purrchena's combo (round 8: 30 list-only stops in
+    04d4 and 99fb, 6 the other way), fixed 2026-11-23:** two causes. (1) Her combo has no hits of its own (the giftbox
+    deals its damage), so no landing shows its path, and the lists kept every slow-down (0, 210, 270) for every cast:
+    the unshielded casts' phantom 210 and 270 slow-downs 7 and 9 s later. Without a landing the lists now take the path
+    with no conditional jump (logcasts.ts pathOf). (2) The engine's shielded path from 210 reached the frame-270
+    slow-down, though the combo casts her loop at 250 (a CastSkill of her own skill on the timeline): SkillTiming.recasts
+    end a path's slow-downs as an end does (pathSlowdowns), her shield's extension on that path 41 − 13 frames. Left: her
+    5 shielded casts (and one of Rossi's combo_3 on its late path, 99fb 39.43 s) carry the path's own slow-down at the
+    jump's frame beside the frame-0 one the lists have; it's covered (the frame-0 one runs lower at every frame: 13.2
+    frames held either way), so the holds agree. The replay's record kept one per start and priority until then
+    (replayrecord.ts), which had hidden these and Rossi's and Pogranichnik's like them.
   - **The application's logged ms (a7a7 3.87 s and 20.53 s, 489c 49.31 s):** readings that put the log's ramp ahead
     of real time since its `since` (a7a7 20.65 s: step 1 at 0.12 s), so the application was earlier than logged.
     a7a7 3.87: Arcane's battle-skill event at 2.31 s puts its hit (frame 20) at 2.98 s, just before Liino's combo
@@ -2874,7 +2894,17 @@ bound builders there were another agent's).
   Rossi's bleed tick series 52.18⇒59.72 s (≤ 0.09 s), whose ticks after 55.72 s may be a new application's (a 1.54 s
   gap). One cause found and fixed: the stop lists put a phantom 0.42 s stop at 58.97 s, combo_3's frame-212 slow-down
   on its perfect path, which ends at frame 211 (logcasts.ts pathOf: the stops follow the path the landings show): 489c
-  plain 579 → 589, mismatch 31 → 23. **Next check:** Rossi's bleed tick series across a reapplication (52.18–59.72 s).
+  plain 579 → 589, mismatch 31 → 23. **The bleed tick series (2026-11-23, reset-reach round): not a reapplication.**
+  Its ticks run 1.00 s apart on both sides of the one 1.54 s gap (54.17 → 55.72 s), and that pair asks +0.54 s of hold
+  (±0.15), what Corrosion's ramp asks from 55 s (0.4–0.6 s): two clocks agree on about one dodge-sized hold between
+  54.2 and 55.7 s. The chain's other conflict is its first tick (52.18 s), logged inside Rossi's combo_3 slow-down
+  (51.90–52.53 s), whose pairs ask −0.19 s (the slow-down holds less than the engine's, as in 3f78 and 4a64: 0.15–0.2 s,
+  "Left" under the buff clock). Dropping chains' anchors inside a slow-down's held frames
+  (holds.ts tickBounds; scratch diff measured, not adopted) keeps the chain from 53.18 s, but the 0.54 s is still
+  dropped: the ramp from 49.31 s caps the hold to 63 s at 0.72–0.79 s, and the unit placed at 49.56 s (latest 52.99 s,
+  for 26 other clocks) already takes 0.51 s of it. Measured: development 2 better, 3 worse (489c 590 → 580 plain,
+  mismatch 23 → 32), verified 1 mixed, hold-outs 1 better, 1 mixed. **Next:** which clock puts a unit at 49.4–53.0 s
+  (it and the 54–56 s hold can't both be under the ramp's cap), or whether the ramp's application at 49.31 s is early.
 - d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
   2.6 s before its event (the same placement rule); her simulated total +11.3 →
   +15.4%, no verdict moved. Not looked into.

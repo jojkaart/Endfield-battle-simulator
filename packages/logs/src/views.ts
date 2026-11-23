@@ -208,7 +208,11 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     for (const { applied: x, listed: l } of pairs) {
       const t = msOf(x.start);
       if (!inWindow(f, t) || (x.operator !== null && !mine(f, x.operator))) continue;
-      const vs = !l ? "not in the log tools' list" : l.scales.length !== x.scales.length ? `the log tools' list has ${l.scales.length} frames (${shortSkill(l.skillId)})` : `as listed (${shortSkill(l.skillId)})`;
+      // One the list lacks beside a listed one of its start and caster running at least as low at every frame (a jump's
+      // own slow-down at the jump's frame next to the frame-0 one: Purrchena's shielded combo, Rossi's combo_3 judged
+      // late) holds nothing more.
+      const covering = !l ? pairs.find((p) => p.listed && p.applied.start === x.start && p.applied.operator === x.operator && x.scales.every((v, i) => (p.listed?.scales[i] ?? 1) <= v)) : undefined;
+      const vs = !l ? (covering ? `not in the log tools' list, covered by its ${covering.listed?.scales.length}-frame one (the same holds)` : "not in the log tools' list") : l.scales.length !== x.scales.length ? `the log tools' list has ${l.scales.length} frames (${shortSkill(l.skillId)})` : `as listed (${shortSkill(l.skillId)})`;
       lines.push({ t, order: 0, text: `STOP   the timeline's ${x.ultimate ? "ultimate stop" : "slow-down"} of ${x.operator ? label(data, x.operator) : "-"} ${s(t)}–${s(msOf(x.start + x.scales.length))} s (${x.scales.length} frames, lowest ×${Number(Math.min(...x.scales).toPrecision(2))}): ${vs}` });
     }
     for (const l of unapplied) {
