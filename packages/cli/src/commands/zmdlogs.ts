@@ -358,7 +358,8 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       const r = await refreshFromDetail(arg, values.detail !== undefined ? { detailFile: values.detail } : {});
       if (r.fetched) process.stderr.write(`fetched the detail once from zmdlogs.com; cached in ${rawDir()}\n`);
       const parser = r.parserVersion !== undefined ? `; ZMDLogs now parses it with ${r.parserVersion}` : "";
-      return `${arg}: ${r.casts} cast(s), ${r.poise} hit(s) with Stagger; added ${r.added.length ? r.added.join(", ") : "nothing"}${parser}`;
+      const kept = r.keptUnquantified ? `; ${r.keptUnquantified} hit(s) keep their unquantified listing (the detail no longer marks it unvalued)` : "";
+      return `${arg}: ${r.casts} cast(s), ${r.poise} hit(s) with Stagger; added ${r.added.length ? r.added.join(", ") : "nothing"}${parser}${kept}`;
     }
     if (sub === "reactions") {
       const fx = readDevFixture(arg);

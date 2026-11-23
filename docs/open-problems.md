@@ -1413,15 +1413,22 @@ holds Corrosion's end but not its ramp in a freeze (assumption
 
 ## The buff clock: unlogged world holds keep buffs past their end (2026-11-22; test 111)
 
-**The hold-outs can't test the lane-based rules (round 7):** `npm run measure` now counts the logs whose listed
-effects carry no `since` / `source` (imported before 2026-11-16): all 13 hold-outs, and the verified 40d9 and 4e5e.
-Every rule below that reads the log's runs (the hidden holds' run and status clocks, `heldToLoggedEnds`, Wolven
-Blood's `layerCrits`) has nothing to read there, so the hold-out row's "unchanged" for those changes means untested,
-not confirmed; their tick and ramp clocks still apply. Re-importing them with `since` (`zmdlogs refresh`, run blind
-on the split's ids so nobody reads them) needs the downloads and the owner's go-ahead.
+**The hold-outs test the lane-based rules now (2026-11-23, refreshed blind):** until then all 13 hold-outs and the
+verified 40d9 and 4e5e listed effects without `since` / `source` (imported before 2026-11-16), so every rule below
+that reads the log's runs (the hidden holds' run and status clocks, `heldToLoggedEnds`, Wolven Blood's `layerCrits`)
+had nothing to read there. `node scripts/holdout-refresh.ts` refreshed the 13 without anyone seeing one (13 ok); 40d9
+and 4e5e were refreshed normally (`zmdlogs refresh`, which now keeps an older `unquantified` listing the detail no
+longer marks). Same code (main at 636bbc0), the fixtures only: hold-out plain 74.0 → 77.6%, matched 91.7 → 92.1%,
+mismatch 6.4 → 6.3%, mean |damage error| 10.8 → 10.6%, within 5% 7 → 8 (5 better, 1 worse, 6 mixed; the worse one
+can't be traced: a hold-out). Then `measure --variant` on the refreshed hold-outs against the default `placed`
+(77.6%, 6.3%, 10.6%): `none` 70.3%, 6.5%, 10.9% (1 better, 7 worse); `log` 73.0%, 6.5%, 10.7%; `holds` 76.8%, 6.3%,
+10.5%. **Confirmed on the hold-outs:** the placed holds with `log` on top beat every other reading there, by about
+as much as on the development logs (`none` → `placed`: development 57.8 → 65.4%, hold-out 70.3 → 77.6%). Not
+separable: `layerCrits` and `valueCrits` have no assumption reading (`valueCrits` reads values, not lanes, and ran on
+the hold-outs before); `layerCrits`' share is inside the refresh's 74.0 → 77.6%.
 
 **Shows:** every run of a listed game buff a team kit stands for, over the 77 development logs whose listings carry the
-runs' start and owner (verified, pending, multi-target; 40d9 and 4e5e don't): its start as logged (the lane's
+runs' start and owner (verified, pending, multi-target; 40d9 and 4e5e didn't then): its start as logged (the lane's
 `since`), its end bracketed by the last hit that lists it and the next hit of a holder that doesn't (exact at a
 boundary hit, or from the raw detail's lane end for the 19 cached), its length in world time (the placed casts' stops
 taken out, `worldMs`) against the data's duration, and against the replay's own expiry. 6,991 runs; 724 single runs

@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { refreshFixture, RefreshMismatch } from "../packages/logs/src/logs.ts";
 import { zmdlogsCasts, zmdlogsHits, type LogFixture, type LogHit } from "../packages/logs/src/zmdlogs.ts";
 import { refreshFromDetail } from "../packages/logs/src/zmdraw.ts";
-import { plainBuild, syntheticDetail, type DetailEvent } from "./helpers/zmdlogs.ts";
+import { oldHit, plainBuild, syntheticDetail, type DetailEvent } from "./helpers/zmdlogs.ts";
 
 const dir = mkdtempSync(join(tmpdir(), "efsim-refresh-"));
 const before = process.env["EFSIM_CACHE_DIR"];
@@ -34,13 +34,6 @@ const buffs = [
 ];
 const detail = syntheticDetail(ID, BOSS, buffs, events);
 const team = [plainBuild(SI), plainBuild(LAEV)];
-
-/** A hit as an older import wrote it: no effect sources or starts, no Stagger origin (and no Stagger when `poise` is false). */
-function oldHit(h: LogHit, poise: boolean): LogHit {
-  const strip = (e: LogHit["effects"][number]) => ({ buff: e.buff, zone: e.zone, element: e.element, value: e.value });
-  const { poise: p, ...rest } = h;
-  return { ...rest, effects: h.effects.map(strip), boundaryEffects: h.boundaryEffects.map(strip), ...(p && poise ? { poise: { dealt: p.dealt, bar: p.bar } } : {}) };
-}
 
 /** An older fixture of the synthetic battle, written to a file; `casts` and `poise`: whether that import kept them. */
 function oldFixture(name: string, opts: { readonly casts: boolean; readonly poise: boolean; readonly hits?: LogHit[] }): string {
@@ -124,6 +117,25 @@ describe("zmdlogs refresh", () => {
     expect(await refreshFromDetail(second, { fetch })).toMatchObject({ fetched: false });
     expect(calls).toBe(1);
     expect(read(second).hits).toEqual(zmdlogsHits(detail));
+  });
+
+  it("keeps an unquantified listing the detail no longer marks as unvalued, and refuses a new one", () => {
+    const marked = [...buffs, { key: "buff_common_natural_triggered", from: SI, start: 1000, end: 1000, effects: [], dynamic: 1 }];
+    const old = syntheticDetail(ID, BOSS, marked, events);
+    const listing = zmdlogsHits(old).map((h) => h.unquantified);
+    expect(listing.filter((u) => u.length)).toEqual([[{ buff: "buff_common_natural_triggered", since: 1000, source: SI }]]);
+    const file = oldFixture("aaaaaaaaaaa8", { casts: true, poise: true, hits: zmdlogsHits(old).map((h) => oldHit(h, true)) });
+    const now = syntheticDetail(ID, BOSS, marked.map((b) => ({ ...b, dynamic: 0 })), events);
+    const r = refreshFixture(file, now);
+    expect(r.keptUnquantified).toBe(1);
+    expect(read(file).hits.map((h) => h.unquantified)).toEqual(listing);
+    expect(read(file).provenance.notes.filter((n) => /no longer marks/.test(n))).toHaveLength(1);
+    expect(refreshFixture(file, now).keptUnquantified).toBe(1);
+    expect(read(file).provenance.notes.filter((n) => /no longer marks/.test(n))).toHaveLength(1);
+    const plain = oldFixture("aaaaaaaaaaa9", { casts: true, poise: true });
+    const text = readFileSync(plain, "utf8");
+    expect(() => refreshFixture(plain, old)).toThrow(/unquantified on 1 hit/);
+    expect(readFileSync(plain, "utf8")).toBe(text);
   });
 
   it("reports when ZMDLogs now parses the battle with another parser version", () => {

@@ -305,6 +305,9 @@ const REFRESH_NOTES = {
   source: "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
   since: "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
 } as const;
+/** The note a refresh adds when it keeps listings the detail no longer marks as unvalued (RefreshResult.keptUnquantified). */
+const KEPT_UNQUANTIFIED_NOTE =
+  "Some hits keep the older import's unquantified listing of a buff the detail no longer marks as unvalued (dynamicEffects): the refresh adds fields, it doesn't re-read the listing (efsim zmdlogs refresh).";
 export type RefreshedField = keyof typeof REFRESH_NOTES;
 
 /** A refresh refused: the detail isn't what the fixture was imported from (or the importer reads it differently now). */
@@ -318,18 +321,26 @@ export interface RefreshResult {
   readonly added: readonly RefreshedField[];
   /** The detail's parserVersion when it isn't the fixture's (ZMDLogs re-parsed the upload; the hits still matched). */
   readonly parserVersion?: string;
+  /**
+   * Hits whose `unquantified` listing the fixture keeps although the detail no longer marks those buffs as unvalued
+   * (its dynamicEffects emptied since the import; seen on 40d9 and 4e5e, one 0 ms trigger buff each); 0 when none.
+   */
+  readonly keptUnquantified: number;
 }
 
 type EffectLike = { readonly source?: string; readonly since?: number };
 const effectsOfHit = (h: LogHit): readonly EffectLike[] => [...h.effects, ...h.boundaryEffects];
 
-/** A hit without the fields in `drop` (a fixture lacks them, so they aren't compared), for the refresh's comparison. */
+/**
+ * A hit without the fields in `drop` (a fixture lacks them, so they aren't compared), for the refresh's comparison.
+ * `unquantified` is compared apart (refreshFixture: the detail may only have dropped entries).
+ */
 function comparable(h: LogHit, drop: ReadonlySet<RefreshedField>): unknown {
   const effect = (e: LogEffect): LogEffect => {
     const { source, since, ...rest } = e;
     return { ...rest, ...(source !== undefined && !drop.has("source") ? { source } : {}), ...(since !== undefined && !drop.has("since") ? { since } : {}) };
   };
-  const { poise, ...rest } = h;
+  const { poise, unquantified: _unquantified, ...rest } = h;
   const kept = drop.has("poise") || !poise ? undefined : drop.has("poise.origin") ? { dealt: poise.dealt, bar: poise.bar } : poise;
   return { ...rest, effects: h.effects.map(effect), boundaryEffects: h.boundaryEffects.map(effect), ...(kept ? { poise: kept } : {}) };
 }
@@ -341,6 +352,8 @@ function comparable(h: LogHit, drop: ReadonlySet<RefreshedField>): unknown {
  * and the skill it's credited to (poise.origin), each buff effect's giver and start (LogEffect.source / since,
  * 2026-11-16). The hits are rebuilt as an import would (zmdlogsHits) and must equal the fixture's but for the fields
  * it lacks, and logged casts it has must equal the detail's: otherwise it throws RefreshMismatch and writes nothing.
+ * A hit's `unquantified` listing may only have lost entries in the detail (ZMDLogs no longer marking a buff's effects
+ * as dynamic): the fixture's is kept then (keptUnquantified, one note), a new entry is a mismatch.
  * The team (from the export, a second request), the enemy level and the notes an import writes aren't touched.
  */
 export function refreshFixture(file: string, detail: unknown, keepDetail?: (detail: unknown) => void): RefreshResult {
@@ -371,14 +384,26 @@ export function refreshFixture(file: string, detail: unknown, keepDetail?: (deta
     for (const k of keys) differing.set(k, (differing.get(k) ?? 0) + 1);
     if (examples.length < 3) examples.push(`hit ${i} (${h.t} ms ${h.event}): ${keys.join(", ")}`);
   });
+  let keptUnquantified = 0;
+  fx.hits.forEach((h, i) => {
+    const now = (fresh[i] as LogHit).unquantified;
+    if (isDeepStrictEqual(h.unquantified, now)) return;
+    if (now.every((u) => h.unquantified.some((v) => isDeepStrictEqual(u, v)))) keptUnquantified++;
+    else {
+      differing.set("unquantified", (differing.get("unquantified") ?? 0) + 1);
+      if (examples.length < 3) examples.push(`hit ${i} (${h.t} ms ${h.event}): unquantified`);
+    }
+  });
   if (differing.size > 0) {
     throw new RefreshMismatch(`the detail's hits differ from the fixture's: ${[...differing].map(([k, n]) => `${k} on ${n} hit(s)`).join(", ")}; e.g. ${examples.join("; ")}`);
   }
+  const hits = fresh.map((h, i) => ({ ...h, unquantified: (fx.hits[i] as LogHit).unquantified }));
   const casts = zmdlogsCasts(detail, fx.team.map((b) => b.operator));
   if (fx.casts && !isDeepStrictEqual(fx.casts, casts)) throw new RefreshMismatch(`the detail has ${casts.length} casts, the fixture ${fx.casts.length}, or they differ`);
   const added: RefreshedField[] = [...(fx.casts ? [] : (["casts"] as const)), ...[...lacking].filter((f) => has(f, fresh))];
-  const notes = [...fx.provenance.notes, ...added.map((f) => REFRESH_NOTES[f]).filter((n) => !fx.provenance.notes.includes(n))];
-  const out: LogFixture = { ...fx, provenance: { ...fx.provenance, notes }, hits: fresh, casts };
+  const newNotes = [...added.map((f) => REFRESH_NOTES[f]), ...(keptUnquantified ? [KEPT_UNQUANTIFIED_NOTE] : [])];
+  const notes = [...fx.provenance.notes, ...newNotes.filter((n) => !fx.provenance.notes.includes(n))];
+  const out: LogFixture = { ...fx, provenance: { ...fx.provenance, notes }, hits, casts };
   const { ajv, validate } = validator();
   if (!validate(out)) throw new Error(`refreshed fixture is invalid: ${ajv.errorsText(validate.errors)}`);
   writeFileSync(file, JSON.stringify(out, null, 1) + "\n");
@@ -386,6 +411,7 @@ export function refreshFixture(file: string, detail: unknown, keepDetail?: (deta
     casts: casts.length,
     poise: fresh.filter((h) => h.poise).length,
     added,
+    keptUnquantified,
     ...(battle.parserVersion !== undefined && battle.parserVersion !== fx.provenance.parserVersion ? { parserVersion: battle.parserVersion } : {}),
   };
 }

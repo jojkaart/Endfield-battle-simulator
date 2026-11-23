@@ -4,9 +4,37 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 127 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 128 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: The hold-outs refreshed blind: the lane rules tested on them
+
+Goal: round 7 found every hold-out (and the verified 40d9, 4e5e) imported before effects carried `since` / `source`,
+so the replay's rules that read the log's buff runs (the hidden holds' run and status clocks, `heldToLoggedEnds`,
+`layerCrits`) were untested there. Refresh them without anyone seeing a hold-out, then measure.
+
+Done:
+- `zmdlogs refresh` refused 40d9 and 4e5e: one 0 ms trigger buff each was unquantified at import, and today's detail
+  has every `dynamicEffects` empty (40d9 under the same parser version). `refreshFixture` now lets a hit's
+  `unquantified` listing only have lost entries, keeps the fixture's then (`RefreshResult.keptUnquantified`, one
+  provenance note) and still refuses a new entry. Both refreshed: since / source / poise.origin added; verdicts
+  unchanged (4e5e: other counts only).
+- scripts/holdout-refresh.ts: the split's hold-out ids by code, each detail fetched once (3.5 s apart, the importer's
+  user agent, memory only, never the raw cache), refreshed in a temporary copy, written back only if its id, battle,
+  team and enemy are unchanged; prints an index, ok / failed (a category) and since yes/no per fixture, then counts.
+  Tested on a synthetic root (tests/holdout-refresh.test.ts). Run: 13 ok, since 0 → 13, no listing kept.
+- Scoreboard (same code, main at 636bbc0; the fixtures only): hold-out plain 74.0 → 77.6%, matched 91.7 → 92.1%,
+  mismatch 6.4 → 6.3%, mean |damage error| 10.8 → 10.6%, within 5% 7 → 8; 5 better, 1 worse, 6 mixed, 1 unchanged.
+  Verified, development, earlier pending unchanged.
+- `measure --variant hidden-holds=none|log|holds` on the refreshed hold-outs against the default `placed` (77.6%,
+  6.3%, 10.6%): none 70.3%, 6.5%, 10.9% (1 better, 7 worse); log 73.0%, 6.5%, 10.7%; holds 76.8%, 6.3%, 10.5%.
+
+Decision: the hidden holds (`placed`, `log` on top) are confirmed on the hold-outs: the best reading there, by about
+the development logs' margin (none → placed: development 57.8 → 65.4%, hold-out 70.3 → 77.6%).
+
+Left: the one hold-out worse after the refresh can't be traced (a hold-out); `layerCrits` has no assumption reading,
+so its share of the 74.0 → 77.6% isn't separated; a detail takes ~45 s to download.
 
 ## 2026-11-23: Crits from values, Combustion ticks from the tick before, landings batched at a stop's end
 
@@ -411,41 +439,3 @@ agents don't open) has it.
 **Left:** d774's strike count before her ultimate (the log's world holds 0.83 s, Liino's slow-down 0.61 s); the
 enemy statuses' hidden holds (the buff clock); the food logs' opener; what sets Hard 27's 11 (its born buffs have no
 BuffData file); Purrchena's level 1 in 99fb. Friction report docs/friction/2026-11-23-smaller-leads.md.
-
-## 2026-11-22: The buff clock: unlogged world holds keep buffs past their end
-
-**Goal:** what holds operators' buffs past their modelled end in some windows (Laevatain's Forgeborn and Scorching
-Heart, Rossi's Wolven Blood, Gilberta's Vulnerable stacks, Liino's beats; three agents found it the same day).
-
-**Done (open-problems "The buff clock"):** every listed run of a kit-modelled game buff over the 77 development logs
-with run starts (6,991 runs): its world length (placed stops out) against the data's duration and the replay's expiry,
-with what each window holds. 724 clean single runs run a median +0.49 s long, over almost every team's buffs, not
-Laevatain's alone. Hypotheses scored against the table, a hidden-clock solver and the enemy's tick series:
-- a listing lag: **wrong**, the damage sides with the listing past the replay's expiry (802 hits against 92);
-- one hidden clock per fight: **fits**, 152 of 1,378 runs conflict (341 with the excesses shuffled), the enemy's 588
-  tick pairs fit the same clock (28 dropped), and the 8 runs a tick series covers end where it says (±0.3 s);
-- perfect dodges (0.512 s world slow-down each by the data, unlogged): **fits** what can be tested: the ticks' unexplained
-  holds cluster at +0.42–0.56 s and come 34 times in 378 pairs outside Stagger, once in 92 inside it (a Staggered enemy
-  doesn't attack); 9c0b's ten hitless seconds hold ~7.5 s, a pause;
-- per-holder clocks (hit-stops, animations), overlapping stops held for their sum, a clock rate, a constant per
-  ultimate or combo, the game timer pausing: **wrong** (Si's Amp ends at one ms on every holder; exact where no other
-  ultimate falls inside; free ticks run at 1.000 between holds).
-
-**Implemented:** engine assumption `hidden-holds` (default `log`, `none` the old replay; read only by the log check's
-replay, buffreplay.ts `heldToLoggedEnds`): a timed kit buff whose single run the log lists past the replay's expiry is
-kept on a step at a time to a frame after its last listed hit, before any holder's hit without it, within 40% of its
-life. First tries extended once at the expiry: the replay's later stops then held it again past the log's end (b6aa's
-Xaihi debuff to 46.9 s against 43.8), and the max over holders' runs gave Si a teammate's later end; both fixed.
-Scoreboard: all but the hold-outs plain 55.7 → 57.5%, mismatch 18.8% unchanged, mean |damage error| 8.3 → 8.1%, within
-5% 33 → 31 (c83c, fc63 over-predict already); development 57.8 → 59.9%, 16.5 → 16.4%, 9.8 → 9.2%; hold-out unchanged
-(69.6%, 6.7%, 11.0%); development logs 14 better, 1 worse (4a64, plain 130 → 128: two Arcane hits at 16.9 s now carry a Hot Work Nature DMG instance the log doesn't list, a knock-on of another buff kept, not traced),
-9 mixed (per-hit error closer in 15 of the 16 mixed logs over both groups). Simulations unchanged (team-ab against 0ab4b03: every team's fight the same; they dodge with
-`--dodge`).
-
-**Decision:** the replay takes the buff's end from the log, as it takes the Stagger windows and the bleed's ticks: it
-can't place the dodges, and the damage agrees with the log. Not a kit change (no buff's duration moved).
-
-**Left:** in-game test 111 (perfect dodges counted during Si's Amp); the holds placed once for every timer (enemy
-statuses, unlisted buffs, the dodges' SP for "Team SP"); the dodger's own 0.315 s; runs ending before the replay's
-expiry (~7%); Liino's beats running fast (the other direction). The hold-outs' aggregate doesn't move, so
-it isn't confirmed there.
