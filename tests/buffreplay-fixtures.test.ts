@@ -62,8 +62,10 @@ describe("simulateLog: the logged casts simulated, each hit against its landing 
     const r = logBuffReplay(data, fx);
     const missing = r.replay.hits.filter((h) => h.ref !== undefined && h.loggedCrit === null && fx.hits[Number(h.ref)]?.crit !== null);
     expect(missing.map((h) => `${h.operator} ${h.skillId}:${h.hitId} @${h.frame}`)).toEqual([]);
-    const wrong = r.replay.hits.filter((h) => h.ref !== undefined && typeof h.loggedCrit === "boolean" && h.loggedCrit !== fx.hits[Number(h.ref)]?.crit);
+    const wrong = r.replay.hits.filter((h) => h.ref !== undefined && typeof h.loggedCrit === "boolean" && fx.hits[Number(h.ref)]?.crit !== null && h.loggedCrit !== fx.hits[Number(h.ref)]?.crit);
     expect(wrong).toEqual([]);
+    // Where the log gives no crit, only crits the replay infers (shownCrits, layerCrits, valueCrits), never a non-crit.
+    expect(r.replay.hits.some((h) => h.ref !== undefined && h.loggedCrit === false && fx.hits[Number(h.ref)]?.crit === null)).toBe(false);
   });
 });
 
@@ -218,7 +220,8 @@ describe("an arts reaction's level as the log shows it, where the replay's enemy
   });
 
   it("3f78: Arcane's Corrosion at 46994 ms is level 2 (its hit fits level 2, or level 1 with a set buff the replay isn't sure of; the logged hits' inflictions say 2)", () => {
-    const { level, shreds } = replayAt("3f78ceb15bc3", "corrosion", 46994);
+    // Logged at 46994 ms, the end of a stop it landed just before (LoggedCast.beforeStop): the replay's at 46167 ms.
+    const { level, shreds } = replayAt("3f78ceb15bc3", "corrosion", 46167);
     expect(level).toBe(2);
     expect(shreds).toEqual(["Corrosion level 2"]);
   });

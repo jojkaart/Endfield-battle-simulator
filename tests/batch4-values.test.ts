@@ -111,17 +111,20 @@ describe("V1: a hit scales a zone's modifiers (KitHit.zoneScale)", () => {
 });
 
 describe("V2: periodic damage keeps its applier's attacker side (takeAtkSnapshot)", () => {
-  const ticksOf = (d: GameData, rotation = [skill("attack1", 0)]) => simulate(d, scenario(rotation)).hits.filter((h) => h.skillId === "reaction:combustionTick");
+  const ticksOf = (d: GameData, rotation = [skill("attack1", 0)], reading?: string) => {
+    const sc = scenario(rotation);
+    return simulate(d, reading ? { ...sc, options: { ...sc.options, assume: { "combustion-snapshot": reading } } } : sc).hits.filter((h) => h.skillId === "reaction:combustionTick");
+  };
   const dmgUp: KitBuff = { id: "dmg_up", label: "Heat DMG", target: "self", duration: 30, modifiers: [{ zone: "damageBonus", value: 0.5, elements: ["fire"] }] };
   const ampUp: KitBuff = { id: "amp_up", label: "Heat Amp", target: "self", duration: 1, modifiers: [{ zone: "amp", value: 0.4, elements: ["fire"] }] };
   const susc: KitBuff = { id: "susc", label: "Heat Susceptibility", target: "enemy", duration: 30, modifiers: [{ zone: "susceptibility", value: 0.3, elements: ["fire"] }] };
   const combust = { applies: [{ kind: "forcedReaction" as const, status: "combustion" as const }] };
 
-  it("Combustion's ticks keep the DMG bonus and Amp at its application; the enemy's side is read at each tick", () => {
+  it("Combustion's ticks keep the DMG bonus and Amp at its application (reading application); the enemy's side is read at each tick", () => {
     // attack1 lands at frame 6 and forces Combustion (ticks at 36, 66, 96, …); an Amp that runs out at frame 30,
     // a DMG bonus from frame 45 and a Susceptibility from frame 75.
     const d = withKit({ hit: combust, buffs: [dmgUp, ampUp, susc], triggers: [onStart("amp_up"), afterAttack1("dmg", "dmg_up", 45), afterAttack1("susc", "susc", 75)] });
-    const ticks = ticksOf(d);
+    const ticks = ticksOf(d, undefined, "application");
     expect(ticks.map((h) => h.frame).slice(0, 3)).toEqual([36, 66, 96]);
     const [t1, t2, t3] = ticks as [typeof ticks[0], typeof ticks[0], typeof ticks[0]];
     expect(t1.zones.amp).toBeCloseTo(1.4, 9);
@@ -129,12 +132,24 @@ describe("V2: periodic damage keeps its applier's attacker side (takeAtkSnapshot
     expect(t2.zones.damageBonus).toBeCloseTo(t1.zones.damageBonus, 9);
     expect(t3.exact / t1.exact).toBeCloseTo(1.3, 9);
     // The status holds the snapshot: the Amp that has run out by then is in it.
-    const ctx = createContext(d, scenario([skill("attack1", 0)]));
+    const ctx = createContext(d, { ...scenario([skill("attack1", 0)]), options: { crit: "never", assume: { "combustion-snapshot": "application" } } });
     const s = advance(ctx, apply(ctx, init(ctx), skill("attack1", 0)), 7);
     expect(s.enemy.statuses[0]?.snapshot?.map((m) => [m.zone, m.value])).toEqual([["amp", 0.4]]);
     // The DMG bonus is on at the second tick (it acts on her own hits then), and the Amp is gone.
     const later = advance(ctx, s, 67);
     expect(buffModifiers(later.buffs, op, 66).map((m) => [m.zone, m.value])).toEqual([["damageBonus", 0.5]]);
+  });
+
+  it("with the default reading (last-tick) each tick deals with the attacker side of the tick before", () => {
+    const d = withKit({ hit: combust, buffs: [dmgUp, ampUp, susc], triggers: [onStart("amp_up"), afterAttack1("dmg", "dmg_up", 45), afterAttack1("susc", "susc", 75)] });
+    const [t1, t2, t3, t4] = ticksOf(d) as [ReturnType<typeof ticksOf>[0], ReturnType<typeof ticksOf>[0], ReturnType<typeof ticksOf>[0], ReturnType<typeof ticksOf>[0]];
+    // Tick 1 (frame 36) the application's side (the Amp); tick 2 (66) the side at 36 (the Amp gone, the DMG bonus not
+    // yet); tick 3 (96) the side at 66 (the DMG bonus) and the Susceptibility read at the tick; tick 4 as tick 3.
+    expect(t1.zones.amp).toBeCloseTo(1.4, 9);
+    expect(t2.zones.amp).toBeCloseTo(1, 9);
+    expect(t2.exact).toBeCloseTo(t1.exact / 1.4, 6);
+    expect(t3.zones.damageBonus).toBeGreaterThan(t2.zones.damageBonus);
+    expect(t4.exact).toBeCloseTo(t3.exact, 6);
   });
 
   it("a buffTick trigger's hit with atkSnapshot keeps the ticking buff's application; without it, each tick's", () => {

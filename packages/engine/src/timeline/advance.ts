@@ -12,7 +12,8 @@ import { panelAt, timingOf } from "./context.ts";
 import { shiftOperator, slowDown } from "./clock.ts";
 import { gainEnergy, gainSp, rebaseCooldowns, refillPoise, spAt } from "./resources.ts";
 import { actionFrame, counters } from "./timing.ts";
-import { situationAt } from "./situation.ts";
+import { retakeTickSnapshots, situationAt } from "./situation.ts";
+import { engineReading } from "./assumptions.ts";
 import { runActions, runTriggers } from "./actions.ts";
 import { asEvents, draw, landBurst, landHit, recordStatus } from "./landing.ts";
 import { castSkill, endCurrentSkill, settleCastBuffs, takeJump } from "./casting.ts";
@@ -152,6 +153,8 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
         const t = tickStatus(st.enemy, at);
         st = recordStatus(ctx, { ...st, enemy: t.state }, t.events, before);
         st = runTriggers(ctx, st, asEvents(t.events, "none"), null);
+        // Each tick takes the attacker side the next one deals with (engine assumption combustion-snapshot, `last-tick`).
+        if (engineReading(ctx.scenario, "combustion-snapshot") === "last-tick") st = retakeTickSnapshots(st, t.events);
         break;
       }
       case "buffExpiry": {
