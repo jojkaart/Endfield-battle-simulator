@@ -20,7 +20,7 @@ import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
 import type { PlacedHolds } from "./holds.ts";
 import { castTimeStops, distinctCasts, placeHits } from "./logcasts.ts";
-import { logBuffReplay } from "./logcheck.ts";
+import { corrosionRamp, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
@@ -447,5 +447,38 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   }
   for (const b of h.dropped) lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)`);
   if (opts.verbose) for (const b of h.kept) lines.push(`  bound: ${b.tag}: P(${s(b.b)}) − P(${s(b.a)}) in [${Number.isFinite(b.min) ? s(b.min) : "−∞"}, ${Number.isFinite(b.max) ? s(b.max) : "∞"}] s; placed ${s(clockAt(h, h.mid, b.b) - clockAt(h, h.mid, b.a))}`);
+  return lines.join("\n");
+}
+
+/**
+ * `zmdlogs ramp`: Corrosion's ramp as the logged hits read it (rampsteps.ts rampSteps, at the replay's landings): per
+ * Corrosion the log lists (its applier and application), each hit's steps that fit against the replay's own step, and
+ * the hidden hold that reading allows between the application and the hit (P(hit) − P(since), s) beside the one the
+ * replay placed. A hit outside its range says the placed holds miss the ramp there (`!`). `verbose`: every hit, not only
+ * those where the log's step differs from the replay's or the placed hold falls outside.
+ */
+export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean } = {}): string {
+  const placement = placeHits(data, fx);
+  const { replay } = logBuffReplay(data, fx, placement);
+  const steps = corrosionRamp(data, fx, placement, replay);
+  const h = replay.hiddenHolds;
+  if (steps.length === 0) return `${fx.id}: no hit under the log's Corrosion reads a step (none listed, no landing with the replay's Corrosion, or no step fits)`;
+  const lines = [`${fx.id}: ${steps.length} hits read Corrosion's ramp (steps: whole seconds of its world time; hold: P(hit) − P(since) in s, as the steps allow and as placed)`];
+  const by = new Map<string, typeof steps>();
+  for (const x of steps) by.set(`${x.source}|${x.since}`, [...(by.get(`${x.source}|${x.since}`) ?? []), x]);
+  for (const [k, list] of by) {
+    const [source, since] = k.split("|") as [string, string];
+    const off = list.filter((x) => x.replayStep < x.low || x.replayStep > x.high);
+    lines.push(`  Corrosion level ${list[0]?.level} by ${label(data, source)} since ${s(Number(since))}: ${list.length} hits, ${off.length} at another step than the replay's`);
+    for (const x of list) {
+      const lo = x.capped ? -Infinity : x.world - (x.high + 1) * 1000;
+      const hi = x.world - x.low * 1000;
+      const placed = h ? clockAt(h, h.mid, x.hit.t) - clockAt(h, h.mid, x.since) : 0;
+      const outside = placed < lo - 70 || placed > hi + 70;
+      if (!opts.verbose && !outside && x.replayStep >= x.low && x.replayStep <= x.high) continue;
+      const steps = `${x.low}${x.high !== x.low ? `–${x.high}` : ""}${x.capped ? "+" : ""}`;
+      lines.push(`    ${s(x.hit.t)} ${label(data, x.hit.operator)} ${x.hit.event}: log step ${steps}, replay ${x.replayStep} (${x.reading}); hold ${Number.isFinite(lo) ? s(lo) : "−∞"}…${s(hi)}, placed ${s(placed)}${outside ? " !" : ""}`);
+    }
+  }
   return lines.join("\n");
 }

@@ -45,6 +45,7 @@ import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { engineCheck, engineReadings, fightTotals, logDifferences, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
 import { boundarySubsets, buffFile, collapseRepeats, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
+import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
 import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
 import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
@@ -535,7 +536,7 @@ export interface Undecided {
 }
 
 /** The facts the replay has of a logged hit's cast, or why it has none (no replay: `zmdlogs check --log-buffs`). */
-function castFactsOf(replay: LogBuffReplay | null, cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind"> | undefined): ReplayCastFacts | Undecided {
+function castFactsOf(replay: Pick<LogBuffReplay, "replay"> | null, cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind"> | undefined): ReplayCastFacts | Undecided {
   if (!replay) return { unknown: "no replay" };
   if (!cast) return { unknown: "a hit the placement doesn't place" };
   return replay.replay.castFacts(cast);
@@ -658,8 +659,24 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placeme
     for (const l of shown) levels.set(`${l.operator}|${l.element}|${l.frame}`, l);
     replay = replayKitBuffs(data, fx, placement, { ...opts, reactionLevels: [...levels.values()] });
   }
+  // With the holds placed (hidden-holds `placed`), Corrosion's ramp as one more clock: the steps the logged hits read
+  // (rampsteps.ts) bound the holds, and the replay is made again with them.
+  if (replay.hiddenHolds) {
+    const bounds = rampBounds(corrosionRamp(data, fx, placement, replay));
+    if (bounds.length) replay = replayKitBuffs(data, fx, placement, { ...opts, reactionLevels: [...levels.values()], holdBounds: bounds });
+  }
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed) };
+}
+
+/** Corrosion's ramp as the logged hits read it at the replay's landings (rampsteps.ts rampSteps; `zmdlogs ramp`). */
+export function corrosionRamp(data: GameData, fx: LogFixture, placement: Placement, replay: BuffReplay): RampStep[] {
+  const applications = replay.reactions.flatMap((r) => (r.kind === "reaction" ? [{ operator: r.operator, frame: r.frame, status: r.status as string }] : []));
+  if (!applications.some((a) => a.status === "corrosion")) return [];
+  const c = engineCheck(data, fx, replay);
+  const holds = replay.hiddenHolds?.holds ?? [];
+  const held = (from: number, to: number) => (holds.filter((x) => x.frame >= Math.round((from * FPS) / 1000) && x.frame < Math.round((to * FPS) / 1000)).reduce((n, x) => n + x.frames, 0) * 1000) / FPS;
+  return rampSteps(c, fx, (h) => hitPlace(data, fx, placement, { replay }, h), held, applications);
 }
 
 const NO_LAYERS: ReadonlyMap<string, number> = new Map();
@@ -1425,7 +1442,7 @@ export function simulateLog(data: GameData, fx: LogFixture, placement: Placement
 }
 
 /** What the check knows of a logged hit besides its landing (enginecheck.ts HitPlace): the kit hits its event can be, its cast's kind and facts, the hit a Combustion tick keeps its attacker side from. */
-export function hitPlace(data: GameData, fx: LogFixture, placement: Placement, replay: LogBuffReplay | null, logged: LogHit): HitPlace {
+export function hitPlace(data: GameData, fx: LogFixture, placement: Placement, replay: Pick<LogBuffReplay, "replay"> | null, logged: LogHit): HitPlace {
   const build = fx.team.find((b) => b.operator === logged.operator);
   const reaction = parseReactionEvent(logged.event);
   const found = reaction || !build ? [] : findHits(data, build, logged.event);
