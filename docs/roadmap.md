@@ -52,8 +52,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   in a stop are held; Twilight still 0.1–4.6 s longer than its model, 2026-11-22: as are her other buffs, a buff-clock question;
   the buff clock 2026-11-22: unlogged world holds, about a perfect dodge each, on one clock per fight;
   2026-11-23 the replay places them once from the log's clocks for every timer, `hidden-holds` `placed`:
-  development plain 59.9 → 62.8%; they don't explain the SP shortfall; next test 111, Corrosion's ramp and
-  Wolven Blood's layers as clocks); Arcane's misses grouped (2026-11-18: 908 → 866;
+  development plain 59.9 → 62.8%; they don't explain the SP shortfall; 2026-11-23 the enemy's statuses and
+  Corrosion's ramp as clocks too, d774 and db87 fixed; next test 111, combo stops over-holding the ramp, Wolven
+  Blood's unlogged crits); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds

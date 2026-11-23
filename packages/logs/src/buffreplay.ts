@@ -18,7 +18,7 @@ import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
-import { placeHolds, tickBounds, type HoldBound, type PlacedHolds } from "./holds.ts";
+import { HOLD_BOUND_TOL_MS, placeHolds, RUN_START_MS, statusBounds, statusLanes, tickBounds, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -1375,21 +1375,49 @@ export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
  */
 export const HIDDEN_HOLD_SHARE = 0.4;
 
-/**
- * How far from an instance's application the log's run of it may start and still be its run (hidden-holds `log`), ms:
- * the log starts a run when its lane opens, which for a buff created inside a time stop is at the stop's end or later
- * (btl_upload_9c0bb09daff2: Si's Amp, created at her ultimate's frame 62, listed from 9515 ms, 2.5 s after her
- * ultimate's cast event).
- */
-const RUN_START_MS = 3000;
-
 /** Ms of a frame. */
 function msOfFrame(f: number): number {
   return (f * 1000) / FPS;
 }
 
-/** How far a run's logged end may miss the bound it gives the hidden holds (ms): its brackets' and the frame grid's slack. */
-const HOLD_BOUND_TOL_MS = 200;
+/**
+ * The enemy's status instances in a replay (holds.ts StatusInstance), from its status events (an application starts
+ * one and replaces the one before; statusConsumed ends one early) and its states after each step (the instance's last
+ * expiry there, which the stops moved).
+ */
+function statusInstances(checkpoints: readonly TimelineState[], reactions: readonly ReactionRecord[], brokenAt: number | null): StatusInstance[] {
+  const applied = reactions.flatMap((r) => (r.kind === "reaction" || (r.kind === "physical" && r.status === "breach") ? [{ status: r.status as string, operator: r.operator, frame: r.frame }] : []));
+  const out: StatusInstance[] = [];
+  for (const [i, a] of applied.entries()) {
+    const next = applied.slice(i + 1).find((b) => b.status === a.status)?.frame ?? Infinity;
+    const consumed = reactions.some((r) => r.kind === "statusConsumed" && r.status === a.status && r.frame >= a.frame && r.frame < next);
+    let last: number | null = null;
+    for (const cp of checkpoints) {
+      if (cp.frame < a.frame || cp.frame >= next) continue;
+      const on = [...cp.enemy.statuses, ...cp.enemy.physical].find((x) => x.status === a.status && x.operator === a.operator);
+      if (on) last = on.expiresAt;
+    }
+    if (last === null) continue;
+    const expired = !consumed && last <= next && (brokenAt === null || last < brokenAt) && Number.isFinite(last);
+    out.push({ status: a.status, operator: a.operator, start: a.frame, end: Math.min(last, next), expired });
+  }
+  return out;
+}
+
+/** The enemy statuses some kit of the team consumes (a `consumeStatus` application: every status where it names none). */
+function consumedStatuses(kits: readonly OperatorKit[]): Set<string> {
+  const out = new Set<string>();
+  const walk = (x: unknown): void => {
+    if (Array.isArray(x)) for (const y of x) walk(y);
+    else if (x && typeof x === "object") {
+      const o = x as Record<string, unknown>;
+      if (o.kind === "consumeStatus") for (const s of (o.statuses as string[] | undefined) ?? ["electrification", "corrosion", "solidification", "combustion"]) out.add(s);
+      for (const v of Object.values(o)) walk(v);
+    }
+  };
+  walk(kits);
+  return out;
+}
 
 /**
  * The bounds the replay's buffs give the hidden holds (holds.ts; hidden-holds `placed`): each instance that ran out in
@@ -1763,6 +1791,11 @@ export interface ReplayOptions {
   readonly assume?: Readonly<Record<string, string>>;
   /** Kit buffs (`owner:id`) whose instances' expiries to trace step by step (BuffReplay.traces; `zmdlogs replay --trace-buff`). */
   readonly trace?: readonly string[];
+  /**
+   * More bounds on the hidden holds (hidden-holds `placed`/`holds`), beside the replay's own clocks: clocks only a reading
+   * of the hits' damage shows (logcheck.ts logBuffReplay: Corrosion's ramp steps, holds.ts rampBounds).
+   */
+  readonly holdBounds?: readonly HoldBound[];
 }
 
 /** Whether a logged cast made as `skillId` at `f` goes against the kit (BuffReplay.castFlags), the state advanced to `f`. */
@@ -2093,7 +2126,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     const stops = castTimeStops(data, placement.casts);
-    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops), ...tickBounds(fx, stops)], {
+    const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE);
+    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),
       still: main.staggerWindows.map((w) => [msOfFrame(w.start), msOfFrame(Number.isFinite(w.end) ? w.end : frameOf(Math.max(0, ...fx.hits.map((h) => h.t))))] as const),
     });

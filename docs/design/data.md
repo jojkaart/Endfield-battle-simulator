@@ -419,8 +419,9 @@ detail):
   casts' stops say: a run listed past the replay's expiry is the game's
   (the damage agrees, 802 hits against 92). The replay places the holds
   once per fight from every clock the log shows (its buffs' runs against
-  the replay's own expiries, the enemy's tick series; packages/logs
-  holds.ts) and holds the world's clock there for every timer, then keeps
+  the replay's own expiries, the enemy's listed statuses' runs, the enemy's
+  tick series, Corrosion's ramp steps read from the hits' damage;
+  packages/logs holds.ts, rampsteps.ts) and holds the world's clock there for every timer, then keeps
   a listed buff on to the log's end (engine assumption `hidden-holds`,
   default `placed`; buffreplay.ts `heldToLoggedEnds`). Where they fall:
   `efsim zmdlogs holds <fixture>`.
@@ -586,6 +587,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
 | The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` (the stops of the replay's casts: placed, from a cast event, inferred; `replayTimeStops` in a script, not `castTimeStops`, which has the placed casts' only) |
 | The fight's hidden holds (unlogged dodges, pauses) the replay places: each 0.512 s unit, its earliest and latest time, the clocks spanning it | `efsim zmdlogs holds <fixture> [--verbose]` |
+| Corrosion's ramp as the hits read it: each hit's fitting step against the replay's, the hidden hold that allows against the one placed | `efsim zmdlogs ramp <fixture> [--verbose]` |
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
 | Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
 | A skill's frames, windows, uncuttable frames, skill group, what each hit inflicts | `efsim kit <operator> [--skill <re>]` |

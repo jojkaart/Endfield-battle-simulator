@@ -170,8 +170,14 @@ development plain 59.9 → 62.8%, mismatch 16.4 → 15.6%, hold-outs 69.6 →
 69.9%. 108.6 s of holds in 5,899 s of fights, a quarter of the 0.512 s
 units placed within 1 s. Read as dodges they cover 87 of the 1,766 SP the
 replay lacks (not the gap); no sign of the dodger's own 0.315 s clock on
-its buffs (pairs: ratio 1.12). Next: test 111; Corrosion's listed ramp
-levels and Rossi's Wolven Blood layers as clocks (d572, 0c14 worse);
+its buffs (pairs: ratio 1.12). **More clocks (2026-11-23):** the enemy's
+listed statuses' runs and Corrosion's ramp steps (read from the hits'
+damage, `efsim zmdlogs ramp`), and the engine's ramp standing still inside
+a stop: d774's strikes and db87's ramp fixed (numbers in the journal).
+Rossi's Wolven Blood has no clock of its own: its misfits are its 16th
+layer's crit (no logged crit). Next: test 111; the combo slow-downs that
+hold the ramp longer than the game (139 of 146 over-held readings; 3f78,
+4a64, a7a7 openers, f978, 9c6e); crits a buff's listed layers show;
 pauses and overlapping ultimates' stops (489c), which a dodge can't be;
 simulations already dodge with `--dodge`, and the owner's dodge rate
 would decide how much rides on it.

@@ -17,9 +17,123 @@ export interface HoldBound {
   readonly b: number;
   readonly min: number;
   readonly max: number;
-  readonly kind: "run" | "tick";
+  /** A listed buff's run, an enemy tick series, a listed enemy status's run, Corrosion's ramp steps. */
+  readonly kind: "run" | "tick" | "status" | "ramp";
   readonly tag: string;
   readonly ex: number;
+}
+
+/** How far a run's logged end may miss the bound it gives the hidden holds (ms): its brackets' and the frame grid's slack. */
+export const HOLD_BOUND_TOL_MS = 200;
+
+/**
+ * How far from an instance's application the log's run of it may start and still be its run, ms: the log starts a run
+ * when its lane opens, which for a buff created inside a time stop is at the stop's end or later
+ * (btl_upload_9c0bb09daff2: Si's Amp, created at her ultimate's frame 62, listed from 9515 ms, 2.5 s after her
+ * ultimate's cast event).
+ */
+export const RUN_START_MS = 3000;
+
+/**
+ * The log's names of the enemy's statuses (their status buffs, on the enemy's side of every hit whatever its element:
+ * Electrification's Arts DMG Taken on Nature hits, Breach's on Heat ones). Combustion isn't listed (only its ticks).
+ * Corrosion's is listed without a value (unquantified): logeffects.ts isCorrosionBuff.
+ */
+export const STATUS_LOG_NAMES: Readonly<Record<string, RegExp>> = {
+  electrification: /^buff_common_pulse_(fire|natural|cryst)_triggered$|^buff_common_pulse_pulse_conduct_triggered_do$/,
+  corrosion: /^buff_common_natural_natural_corrupt_do$|^buff_common_natural_(fire|pulse|cryst)_triggered$/,
+  solidification: /^buff_common_cryst_(fire|natural|pulse)_triggered$/,
+  breach: /^buff_physical_do_fracture$/,
+};
+
+/**
+ * How far a status's last listed hit may come after the replay's end of it with no hold between (ms): the frame grid's
+ * two frames. Tighter than a buff run's HOLD_BOUND_TOL_MS: a status is on the enemy's side of every hit (no holder's
+ * hits to bracket it), and a consumed one's last listing is its consuming hit (d774 at 97443 ms: the strike that takes
+ * Perlica's Electrification needs it on at that frame).
+ */
+const STATUS_END_TOL_MS = 70;
+
+/** The enemy status a logged buff stands for (STATUS_LOG_NAMES), or null. */
+export function statusOfLogged(buff: string): string | null {
+  for (const [status, re] of Object.entries(STATUS_LOG_NAMES)) if (re.test(buff)) return status;
+  return null;
+}
+
+/** One replayed instance of an enemy status (frames): its applier, application, and end (ran out, or replaced or consumed first). */
+export interface StatusInstance {
+  readonly status: string;
+  readonly operator: string;
+  readonly start: number;
+  readonly end: number;
+  readonly expired: boolean;
+}
+
+/** The log's runs of the enemy's statuses (by `status|applier`), and what each hit lists of them. */
+export interface StatusLanes {
+  readonly runs: ReadonlyMap<string, readonly { readonly since: number; readonly lastListed: number; readonly refreshed: boolean }[]>;
+  readonly hits: readonly { readonly t: number; readonly listed: ReadonlySet<string> }[];
+}
+
+/** The log's status runs (StatusLanes) from every hit's effects, boundary effects (not at their own start) and unquantified entries. */
+export function statusLanes(fx: Pick<LogFixture, "hits">): StatusLanes {
+  const runs = new Map<string, { key: string; since: number; lastListed: number }>();
+  const sorted = [...fx.hits].sort((a, b) => a.t - b.t);
+  const hits = sorted.map((h) => {
+    const listed = new Set<string>();
+    for (const e of [...h.effects, ...h.boundaryEffects.filter((x) => x.since !== h.t), ...h.unquantified]) {
+      const status = statusOfLogged(e.buff);
+      if (!status || e.source === undefined || e.since === undefined) continue;
+      const key = `${status}|${e.source}`;
+      listed.add(key);
+      const id = `${key}|${e.since}`;
+      const r = runs.get(id);
+      if (!r) runs.set(id, { key, since: e.since, lastListed: h.t });
+      else if (h.t > r.lastListed) r.lastListed = h.t;
+    }
+    // A boundary effect at its own start still says the status is on.
+    for (const e of h.boundaryEffects) {
+      const status = statusOfLogged(e.buff);
+      if (status && e.source !== undefined) listed.add(`${status}|${e.source}`);
+    }
+    return { t: h.t, listed };
+  });
+  const out = new Map<string, { since: number; lastListed: number; refreshed: boolean }[]>();
+  const all = [...runs.values()];
+  for (const r of all) {
+    const refreshed = all.some((o) => o !== r && o.key === r.key && o.since > r.since && o.since <= r.lastListed);
+    out.set(r.key, [...(out.get(r.key) ?? []), { since: r.since, lastListed: r.lastListed, refreshed }]);
+  }
+  return { runs: out, hits };
+}
+
+/**
+ * The bounds the replay's enemy statuses give the hidden holds (as buffreplay.ts runBounds does for buffs): each instance
+ * that ran out in the replay without the holds, against the log's run of it (the same status from the same applier,
+ * starting within RUN_START_MS of the application, not refreshed): its last listed hit at least its lateness over the
+ * replay's expiry (world time past the expiry: the placed stops after it hold it once it lasts), and the next hit that
+ * doesn't list it at most, but only for a status no kit of the team consumes (`consumable`: a consumed status ends early
+ * in the log, which says nothing of its clock: d774's Electrification, taken by Zhuang Fangyi's battle skill at 97.44 s).
+ */
+export function statusBounds(instances: readonly StatusInstance[], lanes: StatusLanes, stops: readonly TimeStop[], consumable: ReadonlySet<string>, share: number): HoldBound[] {
+  const out: HoldBound[] = [];
+  const ms = (f: number) => (f * 1000) / FPS;
+  for (const w of instances) {
+    if (!w.expired) continue;
+    const [S, E] = [ms(w.start), ms(w.end)];
+    const key = `${w.status}|${w.operator}`;
+    for (const r of lanes.runs.get(key) ?? []) {
+      if (r.refreshed || r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+      const late = (t: number) => (t >= E ? worldMs(E, t, stops) : t - E);
+      const off = consumable.has(w.status) ? undefined : lanes.hits.find((h) => h.t > r.lastListed && !h.listed.has(key));
+      const [lo, hi] = [late(r.lastListed), off === undefined ? Infinity : late(off.t)];
+      if (hi < -2 * HOLD_BOUND_TOL_MS || lo > share * (E - S)) continue;
+      const tag = `status ${key} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : consumable.has(w.status) ? "–(consumable)" : "–end"} ms over ${Math.round(E)}`;
+      if (lo > -STATUS_END_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - STATUS_END_TOL_MS, max: Infinity, kind: "status", tag, ex: lo / 1000 });
+      if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "status", tag, ex: hi / 1000 });
+    }
+  }
+  return out;
 }
 
 /**
@@ -168,7 +282,7 @@ export function placeHolds(bounds: readonly HoldBound[], opts: { readonly end: n
   };
   let kept = bounds.filter((c) => c.b > c.a);
   const dropped: HoldBound[] = [];
-  const rank = (c: HoldBound) => (c.kind === "tick" ? 0.5 : 1) * Math.abs(c.ex);
+  const rank = (c: HoldBound) => (c.kind === "tick" || c.kind === "ramp" ? 0.5 : 1) * Math.abs(c.ex);
   for (;;) {
     const { times, edges } = build(kept);
     const cycle = negativeCycle(times.length, edges);

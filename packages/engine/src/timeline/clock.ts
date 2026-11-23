@@ -2,7 +2,7 @@
 
 import type { SkillTiming } from "../model.ts";
 import type { ActiveBuff } from "../buffs.ts";
-import type { EnemyStatus } from "../status.ts";
+import { rampElapsed, type EnemyStatus } from "../status.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
@@ -171,8 +171,13 @@ export function shiftEnemy(st: TimelineState, start: number, n: number): Timelin
         ...x,
         expiresAt: later(x.expiresAt),
         ...(x.nextTickAt !== undefined ? { nextTickAt: later(x.nextTickAt) } : {}),
-        // Its ramp (Corrosion) doesn't advance while time stands still.
-        ...(x.appliedAt <= start && x.expiresAt > start ? { appliedAt: x.appliedAt + n } : {}),
+        // Its ramp (Corrosion) doesn't advance while time stands still: it resumes n frames later, and stands at what it
+        // had reached until then (ActiveStatus.rampHeld; moving appliedAt alone set it back by the stop at its start:
+        // btl_upload_4d60e7fe92c2 at 73.65 s, Arcane's hit inside Zhuang Fangyi's ultimate stop read a level-4 Corrosion
+        // 2.6 s younger than the log's).
+        ...(x.appliedAt <= start && x.expiresAt > start
+          ? { appliedAt: x.appliedAt + n, ...(x.status === "corrosion" ? { rampHeld: { until: Math.max(start + n, x.rampHeld && x.rampHeld.until > start ? x.rampHeld.until + n : 0), elapsed: rampElapsed(x, start) } } : {}) }
+          : {}),
       })),
     },
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
