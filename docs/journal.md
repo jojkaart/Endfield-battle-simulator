@@ -63,7 +63,8 @@ regressions (458b, bdf2, a7a7); d774's Sunderblade count.
 - Scoreboard (`npm run snapshots:update`): development plain 63.2 → 65.1%, mismatch 15.4 → 15.0%, mean |damage
   error| 9.1 → 9.0%; hold-outs 70.3 → 73.5%, 6.4%, 10.8% (3 better, 0 worse, 2 mixed); earlier pending 56.1 → 56.5%,
   18.8 → 18.6%, 8.4%; verified 77.1 → 77.7% (matched 97.8 → 99.1%); all but the hold-outs 60.6 → 61.9%, 16.4 → 16.1%,
-  8.1%. Development 13 better (5082 plain 150 → 219, mismatch 36 → 6; 7910 255 → 318; db87; f978 394 → 444), 3 worse:
+  8.1%; with round 6's groups (207f a development log) development 62.5 → 64.4%, 15.6 → 15.2%, 9.4 → 9.3%,
+  earlier pending 56.9 → 57.3%. Development 13 better (5082 plain 150 → 219, mismatch 36 → 6; 7910 255 → 318; db87; f978 394 → 444), 3 worse:
   9847 (310 → 300: the ramp caps the holds Gilberta's Vulnerable run asked for, below), 4d60 (697 → 696: Liino's
   ultimate hits at 83.3–83.6 s a step behind the log's ramp, one frame of hold), fc63 (508 → 504: Arcane's 0.12 Susceptibility held past the log's end at 18.85–19.07 s by a hold the new clocks moved earlier); d572
   908 → 918, mismatch 26 → 17; d774 348 → 365, mismatch 38 → 24, its over-predicted total +24.8 → +27.2% (the
