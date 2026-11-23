@@ -43,13 +43,16 @@ export interface OneSided {
   /**
    * Where it sits, the first that applies: `unread` (a logged hit whose own landing counted without it: no primary
    * reading), `twin like` / `twin other` (paired with an opposite-side landing of its operator within TWIN_MS, values
-   * within TWIN_LIKE, or within TWIN_MAX), `fight end`, `away edge`; then a replay-only landing's cast: `no cast` (a trigger's or a
-   * status's), `cast unlogged` (none of its landings stands for a logged hit), `cast tail` (after its last logged one),
+   * within TWIN_LIKE, or within TWIN_MAX); then a replay-only landing's cast: `no cast` (a trigger's or a status's), `cast unlogged` (none of its landings stands for a logged hit), `cast tail` (after its last logged one),
    * `cast head` (before its first), `cast gap` (between two); a log-only hit's: the replay's reason for no landing
    * (BuffReplay.landing / statusLanding), or `landed, not counted`.
    */
   readonly context: string;
-  /** `stop` inside a slow-down the replay applied; `cut` within CUT_MS after a cast made as a cut (CastFlag cuts / inside) of its operator; `next cast` past its operator's next logged cast after its own cast began (replay only). */
+  /**
+   * `stop` inside a slow-down the replay applied; `cut` within CUT_MS after a cast made as a cut (CastFlag cuts / inside)
+   * of its operator; `next cast` past its operator's next logged cast after its own cast began (replay only); `end`
+   * within END_MS of the log's last hit; `away` within AWAY_EDGE_MS of a stretch without logged hits (or in it).
+   */
   readonly flags: readonly string[];
   /** Its twin's time and key (twin contexts). */
   readonly twin?: { readonly t: number; readonly key: string; readonly damage: number };
@@ -182,10 +185,10 @@ export function oneSidedLandings(
     p.h.twin = { t: p.r.t, key: p.r.key, damage: p.r.damage };
   }
   for (const x of items) {
+    if (x.t >= lastLogged - END_MS) x.flags.push("end");
+    if (away.some((w) => Math.abs(x.t - w.from) <= AWAY_EDGE_MS || Math.abs(x.t - w.to) <= AWAY_EDGE_MS || (x.t > w.from && x.t < w.to))) x.flags.push("away");
     if (x.context === "unread" || x.context?.startsWith("twin")) continue;
-    if (x.t >= lastLogged - END_MS) x.context = "fight end";
-    else if (away.some((w) => Math.abs(x.t - w.from) <= AWAY_EDGE_MS || Math.abs(x.t - w.to) <= AWAY_EDGE_MS || (x.t > w.from && x.t < w.to))) x.context = "away edge";
-    else if (x.side === "replay" && x.landing) {
+    if (x.side === "replay" && x.landing) {
       const l = x.landing;
       const logged = l.cast !== undefined ? (castLogged.get(l.cast) ?? []) : [];
       x.context =

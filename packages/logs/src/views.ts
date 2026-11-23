@@ -724,7 +724,7 @@ function totalsOneSided(data: GameData, fx: LogFixture, t: TotalsComparison, f: 
   const items = t.oneSided.filter((x) => !f.operators?.length || f.operators.includes(x.operator));
   const byContext = kindsAggregate([items.map((x): KindShare => ({ context: x.context, nature: x.nature, skill: x.skill, replay: x.side === "replay" ? (100 * x.damage) / L : 0, log: x.side === "log" ? (100 * x.damage) / L : 0, n: 1, flagged: {} }))], (k) => k.context);
   const out = [
-    `${fx.id}: the one-sided landings (onesided.ts; % of the logged total): replay-only (+) and log-only (−), each with where it sits (twin: an opposite-side landing of its operator within 1.5 s; cast tail / head / gap / unlogged: its cast's landings standing for logged hits; no landing: the replay's reason), its nature and skill kind, and flags (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past its operator's next logged cast).`,
+    `${fx.id}: the one-sided landings (onesided.ts; % of the logged total): replay-only (+) and log-only (−), each with where it sits (twin: an opposite-side landing of its operator within 1.5 s; cast tail / head / gap / unlogged: its cast's landings standing for logged hits; no landing: the replay's reason), its nature and skill kind, and flags (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past its operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits).`,
     "  by where they sit:",
     ...byContext.map((k) => `    ${sharePct(k.replay)} ${sharePct(k.log)}  ${k.kind}`),
     "  each:",
@@ -759,7 +759,7 @@ export function totalsKindsView(data: GameData, rows: readonly TotalsRow[], f: {
   const top = f.top ?? 15;
   const kindsOf = (r: TotalsRow) => (r.shares.kinds ?? []).filter(() => !f.operators?.length || r.shares.perOperator.some((o) => f.operators?.includes(o.operator)));
   const out = [
-    "The one-sided landings by kind (onesided.ts), as mean % of a fight's logged total: gross (replay-only + |log-only|), replay-only, log-only, net, the fights with any, and the flags' gross shares (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past the operator's next logged cast). Where they sit: unread (a logged hit's own landing without a reading), twin like / other (an opposite-side landing of the operator within 1.5 s, values within ×1.5 or not), fight end, away edge, then the replay's cast (no cast, cast unlogged / tail / head / gap) or the log's reason (no landing: …).",
+    "The one-sided landings by kind (onesided.ts), as mean % of a fight's logged total: gross (replay-only + |log-only|), replay-only, log-only, net, the fights with any, and the flags' gross shares (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past the operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits). Where they sit: unread (a logged hit's own landing without a reading), twin like / other (an opposite-side landing of the operator within 1.5 s, values within ×1.5 or ×3), then the replay's cast (no cast, cast unlogged / tail / head / gap) or the log's reason (no landing: …).",
   ];
   const groups: { name: string; rows: TotalsRow[] }[] = [
     { name: "development, earlier pending and verified", rows: rows.filter((r) => r.group !== "multi") },
