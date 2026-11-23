@@ -383,7 +383,7 @@ export function differencesReport(records: readonly HitRecord[], opts: { readonl
       baseline++;
       continue;
     }
-    for (const d of ds) add(`${d.what} | ${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : "other values"}`, r, `engine [${d.engine.join(", ")}] log [${d.log.join(", ")}]`);
+    for (const d of ds) add(`${d.what} | ${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"}`, r, `engine [${d.engine.join(", ")}] log [${d.log.join(", ")}]`);
   }
   const rows = [...groups].sort((a, b) => b[1].n - a[1].n);
   const out = [`Where the log's listing and the replay disagree at kit hits with a landing (${records.length} records, ${baseline} without a difference); ratio = logged value ÷ the engine's primary reading (quartiles):`];
@@ -485,7 +485,7 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     ...by(({ r }) => [event(r)]),
     "",
     "Own mismatches by where the log and the replay disagree (none: they agree on every buff they both model):",
-    ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
+    ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
     "",
     ...fallbackGroups(records.filter((r) => r.operator === operator)),
   ];
@@ -522,7 +522,7 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { "hidden-holds": "placed" } }).replay;
   const h = r.hiddenHolds;
   if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
-  if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why);
+  if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why, r.logEnds);
   const series = (tag: string) => tag.replace(/ [0-9]+[→⇒][0-9]+ ms$/, "");
   const lines = [`${fx.id}: ${s(h.total)} s of hidden holds placed (the least total the clocks allow; ${Math.round(h.total / HOLD_UNIT_MS)} perfect dodges' worth at 0.512 s), ${new Set(h.kept.filter((b) => b.kind === "run").map((b) => b.tag)).size} buff runs and ${new Set(h.kept.filter((b) => b.kind === "tick").map((b) => series(b.tag))).size} tick series kept, ${h.dropped.length} bound(s) dropped; times in s`];
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
@@ -541,7 +541,7 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
  * placement or not (holds.ts ClockWhy: the one place runBounds and statusBounds say so), and for a bound whether the
  * placement kept or dropped it.
  */
-function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h: PlacedHolds, re: RegExp): string {
+function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h: PlacedHolds, re: RegExp, logEnds: BuffReplay["logEnds"] = []): string {
   // By id (owner:id, status:<name>) or with the owner's name (Perlica:wpn_funnel_0008.arts_taken), case aside.
   const named = (c: ClockWhy) => (c.clock.startsWith("status:") ? c.clock : `${label(data, c.clock.slice(0, c.clock.indexOf(":")))}${c.clock.slice(c.clock.indexOf(":"))}`);
   const ci = new RegExp(re.source, re.flags.includes("i") ? re.flags : `${re.flags}i`);
@@ -561,6 +561,10 @@ function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h
     const verdict = tag === null ? c.verdict : `a clock (asks ${(c.ask ?? 0).toFixed(2)} s): ${dropped.has(tag) ? "dropped by the placement as conflicting" : kept.has(tag) ? "kept" : "not placed"}`;
     lines.push(`  ${named(c)} ${who} ${inst}${run}: ${verdict.replace(/chr_\d{4}_[a-z0-9]+/g, (op) => label(data, op))}`);
   }
+  // The log-end side (heldToLoggedEnds): each instance that reached its expiry in the check's replay, kept to the log's end or not, and why.
+  const ends = logEnds.filter((e) => ci.test(e.buff) || ci.test(`${label(data, e.buff.slice(0, e.buff.indexOf(":")))}${e.buff.slice(e.buff.indexOf(":"))}`)).sort((a, b) => a.buff.localeCompare(b.buff) || a.appliedAt - b.appliedAt);
+  if (ends.length) lines.push("the log's end (heldToLoggedEnds, in the check's replay): each instance that reached its expiry");
+  for (const e of ends) lines.push(`  ${label(data, e.buff.slice(0, e.buff.indexOf(":")))}${e.buff.slice(e.buff.indexOf(":"))} from ${s(msOf(e.appliedAt))}: ${e.why}`);
   return lines.join("\n");
 }
 

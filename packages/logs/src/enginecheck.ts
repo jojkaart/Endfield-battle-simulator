@@ -90,6 +90,11 @@ export interface LogDifference {
   /** The engine's and the log's entries (zone element value). */
   readonly engine: readonly string[];
   readonly log: readonly string[];
+  /**
+   * "values" whose sums per zone agree (one side lists as one entry what the other has as layers: 0.216 against two of
+   * 0.108): cosmetic, the damage can't tell them apart (round 8: such a group carried the ratio of whatever else moved).
+   */
+  readonly sameTotals?: true;
 }
 
 /** What the check knows of a logged hit besides its landing: the kit hits its event can be, its cast's kind and facts, and the hit a Combustion tick keeps its attacker side from. */
@@ -428,7 +433,14 @@ export function logDifferences(c: EngineCheck, hit: LogHit, landing: LandedHit &
     }
     if (!engineOnly.length && !logOnlyHere.length) continue;
     const kind = !mine.length ? "log" : !logged.length ? "engine" : "values";
-    out.push({ what: [...g].sort().join(" + "), kind, engine: engineOnly, log: logOnlyHere });
+    const totals = (m: ReadonlyMap<string, { zone: string; value: number; n: number }>) => {
+      const t = new Map<string, number>();
+      for (const x of m.values()) t.set(x.zone, (t.get(x.zone) ?? 0) + x.value * x.n);
+      return t;
+    };
+    const [et, lt] = [totals(ei), totals(li)];
+    const same = kind === "values" && [...new Set([...et.keys(), ...lt.keys()])].every((z) => Math.abs((et.get(z) ?? 0) - (lt.get(z) ?? 0)) < 1e-6);
+    out.push({ what: [...g].sort().join(" + "), kind, engine: engineOnly, log: logOnlyHere, ...(same ? { sameTotals: true as const } : {}) });
   }
   const loggedStagger = hit.effects.some((e) => /poise_break/.test(e.buff));
   const engineStagger = landing.inputs.options.staggered;

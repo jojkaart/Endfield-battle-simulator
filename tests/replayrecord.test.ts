@@ -4,7 +4,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { formatRecord, hitRecords, logBuffReplay, readLogFixture, replayTimeStops, replayView, stopsAgainstList, totalsView, type AppliedStop } from "@efsim/logs";
+import { formatRecord, hitRecords, holdsView, logBuffReplay, readLogFixture, replayTimeStops, replayView, stopsAgainstList, totalsView, type AppliedStop } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -72,5 +72,13 @@ describe("the replay's record", () => {
     const text = totalsView(data, b7b3);
     expect(text).toMatch(/ {2}team: [\d,]+ vs [\d,]+ \([+-]\d+\.\d%\)/);
     expect(text).toMatch(/ {2}Arcane: [\d,]+ vs [\d,]+ \([+-]\d+\.\d%\): matched [\d,]+ vs [\d,]+ \([+-]\d+\.\d%, \d+ landing\(s\)\); simulated \+ replay only [\d,]+ \(\d+ landing\(s\)\)/);
+  });
+
+  it("says why an instance wasn't kept to the log's end (holds --why, the log-end side)", () => {
+    // 5082: Xaihi's weapon team ATK is an instance buff: never taken to the log's end (round 8: it fell out silently).
+    const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-5082ceaffad1.json"));
+    const text = holdsView(data, fx, { why: /Xaihi:wpn_funnel_0010\.atk/ });
+    expect(text).toMatch(/^the log's end \(heldToLoggedEnds, in the check's replay\)/m);
+    expect(text).toMatch(/^ {2}Xaihi:wpn_funnel_0010\.atk from 27\.37: not taken: an instance buff/m);
   });
 });

@@ -346,6 +346,12 @@ export interface BuffReplay {
   /** With the holds placed: each replayed instance of a kit buff or enemy status, and why it is a clock of them or not (holds.ts ClockWhy; `zmdlogs holds --why`). */
   readonly holdClocks?: readonly ClockWhy[];
   /**
+   * With hidden-holds `log` (and `placed`, on top): each instance that reached its expiry, whether the replay kept it to
+   * the log's end (heldToLoggedEnds, loggedEndOf) and why (an instance buff, layered, ticking, no run listed past it,
+   * too long): the log-end side of `zmdlogs holds --why` (round 8: Xaihi's weapon instance in 5082 fell out silently).
+   */
+  readonly logEnds: readonly { readonly buff: string; readonly appliedAt: number; readonly end: number | null; readonly why: string }[];
+  /**
    * The SP each logged cast lacked in the replay (its cost less the team's SP then; drivers.ts replayCast raises it to the
    * cost silently: docs/open-problems.md "Team SP"), for the casts that lacked any.
    */
@@ -1377,6 +1383,8 @@ export interface LoggedLaneEnds {
   readonly hits: readonly { readonly t: number; readonly operator: string; readonly listed: ReadonlySet<string> }[];
   /** Each instance's end by the log once decided (loggedEndOf; null: the log doesn't decide it), by `owner|id|appliedAt`. */
   readonly decided: Map<string, { readonly end: number } | null>;
+  /** Why loggedEndOf decided so, by the same key (`zmdlogs holds --why`: the log-end side of an instance's verdict). */
+  readonly why: Map<string, string>;
 }
 
 /** The log's runs of its listed buffs and what each hit lists (LoggedLaneEnds), nothing decided yet. */
@@ -1401,7 +1409,7 @@ export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
     const key = `${r.buff}|${r.source}`;
     out.set(key, [...(out.get(key) ?? []), { ...r, refreshed }]);
   }
-  return { runs: out, hits, decided: new Map() };
+  return { runs: out, hits, decided: new Map(), why: new Map() };
 }
 
 /**
@@ -1626,14 +1634,19 @@ function loggedEndOf(b: ActiveBuff, ends: LoggedLaneEnds, defs: ReadonlyMap<stri
   const key = `${b.owner}|${b.id}|${b.appliedAt}`;
   const known = ends.decided.get(key);
   if (known !== undefined) return known;
-  const decide = (end: number | null) => {
+  const decide = (end: number | null, why: string) => {
     const v = end === null ? null : { end };
     ends.decided.set(key, v);
+    ends.why.set(key, why);
     return v;
   };
-  if (b.every !== undefined || b.maxLayers !== undefined || b.maxInstances !== undefined) return decide(null);
+  if (b.every !== undefined) return decide(null, "not taken: a ticking buff (its end is its ticks')");
+  if (b.maxLayers !== undefined) return decide(null, "not taken: a layered buff");
+  if (b.maxInstances !== undefined) return decide(null, "not taken: an instance buff (KitBuff.instances, or stackingType 1: the log may merge its instances)");
   const def = defs.get(`${b.owner}:${b.id}`);
-  if (!def || notAClock(def) !== null) return decide(null);
+  if (!def) return decide(null, "not taken: no kit buff of that id");
+  const skip = notAClock(def);
+  if (skip !== null) return decide(null, `not taken: the kit buff has \`${skip}\``);
   // The run began with this instance (within RUN_START_MS of its application), not a later one the replay missed.
   const [from, latest, until] = [((b.appliedAt * 1000) / FPS) - RUN_START_MS, ((b.appliedAt * 1000) / FPS) + RUN_START_MS, (b.expiresAt * 1000) / FPS];
   const names = loggedNames(def);
@@ -1649,9 +1662,12 @@ function loggedEndOf(b: ActiveBuff, ends: LoggedLaneEnds, defs: ReadonlyMap<stri
   const keys = names.map((g) => `${g}|${b.owner}`);
   const off = lasts.length ? ends.hits.find((h) => h.t > until && (def.target === "enemy" || holds(h.operator)) && !keys.some((k) => h.listed.has(k))) : undefined;
   const before = lasts.filter((t) => off === undefined || t < off.t);
-  if (before.length === 0) return decide(null);
+  if (before.length === 0) return decide(null, lasts.length ? "not taken: listed past its expiry only after a hit of its holder without it" : "not taken: no run of it from its application (not refreshed) listed past its expiry");
   const end = frameOf(Math.max(...before)) + 1;
-  return decide(end - b.expiresAt > HIDDEN_HOLD_SHARE * (b.expiresAt - b.appliedAt) ? null : end);
+  const sec = (f: number) => ((f * 1000) / FPS / 1000).toFixed(2);
+  return end - b.expiresAt > HIDDEN_HOLD_SHARE * (b.expiresAt - b.appliedAt)
+    ? decide(null, `not taken: the log's end ${sec(end)} s is past HIDDEN_HOLD_SHARE of its life`)
+    : decide(end, `kept to the log's end, ${sec(end)} s (its expiry ${sec(b.expiresAt)} s)`);
 }
 
 /**
@@ -2207,7 +2223,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   let placedHolds: PlacedHolds | null = null;
   // Why each replayed instance is or isn't a clock of the placement (BuffReplay.holdClocks).
   const holdClocks: ClockWhy[] = [];
-  const noEnds = (): LoggedLaneEnds => ({ runs: new Map(), hits: [], decided: new Map() });
+  const noEnds = (): LoggedLaneEnds => ({ runs: new Map(), hits: [], decided: new Map(), why: new Map() });
   // Placing, the first replay keeps no buff to the log's end: its expiries are the clocks' (runBounds).
   let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx) : noEnds();
   const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx) : laneEnds;
@@ -2380,6 +2396,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     appliedStops: main?.appliedStops ?? [],
     hiddenHolds: placedHolds,
     holdClocks,
+    logEnds: [...laneEnds.why].map(([k, why]) => {
+      const [owner, id, at] = k.split("|") as [string, string, string];
+      return { buff: `${owner}:${id}`, appliedAt: Number(at), end: laneEnds.decided.get(k)?.end ?? null, why };
+    }),
     spTopUps: main ? main.made.flatMap((m) => {
       const lack = spCostAt(main.ctx, m.pre, m.c.operator, skillCosts(main.ctx, m.c.operator, m.skillId, m.f), m.f) - spAt(m.pre, m.f);
       return lack > 1e-6 ? [{ frame: m.f, operator: m.c.operator, skillId: m.skillId, sp: lack }] : [];
