@@ -627,7 +627,10 @@ reaction has no initial hit.
   [DATA]
 - During a `ChannelingCastingAction` with `cantCastSkill` (and a finisher's
   `buff_common_power_attack_disable_cast_skill` frames) the operator starts
-  no skill. Whether ultimates are an exception: [OPEN] (test 15). With
+  no skill. Whether ultimates are an exception: [OPEN] for the channels
+  (test 15); for a finisher's frames they are [LOGS]: every logged
+  ultimate inside them (458b ×2, d572) cut the finisher, whose later hits
+  never land (engine assumption `finisher-ultimate`, 2026-11-23). With
   `cantSwitchPosition`, no swap is possible. [DATA]
 - A swap costs no time and doesn't stop the controlled operator's action.
   [ASSUMED] (test 15). Ultimates with `takesControl` make the caster the

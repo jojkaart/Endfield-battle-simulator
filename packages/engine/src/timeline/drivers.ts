@@ -130,7 +130,7 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   // A logged cast after which the previous one's logged hits go on keeps what that one had to come, but the follow-ups its
   // timeline would cast (bdf223db8e49: Typhoeus's shot 3 cuts the loop shot 2 started, whose landing at its frame 27 would
   // end her hover).
-  const keepPrevious = afterCantCast(ctx, advanced, operator, frame) > frame ? true : opts.keepPrevious === true ? ("uncast" as const) : false;
+  const keepPrevious = afterCantCast(ctx, advanced, operator, frame, costs.kind) > frame ? true : opts.keepPrevious === true ? ("uncast" as const) : false;
   const r = castSkill(ctx, advanced, operator, skillId, frame, false, keepPrevious);
   let st = r.state;
   // A cast that hit nothing: its own hits never land, so nothing they do happens (damage, Stagger, SP, inflictions, the

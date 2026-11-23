@@ -192,7 +192,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
   const windows: { from: number; to: number; skills: string[]; conditional?: true }[] = [];
   // ComboCacheAction mappings of the basic-attack input (cmdType 0): what the next attack input becomes.
   const inputMap = new Set<string>();
-  const channels: { from: number; to: number; cantCastSkill: boolean; cantSwitch: boolean }[] = [];
+  const channels: { from: number; to: number; cantCastSkill: boolean; cantSwitch: boolean; finisher?: true }[] = [];
   const slowdowns: { from: number; scales: number[]; priority?: number }[] = [];
   const resets: { at: number; priority: number }[] = [];
   const dilations: SkillDilation[] = [];
@@ -233,9 +233,10 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
       else if (o["useCurveKey"] === true && o["curveKey"] === "RESETto1" && priority !== null) resets.push({ at: from, priority });
     }
     if (o["isEnable"] !== false && type.includes("ChannelingCastingAction")) channels.push({ from, to, cantCastSkill: o["cantCastSkill"] === true, cantSwitch: o["cantSwitchPosition"] === true });
-    // A finisher's disable-cast buff for the action's frames blocks casts as a cantCastSkill channel does.
+    // A finisher's disable-cast buff for the action's frames blocks casts as a cantCastSkill channel does, but for an
+    // ultimate (SkillTiming channels' `finisher`).
     if (o["isEnable"] !== false && type.includes("CreateBuffAction") && o["autoFinishByAction"] === true && ((o["buffs"] ?? []) as { buffId?: unknown }[]).some((b) => b.buffId === "buff_common_power_attack_disable_cast_skill")) {
-      channels.push({ from, to, cantCastSkill: true, cantSwitch: false });
+      channels.push({ from, to, cantCastSkill: true, cantSwitch: false, finisher: true });
     }
     const under = conditional || (o["isEnable"] !== false && (type.includes("TogglableAction") || type.includes("IfElseAction")));
     for (const v of Object.values(o)) find(v, from, to, under);

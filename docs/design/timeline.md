@@ -210,8 +210,11 @@ When an operator may act again after casting a skill (engine
 - During a `ChannelingCastingAction` with `cantCastSkill` (and a
   finisher's `buff_common_power_attack_disable_cast_skill` frames) the
   operator starts no skill, whatever its priority. Whether ultimates are
-  an exception isn't in the data (in-game test 15). Follow-up casts
-  (CastSkill) aren't held.
+  an exception isn't in the data (in-game test 15); for the finisher's
+  frames the logs say they are: an ultimate starts at once and cuts the
+  finisher (SkillTiming channels' `finisher`, timing.ts afterCantCast,
+  engine assumption `finisher-ultimate`). Follow-up casts (CastSkill)
+  aren't held.
 - Dive attacks (`skillSpecification` 6, `canCastInAir`): a rotation action
   `{operator, skill: "<op>_plunging_attack_end"}` of the controlled
   operator is a jump, the fall (`plunging_attack_start`, no damage) and the

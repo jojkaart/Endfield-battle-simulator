@@ -4,6 +4,7 @@ import type { Build } from "../build.ts";
 import { decide, evalContext } from "../damage.ts";
 import { EngineError } from "../errors.ts";
 import type { KitSkill, SkillTiming } from "../model.ts";
+import type { SkillType } from "../attributes.ts";
 import { allActions, triggerSkillId } from "../events.ts";
 import { test } from "../expr.ts";
 import { activeAt } from "../buffs.ts";
@@ -15,6 +16,7 @@ import { afterRegen, isStaggered, spAt, spCostAt } from "./resources.ts";
 import { situationAt } from "./situation.ts";
 import { advance, nextEventAfter } from "./advance.ts";
 import { castBound, ofCast, ofKind } from "./schedule.ts";
+import { engineReading } from "./assumptions.ts";
 
 /**
  * Combo-kind skills of an operator that an `openCombo` with `skills` names:
@@ -234,14 +236,19 @@ export function counters(ctx: TimelineContext, operator: string, cur: Acting, fr
   );
 }
 
-/** The first frame at or after `frame` outside the operator's current skill's cantCastSkill channels. */
-export function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number): number {
+/**
+ * The first frame at or after `frame` outside the operator's current skill's cantCastSkill channels that hold a cast of
+ * this kind. A finisher's disable-cast buff doesn't hold an ultimate (engine assumption finisher-ultimate, `cuts`): the
+ * ultimate cuts the finisher, its hits still to come with it.
+ */
+export function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number, kind?: SkillType): number {
   const cur = state.acting[operator];
   if (!cur || cur.auto) return frame;
+  const through = kind === "ultimate" && engineReading(ctx.scenario, "finisher-ultimate") === "cuts";
   let f = frame;
   // Channels are in skill frames; a hasted cast plays them faster.
   const at = (x: number) => actionFrame(cur, x);
-  for (const c of [...timingOf(ctx, cur.skill).channels].sort((a, b) => a.from - b.from)) if (c.cantCastSkill && at(c.from) <= f && f < at(c.to)) f = at(c.to);
+  for (const c of [...timingOf(ctx, cur.skill).channels].sort((a, b) => a.from - b.from)) if (c.cantCastSkill && !(through && c.finisher) && at(c.from) <= f && f < at(c.to)) f = at(c.to);
   return f;
 }
 
@@ -409,7 +416,7 @@ function gatesFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   if (mappedAt(gate.frame) !== mapped) return { error: `${action.skill}: what the basic-attack input maps to changes at frame ${gate.frame}` };
   frame = gate.frame;
   // A channel that forbids casting (cantCastSkill, a finisher's disable-cast buff) holds every cast of its operator, whatever its priority.
-  frame = afterCantCast(ctx, state, action.operator, frame);
+  frame = afterCantCast(ctx, state, action.operator, frame, costs.kind);
   // A finisher only on a Staggered enemy, once per stagger, and only while the attack input isn't an enhanced basic attack.
   if (costs.timing.specification === 8) {
     const then = advance(ctx, state, frame);

@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { activeAt, advance, apply, buffEndedEvent, buffEndedEvents, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, startsNow, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
+import { activeAt, advance, apply, buffEndedEvent, buffEndedEvents, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, replayCast, simulate, simulateRuns, startsNow, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -1248,6 +1248,22 @@ describe("timeline: what ends with a cast, cast blocks, mid-air, control immunit
     const ctx = createContext(data, { ...scenario([]), team: [gb], startEnergy: { [gb.operator]: "full" } });
     const s = apply(ctx, init(ctx), { operator: gb.operator, skill: G + "normal_skill" });
     expect(earliestStart(ctx, s, { operator: gb.operator, skill: G + "ultimate_skill", at: 10 })).toEqual({ frame: (s.casts[0]?.frame ?? NaN) + 111 });
+  });
+
+  it("a finisher's disable-cast frames hold its operator's other casts, not her ultimate, which cuts the finisher (engine assumption finisher-ultimate)", () => {
+    const P = L + "power_attack";
+    expect(data.skills[P]?.timing?.channels.find((c) => c.finisher)).toMatchObject({ from: 0, to: 42, cantCastSkill: true });
+    const run = (reading?: string) => {
+      const ctx = createContext(data, { ...scenario([]), ...(reading ? { options: { crit: "never", assume: { "finisher-ultimate": reading } } } : {}) });
+      const s = replayCast(ctx, init(ctx), op, P, 0);
+      const ult = earliestStart(ctx, s, { operator: op, skill: L + "ultimate_skill", at: 10 });
+      const battle = earliestStart(ctx, s, { operator: op, skill: L + "normal_skill", at: 10 });
+      // The ultimate replayed at frame 10: the finisher's hit_2 (frame 42) lands only if the finisher can't be cut there.
+      const finisherHits = advance(ctx, replayCast(ctx, s, op, L + "ultimate_skill", 10), 400).hits.filter((h) => h.skillId === P).map((h) => h.hitId);
+      return { ult, battle, finisherHits };
+    };
+    expect(run()).toEqual({ ult: { frame: 10 }, battle: { frame: 42 }, finisherHits: ["hit"] });
+    expect(run("held")).toEqual({ ult: { frame: 42 }, battle: { frame: 42 }, finisherHits: ["hit", "hit_2"] });
   });
 
   it("a dive starts with a jump (tests/batch4-dive.test.ts); control statuses don't freeze a control-immune enemy", () => {
