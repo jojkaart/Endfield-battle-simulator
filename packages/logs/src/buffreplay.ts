@@ -266,6 +266,8 @@ function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0): string | nu
 }
 
 export interface BuffReplay {
+  /** The readings of open assumptions it replayed under (ReplayOptions.assume; none: every default). */
+  readonly assume: Readonly<Record<string, string>>;
   /** Game buffs the replay decides, each with the team's kit buffs that stand for it (`operator:kit buff`). */
   readonly decided: ReadonlyMap<string, readonly string[]>;
   /** Game buffs a kit defines and the log lists that the replay can't decide, and why. */
@@ -2374,6 +2376,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   }
   const nearIn = (changes: ReadonlyMap<string, readonly Change[]>, key: string, f: number) => (changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack);
   return {
+    assume: opts.assume ?? {},
     decided,
     undecided,
     failed,

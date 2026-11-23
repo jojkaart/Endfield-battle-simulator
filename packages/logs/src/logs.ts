@@ -194,7 +194,33 @@ export function listLogs(opts: { readonly root?: string; readonly dirs?: readonl
 }
 
 export function readLogFixture(file: string): LogFixture {
-  return withBuildOverrides(readLogFixtureRaw(file));
+  return withBuildOverrides(withEndminVariant(readLogFixtureRaw(file)));
+}
+
+const ENDMIN_F = "chr_0003_endminf";
+const ENDMIN_M = "chr_0002_endminm";
+
+/**
+ * The Endministrator as the variant her keys name. The import reads the game's virtual ID (chr_9000_endmin) as the
+ * female's, whose combo the log keys under the male's ID as well (7e19489ae503); a log whose other skills are keyed
+ * chr_0002_endminm_* too (d4fb69b036fe: attacks, battle skill, finisher, ultimate) is the male's, whose kit (the female's
+ * variant, the same values: packages/data/kits/operators/chr_0003_endminf.json) has those keys. Read with the female's
+ * kit, none of those hits had a landing, and each Originium Crystals shatter made an ultimate (2026-11-23).
+ */
+export function withEndminVariant(fx: LogFixture): LogFixture {
+  if (!fx.team.some((b) => b.operator === ENDMIN_F)) return fx;
+  const male = fx.hits.some((h) => h.operator === ENDMIN_F && h.event.startsWith(`${ENDMIN_M}_`) && !h.event.endsWith("_combo_skill"));
+  if (!male) return fx;
+  const op = (x: string) => (x === ENDMIN_F ? ENDMIN_M : x);
+  const effect = <E extends { readonly source?: string }>(e: E): E => (e.source === ENDMIN_F ? { ...e, source: ENDMIN_M } : e);
+  return {
+    ...fx,
+    team: fx.team.map((b) => (b.operator === ENDMIN_F ? { ...b, operator: ENDMIN_M } : b)),
+    hits: fx.hits.map((h) => ({ ...h, operator: op(h.operator), effects: h.effects.map(effect), boundaryEffects: h.boundaryEffects.map(effect), unquantified: h.unquantified.map(effect) })),
+    ...(fx.casts ? { casts: fx.casts.map((c) => ({ ...c, operator: op(c.operator) })) } : {}),
+    ...(fx.absent ? { absent: fx.absent.map((a) => ({ ...a, operator: op(a.operator) })) } : {}),
+    ...(fx.buildOverrides ? { buildOverrides: fx.buildOverrides.map((o) => ({ ...o, operator: op(o.operator) })) } : {}),
+  };
 }
 
 /** A fixture as written: `team` as exported, its buildOverrides not applied (for tools that rewrite the file). */
@@ -207,9 +233,9 @@ export function readLogFixtureRaw(file: string): LogFixture {
 
 /** A build with overrides set over it (LogFixture.buildOverrides): `weapon`'s fields over the build's weapon. */
 export function overrideBuild(b: Build, set: BuildOverride["set"]): Build {
-  const { weapon, ...rest } = set;
+  const { weapon, skillLevels, ...rest } = set;
   if (weapon && !b.weapon) throw new Error(`${b.operator}: a weapon override, but the build has no weapon`);
-  return { ...b, ...rest, ...(weapon && b.weapon ? { weapon: { ...b.weapon, ...weapon } } : {}) };
+  return { ...b, ...rest, ...(weapon && b.weapon ? { weapon: { ...b.weapon, ...weapon } } : {}), ...(skillLevels ? { skillLevels: { ...b.skillLevels, ...skillLevels } } : {}) };
 }
 
 /** The fixture with its buildOverrides set over `team` (each operator's in order); unchanged without any. */

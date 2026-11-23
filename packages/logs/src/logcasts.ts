@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, pathSlowdowns, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /**
@@ -309,7 +309,8 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
       const hits = allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits : [])).filter(available(skillId));
       if (hits.length === 0) return [];
       const anchor = t.on.event === "cast" && t.on.skills?.length ? { skills: t.on.skills, delay: t.delay ?? 0 } : null;
-      const firedAt = t.on.event === "hit" && t.on.decorations?.length ? decoratedHits(data, fx, t.on.decorations, t.by === "self" ? build.operator : null).map((h) => h.t + msOf(t.delay ?? 0)) : undefined;
+      const fired = t.on.event === "hit" && t.on.decorations?.length ? decoratedHits(data, fx, t.on.decorations, t.by === "self" ? build.operator : null) : t.on.event === "physicalStatus" ? statusHits(fx, t.on.statuses, t.by, build.operator) : undefined;
+      const firedAt = fired?.map((h) => h.t + msOf(t.delay ?? 0));
       return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits }];
     }),
   ];
@@ -331,6 +332,20 @@ function decoratedHits(data: GameData, fx: LogFixture, decorations: readonly Hit
     }
   }
   return fx.hits.filter((h) => keys.has(`${h.operator}|${h.event}`));
+}
+
+/**
+ * The logged physical-status hits (Lift, Knock Down, Crush, Breach: parseReactionEvent) that can fire a trigger on them
+ * (`statuses`, every one when absent), by whom its `by` allows. The Endministrator's Originium Crystals shatter on a
+ * teammate's Lift under the key her ultimate's third hit has: placed as an ultimate, each made one the log doesn't have
+ * (0c14fb3ce77d: seven, every one at Rossi's Lift's millisecond, 1.17M of replay-only damage).
+ */
+function statusHits(fx: LogFixture, statuses: readonly string[] | undefined, by: string, operator: string): LogHit[] {
+  return fx.hits.filter((h) => {
+    const r = parseReactionEvent(h.event);
+    if (!r || !["lift", "knockdown", "crush", "breach"].includes(r.kind) || (statuses && !statuses.includes(r.kind))) return false;
+    return by === "self" ? h.operator === operator : by === "teammate" ? h.operator !== operator : true;
+  });
 }
 
 /** A hit's landing frames (a count past its frames repeats the last, `framesEvery` apart); null when it has none. */

@@ -645,6 +645,7 @@ export function totalsView(data: GameData, fx: LogFixture, f: { readonly operato
   const out = [
     `${fx.id}: the simulated total's parts (enginecheck.ts fightTotals; damage simulated vs logged). matched: the landings standing for logged hits, predicted vs their logged values; replay only: landings no logged hit stands for (counted to the log's last hit); log only: logged hits the total has no landing for; shifts: recorded bursts' teammate shares taken as logged.`,
     `  team: ${n(t.simulated.damage)} vs ${n(t.logged.damage)} (${pct(t.simulated.damage, t.logged.damage)})`,
+    ...(t.away.windows.length ? [`  enemy away (engine assumption enemy-away; no logged hit for 6 s or more): ${t.away.windows.map((w) => `${s(w.from)}–${s(w.to)} s`).join(", ")}; ${t.away.leftOut} replay-only landing(s) there not counted`] : []),
   ];
   for (const op of ops) {
     const mine = t.parts.filter((p) => p.operator === op);

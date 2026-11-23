@@ -130,6 +130,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "enemy-away",
+    question: "Does the enemy take damage in a stretch of the fight where the log has no hit at all for 6 s or more (ENEMY_AWAY_MS)? Read only by the log check's totals (packages/logs enginecheck.ts fightTotals), not by simulations: a stage's boss phase isn't the team's to model.",
+    default: "away",
+    readings: {
+      away: "no: the enemy is out of reach (a boss phase), and the replay's landings there that stand for no logged hit, more than 0.3 s inside it, aren't counted in the simulated total, as a fixture's hand-written `absent` landings aren't. The logs' gaps fall apart at 6 s (development logs 2026-11-23: 18 of 4–6 s, then 1 of 6–7 s and 30 of 7–46 s, in 8 fights against Si (eny_0134_jsspsi, 19 gaps: about 20–24 s, then 13–14 s, a phase each fight) and 4 against eny_0125_fdcentur (7), eny_0128_babyents_hdg031 (3) and eny_0120_klbear_tower015 (2)), and the team still presses there (pending/zmdlogs-d774d0ce7bd3.json 30.6–54.6 s: Liino's ultimate and battle skills, Arcane's combo; Zhuang Fangyi's Empyrean strikes and finale, 0.78M, land there in the replay alone) (2026-11-23)",
+      counted: "yes: every replay landing up to the log's last hit counts (the totals until 2026-11-23)",
+    },
+  },
+  {
     id: "finisher-ultimate",
     question: "Does a finisher's disable-cast buff (buff_common_power_attack_disable_cast_skill, the finisher's frames 0 to its last hit or past it) hold the operator's ultimate, as it holds her battle skill and combo (timeline/timing.ts afterCantCast)? The buff's tags include battle-skill (-1486085048, buff_common_disable_normal_skill's) and dash (-1601691447, buff_common_disable_dash's) and one no other buff has (-496376350); Typhoeus's hover, which allows her combo and ultimate, carries the other two.",
     default: "cuts",
