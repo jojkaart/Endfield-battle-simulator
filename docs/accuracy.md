@@ -39,9 +39,9 @@ over |matched|, so the error is in what lands, not in its scale.
 | Logs | Fights | \|Matched\| | Replay-only | Log-only | One-sided |
 |---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 2.2% | 0.7% | 0.3% | 2 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 5.4% | 6.3% | 3.9% | 24 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.5% | 7.1% | 6.2% | 11 |
-| Earlier pending (imported before the hold-out split) | 23 | 4.3% | 2.9% | 1.9% | 15 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 5.4% | 6.0% | 3.7% | 24 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.8% | 5.2% | 5.3% | 11 |
+| Earlier pending (imported before the hold-out split) | 23 | 4.5% | 2.2% | 1.4% | 14 |
 
 ## By operator (every log but the hold-outs)
 
