@@ -44,8 +44,11 @@ fights) 53.1 → 54.9%, 23.3 → 19.0%, |damage| 8.1 → 8.4% (207f's −18.8% j
 1d91, 00ae, 0eef, bdf2. Worse: a7a7 (386 → 351: its first Liino combo at the fight's start now ends before the
 Corrosion of 3.86 s, so Si's combo stop alone holds the ramp 0.53 s where the log allows 0.42), 4d60 (−6), 3f78 (−2,
 status-in-stop), 9090, 9847 and c6d8 (−1 each; knock-ons of Liino's moved stops); mixed d774 (+13 plain, mismatches
-59 → 39, its over-predicted total +22.6 → +24.6%), 9a80, c3c7. Team numbers: team-ab against 6b117c1 (the journal's
-report to the lead).
+59 → 39, its over-predicted total +22.6 → +24.6%), 9a80, c3c7. Teams (team-ab against 6b117c1, seeds 1001–1032,
+status-in-stop held): Estella's sustained DPS +0.08% full / −0.00% zero, Typhoeus's +0.05% / +0.04%, Typhoeus's 60 s
+timeline −0.30% (full energy), the rest unchanged. Also: a7a7's INT lasers' event at 42128 ms, now 1.35 s of world
+time after Arcane's combo touch, had become her combo's own event; after a combo's last landing the window is 1 s
+(buffreplay.ts COMBO_EVENT_AFTER_MS; no verdict moved).
 
 **Decisions:** the placement rule only for frozen frames (scale ≤ 0.05): counting every frame below 1 moved 4e5e, db87
 and others' casts. `status-in-stop` held by default for one world clock with buff-in-stop, measured better on both
