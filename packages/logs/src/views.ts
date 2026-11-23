@@ -19,7 +19,8 @@ import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } 
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
 import type { ClockWhy, PlacedHolds } from "./holds.ts";
-import { castTimeStops, distinctCasts, placeHits } from "./logcasts.ts";
+import { distinctCasts, placeHits } from "./logcasts.ts";
+import { replayTimeStops } from "./query.ts";
 import { corrosionRamp, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
@@ -57,11 +58,13 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): s
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
     lines.push({ t: c.start, order: 1, text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}` });
   }
-  for (const st of castTimeStops(data, placement.casts)) {
+  // The stops the replay holds (query.ts replayTimeStops, the views' one list): a cast placed from its cast event alone
+  // (an ultimate at its logged stop's end: db87's Laevatain at 16.60 s) is marked.
+  for (const st of replayTimeStops(data, fx, placement)) {
     const [a, z] = [msOf(st.start), msOf(st.start + st.scales.length)];
     if (z < (f.from ?? -Infinity) || a > (f.to ?? Infinity)) continue;
     const zero = st.scales.filter((x) => x === 0).length;
-    lines.push({ t: a, order: 2, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})` });
+    lines.push({ t: a, order: 2, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})${st.placed ? "" : " [no placed hits: the replay's cast from its event or inferred]"}` });
   }
   for (const h of fx.hits) {
     if (!inWindow(f, h.t)) continue;
