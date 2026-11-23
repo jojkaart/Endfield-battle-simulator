@@ -35,6 +35,12 @@ export const HOLD_BOUND_TOL_MS = 200;
 export const RUN_START_MS = 3000;
 
 /**
+ * How long (ms) a run may still be listed past another's start and be refreshed by it: the refreshing hit's batch.
+ * Runs listed side by side longer are two instances (buffreplay.ts loggedLaneEnds; statusLanes for the enemy's statuses).
+ */
+export const REFRESH_OVERLAP_MS = 200;
+
+/**
  * The log's names of the enemy's statuses (their status buffs, on the enemy's side of every hit whatever its element:
  * Electrification's Arts DMG Taken on Nature hits, Breach's on Heat ones). Combustion isn't listed (only its ticks).
  * Corrosion's is listed without a value (unquantified): logeffects.ts isCorrosionBuff.
@@ -101,7 +107,7 @@ export function statusLanes(fx: Pick<LogFixture, "hits">): StatusLanes {
   const out = new Map<string, { since: number; lastListed: number; refreshed: boolean }[]>();
   const all = [...runs.values()];
   for (const r of all) {
-    const refreshed = all.some((o) => o !== r && o.key === r.key && o.since > r.since && o.since <= r.lastListed);
+    const refreshed = all.some((o) => o !== r && o.key === r.key && o.since > r.since && o.since <= r.lastListed && r.lastListed - o.since <= REFRESH_OVERLAP_MS);
     out.set(r.key, [...(out.get(r.key) ?? []), { since: r.since, lastListed: r.lastListed, refreshed }]);
   }
   return { runs: out, hits };

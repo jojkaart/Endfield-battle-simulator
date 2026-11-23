@@ -18,7 +18,7 @@ import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
-import { HOLD_BOUND_TOL_MS, placeHolds, RUN_START_MS, statusBounds, statusLanes, tickBounds, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
+import { HOLD_BOUND_TOL_MS, placeHolds, REFRESH_OVERLAP_MS, RUN_START_MS, statusBounds, statusLanes, tickBounds, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -1418,9 +1418,6 @@ export interface LoggedLaneEnd {
    */
   readonly refreshed: boolean;
 }
-
-/** How long (ms) a run may still be listed past another's start and be refreshed by it: the refreshing hit's batch. */
-const REFRESH_OVERLAP_MS = 200;
 
 /**
  * Where the log's listing of each buff ends (hidden-holds `log`): every run of every listed game buff, by `buff|source`,
