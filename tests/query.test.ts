@@ -23,6 +23,7 @@ import {
   selectItems,
   worldMs,
   castTimeStops,
+  replayTimeStops,
   worldTimeView,
 } from "@efsim/logs";
 
@@ -121,11 +122,23 @@ describe("control and cadence", () => {
 describe("world time in a log (zmdlogs worldtime, lanes --world)", () => {
   it("gives the real and the world time between two moments, and the stops between", () => {
     const text = worldTimeView(data, a.fx, 2000, 8000);
-    const world = worldMs(2000, 8000, castTimeStops(data, placeHits(data, a.fx).casts));
+    const world = worldMs(2000, 8000, replayTimeStops(data, a.fx));
     expect(world).toBeLessThan(6000);
     expect(text.split("\n")[0]).toContain(`real 6.00 s, world ${(world / 1000).toFixed(2)} s`);
     expect(text).toMatch(/frame\(s\), lowest scale/);
     expect(() => worldTimeView(data, a.fx, 8000, 2000)).toThrow(/to after from/);
+  });
+
+  it("counts the stops of casts the replay places from their cast event (round 6: db87's Laevatain ultimate)", () => {
+    const [d] = devFixtures({ ids: ["db87"] });
+    const fx = (d as (typeof logs)[number]).fx;
+    const placed = castTimeStops(data, placeHits(data, fx).casts);
+    const replayed = replayTimeStops(data, fx);
+    // Every placed cast's stop is among the replay's; the ultimate at 16.6 s comes from its cast event alone.
+    for (const st of placed) expect(replayed.some((r) => r.start === st.start && r.skillId === st.skillId)).toBe(true);
+    const ult = replayed.find((r) => !r.placed && r.kind === "ultimate" && r.start >= 16 * 30 && r.start <= 17 * 30);
+    expect(ult?.operator).toBe("chr_0016_laevat");
+    expect(worldTimeView(data, fx, 16000, 21000)).toMatch(/Laevatain ultimate_skill \(ultimate\).*no placed hits/);
   });
 
   it("adds each listed run's world-time length", () => {

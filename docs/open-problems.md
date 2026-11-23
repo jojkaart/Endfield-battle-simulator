@@ -2621,10 +2621,10 @@ time after the last Vulnerable add on another enemy.
   (1cd1, 5082, 7910, 79cc, af7b, f879, f978, bdf2, b6aa), with or without an
   overlap. Exceptions run ahead: 3f78 and 4a64's openers (below, "3f78 and
   4a64"). **Left:** the holds placed once for every timer (enemy statuses
-  among them) would take db87's ramp from the shared clock. Tool gap: the
-  views on the placed casts' stops (`zmdlogs worldtime`, `lanes --world`,
-  `cadence`) don't have an ultimate the replay places from its cast event
-  only (db87's Laevatain at 16.60 s).
+  among them) would take db87's ramp from the shared clock. (The world-time
+  views `zmdlogs worldtime`, `lanes --world` and `cadence` count the stops of
+  the replay's casts since round 6, db87's Laevatain at 16.60 s, placed from
+  its cast event, among them.)
 - a7a7 after Liino's combo placement (2026-11-23, plain 386 → 351): her
   first combo (hit 1 logged at 3.86 s) now starts at 3.0 s, its stop ending
   before the Corrosion Arcane's battle skill forms (logged at 3.86 s, the

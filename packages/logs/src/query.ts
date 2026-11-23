@@ -18,7 +18,7 @@
 import { effectiveKit, FPS, type GameData, type SkillType } from "@efsim/engine";
 import { assembleCasts, controlSwaps } from "./buffreplay.ts";
 import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
-import { castEventOf, castTimeStops, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement } from "./logcasts.ts";
+import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 
@@ -29,6 +29,34 @@ export function operatorLabel(data: GameData, op: string): string {
   return data.operators[op]?.name ?? op.replace(/^chr_\d+_/, "");
 }
 const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
+
+/** A time stop of a cast the replay makes, and whether the placement has that cast from its hits. */
+export interface ReplayTimeStop extends TimeStop {
+  /** False for a cast the replay makes without placed hits: from a cast event (an ultimate at its stop: withLoggedCasts), or inferred. */
+  readonly placed: boolean;
+}
+
+/**
+ * The time stops of the casts the replay assembles (assembleCasts: the placed casts, the log's hitless cast events at
+ * the start the replay gives them, the inferred casts), before control drops any: what the world-time views take out.
+ * Round 6: they took castTimeStops of the placed casts only, which misses an ultimate placed from its cast event
+ * (db8711232de9: Laevatain's at 16.60 s, logged at its stop's end, so `worldtime 16 21` counted Camille's combo alone).
+ * A slot press counts only when the replay makes it as a variant (`as`).
+ */
+export function replayTimeStops(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): ReplayTimeStop[] {
+  const kits = fx.team.flatMap((b) => {
+    const k = effectiveKit(data, b);
+    return k ? [k] : [];
+  });
+  return assembleCasts(data, fx, placement, kits).flatMap((c) => {
+    if (c.slot && c.as === undefined) return [];
+    const skillId = c.as ?? c.skillId;
+    const at = Math.round((c.start * FPS) / 1000);
+    return (data.skills[skillId]?.timing?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, operator: c.operator, skillId, kind: c.kind, placed: c.landings.length > 0 }));
+  });
+}
+
+const notPlaced = (st: ReplayTimeStop) => (st.placed ? "" : " [no placed hits: from its cast event or inferred]");
 
 /** One real cast of a skill as the log means it (loggedSkillInstances). Times in ms. */
 export interface SkillInstance {
@@ -178,7 +206,7 @@ export function buffLanes(fx: LogFixture, buff?: RegExp): BuffLane[] {
 /** `zmdlogs lanes`: a fight's runs of the listed buffs matching `buff`; with `world`, each run's length in world time too. */
 export function lanesView(data: GameData, fx: LogFixture, buff?: RegExp, opts: { readonly world?: boolean } = {}): string {
   const lanes = buffLanes(fx, buff);
-  const stops = opts.world ? castTimeStops(data, placeHits(data, fx).casts) : [];
+  const stops = opts.world ? replayTimeStops(data, fx) : [];
   const lines = lanes.map((l) => {
     const end = l.nextUnlisted === null ? "listed to the fight's end" : `next unlisted hit ${s(l.nextUnlisted)}`;
     const from = l.since ?? l.firstListed;
@@ -187,26 +215,26 @@ export function lanesView(data: GameData, fx: LogFixture, buff?: RegExp, opts: {
       : "";
     return `  ${l.buff} from ${l.source ? operatorLabel(data, l.source) : "?"}: since ${l.since === null ? "?" : s(l.since)}, listed ${s(l.firstListed)}–${s(l.lastListed)} on ${l.listedHits} hit(s)${l.boundaryOnly ? " (boundary only)" : ""} of ${l.hitters.map((h) => operatorLabel(data, h)).join(", ")}, ${end}; value(s) ${l.values.join(", ")}${world}`;
   });
-  const note = opts.world ? "; world time takes the placed casts' time stops out (worldMs; the log's ms are batched, so under ~0.2 s isn't evidence)" : "";
+  const note = opts.world ? "; world time takes the time stops of the replay's casts out (replayTimeStops ; worldMs; the log's ms are batched, so under ~0.2 s isn't evidence)" : "";
   return [`${fx.id}: ${lanes.length} run(s) of listed buffs${buff ? ` matching /${buff.source}/` : ""} (one per source and since; times in s; since is the lane's start as the log has it: a refresh may move it${note})`, ...lines].join("\n");
 }
 
 /**
- * `zmdlogs worldtime`: the world's time between two moments of a log (ms), under the placed casts' time stops
- * (castTimeStops, worldMs), and the stops between with their frames and lowest scale. The first number of every "lasts
+ * `zmdlogs worldtime`: the world's time between two moments of a log (ms), under the time stops of the casts the
+ * replay makes (replayTimeStops, worldMs), and the stops between with their frames and lowest scale. The first number of every "lasts
  * longer than its duration" question (round 5: three agents wrote it as a scratch script).
  */
 export function worldTimeView(data: GameData, fx: LogFixture, from: number, to: number): string {
   if (!(to > from)) throw new Error("zmdlogs worldtime takes <from s> <to s> with to after from");
-  const stops = castTimeStops(data, placeHits(data, fx).casts);
+  const stops = replayTimeStops(data, fx);
   const [a, b] = [Math.round((from * FPS) / 1000), Math.round((to * FPS) / 1000)];
   const between = stops.filter((st) => st.start < b && st.start + st.scales.length > a).sort((x, y) => x.start - y.start);
   const world = worldMs(from, to, stops);
   return [
-    `${fx.id}: ${s(from)}–${s(to)} s: real ${s(to - from)} s, world ${s(world)} s (held ${s(to - from - world)} s by ${between.length} time stop(s) of the placed casts; times in s, a stop's frames at 30 a second)`,
+    `${fx.id}: ${s(from)}–${s(to)} s: real ${s(to - from)} s, world ${s(world)} s (held ${s(to - from - world)} s by ${between.length} time stop(s) of the replay's casts; times in s, a stop's frames at 30 a second)`,
     ...between.map((st) => {
       const inside = Math.min(b, st.start + st.scales.length) - Math.max(a, st.start);
-      return `  ${s(msOf(st.start)).padStart(7)}  ${operatorLabel(data, st.operator)} ${shortSkill(st.skillId)}${st.kind ? ` (${st.kind})` : ""}: ${st.scales.length} frame(s), lowest scale ${Math.min(...st.scales)}, ${inside} frame(s) inside the window`;
+      return `  ${s(msOf(st.start)).padStart(7)}  ${operatorLabel(data, st.operator)} ${shortSkill(st.skillId)}${st.kind ? ` (${st.kind})` : ""}: ${st.scales.length} frame(s), lowest scale ${Math.min(...st.scales)}, ${inside} frame(s) inside the window${notPlaced(st)}`;
     }),
     "Overlapping stops count once per frame, at the lowest scale then; the log's ms are batched (docs/design/data.md \"What the log records\"), so a difference under ~0.2 s isn't timing evidence.",
   ].join("\n");
@@ -417,13 +445,13 @@ export function controlView(data: GameData, fx: LogFixture, opts: { readonly ope
 
 /**
  * `zmdlogs cadence`: an operator's hit groups of event keys matching `key` (a gap over GROUP_GAP_MS starts one) in each
- * log, each with its hit count, the world-time gap from the previous group (the placed casts' time stops taken out:
- * logcasts.ts worldMs), the stops between by operator and skill, and the operator's nearest cast event; then the gaps'
+ * log, each with its hit count, the world-time gap from the previous group (the time stops of the replay's casts taken
+ * out: replayTimeStops, logcasts.ts worldMs), the stops between by operator and skill, and the operator's nearest cast event; then the gaps'
  * spread over all logs (is it a timer, a cooldown or event-driven?).
  */
 export function cadenceView(data: GameData, logs: readonly DevFixture[], operator: string, key: RegExp): string {
   const gaps: number[] = [];
-  const out = [`cadence of ${operatorLabel(data, operator)}'s hits matching /${key.source}/ (a gap over ${GROUP_GAP_MS} ms starts a group); world-time gaps take the placed casts' time stops out (times in s)`];
+  const out = [`cadence of ${operatorLabel(data, operator)}'s hits matching /${key.source}/ (a gap over ${GROUP_GAP_MS} ms starts a group); world-time gaps take the time stops of the replay's casts out (replayTimeStops; times in s)`];
   for (const d of logs) {
     const fx = d.fx;
     const groups: { t: number; last: number; n: number; value: number }[] = [];
@@ -437,8 +465,7 @@ export function cadenceView(data: GameData, logs: readonly DevFixture[], operato
       } else groups.push({ t: h.t, last: h.t, n: 1, value: h.value });
     }
     if (!groups.length) continue;
-    const placement = placeHits(data, fx);
-    const stops = castTimeStops(data, placement.casts);
+    const stops = replayTimeStops(data, fx);
     out.push(`  ${d.short}: ${groups.length} group(s)`);
     for (const [i, g] of groups.entries()) {
       const prev = groups[i - 1];

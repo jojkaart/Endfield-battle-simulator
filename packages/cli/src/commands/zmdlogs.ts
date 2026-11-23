@@ -154,10 +154,11 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
   efsim zmdlogs lanes <fixture> [--buff <regex>]  Each run of a listed buff (one per source and since): since,
                                           first and last listed hit, the next hit of its hitters that doesn't list
                                           it, values (since is the lane's start as logged: a refresh may move it)
-                [--world]                 Each run's length in world time too (the placed casts' stops taken out)
-  efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the placed
-                                          casts' time stops, and the stops between (operator, skill, frames, lowest
-                                          scale)
+                [--world]                 Each run's length in world time too (the stops of the replay's casts
+                                          taken out: placed, from cast events, inferred)
+  efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the time
+                                          stops of the replay's casts (placed, from cast events, inferred), and the
+                                          stops between (operator, skill, frames, lowest scale)
   efsim zmdlogs holds <fixture>           The fight's hidden holds the replay places (hidden-holds placed): the
                                           least total, each 0.512 s unit with its earliest and latest time and the
                                           clocks spanning it, the bounds dropped; --verbose every bound
