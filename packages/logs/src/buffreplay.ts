@@ -17,7 +17,7 @@ import {
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
-import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /**
@@ -1096,7 +1096,7 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
   });
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((x) => x.followUpOnly).map((x) => `${k.operator}|${x.skillId}`)));
   const placed = replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`));
-  const stops = castTimeStops(data, placement.casts);
+  const stops = castTimeStops(data, placement.casts, castFrames(placement));
   const near = loggedCastMatcher(kits, stops);
   return (fx.casts ?? []).map((lc): LoggedCastFate => {
     const base = { t: lc.t, operator: lc.operator, skill: lc.skill };
@@ -1123,7 +1123,13 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
     casts.flatMap((c) => {
       if (c.slot && c.as === undefined) return [];
       const skillId = c.as ?? c.skillId;
-      const { stops, resets } = skillStops(data, skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId, kind: c.kind });
+      // The kit frames of its landings (their hit and nth), which show the path it took (skillStops).
+      const hits = data.kits.operators[c.operator]?.skills.find((s) => s.skillId === skillId)?.hits ?? [];
+      const landed = c.landings.flatMap((l) => {
+        const f = hits.find((h) => h.id === l.hitId)?.frames?.[l.nth];
+        return f === undefined ? [] : [f];
+      });
+      const { stops, resets } = skillStops(data, skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId, kind: c.kind }, landed);
       return [{ stops: stops.map((s) => ({ ...s, placed: c.landings.length > 0 })), resets }];
     }),
   );
@@ -1138,7 +1144,7 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
 export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[]): ReplayedCast[] {
   if (kits.length === 0) return [];
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts))))))));
+  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement)))))))));
 }
 
 /**
@@ -1648,9 +1654,11 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
             v(`asks ${sec(lo)} s, over HIDDEN_HOLD_SHARE (${HIDDEN_HOLD_SHARE}) of its life (a refresh the replay missed, or a kit's error)`, lo / 1000);
             continue;
           }
-          // An instance buff's run later than INSTANCE_LATE_MS: a refresh in place is likelier than holds.
-          if (def.instances !== undefined && lo > INSTANCE_LATE_MS) {
-            v(`an instance buff's run ${sec(lo)} s late, over INSTANCE_LATE_MS (a refresh in place is likelier than holds)`, lo / 1000);
+          // An instance buff's run later than INSTANCE_LATE_MS with a reapplication on its holder inside it: a refresh in
+          // place is likelier than holds. Without one nothing could have refreshed it, so it is a clock like any other.
+          const refresher = def.instances !== undefined && lo > INSTANCE_LATE_MS ? list.find((x) => x.start > w.start && msOfFrame(x.start) <= r.lastListed) : undefined;
+          if (refresher) {
+            v(`an instance buff's run ${sec(lo)} s late, over INSTANCE_LATE_MS, with a reapplication inside it (${sec(msOfFrame(refresher.start))} s): a refresh in place is likelier than holds`, lo / 1000);
             continue;
           }
           const tag = `run ${g}|${owner} on ${holder} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : "–end"} ms over ${Math.round(E)}`;
@@ -1673,9 +1681,12 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
 const APART_MS = 1000;
 
 /**
- * How late (ms, world time past the replay's expiry) an instance buff's run may be and still be a clock: about two
- * perfect dodges. Arcane's will_dmg / will_atk runs, refreshed in place with their start kept, ask 2–8 s (b6aa15281db4
- * from 2.1 s, 4d60e7fe92c2 from 10.8 s: 7.7 s); Perlica's Arts DMG Taken in 4360447193ac 0.74 s. An interim bound.
+ * How late (ms, world time past the replay's expiry) an instance buff's run may be and still be a clock where the replay
+ * reapplies the buff to its holder inside the run: about two perfect dodges. Arcane's will_dmg / will_atk runs, refreshed
+ * in place by her later bursts with their start kept, ask 2–8 s (b6aa15281db4 from 2.1 s, 4d60e7fe92c2 from 10.8 s:
+ * 7.7 s); Perlica's Arts DMG Taken in 4360447193ac 0.74 s. A run with no reapplication inside it can't have been
+ * refreshed, and is a clock up to HIDDEN_HOLD_SHARE as other buffs' runs are (5082ceaffad1: Xaihi's weapon team ATK
+ * from 27.37 s, its last instance, listed on Yvonne and Arcane 1.67 s past its expiry).
  */
 const INSTANCE_LATE_MS = 1000;
 

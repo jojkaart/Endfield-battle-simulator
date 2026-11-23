@@ -191,7 +191,7 @@ are at 30 FPS.
 - K22. Action gates: a skill may start after the current action's duration, inside a window (`AllowNextSkillAction`) that lists it, from the current action's exclusive frame, or at once if it outranks it. [DATA]
 - K23. Priorities by skillSpecification: basic 1, battle 2, finisher 2, combo 5, ultimate 7, dive always; others 2. [ASSUMED]
 - K24. Starting a skill ends the current one: its pending hits, delayed cast actions and `endsWithCast` buffs are cancelled, except detached hits (launched projectiles). [DATA]
-- K25. `cantCastSkill` channels (and a finisher's disable-cast frames) block every cast of that operator whatever the priority; `cantSwitchPosition` blocks swaps. [DATA]; ultimates [OPEN]
+- K25. `cantCastSkill` channels (and a finisher's disable-cast frames) block every cast of that operator whatever the priority; `cantSwitchPosition` blocks swaps. [DATA]; ultimates in a `cantCastSkill` channel [OPEN] (test 15); a finisher's disable-cast frames don't hold an ultimate, which cuts the finisher [LOGS] (engine assumption `finisher-ultimate`, 2026-11-23)
 - K26. A swap costs no time and doesn't stop the old operator's action; basic attacks and dives need the operator to be controlled; casting a basic attack or dive makes it controlled; `takesControl` ultimates take control. [ASSUMED]
 - K27. Chains: a chain step (attack2…) starts only while an earlier step's window lists it; an attack input during that window is that step. [DATA]
 - K28. `dontInterruptCombo` skills keep the chain's next step until 1 s (30 frames) after their exclusive time; other skills clear it. [ASSUMED] 1 s

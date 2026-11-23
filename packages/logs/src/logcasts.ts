@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, pathSlowdowns, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /**
@@ -33,15 +33,43 @@ export interface TimeStop {
 }
 
 /**
- * A cast's time stops from frame `at` (its skill's slow-downs, with their priority) and its resets as frames. Stops are
- * cut at the resets of every cast among them (withResets), as the engine does (timeline/clock.ts cutAtResets).
+ * A cast's time stops from frame `at` (its skill's slow-downs along the path the cast took, with their priority) and its
+ * resets as frames. Stops are cut at the resets of every cast among them (withResets), as the engine does
+ * (timeline/clock.ts cutAtResets). `landed`: the kit frames of the cast's logged landings, which show the path
+ * (pathOf); without them a skill with conditional jumps keeps every slow-down.
  */
-export function skillStops(data: GameData, skillId: string, at: number, who: Omit<TimeStop, "start" | "scales" | "priority">): { readonly stops: TimeStop[]; readonly resets: { readonly frame: number; readonly priority: number }[] } {
+export function skillStops(data: GameData, skillId: string, at: number, who: Omit<TimeStop, "start" | "scales" | "priority">, landed?: readonly number[]): { readonly stops: TimeStop[]; readonly resets: { readonly frame: number; readonly priority: number }[] } {
   const t = data.skills[skillId]?.timing;
   return {
-    stops: (t?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, ...who, ...(d.priority !== undefined ? { priority: d.priority } : {}) })),
+    stops: (t ? pathOf(t, landed) : []).map((d) => ({ start: at + d.from, scales: d.scales, ...who, ...(d.priority !== undefined ? { priority: d.priority } : {}) })),
     resets: (t?.resets ?? []).map((r) => ({ frame: at + r.at, priority: r.priority })),
   };
+}
+
+/**
+ * A cast's slow-downs along the path its landings show (engine pathSlowdowns: its ends and the jumps taken): a conditional
+ * jump is taken when a landing comes at or past its target and none between its frame and the target (of several from
+ * one frame, the farthest so reached). Rossi's sequence 2 (combo_3) on its perfect path ends at frame 211, so its frame-212
+ * slow-down, the late path's, never comes (489c0be3e162's at 51.90 s put 0.42 s of stop at 58.97 s that the replay's
+ * own timeline, which judges the jump at the cast, never had). With conditional jumps and no landing: every slow-down.
+ */
+function pathOf(t: SkillTiming, landed?: readonly number[]): SkillTiming["slowdowns"] {
+  const conditional = t.jumps.filter((j) => j.conditional);
+  if (conditional.length > 0 && !landed?.length) return t.slowdowns;
+  const taken = t.jumps.filter((j) => !j.conditional).map((j) => ({ from: j.at, to: j.to }));
+  for (const at of new Set(conditional.map((j) => j.at))) {
+    const reached = conditional.filter((j) => j.at === at && (landed ?? []).some((f) => f >= j.to) && !(landed ?? []).some((f) => f > j.at && f < j.to));
+    const far = reached.reduce<(typeof reached)[number] | null>((m, j) => (!m || j.to > m.to ? j : m), null);
+    if (far) taken.push({ from: far.at, to: far.to });
+  }
+  return pathSlowdowns(t, taken);
+}
+
+/** The kit frames of each placed cast's landings (PlacedHit.frame), which show the path it took (skillStops). */
+export function castFrames(placement: Pick<Placement, "hits">): Map<LoggedCast, number[]> {
+  const out = new Map<LoggedCast, number[]>();
+  for (const p of placement.hits.values()) if (p.frame !== undefined && p.sameAs === undefined) out.set(p.cast, [...(out.get(p.cast) ?? []), p.frame]);
+  return out;
 }
 
 /** Stops cut at the resets among their casts (skillStops; Arcane's combo at its frame 9: engine assumption combo-reset). */
@@ -64,8 +92,8 @@ export function withResets<T extends TimeStop>(parts: readonly { readonly stops:
  * Every list is built by skillStops and cut by withResets; nothing else in packages/logs reads SkillTiming.slowdowns or
  * resets for a list (tests/stops-source.test.ts).
  */
-export function castTimeStops(data: GameData, casts: readonly LoggedCast[]): TimeStop[] {
-  return withResets(distinctCasts({ hits: new Map(), casts }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind })));
+export function castTimeStops(data: GameData, casts: readonly LoggedCast[], frames?: ReadonlyMap<LoggedCast, readonly number[]>): TimeStop[] {
+  return withResets(distinctCasts({ hits: new Map(), casts }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind }, frames?.get(c))));
 }
 
 /** The world's time from `from` to `to` ms under time stops, in ms: each frame counts at the lowest scale of the stops then (1 without one). */
@@ -393,11 +421,12 @@ function exactSlots(g: Group, key: string): boolean {
  * 11.3 s runs on across Jsspsi's combo and Last Rite's ultimate).
  */
 export function placeHits(data: GameData, fx: LogFixture): Placement {
-  const first = placeWith(data, fx, []).casts;
+  const firstPlacement = placeWith(data, fx, []);
+  const first = firstPlacement.casts;
   // The placed casts' stops cut at their resets, and the unplaced cast events' stops as they are: an event's time is the
   // press, not the cast, so its reset is no time to cut at (1cd1657bc305: Arcane's combo event at 34.70 s, cast at
   // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
-  const placed = placeWith(data, fx, [...castTimeStops(data, first), ...unplacedCastStops(data, fx, first).flatMap((p) => p.stops)]);
+  const placed = placeWith(data, fx, [...castTimeStops(data, first, castFrames(firstPlacement)), ...unplacedCastStops(data, fx, first).flatMap((p) => p.stops)]);
   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
   const merge = new Map<string, number>();

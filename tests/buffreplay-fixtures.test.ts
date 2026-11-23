@@ -383,3 +383,16 @@ describe("4360447193ac: Gilberta's Vulnerable stacks past 20 s on a tower boss (
     expect(v?.kind === "match" ? v.class : v?.kind).toBe("plain");
   });
 });
+
+describe("5082ceaffad1: an instance buff's run with no reapplication inside it is a clock, however late (2026-11-23)", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-5082ceaffad1.json", import.meta.url).pathname);
+
+  it("holds Xaihi's weapon team ATK from 27.37 s (her last instance) to Arcane's 50.51 s hits, as the log lists it", () => {
+    // Listed on Arcane and Yvonne to 51.1 s, 1.67 s of world time past the replay's expiry (49.43 s): over
+    // INSTANCE_LATE_MS, but nothing reapplies it inside the run, so no refresh in place explains it (buffreplay.ts
+    // runBounds). Arcane's laser and attack 2 there were ×1.18.
+    const v = checkLog(data, fx).filter((x) => x.hit.t === 50506 && x.hit.operator === "chr_0032_lizhiyan");
+    expect(v.length).toBe(2);
+    expect(v.map((x) => (x.kind === "match" ? x.class : x.kind))).toEqual(["plain", "plain"]);
+  });
+});

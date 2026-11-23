@@ -12,7 +12,7 @@ import { FINISHER_SP_SOURCE_TYPE } from "../constants.ts";
 import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Scheduled, TimelineContext, TimelineState } from "./state.ts";
 import { DIVE, ENERGY, JUMP, linkValue, SP } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
-import { slowDown } from "./clock.ts";
+import { pathSlowdowns, slowDown } from "./clock.ts";
 import { engineReading } from "./assumptions.ts";
 import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spAt, spCostAt, spGrantOf } from "./resources.ts";
 import { chainAfter, windowKey } from "./timing.ts";
@@ -106,14 +106,7 @@ function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operat
  * (a trigger's `jump`) can't be foreseen here.
  */
 function plannedSlowdowns(timing: SkillTiming, planned: readonly PendingJump[]): SkillTiming["slowdowns"] {
-  if (planned.length === 0) return timing.slowdowns;
-  const skips: { from: number; to: number }[] = [];
-  for (const j of [...planned].filter((x) => !x.end).sort((a, b) => a.from - b.from)) if (!skips.some((k) => j.from > k.from && j.from < k.to)) skips.push({ from: j.from, to: j.to });
-  const skipped = (x: number) => skips.some((k) => x > k.from && x < k.to);
-  const end = Math.min(Infinity, ...planned.filter((x) => x.end && !skipped(x.from)).map((x) => x.from));
-  return timing.slowdowns
-    .filter((d) => !skipped(d.from) && d.from < end)
-    .map((d) => ({ ...d, from: d.from - skips.filter((k) => k.to <= d.from).reduce((t, k) => t + (k.to - k.from), 0) }));
+  return pathSlowdowns(timing, planned.filter((x) => !x.end));
 }
 
 /**

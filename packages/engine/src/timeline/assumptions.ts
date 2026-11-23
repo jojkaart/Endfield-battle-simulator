@@ -129,6 +129,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "finisher-ultimate",
+    question: "Does a finisher's disable-cast buff (buff_common_power_attack_disable_cast_skill, the finisher's frames 0 to its last hit or past it) hold the operator's ultimate, as it holds her battle skill and combo (timeline/timing.ts afterCantCast)? The buff's tags include battle-skill (-1486085048, buff_common_disable_normal_skill's) and dash (-1601691447, buff_common_disable_dash's) and one no other buff has (-496376350); Typhoeus's hover, which allows her combo and ultimate, carries the other two.",
+    default: "cuts",
+    readings: {
+      cuts: "it doesn't: an ultimate pressed inside it starts at once and cuts the finisher, whose hits still to come never land (every logged ultimate inside one: pending/zmdlogs-458b03609665.json, Laevatain's at 156.27 s, 20 frames before frame 42, and 223.17 s, 3 frames before, no hit_2 logged either time; pending/zmdlogs-d5720d9ceb94.json, Rossi's at 121.89 s, placed from its own hits, 17 frames into her finisher, whose window runs to 65: neither the frame-15 hit nor hit_2 logged) (2026-11-23)",
+      held: "it holds every cast, the ultimate too (the engine until 2026-11-23)",
+    },
+  },
+  {
     id: "stagger-freeze",
     test: "110",
     question: "Does a freezing control status (Si's Immobilization, Tangtang's OLDEN STARE, Rossi's ultimate) hold a running Stagger's end (timeline/actions.ts runTriggers)?",

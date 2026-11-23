@@ -86,8 +86,12 @@ export interface SkillTiming {
    * so it's open only when the kit says (KitSkill.windows).
    */
   readonly windows: readonly { readonly from: number; readonly to: number; readonly skills: readonly string[]; readonly conditional?: boolean }[];
-  /** ChannelingCastingAction: the caster can't cast skills / can't be swapped out, from `from` to `to`. */
-  readonly channels: readonly { readonly from: number; readonly to: number; readonly cantCastSkill: boolean; readonly cantSwitch: boolean }[];
+  /**
+   * ChannelingCastingAction: the caster can't cast skills / can't be swapped out, from `from` to `to`. `finisher`: the
+   * channel is a finisher's disable-cast buff (buff_common_power_attack_disable_cast_skill), which an ultimate goes
+   * through, cutting the finisher (engine assumption finisher-ultimate).
+   */
+  readonly channels: readonly { readonly from: number; readonly to: number; readonly cantCastSkill: boolean; readonly cantSwitch: boolean; readonly finisher?: true }[];
   /** skillSpecification: 1 basic attack, 3 battle skill, 4 combo, 5 ultimate, 6 plunging, 8 finisher. */
   readonly specification: number;
   /** dontInterruptCombo: casting it keeps the basic-attack chain's next step. */
