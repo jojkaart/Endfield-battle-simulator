@@ -3,6 +3,7 @@
 // battle-skill hit frames for a log's gaps took three attempts). Kit files have no frames; they come from SkillData.
 
 import { FPS, type GameData, type KitApplication, type KitHit, type KitSkill, type OperatorKit } from "@efsim/engine";
+import { isSkillFileListed, readSkillFile } from "@efsim/data";
 import { landingFrames, operatorNamed } from "@efsim/logs";
 import { command } from "../command.ts";
 
@@ -44,8 +45,13 @@ function skillLines(data: GameData, operator: string, s: KitSkill): string[] {
   // enhanced one (the finisher-gate report: the Finisher's gate rests on it).
   const group = data.operators[operator]?.skillGroups[s.skillId];
   const kind = group !== undefined && group !== s.kind ? `${s.kind}; skill group ${group}${s.kind === "basic" ? ": an enhanced basic attack" : ""}` : s.kind;
+  // Every time-dilation action in its SkillData file and what the compiler made of it (a reset, a priority, or dropped:
+  // friction round 7, Arcane's combo reset was dropped silently).
+  const file = isSkillFileListed(s.skillId) ? readSkillFile(s.skillId) : null;
+  const dilations = [...(file?.dilations ?? [])].sort((a, b) => a.frame - b.frame).map((d) => `frame ${d.frame} ${d.type === "UltimateTimeAction" ? "ultimate stop" : `dilation layer ${d.layer ?? "?"}${d.curve ? ` (${d.curve})` : ""}`}${d.priority !== null ? ` priority ${d.priority}` : ""}: ${d.compiled}`);
   return [
     `  ${s.skillId} (${kind}) "${s.label}": ${timing}`,
+    ...(dilations.length ? [`      time dilations: ${dilations.join("; ")}`] : []),
     ...(s.available !== undefined ? [`      available if ${pred(s.available)}`] : []),
     ...(s.beside !== undefined ? [`      beside the running cast if ${pred(s.beside)}`] : []),
     ...(s.followUpOnly ? ["      only as a follow-up (a skill's own cast action starts it)"] : []),

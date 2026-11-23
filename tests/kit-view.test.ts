@@ -30,6 +30,14 @@ describe("efsim kit: skill groups and applications", () => {
   });
 });
 
+describe("efsim kit: what the compiler made of each time dilation", () => {
+  it("shows Arcane's combo reset, its priority, and the layer-1 dilation it drops", () => {
+    const text = kitView(data, "Arcane", /_combo_skill$/);
+    expect(text).toMatch(/time dilations: .*frame 9 dilation layer 0 \(RESETto1\) priority -?\d+: reset/);
+    expect(text).toMatch(/layer 1 \(own curve\) priority -?\d+: dropped: layer 1/);
+  });
+});
+
 describe("efsim assumptions", () => {
   it("lists every open assumption with its readings and default, filtered by a regex", () => {
     const all = assumptionsList(data);

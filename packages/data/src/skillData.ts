@@ -23,6 +23,37 @@ export interface RawSkillFile {
    * window listing this skill opens for those too.
    */
   readonly switchCasts: readonly string[];
+  /**
+   * Every time-dilation action the file has (UltimateTimeAction, TimeDilationAction) and what the compiler made of it:
+   * a slow-down, a reset, or why it dropped it (friction round 7: Arcane's combo reset was dropped silently and found by
+   * hand). Not in the compiled game data; `efsim kit` and `efsim gamedata dilations` print it.
+   */
+  readonly dilations: readonly SkillDilation[];
+}
+
+/** A time-dilation action of a skill file and what the compiler made of it (RawSkillFile.dilations). */
+export interface SkillDilation {
+  readonly frame: number;
+  readonly type: "UltimateTimeAction" | "TimeDilationAction";
+  /** Its layer (TimeDilationAction: 0 the world's), priority tag and curve (a named curve, or "own curve"). */
+  readonly layer: number | null;
+  readonly priority: number | null;
+  readonly curve: string | null;
+  /** "slow-down", "reset", or "dropped: <why>". */
+  readonly compiled: string;
+}
+
+/** What readSkillFile makes of a time-dilation action (SkillDilation.compiled), by the rules it compiles with. */
+function dilationOutcome(o: Record<string, unknown>, ultimate: boolean, intervalFrames: number): string {
+  if (o["isEnable"] === false) return "dropped: switched off (isEnable false)";
+  if (ultimate) return "slow-down";
+  if (o["layer"] !== 0) return `dropped: layer ${String(o["layer"])} (only layer 0, the world's, is compiled)`;
+  if (slowdownOf(o, intervalFrames)) return "slow-down";
+  if (o["useCurveKey"] === true && o["curveKey"] === "RESETto1") return dilationPriority(o) !== null ? "reset" : "dropped: a reset without a priority tag";
+  const dur = o["duration"] as { value?: number } | undefined;
+  if (!(typeof dur?.value === "number" && dur.value > 0)) return "dropped: no duration";
+  if (o["useCurveKey"] === true && !NAMED_CURVES[String(o["curveKey"])]) return `dropped: curve ${String(o["curveKey"])} unknown (skillData.ts NAMED_CURVES)`;
+  return "dropped: never below scale 1";
 }
 
 /** A Unity AnimationCurve key (TimeDilationAction timeScaleCurve). */
@@ -164,12 +195,24 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
   const channels: { from: number; to: number; cantCastSkill: boolean; cantSwitch: boolean }[] = [];
   const slowdowns: { from: number; scales: number[]; priority?: number }[] = [];
   const resets: { at: number; priority: number }[] = [];
+  const dilations: SkillDilation[] = [];
   // `conditional`: under a TogglableAction or an IfElse branch, the window is open only when its condition holds (the kit says when).
   const find = (node: unknown, from: number, to: number, conditional = false) => {
     if (Array.isArray(node)) return node.forEach((x) => find(x, from, to, conditional));
     if (typeof node !== "object" || node === null) return;
     const o = node as Record<string, unknown>;
     const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (type.includes("UltimateTimeAction") || type.includes("TimeDilationAction")) {
+      const ultimate = type.includes("UltimateTimeAction");
+      dilations.push({
+        frame: from,
+        type: ultimate ? "UltimateTimeAction" : "TimeDilationAction",
+        layer: typeof o["layer"] === "number" ? o["layer"] : null,
+        priority: dilationPriority(o),
+        curve: ultimate ? null : o["useCurveKey"] === true ? String(o["curveKey"]) : "own curve",
+        compiled: dilationOutcome(o, ultimate, to - from),
+      });
+    }
     if (o["isEnable"] !== false && type.includes("AllowNextSkillAction")) {
       windows.push({ from, to, skills: ((o["allowedSkillIdList"] ?? []) as unknown[]).filter((x): x is string => typeof x === "string"), ...(conditional ? { conditional: true as const } : {}) });
     }
@@ -237,7 +280,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     ...(interruptibleFrom.length ? { interruptibleFrom: [...new Set(interruptibleFrom)].sort((a, b) => a - b) } : {}),
     ...(inputMap.size ? { inputMap: [...inputMap].sort() } : {}),
   };
-  return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j), switchCasts: switchCastsOf(j) };
+  return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j), switchCasts: switchCastsOf(j), dilations };
 }
 
 /** The skills a skill file's switchToBuffConfig buffs cast (their enabled CastSkill actions with a literal skill ID). */
