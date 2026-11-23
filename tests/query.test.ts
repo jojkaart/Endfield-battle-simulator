@@ -90,6 +90,14 @@ describe("the census", () => {
     expect(() => parseSelector("combo")).toThrow(/cast:<regex>/);
   });
 
+  it("selects hit groups by their Stagger origin (origin:)", () => {
+    const items = logs.flatMap((d) => selectItems(data, d.fx, parseSelector("origin:normal_skill")));
+    const hits = logs.flatMap((d) => d.fx.hits.filter((h) => /normal_skill/.test(h.poise?.origin ?? "")));
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.length).toBeLessThanOrEqual(hits.length);
+    for (const i of items) expect(i.label).toMatch(/\(origin .*normal_skill/);
+  });
+
   it("finds the nearest item of another selection inside the window", () => {
     const text = census(data, logs, { select: parseSelector("event:attack"), near: parseSelector("cast:combo_skill"), window: { from: -2000, to: 2000 }, list: true, rerun: "x", logs: "y" });
     expect(text).toMatch(/with a near item/);

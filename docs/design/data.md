@@ -397,6 +397,13 @@ detail):
   under ~0.2 s, or one at a ms many hits share, isn't timing evidence;
   "uneven batches" of a periodic hit may be the log's, not the game's.
   World time between two moments: `efsim zmdlogs worldtime`.
+- **A hit's Stagger origin** (`LogHit.poise.origin`, imports and refreshes
+  since 2026-11-16; 2026-11-23, Si's strokes): the skill whose cast the
+  hit's Stagger is credited to, the skill id the hit's own skill inherits
+  its cast from. It tells hits of one event key apart by what launched
+  them: Si's ink burst after a Final Stroke (origin `normal_skill_2`) from
+  one at an Inksoul's expiry (`normal_skill_inkmove_2`). Only on hits that
+  dealt Stagger. `efsim zmdlogs census --select 'origin:<re>'` counts them.
 - **A hit inside its own cast's stop** (2026-11-23) is logged where the
   stop ends, not at its frame: Liino's combo hit 1 (frame 9, the world at
   0.01 to frame 10) comes 0.1–0.9 s (median 0.23 s) before hit 2 (frame

@@ -141,7 +141,9 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                                           verified and pending development log); the output's first lines record the
                                           selection and the command that reruns it: cite them with a claim.
                                           <sel>: cast:<regex> (skill instances), event:<regex> (hit groups of a logged
-                                          event key, a gap over 1 s starts one), buff:<regex> (runs of a listed buff)
+                                          event key, a gap over 1 s starts one), buff:<regex> (runs of a listed buff),
+                                          origin:<regex> (hit groups whose Stagger the log credits to a matching
+                                          skill: poise.origin, imports since 2026-11-16)
                 [--operator <op>]         Only these operators' items (repeatable)
                 [--near <sel>] [--near-operator <op>]  Also whether an item of this selection is near each item…
                 [--within ms | --window from,to]  …within ±ms (default 1000), or from..to ms relative to it (0,700:
@@ -279,7 +281,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
         if (operators.length !== 1 || values.event === undefined) throw new Error("zmdlogs cadence takes one --operator <op> and --event <regex>");
         return cadenceView(data(), logs, operators[0] as string, new RegExp(values.event));
       }
-      if (values.select === undefined) throw new Error("zmdlogs census takes --select <cast:|event:|buff:regex>");
+      if (values.select === undefined) throw new Error("zmdlogs census takes --select <cast:|event:|buff:|origin:regex>");
       const window = values.window !== undefined ? values.window.split(",").map(Number) : values.within !== undefined ? [-Number(values.within), Number(values.within)] : [-1000, 1000];
       if (window.length !== 2 || window.some((x) => !Number.isFinite(x))) throw new Error("--within takes ms, --window from,to (ms)");
       const nearOps = values["near-operator"].map((o) => operatorNamed(data(), o));

@@ -303,7 +303,8 @@ export function buffsView(data: GameData, logs: readonly DevFixture[], opts: { r
 
 /** A census selector: casts of a skill, hits of an event key (grouped: a gap over GROUP_GAP_MS starts a new group), or runs of a listed buff. */
 export interface Selector {
-  readonly what: "cast" | "event" | "buff";
+  /** origin: hit groups (as event's) of hits whose poise.origin matches (round 6: Si's bursts by the skill they're credited to). */
+  readonly what: "cast" | "event" | "buff" | "origin";
   readonly re: RegExp;
 }
 /** A gap between two hits of one key that starts a new group (ms). */
@@ -311,8 +312,8 @@ export const GROUP_GAP_MS = 1000;
 
 /** `cast:<regex>`, `event:<regex>` or `buff:<regex>` as a Selector. */
 export function parseSelector(text: string): Selector {
-  const m = /^(cast|event|buff):(.+)$/.exec(text);
-  if (!m) throw new Error(`${text}: a selector is cast:<regex> (skill instances), event:<regex> (hit groups of a logged event key) or buff:<regex> (runs of a listed buff)`);
+  const m = /^(cast|event|buff|origin):(.+)$/.exec(text);
+  if (!m) throw new Error(`${text}: a selector is cast:<regex> (skill instances), event:<regex> (hit groups of a logged event key), buff:<regex> (runs of a listed buff) or origin:<regex> (hit groups whose Stagger is credited to a matching skill: LogHit.poise.origin)`);
   return { what: m[1] as Selector["what"], re: new RegExp(m[2] as string) };
 }
 
@@ -334,12 +335,13 @@ export function selectItems(data: GameData, fx: LogFixture, sel: Selector, opera
   const out: Item[] = [];
   const last = new Map<string, number>();
   for (const h of [...fx.hits].sort((a, b) => a.t - b.t)) {
-    if (!mine(h.operator) || !sel.re.test(h.event)) continue;
-    const key = `${h.operator}|${h.event}`;
+    const origin = h.poise?.origin;
+    if (!mine(h.operator) || !(sel.what === "origin" ? origin !== undefined && sel.re.test(origin) : sel.re.test(h.event))) continue;
+    const key = `${h.operator}|${h.event}|${sel.what === "origin" ? origin : ""}`;
     const prev = last.get(key);
     last.set(key, h.t);
     if (prev !== undefined && h.t - prev <= GROUP_GAP_MS) continue;
-    out.push({ t: h.t, operator: h.operator, label: shortSkill(h.event) });
+    out.push({ t: h.t, operator: h.operator, label: sel.what === "origin" ? `${shortSkill(h.event)} (origin ${shortSkill(origin as string)})` : shortSkill(h.event) });
   }
   return out;
 }
