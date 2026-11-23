@@ -22,7 +22,7 @@ import { logBuffReplay } from "./logcheck.ts";
 import { worldMs } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
 import { buffLanes, operatorLabel, replayTimeStops, type BuffLane } from "./query.ts";
-import type { BuffTrace } from "./buffreplay.ts";
+import type { BuffTrace } from "./replayrecord.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
