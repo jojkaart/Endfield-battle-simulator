@@ -1013,6 +1013,18 @@ potential), his weapons pistol_0004 and 0009, enemy level/DEF, food and a
 fight-wide factor for c83c, c7790, f879, f978. For the ticks left: the
 buffs a Combustion's own application creates (in the snapshot now).
 
+**458b (2026-11-23, looked at, not fixed):** Wulfgard's Combustion from
+~84.7 s: the log's ticks read 1917 (79.33, 82.33 s), 2493 at 85.70 s (=
+1917 × the Stagger's 1.3, Staggered from 85.60 s), 3190 at 86.69 and
+88.33 s (×1.28: Si's ultimate Amp and her set's team DMG, which the
+replay's landings there carry but the snapshot leaves out), 2941 from
+89.34 s (×0.922: Akekuri's squad ATK gone). The replay's ticks come 0.3–0.5
+s later than the log's (hidden holds placed at 80.95, 83.17 and 85.39 s
+move them), are matched one behind from 88.33 s, and stay at 2493: its
+snapshot doesn't follow what the log's ticks do. Whether the hold clocks
+round's 6.1 → 7.5% is these ticks: not checked (an A/B at 235d717 against
+its parent on 458b's Wulfgard hits would say).
+
 **Still possible (ticks left):** a snapshot retaken when Heat lands on a
 burning enemy (458b ×1.28, f879); which Combustion a logged tick belongs
 to where two overlap (db87's swapped ratios); ticks the log drops or the
@@ -1392,6 +1404,14 @@ against 3f78's); why an immune enemy still holds the freezer's own debuffs
 (no data mechanism found: Artful Intent and Arcane's will_atk have the same
 time-dilation flags).
 
+**Found (2026-11-23, ramp slow-downs round):** Corrosion's ramp, which no
+verdict could tell apart before, runs on through a freeze on an enemy that
+freezes: f978 (Si, 57.6 s: at most 0.51 s of its 1.5 s held), a7a7 (Si,
+18.1 s: 0.68 s), 7910 (Tangtang's stare, 47.8 s: about 0.7 s of 4 s), from
+the ramp's steps (scripts/probes/corrosion/freezeramp.ts). The engine now
+holds Corrosion's end but not its ramp in a freeze (assumption
+`freeze-ramp`, default `runs`); its end isn't tested by any log yet.
+
 ## The buff clock: unlogged world holds keep buffs past their end (2026-11-22; test 111)
 
 **Shows:** every run of a listed game buff a team kit stands for, over the 77 development logs whose listings carry the
@@ -1551,12 +1571,52 @@ keeps a listed buff to its listing's end.
   the replay holds the ramp longer than the game across some combos (a combo pressed inside another's slow-down: 3f78,
   4a64, a7a7's openers), which no hidden hold can undo. a7a7 (lead 3: Si's combo stop alone holds 0.53 s where the log
   allows 0.42) is one of them: unchanged.
+- **What over-holds it (2026-11-23, ramp slow-downs round; scripts/probes/corrosion/ramp-pairs.ts, freezeramp.ts):**
+  read per reading against its stops, the 146 aren't one combo rule but four causes:
+  - **Freezes, not combos (f978 33, 7910):** the replay's freeze held the ramp its whole length; the log's steps run on
+    through it: Si's Immobilization in f978 at 57.6 s allows at most 0.51 s of hold in its 1.5 s, a7a7 at 18.1 s
+    0.68 s, Tangtang's stare in 7910 at 47.8 s about 0.7 s of 4 s (the combos the old probe saw in those windows hold
+    what they should). **Fixed:** a freeze holds Corrosion's end but not its ramp (engine assumption `freeze-ramp`,
+    default `runs`; clock.ts `rampRunsOn`). f978 plain 444 → 469, a7a7 351 → 376 (mismatch 71 → 45), 7910 318 → 323;
+    alone: development 64.4 → 64.6%, hold-outs 73.5 → 74.0% (2 better, 0 worse).
+  - **Arcane's combo resets the combo slow-down (3f78, 4a64, 9a80, 9c6e, fc63):** her combo's SkillData has, besides
+    its 0.6 s ComboSkill dilation, a layer-0 TimeDilationAction back to scale 1 (curve RESETto1, 1 frame) at frame 9,
+    in the same priority tag as every combo's (timeDilationPriority −593023102). Under the lowest-scale rule a reset
+    does nothing; the game keeps one dilation per priority, so it ends her own slow-down at frame 9 and any teammate's
+    combo slow-down running then. 3f78's opener (Corrosion at 1.33 s, whose battle-skill event 0.63 s + 20 frames puts
+    the application where it's logged, so the reading is sound): the steps allow 0.61–0.73 s held by 3.0 s; the
+    lowest-scale rule 0.92 s, with the reset 0.72 s. **Built:** SkillTiming.resets and each slow-down's `priority`
+    (skillData.ts), the engine ends the running slow-downs of that priority at the reset and gives each clock back
+    what they would still have taken (clock.ts `cutAtResets`, `resetSlowdowns`: negative shifts), and every stop list
+    the views and bounds use is cut the same way (logcasts.ts `skillStops`, `withResets`). Engine assumption
+    `combo-reset`, default `resets` (the views cut at resets whatever the reading). 3f78 plain 53 → 63, 4a64 150 →
+    156 (mismatch 2 → 0), 9c6e 164 → 169, 9a80 221 → 223. Alone (with the views uncut) it was mixed (hold-outs 73.5
+    → 73.4%: the bounds counted her stop whole while the engine cut it); with the views cut, against that: hold-outs
+    2 better, 0 worse.
+  - **The application's logged ms (a7a7 3.87 s and 20.53 s, 489c 49.31 s):** readings that put the log's ramp ahead
+    of real time since its `since` (a7a7 20.65 s: step 1 at 0.12 s), so the application was earlier than logged.
+    a7a7 3.87: Arcane's battle-skill event at 2.31 s puts its hit (frame 20) at 2.98 s, just before Liino's combo
+    stop (3.00–3.93 s), and the log has it at 3.86 s, the stop's end (a hit before a stop logged at its end); the
+    placement starts the cast from the hit through the stop (castStart, heldStart: 2.56 s, never before the event),
+    so the replay's Corrosion comes at 3.86 s and misses the 0.32 s of world time Liino's stop lets through. A pair of
+    readings doesn't depend on `since` (ramp-pairs.ts): without it, a7a7, 489c and 9a80 need no hold below zero.
+    Not built: castStart taking a battle skill's event over the held start when a stop starts within a few frames
+    of event + hit frame.
+  - **Left (ramp-pairs.ts, 150 ms a side, readings inside stops left out):** Rossi's combos in 3f78 (combo_2 at
+    5.77 s and combo_3 at 7.80 s: 0.87 s held where the pairs allow 0.72 s) and 4a64 (combo_3 at 8.93 s: 0.35 s where
+    0.14 s), her combo_3 carrying two dilations at frame 0 (0.4 s in priority −361293424, 0.633 s in the combo
+    priority) that the engine takes at the lowest scale; Zhuang Fangyi's ultimate in 4d60 placed from its cast event
+    (73.63 s: 2.60 s held, 2.43 s allowed).
 
 **Still possible / open:**
 - Where in a window the holds fall: half the units are placed only to 3 s or worse; the least total misses dodges no
   clock sees.
-- Which combo slow-downs hold Corrosion's ramp less than the engine (above: 139 of the 146 over-held readings with a
-  combo in the window; most combo windows need no less).
+- Which combo slow-downs hold Corrosion's ramp less than the engine: answered in part (above, 2026-11-23: freezes,
+  Arcane's reset, the application's logged ms); left Rossi's two-dilation combo_3 (whether one priority outranks the
+  other, or the latest replaces the earlier: the data names the tags, not their order) and whether one combo's
+  dilation replaces another's in general (latest wins) rather than the lowest scale (the logs' steps can't tell them
+  apart: the curves differ by tens of ms). Si's hits keep her own cadence while Arcane's combo slow-down runs in
+  3f78's opener (2.10–2.73 s): a combo's caster may not be held by another's combo slow-down at all.
 - **What else besides dodges** (holds a dodge can't be): 12 units fall in hitless spans of 3 s or more (0c14, 458b, a9d7,
   abfd, b6aa, c4f3, de6a: pauses the log's clock runs through, as 9c0b's and 4d60's); 9c0b's ~7.5 s after Laevatain's
   ultimate is placed only 3.9 s (its Forgeborn and Amp runs conflict, 7 dropped). Holds inside ultimates' stops: 489c's
@@ -1580,9 +1640,9 @@ keeps a listed buff to its listing's end.
   late in the replay. The replay's 0.1–0.2 s overhang at d572 30.0 s is that start. Next: crits a buff's listed layer
   count shows (a layer more on the next hit), as shownCrits does for Seething Blood.
 
-**Next check:** test 111 (perfect dodges during Si's Amp, counted: whether the holds are dodges at all); the combo
-slow-downs that over-hold the ramp (3f78, 9c6e, a7a7, 4d60: which combo, pressed when); the Stagger's ticks across
-stops (489c).
+**Next check:** test 111 (perfect dodges during Si's Amp, counted: whether the holds are dodges at all); a battle
+skill's hit just before a stop logged at its end (a7a7 3.86 s: castStart from the event); Rossi's combo_3 dilations;
+the Stagger's ticks across stops (489c).
 
 ## Laevatain's Twilight runs longer than its model (tests 17, 18, 21; 2026-11-22: her buffs' clock, not Twilight's)
 
@@ -2124,10 +2184,16 @@ is per frame); the slow-down curves' ramps. Rossi's ultimate stabs at
 58.8–59.3 s ×2.7 and their Seething Blood extras ×2.1 in 3f78 are Rossi's
 crit reading ("Rossi: her bleed…"), not food.
 
-**Next check:** the same opener in other logs (a combo pressed in
-another's combo stop, a timer running across): whether the logs' holds
-fit an earlier start of the pressed combos; then the Will buffs' instances
-in 3f78's second window.
+**Found and fixed (2026-11-23, ramp slow-downs round):** Arcane's combo
+resets the combo slow-down at its frame 9 (a RESETto1 dilation in the
+combo priority: "The buff clock", What over-holds it): the opener holds
+0.72 s (3f78) and 0.74 s (4a64), inside what the steps allow. 3f78 plain
+53 → 63 (mismatch 5 → 2), 4a64 150 → 156 (2 → 0). Left in these windows:
+Rossi's combo_2 and combo_3 (3f78 5.77–8.43 s, 4a64 8.93 s) still hold
+about 0.15–0.2 s more than the steps allow.
+
+**Next check:** Rossi's combo_3's two dilations; then the Will buffs'
+instances in 3f78's second window.
 
 ## The slow-down rule's reach (2026-11-11)
 

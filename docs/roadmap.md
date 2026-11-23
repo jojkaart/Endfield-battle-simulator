@@ -53,7 +53,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   the buff clock 2026-11-22: unlogged world holds, about a perfect dodge each, on one clock per fight;
   2026-11-23 the replay places them once from the log's clocks for every timer, `hidden-holds` `placed`:
   development plain 59.9 → 62.8%; they don't explain the SP shortfall; 2026-11-23 the enemy's statuses and
-  Corrosion's ramp as clocks too, d774 and db87 fixed; next test 111, combo stops over-holding the ramp, Wolven
+  Corrosion's ramp as clocks too, d774 and db87 fixed; the ramp's over-holds (freezes run the ramp on; Arcane's combo resets the combo slow-down at its frame 9); next test 111, a battle skill's hit logged at a stop's end, Rossi's combo_3 dilations, Wolven
   Blood's unlogged crits); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from

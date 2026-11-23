@@ -4,9 +4,67 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 123 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 124 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Corrosion's ramp under slow-downs: Arcane's reset, freezes
+
+**Goal:** the hold clocks' open direction (docs/journal/2026-11-23-02-hold-clocks-enemy-statuses-and-corrosion-s-ramp.md):
+146 of 3,553 ramp readings show the game's Corrosion ramp ahead of the replay's, 139 with a combo slow-down in the
+window. Which slow-downs over-hold it, and why; then the hold bounds on the replay's own stops; then 458b's Wulfgard
+Combustion ticks.
+
+**Found (open-problems "The buff clock", What over-holds it):** four causes, not one combo rule.
+- **Freezes** (f978's 33 readings, the largest bucket, and 7910): the replay's freeze held Corrosion's ramp its whole
+  length; the log's steps run on (Si's Immobilization in f978 at 57.6 s: ≤ 0.51 s held of 1.5 s; a7a7 18.1 s ≤ 0.68 s;
+  Tangtang's stare in 7910 47.8 s about 0.7 s of 4 s). The probe had counted Laevatain's combo in f978's window.
+- **Arcane's combo resets the combo slow-down:** its SkillData has a layer-0 TimeDilationAction back to scale 1 (curve
+  RESETto1) at frame 9, in the same priority tag as every combo's dilation (−593023102). Under the lowest-scale rule it
+  would do nothing; the game keeps one dilation per priority, so it ends her own 0.6 s slow-down at frame 9 and a
+  teammate's running then. 3f78's opener (an application the battle-skill event confirms): steps allow 0.61–0.73 s by
+  3.0 s, lowest scale 0.92 s, with the reset 0.72 s; 4a64 likewise.
+- **The application's logged ms** (a7a7 3.87 and 20.53 s, 489c 49.31 s): readings ahead of real time since `since`.
+  a7a7: Arcane's battle-skill event (2.31 s) puts its hit at 2.98 s, before Liino's combo stop, logged at the stop's
+  end (3.86 s); the placement starts the cast through the stop, so the replay applies Corrosion 0.9 s late.
+- **Left:** Rossi's combo_3 (two dilations at frame 0 in different priorities) in 3f78 / 4a64, ~0.15–0.2 s; Zhuang
+  Fangyi's ultimate placed from its event in 4d60 (0.17 s).
+
+**Done:**
+- Data: each compiled slow-down's `priority`, SkillTiming.resets (skillData.ts). Engine: `combo-reset` (default
+  `resets`): a reset ends the running slow-downs of its priority, its own too, and gives each clock back what they would
+  still have taken (clock.ts `cutAtResets`, `resetSlowdowns`; the shift functions take negative frames, floored after
+  the reset). `freeze-ramp` (default `runs`): a freeze holds Corrosion's end, not its ramp (`rampRunsOn`).
+  tests/slowdown-reset.test.ts.
+- Logs: every stop list is cut at the resets among its casts (logcasts.ts `skillStops`, `withResets`); the hold bounds
+  use the replay's own casts' stops (buffreplay.ts `replayedCastStops`, which `replayTimeStops` now calls). Probes
+  corrosion/ramp-pairs.ts (pairs of readings cap the model's hold between them, independent of `since`) and
+  freezeramp.ts.
+
+**Scoreboard** (`npm run snapshots:update` against 6921b3f): development plain 64.4 → 64.6%, mismatch 15.2 → 15.1%,
+|damage| 9.3%; hold-outs 73.5 → 73.7%, 6.4%, 10.8% (5 better, 4 worse); earlier pending 57.3 → 57.5%, 18.4 → 18.2%,
+8.0 → 7.9%; verified 77.7 → 77.9%, 1.9 → 1.8%. Better: f978 (444 → 469), a7a7 (351 → 376, mismatch 71 → 45), 3f78
+(53 → 63), 4a64 (150 → 156, mismatch 2 → 0), 9c6e, 891566, 7910, 9a80, c83c, b6aa, 2fd9, 99fb, 0eef, b7b3. Worse
+(knock-ons of the hidden holds placed again, small): 4d60 −4 plain (Zhuang Fangyi's strikes at 151.7–152.4 s land
+0.15–0.3 s off the log's), 79cc −4 (a Corrosion step ahead at 50.1–53.6 s, ×0.987: after Arcane's cut combo the log
+asks a dodge-sized hidden hold the bounds now place elsewhere), 9090 −3, 1d91 −1, af7b −1, d9e5 damage −0.1 pt; mixed
+00ae (−9 plain, a mismatch fewer), 489c, 9c0b, fc63, 1cd1. Measured apart: freeze-ramp alone 3 better, 0 worse
+(hold-outs 73.5 → 74.0%, 2 better, 0 worse); the reset alone, the stop lists uncut, mixed (hold-outs 73.4%, 4 worse);
+cutting the lists then 2 better, 0 worse on the hold-outs; the bounds on the replay's stops alone: 2 better, 1 mixed.
+
+**Teams** (team-ab against 6921b3f, seeds 1001–1032; both teams have Arcane, whose combo now holds the world 9
+frames): Estella's sustained DPS +0.10% full / −0.13% zero (60 s timeline +4.92% / −1.61%: one rotation's casts moved),
+Typhoeus's +0.34% / −0.04% (as a bot at zero energy +4.40%; 60 s timeline −0.26% / −0.01%). Sustained numbers within
+their seed spread; the owner's rules need no re-search for this. Examples snapshot moved accordingly.
+
+**Decisions:** the reset in the engine, not a per-log fix: the data carries it, and only a replacing dilation makes
+it mean anything. One priority tag per dilation recorded for every slow-down (the reset names its priority). The
+views and bounds cut at resets whatever the `combo-reset` reading (they have no scenario). Lead 3 (458b) looked at,
+not fixed (open-problems "Ink Melt logs").
+
+**Dead ends:** per-cluster brackets of the hold across a stop from the ramp (a step is 1 s wide: brackets of ±1 s,
+uninformative); the readings with the application as one end (they mix in the application's logged-ms errors: the
+pairwise test without it separates them).
 
 ## 2026-11-23: Improvement round 6: a kit buff's clock, probes, the split
 
@@ -368,37 +426,3 @@ hit, Forgeborn +6–7.8 s), hit-stops in part. Next: the buff clock over every l
 listed buff's natural end against the replay's. Friction report
 docs/friction/2026-11-22-twilight.md (a `--long` trace and a lane-end view would have
 found the probe in minutes).
-
-## 2026-11-22: The rule search decides: an objective across starts, rule sets, setups
-
-**Goal:** the owner: "The whole point of this simulator is to discover [the rules] for each team." Three rule
-questions had been left as the owner's call because the guided search had no objective across the fight's two starts
-(full energy, the zero-energy companion). Later the same day, also from the owner: conditionally active rule sets, so a
-team with Arcane and a non-Nature inflicter can play a Corrosion setup phase.
-
-**Done** (docs/design/rules.md "The objective across starts", "Rule sets", "The search decides"):
-- **The objective:** every list played on both starts on the same seeds, each seed scored by the two starts' mean
-  sustained DPS (`startsObjective`); the guided search's default (`--objective mean`; `first` the old veto), per-start
-  gains in its report, `efsim rules --compare` the same. Chosen over one long fight from zero because both starts
-  happen in play and a fight from zero never returns to four full bars.
-- **Cues:** `ultimates` (how many ready at once, rank 4), `energy` (an ultimate's gauge, rank 5), `statusLevel` (a
-  status at a level, rank 3: Corrosion at full strength is level 4). In guideCues, the rule search's pool and its
-  threshold moves.
-- **Rule sets:** `sets: [{ name, when }]` and a rule's `set`; one ordered list, a set rule read only while its
-  condition holds (`effectiveRules`); the condition counts once in the learnability; flat lists unchanged.
-- **Search moves:** reaction setup sets (`reactionSetupEdits`: the applier at 4 stacks of another element, else the
-  inflicter, from spare SP or not, with the list's own guards), rules moved between sets (`setMoveEdits`), an edit
-  split by a start cue into two sets (`splitEdit`, after a round that keeps nothing or a kept edit that disagrees
-  between the starts), the rule search's `editSets`.
-- **Searches** (with-lock, 15–49 min each): the owner's team kept a Corrosion setup set: +1.06% ± 0.33 on 64 fresh
-  seeds with Akekuri's ultimate guard (+1.71% as found; Arcane's press alone +0.94%). Ink Melt: Laevatain's ultimate
-  waits for Corrosion, Si's for Combustion and Twilight: +3.21% ± 0.73 (64). Typhoeus's: ultimates wait for the hover,
-  Arcane's battle skill while the Stagger bar is below half: +8.62% ± 0.65 (32). Questions: Estella on Stagger no; Ink
-  Melt's rule 7 `shows` no (a loss from both starts now); the Twilight hold kept (dropping it −2.3%). Arcane INT
-  (Hot Work), each mode with its own searched list: −1.91% ± 0.60 (64): not worth farming. Examples changed; an INT variant in examples/variants/.
-
-**Problems:** the 2026-11-16 numbers behind the questions had all moved (the engine changes since): measured per start
-before designing anything. The owner's setup as found pressed Akekuri's battle skill inside her ultimate; the rules
-check in the test suite caught it, the setup move now copies the list's guards. The first INT search hit the 2 h
-background limit (queue wait included): rerun with 4 rounds from the new WILL list. `npx prettier` reformatted a file
-(no config in the repository): rebuilt from `git show HEAD`. Friction: docs/friction/2026-11-22-rule-objective.md.

@@ -108,7 +108,9 @@ and the other operators (their hits on the way, delayed actions, current
 action) lose the frames the slow-down takes; skill cooldowns run on raw
 time (the logs, in-game test 18: 58 combo pairs come back within their
 cooldown plus less than the stops between), and so do team SP's regen and its pause after a spend (the logs:
-the replay's SP shortfalls drop from 20 to 13 of 38 logs). Overlapping slow-downs: the lowest scale counts. The engine shifts
+the replay's SP shortfalls drop from 20 to 13 of 38 logs). Overlapping slow-downs: the lowest scale counts; a reset (SkillTiming.resets: a dilation back to scale 1 in a
+priority tag, Arcane's combo at its frame 9) ends every running slow-down of its priority, its own too, and gives
+the clocks back what they would still have lost (engine assumption `combo-reset`, clock.ts `resetSlowdowns`). The engine shifts
 what comes after the slow-down's start by the lost frames, which is exact
 for a stop and, for a partial slow-down, for everything after it ends;
 for an operator still in its own ultimate's stop (which another
@@ -160,8 +162,8 @@ The log check places a delayed landing by its damage's time
 (logcasts.ts `loggedFrames`, `joinDelayed`: the latest shot without its
 burst, within its frame plus 1 s of the enemy's time).
 **Freezes**: a control status with `freezes` (Si's Immobilization,
-Tangtang's OLDEN STARE, Rossi's ultimate) stops the enemy's own clock and
-every operator's debuffs on it, unless the enemy is control-immune (the
+Tangtang's OLDEN STARE, Rossi's ultimate) stops the enemy's own clock (Corrosion's end, not its ramp: assumption
+`freeze-ramp`) and every operator's debuffs on it, unless the enemy is control-immune (the
 data's tag 188749032, skipping the freeze). On a control-immune enemy it
 still holds the freezing operator's own debuffs (each buff's `owner`:
 Si's Artful Intent, Jade Vessel and her weapon's; Tangtang's for her
@@ -284,7 +286,7 @@ stepping API as `@efsim/engine` exports it) is split by concern under
 |---|---|
 | `state.ts` | the types: scenario, context, state, scheduled items (`Scheduled`), casts, landed hits |
 | `rules.ts` | fixed rules: team SP, energy, combo windows, dives, priorities, Link, `TIMELINE_ASSUMPTIONS` |
-| `assumptions.ts` | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, buff-in-stop, teammate-pause, stagger-recovery, hidden-holds (read by the log check's replay only: it places the hidden holds with clock.ts `holdWorld`), stagger-freeze, combo-window-count), switched by `TimelineOptions.assume` |
+| `assumptions.ts` | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, buff-in-stop, status-in-stop, combo-reset, freeze-ramp, teammate-pause, stagger-recovery, hidden-holds (read by the log check's replay only: it places the hidden holds with clock.ts `holdWorld`), stagger-freeze, combo-window-count), switched by `TimelineOptions.assume` |
 | `context.ts` | `createContext` (the build stage), panels, kit and skill lookups, skill costs and timing, the enemy's attributes |
 | `schedule.ts` | the scheduled list: the order within a frame (`IN_FRAME`, `dueBefore`) and one pass each to shift a clock, end a cast and jump on a cast's timeline |
 | `clock.ts` | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`; `holdWorld`, the world's clock alone held, for the log check's hidden holds), control immunity |
