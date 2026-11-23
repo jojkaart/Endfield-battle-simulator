@@ -38,7 +38,15 @@ export interface PerHit {
   readonly meanAbs: number;
 }
 export type MeasureAnswer =
-  | { readonly key: string; readonly entry: Record<string, Record<string, number | null>>; readonly perHit?: PerHit; readonly hits?: readonly HitRow[]; readonly seconds: number }
+  | {
+      readonly key: string;
+      readonly entry: Record<string, Record<string, number | null>>;
+      readonly perHit?: PerHit;
+      readonly hits?: readonly HitRow[];
+      /** The log lists effects but none with `since` and `source` (imported before 2026-11-16): a change resting on the lanes can't move it. */
+      readonly untimed?: boolean;
+      readonly seconds: number;
+    }
   | { readonly key: string; readonly placement: string; readonly casts?: readonly string[]; readonly seconds: number }
   | { readonly key: string; readonly negative: readonly NegativeCount[]; readonly seconds: number }
   | { readonly key: string; readonly error: string };
@@ -106,6 +114,12 @@ function modifiersAt(fx: any, replay: any): (hit: any) => string[] | null {
   };
 }
 
+/** Whether a log lists effects but none with `since` and `source` (MeasureAnswer `untimed`). */
+function untimed(fx: any): boolean {
+  const effects = (fx.hits as any[]).flatMap((h) => [...(h.effects ?? []), ...(h.boundaryEffects ?? [])]);
+  return effects.length > 0 && !effects.some((e) => e.since !== undefined && e.source !== undefined);
+}
+
 function placementOf(fx: any, withCasts = false): { placement: string; casts?: string[] } {
   const p = logs.placeHits(data, fx);
   const casts = logs.distinctCasts(p).map((c: any) => [c.operator, c.skillId, c.start]);
@@ -139,7 +153,7 @@ parentPort?.on("message", (job: MeasureJob) => {
     const fx = logs.readLogFixture(join(job.fixtures ?? join(tree, "fixtures"), job.key));
     const seconds = () => (performance.now() - start) / 1000;
     if (job.what === "negative") parentPort?.postMessage({ key: job.key, negative: negativeOf(fx, job.factors ?? [0.97, 1.03]), seconds: seconds() });
-    else parentPort?.postMessage(job.what === "entry" ? { key: job.key, ...entryOf(fx, job.hits === true), seconds: seconds() } : { key: job.key, ...placementOf(fx, job.hits === true), seconds: seconds() });
+    else parentPort?.postMessage(job.what === "entry" ? { key: job.key, ...entryOf(fx, job.hits === true), ...(untimed(fx) ? { untimed: true } : {}), seconds: seconds() } : { key: job.key, ...placementOf(fx, job.hits === true), seconds: seconds() });
   } catch (e) {
     parentPort?.postMessage({ key: job.key, error: e instanceof Error ? `${e.message}\n${e.stack ?? ""}` : String(e) });
   }

@@ -52,8 +52,16 @@ export function carry(text: string, wanted: readonly number[], start: number, la
   wanted.forEach((n, i) => {
     const p = ps.find((x) => x.n === n);
     if (!p) throw new Error(`no point ${n} (the file has ${ps.map((x) => x.n).join(", ")})`);
-    const body = p.body.map((l) => (/^- \*\*From:\*\* /.test(l) ? `${l.replace(/\.?\s*$/, "")}; ${label} point ${n}.` : l));
-    if (!p.body.some((l) => /^- \*\*From:\*\* /.test(l))) body.push(`- **From:** ${label} point ${n}.`);
+    // The From paragraph is its line and the indented lines after it (wrapped): extend its last line (round 7: the first
+    // line of a wrapped one got the addition in its middle).
+    const body = [...p.body];
+    const from = body.findIndex((l) => /^- \*\*From:\*\* /.test(l));
+    if (from < 0) body.push(`- **From:** ${label} point ${n}.`);
+    else {
+      let last = from;
+      while (last + 1 < body.length && /^ {2}\S/.test(body[last + 1] as string)) last++;
+      body[last] = `${(body[last] as string).replace(/\.?\s*$/, "")}; ${label} point ${n}.`;
+    }
     out.push(`## ${start + i}. ${p.title}`, ...body, "");
   });
   return out.join("\n");

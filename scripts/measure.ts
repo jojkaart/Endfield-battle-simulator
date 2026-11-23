@@ -30,6 +30,8 @@
 //                       every value ×0.97 and ×1.03, as tests/slow/negative-control.test.ts does, and a count over
 //                       its bound is flagged: a reading fitted to the data it is judged on shows at the first
 //                       measure, not at premerge; seconds)
+// The summary also counts the logs whose listed effects carry no since / source (imported before 2026-11-16; hold-outs
+// as a count only): a change that rests on the log's lanes can't move them, so "unchanged" there means untested.
 //   --workers <n>       worker threads (default 3, as test:logs)
 //   --hits              also list, for each development log whose entry moved, the hits whose verdict changed
 //                       (time, operator, event, verdict and logged ÷ primary before and after; the reference's code
@@ -243,6 +245,14 @@ async function main(argv: string[]): Promise<number> {
 
   const cost = costs(tree, keys);
   const order = [...keys].sort((a, b) => (cost.get(b) as number) - (cost.get(a) as number) || a.localeCompare(b));
+  // The logs whose listed effects have no `since` / `source` (imported before 2026-11-16): a change resting on the
+  // lanes can't move them, so "unchanged" there means untested (buff-clock report point 5). Hold-outs only counted.
+  const untimed = new Set<string>();
+  const untimedLine = (): string[] => {
+    const hold = [...untimed].filter(isHoldout).length;
+    const dev = [...untimed].filter((k) => !isHoldout(k)).sort();
+    return untimed.size ? [`Logs whose effects carry no since / source (a change resting on the lanes can't move them): ${hold} of ${keys.filter(isHoldout).length} hold-outs measured${dev.length ? `; ${dev.join(", ")}` : ""}`] : [];
+  };
   const perHit = new Map<string, Map<string, PerHit>>();
   const hitRows = new Map<string, Map<string, readonly HitRow[]>>();
   // Per tree and readings (`slot`: a --variant's measurements of the same tree apart).
@@ -265,6 +275,7 @@ async function main(argv: string[]): Promise<number> {
       if ("error" in a) throw new Error(`${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
       if (!("entry" in a)) return;
       got.set(a.key, a.entry);
+      if (a.untimed) untimed.add(a.key);
       if (a.perHit) fits.set(a.key, a.perHit);
       if (a.hits) rows.set(a.key, a.hits);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
@@ -340,6 +351,7 @@ async function main(argv: string[]): Promise<number> {
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
       ...(await negativeLines(v.readings, label)),
+      ...(vi === 0 ? untimedLine() : []),
     ];
     if (keys.length === logKeys(tree).length && !baseTree) {
       const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(dir, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
