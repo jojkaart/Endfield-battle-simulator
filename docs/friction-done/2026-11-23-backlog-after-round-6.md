@@ -291,3 +291,33 @@ same number; a new report that hits one brings it back with that text.
 
 The reports named their scratch scripts by path and their worktrees still had them, so promoting them was a copy;
 `npm run measure -- --against <old ref> --logs <id> --hits` reproduced the new-fixture crash in a minute.
+
+## Outcome (round 7)
+
+Points 1–14 were carried once already (round 6) and no new report hit them, except 11 and 13: parked (README "The
+backlog stays short"; one line each in docs/friction/2026-11-23-backlog-after-round-7.md's Parked list, full text
+here).
+
+- 1 (groups: off under both readings or only under the replay's): parked.
+- 2 (No interval selectors in census): parked.
+- 3 (A ticking buff's ticks and holds: logged against replayed): parked.
+- 4 (A cast's two variants both landing raises no flag): parked.
+- 5 (One skill's hits across logs with their zones): parked.
+- 6 (`differences` blames the applying hit for a buff it creates): parked.
+- 7 (A no-landing reason that hides an unlogged crit): parked.
+- 8 (Open rule questions go stale as the engine moves): parked.
+- 9 (Who inflicts what, as a team table): parked.
+- 10 (A buff's holds past its modelled end need a kit edit): parked.
+- 11 (The log reading's parts and a consumed buff's layers per cast): carried (round 7's backlog point 1), with rossi-gilberta point 4 (a layered buff's listed layers against the replay's per hit) hitting it again.
+- 12 (`zmdlogs instances` and the replay's casts disagree silently): parked.
+- 13 (A "batched" mark on log times): done (c205e2d): `zmdlogs casts` HIT lines and `zmdlogs replay` LAND lines end with "[batched: n hits at this ms]" where more than three logged hits share the ms.
+- 14 (smoke and snapshots read the tree when their turn comes): parked.
+- 15 (`zmdlogs clock`'s remainders: states from casts, every buff at once, the trigger hit after the end): carried (point 2).
+- 16 (The replay's kit windows don't say which instance a later window continues): carried (point 3); it waits on the replay's run() refactor (point 6), which nobody did.
+- 17 (An expiry taken from the log gets held again by later stops): carried (point 4), the same.
+- 18 ("Unchanged on the hold-outs" may mean "not testable there"): done (8ff6319): measure's summary counts the logs whose effects carry no since / source (hold-outs as a count, development logs by name). The answer: **all 13 hold-outs** lack them (and 40d9, 4e5e), so every lane-based rule is untested on the hold-outs (docs/open-problems.md, "The buff clock"). snapshots:update doesn't (its summary is accuracy.ts --compare's; measure is where a change is judged). `zmdlogs refresh` for the two verified logs isn't done: it needs the network and the owner's go-ahead for re-downloads.
+- 19 (`poise.origin` in the views): done for `zmdlogs casts` (c205e2d: "(origin <skill>)" on a HIT line whose origin isn't its own key or cast); `zmdlogs instances` prints instances, not hits, so it has no line to put it on (census `origin:<re>` counts them).
+- 20 (Probes have no "still runs" check): carried (point 5): still "if probes rot"; none was found broken this round.
+- Taken by the hidden-holds clocks agent: that agent did accuracy work (enemy statuses and the ramp as hold clocks) instead. The replay's run() as passes: carried (point 6, with round 6's own report point 1). An enemy status's life: carried (point 7, with hold-clocks point 3a). Corrosion's ramp as a reading: closed by that branch's `zmdlogs ramp` (the steps per hit, log against replay, the holds they allow) and round 7's `--held`; the hits --json `corrosionStep` field and deleting scripts/probes/corrosion/corrosion-lag.ts aren't done (the probe still answers the lag question the view doesn't).
+- Parked (round 5's 1–21): 8 (a "same CLI output" harness) done by round 7's scripts/cli-ab.ts (780779a); 12 (the step list's module) folded into point 6. The rest stay parked.
+- Needs an accuracy or search task: carried to round 7's list, with ramp-slowdowns point 2.

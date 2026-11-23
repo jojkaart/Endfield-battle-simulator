@@ -16,15 +16,16 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–6
-  done (round 6, 2026-11-23: `zmdlogs clock` for a kit buff's own clock
-  against the log, scripts/probes/ for the scratch scripts docs cite,
-  development logs registered without opening the split, world-time views
-  on the replay's casts, operator ids from names, `hits --assume`, a
-  parked list that keeps the backlog short); the backlog
-  ([2026-11-23-backlog-after-round-6.md](friction/2026-11-23-backlog-after-round-6.md),
-  20 live points and three the hidden-holds clocks agent is building)
-  joins the next round once about five new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–7
+  done (round 7, 2026-11-23: `zmdlogs holds --why` and scripts/cli-ab.ts
+  for what a bound change moved, one stop-list rule under a test, measure
+  `--variant`, the negative control in every measure, `--hits` against
+  the snapshots' own code with the modifiers that moved, `ramp --held`,
+  the compiler's dropped dilations listed, `verify-at --test`; all 13
+  hold-outs lack the `since` the lane rules read, the lead's call); the
+  backlog ([2026-11-23-backlog-after-round-7.md](friction/2026-11-23-backlog-after-round-7.md),
+  8 live points, the replay's run() refactor the largest) joins the next
+  round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

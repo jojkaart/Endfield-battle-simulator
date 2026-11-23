@@ -62,3 +62,10 @@ Points already in docs/friction/2026-11-23-backlog-after-round-6.md aren't repea
   tests/accuracy.test.ts's development ∩ hold-out check behind it.
 - The reports named their scratch scripts by path, and the worktrees were still on disk.
 - `npm run snapshots:update`'s closing lines ("No log's verdicts moved") made the behaviour check one read.
+
+## Outcome (round 7)
+
+- 1 (A 2,500-line buffreplay.ts with an agent inside it blocks small edits): carried (docs/friction/2026-11-23-backlog-after-round-7.md point 6, with the "Taken" replayOnce refactor it waits on: the hidden-holds clocks agent did accuracy work instead and never split run()). Round 7 hit it again: it kept its own buffreplay.ts edits to runBounds and two fields and left KitWindow's chain (point 16) and pinned expiries (17) for that refactor.
+- 2 (A trace's removal is seen at the next step, and nothing says so): done (c205e2d): BuffTrace.to's comment says a buff that ran out between steps shows gone at the later step with `from` its expiry; `zmdlogs replay --trace-buff`'s TRACE line then reads "ran out at its expiry … (seen gone at <step>)" at the expiry's time.
+- 3 (`git mv` then a pathspec-less commit dropped the edits): done (3c919d3): CLAUDE.md's commit recipe: `git mv` stages the index's text only; move first, edit after, commit by the pathspecs of both folders. This round moved its reports that way.
+- 4 (Promoting another agent's scratch means reading all of it first): nothing to do, as the report says (the probes rule in scripts/probes/README.md puts the header on the author).

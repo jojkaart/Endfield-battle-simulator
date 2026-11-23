@@ -1414,6 +1414,13 @@ holds Corrosion's end but not its ramp in a freeze (assumption
 
 ## The buff clock: unlogged world holds keep buffs past their end (2026-11-22; test 111)
 
+**The hold-outs can't test the lane-based rules (round 7):** `npm run measure` now counts the logs whose listed
+effects carry no `since` / `source` (imported before 2026-11-16): all 13 hold-outs, and the verified 40d9 and 4e5e.
+Every rule below that reads the log's runs (the hidden holds' run and status clocks, `heldToLoggedEnds`, Wolven
+Blood's `layerCrits`) has nothing to read there, so the hold-out row's "unchanged" for those changes means untested,
+not confirmed; their tick and ramp clocks still apply. Re-importing them with `since` (`zmdlogs refresh`, run blind
+on the split's ids so nobody reads them) needs the downloads and the owner's go-ahead.
+
 **Shows:** every run of a listed game buff a team kit stands for, over the 77 development logs whose listings carry the
 runs' start and owner (verified, pending, multi-target; 40d9 and 4e5e don't): its start as logged (the lane's
 `since`), its end bracketed by the last hit that lists it and the next hit of a holder that doesn't (exact at a
