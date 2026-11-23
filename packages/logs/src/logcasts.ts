@@ -77,6 +77,32 @@ export function heldStart(t: number, frame: number, stops: readonly TimeStop[]):
   return t - msOf(n);
 }
 
+/**
+ * A slow-down's scale at or below which the world stands still for the log (ownStopLoggedFrame). A partial one doesn't
+ * hold the log's hits: with any frame below 1 counted, 4e5e1390085e, db8711232de9, 0eef2474a26f and others moved too.
+ */
+export const OWN_STOP_SCALE = 0.05;
+
+/**
+ * The frame of its cast a landing at kit frame `frame` is logged at: inside the cast's own stop (a frame its slow-down,
+ * SkillTiming.slowdowns, stops the world: OWN_STOP_SCALE) the log has it where the slow-down ends (its last frame below
+ * scale 1), as it
+ * batches every hit inside a stop (docs/design/data.md "What the log records"); elsewhere its frame. Liino's combo, hit 1
+ * at frame 9 inside its slow-down (0.01 to frame 10, back to 1 at frame 26): in her 64 combos in the development logs
+ * the latest teammate's hit before hit 1 is logged 0.79–1.8 s before it (median 1.0 s; 5 under 0.65 s where hits
+ * overlap a log's start or another stop), and hit 2 (frame 33) follows it by 0.1–0.9 s (median 0.23 s), not 0.8 s;
+ * placed at frame 9, her cast and its stop came 0.6 s late (d774d0ce7bd3 98.43 s: Zhuang Fangyi's Thunder Strikes ran on
+ * 0.6 s into the hold the log shows from 97.9 s). A detached hit (on its way) isn't the cast's own landing.
+ */
+export function ownStopLoggedFrame(timing: SkillTiming | null | undefined, hits: readonly KitHit[], frame: number): number {
+  if (!timing || hits.length === 0 || hits.some((h) => h.detached || h.launch !== undefined || h.enemyDelay !== undefined)) return frame;
+  for (const d of timing.slowdowns) {
+    const i = frame - d.from;
+    if (i >= 0 && i < d.scales.length && (d.scales[i] as number) <= OWN_STOP_SCALE) return d.from + d.scales.findLastIndex((x) => x < 1) + 1;
+  }
+  return frame;
+}
+
 /** How far before a cast's held start (heldStart) the log's cast event of its skill may be and still be its (ms). */
 const HELD_EVENT_MS = 2000;
 
@@ -448,7 +474,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: castStart(h.t, first?.frame ?? 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
+        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: castStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
