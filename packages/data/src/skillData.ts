@@ -33,6 +33,8 @@ export interface RawSkillFile {
 
 /** A time-dilation action of a skill file and what the compiler made of it (RawSkillFile.dilations). */
 export interface SkillDilation {
+  /** Its index among the file's time-dilation actions (in the file's order): the `n` its compiled slow-down carries. */
+  readonly n: number;
   readonly frame: number;
   readonly type: "UltimateTimeAction" | "TimeDilationAction";
   /** Its layer (TimeDilationAction: 0 the world's), priority tag and curve (a named curve, or "own curve"). */
@@ -193,7 +195,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
   // ComboCacheAction mappings of the basic-attack input (cmdType 0): what the next attack input becomes.
   const inputMap = new Set<string>();
   const channels: { from: number; to: number; cantCastSkill: boolean; cantSwitch: boolean; finisher?: true }[] = [];
-  const slowdowns: { from: number; scales: number[]; priority?: number }[] = [];
+  const slowdowns: { from: number; scales: number[]; priority?: number; n: number }[] = [];
   const resets: { at: number; priority: number }[] = [];
   const dilations: SkillDilation[] = [];
   // `conditional`: under a TogglableAction or an IfElse branch, the window is open only when its condition holds (the kit says when).
@@ -205,6 +207,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     if (type.includes("UltimateTimeAction") || type.includes("TimeDilationAction")) {
       const ultimate = type.includes("UltimateTimeAction");
       dilations.push({
+        n: dilations.length,
         frame: from,
         type: ultimate ? "UltimateTimeAction" : "TimeDilationAction",
         layer: typeof o["layer"] === "number" ? o["layer"] : null,
@@ -222,12 +225,12 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     if (o["isEnable"] !== false && type.includes("UltimateTimeAction")) {
       const scale = typeof o["timeScale"] === "number" ? o["timeScale"] : 0;
       const priority = dilationPriority(o);
-      slowdowns.push({ from, scales: Array.from({ length: Math.max(0, to - from) }, () => scale), ...(priority !== null ? { priority } : {}) });
+      slowdowns.push({ from, scales: Array.from({ length: Math.max(0, to - from) }, () => scale), ...(priority !== null ? { priority } : {}), n: dilations.length - 1 });
     }
     if (o["isEnable"] !== false && type.includes("TimeDilationAction") && o["layer"] === 0) {
       const d = slowdownOf(o, to - from);
       const priority = dilationPriority(o);
-      if (d) slowdowns.push({ from, scales: d, ...(priority !== null ? { priority } : {}) });
+      if (d) slowdowns.push({ from, scales: d, ...(priority !== null ? { priority } : {}), n: dilations.length - 1 });
       // A global dilation back to scale 1 (curve RESETto1): it takes the place of the running ones of its priority
       // (SkillTiming.resets).
       else if (o["useCurveKey"] === true && o["curveKey"] === "RESETto1" && priority !== null) resets.push({ at: from, priority });

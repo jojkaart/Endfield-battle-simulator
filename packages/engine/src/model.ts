@@ -107,8 +107,12 @@ export interface SkillTiming {
    * (UltimateTimeAction, global-layer TimeDilationAction): from frame
    * `from`, the world's time scale for each following frame. `priority`: the
    * dilation's priority tag (timeDilationPriority), which `resets` name.
+   * `n`: which of the skill file's time-dilation actions it is (their index
+   * in the file, RawSkillFile.dilations' `n`; absent in a hand-made timing):
+   * its identity, so two at one frame (Rossi's combo_3, Pogranichnik's combo)
+   * pair exactly (round 8's friction point 2).
    */
-  readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[]; readonly priority?: number }[];
+  readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[]; readonly priority?: number; readonly n?: number }[];
   /**
    * Global dilations back to scale 1 (TimeDilationAction, curve RESETto1) at frame `at`: every running slow-down of
    * the same priority ends there, the skill's own too (Arcane's combo at its frame 9; engine assumption combo-reset,
