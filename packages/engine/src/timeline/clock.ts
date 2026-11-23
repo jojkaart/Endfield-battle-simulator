@@ -26,12 +26,24 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
   // Its resets end the running slow-downs of their priority (others' and, below, its own) where they come.
-  const resets = engineReading(ctx.scenario, "combo-reset") === "resets" ? (timing.resets ?? []).map((r) => ({ frame: frame + r.at, priority: r.priority })) : [];
+  const reading = engineReading(ctx.scenario, "combo-reset");
+  const resets = reading !== "none" ? (timing.resets ?? []).map((r) => ({ frame: frame + r.at, priority: r.priority })) : [];
   for (const r of resets) s = resetSlowdowns(ctx, s, r);
-  const own = cutAtResets(
-    timing.slowdowns.map((d) => ({ start: frame + d.from, scales: d.scales, ...(d.priority !== undefined ? { priority: d.priority } : {}) })),
-    resets,
-  ).filter((d) => d.scales.length > 0);
+  // An earlier cast's resets still to come (`reaches`) end its slow-downs of their priority there too: a teammate's
+  // combo pressed inside Arcane's first 9 frames runs only to her frame 9 (btl_upload_9555de54bb3d at 31.73 s: Xaihi's
+  // 27-frame slow-down 7 frames after Arcane's start; her Imprisonment burst comes 1.46 s after her cast, as with no
+  // teammate's combo, 81.53 s: 1.48 s; a held world puts it later), as the log tools' stop lists cut it (withResets).
+  const pending = reading === "reaches" ? (s.resets ?? []).filter((r) => r.frame > frame) : [];
+  if (reading === "reaches") s = { ...s, resets: [...pending, ...resets.filter((r) => r.frame > frame).map((r) => ({ ...r, by: caster }))] };
+  const own = timing.slowdowns
+    .map((d) => {
+      const whole = { start: frame + d.from, scales: d.scales, ...(d.priority !== undefined ? { priority: d.priority } : {}) };
+      const cut = cutAtResets([whole], [...pending, ...resets])[0] as typeof whole;
+      // The caster of a pending reset that cuts it isn't held by it: her frame 9 comes when it ends (the reset's frame).
+      const by = cut.scales.length < whole.scales.length ? pending.find((r) => r.priority === cut.priority && r.frame === cut.start + cut.scales.length)?.by : undefined;
+      return { ...cut, ...(by !== undefined ? { spares: by } : {}) };
+    })
+    .filter((d) => d.scales.length > 0);
   for (const d of own) {
     const start = d.start;
     const scaleAt = (who: string | null, f: number) => {
@@ -47,7 +59,7 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     // from that stop's end, so what's due right then comes on time (dbaee23b801d: Liino's Cosmovoice at her ultimate's
     // frame 77, the end of its stop, with Xaihi's ultimate stop from 7606 ms running on: at 8258 ms, as logged).
     const lost = (who: string | null): { n: number; from: number } => {
-      if (who === caster) return { n: 0, from: start };
+      if (who === caster || who === d.spares) return { n: 0, from: start };
       let sum = 0;
       let from: number | null = null;
       d.scales.forEach((v, k) => {
@@ -68,17 +80,20 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 
 /**
  * A skill's slow-downs along a path (casting.ts plannedSlowdowns; the log check's stop lists, logcasts.ts skillStops):
- * the jumps taken (`from` → `to`, skill frames) and the timing's own ends (InterruptCurSkillAction). One in a skipped
- * segment or after the first end the path reaches never starts, and one after a jump starts that much sooner. Rossi's
+ * the jumps taken (`from` → `to`, skill frames) and the timing's own ends (InterruptCurSkillAction) and casts of the
+ * operator's next skill (recasts: Purrchena's shielded combo casts its loop at 250, so its 210 path never reaches the
+ * frame-270 slow-down). One in a skipped segment or after the first end the path reaches never starts, and one after a
+ * jump starts that much sooner. Rossi's
  * sequence 2 (combo_3) holds the world again at its frame 212, the start of the path its frame-0 jump takes when the
  * timing isn't perfect; the perfect path ends at 211.
  */
 export function pathSlowdowns(timing: SkillTiming, jumps: readonly { readonly from: number; readonly to: number }[]): SkillTiming["slowdowns"] {
-  if (jumps.length === 0 && timing.ends.length === 0) return timing.slowdowns;
+  const ends = [...timing.ends, ...(timing.recasts ?? [])];
+  if (jumps.length === 0 && ends.length === 0) return timing.slowdowns;
   const skips: { from: number; to: number }[] = [];
   for (const j of [...jumps].sort((a, b) => a.from - b.from)) if (!skips.some((k) => j.from > k.from && j.from < k.to)) skips.push({ from: j.from, to: j.to });
   const skipped = (x: number) => skips.some((k) => x > k.from && x < k.to);
-  const end = Math.min(Infinity, ...timing.ends.filter((e) => !skipped(e)));
+  const end = Math.min(Infinity, ...ends.filter((e) => !skipped(e)));
   return timing.slowdowns
     .filter((d) => !skipped(d.from) && d.from < end)
     .map((d) => ({ ...d, from: d.from - skips.filter((k) => k.to <= d.from).reduce((t, k) => t + (k.to - k.from), 0) }));

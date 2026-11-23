@@ -6,6 +6,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
+import { pathSlowdowns } from "@efsim/engine";
 import { skillStops } from "@efsim/logs";
 
 const SRC = new URL("../packages/logs/src/", import.meta.url).pathname;
@@ -13,8 +14,8 @@ const SRC = new URL("../packages/logs/src/", import.meta.url).pathname;
 /** The reads of `.slowdowns` / `.resets` allowed per file (code lines, comments aside), and why each isn't a stop list. */
 const ALLOWED: Readonly<Record<string, { readonly n: number; readonly why: string }>> = {
   "logcasts.ts": {
-    n: 6,
-    why: "skillStops (the builder: slowdowns, resets), withResets (its parts' resets), ownStopLoggedFrame (where a cast's own stop ends, for its logged frame), unplacedCastStops (whether a skill has any) and placeWith (whether a teammate's cast stops the world)",
+    n: 5,
+    why: "skillStops (the builder: its resets; its slow-downs come from the engine's pathSlowdowns), withResets (its parts' resets), ownStopLoggedFrame (where a cast's own stop ends, for its logged frame), unplacedCastStops (whether a skill has any) and placeWith (whether a teammate's cast stops the world)",
   },
   "buffreplay.ts": { n: 1, why: "loggedCastStart: the length of an ultimate's full stop from its frame 0" },
   "replayrecord.ts": { n: 1, why: "replayRecorder: TimelineState.slowdowns, the slow-downs the timeline applied (BuffReplay.appliedStops), not SkillTiming's" },
@@ -45,8 +46,23 @@ describe("skillStops: a cast's slow-downs along the path its landings show", () 
     expect(starts([29])).toEqual([[1000, 12], [1000, 19]]);
   });
 
-  it("the late path (its landing at 227, past the frame-0 jump to 212) has that slow-down at once; unknown, every one as listed", () => {
+  it("the late path (its landing at 227, past the frame-0 jump to 212) has that slow-down at once; unknown, the path with no conditional jump", () => {
     expect(starts([227])).toEqual([[1000, 12], [1000, 19], [1000, 19]]);
-    expect(starts()).toEqual([[1000, 12], [1000, 19], [1212, 19]]);
+    expect(starts()).toEqual([[1000, 12], [1000, 19]]);
+  });
+
+  it("Purrchena's combo (no hits of its own): the unshielded path, its frame-0 slow-down only; the shielded path from 210 ends at its cast of the loop (250), before the frame-270 slow-down", () => {
+    const P = "chr_0038_purrche_combo_skill";
+    const t = data.skills[P]?.timing;
+    expect(t?.recasts).toEqual([250, 309]);
+    expect(skillStops(data, P, 0, { operator: "chr_0038_purrche", skillId: P, kind: "combo" }).stops.map((s) => [s.start, s.scales.length])).toEqual([[0, 20]]);
+    expect(t && pathSlowdowns(t, [{ from: 0, to: 210 }]).map((d) => [d.from, d.scales.length])).toEqual([
+      [0, 20],
+      [0, 18],
+    ]);
+    expect(t && pathSlowdowns(t, [{ from: 0, to: 270 }]).map((d) => [d.from, d.scales.length])).toEqual([
+      [0, 20],
+      [0, 15],
+    ]);
   });
 });

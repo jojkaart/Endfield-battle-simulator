@@ -36,7 +36,7 @@ export interface TimeStop {
  * A cast's time stops from frame `at` (its skill's slow-downs along the path the cast took, with their priority) and its
  * resets as frames. Stops are cut at the resets of every cast among them (withResets), as the engine does
  * (timeline/clock.ts cutAtResets). `landed`: the kit frames of the cast's logged landings, which show the path
- * (pathOf); without them a skill with conditional jumps keeps every slow-down.
+ * (pathOf); without them a skill with conditional jumps takes none of them.
  */
 export function skillStops(data: GameData, skillId: string, at: number, who: Omit<TimeStop, "start" | "scales" | "priority">, landed?: readonly number[]): { readonly stops: TimeStop[]; readonly resets: { readonly frame: number; readonly priority: number }[] } {
   const t = data.skills[skillId]?.timing;
@@ -51,12 +51,15 @@ export function skillStops(data: GameData, skillId: string, at: number, who: Omi
  * jump is taken when a landing comes at or past its target and none between its frame and the target (of several from
  * one frame, the farthest so reached). Rossi's sequence 2 (combo_3) on its perfect path ends at frame 211, so its frame-212
  * slow-down, the late path's, never comes (489c0be3e162's at 51.90 s put 0.42 s of stop at 58.97 s that the replay's
- * own timeline, which judges the jump at the cast, never had). With conditional jumps and no landing: every slow-down.
+ * own timeline, which judges the jump at the cast, never had). With conditional jumps and no landing to show one: the path
+ * that takes none, the skill's own when no kit condition holds (every slow-down, as before 2026-11-23, is no path's:
+ * Purrchena's combo, whose damage is all its giftbox's, put its shielded paths' slow-downs at frames 210 and 270 after
+ * every unshielded cast, 26 stops in 04d401ad257e and 99fb3c35fda2 the engine never had).
  */
 function pathOf(t: SkillTiming, landed?: readonly number[]): SkillTiming["slowdowns"] {
   const conditional = t.jumps.filter((j) => j.conditional);
-  if (conditional.length > 0 && !landed?.length) return t.slowdowns;
   const taken = t.jumps.filter((j) => !j.conditional).map((j) => ({ from: j.at, to: j.to }));
+  if (conditional.length > 0 && !landed?.length) return pathSlowdowns(t, taken);
   for (const at of new Set(conditional.map((j) => j.at))) {
     const reached = conditional.filter((j) => j.at === at && (landed ?? []).some((f) => f >= j.to) && !(landed ?? []).some((f) => f > j.at && f < j.to));
     const far = reached.reduce<(typeof reached)[number] | null>((m, j) => (!m || j.to > m.to ? j : m), null);

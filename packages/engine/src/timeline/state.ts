@@ -439,6 +439,11 @@ export interface TimelineState {
    * (SkillTiming.resets: clock.ts resetSlowdowns).
    */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string; readonly ultimate?: true; readonly priority?: number }[];
+  /**
+   * Resets still to come (SkillTiming.resets, combo-reset `reaches`): at `frame` the reset of `by`'s cast ends the
+   * slow-downs of its priority, so one of that priority starting before it ends there too (clock.ts slowDown).
+   */
+  readonly resets?: readonly { readonly frame: number; readonly priority: number; readonly by: string }[];
   readonly enemy: EnemyStatus;
   /**
    * Timed buffs and debuffs from skills: only those still active. `advance` prunes a buff once it has ended, so the

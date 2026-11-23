@@ -62,6 +62,32 @@ describe("resets", () => {
     expect(none.slowdowns.map((s) => s.scales.length)).toEqual([24, 18]);
   });
 
+  it("a teammate's combo pressed inside Arcane's first 9 frames ends at her frame 9 too, and doesn't hold her (reaches)", () => {
+    const ctx = ctxWith();
+    const arc = slowDown(ctx, state(), "arc", timingOf(ARCANE), 0);
+    expect(arc.resets).toEqual([{ frame: 9, priority: COMBO, by: "arc" }]);
+    const both = slowDown(ctx, arc, "si", timingOf(SI), 6);
+    // Si's 24 frames cut to 3: the world is held to frame 9 only (9 × 0.99), as with Arcane's alone.
+    expect(both.slowdowns.map((s) => [s.start, s.scales.length])).toEqual([
+      [0, 9],
+      [6, 3],
+    ]);
+    expect(expiry(both)).toBe(309);
+    // The log tools' lists cut it the same (withResets over cutAtResets).
+    expect(cutAtResets([{ start: 6, scales: timingOf(SI).slowdowns[0]?.scales ?? [], priority: COMBO }], [{ frame: 9, priority: COMBO }])[0]?.scales.length).toBe(3);
+    // Under `resets` (the engine before) Si's runs whole: the world is held 6 + Si's 15.8.
+    const before = slowDown(ctxWith({ "combo-reset": "resets" }), slowDown(ctxWith({ "combo-reset": "resets" }), state(), "arc", timingOf(ARCANE), 0), "si", timingOf(SI), 6);
+    expect(before.slowdowns.map((s) => s.scales.length)).toEqual([9, 24]);
+    expect(expiry(before)).toBeGreaterThan(320);
+  });
+
+  it("a reset that has passed cuts nothing: a combo after Arcane's frame 9 runs whole", () => {
+    const ctx = ctxWith();
+    const later = slowDown(ctx, slowDown(ctx, state(), "arc", timingOf(ARCANE), 0), "si", timingOf(SI), 9);
+    expect(later.slowdowns.map((s) => s.scales.length)).toEqual([24]);
+    expect(later.resets).toEqual([]);
+  });
+
   it("Arcane's combo alone holds the world 9 frames, not its 18", () => {
     expect(expiry(slowDown(ctxWith(), state(), "arc", timingOf(ARCANE), 0))).toBe(309);
     expect(expiry(slowDown(ctxWith({ "combo-reset": "none" }), state(), "arc", timingOf(ARCANE), 0))).toBe(312);

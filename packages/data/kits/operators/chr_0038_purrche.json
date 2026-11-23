@@ -525,7 +525,7 @@
           "buff": "shield_up",
           "seconds": {
             "div": [
-              18,
+              28,
               30
             ]
           }
@@ -535,7 +535,7 @@
           "buff": "protection",
           "seconds": {
             "div": [
-              18,
+              28,
               30
             ]
           }
@@ -550,7 +550,7 @@
           ]
         }
       ],
-      "note": "The shielded combo (the skill's jump at 0 → 210): aura_block paused from the cast until pause_block [210–251] ends, 41 frames (cut short if a block ends the combo first: not modelled). Written as 41 − 23: the engine already holds every buff for what the combo's slow-downs cost the world (23 frames on this path: the frame-0 slow-down kept at the jump's own frame, and the one at 270 that the cast at 250 never reaches; see the report), so the shield lasts the data's 41 frames longer. Until frame 221 no listener: an attack isn't blocked (combo_unguarded)."
+      "note": "The shielded combo (the skill's jump at 0 → 210): aura_block paused from the cast until pause_block [210–251] ends, 41 frames (cut short if a block ends the combo first: not modelled). Written as 41 − 13: the engine already holds every buff for what the combo's slow-downs cost the world (13 frames on this path: the frame-0 slow-down kept at the jump's own frame, which covers the path's own at 210; the one at 270 never comes, the cast at 250 being the path's end, SkillTiming.recasts; see the report), so the shield lasts the data's 41 frames longer. Until frame 221 no listener: an attack isn't blocked (combo_unguarded)."
     },
     {
       "id": "combo_shielded_listen",

@@ -748,6 +748,8 @@ const STATE_KEY: KeyRules<TimelineState> = {
   stagger: (s, env) => (s.until !== null && s.until > env.frame ? s : { poise: s.until !== null ? env.scenario.maxPoise : s.poise }),
   // Read only from their start to their end (clock.ts slowDown, which drops the ended ones).
   slowdowns: (d, env) => d.filter((x) => x.start + x.scales.length > env.frame),
+  // Read only before their frame (clock.ts slowDown, which drops the past ones).
+  resets: (r, env) => r.filter((x) => x.frame > env.frame),
   // Who applied the infliction's stacks (Infliction.by) is a record nothing in the fight reads.
   enemy: (e) => (e.infliction?.by ? { ...e, infliction: { element: e.infliction.element, stacks: e.infliction.stacks, expiresAt: e.infliction.expiresAt } } : e),
   // In order (the engine reads the first of several matches in places); a family (loose) doesn't care which came first.

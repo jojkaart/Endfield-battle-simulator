@@ -51,9 +51,10 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "combo-reset",
     question: "Does a global dilation back to scale 1 (TimeDilationAction, curve RESETto1: Arcane's combo at its frame 9) end the running slow-downs of its priority, its own and a teammate's combo slow-down (timeline/clock.ts cutAtResets, resetSlowdowns)? The game keeps one dilation per priority tag (the reset would do nothing under the lowest-scale rule).",
-    default: "resets",
+    default: "reaches",
     readings: {
-      resets: "it ends them: Arcane's combo holds the world 9 frames, and a combo slow-down running at her frame 9 ends there (Corrosion's ramp in 3f78ceb15bc3's and 4a64e58e75ad's openers, Gilberta's, Si's and Arcane's combos: the lowest-scale rule holds 0.93 s and 0.91 s where the steps allow 0.73 s and 0.75 s; with the reset 0.72 s and 0.74 s) (2026-11-23)",
+      reaches: "it ends them, and one of its priority that starts before it (a teammate's combo pressed inside her first 9 frames) ends there too, not holding her, as the log tools' stop lists cut it (withResets): 9555de54bb3d at 31.73 s (Xaihi's 27-frame combo slow-down 7 frames after Arcane's start), her Imprisonment burst 1.46 s after her cast as with no teammate's combo (81.53 s: 1.48 s; held 1.84 s), and the hits after it with her Susceptibility and Gear set bonus as logged; 791020039384 at 4.90 s (Ardelia's), 1d9198480e75 at 50.30 s (Typhoeus's: Liino's volleys on time, 0.5 s early held) (2026-11-23, measured: development 5 better, 3 worse, plain 65.7 → 65.8%; hold-outs 1 better, 1 worse)",
+      resets: "it ends the slow-downs running when the resetting cast starts: Arcane's combo holds the world 9 frames, and a combo slow-down running at her frame 9 ends there (Corrosion's ramp in 3f78ceb15bc3's and 4a64e58e75ad's openers, Gilberta's, Si's and Arcane's combos: the lowest-scale rule holds 0.93 s and 0.91 s where the steps allow 0.73 s and 0.75 s; with the reset 0.72 s and 0.74 s); one starting after her cast but before her frame 9 runs whole (the engine 2026-11-23, before `reaches`)",
       none: "it does nothing: every slow-down runs its length, the lowest scale counting where they overlap (the engine until 2026-11-23)",
     },
   },
