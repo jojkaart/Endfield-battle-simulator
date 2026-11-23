@@ -9,6 +9,7 @@ import {
   cacheRawDetail,
   cadenceView,
   census,
+  clockView,
   controlView,
   devFixtures,
   instancesView,
@@ -159,6 +160,13 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
   efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the time
                                           stops of the replay's casts (placed, from cast events, inferred), and the
                                           stops between (operator, skill, frames, lowest scale)
+  efsim zmdlogs clock --kit-buff owner:id [fixture…]  Each instance of a kit buff: the expiry the replay first
+                                          gave it, its expiry on the replay's own clock (no hidden holds, no log
+                                          ends) and how it ended there, how it ended in the check's replay, the
+                                          log's run of it (since, last listed, next unlisted hit) and the last
+                                          listed hit's lateness past the own expiry (real and world time); default
+                                          every development log with the owner, then the lateness's spread
+                [--assume <id>=<reading>] The check's replay under another reading
   efsim zmdlogs holds <fixture>           The fight's hidden holds the replay places (hidden-holds placed): the
                                           least total, each 0.512 s unit with its earliest and latest time and the
                                           clocks spanning it, the bounds dropped; --verbose every bound
@@ -247,6 +255,13 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (sub === "control") return controlView(data(), fx, { operators });
       if (values.buff.length > 1) throw new Error("zmdlogs lanes takes one --buff <regex>");
       return lanesView(data(), fx, values.buff[0] !== undefined ? new RegExp(values.buff[0]) : undefined, { world: values.world });
+    }
+    if (sub === "clock") {
+      if (values["kit-buff"].length !== 1) throw new Error("zmdlogs clock takes one --kit-buff owner:id (efsim kit <operator> lists its buffs) and optional fixtures");
+      const kitBuff = values["kit-buff"][0] as string;
+      const named = args.slice(1);
+      const logs = devFixtures({ ...(named.length ? { ids: named } : { withOperators: [kitBuff.split(":")[0] as string] }) });
+      return clockView(data(), logs, kitBuff, parseAssume(data(), values.assume));
     }
     if (sub === "census" || sub === "buffs" || sub === "cadence") {
       const named = args.slice(1);

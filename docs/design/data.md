@@ -589,6 +589,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Where the placement put each hit and cast | `efsim zmdlogs casts <fixture> [--from --to]` |
 | The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE, EVENT) |
 | How a kit buff's expiry moved | `efsim zmdlogs replay <fixture> --trace-buff owner:id` |
+| Does a kit buff run long or short: each instance's first expiry, its expiry on the replay's own clock (no hidden holds, no log ends), how it ended there and in the check's replay, the log's run and the lateness past the own expiry | `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (default every development log with the owner; `kitBuffClock` in a script). The check's window (`replay --kit-buff`) is already cut or held to the log's end: not the buff's natural end |
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
