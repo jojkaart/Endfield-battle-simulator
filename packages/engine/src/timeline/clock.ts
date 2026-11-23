@@ -67,6 +67,24 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 }
 
 /**
+ * A skill's slow-downs along a path (casting.ts plannedSlowdowns; the log check's stop lists, logcasts.ts skillStops):
+ * the jumps taken (`from` → `to`, skill frames) and the timing's own ends (InterruptCurSkillAction). One in a skipped
+ * segment or after the first end the path reaches never starts, and one after a jump starts that much sooner. Rossi's
+ * sequence 2 (combo_3) holds the world again at its frame 212, the start of the path its frame-0 jump takes when the
+ * timing isn't perfect; the perfect path ends at 211.
+ */
+export function pathSlowdowns(timing: SkillTiming, jumps: readonly { readonly from: number; readonly to: number }[]): SkillTiming["slowdowns"] {
+  if (jumps.length === 0 && timing.ends.length === 0) return timing.slowdowns;
+  const skips: { from: number; to: number }[] = [];
+  for (const j of [...jumps].sort((a, b) => a.from - b.from)) if (!skips.some((k) => j.from > k.from && j.from < k.to)) skips.push({ from: j.from, to: j.to });
+  const skipped = (x: number) => skips.some((k) => x > k.from && x < k.to);
+  const end = Math.min(Infinity, ...timing.ends.filter((e) => !skipped(e)));
+  return timing.slowdowns
+    .filter((d) => !skipped(d.from) && d.from < end)
+    .map((d) => ({ ...d, from: d.from - skips.filter((k) => k.to <= d.from).reduce((t, k) => t + (k.to - k.from), 0) }));
+}
+
+/**
  * Slow-downs after resets (SkillTiming.resets): a reset at `frame` ends every slow-down of its priority that started
  * before it and runs past it. The game keeps one dilation per priority, the latest taking the place of the one running
  * (a reset is a dilation at scale 1; under the lowest-scale rule it would do nothing): Arcane's combo resets the combo

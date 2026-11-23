@@ -5,7 +5,7 @@
 
 import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, readingDoesNotApply, resolveApplication, statusEventKey, type EnemyStatus, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { castTimeStops, placeHits, type Placement, type TimeStop } from "./logcasts.ts";
+import { castFrames, castTimeStops, placeHits, type Placement, type TimeStop } from "./logcasts.ts";
 
 /**
  * Reactions show up in logs at the hit that caused them. A logged event
@@ -67,7 +67,7 @@ export type { TimeStop };
 
 /** The time stops of the logged casts of skills that have them, each cast placed from its first logged hit (logcasts.ts). */
 export function loggedTimeStops(data: GameData, placement: Placement): TimeStop[] {
-  return castTimeStops(data, placement.casts);
+  return castTimeStops(data, placement.casts, castFrames(placement));
 }
 
 /**

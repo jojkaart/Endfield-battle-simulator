@@ -17,7 +17,7 @@ import {
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
-import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /**
@@ -1096,7 +1096,7 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
   });
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((x) => x.followUpOnly).map((x) => `${k.operator}|${x.skillId}`)));
   const placed = replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`));
-  const stops = castTimeStops(data, placement.casts);
+  const stops = castTimeStops(data, placement.casts, castFrames(placement));
   const near = loggedCastMatcher(kits, stops);
   return (fx.casts ?? []).map((lc): LoggedCastFate => {
     const base = { t: lc.t, operator: lc.operator, skill: lc.skill };
@@ -1123,7 +1123,13 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
     casts.flatMap((c) => {
       if (c.slot && c.as === undefined) return [];
       const skillId = c.as ?? c.skillId;
-      const { stops, resets } = skillStops(data, skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId, kind: c.kind });
+      // The kit frames of its landings (their hit and nth), which show the path it took (skillStops).
+      const hits = data.kits.operators[c.operator]?.skills.find((s) => s.skillId === skillId)?.hits ?? [];
+      const landed = c.landings.flatMap((l) => {
+        const f = hits.find((h) => h.id === l.hitId)?.frames?.[l.nth];
+        return f === undefined ? [] : [f];
+      });
+      const { stops, resets } = skillStops(data, skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId, kind: c.kind }, landed);
       return [{ stops: stops.map((s) => ({ ...s, placed: c.landings.length > 0 })), resets }];
     }),
   );
@@ -1138,7 +1144,7 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
 export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[]): ReplayedCast[] {
   if (kits.length === 0) return [];
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts))))))));
+  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement)))))))));
 }
 
 /**
