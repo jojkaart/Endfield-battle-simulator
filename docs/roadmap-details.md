@@ -163,6 +163,14 @@ hits (2.45%, 2.08% of it a status the replay deals nowhere within 5 s: a physica
 2.3%: basic attacks cut by inputs the log lacks); (5) Rossi's Seething Blood extras; (6) Typhoeus's 5th-shot Hovering
 ATK (her own clock: the end varies 0.52–0.71 s); then round 2's (1), (3), (5).
 
+**Fight totals, round 4 (2026-11-24, [journal](journal/2026-11-23-13-fight-totals-4-whose-shatter-snowshine-s-counter-rossi-s.md)):**
+done: a Shatter at a stack joining a running Vulnerable is its starter's (04d4's Ember), Snowshine's counter jump from
+its logged bash (04d4, 2fd9 −15.6 → −3.6%), a pinned landing's crit only its own hit's and valueCrits over listed
+effects (Rossi's extras). Next: (1) measure's hold-out physical misses split by status kind (2.08%, unmoved: no
+development mechanism); (2) Zhuang Fangyi's Empyrean free path (4d60: 6 blades, the log 8, earlier counts right);
+(3) Rossi's bleed ending at her slash2 (3 replay-only extras); (4) slots by value; (5) same-ms order where a stop
+doesn't batch (docs/tried/2026-11-24-same-ms-cast-order.diff); then round 3's (4), (6).
+
 **Tests 18, 19, 101, 104 from the logs (2026-11-16,
 [journal](journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md)):** bosses freeze by default, control immunity per enemy
 (Chiliarch, the enemy Si; packages/data/src/enemyFacts.ts); cooldowns run
