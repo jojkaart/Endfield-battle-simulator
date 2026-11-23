@@ -21,6 +21,8 @@ const TWIN_MAX = 3;
 const END_MS = 1500;
 /** How near an away stretch's edge (ms) a one-sided landing counts as at it. */
 const AWAY_EDGE_MS = 1000;
+/** How far (ms) the replay may have dealt a logged status hit its operator has no landing for (OneSided.context). */
+const STATUS_NEAR_MS = 5000;
 /** How far before a one-sided landing (ms) a cast the replay made as a cut of its operator's running cast counts. */
 const CUT_MS = 1000;
 
@@ -43,7 +45,8 @@ export interface OneSided {
   /**
    * Where it sits, the first that applies: `unread` (a logged hit whose own landing counted without it: no primary
    * reading), `twin like` / `twin other` (paired with an opposite-side landing of its operator within TWIN_MS, values
-   * within TWIN_LIKE, or within TWIN_MAX); then a replay-only landing's cast: `no cast` (a trigger's or a status's), `cast unlogged` (none of its landings stands for a logged hit), `cast tail` (after its last logged one),
+   * within TWIN_LIKE, or within TWIN_MAX), `twin uncounted (<why>)` (a log-only hit with such a landing the totals left
+   * out); then a replay-only landing's cast: `no cast` (a trigger's or a status's), `cast unlogged` (none of its landings stands for a logged hit), `cast tail` (after its last logged one),
    * `cast head` (before its first), `cast gap` (between two); a log-only hit's: the replay's reason for no landing
    * (BuffReplay.landing / statusLanding), or `landed, not counted`.
    */
@@ -96,8 +99,8 @@ function loggedKind(data: GameData, fx: LogFixture, h: LogHit): { skill: string;
 
 /**
  * Every one-sided landing of a fight's totals, classified (OneSided): `counted` the simulated total's parts with their
- * landings, `uncounted` why a logged hit's landing wasn't counted (absent, away, after the kill), `away` the away
- * stretches (ms).
+ * landings, `uncounted` the replay's landings the totals left out and why (absent, away, after the kill, past the log's
+ * end), `away` the away stretches (ms).
  */
 export function oneSidedLandings(
   data: GameData,
@@ -105,7 +108,7 @@ export function oneSidedLandings(
   replay: BuffReplay,
   counted: readonly CountedLanding[],
   away: readonly { readonly from: number; readonly to: number }[],
-  uncounted: (l: LandedHit) => string | undefined,
+  uncounted: ReadonlyMap<LandedHit, string>,
 ): OneSided[] {
   const standsFor = new Set(counted.flatMap((p) => (p.logged ? [p.logged] : [])));
   const byLanding = new Map(counted.map((p) => [p.landing, p]));
@@ -149,6 +152,14 @@ export function oneSidedLandings(
     const l = parseReactionEvent(x.hit.event) ? replay.statusLanding(x.hit) : replay.landing(x.hit);
     if ("unknown" in l) {
       x.context = `no landing: ${l.unknown}`;
+      // A status the replay didn't deal near the hit: whether it dealt it later or sooner (its operator's, within
+      // STATUS_NEAR_MS), by another operator near the hit, or not at all.
+      const r = parseReactionEvent(x.hit.event);
+      if (r) {
+        const t = x.hit.t;
+        const same = replay.hits.filter((y) => y.skillId === `reaction:${r.kind}` && Math.abs(msOf(y.frame) - t) <= STATUS_NEAR_MS);
+        x.context += same.some((y) => y.operator === x.operator) ? ` (dealt within ${STATUS_NEAR_MS / 1000} s)` : same.some((y) => Math.abs(msOf(y.frame) - t) <= TWIN_MS) ? " (dealt by another operator)" : ` (none within ${STATUS_NEAR_MS / 1000} s)`;
+      }
       continue;
     }
     const part = byLanding.get(l);
@@ -160,7 +171,7 @@ export function oneSidedLandings(
         r.twin = { t: x.t, key: x.key, damage: x.damage };
         x.twin = { t: r.t, key: r.key, damage: r.damage };
       }
-    } else x.context = part ? "landing a teammate's hit's" : `landed, not counted${uncounted(l) ? ` (${uncounted(l)})` : ""}`;
+    } else x.context = part ? "landing a teammate's hit's" : `landed, not counted${uncounted.has(l) ? ` (${uncounted.get(l)})` : ""}`;
   }
   // Twins: one to one, like values first, then nearest.
   const pairs: { r: (typeof items)[number]; h: (typeof items)[number]; like: boolean; dt: number }[] = [];
@@ -183,6 +194,24 @@ export function oneSidedLandings(
     p.h.context = ctx;
     p.r.twin = { t: p.h.t, key: p.h.key, damage: p.h.damage };
     p.h.twin = { t: p.r.t, key: p.r.key, damage: p.r.damage };
+  }
+  // A log-only hit with no twin among the counted landings may have one the totals left out (after the kill, away):
+  // `twin uncounted (<why>)`, the nearest of its operator's within TWIN_MS and TWIN_MAX.
+  const spare = [...uncounted].filter(([l]) => l.exact > 0);
+  const usedSpare = new Set<LandedHit>();
+  for (const h of items) {
+    if (h.side !== "log" || h.context === "unread" || h.context?.startsWith("twin") || h.context?.startsWith("landed")) continue;
+    let best: [LandedHit, string] | undefined;
+    for (const [l, why] of spare) {
+      if (usedSpare.has(l) || l.operator !== h.operator || Math.abs(msOf(l.frame) - h.t) > TWIN_MS) continue;
+      const ratio = l.exact / -h.damage;
+      if (ratio > TWIN_MAX || ratio < 1 / TWIN_MAX) continue;
+      if (!best || Math.abs(msOf(l.frame) - h.t) < Math.abs(msOf(best[0].frame) - h.t)) best = [l, why];
+    }
+    if (!best) continue;
+    usedSpare.add(best[0]);
+    h.context = `twin uncounted (${best[1]})`;
+    h.twin = { t: msOf(best[0].frame), key: `${best[0].skillId} ${best[0].hitId}`, damage: best[0].exact };
   }
   for (const x of items) {
     if (x.t >= lastLogged - END_MS) x.flags.push("end");

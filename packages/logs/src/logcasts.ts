@@ -581,7 +581,13 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // at random, so off their slots' frames, made three casts from 41880 to 45866 ms, around her combo's bomb;
         // af7b7f865906: five sheep, four casts, around her attack 3 at 59.7 s).
         const sameUltimate = cur !== undefined && cur.cast.kind === "ultimate" && (cur.slots === null || cur.index + 1 < cur.slots.length) && worldMs(cur.cast.start, h.t, others) <= cur.longest + CAST_SLACK_MS;
-        if (cur && !used && (sameUltimate || (!superseded && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome)))) {
+        // A series of landings on their way (detached: a field's ticks) goes on at its own pace, however long its pauses
+        // made it: the next slot's landing within its gap from the last one's (ON_TIME_MS) is the same cast's
+        // (fc63a2001251: Typhoeus's Barrage Array, 18 ticks from 81.47 s, its 18th at 94.26 s after her ultimate's stop,
+        // 0.34 s after the 17th, was placed as a combo of its own, whose hovering conversion gave three Hunting Arrows).
+        const atSlot = cur?.slots?.[cur.index];
+        const paced = cur !== undefined && next !== undefined && atSlot !== undefined && next.hits.every((x) => x.detached) && worldMs(cur.last.t, h.t, others) <= msOf(next.frame - atSlot.frame) + ON_TIME_MS;
+        if (cur && !used && (sameUltimate || (!superseded && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) {
           cur.index++;
           cur.last = h;
           const s = cur.slots;
