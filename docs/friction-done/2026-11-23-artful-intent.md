@@ -51,3 +51,11 @@ agent-a9845cb0c7800c225, base 6b117c1.
   and `who` on Artful Intent listed every place that ends it.
 - `npm run measure -- --hits` (51 s for 73 logs) and team-ab's identity check (2 min) made the A/B cheap.
 - `scripts/at-commit.ts` gave a base worktree for a scratch-script A/B (burst landings) without touching the tree.
+
+## Outcome (round 6)
+
+2026-11-23, improvement round 6 (docs/friction-done/2026-11-23-round-6.md); what's left is in docs/friction/2026-11-23-backlog-after-round-6.md.
+
+- 1 (no view of a kit buff's own clock): done (7204f27): `efsim zmdlogs clock --kit-buff chr_0036_jsspsi:artful_intent` gives per instance the own-clock expiry (`hidden-holds=none`, before any shortening step), how it ended and by which step, the check's end; the logged trigger hit after it with its origin carried (the round-6 backlog point 15).
+- 2 (poise.origin in no census or view): partly (9f73b21): census selector `origin:<re>`, a data.md "What the log records" line on what the origin is; the origin column in instances / casts carried (the round-6 backlog point 19).
+- 3 (the Yinglung scoring scripts in another agent's scratch): done (95adc49): scripts/probes/edge/ (edge-export.ts, edge_implied.py, edge-score.py with its import fixed), run at this round's code (H1 59 exact, H3 56 of 69); not rewritten as one TS script: the probe is what the numbers came from.

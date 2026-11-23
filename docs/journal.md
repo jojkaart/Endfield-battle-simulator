@@ -4,9 +4,45 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 121 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 122 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Improvement round 6: a kit buff's clock, probes, the split
+
+**Goal:** the sixth friction round (docs/friction/README.md) over the six open reports (round 5's backlog and its own
+report, the buff clock, Artful Intent, hidden holds, the four smaller leads) and the lead's list, behaviour-preserving;
+on main at 235d717. Summary: docs/friction-done/2026-11-23-round-6.md.
+
+**Done:**
+- `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (packages/logs/src/clockview.ts): per instance the first
+  expiry, the expiry on the replay's own clock (`hidden-holds=none`, before any shortening step), how it ended there
+  and in the check's replay, the log's run and the lateness in real and world time; four agents had scripted it.
+- scripts/probes/<topic>/ with an index and a rule (a scratch script a doc cites moves there in that commit); eleven
+  cited probes promoted from other worktrees' scratch and run at this code; open-problems points at them.
+- `node scripts/holdout-split.ts add-development <fixture>` (the development array's text alone, the parse checked,
+  nothing of the hold-out list shown); 207f registered.
+- World-time views (worldtime, lanes --world, cadence) on the stops of the replay's casts (query.ts `replayTimeStops`:
+  db87's Laevatain ultimate placed from its cast event was missing); `measure` reads a log new since the reference
+  commit from the measured tree; `zmdlogs hits --assume`; census `origin:<re>`.
+- `operatorId(data, "Arcane")` (@efsim/data), `efsim find --operators`, devFixtures by name.
+- The backlog: closed-by lines and a parked list (docs/friction/README.md), scripts/friction.ts `outcomes` / `carry`;
+  round 5's points 1–21 parked; docs/friction/2026-11-23-backlog-after-round-6.md has 20 live points.
+
+**Scoreboard** (`npm run snapshots:update`: no log's verdicts moved; only the groups): development 31 → 32 fights,
+plain 63.2 → 62.5%, mismatch 15.4 → 15.6%, |damage| 9.1 → 9.4%; earlier pending 24 → 23 fights, 56.1 → 56.9%,
+18.8 → 18.7%, 8.4 → 8.0%; verified, hold-outs and all but the hold-outs unchanged.
+
+**Decisions:** the split edited as text, not re-serialised (a whole-file rewrite would put hold-out ids in the
+diff). `zmdlogs clock` as a consumer of the replay's traces under two readings, so nothing in logBuffReplay moved
+while the hidden-holds clocks agent works in it; its run() refactor, the enemy-status trace view and the Corrosion
+reader left to that agent (the backlog's "Taken" section). Probes not typechecked or linted: they age, and the
+README's "last run" column says when one was last seen working. Points carried through two rounds without a new
+report parked rather than re-read.
+
+**Left:** the backlog's 20 points (`zmdlogs clock` from casts and over every buff, the kit windows' instance chain,
+pinned expiries, origin columns, the hold-out field count, round 5's carried views); friction report
+docs/friction/2026-11-23-round-6-friction.md.
 
 ## 2026-11-23: Si's strokes from the log: Initial Stroke at the first press, the burst's origin
 
@@ -349,41 +385,3 @@ already; per-hit closer). Rossi's own mismatches 594 → 497 (`zmdlogs groups --
 up to ~2.5 s longer or shorter in world time than the replay's (tables in the entry); Corrosion's ramp under 489c's
 ultimates; 0c14's crit-less ultimate without a bleed (no extras to show its crits; the log's layer counts would).
 9a80's ultimate ×1.09 already fitted at the base.
-
-## 2026-11-22: Perlica's combo hits: Pulser Labs and Wild Wanderer before the hit's damage
-
-**Goal:** Perlica's combo hits ×1.15–1.40 above the engine (fc63, 3aa6, 4d60, 4360, 9847), her −9.6% in 9090's
-totals although every hit matched, and fc63's ×0.934 ATK (docs/open-problems.md, "Typhoeus, Arcane, Liino, Perlica").
-
-**Found:** one cause for the first two. Where her combo hit had no other DMG bonus it was ×1.500 of the engine in every
-Pulser Labs log (4360, 9090, 9847; fc63 ×1.401 = 1.5 × its ATK offset), elsewhere 1 + 0.5 over the hit's DMG sum; in the
-Wild Wanderer logs (3aa6, d774) 1 + 0.192 / 0.224, the weapon's dmg_up at her skill-3 levels. Both triggers (Pulser Labs
-abilityEvent 102, Wild Wanderer 206, the Electrification tag) ran after the applying hit's damage while P3's, on the same
-event and tag, ran before it; her combo makes its forced Electrification before its DamageAction. Both are now
-`beforeDamage`; 46 of her 59 combo hits are exactly the primary reading (14 before). 9090's −9.6% was those 7 combo hits,
-matched only by the log-listing fallback: no hit is missing (130 of 130 landed; per skill attack1 20, attack2 34, attack3
-51, attack4 16, combo 7, ultimate 2), Perlica −9.4 → −2.7%, the rest crit luck. ZMDLogs lists none of the three buffs on
-the hit that creates them (a new "Common misreadings" line in docs/design/data.md).
-
-**Follow-on:** e82d's Electrification reaction hit (the only one in the development logs) took the +0.5 too (Perlica
-+14.8 → +64%); it fits P3's ATK without Pulser Labs' DMG and without its own Electrification. So a reaction's own hit
-takes its triggers' ATK but not their DMG bonuses for Electrification as for Combustion (landing.ts `reactionHitSide`,
-was `combustionHitSide`), and OWN_HIT_SEES has Electrification seeing the one before it (ASSUMED, one hit;
-combat-mechanics §3.2, §3.8): e82d Perlica −3.4%. **fc63:** `zmdlogs fit-build` fits attribute nodes 2 (nodes 5 and 7
-need favorability 300) with Stanza at level 86 (57 of 81 hits, 20 of 21 clean; 1 node at 89 is within 0.1%): kept as
-the fixture's `buildOverrides`, the pair a fit, not a reading.
-
-**Scoreboard (docs/accuracy.md):** development plain 52.0 → 52.5%, mismatch 18.2 → 17.9%, mean |damage error| 12.6%
-unchanged; hold-out plain 67.3 → 67.4%, mismatch 6.7%, error 12.1 → 12.0% (2 better, 0 worse); earlier pending 48.9 →
-49.0%, error 8.3 → 8.4%. Logs better: 4d60, 9090, fc63, 3aa6; mixed 4360, 9847, c6d8, d774 (each closer per hit;
-4360's and c6d8's fights were already over-predicted by others), worse e82d (fight −8.5 → −8.8%: its reaction hit was
-over-predicted, now right, the fight's shortfall is elsewhere). Perlica's row: plain 58.8 → 66.7%, mismatch 24.1 →
-18.8%, mean |damage error| 18.5 → 19.2% (c6d8 +137.8 → +163.7%, a team-wide ×0.1 log; fc63 −0.5 → −6.1%, where the
-ATK offset had hidden the missing combo bonus, now both right, the rest an unflagged ultimate crit and Stagger runs).
-
-**Team (team-ab, seeds 1001–1032):** Typhoeus's team sustained DPS 52,949 → 53,173 (+0.42%) at full energy, 50,194
-→ 50,417 (+0.44%) from zero; the 60 s timelines +0.30% / +0.29% (docs/teams/typhoeus-arcane-liino-perlica.md); Estella's
-team unchanged.
-
-**Dead ends:** none kept. Left: 4d60's combos ×1.08 (Liino's stance ATK listed, not replayed), a reaction
-Electrification with Wild Wanderer (in-game test 68's open half), the Electrification reaction rule rests on one hit.

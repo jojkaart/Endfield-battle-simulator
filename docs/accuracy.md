@@ -24,9 +24,9 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 77.1% | 97.8% | 0.0% | 1.9% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 63.2% | 78.1% | 15.4% | 9.1% | 16 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 62.5% | 77.6% | 15.6% | 9.4% | 16 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 70.3% | 88.3% | 6.4% | 10.8% | 7 |
-| Earlier pending (imported before the hold-out split) | 24 | 12078 | 56.1% | 77.6% | 18.8% | 8.4% | 12 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 56.9% | 78.2% | 18.7% | 8.0% | 12 |
 | All but the hold-outs | 61 | 29035 | 60.6% | 78.4% | 16.4% | 8.1% | 34 |
 
 ## By operator (every log but the hold-outs)

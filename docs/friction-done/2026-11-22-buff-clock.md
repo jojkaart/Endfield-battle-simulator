@@ -74,3 +74,13 @@ development log, score deterministic hypotheses for the excess, implement what f
 - The raw-detail cache (19 logs) gave exact lane ends, which showed the logger's ends are flush times shared with other
   edges, and the battle's clock fields (`timeSource`, official vs timeline duration).
 - `castTimeStops` / `worldMs` exported from @efsim/logs: the world-time arithmetic was one call.
+
+## Outcome (round 6)
+
+2026-11-23, improvement round 6 (docs/friction-done/2026-11-23-round-6.md); what's left is in docs/friction/2026-11-23-backlog-after-round-6.md.
+
+- 1 (each listed run against its data duration and the replay's expiry): done (7204f27, 95adc49): per kit buff `efsim zmdlogs clock --kit-buff owner:id` over every development log (first expiry, own-clock expiry, ends, the log's run, lateness in world time, the spread); the every-buff table is this report's lanes.ts, committed as scripts/probes/buff-clock/lanes.ts; a view over every buff at once carried (the round-6 backlog point 15). No `kitBuffSeconds` export: the view takes the replay's first expiry.
+- 2 (the kit windows don't say which instance a later window continues): not done (a change in the replay's run(), which the hidden-holds clocks agent is refactoring now), carried (the round-6 backlog point 16).
+- 3 (an expiry extended from the log gets held again): not done (engine clock and the replay's held ends, the hidden-holds clocks agent's area now), carried (the round-6 backlog point 17).
+- 4 (the guard refuses `source`; hits ignores --assume): done: CLAUDE.md's worktree rules name `source`, `eval` and `exec` as refused anywhere in a command (95adc49); `zmdlogs hits` takes `--assume` (hitRecords, the workers, never cached; 3e89a2b).
+- 5 (hold-outs can't show a listing-based change): not done, carried (the round-6 backlog point 18).

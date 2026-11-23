@@ -650,7 +650,11 @@ promotion. 50 loadouts may be screened (authorized 2026-11-08).
   fixtures/holdout/ (with the split, holdout.json), apart from the
   development logs, so no glob or listing over fixtures/pending touches
   one; `efsim zmdlogs list` (or `logFixtureFiles`) is the safe way to
-  find development logs. Every new log's first check is
+  find development logs. A development log of the new ones goes on the
+  split's development list with `node scripts/holdout-split.ts
+  add-development <fixture>` (it shows nothing else of the file; round 6),
+  else it counts as "earlier pending" on the scoreboard; the hold-out
+  draw stays the lead's. Every new log's first check is
   recorded before any fix. An operator with a build offset sends us to
   another log first; a log is corrected only when no cleaner one exists,
   with the evidence in its notes.

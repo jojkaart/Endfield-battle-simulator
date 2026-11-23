@@ -71,3 +71,13 @@ main at 6b117c1, branch of worktree agent-a58a694ab66bcb985.
   the ruled-out lists that made "a second player's log" an immediate decider for Hard 27.
 - `zmdlogs fit-build` found Ember's and Snowshine's weapon levels in seconds once the resistance was right.
 - measure's snapshot at queue time: I kept editing during every run.
+
+## Outcome (round 6)
+
+2026-11-23, improvement round 6 (docs/friction-done/2026-11-23-round-6.md); what's left is in docs/friction/2026-11-23-backlog-after-round-6.md.
+
+- 1 (no view of an enemy status's life in the replay): not done: the hidden-holds clocks agent builds the enemy-status trace view (the round-6 backlog, "Taken by the hidden-holds clocks agent").
+- 2 (`measure --hits` fails on a new fixture): done (89f6142): a log new since the reference (or --base) commit is measured there on the measured tree's copy of its fixture; if that code can't read it, it stays "new" there instead of failing (checked: `--logs 207fff414d82 --hits --against f0bcbe9^`, 197 changed hits listed).
+- 3 (the placed-cast views miss the replay's event-placed ultimates): done (5d9f32d): query.ts `replayTimeStops` (the stops of assembleCasts' casts, each marked whether placed from hits); worldtime, lanes --world and cadence use it (db87 16–21 s: held 2.03 s by Laevatain's ultimate and Camille's combo, was 0.33 s).
+- 4 (a new development log can't be registered without opening the split): done (89f6142): `node scripts/holdout-split.ts add-development <fixture>` edits the development array's text alone, checks the parse, prints only the id and the count; `group <fixture>`; fixtures/pending/zmdlogs-207fff414d82.json registered (it moved from earlier pending to development at this round's snapshots:update).
+- 5 (Corrosion's ramp has no reading tool): not done as a view (the hidden-holds clocks agent's, the round-6 backlog); the scratch reader is committed as scripts/probes/corrosion/corrosion-lag.ts (95adc49).
