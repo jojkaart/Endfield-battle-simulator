@@ -14,6 +14,17 @@ const fx = readLogFixture(join(ROOT, file));
 const records = hitRecords(data, fx, file);
 
 describe("per-hit records of the log check", () => {
+  it("replays under another reading when asked (zmdlogs hits --assume; round 6: it was ignored)", () => {
+    const assume = { "hidden-holds": "none" };
+    const under = hitRecords(data, fx, file, assume);
+    const replay = logBuffReplay(data, fx, undefined, { assume });
+    const byHit = engineHits(data, fx, replay);
+    fx.hits.forEach((h, i) => {
+      const p = byHit.get(h)?.primary;
+      if (p !== null && p !== undefined) expect(under[i]?.predicted).toBe(p);
+    });
+  });
+
   it("has one record per logged hit, with the check's verdict classes and primary readings", () => {
     expect(records).toHaveLength(fx.hits.length);
     const replay = logBuffReplay(data, fx);

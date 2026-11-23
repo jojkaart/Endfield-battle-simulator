@@ -110,7 +110,19 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   worktree (scripts/at-commit.ts), so the working tree stays editable;
   `--base <ref>` measures two commits' code on the same logs (an A/B that
   doesn't trust either side's committed snapshots). Never copy older source
-  files over the tree while a job runs on it.
+  files over the tree while a job runs on it. A log new since that commit
+  (an import on this branch) is measured there on this tree's copy of its
+  fixture (round 6).
+- **Two code variants, neither an open reading:** commit variant A (a WIP
+  commit on the branch), make variant B in the working tree, then `npm run
+  measure -- --base HEAD`: B (the tree, fixed at queue time) against A's
+  code on the same logs; with `--hits` for the hits that differ. For more
+  variants, a commit each and `--at <ref> --base <ref>`. Don't register a
+  temporary reading in the assumptions registry to compare two variants
+  (round 6: the hidden-holds round added and removed a `world` reading to
+  measure "the operators' clocks too"): `--assume` is for the open
+  questions the registry lists, and a reading added for one measurement
+  leaks into `efsim assumptions` and `--assumptions` checks if forgotten.
 - **`npm run snapshots:update`** stays the final step before a commit
   that moves verdicts (it also rewrites the example and kit snapshots and
   checks every test's assertions).

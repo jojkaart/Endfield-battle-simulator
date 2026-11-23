@@ -61,6 +61,7 @@ export default command({
                 [--kind <k>] [--operator <op>]  Only this reaction kind ("skill": kit hits) / operator (id or name;
                                           repeatable)
                 [--event <regex>]         Only hits whose logged event key matches
+                [--assume <id>=<reading>] Under another reading of an open assumption, as check's (not cached)
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
                 [--reading log]           Text lines also give the log's reading and its error: off under both is the
                                           build or a kit value, off only under the primary the replay's timing
@@ -303,7 +304,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     if (sub === "hits") {
       if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
       const reading = values.reading === "log" ? "log" : "primary";
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, cache: !values["no-cache"], progress });
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });

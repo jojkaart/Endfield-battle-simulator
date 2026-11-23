@@ -7,9 +7,9 @@ import { filterRecords, hitRecords } from "./hitexport.ts";
 import { readLogFixture } from "./logs.ts";
 
 const data = loadGameData();
-parentPort?.on("message", (m: { file: string; kind?: string; operators?: string[] }) => {
+parentPort?.on("message", (m: { file: string; kind?: string; operators?: string[]; assume?: Record<string, string> }) => {
   try {
-    parentPort?.postMessage({ file: m.file, records: filterRecords(hitRecords(data, readLogFixture(m.file), m.file), { ...(m.kind !== undefined ? { kind: m.kind } : {}), ...(m.operators ? { operators: m.operators } : {}) }) });
+    parentPort?.postMessage({ file: m.file, records: filterRecords(hitRecords(data, readLogFixture(m.file), m.file, m.assume ?? {}), { ...(m.kind !== undefined ? { kind: m.kind } : {}), ...(m.operators ? { operators: m.operators } : {}) }) });
   } catch (e) {
     parentPort?.postMessage({ file: m.file, error: e instanceof Error ? `${e.message}\n${e.stack ?? ""}` : String(e) });
   }
