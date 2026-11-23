@@ -53,16 +53,18 @@ below ([review-2026-10.md](review-2026-10.md)).
   the buff clock 2026-11-22: unlogged world holds, about a perfect dodge each, on one clock per fight;
   2026-11-23 the replay places them once from the log's clocks for every timer, `hidden-holds` `placed`:
   development plain 59.9 → 62.8%; they don't explain the SP shortfall; 2026-11-23 the enemy's statuses and
-  Corrosion's ramp as clocks too, d774 and db87 fixed; the ramp's over-holds (freezes run the ramp on; Arcane's combo resets the combo slow-down at its frame 9); next test 111, a battle skill's hit logged at a stop's end, Rossi's combo_3 dilations, Wolven
-  Blood's unlogged crits); Arcane's misses grouped (2026-11-18: 908 → 866;
+  Corrosion's ramp as clocks too, d774 and db87 fixed; Wolven Blood's unlogged crits from its listed layers
+  2026-11-23, 489c 517 → 546; the ramp's over-holds 2026-11-23 (freezes run the ramp on; Arcane's combo resets the
+  combo slow-down at its frame 9); next test 111, a battle skill's hit logged at a stop's end, Rossi's combo_3
+  dilations, Rossi's bleed ticks landed off the log's); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
   only game-only tests now); Rossi's bleed and ultimate crits (2026-11-22:
   her bleed keeps only ATK, its ticks on the log's clock; her buffs' lengths
   are the buff clock's); Gilberta's Vulnerable count at her ultimate
-  (2026-11-22: 489c / d572 fixed, Rossi's combo 3 landed twice; left 4360 /
-  9847, stacks outliving 20 s on the tower bosses); Si's strokes from the log (2026-11-23: Initial Stroke at the first
+  (2026-11-22: 489c / d572 fixed, Rossi's combo 3 landed twice; 4360 2026-11-23, an instance buff's run as a
+  hold clock; left 9847, next her listed Susceptibility as a Vulnerable-count clock); Si's strokes from the log (2026-11-23: Initial Stroke at the first
   press, Final Stroke by the burst's origin; Yinglung's Edge 61 / 68, left the boss's phase pause, test 106); four
   smaller leads (2026-11-23: Hard 27's resistance 11 from a second player's log; Liino's combo placed from its stop's
   end; statuses created in a stop held; d774's ×1.39 and db87's ramp are the buff clock's hidden holds on enemy

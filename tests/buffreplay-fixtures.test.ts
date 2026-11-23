@@ -4,8 +4,8 @@
 import { describe, expect, it } from "vitest";
 import { effectiveKit, FPS, type OperatorKit } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
-import { type LogFixture, type LogHit } from "@efsim/logs";
-import { castsFromTriggerHits, checkLog, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, simulateLog } from "@efsim/cli";
+import { layerCrits, shownCrits, type LogEffect, type LogFixture, type LogHit } from "@efsim/logs";
+import { castsFromTriggerHits, checkLog, LOG_LISTING, logBuffReplay, loggedLaneEnds, readLogFixture, replayedCasts, simulateLog } from "@efsim/cli";
 import { placeHits } from "../packages/logs/src/logcasts.ts";
 
 const data = loadGameData();
@@ -289,6 +289,42 @@ describe("489c0be3e162: Rossi's ultimate crits the log leaves out, and her bleed
     expect(extras.every((h) => !("unknown" in r.replay.landing(h)))).toBe(true);
   });
 
+  it("counts as crits the crit-less hits where Wolven Blood's listed layers show them (layerCrits): her final before 57 s, not at 59.5 s", () => {
+    const kits = fx.team.flatMap((b) => effectiveKit(data, b) ?? []);
+    const placement = placeHits(data, fx);
+    const crits = layerCrits(kits, fx, placement, shownCrits(kits, fx, placement));
+    // 55610 ms: a power attack with no crit flag, listed with a layer from its ms and the max-stack final.
+    const power = fx.hits.findIndex((h) => h.t === 55610 && h.event === "chr_0028_wulfa_power_attack");
+    expect(fx.hits[power]?.crit).toBeNull();
+    expect(crits.get(power)).toBe(true);
+    const finals = r.replay.kitWindows("chr_0028_wulfa:wpn_sword_0022.final", "chr_0028_wulfa").map((w) => w.start);
+    // The log's final from 55.61 s; the replay's from 56.73 s, two layers short from two bleed ticks it lands off the
+    // log's (47.13 s at 46.60 s, before the first final's end clears the layers; 52.18 s none): not crits.
+    expect(finals.some((s) => s > 55000 && s < 57000)).toBe(true);
+  });
+
+  it("reads her logged crits back from the layers when every flag is hidden, and not from the listing moved at random (negative control)", () => {
+    const kits = fx.team.flatMap((b) => effectiveKit(data, b) ?? []);
+    const rossiHit = (h: LogHit) => h.operator === "chr_0028_wulfa";
+    const precision = (moved: (since: number) => number) => {
+      const move = (e: LogEffect) => (e.since !== undefined && e.buff === "buff_wpn_sword_0022_layer" ? { ...e, since: moved(e.since) } : e);
+      const hidden: LogFixture = { ...fx, hits: fx.hits.map((h) => (rossiHit(h) ? { ...h, crit: null, effects: h.effects.map(move), boundaryEffects: h.boundaryEffects.map(move) } : h)) };
+      const placement = placeHits(data, hidden);
+      const inferred = [...layerCrits(kits, hidden, placement, shownCrits(kits, hidden, placement)).keys()].map((i) => fx.hits[i]?.crit).filter((c) => c !== null);
+      return { n: inferred.length, right: inferred.filter((c) => c === true).length / inferred.length };
+    };
+    const flagged = fx.hits.filter((h) => rossiHit(h) && h.crit !== null);
+    const base = flagged.filter((h) => h.crit === true).length / flagged.length;
+    // As measured 2026-11-23: 152 of 156 right (0.97) against a base rate of 0.64.
+    const own = precision((s) => s);
+    expect(own.n).toBeGreaterThan(100);
+    expect(own.right).toBeGreaterThan(0.95);
+    // Each listed start moved to another of her hits' moments (a fixed shuffle): no better than the base rate.
+    const moments = [...new Set(fx.hits.filter(rossiHit).map((h) => h.t))].sort((a, b) => a - b);
+    const shuffled = precision((s) => moments[(moments.indexOf(s) * 7919 + 13) % moments.length] ?? s);
+    expect(shuffled.right).toBeLessThan(base + 0.1);
+  });
+
   it("takes each bleed tick from its logged one (KitBuff.ticksShownByHits): the replay's clock runs 0.3–0.6 s off the log's within one application", () => {
     // Unpinned, the replay ticked 368 ms after the first two and had none within 0.5 s of the third.
     for (const t of [30565, 31564, 41667]) {
@@ -324,5 +360,22 @@ describe("b6aa15281db4: a buff the log lists past the replay's expiry (engine as
     expect(placed).toBeLessThan(43880);
     // The holds alone hold it past the replay's own expiry.
     expect(end("holds") as number).toBeGreaterThan(40000);
+  });
+});
+
+describe("4360447193ac: Gilberta's Vulnerable stacks past 20 s on a tower boss (2026-11-23)", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-4360447193ac.json", import.meta.url).pathname);
+
+  it("takes runs listed side by side as two instances, not a refresh (loggedLaneEnds)", () => {
+    const runs = loggedLaneEnds(fx).runs.get("buff_wpn_funnel_0008_magic_damage_taken_up|chr_0004_pelica") ?? [];
+    // Perlica's Arts DMG Taken from 92.24 s is listed beside the one from 104.92 s until 108.27 s.
+    expect(runs.find((r) => r.since === 92241)?.refreshed).toBe(false);
+  });
+
+  it("reads her 116.0 s ultimate's Susceptibility as listed (0.39, 3 stacks): the hold Perlica's run places keeps the stacks", () => {
+    // Perlica's run from 92.24 s, 0.74 s late, places a hold that keeps the 90.87 s stacks to the 113.40 s Lift.
+    // Avywenna's ultimate at 117.98 s under it was a mismatch at 0.33.
+    const v = checkLog(data, fx).find((x) => x.hit.t === 117977 && x.hit.event === "chr_0012_avywen_ultimate_skill");
+    expect(v?.kind === "match" ? v.class : v?.kind).toBe("plain");
   });
 });

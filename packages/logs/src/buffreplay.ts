@@ -61,6 +61,9 @@ function healsControlled(kit: OperatorKit): boolean {
   return kitHitEntries(kit).some((e) => e.hit.heals === "controlled") || kit.triggers.some((t) => allActions(t.do).some((a) => a.kind === "heal" && a.target === "controlled"));
 }
 
+/** How close (ratio) the lowest of the hits taken for crits at one moment may be to the highest of the rest. */
+const CRIT_APART = 1.4;
+
 /**
  * Crits the log leaves out (LogHit.crit null) that a trigger on crits shows by its own logged hits, per logged hit
  * index. Every development log leaves the crit out of Rossi's ultimate stabs (and of hits during it), yet logs the
@@ -68,10 +71,10 @@ function healsControlled(kit: OperatorKit): boolean {
  * 94430 ms: one stab of 16604 and one extra; 95000 ms: stabs of 16604, 16604 and 6386 and two extras): at a moment with
  * m such hits (less the logged crits that may have fired them), the m largest of the operator's hits there of the
  * trigger's kinds with no logged crit are crits, when they stand apart from the rest (crit and non-crit values of one
- * key differ by the crit zone, ×1.5 or more). Without the inference the replay's main run lands none of the extras and
+ * key differ by the crit zone, ×1.5 or more: CRIT_APART). Without the inference the replay's main run lands none of the extras and
  * the Wolven Blood layers those crits add.
  */
-function shownCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement): Map<number, boolean> {
+export function shownCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement): Map<number, boolean> {
   const out = new Map<number, boolean>();
   const index = new Map(fx.hits.map((h, i) => [h, i]));
   for (const k of kits) for (const t of k.triggers) {
@@ -99,7 +102,72 @@ function shownCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Pla
       const crits = sorted.slice(0, Math.min(m, sorted.length));
       const rest = sorted.slice(crits.length);
       const lowest = crits.at(-1) as LogHit;
-      if (rest.length > 0 && lowest.value < 1.4 * (rest[0] as LogHit).value) continue;
+      if (rest.length > 0 && lowest.value < CRIT_APART * (rest[0] as LogHit).value) continue;
+      for (const h of crits) out.set(index.get(h) as number, true);
+    }
+  }
+  return out;
+}
+
+/**
+ * The instances of a game buff the log lists as starting at each ms, on an operator's hits (its effects and the
+ * boundary's): per start, the entries with that `since` over the kinds of entry (zone and element) among them, the most
+ * any one hit lists. Wolven Blood (buff_wpn_sword_0022_layer) is listed once per layer and element (Physical, Heat):
+ * two layers from one moment are four entries.
+ */
+export function listedStarts(fx: LogFixture, operator: string, gameBuff: string): Map<number, number> {
+  const out = new Map<number, number>();
+  for (const h of fx.hits) {
+    if (h.operator !== operator) continue;
+    const bySince = new Map<number, LogEffect[]>();
+    for (const e of [...h.effects, ...h.boundaryEffects]) {
+      if (e.buff !== gameBuff || e.since === undefined || (e.source !== undefined && e.source !== operator)) continue;
+      bySince.set(e.since, [...(bySince.get(e.since) ?? []), e]);
+    }
+    for (const [s, es] of bySince) out.set(s, Math.max(out.get(s) ?? 0, es.length / new Set(es.map((e) => `${e.zone}|${e.element}`)).size));
+  }
+  return out;
+}
+
+/**
+ * Crits the log leaves out (LogHit.crit null) that a trigger on crits shows by the layers it adds: a trigger on its
+ * operator's crits that adds a layer of a buff the log lists with its start (LogEffect.since) adds one per crit, so n
+ * layers listed from a moment are n crits there. 489c (pending/zmdlogs-489c0be3e162.json) lists Rossi's Wolven Blood
+ * layers from 54406 ms, then one from 55610 ms with the max-stack final, on a power attack whose crit the log doesn't
+ * give (and one from each of her next five crit-less hits); without it the replay reaches 16 layers 3.9 s later. Taken
+ * after the logged crits and those `shown` (shownCrits) at the moment: n − those are crits among the rest of the
+ * operator's crit-less hits there of the trigger's kinds; all of them when there are as many, else the largest when
+ * they stand apart (CRIT_APART). Not a buff the replay can't decide (a chance, an enemy's action). The count can only
+ * add crits: at the buff's maximum a new layer replaces one, and the listing can show fewer than were dealt.
+ */
+export function layerCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement, shown: ReadonlyMap<number, boolean> = new Map()): Map<number, boolean> {
+  const out = new Map<number, boolean>();
+  const index = new Map(fx.hits.map((h, i) => [h, i]));
+  for (const k of kits) for (const t of k.triggers) {
+    if (t.on.event !== "hit" || t.on.crit !== true || t.by !== "self" || t.chance !== undefined) continue;
+    const first = t.do[0];
+    const def = first?.kind === "buff" && !first.if ? k.buffs.find((d) => d.id === first.buff) : undefined;
+    if (!def?.gameBuff || undecidedBuff(k, def.id)) continue;
+    const kinds = t.on.kinds;
+    const starts = listedStarts(fx, k.operator, def.gameBuff);
+    if (starts.size === 0) continue;
+    const byMs = new Map<number, LogHit[]>();
+    for (const h of fx.hits) {
+      if (h.operator !== k.operator || !starts.has(h.t)) continue;
+      if (kinds) {
+        const kind = placement.hits.get(h)?.cast.kind;
+        if (!kind || !kinds.includes(kind as SkillType)) continue;
+      }
+      byMs.set(h.t, [...(byMs.get(h.t) ?? []), h]);
+    }
+    for (const [ms, hits] of byMs) {
+      const crit = (h: LogHit) => h.crit ?? shown.get(index.get(h) as number) ?? out.get(index.get(h) as number) ?? null;
+      const m = (starts.get(ms) as number) - hits.filter((h) => crit(h) === true).length;
+      const open = hits.filter((h) => crit(h) === null).sort((a, b) => b.value - a.value);
+      if (m <= 0 || open.length === 0) continue;
+      const crits = open.slice(0, m);
+      const rest = open.slice(crits.length);
+      if (rest.length > 0 && (crits.at(-1) as LogHit).value < CRIT_APART * (rest[0] as LogHit).value) continue;
       for (const h of crits) out.set(index.get(h) as number, true);
     }
   }
@@ -1343,9 +1411,16 @@ export interface LoggedLaneEnd {
   /** The operator whose hits list it, or "enemy" for a debuff (an enemy-side zone: TARGET_SIDE_ZONES). */
   readonly holder: string;
   readonly lastListed: number;
-  /** Another run of it (same source and holder) starts inside this one: the log shows a refresh. */
+  /**
+   * Another run of it (same source and holder) starts inside this one and this one isn't listed past it (by more than
+   * REFRESH_OVERLAP_MS): the log shows a refresh. Runs listed side by side are two instances (a stackingType 1 buff:
+   * 4360447193ac, Perlica's Arts DMG Taken from 92.24 s listed with the one from 104.92 s to 108.27 s).
+   */
   readonly refreshed: boolean;
 }
+
+/** How long (ms) a run may still be listed past another's start and be refreshed by it: the refreshing hit's batch. */
+const REFRESH_OVERLAP_MS = 200;
 
 /**
  * Where the log's listing of each buff ends (hidden-holds `log`): every run of every listed game buff, by `buff|source`,
@@ -1376,7 +1451,7 @@ export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
   const all = [...runs.values()];
   const out = new Map<string, LoggedLaneEnd[]>();
   for (const r of all) {
-    const refreshed = all.some((o) => o !== r && o.buff === r.buff && o.source === r.source && o.holder === r.holder && o.since > r.since && o.since <= r.lastListed);
+    const refreshed = all.some((o) => o !== r && o.buff === r.buff && o.source === r.source && o.holder === r.holder && o.since > r.since && o.since <= r.lastListed && r.lastListed - o.since <= REFRESH_OVERLAP_MS);
     const key = `${r.buff}|${r.source}`;
     out.set(key, [...(out.get(key) ?? []), { ...r, refreshed }]);
   }
@@ -1449,7 +1524,7 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
   for (const [key, list] of kitInstances) {
     const [kitKey, op] = key.split("|") as [string, string];
     const def = defs.get(kitKey);
-    if (!def || def.every !== undefined || def.consumedBy || def.link || def.endsWithCast || def.maxStacks !== undefined || def.sharedTimer || def.ticksShownByHits || def.ticksLoggedAs || def.endFollowsTick || def.childOf || def.instances !== undefined) continue;
+    if (!def || def.every !== undefined || def.consumedBy || def.link || def.endsWithCast || def.maxStacks !== undefined || def.sharedTimer || def.ticksShownByHits || def.ticksLoggedAs || def.endFollowsTick || def.childOf) continue;
     const owner = kitKey.slice(0, kitKey.indexOf(":"));
     const holder = def.target === "enemy" ? "enemy" : op;
     for (const w of list) {
@@ -1459,6 +1534,11 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
         const k = `${g}|${owner}`;
         for (const r of ends.runs.get(k) ?? []) {
           if (r.refreshed || r.holder !== holder || r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+          // Instances (KitBuff.instances): a reapplication may refresh the log's run without a new start (Arcane's
+          // will_dmg in 489c: runs from 12.0 and 14.6 s both listed to 49.4 s, over the replay's 25 s instances), so only
+          // a run the log shows apart from the reapplications inside it (runApart), and only the run that starts nearest the
+          // instance (489c: the run from 14.63 s isn't the 12.03 s instance's).
+          if (def.instances !== undefined && (!runApart(list, w, r, ends.runs.get(k) ?? []) || !nearestRun(r, S, ends.runs.get(k) ?? []))) continue;
           const id = `${k}|${r.since}|${holder}|${w.start}`;
           if (seen.has(id)) continue;
           seen.add(id);
@@ -1467,6 +1547,8 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
           const late = (t: number) => (t >= E ? worldMs(E, t, stops) : t - E);
           const [lo, hi] = [late(r.lastListed), off === undefined ? Infinity : late(off.t)];
           if (hi < -2 * HOLD_BOUND_TOL_MS || lo > HIDDEN_HOLD_SHARE * (E - S)) continue;
+          // An instance buff's run later than INSTANCE_LATE_MS: a refresh in place is likelier than holds.
+          if (def.instances !== undefined && lo > INSTANCE_LATE_MS) continue;
           const tag = `run ${g}|${owner} on ${holder} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : "–end"} ms over ${Math.round(E)}`;
           if (lo > -HOLD_BOUND_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - HOLD_BOUND_TOL_MS, max: Infinity, kind: "run", tag, ex: lo / 1000 });
           if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "run", tag, ex: hi / 1000 });
@@ -1475,6 +1557,37 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
     }
   }
   return out;
+}
+
+/** How far apart (ms) the ends of two overlapping runs must be to show them as two instances (runApart). */
+const APART_MS = 1000;
+
+/**
+ * How late (ms, world time past the replay's expiry) an instance buff's run may be and still be a clock: about two
+ * perfect dodges. Arcane's will_dmg / will_atk runs, refreshed in place with their start kept, ask 2–8 s (b6aa15281db4
+ * from 2.1 s, 4d60e7fe92c2 from 10.8 s: 7.7 s); Perlica's Arts DMG Taken in 4360447193ac 0.74 s. An interim bound.
+ */
+const INSTANCE_LATE_MS = 1000;
+
+/**
+ * Whether the log shows a run `r` of an instance buff as an instance of its own: each of the replay's applications
+ * (`list`) after `w` and inside the run has a run of its own in the log, some run overlaps `r` (a lone run may be one
+ * the game refreshed in place: b6aa15281db4, Arcane's will_atk from 2.1 s listed to 31.8 s), and every run overlapping it ends at
+ * least APART_MS from it (two runs ending together: a reapplication that refreshed both; 9c0bb09daff2, Arcane's will_dmg
+ * from 31.5 and 34.3 s both listed to 70.2 s). 4360447193ac: Perlica's Arts DMG Taken from 92.24 s ends at 108.27 s
+ * beside the one from 104.92 s, listed to 119.2 s.
+ */
+function runApart(list: readonly { start: number }[], w: { start: number }, r: LoggedLaneEnd, runs: readonly LoggedLaneEnd[]): boolean {
+  const on = runs.filter((o) => o !== r && o.holder === r.holder);
+  const later = list.filter((x) => x.start > w.start && msOfFrame(x.start) <= r.lastListed);
+  if (!later.every((x) => on.some((o) => Math.abs(o.since - msOfFrame(x.start)) <= RUN_START_MS))) return false;
+  const overlaps = (o: LoggedLaneEnd) => o.since <= r.lastListed && r.since <= o.lastListed;
+  return on.some(overlaps) && on.every((o) => !overlaps(o) || Math.abs(o.lastListed - r.lastListed) >= APART_MS);
+}
+
+/** Whether `r` is the run on its holder whose start is nearest `S` (ms): the one an instance applied at S stands for. */
+function nearestRun(r: LoggedLaneEnd, S: number, runs: readonly LoggedLaneEnd[]): boolean {
+  return runs.every((o) => o === r || o.holder !== r.holder || Math.abs(o.since - S) >= Math.abs(r.since - S));
 }
 
 /**
@@ -1912,7 +2025,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
   const held = (st: TimelineState, frame: number) => heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
-  const shown = shownCrits(kits, fx, placement);
+  const shownByHits = shownCrits(kits, fx, placement);
+  const shown = new Map([...shownByHits, ...layerCrits(kits, fx, placement, shownByHits)]);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */
@@ -1966,7 +2080,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
       // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.
-      // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits) count as logged.
+      // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits) or by the layers it adds
+      // (layerCrits) count as logged.
       loggedCrits: fx.hits.flatMap((h, i) => {
         const crit = h.crit ?? shown.get(i) ?? null;
         return crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit, ref: String(i) }];

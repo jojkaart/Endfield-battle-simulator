@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-23: Wolven Blood's crits from its listed layers; Gilberta's tower-boss stacks from an instance buff's clock](2026-11-23-03-wolven-blood-s-crits-from-its-listed-layers-gilberta-s-tower.md)
 - [2026-11-23: Corrosion's ramp under slow-downs: Arcane's reset, freezes](2026-11-23-03-corrosion-s-ramp-under-slow-downs-arcane-s-reset-freezes.md)
 - [2026-11-23: Improvement round 6: a kit buff's clock, probes, the split](2026-11-23-02-improvement-round-6-a-kit-buff-s-clock-probes-the-split.md)
 - [2026-11-23: Hold clocks: enemy statuses and Corrosion's ramp](2026-11-23-02-hold-clocks-enemy-statuses-and-corrosion-s-ramp.md)
