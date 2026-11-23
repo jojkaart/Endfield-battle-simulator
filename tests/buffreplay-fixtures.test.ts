@@ -112,6 +112,33 @@ describe("a press that leads to an inferred cast: the slot's variant by its kit'
   });
 });
 
+describe("Si's strokes from the log (c83c): Initial Stroke at the first press, no Final Stroke where the burst is the Inksoul's own", () => {
+  const S = "chr_0036_jsspsi";
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-c83c75d02a85.json", import.meta.url).pathname);
+  const r = logBuffReplay(data, fx).replay;
+
+  it("lands the Inksoul's bursts credited to the Inksoul itself (poise.origin normal_skill_inkmove_2) at their logged times, as Artful Intent's expiry", () => {
+    for (const t of [23541, 57256, 87885]) {
+      const h = fx.hits.find((x) => x.operator === S && x.event === `${S}_normal_skill_inkmove_2` && Math.abs(x.t - t) < 5) as LogHit;
+      expect(h.poise?.origin).toBe(`${S}_normal_skill_inkmove_2`);
+      const l = r.landing(h);
+      expect("unknown" in l ? null : l.hitId).toBe("burst_inksoul");
+      expect(Math.abs(("unknown" in l ? 0 : (l.frame * 1000) / FPS) - h.t)).toBeLessThan(250);
+    }
+  });
+
+  it("counts the first press after her battle skill (Initial Stroke) for Type 50 Yinglung's Edge, not her later presses nor an inferred Final Stroke: the combos' implied layers", () => {
+    const layers = (from: number) => {
+      const h = fx.hits.find((x) => x.operator === S && x.event === `${S}_combo_skill_abilityrange` && x.t >= from) as LogHit;
+      const l = r.landing(h);
+      return "unknown" in l ? null : Math.round(l.modifiers.filter((m) => m.kitBuff?.id === "suit_atk02.edge").reduce((s, m) => s + m.value, 0) / 0.2);
+    };
+    // 55.6 s: one layer (before: two, a press at 51.8 s made Initial Stroke); 82.8 s: three (Initial Stroke at 68.6 s);
+    // 98.4 s: two (before: three, a Final Stroke inferred from the Inksoul's own burst at 87.9 s).
+    expect([layers(55000), layers(82700), layers(98300)]).toEqual([1, 3, 2]);
+  });
+});
+
 describe("a hitless ultimate's logged cast at its time stop's end", () => {
   it("starts its stop's length earlier when nobody hits during it and another's hit lands at the event (b6aa: Xaihi at 31027 ms, her Amp on Last Rite's combo at 32034 ms)", async () => {
     const { logBuffReplay } = await import("@efsim/cli");

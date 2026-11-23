@@ -261,22 +261,22 @@
   ]
  },
  "ink-melt-zero.scenario.json": {
-  "total": 2844497.507,
-  "hits": 467,
-  "casts": 200,
+  "total": 2853255.777,
+  "hits": 456,
+  "casts": 194,
   "perOperator": {
    "chr_0016_laevat": 1335479.289,
-   "chr_0036_jsspsi": 970865.89,
+   "chr_0036_jsspsi": 979624.16,
    "chr_0006_wolfgd": 281895.662,
    "chr_0025_ardelia": 256256.666
   },
-  "digest": "d147f78e29a2",
+  "digest": "6afcf5ad5cfb",
   "windows": [
-   "658cc1f41afd",
-   "3f80623034cc",
-   "2c00175dd346",
-   "a0a4c6474292",
-   "fc2b0211db0e",
+   "bc98614510cc",
+   "5395613fee08",
+   "9e9797ce1c3a",
+   "298351068fed",
+   "9372f1994d87",
    "0c540ec73d04"
   ]
  },

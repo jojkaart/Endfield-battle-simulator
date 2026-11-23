@@ -61,7 +61,7 @@ suggestions.
 
 | # | test | needs | why only the game | reply, e.g. |
 |---|---|---|---|---|
-| 1 | [106](#106-type-50-yinglungs-edge-does-leaving-combat-clear-the-stacks-does-final-stroke-give-one-partly-decided-by-the-logs-2026-11-22-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge after a pause; Final Stroke | Estella and Si with 3 pieces each | leaving combat and presses aren't logged; the buff isn't listed | `106: leaving combat clears them, 8 s idle keeps them; Final Stroke counts` |
+| 1 | [106](#106-type-50-yinglungs-edge-does-leaving-combat-clear-the-stacks-does-final-stroke-give-one-partly-decided-by-the-logs-2026-11-22-ready-if-a-team-member-wears-3-pieces-higher-priority-the-owners-team-has-two-wearers) Yinglung's Edge after a pause; Final Stroke | Estella and Si with 3 pieces each | leaving combat and presses aren't logged; the buff isn't listed | `106: the phase change clears them; Final Stroke counts` |
 | 2 | [16](#16-does-a-skill-cancel-the-basic-attack-it-interrupts-ready-optional-variant-with-ardelia-the-logs-partly-2026-11-18) a skill pressed during attack 5 | Si (or anyone) | presses aren't logged, and a dropped hit leaves no trace | `16: the Final Strike's number still appears / is gone` |
 | 3 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | jumps and dashes aren't logged; players never dive | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
 | 4 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-decided-by-the-logs-2026-11-18-for-the-tap-yes-but-not-under-an-enhanced-attack-eg-laevatains-twilight-generalised-2026-11-18-from-the-talos-wiki-the-dive-part-ready-any-operator-lower-priority) a dive on a Staggered enemy | anyone | no logged dive on a Staggered enemy | `108: a dive isn't the Finisher` |
@@ -390,20 +390,25 @@ wearers count the same casts); stacks don't expire inside a fight (an
 other's stacks; ultimates give none; Si's periodic battle-button events
 give none, except her first press after her battle skill (Initial Stroke,
 under Artful Intent). Don't ask (a)–(c) of the old version.
-**Left (what no log shows):** (e) the logs fit one or two stacks fewer
-after a pause with no damage (3f78, 4a64: about 20 s; 7b54: 6 s; abfd's
-5 s pause keeps them): leaving combat is the likely cause, which the log
-doesn't record. (d) Whether Si's Final Stroke gives a stack too (the logs
-can't tell it from her other presses).
+**Left (what no log shows):** (e) the logs fit one stack fewer after the
+boss Si's (eny_0134) half-HP pause (3f78, 4a64: about 21 s with no hit,
+her Stagger bar back to full and most debuffs gone after it); 7b54's 6 s
+pause fits two fewer but its combo's reading is ambiguous; abfd's 5 s
+pause keeps them (2026-11-23). The game data has no clear for the set on
+leaving battle (its buffs handle no battle exit; only six buffs in the
+data do, Si's Artful Intent among them), so what the pause does is the
+question. (d) Whether Si's Final Stroke gives a stack too: in every log
+the stack it would add is cut by the cap of 3 or falls before the same
+combo as another, so no log tells.
 **How:** Estella and Si both wearing 3 pieces (as your team). (e) Build 3
-stacks on Estella (three battle skills), then walk away from the enemy
-until the fight ends (the combat music / HUD goes), come back: is the
-Edge icon's number still 3? Then, in a fight, 3 stacks and 6–8 s without
-attacking (stand still next to the enemy): still 3? (d) With Estella at 0
-(after her combo), cast Si's battle skill, then Initial Stroke, then Final
-Stroke: Estella's count after each (expected 1, 2, then 3 if Final Stroke
-counts).
-**Reply, e.g.:** `106: leaving combat clears them, 8 s idle keeps them; Final Stroke counts`.
+stacks on Estella (three battle skills) before the boss Si (or any boss
+with a phase change) reaches half HP, then let her phase change play
+out: is the Edge icon's number still 3 when the fight resumes? If you
+can, also walk away from an enemy until the fight ends (the combat music
+/ HUD goes) and come back. (d) With Estella at 0 (after her combo), cast
+Si's battle skill, then Initial Stroke, then Final Stroke: Estella's
+count after each (expected 1, 2, then 3 if Final Stroke counts).
+**Reply, e.g.:** `106: the phase change clears them; Final Stroke counts`.
 
 ### 105. Arcane on the mode line: INT's cooldown with WILL's skills? (answered, 2026-11-13: no; 0206 is game 1.5)
 

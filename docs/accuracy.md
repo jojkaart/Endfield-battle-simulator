@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 75.6% | 95.6% | 0.0% | 1.9% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 59.9% | 76.2% | 16.4% | 9.2% | 14 |
+| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 60.1% | 76.4% | 16.2% | 9.3% | 14 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 69.6% | 87.9% | 6.7% | 11.0% | 7 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 53.1% | 73.6% | 23.3% | 8.1% | 11 |
-| All but the hold-outs | 60 | 28693 | 57.5% | 75.7% | 18.8% | 8.1% | 31 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 53.2% | 73.7% | 23.3% | 8.1% | 11 |
+| All but the hold-outs | 60 | 28693 | 57.8% | 75.8% | 18.6% | 8.1% | 31 |
 
 ## By operator (every log but the hold-outs)
 
@@ -62,5 +62,5 @@ commit, and how many logs got better or worse.
 | chr_0033_camille | 10 | 1004 | 79.6% | 7.2% | 14.3% |
 | chr_0034_typhoea | 12 | 2081 | 70.5% | 11.1% | 4.0% |
 | chr_0035_liino | 19 | 1469 | 61.1% | 18.3% | 17.9% |
-| chr_0036_jsspsi | 28 | 2993 | 63.2% | 10.0% | 8.3% |
+| chr_0036_jsspsi | 28 | 2993 | 65.5% | 8.6% | 8.3% |
 | chr_0038_purrche | 3 | 290 | 62.1% | 29.7% | 25.5% |
