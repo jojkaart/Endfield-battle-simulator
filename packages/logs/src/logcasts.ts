@@ -57,20 +57,15 @@ export function withResets<T extends TimeStop>(parts: readonly { readonly stops:
  * stops. Which stop list for what (friction round 7: four builders each needed Arcane's reset):
  * - castTimeStops: what the placement knows (the placed casts); for code that runs before the replay's casts exist or
  *   must match it (withLoggedCasts, loggedCastFates, the reaction check's enemy clock).
- * - the placement's second pass: castTimeStops' casts and the log's unplaced cast events together (placeHits), cut at
- *   the resets of both.
+ * - the placement's second pass: castTimeStops and the log's unplaced cast events' stops, those uncut (placeHits: an
+ *   event's time is the press, no time to cut at).
  * - buffreplay.ts replayedCastStops / query.ts replayTimeStops: what the replay holds (its casts, an ultimate placed
  *   from its cast event included); for every hold bound, world-time view and diagnosis text.
  * Every list is built by skillStops and cut by withResets; nothing else in packages/logs reads SkillTiming.slowdowns or
  * resets for a list (tests/stops-source.test.ts).
  */
 export function castTimeStops(data: GameData, casts: readonly LoggedCast[]): TimeStop[] {
-  return withResets(castStopParts(data, casts));
-}
-
-/** Each placed cast's stops and resets (skillStops), before withResets. */
-function castStopParts(data: GameData, casts: readonly LoggedCast[]): ReturnType<typeof skillStops>[] {
-  return distinctCasts({ hits: new Map(), casts }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind }));
+  return withResets(distinctCasts({ hits: new Map(), casts }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind })));
 }
 
 /** The world's time from `from` to `to` ms under time stops, in ms: each frame counts at the lowest scale of the stops then (1 without one). */
@@ -361,8 +356,10 @@ function exactSlots(g: Group, key: string): boolean {
  */
 export function placeHits(data: GameData, fx: LogFixture): Placement {
   const first = placeWith(data, fx, []).casts;
-  // The placed casts' stops and the unplaced cast events', cut at the resets of both (one list: withResets).
-  const placed = placeWith(data, fx, withResets([...castStopParts(data, first), ...unplacedCastStops(data, fx, first)]));
+  // The placed casts' stops cut at their resets, and the unplaced cast events' stops as they are: an event's time is the
+  // press, not the cast, so its reset is no time to cut at (1cd1657bc305: Arcane's combo event at 34.70 s, cast at
+  // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
+  const placed = placeWith(data, fx, [...castTimeStops(data, first), ...unplacedCastStops(data, fx, first).flatMap((p) => p.stops)]);
   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
   const merge = new Map<string, number>();

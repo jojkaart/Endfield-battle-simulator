@@ -13,7 +13,10 @@ import { parentPort, workerData } from "node:worker_threads";
 
 export interface MeasureJob {
   readonly key: string;
-  readonly what: "entry" | "placement";
+  /** A snapshot entry, a placement signature, or the negative control (a verified log scaled ×0.97 and ×1.03: tests/slow/negative-control.test.ts). */
+  readonly what: "entry" | "placement" | "negative";
+  /** With the negative control: the factors to scale by. */
+  readonly factors?: readonly number[];
   /** With an entry: each hit's verdict too (measure --hits); with a placement: its casts (--changed placement). Never asked for a hold-out. */
   readonly hits?: boolean;
   /**
@@ -32,7 +35,14 @@ export interface PerHit {
 export type MeasureAnswer =
   | { readonly key: string; readonly entry: Record<string, Record<string, number | null>>; readonly perHit?: PerHit; readonly hits?: readonly HitRow[]; readonly seconds: number }
   | { readonly key: string; readonly placement: string; readonly casts?: readonly string[]; readonly seconds: number }
+  | { readonly key: string; readonly negative: readonly NegativeCount[]; readonly seconds: number }
   | { readonly key: string; readonly error: string };
+/** The negative control's count for one factor: chance matches among the judged hits (the test's own counting). */
+export interface NegativeCount {
+  readonly factor: number;
+  readonly matches: number;
+  readonly judged: number;
+}
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the tree's own modules, of whatever commit: typed loosely */
 const { tree, assume } = workerData as { tree: string; assume?: Record<string, string> };
@@ -82,6 +92,20 @@ function placementOf(fx: any, withCasts = false): { placement: string; casts?: s
   // A cast as measure prints a moved one: start (s), operator, skill.
   return withCasts ? { placement, casts: casts.map(([op, skill, start]: [string, string, number]) => `${(start / 1000).toFixed(2)} s ${op} ${skill}`) } : { placement };
 }
+/**
+ * The negative control on one log (tests/slow/negative-control.test.ts, the same counting): every logged value scaled
+ * by each factor, the matches that are left (a recording buff's burst aside), out of the judged hits.
+ */
+function negativeOf(fx: any, factors: readonly number[]): NegativeCount[] {
+  return factors.map((k) => {
+    const scaled = { ...fx, hits: fx.hits.map((h: any) => ({ ...h, value: Math.round(h.value * k), ...(h.uncapped !== undefined ? { uncapped: Math.round(h.uncapped * k) } : {}) })) };
+    // Under the run's readings where the commit has snapshotEntry (the entries' own computation), else the test's call.
+    const verdicts = (typeof logs.snapshotEntry === "function" ? logs.snapshotEntry(data, scaled, under ?? {}).verdicts : logs.checkLog(data, scaled)) as any[];
+    const kept = verdicts.filter((v) => !(v.kind === "match" && (v.assumptions ?? []).some((a: any) => a.kind === "recordEnd")));
+    const judged = kept.filter((v) => v.kind !== "uncovered" && !(v.kind === "unquantified" && v.reason !== "corrosion")).length;
+    return { factor: k, matches: kept.filter((v) => v.kind === "match").length, judged };
+  });
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 parentPort?.on("message", (job: MeasureJob) => {
@@ -89,7 +113,8 @@ parentPort?.on("message", (job: MeasureJob) => {
   try {
     const fx = logs.readLogFixture(join(job.fixtures ?? join(tree, "fixtures"), job.key));
     const seconds = () => (performance.now() - start) / 1000;
-    parentPort?.postMessage(job.what === "entry" ? { key: job.key, ...entryOf(fx, job.hits === true), seconds: seconds() } : { key: job.key, ...placementOf(fx, job.hits === true), seconds: seconds() });
+    if (job.what === "negative") parentPort?.postMessage({ key: job.key, negative: negativeOf(fx, job.factors ?? [0.97, 1.03]), seconds: seconds() });
+    else parentPort?.postMessage(job.what === "entry" ? { key: job.key, ...entryOf(fx, job.hits === true), seconds: seconds() } : { key: job.key, ...placementOf(fx, job.hits === true), seconds: seconds() });
   } catch (e) {
     parentPort?.postMessage({ key: job.key, error: e instanceof Error ? `${e.message}\n${e.stack ?? ""}` : String(e) });
   }
