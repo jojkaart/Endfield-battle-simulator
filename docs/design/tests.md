@@ -104,8 +104,27 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
 - **Which hits moved:** `--hits` lists, for each development log whose
   entry moved, the hits whose verdict changed (time, operator, event,
   verdict and logged ÷ primary before and after): a few per kind of
-  change in the summary, all in `hits.txt` beside it. `--changed
-  placement` also names the casts placed only before (-) and only now (+).
+  change in the summary, all in `hits.txt` beside it, each with the
+  modifiers that moved at it (kit buffs gone, new, changed in value).
+  The per-hit reference without `--base` is the code of the commit that
+  wrote the reference's snapshots (round 7: after a code-only commit,
+  HEAD's code is the measured code and "no hit's verdict changed").
+  `--changed placement` also names the casts placed only before (-) and
+  only now (+).
+- **Several readings at once:** `--variant <id>=<r>[,<id>=<r>…]`
+  (repeatable) measures each on the same snapshot in one run (summaries
+  per variant, files under `variant-<n>/`); not chained measures, each
+  fixing its own snapshot (round 7).
+- **The negative control in every measure** (round 7): the verified
+  logs measured are also checked with every value ×0.97 and ×1.03, the
+  bound test:logs fails on, flagged `!`; a reading fitted to the damage it
+  is judged on shows at the first measure, not at premerge.
+  `--no-negative` skips it.
+- **A new test that should fail before the change:** `node
+  scripts/verify-at.ts <base> --test <file> [-t <name>]` runs the tree's
+  copy of the test at the base (seconds) and says whether it fails there
+  (round 7: a verdict test passed at the base too; the hit it named
+  didn't read the change, the hits after it did).
 - **Against other code:** `--at <ref>` measures a commit in its own
   worktree (scripts/at-commit.ts), so the working tree stays editable;
   `--base <ref>` measures two commits' code on the same logs (an A/B that

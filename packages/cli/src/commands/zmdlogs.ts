@@ -174,9 +174,15 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
   efsim zmdlogs holds <fixture>           The fight's hidden holds the replay places (hidden-holds placed): the
                                           least total, each 0.512 s unit with its earliest and latest time and the
                                           clocks spanning it, the bounds dropped; --verbose every bound
+                [--why <regex>]           Instead: each replayed instance of the matching kit buffs (owner:id) and
+                                          enemy statuses (status:<name>), the log's run paired with it, and why it
+                                          is a clock or not (the rule that skipped it), kept or dropped
+                                          Between two commits' code: node scripts/cli-ab.ts <ref> --holds <fixture>
   efsim zmdlogs ramp <fixture>            Corrosion's ramp as the logged hits read it: per listed Corrosion, the
                                           hits whose fitting step differs from the replay's or whose placed hold
                                           falls outside what the steps allow (--verbose every hit)
+                [--held]                  Each reading with what held the replay's ramp since its application:
+                                          each time stop's share, the placed hidden holds, the rest
   efsim zmdlogs control <fixture>         Who the log shows controlled when (a basic hit with Stagger is the
                                           controlled operator's: controlledFromLog) and every cast, logged or
                                           inferred from hits, with who was controlled at its start; --operator
@@ -225,6 +231,8 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     list: { type: "boolean", default: false },
     buff: { type: "string", multiple: true, default: [] },
     world: { type: "boolean", default: false },
+    why: { type: "string" },
+    held: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -253,11 +261,11 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     }
     if (sub === "ramp") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs ramp takes one fixture (a path or an id such as db87)");
-      return rampView(data(), readDevFixture(arg), { verbose: values.verbose });
+      return rampView(data(), readDevFixture(arg), { verbose: values.verbose, why: values.held });
     }
     if (sub === "holds") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14)");
-      return holdsView(data(), readDevFixture(arg), { verbose: values.verbose });
+      return holdsView(data(), readDevFixture(arg), { verbose: values.verbose, ...(values.why !== undefined ? { why: new RegExp(values.why) } : {}) });
     }
     if (sub === "instances" || sub === "control" || sub === "lanes") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture (a path or an id such as 0c14)`);

@@ -587,7 +587,10 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
 | The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` (the stops of the replay's casts: placed, from a cast event, inferred; `replayTimeStops` in a script, not `castTimeStops`, which has the placed casts' only) |
 | The fight's hidden holds (unlogged dodges, pauses) the replay places: each 0.512 s unit, its earliest and latest time, the clocks spanning it | `efsim zmdlogs holds <fixture> [--verbose]` |
-| Corrosion's ramp as the hits read it: each hit's fitting step against the replay's, the hidden hold that allows against the one placed | `efsim zmdlogs ramp <fixture> [--verbose]` |
+| Why a buff's or status's run is (not) a clock of the holds: the run paired with each instance, the rule that skipped it, kept or dropped | `efsim zmdlogs holds <fixture> --why <re>` (`owner:id`, `Perlica:wpn`, `status:corrosion`) |
+| Which bounds and holds a change moved (bounds added, removed, each unit and bound before and after) | `node scripts/cli-ab.ts <ref> --holds <fixture>`; any command at two commits: `node scripts/cli-ab.ts <ref> [--key <re>] -- <efsim args>` |
+| Corrosion's ramp as the hits read it: each hit's fitting step against the replay's, the hidden hold that allows against the one placed | `efsim zmdlogs ramp <fixture> [--verbose]`; `--held`: what held the replay's ramp (each stop's share, placed holds, the rest) |
+| What the data compiler made of a skill's time dilations (slow-down, reset, dropped and why) | `efsim kit <operator> --skill <re>` ("time dilations"); every skill: `efsim gamedata dilations [--dropped]` |
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
 | Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
 | A skill's frames, windows, uncuttable frames, skill group, what each hit inflicts | `efsim kit <operator> [--skill <re>]` |

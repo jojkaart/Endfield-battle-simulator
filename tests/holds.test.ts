@@ -3,7 +3,7 @@
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
 import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
-import { placeHolds, rampBounds, statusBounds, statusLanes, tickBounds, type HoldBound, type RampStep } from "@efsim/logs";
+import { notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -86,6 +86,30 @@ describe("statusBounds", () => {
     const b = statusBounds(inst, statusLanes(fx), [], new Set(["electrification"]), 0.4);
     expect(b).toHaveLength(1);
     expect(b[0]?.max).toBe(Infinity);
+  });
+
+  it("says why each instance is a clock or not (zmdlogs holds --why), with the same bounds", () => {
+    const why: ClockWhy[] = [];
+    const others = [...inst, { status: "electrification", operator: "p", start: 400, end: 500, expired: false }, { status: "electrification", operator: "q", start: 30, end: 270, expired: true }];
+    const b = statusBounds(others, statusLanes(fx), [], new Set(), 0.4, why);
+    expect(b).toEqual(statusBounds(inst, statusLanes(fx), [], new Set(), 0.4));
+    expect(why.map((w) => [w.holder, w.verdict.split(" ")[0]])).toEqual([["p", "bound:"], ["p", "didn't"], ["q", "the"]]);
+    expect(why[0]?.run).toEqual({ name: "electrification", since: 1000, lastListed: 9600 });
+  });
+});
+
+describe("the shared clock rules (holds.ts)", () => {
+  it("refreshedIn: a run another starts inside and that isn't listed past it by over REFRESH_OVERLAP_MS", () => {
+    const runs = [{ since: 0, lastListed: 5100 }, { since: 5000, lastListed: 9000 }, { since: 20000, lastListed: 30000 }, { since: 25000, lastListed: 28000 }];
+    const same = () => true;
+    expect(runs.map((r) => refreshedIn(r, runs, same))).toEqual([true, false, false, false]);
+    expect(refreshedIn(runs[0] as (typeof runs)[number], runs, () => false)).toBe(false);
+  });
+  it("notAClock: the first kit field that makes a buff no clock, `every` only when asked", () => {
+    const def = { id: "b", label: "b", target: "self", every: 30 } as never;
+    expect(notAClock(def)).toBeNull();
+    expect(notAClock(def, { every: true })).toBe("every");
+    expect(notAClock({ id: "b", label: "b", target: "self", maxStacks: 0 } as never)).toBe("maxStacks");
   });
 });
 

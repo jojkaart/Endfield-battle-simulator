@@ -18,7 +18,7 @@ import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
-import { HOLD_BOUND_TOL_MS, placeHolds, REFRESH_OVERLAP_MS, RUN_START_MS, statusBounds, statusLanes, tickBounds, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
+import { HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -343,6 +343,8 @@ export interface BuffReplay {
   readonly traces: readonly BuffTrace[];
   /** The fight's hidden holds the replay placed (engine assumption hidden-holds, reading `placed`: holds.ts), else null. */
   readonly hiddenHolds: PlacedHolds | null;
+  /** With the holds placed: each replayed instance of a kit buff or enemy status, and why it is a clock of them or not (holds.ts ClockWhy; `zmdlogs holds --why`). */
+  readonly holdClocks?: readonly ClockWhy[];
   /**
    * The SP each logged cast lacked in the replay (its cost less the team's SP then; drivers.ts replayCast raises it to the
    * cost silently: docs/open-problems.md "Team SP"), for the casts that lacked any.
@@ -373,7 +375,11 @@ export interface BuffTrace {
   /** The step's frame and what it was (a cast, the log's Stagger steps, or time passing to a sample). */
   readonly frame: number;
   readonly step: string;
-  /** Its expiry before and after the step (null: it didn't exist / is gone). */
+  /**
+   * Its expiry before and after the step (null: it didn't exist / is gone). The state is sampled after each step, so a
+   * buff that ran out between two steps shows gone at the later step's frame with `from` its expiry (`from <= frame`):
+   * it ran out then, the step didn't cut it (round 6: `zmdlogs clock` first read such an end as a cut).
+   */
   readonly from: number | null;
   readonly to: number | null;
 }
@@ -1512,7 +1518,7 @@ export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
   const all = [...runs.values()];
   const out = new Map<string, LoggedLaneEnd[]>();
   for (const r of all) {
-    const refreshed = all.some((o) => o !== r && o.buff === r.buff && o.source === r.source && o.holder === r.holder && o.since > r.since && o.since <= r.lastListed && r.lastListed - o.since <= REFRESH_OVERLAP_MS);
+    const refreshed = refreshedIn(r, all, (a, b) => a.buff === b.buff && a.source === b.source && a.holder === b.holder);
     const key = `${r.buff}|${r.source}`;
     out.set(key, [...(out.get(key) ?? []), { ...r, refreshed }]);
   }
@@ -1579,27 +1585,54 @@ function consumedStatuses(kits: readonly OperatorKit[]): Set<string> {
  * after the expiry hold it too once it lasts) and the next hit of the holder without it (at most). Not a run that ends more than 0.4 s before the replay's expiry (a refresh or cut the replay
  * doesn't make: not a clock) or past HIDDEN_HOLD_SHARE of its life.
  */
-function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; end: number; expired: boolean }[]>, defs: ReadonlyMap<string, KitBuff>, ends: LoggedLaneEnds, stops: readonly TimeStop[]): HoldBound[] {
+function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; end: number; expired: boolean }[]>, defs: ReadonlyMap<string, KitBuff>, ends: LoggedLaneEnds, stops: readonly TimeStop[], why?: ClockWhy[]): HoldBound[] {
   const out: HoldBound[] = [];
   const seen = new Set<string>();
+  const sec = (ms: number) => (ms / 1000).toFixed(2);
   for (const [key, list] of kitInstances) {
     const [kitKey, op] = key.split("|") as [string, string];
     const def = defs.get(kitKey);
-    if (!def || def.every !== undefined || def.consumedBy || def.link || def.endsWithCast || def.maxStacks !== undefined || def.sharedTimer || def.ticksShownByHits || def.ticksLoggedAs || def.endFollowsTick || def.childOf) continue;
+    if (!def) continue;
     const owner = kitKey.slice(0, kitKey.indexOf(":"));
     const holder = def.target === "enemy" ? "enemy" : op;
+    // `zmdlogs holds --why`: each instance with the rule that made it a clock or not (ClockWhy); the bounds as before.
+    const note = (x: Omit<ClockWhy, "clock" | "holder">) => why?.push({ clock: kitKey, holder, ...x });
+    const skip = notAClock(def, { every: true });
+    if (skip) {
+      note({ instance: null, verdict: `not a clock: the kit buff has \`${skip}\` (its end isn't its own timer's, or the log merges its instances)` });
+      continue;
+    }
     for (const w of list) {
-      if (!w.expired || !Number.isFinite(w.end)) continue;
+      const instance = { start: w.start, end: w.end, expired: w.expired };
+      if (!w.expired || !Number.isFinite(w.end)) {
+        note({ instance, verdict: "didn't run out in the replay (a step ended or replaced it, or it was on at the end)" });
+        continue;
+      }
       const [S, E] = [msOfFrame(w.start), msOfFrame(w.end)];
       for (const g of loggedNames(def)) {
         const k = `${g}|${owner}`;
+        let near = 0;
         for (const r of ends.runs.get(k) ?? []) {
-          if (r.refreshed || r.holder !== holder || r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+          if (r.holder !== holder || r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+          near++;
+          const run = { name: g, since: r.since, lastListed: r.lastListed };
+          const v = (verdict: string, ask?: number) => note({ instance, run, verdict, ...(ask !== undefined ? { ask } : {}) });
+          if (r.refreshed) {
+            v("refreshed in the log (another run starts inside it and it isn't listed past that: holds.ts refreshedIn)");
+            continue;
+          }
           // Instances (KitBuff.instances): a reapplication may refresh the log's run without a new start (Arcane's
           // will_dmg in 489c: runs from 12.0 and 14.6 s both listed to 49.4 s, over the replay's 25 s instances), so only
           // a run the log shows apart from the reapplications inside it (runApart), and only the run that starts nearest the
           // instance (489c: the run from 14.63 s isn't the 12.03 s instance's).
-          if (def.instances !== undefined && (!runApart(list, w, r, ends.runs.get(k) ?? []) || !nearestRun(r, S, ends.runs.get(k) ?? []))) continue;
+          if (def.instances !== undefined && !runApart(list, w, r, ends.runs.get(k) ?? [])) {
+            v("an instance buff's run the log doesn't show apart from the reapplications inside it (runApart)");
+            continue;
+          }
+          if (def.instances !== undefined && !nearestRun(r, S, ends.runs.get(k) ?? [])) {
+            v("another run on its holder starts nearer the application (nearestRun)");
+            continue;
+          }
           const id = `${k}|${r.since}|${holder}|${w.start}`;
           if (seen.has(id)) continue;
           seen.add(id);
@@ -1607,12 +1640,28 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
           // Past its expiry, the placed stops then hold it too (a stop after E didn't hold the instance that ended at E).
           const late = (t: number) => (t >= E ? worldMs(E, t, stops) : t - E);
           const [lo, hi] = [late(r.lastListed), off === undefined ? Infinity : late(off.t)];
-          if (hi < -2 * HOLD_BOUND_TOL_MS || lo > HIDDEN_HOLD_SHARE * (E - S)) continue;
+          if (hi < -2 * HOLD_BOUND_TOL_MS) {
+            v(`ends ${sec(-hi)} s before the replay's expiry (a refresh or cut the replay doesn't make: not a clock)`);
+            continue;
+          }
+          if (lo > HIDDEN_HOLD_SHARE * (E - S)) {
+            v(`asks ${sec(lo)} s, over HIDDEN_HOLD_SHARE (${HIDDEN_HOLD_SHARE}) of its life (a refresh the replay missed, or a kit's error)`, lo / 1000);
+            continue;
+          }
           // An instance buff's run later than INSTANCE_LATE_MS: a refresh in place is likelier than holds.
-          if (def.instances !== undefined && lo > INSTANCE_LATE_MS) continue;
+          if (def.instances !== undefined && lo > INSTANCE_LATE_MS) {
+            v(`an instance buff's run ${sec(lo)} s late, over INSTANCE_LATE_MS (a refresh in place is likelier than holds)`, lo / 1000);
+            continue;
+          }
           const tag = `run ${g}|${owner} on ${holder} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : "–end"} ms over ${Math.round(E)}`;
           if (lo > -HOLD_BOUND_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - HOLD_BOUND_TOL_MS, max: Infinity, kind: "run", tag, ex: lo / 1000 });
           if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "run", tag, ex: hi / 1000 });
+          v(lo > -HOLD_BOUND_TOL_MS || off ? `bound: ${tag}` : "no bound (listed only before its expiry, and no later hit of its holder without it)", lo / 1000);
+        }
+        if (near === 0) {
+          const runs = (ends.runs.get(k) ?? []).filter((r) => r.holder === holder);
+          const nearest = runs.length ? Math.min(...runs.map((r) => Math.abs(r.since - S))) : null;
+          note({ instance, verdict: nearest === null ? `the log lists no run of ${g} from its owner on ${holder}` : `no run of ${g} on ${holder} starts within ${RUN_START_MS / 1000} s of the application (the nearest ${sec(nearest)} s away)` });
         }
       }
     }
@@ -1700,7 +1749,7 @@ function loggedEndOf(b: ActiveBuff, ends: LoggedLaneEnds, defs: ReadonlyMap<stri
   };
   if (b.every !== undefined || b.maxLayers !== undefined || b.maxInstances !== undefined) return decide(null);
   const def = defs.get(`${b.owner}:${b.id}`);
-  if (!def || def.consumedBy || def.link || def.endsWithCast || def.maxStacks !== undefined || def.sharedTimer || def.ticksShownByHits || def.ticksLoggedAs || def.endFollowsTick || def.childOf) return decide(null);
+  if (!def || notAClock(def) !== null) return decide(null);
   // The run began with this instance (within RUN_START_MS of its application), not a later one the replay missed.
   const [from, latest, until] = [((b.appliedAt * 1000) / FPS) - RUN_START_MS, ((b.appliedAt * 1000) / FPS) + RUN_START_MS, (b.expiresAt * 1000) / FPS];
   const names = loggedNames(def);
@@ -2079,6 +2128,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const placing = holdsReading === "placed" || holdsReading === "holds";
   let worldHolds: readonly { readonly frame: number; readonly frames: number }[] = [];
   let placedHolds: PlacedHolds | null = null;
+  // Why each replayed instance is or isn't a clock of the placement (BuffReplay.holdClocks).
+  const holdClocks: ClockWhy[] = [];
   const noEnds = (): LoggedLaneEnds => ({ runs: new Map(), hits: [], decided: new Map() });
   // Placing, the first replay keeps no buff to the log's end: its expiries are the clocks' (runBounds).
   let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx) : noEnds();
@@ -2320,8 +2371,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops (replayedCastStops): the placed casts' miss an ultimate placed from its cast event.
     const stops = replayedCastStops(data, assembled);
-    const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE);
-    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
+    const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks);
+    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),
       still: main.staggerWindows.map((w) => [msOfFrame(w.start), msOfFrame(Number.isFinite(w.end) ? w.end : frameOf(Math.max(0, ...fx.hits.map((h) => h.t))))] as const),
     });
@@ -2470,6 +2521,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     castFlags: main?.flags ?? [],
     traces: main?.traces ?? [],
     hiddenHolds: placedHolds,
+    holdClocks,
     spTopUps: main ? main.made.flatMap((m) => {
       const lack = spCostAt(main.ctx, m.pre, m.c.operator, skillCosts(main.ctx, m.c.operator, m.skillId, m.f), m.f) - spAt(m.pre, m.f);
       return lack > 1e-6 ? [{ frame: m.f, operator: m.c.operator, skillId: m.skillId, sp: lack }] : [];

@@ -18,8 +18,9 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
-import type { PlacedHolds } from "./holds.ts";
-import { castTimeStops, distinctCasts, placeHits } from "./logcasts.ts";
+import type { ClockWhy, PlacedHolds } from "./holds.ts";
+import { distinctCasts, placeHits } from "./logcasts.ts";
+import { replayTimeStops } from "./query.ts";
 import { corrosionRamp, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
@@ -48,20 +49,36 @@ const render = (lines: Line[]) =>
     .map((l) => `${s(l.t).padStart(7)}  ${l.text}`)
     .join("\n");
 
+/** More logged hits than this at one ms: the log batched their timestamps (docs/design/data.md "Timestamps are batched"). */
+const BATCH_HITS = 3;
+
+/** A mark after a logged hit's time when more than BATCH_HITS hits share its ms (a residual there isn't timing evidence). */
+function batchMark(fx: LogFixture): (t: number) => string {
+  const at = new Map<number, number>();
+  for (const h of fx.hits) at.set(h.t, (at.get(h.t) ?? 0) + 1);
+  return (t) => {
+    const n = at.get(t) ?? 0;
+    return n > BATCH_HITS ? ` [batched: ${n} hits at this ms]` : "";
+  };
+}
+
 /** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
 export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): string {
   const placement = placeHits(data, fx);
   const lines: Line[] = [];
+  const batched = batchMark(fx);
   for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ t: c.t, order: 0, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
   for (const c of distinctCasts(placement)) {
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
     lines.push({ t: c.start, order: 1, text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}` });
   }
-  for (const st of castTimeStops(data, placement.casts)) {
+  // The stops the replay holds (query.ts replayTimeStops, the views' one list): a cast placed from its cast event alone
+  // (an ultimate at its logged stop's end: db87's Laevatain at 16.60 s) is marked.
+  for (const st of replayTimeStops(data, fx, placement)) {
     const [a, z] = [msOf(st.start), msOf(st.start + st.scales.length)];
     if (z < (f.from ?? -Infinity) || a > (f.to ?? Infinity)) continue;
     const zero = st.scales.filter((x) => x === 0).length;
-    lines.push({ t: a, order: 2, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})` });
+    lines.push({ t: a, order: 2, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})${st.placed ? "" : " [no placed hits: the replay's cast from its event or inferred]"}` });
   }
   for (const h of fx.hits) {
     if (!inWindow(f, h.t)) continue;
@@ -71,7 +88,11 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): s
     }
     const p = placement.hits.get(h);
     const where = p ? `${shortSkill(p.cast.group)}@${s(p.cast.start)} #${p.index}${p.frame !== undefined ? ` frame ${p.frame}` : ""}${p.sameAs ? " (same landing as another enemy's)" : ""}` : parseReactionEvent(h.event) ? "a status event" : "unplaced";
-    lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}` });
+    // Whose skill the log credits the hit's Stagger to (LogHit.poise.origin), where that isn't the hit's own key or cast:
+    // a projectile's or an entity's skill (Si's bursts by the stroke or Inksoul behind them).
+    const origin = h.poise?.origin;
+    const credited = origin !== undefined && origin !== h.event && !h.event.startsWith(origin) && origin !== p?.cast.skillId ? ` (origin ${shortSkill(origin)})` : "";
+    lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}` });
   }
   return [`${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)`, render(lines)].join("\n");
 }
@@ -98,11 +119,12 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const { replay } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(f.trace?.length ? { trace: f.trace } : {}) });
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
+  const batched = batchMark(fx);
   for (const l of replay.hits) {
     const t = msOf(l.frame);
     if (!inWindow(f, t) || !mine(f, l.operator)) continue;
     const h = byLanding.get(l);
-    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}` : "replay only";
+    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}` : "replay only";
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
   }
   for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
@@ -134,7 +156,9 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     if (!inWindow(f, t)) continue;
     const exp = (v: number | null) => (v === null ? "none" : v === Infinity ? "never" : `${s(msOf(v))} s`);
     const moved = x.from !== null && x.to !== null ? ` (${x.to - x.from > 0 ? "+" : ""}${x.to - x.from} frames)` : "";
-    lines.push({ t, order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: expiry ${exp(x.from)} → ${exp(x.to)}${moved} at ${x.step}` });
+    // Gone with its expiry already past: it ran out between steps (BuffTrace.to), not cut by this one.
+    if (x.to === null && x.from !== null && x.from <= x.frame) lines.push({ t: msOf(x.from), order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: ran out at its expiry ${exp(x.from)} (seen gone at ${x.step}, ${s(t)} s)` });
+    else lines.push({ t, order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: expiry ${exp(x.from)} → ${exp(x.to)}${moved} at ${x.step}` });
   }
   for (const w of replay.staggerSpans) {
     const [a, z] = [msOf(w.start), msOf(w.end)];
@@ -434,10 +458,11 @@ function clockReaches(h: PlacedHolds, P: readonly number[], m: number): number {
  * holds.ts placeHolds): the least total, each dodge-sized unit of it with its earliest and latest time and the clocks
  * spanning it (a buff's run, a tick series), the bounds dropped as conflicting, and (with `verbose`) every bound.
  */
-export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean } = {}): string {
+export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: RegExp } = {}): string {
   const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { "hidden-holds": "placed" } }).replay;
   const h = r.hiddenHolds;
   if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
+  if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why);
   const series = (tag: string) => tag.replace(/ [0-9]+[→⇒][0-9]+ ms$/, "");
   const lines = [`${fx.id}: ${s(h.total)} s of hidden holds placed (the least total the clocks allow; ${Math.round(h.total / HOLD_UNIT_MS)} perfect dodges' worth at 0.512 s), ${new Set(h.kept.filter((b) => b.kind === "run").map((b) => b.tag)).size} buff runs and ${new Set(h.kept.filter((b) => b.kind === "tick").map((b) => series(b.tag))).size} tick series kept, ${h.dropped.length} bound(s) dropped; times in s`];
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
@@ -451,19 +476,69 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
 }
 
 /**
+ * `zmdlogs holds --why <re>`: each replayed instance of the kit buffs (`owner:id`) and enemy statuses (`status:<name>`)
+ * matching, from the replay without holds, with the log's run it was paired with and why it is a clock of the
+ * placement or not (holds.ts ClockWhy: the one place runBounds and statusBounds say so), and for a bound whether the
+ * placement kept or dropped it.
+ */
+function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h: PlacedHolds, re: RegExp): string {
+  // By id (owner:id, status:<name>) or with the owner's name (Perlica:wpn_funnel_0008.arts_taken), case aside.
+  const named = (c: ClockWhy) => (c.clock.startsWith("status:") ? c.clock : `${label(data, c.clock.slice(0, c.clock.indexOf(":")))}${c.clock.slice(c.clock.indexOf(":"))}`);
+  const ci = new RegExp(re.source, re.flags.includes("i") ? re.flags : `${re.flags}i`);
+  const mine = clocks.filter((c) => ci.test(c.clock) || ci.test(named(c)));
+  const known = [...new Set(clocks.map((c) => c.clock))].sort();
+  if (!mine.length) return `${fx.id}: no kit buff or enemy status matching ${re} among the replay's (${known.length ? known.join(", ") : "none"})`;
+  const dropped = new Set(h.dropped.map((b) => b.tag));
+  const kept = new Set(h.kept.map((b) => b.tag));
+  const lines = [`${fx.id}: why each instance is a clock of the hidden holds or not (the replay without them; instance and run times in s, the instance's end its expiry there)`];
+  // One line per instance and run (an enemy buff's instances come once per recipient), by clock, then time.
+  const once = [...new Map(mine.map((c) => [JSON.stringify(c), c])).values()].sort((a, b) => a.clock.localeCompare(b.clock) || (a.instance?.start ?? -1) - (b.instance?.start ?? -1) || (a.run?.since ?? 0) - (b.run?.since ?? 0));
+  for (const c of once) {
+    const who = c.clock.startsWith("status:") ? `by ${label(data, c.holder)}` : `on ${c.holder === "enemy" ? "the enemy" : label(data, c.holder)}`;
+    const inst = c.instance ? `${s(msOf(c.instance.start))}–${s(msOf(c.instance.end))}` : "every instance";
+    const run = c.run ? `; the log's run ${c.run.name} ${s(c.run.since)}–${s(c.run.lastListed)}` : "";
+    const tag = c.verdict.startsWith("bound: ") ? c.verdict.slice(7) : null;
+    const verdict = tag === null ? c.verdict : `a clock (asks ${(c.ask ?? 0).toFixed(2)} s): ${dropped.has(tag) ? "dropped by the placement as conflicting" : kept.has(tag) ? "kept" : "not placed"}`;
+    lines.push(`  ${named(c)} ${who} ${inst}${run}: ${verdict.replace(/chr_\d{4}_[a-z0-9]+/g, (op) => label(data, op))}`);
+  }
+  return lines.join("\n");
+}
+
+/**
  * `zmdlogs ramp`: Corrosion's ramp as the logged hits read it (rampsteps.ts rampSteps, at the replay's landings): per
  * Corrosion the log lists (its applier and application), each hit's steps that fit against the replay's own step, and
  * the hidden hold that reading allows between the application and the hit (P(hit) − P(since), s) beside the one the
  * replay placed. A hit outside its range says the placed holds miss the ramp there (`!`). `verbose`: every hit, not only
  * those where the log's step differs from the replay's or the placed hold falls outside.
  */
-export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean } = {}): string {
+export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: boolean } = {}): string {
   const placement = placeHits(data, fx);
   const { replay } = logBuffReplay(data, fx, placement);
   const steps = corrosionRamp(data, fx, placement, replay);
   const h = replay.hiddenHolds;
   if (steps.length === 0) return `${fx.id}: no hit under the log's Corrosion reads a step (none listed, no landing with the replay's Corrosion, or no step fits)`;
-  const lines = [`${fx.id}: ${steps.length} hits read Corrosion's ramp (steps: whole seconds of its world time; hold: P(hit) − P(since) in s, as the steps allow and as placed)`];
+  const lines = [`${fx.id}: ${steps.length} hits read Corrosion's ramp (steps: whole seconds of its world time; hold: P(hit) − P(since) in s, as the steps allow and as placed)${opts.why ? "; held: what held the replay's ramp from its application to the landing (time stops of the replay's casts, at their lowest scale; placed hidden holds; the rest: statuses created in a stop, the stop a reset cut, the frame grid; freezes run the ramp on)" : ""}`];
+  const stops = opts.why ? replayTimeStops(data, fx, placement) : [];
+  const heldText = (x: (typeof steps)[number]): string => {
+    if (!x.replay) return "";
+    const { applied, landing, elapsed } = x.replay;
+    const real = landing - applied;
+    const [a, b] = [Math.round((applied * FPS) / 1000), Math.round((landing * FPS) / 1000)];
+    // Each stop's share: the frames it is the lowest scale in, at 1 less that scale.
+    const share = new Map<string, number>();
+    for (let f = a; f < b; f++) {
+      let low: (typeof stops)[number] | null = null;
+      for (const st of stops) if (f >= st.start && f < st.start + st.scales.length && (low === null || (st.scales[f - st.start] as number) < (low.scales[f - low.start] as number))) low = st;
+      if (!low) continue;
+      const k = `${label(data, low.operator)} ${shortSkill(low.skillId)}@${s(msOf(low.start))}`;
+      share.set(k, (share.get(k) ?? 0) + msOf(1 - (low.scales[f - low.start] as number)));
+    }
+    const byStops = [...share.values()].reduce((t, v) => t + v, 0);
+    const holds = h ? h.holds.filter((y) => y.frame >= a && y.frame < b).reduce((t, y) => t + msOf(y.frames), 0) : 0;
+    const rest = real - elapsed - byStops - holds;
+    const parts = [...share].sort((p, q) => q[1] - p[1]).map(([k, v]) => `${k} ${s(v)}`);
+    return `; held ${s(real - elapsed)} s of ${s(real)}: stops ${s(byStops)}${parts.length ? ` (${parts.join(", ")})` : ""}, holds ${s(holds)}, rest ${s(rest)}${x.since !== Math.round(applied) ? `; the log's application ${s(x.since)}, the replay's ${s(applied)}` : ""}`;
+  };
   const by = new Map<string, typeof steps>();
   for (const x of steps) by.set(`${x.source}|${x.since}`, [...(by.get(`${x.source}|${x.since}`) ?? []), x]);
   for (const [k, list] of by) {
@@ -477,7 +552,7 @@ export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbos
       const outside = placed < lo - 70 || placed > hi + 70;
       if (!opts.verbose && !outside && x.replayStep >= x.low && x.replayStep <= x.high) continue;
       const steps = `${x.low}${x.high !== x.low ? `–${x.high}` : ""}${x.capped ? "+" : ""}`;
-      lines.push(`    ${s(x.hit.t)} ${label(data, x.hit.operator)} ${x.hit.event}: log step ${steps}, replay ${x.replayStep} (${x.reading}); hold ${Number.isFinite(lo) ? s(lo) : "−∞"}…${s(hi)}, placed ${s(placed)}${outside ? " !" : ""}`);
+      lines.push(`    ${s(x.hit.t)} ${label(data, x.hit.operator)} ${x.hit.event}: log step ${steps}, replay ${x.replayStep} (${x.reading}); hold ${Number.isFinite(lo) ? s(lo) : "−∞"}…${s(hi)}, placed ${s(placed)}${outside ? " !" : ""}${opts.why ? heldText(x) : ""}`);
     }
   }
   return lines.join("\n");

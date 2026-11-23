@@ -12,7 +12,8 @@ import { allActions, effectiveKit, FPS, kitBuffModifiers, landingDamage, parseRe
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { engineCheck, loggedEntries, readingBasis, type Alternative, type EngineCheck, type Reading, type ReadingBasis } from "./enginecheck.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
-import { castTimeStops, placeHits, type Placement } from "./logcasts.ts";
+import { placeHits, type Placement, type TimeStop } from "./logcasts.ts";
+import { replayTimeStops } from "./query.ts";
 import { loggedRecoveries, type BuffReplay, type KitWindow } from "./buffreplay.ts";
 import { teamPanels } from "./logeffects.ts";
 
@@ -482,6 +483,9 @@ function kitSources(kit: OperatorKit, def: KitBuff): { text: string; creates: bo
 }
 
 /** What happens near a pattern (casts, stops, reactions, Stagger) and the kit sources an event there matches. */
+/** The replay's stops per placement (mechanismNear runs once per pattern). */
+const replayStops = new WeakMap<Placement, readonly TimeStop[]>();
+
 function mechanismNear(data: GameData, fx: LogFixture, c: EngineCheck, placement: Placement, replay: BuffReplay, k: string, d: TimingDirection, edge: number | null, lo: number, hi: number): Mechanism {
   const window = mechanismWindow(d, edge, lo, hi);
   const [a, z] = window;
@@ -496,7 +500,9 @@ function mechanismNear(data: GameData, fx: LogFixture, c: EngineCheck, placement
   const casts = placement.casts.filter((x) => x.kind !== null && inWindow(x.start));
   const hitless = (fx.casts ?? []).filter((x) => inWindow(x.t) && !casts.some((y) => y.operator === x.operator && Math.abs(y.start - x.t) <= 1000));
   const castText = [...casts.map((x) => ({ t: x.start, text: `${name(x.operator)} ${x.kind} ${s(x.start)}` })), ...hitless.map((x) => ({ t: x.t, text: `${name(x.operator)} ${x.skill} ${s(x.t)} (logged, hitless)` }))].sort((x, y) => x.t - y.t).map((x) => x.text);
-  const stops = castTimeStops(data, placement.casts).filter((x) => ms(x.start) <= z && ms(x.start + x.scales.length) >= a);
+  // The stops the replay holds (query.ts replayTimeStops: an ultimate placed from its cast event included), once per placement.
+  if (!replayStops.has(placement)) replayStops.set(placement, replayTimeStops(data, fx, placement));
+  const stops = (replayStops.get(placement) as readonly TimeStop[]).filter((x) => ms(x.start) <= z && ms(x.start + x.scales.length) >= a);
   const stopText = stops.map((x) => `${name(x.operator)} ${data.skills[x.skillId] ? x.skillId.replace(/^chr_\d+_/, "") : x.skillId} ${s(ms(x.start))}–${s(ms(x.start + x.scales.length))}${Math.min(...x.scales) === 0 ? " stop" : " slow-down"}`);
   const reactionHits = fx.hits.filter((h) => inWindow(h.t) && parseReactionEvent(h.event));
   const reactions = [...new Map(reactionHits.map((h) => {

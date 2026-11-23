@@ -22,4 +22,9 @@ describe("friction.ts", () => {
     expect(out).toContain("## 6. First thing.\n\n- **What happened:** a.\n- **From:** round 4; round 5's backlog, point 1.");
     expect(() => carry(report, [3], 1, "x")).toThrow(/no point 3/);
   });
+
+  it("extends a wrapped From paragraph at its end", () => {
+    const wrapped = ["## 1. One", "- **From:** round 4's backlog, point 2; docs/friction-done/", "  x.md point 1.", "- **Why it helps:** y."].join("\n");
+    expect(carry(wrapped, [1], 1, "round 6's backlog,")).toContain("- **From:** round 4's backlog, point 2; docs/friction-done/\n  x.md point 1; round 6's backlog, point 1.\n- **Why it helps:** y.");
+  });
 });
