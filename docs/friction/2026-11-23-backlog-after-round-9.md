@@ -21,7 +21,9 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   d.n`), TimelineState.slowdowns (engine timeline/clock.ts slowDown's push: `n: d.n`, keep it out of search.ts's
   state key if one reads slowdowns) and AppliedStop (replayrecord.ts, keyed by the state's slow-down object or by
   (start, caster, n) in place of start|caster|priority|kind); then pair by (start, caster, n) first in views.ts
-  stopsAgainstList. `zmdlogs stops --all --differ` before and after: the counts must stay (or explain each change).
+  stopsAgainstList. `zmdlogs stops --all --differ` before and after: the counts must stay (or explain each change);
+  at round 9's end over the 61 development and verified logs: as listed 1380, covered 36 (14 logs), length 0,
+  timeline only 1 (3f78: Rossi's 12-frame slow-down at 50.13 s), list only 0.
 - **Why it helps:** the next comparison of the stop lists (the accuracy list's "the lists from the timeline")
   pairs exactly, and a count that goes into a commit is right the first time.
 - **From:** docs/friction-done/2026-11-23-round-8-friction.md point 2; docs/friction-done/2026-11-23-stop-lists.md
@@ -119,7 +121,8 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
 - **The log tools' stop lists from the timeline's applied slow-downs** (docs/friction-done/2026-11-23-remaining-leads.md
   point 3): BuffReplay.appliedStops has them; replayedCastStops could read the first run's, so a cast cut early or a
   kit trigger's jump shows. Purrchena's part was closed (worktree-agent-a432f82c25a7b4d6b, 95917d1); `zmdlogs stops
-  --all --differ` (round 9) gives the rest's list in a minute. Moves the placement: measure.
+  --all --differ` (round 9) gives what is left in a few minutes: one slow-down (3f78, Rossi at 50.13 s, timeline
+  only), so the lists and the timeline now agree but for it. Moves the placement: measure.
 - **Ramp readings anchored on the application's logged ms** (docs/friction-done/2026-11-23-ramp-slowdowns.md point 2):
   where the applying hit landed before a stop and was logged at its end (a7a7 3.86 s, 489c 49.31 s) every reading of
   the instance looks over-held. Pair bounds between consecutive readings of one instance (scripts/probes/corrosion/
