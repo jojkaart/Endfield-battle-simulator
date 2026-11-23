@@ -1,18 +1,18 @@
 {
  "akekuri-laevatain.scenario.json": {
-  "total": 298900.981,
+  "total": 299491.153,
   "hits": 122,
   "casts": 53,
   "perOperator": {
    "chr_0019_karin": 65618.882,
-   "chr_0016_laevat": 233282.1
+   "chr_0016_laevat": 233872.271
   },
-  "digest": "7bcd86f6d6f3",
+  "digest": "893e6916edfa",
   "windows": [
    "4199b6179a05",
    "b4d36a40ad2d",
    "9652f8a4632c",
-   "a912f71661a7",
+   "db9c7b34674f",
    "ef5bbceec9e8"
   ]
  },
@@ -31,18 +31,18 @@
   ]
  },
  "antal-focus.scenario.json": {
-  "total": 623043.337,
+  "total": 625430.367,
   "hits": 135,
   "casts": 70,
   "perOperator": {
    "chr_0023_antal": 99562.029,
    "chr_0013_aglina": 94966.168,
-   "chr_0016_laevat": 428515.14
+   "chr_0016_laevat": 430902.17
   },
-  "digest": "373a434958f2",
+  "digest": "d7c410d566a9",
   "windows": [
    "96d149dc526c",
-   "b1505fc50ff9",
+   "9a52de347d7e",
    "2853a7023303",
    "e3aec290c82b",
    "71a4a6d1b21c"
@@ -105,17 +105,17 @@
   ]
  },
  "camille-gilberta.scenario.json": {
-  "total": 248173.163,
+  "total": 248668.415,
   "hits": 68,
   "casts": 20,
   "perOperator": {
-   "chr_0033_camille": 174600.635,
+   "chr_0033_camille": 175095.887,
    "chr_0013_aglina": 73572.528
   },
-  "digest": "d96f7cd6cd79",
+  "digest": "f6c648e32158",
   "windows": [
    "299f9b4a7122",
-   "2e4cb7dcaa10"
+   "95666ac3ae7e"
   ]
  },
  "catcher-counter.scenario.json": {
@@ -247,53 +247,53 @@
   ]
  },
  "gilberta-gravity-field.scenario.json": {
-  "total": 435175.42,
+  "total": 437284.462,
   "hits": 55,
   "casts": 26,
   "perOperator": {
    "chr_0013_aglina": 62896.28,
-   "chr_0016_laevat": 372279.14
+   "chr_0016_laevat": 374388.183
   },
-  "digest": "b6b45ce23524",
+  "digest": "9f27bc594b64",
   "windows": [
-   "16a017be292d",
-   "26ffcfa569cd"
+   "d00fa27d36cb",
+   "60fc58b758bf"
   ]
  },
  "ink-melt-zero.scenario.json": {
-  "total": 2853593.641,
+  "total": 2861755.869,
   "hits": 456,
   "casts": 194,
   "perOperator": {
-   "chr_0016_laevat": 1335778.284,
+   "chr_0016_laevat": 1343940.513,
    "chr_0036_jsspsi": 979663.029,
    "chr_0006_wolfgd": 281895.662,
    "chr_0025_ardelia": 256256.666
   },
-  "digest": "c983467c08e7",
+  "digest": "6d2a95441462",
   "windows": [
    "bc98614510cc",
    "5395613fee08",
    "9e9797ce1c3a",
    "298351068fed",
    "08b1553c641d",
-   "0c540ec73d04"
+   "4469a05b70dd"
   ]
  },
  "ink-melt.scenario.json": {
-  "total": 3410561.953,
+  "total": 3432399.784,
   "hits": 461,
   "casts": 169,
   "perOperator": {
    "chr_0016_laevat": 2050587.801,
-   "chr_0036_jsspsi": 780329.371,
-   "chr_0006_wolfgd": 357465.447,
+   "chr_0036_jsspsi": 782841.688,
+   "chr_0006_wolfgd": 376790.961,
    "chr_0025_ardelia": 222179.334
   },
-  "digest": "ff262d09d8df",
+  "digest": "ff3024dfb23b",
   "windows": [
-   "5dfa5226ab61",
-   "3455b1cecb18",
+   "7a3269d28882",
+   "2622807fa351",
    "2328901c660b",
    "eccc290cc2a4",
    "0de21f4d89c1",
@@ -435,19 +435,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2679054.88,
+  "total": 2674344.809,
   "hits": 169,
   "casts": 64,
   "perOperator": {
    "chr_0036_jsspsi": 697300.676,
-   "chr_0016_laevat": 1647494.457,
+   "chr_0016_laevat": 1642784.386,
    "chr_0035_liino": 208483.065,
    "chr_0013_aglina": 125776.683
   },
-  "digest": "bd12880ff2d6",
+  "digest": "97d6a79846c0",
   "windows": [
    "b0c782d11f81",
-   "0e8bf3744f9b"
+   "5b24501d18d3"
   ]
  },
  "si-laevatain.scenario.json": {

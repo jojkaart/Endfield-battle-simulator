@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 77.9% | 99.1% | 0.0% | 1.8% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 65.2% | 80.2% | 14.8% | 8.9% | 16 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 73.7% | 91.6% | 6.4% | 10.8% | 7 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 57.9% | 78.9% | 18.2% | 8.3% | 12 |
-| All but the hold-outs | 61 | 29035 | 62.6% | 80.2% | 15.8% | 8.0% | 34 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 65.4% | 80.2% | 14.8% | 8.6% | 19 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 74.0% | 91.7% | 6.4% | 10.8% | 7 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 58.5% | 79.2% | 17.8% | 8.4% | 12 |
+| All but the hold-outs | 61 | 29035 | 63.0% | 80.3% | 15.6% | 7.9% | 37 |
 
 ## By operator (every log but the hold-outs)
 
@@ -36,16 +36,16 @@ commit, and how many logs got better or worse.
 | chr_0003_endminf | 3 | 472 | 13.8% | 3.4% | 58.6% |
 | chr_0004_pelica | 11 | 1076 | 77.4% | 12.0% | 19.1% |
 | chr_0005_chen | 6 | 810 | 17.4% | 35.3% | 7.0% |
-| chr_0006_wolfgd | 7 | 808 | 77.1% | 14.6% | 15.3% |
+| chr_0006_wolfgd | 7 | 808 | 79.6% | 12.5% | 15.3% |
 | chr_0007_ikut | 2 | 257 | 93.4% | 1.9% | 20.5% |
 | chr_0009_azrila | 4 | 388 | 13.1% | 83.0% | 7.6% |
 | chr_0011_seraph | 7 | 266 | 67.3% | 21.4% | 27.1% |
 | chr_0012_avywen | 2 | 186 | 68.3% | 28.5% | 5.7% |
-| chr_0013_aglina | 15 | 1174 | 80.4% | 9.0% | 3.8% |
+| chr_0013_aglina | 15 | 1174 | 80.6% | 8.9% | 3.8% |
 | chr_0014_aurora | 2 | 250 | 5.2% | 88.8% | 15.3% |
 | chr_0015_lifeng | 2 | 260 | 6.2% | 72.7% | 5.2% |
-| chr_0016_laevat | 13 | 1497 | 75.8% | 5.5% | 14.6% |
-| chr_0017_yvonne | 2 | 323 | 22.0% | 0.3% | 6.7% |
+| chr_0016_laevat | 13 | 1497 | 77.6% | 5.3% | 14.5% |
+| chr_0017_yvonne | 2 | 323 | 28.2% | 0.3% | 4.9% |
 | chr_0019_karin | 2 | 202 | 75.7% | 18.3% | 6.6% |
 | chr_0020_meurs | 1 | 252 | 0.0% | 100.0% | 112.2% |
 | chr_0021_whiten | 5 | 289 | 43.3% | 29.8% | 8.4% |
@@ -54,13 +54,13 @@ commit, and how many logs got better or worse.
 | chr_0025_ardelia | 11 | 1470 | 76.3% | 10.8% | 2.9% |
 | chr_0026_lastrite | 4 | 156 | 64.7% | 0.6% | 3.7% |
 | chr_0027_tangtang | 2 | 265 | 53.2% | 22.6% | 5.3% |
-| chr_0028_wulfa | 10 | 2305 | 43.0% | 7.9% | 7.6% |
+| chr_0028_wulfa | 10 | 2305 | 43.3% | 7.9% | 7.5% |
 | chr_0029_pograni | 5 | 649 | 35.3% | 19.3% | 2.4% |
 | chr_0030_zhuangfy | 5 | 1392 | 53.5% | 23.2% | 14.7% |
 | chr_0031_mifu | 5 | 471 | 66.7% | 1.5% | 4.1% |
-| chr_0032_lizhiyan | 40 | 5688 | 72.9% | 13.4% | 13.8% |
-| chr_0033_camille | 10 | 1004 | 87.8% | 4.2% | 14.0% |
+| chr_0032_lizhiyan | 40 | 5688 | 73.2% | 13.1% | 13.8% |
+| chr_0033_camille | 10 | 1004 | 88.0% | 4.2% | 14.0% |
 | chr_0034_typhoea | 12 | 2081 | 74.7% | 10.4% | 3.8% |
 | chr_0035_liino | 19 | 1469 | 62.9% | 18.7% | 18.2% |
-| chr_0036_jsspsi | 29 | 3060 | 67.6% | 8.5% | 8.9% |
+| chr_0036_jsspsi | 29 | 3060 | 67.6% | 8.4% | 8.8% |
 | chr_0038_purrche | 3 | 290 | 62.1% | 29.7% | 23.4% |
