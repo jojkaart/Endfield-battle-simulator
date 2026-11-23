@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 77.4% | 98.0% | 0.0% | 1.9% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 62.8% | 77.6% | 15.6% | 9.1% | 16 |
+| Development (fixtures/pending, holdout.json `development`) | 31 | 16153 | 63.0% | 77.7% | 15.5% | 9.1% | 16 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 69.9% | 87.9% | 6.6% | 11.0% | 7 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 54.0% | 73.6% | 23.3% | 8.1% | 12 |
-| All but the hold-outs | 60 | 28693 | 59.6% | 76.6% | 18.3% | 8.0% | 34 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 54.3% | 73.7% | 23.2% | 8.1% | 12 |
+| All but the hold-outs | 60 | 28693 | 59.8% | 76.7% | 18.2% | 8.0% | 34 |
 
 ## By operator (every log but the hold-outs)
 
@@ -44,7 +44,7 @@ commit, and how many logs got better or worse.
 | chr_0013_aglina | 14 | 1144 | 79.5% | 9.0% | 3.4% |
 | chr_0014_aurora | 2 | 250 | 0.0% | 98.8% | 16.3% |
 | chr_0015_lifeng | 2 | 260 | 6.2% | 72.7% | 5.0% |
-| chr_0016_laevat | 13 | 1497 | 73.1% | 6.0% | 14.7% |
+| chr_0016_laevat | 13 | 1497 | 73.3% | 5.8% | 14.9% |
 | chr_0017_yvonne | 2 | 323 | 13.6% | 1.9% | 14.1% |
 | chr_0019_karin | 2 | 202 | 74.8% | 18.3% | 6.7% |
 | chr_0020_meurs | 1 | 252 | 0.0% | 100.0% | 112.2% |
@@ -62,5 +62,5 @@ commit, and how many logs got better or worse.
 | chr_0033_camille | 10 | 1004 | 85.2% | 6.0% | 14.5% |
 | chr_0034_typhoea | 12 | 2081 | 73.9% | 10.9% | 3.9% |
 | chr_0035_liino | 19 | 1469 | 62.8% | 18.0% | 17.8% |
-| chr_0036_jsspsi | 28 | 2993 | 64.5% | 9.3% | 8.1% |
+| chr_0036_jsspsi | 28 | 2993 | 66.4% | 8.3% | 8.1% |
 | chr_0038_purrche | 3 | 290 | 62.1% | 29.7% | 25.5% |
