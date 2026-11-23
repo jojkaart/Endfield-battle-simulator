@@ -18,7 +18,7 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
-import type { PlacedHolds } from "./holds.ts";
+import type { ClockWhy, PlacedHolds } from "./holds.ts";
 import { castTimeStops, distinctCasts, placeHits } from "./logcasts.ts";
 import { corrosionRamp, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -434,10 +434,11 @@ function clockReaches(h: PlacedHolds, P: readonly number[], m: number): number {
  * holds.ts placeHolds): the least total, each dodge-sized unit of it with its earliest and latest time and the clocks
  * spanning it (a buff's run, a tick series), the bounds dropped as conflicting, and (with `verbose`) every bound.
  */
-export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean } = {}): string {
+export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: RegExp } = {}): string {
   const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { "hidden-holds": "placed" } }).replay;
   const h = r.hiddenHolds;
   if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
+  if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why);
   const series = (tag: string) => tag.replace(/ [0-9]+[→⇒][0-9]+ ms$/, "");
   const lines = [`${fx.id}: ${s(h.total)} s of hidden holds placed (the least total the clocks allow; ${Math.round(h.total / HOLD_UNIT_MS)} perfect dodges' worth at 0.512 s), ${new Set(h.kept.filter((b) => b.kind === "run").map((b) => b.tag)).size} buff runs and ${new Set(h.kept.filter((b) => b.kind === "tick").map((b) => series(b.tag))).size} tick series kept, ${h.dropped.length} bound(s) dropped; times in s`];
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
@@ -447,6 +448,35 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   }
   for (const b of h.dropped) lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)`);
   if (opts.verbose) for (const b of h.kept) lines.push(`  bound: ${b.tag}: P(${s(b.b)}) − P(${s(b.a)}) in [${Number.isFinite(b.min) ? s(b.min) : "−∞"}, ${Number.isFinite(b.max) ? s(b.max) : "∞"}] s; placed ${s(clockAt(h, h.mid, b.b) - clockAt(h, h.mid, b.a))}`);
+  return lines.join("\n");
+}
+
+/**
+ * `zmdlogs holds --why <re>`: each replayed instance of the kit buffs (`owner:id`) and enemy statuses (`status:<name>`)
+ * matching, from the replay without holds, with the log's run it was paired with and why it is a clock of the
+ * placement or not (holds.ts ClockWhy: the one place runBounds and statusBounds say so), and for a bound whether the
+ * placement kept or dropped it.
+ */
+function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h: PlacedHolds, re: RegExp): string {
+  // By id (owner:id, status:<name>) or with the owner's name (Perlica:wpn_funnel_0008.arts_taken), case aside.
+  const named = (c: ClockWhy) => (c.clock.startsWith("status:") ? c.clock : `${label(data, c.clock.slice(0, c.clock.indexOf(":")))}${c.clock.slice(c.clock.indexOf(":"))}`);
+  const ci = new RegExp(re.source, re.flags.includes("i") ? re.flags : `${re.flags}i`);
+  const mine = clocks.filter((c) => ci.test(c.clock) || ci.test(named(c)));
+  const known = [...new Set(clocks.map((c) => c.clock))].sort();
+  if (!mine.length) return `${fx.id}: no kit buff or enemy status matching ${re} among the replay's (${known.length ? known.join(", ") : "none"})`;
+  const dropped = new Set(h.dropped.map((b) => b.tag));
+  const kept = new Set(h.kept.map((b) => b.tag));
+  const lines = [`${fx.id}: why each instance is a clock of the hidden holds or not (the replay without them; instance and run times in s, the instance's end its expiry there)`];
+  // One line per instance and run (an enemy buff's instances come once per recipient), by clock, then time.
+  const once = [...new Map(mine.map((c) => [JSON.stringify(c), c])).values()].sort((a, b) => a.clock.localeCompare(b.clock) || (a.instance?.start ?? -1) - (b.instance?.start ?? -1) || (a.run?.since ?? 0) - (b.run?.since ?? 0));
+  for (const c of once) {
+    const who = c.clock.startsWith("status:") ? `by ${label(data, c.holder)}` : `on ${c.holder === "enemy" ? "the enemy" : label(data, c.holder)}`;
+    const inst = c.instance ? `${s(msOf(c.instance.start))}–${s(msOf(c.instance.end))}` : "every instance";
+    const run = c.run ? `; the log's run ${c.run.name} ${s(c.run.since)}–${s(c.run.lastListed)}` : "";
+    const tag = c.verdict.startsWith("bound: ") ? c.verdict.slice(7) : null;
+    const verdict = tag === null ? c.verdict : `a clock (asks ${(c.ask ?? 0).toFixed(2)} s): ${dropped.has(tag) ? "dropped by the placement as conflicting" : kept.has(tag) ? "kept" : "not placed"}`;
+    lines.push(`  ${named(c)} ${who} ${inst}${run}: ${verdict.replace(/chr_\d{4}_[a-z0-9]+/g, (op) => label(data, op))}`);
+  }
   return lines.join("\n");
 }
 
