@@ -31,7 +31,9 @@
 //   +12–24% (× Arts Intensity effect) for 12–30 s, replacing any Breach.
 // - Shatter: a physical status, or any new Vulnerable stack, on a
 //   Solidified enemy consumes Solidification for a 240–600% hit (by its
-//   level), after the status's own hit.
+//   level), after the status's own hit. A stack joining a running
+//   Vulnerable (a Lift's, a Knock Down's, or one applied directly)
+//   shatters as the instance's: credited to the operator who started it.
 
 import type { Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
@@ -211,7 +213,11 @@ export interface EnemyStatus {
   readonly infliction: Infliction | null;
   /** At most one of each status. */
   readonly statuses: readonly ActiveStatus[];
-  readonly vulnerable: { readonly stacks: number; readonly expiresAt: number } | null;
+  /**
+   * `by`: the operator whose application started it (buff_physical_no_guard's source: later stacks join its instance
+   * and don't change it), whom a Shatter at a later stack is credited to (addVulnerable).
+   */
+  readonly vulnerable: { readonly stacks: number; readonly expiresAt: number; readonly by?: string } | null;
   /** At most one of each physical status. */
   readonly physical: readonly ActivePhysical[];
   /** Control statuses (Immobilization, …), at most one of each. */
@@ -488,7 +494,9 @@ export function applyToEnemy(
     };
     const state = { ...added.state, physical: [...added.state.physical.filter((x) => x.status !== app.status), phys] };
     const hit: StatusEvent = { kind: "physical", frame, operator, status: app.status, level, forced: app.forced === true, ...(multiplier !== undefined ? { multiplier } : {}) };
-    const sh = shatter(state, frame, operator);
+    // A Lift or Knock Down adds its Vulnerable stack first, whose instance's handler shatters before the status's own:
+    // the Shatter is that instance's starter's (addVulnerable); a Crush or Breach, or a first stack, its applier's.
+    const sh = shatter(state, frame, lifting && n > 0 ? (s.vulnerable?.by ?? operator) : operator);
     return { state: sh.state, events: [...added.events, hit, ...sh.events] };
   }
   if (app.kind === "consumeStatus") {
@@ -506,15 +514,22 @@ export function applyToEnemy(
   return { state: { ...s, infliction: left > 0 ? { ...cur, stacks: left, ...(cur.by ? { by: cur.by.slice(n) } : {}) } : null }, events: [{ kind: "consumed", frame, operator, element: cur.element, stacks: n }] };
 }
 
-/** Adds Vulnerable stacks (refreshing it to at least 20 s); a new stack on a Solidified enemy shatters it, unless `shatters` is false. */
+/**
+ * Adds Vulnerable stacks (refreshing it to at least 20 s); a new stack on a Solidified enemy shatters it, unless
+ * `shatters` is false. A stack joining a running Vulnerable shatters as that instance's (buff_physical_no_guard's
+ * on-stack handler, buff_physical_handle_cryst_break, takes the buff's source): the Shatter is credited to whoever
+ * started it, not to the stack's applier. 04d401ad257e: Catcher's Knock Down at 52.78, 143.12 and 300.02 s, on Ember's
+ * Vulnerable, shatters at Ember's value (25,993; Catcher's would be about ÷6), the log crediting her.
+ */
 function addVulnerable(s: EnemyStatus, n: number, frame: number, operator: string, shatters: boolean): { state: EnemyStatus; events: StatusEvent[] } {
   if (!Number.isInteger(n) || n < 1) throw new EngineError(`Vulnerable stacks ${n}`);
   const cur = s.vulnerable;
   const stacks = Math.min(MAX_VULNERABLE_STACKS, (cur?.stacks ?? 0) + n);
-  const state: EnemyStatus = { ...s, vulnerable: { stacks, expiresAt: Math.max(cur?.expiresAt ?? 0, frame + VULNERABLE_FRAMES) } };
+  const by = cur ? (cur.by ?? operator) : operator;
+  const state: EnemyStatus = { ...s, vulnerable: { stacks, expiresAt: Math.max(cur?.expiresAt ?? 0, frame + VULNERABLE_FRAMES), by } };
   const events: StatusEvent[] = [{ kind: "vulnerable", frame, operator, stacks, before: cur?.stacks ?? 0 }];
   if (!shatters) return { state, events };
-  const sh = shatter(state, frame, operator);
+  const sh = shatter(state, frame, by);
   return { state: sh.state, events: [...events, ...sh.events] };
 }
 

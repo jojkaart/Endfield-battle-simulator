@@ -28,14 +28,15 @@ function loggedModifiersAt(ctx: TimelineContext, operator: string, events: reado
 
 /**
  * The crit a logged fight gives a kit hit's landing (TimelineScenario.loggedCrits): a pinned landing's own logged hit's
- * (its `ref`), else of a logged landing of its operator with one of its events within a frame of it; null when there
- * is none, or both crit and not at once (several landings at one frame). Undefined without logged crits (a simulation).
+ * (its `ref`; null when the log leaves that hit's crit out: never a hit's beside it, 207fff414d82 41.03 s, a stab of
+ * 13,441 took the 38,980 one's crit at its ms and fired a Seething Blood extra the log hasn't), else of a logged
+ * landing of its operator with one of its events within a frame of it; null when there is none, or both crit and not
+ * at once (several landings at one frame). Undefined without logged crits (a simulation).
  */
 function loggedCritAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number, ref?: string): boolean | null | undefined {
   if (!ctx.loggedCrits) return undefined;
+  if (ref !== undefined) return ctx.loggedCritRefs?.get(ref) ?? null;
   const all = events.flatMap((e) => ctx.loggedCrits?.get(`${operator}|${e}`) ?? []);
-  const own = ref !== undefined ? all.find((x) => x.ref === ref) : undefined;
-  if (own) return own.crit;
   const near = all.filter((x) => Math.abs(x.frame - frame) <= 1);
   if (near.length === 0) return null;
   return near.every((x) => x.crit === near[0]?.crit) ? (near[0] as { crit: boolean }).crit : null;

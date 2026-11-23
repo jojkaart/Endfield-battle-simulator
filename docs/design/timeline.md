@@ -352,7 +352,11 @@ go by operator ID, an arbitrary order that keeps them apart from the
 team's order (scheduling order instead moves only si-laevatain, by order
 and, with rolled crits, by which hit draws which roll). The owner
 (2026-10-25): same-frame hits of two operators are rare enough not to
-matter in practice, so the order stays and gets no in-game test.
+matter in practice, so the order stays and gets no in-game test. The logs
+show one case against it (2026-11-24): Estella's combo lands before Chen
+Qianyu's at one ms in three fights (combat-mechanics §3.6); the casts'
+order for logged simultaneous hits fixed those and moved batched landings
+at a stop's end the wrong way (docs/tried/2026-11-24-same-ms-cast-order.diff).
 
 **Team order.** A result depends on the order the team is listed in only
 where the game reads team positions: a kit's `teamSlotElement` predicate

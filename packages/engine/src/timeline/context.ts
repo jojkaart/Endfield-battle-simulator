@@ -96,7 +96,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
     data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>, ownWindows,
     ...(foodEnds.size ? { foodEnds } : {}),
     ...(critListeners.length ? { critListeners } : {}),
-    ...(scenario.loggedCrits ? { loggedCrits: loggedCritsByKey(scenario.loggedCrits) } : {}),
+    ...(scenario.loggedCrits ? { loggedCrits: loggedCritsByKey(scenario.loggedCrits), loggedCritRefs: new Map(scenario.loggedCrits.flatMap((x) => (x.ref !== undefined ? [[x.ref, x.crit] as const] : []))) } : {}),
     ...(scenario.loggedCrits || scenario.keepInputs ? { keepInputs: true as const } : {}),
     ...(scenario.loggedModifiers ? { loggedModifiers: byOperatorEvent(scenario.loggedModifiers) } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
