@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-23: Fight totals 3: the one-sided landings by kind, Sunderblade variants, Si's burst paths, the Barrage Array's pace](2026-11-23-12-fight-totals-3-the-one-sided-landings-by-kind-sunderblade.md)
 - [2026-11-23: Fight totals 2: an all-fights view, kills from capped hits, missing foods, Typhoeus's shots](2026-11-23-11-fight-totals-2-an-all-fights-view-kills-from-capped-hits.md)
 - [2026-11-23: Fight totals: the enemy away, the Endministrator's shatters, Hard 27's Electrification](2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)
 - [2026-11-23: Arcane's reset reaches a combo inside her first 9 frames; Purrchena's stops; pinned expiries](2026-11-23-09-arcane-s-reset-reaches-a-combo-inside-her-first-9-frames.md)

@@ -152,6 +152,17 @@ log-only landings are by kind (measure: counts per landing kind, no log named); 
 fc63's Hunting Arrows after the hovering ultimate and the 5th shot's burst's Hovering ATK; (5) Chen's readings (d4fb,
 a9d7), e82d's Si combo listing.
 
+**Fight totals, round 3 (2026-11-23, [journal](journal/2026-11-23-12-fight-totals-3-the-one-sided-landings-by-kind-sunderblade.md)):**
+the one-sided landings by kind (packages/logs onesided.ts; `zmdlogs totals <fx> --kinds`, `totals --all --kinds`,
+measure's "One-sided landings by kind", the hold-outs' means by kind only). Done: Zhuang Fangyi's Sunderblade variants
+pinned in turn (3aa6), a trigger's alternative paths as one landing (Si's Artful Intent bursts: hold-out 9.1 → 8.2%),
+a detached series at its own pace (fc63's Barrage Array: +6.8 → +3.3%). Next: (1) slots by value as well as time
+within a cast (9a80's Si combo final on a slash 6.6%, 7910, a27b: scratch/misslot.ts in the journal); (2) Zhuang
+Fangyi's Sunderblade gains (4d60: 6 and 8 where the log shows 8 and 9); (3) the hold-outs' log-only physical status
+hits (2.45%, 2.08% of it a status the replay deals nowhere within 5 s: a physical status it never makes); (4) cast tails (1.9% /
+2.3%: basic attacks cut by inputs the log lacks); (5) Rossi's Seething Blood extras; (6) Typhoeus's 5th-shot Hovering
+ATK (her own clock: the end varies 0.52–0.71 s); then round 2's (1), (3), (5).
+
 **Tests 18, 19, 101, 104 from the logs (2026-11-16,
 [journal](journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md)):** bosses freeze by default, control immunity per enemy
 (Chiliarch, the enemy Si; packages/data/src/enemyFacts.ts); cooldowns run
