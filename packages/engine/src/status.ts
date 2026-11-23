@@ -176,11 +176,22 @@ export interface ActiveStatus {
   /** Corrosion: the shred of the Corrosion it replaced, when it did (corrosionShred `carried`). */
   readonly carried?: number;
   /**
+   * Corrosion held by a time stop or slow-down (timeline/clock.ts shiftEnemy, which moves `appliedAt` past it at its
+   * start): until `until` its ramp stands at `elapsed` frames, what it had reached when the stop began (rampElapsed).
+   */
+  readonly rampHeld?: { readonly until: number; readonly elapsed: number };
+  /**
    * Combustion: the applier's attacker-side modifiers when it was applied
    * (effects.ts SNAPSHOT_ZONES; buff_common_burning_status takeAtkSnapshot),
    * which its ticks keep; absent when the caller gave none.
    */
   readonly snapshot?: readonly Modifier[];
+}
+
+/** Frames of a status's own (world) time since its application at `frame`: Corrosion's ramp (ActiveStatus.rampHeld). */
+export function rampElapsed(x: Pick<ActiveStatus, "appliedAt" | "rampHeld">, frame: number): number {
+  const e = frame - x.appliedAt;
+  return x.rampHeld && frame < x.rampHeld.until ? Math.max(e, x.rampHeld.elapsed) : e;
 }
 
 export interface ActivePhysical {
@@ -361,7 +372,7 @@ function withStatus(s: EnemyStatus, st: ReactionStatus, level: number, frame: nu
   const t = tweaks[st];
   // A Corrosion still on the enemy passes its shred on (buff_common_natural_*_triggered_wrapper).
   const running = st === "corrosion" ? s.statuses.find((x) => x.status === "corrosion" && x.expiresAt > frame) : undefined;
-  const carried = running ? corrosionShred(running.level, ((frame - running.appliedAt) * 1000) / FPS, running.artsIntensity, running.capScale ?? 1, running.damageScale?.value ?? 1, running.carried ?? 0) : 0;
+  const carried = running ? corrosionShred(running.level, (rampElapsed(running, frame) * 1000) / FPS, running.artsIntensity, running.capScale ?? 1, running.damageScale?.value ?? 1, running.carried ?? 0) : 0;
   const status: ActiveStatus = {
     status: st,
     level: checkLevel(level),
@@ -524,7 +535,7 @@ export function statusModifiers(state: EnemyStatus, frame: number): Modifier[] {
   const scaled = (x: { readonly damageScale?: { readonly value: number } }) => x.damageScale?.value ?? 1;
   for (const x of expireStatus(state, frame).statuses) {
     if (x.status === "corrosion") {
-      out.push(corrosionModifier(x.level, ((frame - x.appliedAt) * 1000) / FPS, x.artsIntensity, x.capScale ?? 1, scaled(x), x.carried ?? 0));
+      out.push(corrosionModifier(x.level, (rampElapsed(x, frame) * 1000) / FPS, x.artsIntensity, x.capScale ?? 1, scaled(x), x.carried ?? 0));
     } else if (x.status === "electrification") {
       const value = (ELECTRIFICATION_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity) * scaled(x);
       for (const element of ARTS_ELEMENTS) out.push({ zone: "damageTaken", value, element, source: `Electrification level ${x.level}` });

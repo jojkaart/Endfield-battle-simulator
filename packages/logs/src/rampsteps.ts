@@ -5,7 +5,7 @@
 // every stop the replay makes holds) with its placed hidden holds taken out, that is how much hidden hold the log's clock
 // had there (holds.ts placeHolds, kind "ramp"). `efsim zmdlogs ramp <fixture>` shows the reading.
 
-import { corrosionShred, FPS, landingDamage, readingDoesNotApply, roundDamage, type ActiveStatus } from "@efsim/engine";
+import { corrosionShred, FPS, landingDamage, rampElapsed, readingDoesNotApply, roundDamage, type ActiveStatus } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { readingBasis, type EngineCheck, type HitPlace, type Reading } from "./enginecheck.ts";
 import { isCorrosionBuff } from "./logeffects.ts";
@@ -113,7 +113,7 @@ export function rampSteps(c: EngineCheck, fx: Pick<LogFixture, "hits">, place: (
     const [low, high] = [Math.min(...ks), Math.max(...ks)];
     // A run of steps only (two apart fitting and the one between not: a coincidence of other parts).
     if (high - low + 1 !== ks.length) continue;
-    const elapsed = ((frame - s.appliedAt) * 1000) / FPS;
+    const elapsed = (rampElapsed(s, frame) * 1000) / FPS;
     const replayStep = Math.min(values.length - 1, Math.floor(Math.max(0, elapsed) / 1000));
     // Far from the replay's own step: a coincidence of other parts (a seal's finisher reading step 2 of 10), not the ramp.
     if (low > replayStep + MAX_STEP_LAG || high < replayStep - MAX_STEP_LAG) continue;
