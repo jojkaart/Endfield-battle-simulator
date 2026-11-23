@@ -32,7 +32,7 @@ describe("the build-offset screen", () => {
     expect(ohits.length).toBe(25);
     const fx = { id: "zmdlogs-abcd12345678" } as unknown as LogFixture;
     const text = offsetsView({ operators: { chr_a: { name: "Alpha" } } }, screenOffsets(ohits).map((offset) => ({ short: "abcd", fx, offset })));
-    expect(text).toMatch(/^\* abcd  Alpha\s+25\s+-10\.0%\s+100%\s+-10\.0%  → zmdlogs fit-build abcd --operator chr_a$/m);
+    expect(text).toMatch(/^\* abcd {2}Alpha\s+25\s+-10\.0%\s+100%\s+-10\.0% {2}→ zmdlogs fit-build abcd --operator chr_a$/m);
     expect(text).toMatch(/1 candidate\(s\) over 1 logs, 1 with nothing accounting for them/);
   });
 });
