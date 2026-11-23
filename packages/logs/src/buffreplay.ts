@@ -1395,9 +1395,16 @@ export interface LoggedLaneEnd {
   /** The operator whose hits list it, or "enemy" for a debuff (an enemy-side zone: TARGET_SIDE_ZONES). */
   readonly holder: string;
   readonly lastListed: number;
-  /** Another run of it (same source and holder) starts inside this one: the log shows a refresh. */
+  /**
+   * Another run of it (same source and holder) starts inside this one and this one isn't listed past it (by more than
+   * REFRESH_OVERLAP_MS): the log shows a refresh. Runs listed side by side are two instances (a stackingType 1 buff:
+   * 4360447193ac, Perlica's Arts DMG Taken from 92.24 s listed with the one from 104.92 s to 108.27 s).
+   */
   readonly refreshed: boolean;
 }
+
+/** How long (ms) a run may still be listed past another's start and be refreshed by it: the refreshing hit's batch. */
+const REFRESH_OVERLAP_MS = 200;
 
 /**
  * Where the log's listing of each buff ends (hidden-holds `log`): every run of every listed game buff, by `buff|source`,
@@ -1428,7 +1435,7 @@ export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
   const all = [...runs.values()];
   const out = new Map<string, LoggedLaneEnd[]>();
   for (const r of all) {
-    const refreshed = all.some((o) => o !== r && o.buff === r.buff && o.source === r.source && o.holder === r.holder && o.since > r.since && o.since <= r.lastListed);
+    const refreshed = all.some((o) => o !== r && o.buff === r.buff && o.source === r.source && o.holder === r.holder && o.since > r.since && o.since <= r.lastListed && r.lastListed - o.since <= REFRESH_OVERLAP_MS);
     const key = `${r.buff}|${r.source}`;
     out.set(key, [...(out.get(key) ?? []), { ...r, refreshed }]);
   }
@@ -1501,7 +1508,7 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
   for (const [key, list] of kitInstances) {
     const [kitKey, op] = key.split("|") as [string, string];
     const def = defs.get(kitKey);
-    if (!def || def.every !== undefined || def.consumedBy || def.link || def.endsWithCast || def.maxStacks !== undefined || def.sharedTimer || def.ticksShownByHits || def.ticksLoggedAs || def.endFollowsTick || def.childOf || def.instances !== undefined) continue;
+    if (!def || def.every !== undefined || def.consumedBy || def.link || def.endsWithCast || def.maxStacks !== undefined || def.sharedTimer || def.ticksShownByHits || def.ticksLoggedAs || def.endFollowsTick || def.childOf) continue;
     const owner = kitKey.slice(0, kitKey.indexOf(":"));
     const holder = def.target === "enemy" ? "enemy" : op;
     for (const w of list) {
@@ -1511,6 +1518,11 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
         const k = `${g}|${owner}`;
         for (const r of ends.runs.get(k) ?? []) {
           if (r.refreshed || r.holder !== holder || r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+          // Instances (KitBuff.instances): a reapplication may refresh the log's run without a new start (Arcane's
+          // will_dmg in 489c: runs from 12.0 and 14.6 s both listed to 49.4 s, over the replay's 25 s instances), so only
+          // a run the log shows apart from the reapplications inside it (runApart), and only the run that starts nearest the
+          // instance (489c: the run from 14.63 s isn't the 12.03 s instance's).
+          if (def.instances !== undefined && (!runApart(list, w, r, ends.runs.get(k) ?? []) || !nearestRun(r, S, ends.runs.get(k) ?? []))) continue;
           const id = `${k}|${r.since}|${holder}|${w.start}`;
           if (seen.has(id)) continue;
           seen.add(id);
@@ -1527,6 +1539,29 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
     }
   }
   return out;
+}
+
+/** How far apart (ms) the ends of two overlapping runs must be to show them as two instances (runApart). */
+const APART_MS = 1000;
+
+/**
+ * Whether the log shows a run `r` of an instance buff as an instance of its own: each of the replay's applications
+ * (`list`) after `w` and inside the run has a run of its own in the log, and every run overlapping `r` ends at
+ * least APART_MS from it (two runs ending together: a reapplication that refreshed both; 9c0bb09daff2, Arcane's will_dmg
+ * from 31.5 and 34.3 s both listed to 70.2 s). 4360447193ac: Perlica's Arts DMG Taken from 92.24 s ends at 108.27 s
+ * beside the one from 104.92 s, listed to 119.2 s.
+ */
+function runApart(list: readonly { start: number }[], w: { start: number }, r: LoggedLaneEnd, runs: readonly LoggedLaneEnd[]): boolean {
+  const on = runs.filter((o) => o !== r && o.holder === r.holder);
+  const later = list.filter((x) => x.start > w.start && msOfFrame(x.start) <= r.lastListed);
+  if (!later.every((x) => on.some((o) => Math.abs(o.since - msOfFrame(x.start)) <= RUN_START_MS))) return false;
+  const overlaps = (o: LoggedLaneEnd) => o.since <= r.lastListed && r.since <= o.lastListed;
+  return on.every((o) => !overlaps(o) || Math.abs(o.lastListed - r.lastListed) >= APART_MS);
+}
+
+/** Whether `r` is the run on its holder whose start is nearest `S` (ms): the one an instance applied at S stands for. */
+function nearestRun(r: LoggedLaneEnd, S: number, runs: readonly LoggedLaneEnd[]): boolean {
+  return runs.every((o) => o === r || o.holder !== r.holder || Math.abs(o.since - S) >= Math.abs(r.since - S));
 }
 
 /**

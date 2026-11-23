@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { effectiveKit, FPS, type OperatorKit } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { layerCrits, shownCrits, type LogEffect, type LogFixture, type LogHit } from "@efsim/logs";
-import { castsFromTriggerHits, checkLog, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, simulateLog } from "@efsim/cli";
+import { castsFromTriggerHits, checkLog, LOG_LISTING, logBuffReplay, loggedLaneEnds, readLogFixture, replayedCasts, simulateLog } from "@efsim/cli";
 import { placeHits } from "../packages/logs/src/logcasts.ts";
 
 const data = loadGameData();
@@ -358,5 +358,27 @@ describe("b6aa15281db4: a buff the log lists past the replay's expiry (engine as
     expect(placed).toBeLessThan(43880);
     // The holds alone hold it past the replay's own expiry.
     expect(end("holds") as number).toBeGreaterThan(40000);
+  });
+});
+
+describe("4360447193ac, 984748cfa662: Gilberta's Vulnerable stacks past 20 s on the tower bosses (2026-11-23)", () => {
+  const ult = (file: string, t: number) => {
+    const fx = readLogFixture(new URL(`../fixtures/pending/${file}`, import.meta.url).pathname);
+    return { fx, v: checkLog(data, fx).find((x) => x.hit.t === t && x.hit.event === "chr_0013_aglina_ultimate_skill") };
+  };
+
+  it("takes runs listed side by side as two instances, not a refresh (loggedLaneEnds)", () => {
+    const { fx } = ult("zmdlogs-4360447193ac.json", 116005);
+    const runs = loggedLaneEnds(fx).runs.get("buff_wpn_funnel_0008_magic_damage_taken_up|chr_0004_pelica") ?? [];
+    // Perlica's Arts DMG Taken from 92.24 s is listed beside the one from 104.92 s until 108.27 s.
+    expect(runs.find((r) => r.since === 92241)?.refreshed).toBe(false);
+  });
+
+  it("reads her ultimates' Susceptibility as listed: the holds those runs place keep the stacks (0.39 at 116.0 s, 0.36 at 126.1 s)", () => {
+    // 4360: Perlica's run from 92.24 s, 0.74 s late, places a hold that keeps the 90.87 s stacks to the 113.40 s Lift.
+    for (const [file, t] of [["zmdlogs-4360447193ac.json", 116005], ["zmdlogs-984748cfa662.json", 126094]] as const) {
+      const v = ult(file, t).v;
+      expect(v?.kind === "match" ? v.class : v?.kind).toBe("plain");
+    }
   });
 });
