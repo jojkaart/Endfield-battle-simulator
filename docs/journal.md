@@ -4,9 +4,57 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 121 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 122 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Hold clocks: enemy statuses and Corrosion's ramp
+
+**Goal:** more clocks for the hidden holds (docs/journal/2026-11-23-01-hidden-holds-placed-once-for-every-timer.md):
+the enemy's listed statuses and Corrosion's ramp steps; Rossi's Wolven Blood clock; the last merge's combination
+regressions (458b, bdf2, a7a7); d774's Sunderblade count.
+
+**Done (open-problems "The buff clock", More clocks):**
+- holds.ts `statusBounds` / `statusLanes`: each Electrification, Corrosion and Breach the replay without holds let run
+  out, against the log's run of it (the enemy's side of every hit lists them, any element); from below only for a
+  status a team kit consumes. The placed holds alone didn't cover d774 (0.26 s placed where its Electrification asks
+  0.84 s); now 0.83 s: the first Sunderblade strike plain (12127), all eight strikes one for one with the log's.
+- rampsteps.ts + `efsim zmdlogs ramp <fixture>`: each hit under Corrosion read at every step of the replay's Corrosion
+  (the steps whose damage fits ±1), against the replay's own world time there; logcheck.ts `logBuffReplay` places the
+  holds again with these bounds (ReplayOptions.holdBounds). db87 plain 166 → 206, mismatch 59 → 18.
+- Engine: a running Corrosion's ramp stands still inside a stop (status.ts `rampElapsed`, ActiveStatus.rampHeld); it
+  used to be set back by the rest of the stop at the stop's start (4d60 73.65 s: 2.6 s younger, 14.4 against 22.5).
+- Scoreboard (`npm run snapshots:update`): development plain 63.2 → 65.1%, mismatch 15.4 → 15.0%, mean |damage
+  error| 9.1 → 9.0%; hold-outs 70.3 → 73.5%, 6.4%, 10.8% (3 better, 0 worse, 2 mixed); earlier pending 56.1 → 56.5%,
+  18.8 → 18.6%, 8.4%; verified 77.1 → 77.7% (matched 97.8 → 99.1%); all but the hold-outs 60.6 → 61.9%, 16.4 → 16.1%,
+  8.1%. Development 13 better (5082 plain 150 → 219, mismatch 36 → 6; 7910 255 → 318; db87; f978 394 → 444), 3 worse:
+  9847 (310 → 300: the ramp caps the holds Gilberta's Vulnerable run asked for, below), 4d60 (697 → 696: Liino's
+  ultimate hits at 83.3–83.6 s a step behind the log's ramp, one frame of hold), fc63 (508 → 504: Arcane's 0.12 Susceptibility held past the log's end at 18.85–19.07 s by a hold the new clocks moved earlier); d572
+  908 → 918, mismatch 26 → 17; d774 348 → 365, mismatch 38 → 24, its over-predicted total +24.8 → +27.2% (the
+  Electrification it now keeps).
+- Teams (team-ab against 235d717, seeds 1001–1032): Estella's sustained +0.00% full / +0.01% zero, as a bot +0.08%,
+  her zero-energy 60 s timeline +0.07%; Typhoeus's unchanged (60 s timeline +0.00%). Five example snapshots moved
+  ≤ 0.13% (Corrosion read inside stops).
+
+**Found:** Wolven Blood has no clock of its own (no time-scale flags in its BuffData; its runs last 19.5–20.8 s of
+world time); its misfits are its 16th layer, on hits the log gives no crit (489c 55.61 s; the replay reaches 16 at
+59.5 s). The ramp says 9847's Gilberta Vulnerable stacks outliving 20 s aren't hidden holds (it allows ≤ 0.94 s there).
+The other direction is common: 146 of 3,553 ramp readings need a hold below zero, 139 with a combo slow-down in the
+window (f978, 3f78, 9c6e, a7a7, 4d60): the replay holds the ramp longer than the game across some combos. a7a7 (lead
+3) is one; 458b's regression is Wulfgard's Combustion ticks, not traced; bdf2 156 → 157.
+
+**Decisions:** a status's last listing within two frames (70 ms), not a buff run's 200 ms: no holder's hits bracket
+it, and a consumed status's last listing is the consuming hit. Ramp bounds against the replay's own world time (its
+Corrosion at the landing, its placed holds added back), not the placement's stops: those miss ultimates placed from
+their events (db87's Laevatain, 4d60's Zhuang Fangyi), and a first version double-counted 1.5 s in db87. The run()
+closure stays: the ramp pass composes outside it (one more replayKitBuffs with `holdBounds`).
+
+**Dead ends:** reading the ramp only from the log's listed Corrosion: db87's log lists none (the replay's application
+stands in). A ramp reading far from the replay's step (Arcane's seal finisher at step 2 of 10): a coincidence, now
+skipped beyond 3 steps.
+
+**Left:** test 111; the combo slow-downs that over-hold the ramp; crits a buff's listed layers show (Wolven Blood); the
+replay's own stops for every view and bound (friction report docs/friction/2026-11-23-hold-clocks.md).
 
 ## 2026-11-23: Si's strokes from the log: Initial Stroke at the first press, the burst's origin
 
@@ -349,41 +397,3 @@ already; per-hit closer). Rossi's own mismatches 594 → 497 (`zmdlogs groups --
 up to ~2.5 s longer or shorter in world time than the replay's (tables in the entry); Corrosion's ramp under 489c's
 ultimates; 0c14's crit-less ultimate without a bleed (no extras to show its crits; the log's layer counts would).
 9a80's ultimate ×1.09 already fitted at the base.
-
-## 2026-11-22: Perlica's combo hits: Pulser Labs and Wild Wanderer before the hit's damage
-
-**Goal:** Perlica's combo hits ×1.15–1.40 above the engine (fc63, 3aa6, 4d60, 4360, 9847), her −9.6% in 9090's
-totals although every hit matched, and fc63's ×0.934 ATK (docs/open-problems.md, "Typhoeus, Arcane, Liino, Perlica").
-
-**Found:** one cause for the first two. Where her combo hit had no other DMG bonus it was ×1.500 of the engine in every
-Pulser Labs log (4360, 9090, 9847; fc63 ×1.401 = 1.5 × its ATK offset), elsewhere 1 + 0.5 over the hit's DMG sum; in the
-Wild Wanderer logs (3aa6, d774) 1 + 0.192 / 0.224, the weapon's dmg_up at her skill-3 levels. Both triggers (Pulser Labs
-abilityEvent 102, Wild Wanderer 206, the Electrification tag) ran after the applying hit's damage while P3's, on the same
-event and tag, ran before it; her combo makes its forced Electrification before its DamageAction. Both are now
-`beforeDamage`; 46 of her 59 combo hits are exactly the primary reading (14 before). 9090's −9.6% was those 7 combo hits,
-matched only by the log-listing fallback: no hit is missing (130 of 130 landed; per skill attack1 20, attack2 34, attack3
-51, attack4 16, combo 7, ultimate 2), Perlica −9.4 → −2.7%, the rest crit luck. ZMDLogs lists none of the three buffs on
-the hit that creates them (a new "Common misreadings" line in docs/design/data.md).
-
-**Follow-on:** e82d's Electrification reaction hit (the only one in the development logs) took the +0.5 too (Perlica
-+14.8 → +64%); it fits P3's ATK without Pulser Labs' DMG and without its own Electrification. So a reaction's own hit
-takes its triggers' ATK but not their DMG bonuses for Electrification as for Combustion (landing.ts `reactionHitSide`,
-was `combustionHitSide`), and OWN_HIT_SEES has Electrification seeing the one before it (ASSUMED, one hit;
-combat-mechanics §3.2, §3.8): e82d Perlica −3.4%. **fc63:** `zmdlogs fit-build` fits attribute nodes 2 (nodes 5 and 7
-need favorability 300) with Stanza at level 86 (57 of 81 hits, 20 of 21 clean; 1 node at 89 is within 0.1%): kept as
-the fixture's `buildOverrides`, the pair a fit, not a reading.
-
-**Scoreboard (docs/accuracy.md):** development plain 52.0 → 52.5%, mismatch 18.2 → 17.9%, mean |damage error| 12.6%
-unchanged; hold-out plain 67.3 → 67.4%, mismatch 6.7%, error 12.1 → 12.0% (2 better, 0 worse); earlier pending 48.9 →
-49.0%, error 8.3 → 8.4%. Logs better: 4d60, 9090, fc63, 3aa6; mixed 4360, 9847, c6d8, d774 (each closer per hit;
-4360's and c6d8's fights were already over-predicted by others), worse e82d (fight −8.5 → −8.8%: its reaction hit was
-over-predicted, now right, the fight's shortfall is elsewhere). Perlica's row: plain 58.8 → 66.7%, mismatch 24.1 →
-18.8%, mean |damage error| 18.5 → 19.2% (c6d8 +137.8 → +163.7%, a team-wide ×0.1 log; fc63 −0.5 → −6.1%, where the
-ATK offset had hidden the missing combo bonus, now both right, the rest an unflagged ultimate crit and Stagger runs).
-
-**Team (team-ab, seeds 1001–1032):** Typhoeus's team sustained DPS 52,949 → 53,173 (+0.42%) at full energy, 50,194
-→ 50,417 (+0.44%) from zero; the 60 s timelines +0.30% / +0.29% (docs/teams/typhoeus-arcane-liino-perlica.md); Estella's
-team unchanged.
-
-**Dead ends:** none kept. Left: 4d60's combos ×1.08 (Liino's stance ATK listed, not replayed), a reaction
-Electrification with Wild Wanderer (in-game test 68's open half), the Electrification reaction rule rests on one hit.

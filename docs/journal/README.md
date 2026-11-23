@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-23: Hold clocks: enemy statuses and Corrosion's ramp](2026-11-23-02-hold-clocks-enemy-statuses-and-corrosion-s-ramp.md)
 - [2026-11-23: Si's strokes from the log: Initial Stroke at the first press, the burst's origin](2026-11-23-01-si-s-strokes-from-the-log-initial-stroke-at-the-first-press.md)
 - [2026-11-23: Hidden holds placed once for every timer](2026-11-23-01-hidden-holds-placed-once-for-every-timer.md)
 - [2026-11-23: Four smaller leads: d774's strikes, db87's ramp, the food logs' openers, Hard 27's resistance](2026-11-23-01-four-smaller-leads-d774-s-strikes-db87-s-ramp-the-food-logs.md)
