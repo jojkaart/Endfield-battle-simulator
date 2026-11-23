@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, holdWorld, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, holdWorld, ownHitsLanded, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type Predicate, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
@@ -19,7 +19,7 @@ import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from 
 import { loggedNames } from "./enginecheck.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { loggedStagger, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
-import { REPLAY_EDGE_MS, replayRecorder, type BuffTrace, type Change, type KitWindow, type ReplayRecord } from "./replayrecord.ts";
+import { REPLAY_EDGE_MS, replayRecorder, type AppliedStop, type BuffTrace, type Change, type KitWindow, type ReplayRecord, type StatusTrace } from "./replayrecord.ts";
 import { HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
@@ -284,6 +284,12 @@ export interface BuffReplay {
   /** A logged hit's landing in the replay (its damage, modifiers and LandingFacts), or why there is none. */
   landing(hit: LogHit): LandedHit | { readonly unknown: string };
   /**
+   * Where the crit the replay gave a logged hit's landing comes from (CritSource): the log's flag, or, where the log
+   * gives none, which inference made it a logged crit (shownCrits, layerCrits, valueCrits), else none (the landing
+   * doesn't crit in the replay the check reads).
+   */
+  critSource(hit: LogHit): CritSource;
+  /**
    * A logged status hit's landing (a burst, reaction, physical status or Combustion tick): the replay's status damage of
    * its operator, kind and element nearest it within NEAR_FRAMES (each landing once), or why there is none.
    */
@@ -328,6 +334,13 @@ export interface BuffReplay {
   readonly castFlags: readonly CastFlag[];
   /** With ReplayOptions.trace: each change of a traced kit buff's instances (start, end moved, gone), step by step. */
   readonly traces: readonly BuffTrace[];
+  /** With ReplayOptions.trace `status:<status>` (`status:*` every one): each change of an enemy status, step by step (keyed by status and applier: a hold moves appliedAt). */
+  readonly statusTraces: readonly StatusTrace[];
+  /**
+   * The slow-downs the replay's timeline applied (frames; a reset's cut and a path's ends and jumps in them), beside the
+   * stop lists the log tools build for its casts (replayedCastStops): where they differ, the lists aren't the engine's.
+   */
+  readonly appliedStops: readonly AppliedStop[];
   /** The fight's hidden holds the replay placed (engine assumption hidden-holds, reading `placed`: holds.ts), else null. */
   readonly hiddenHolds: PlacedHolds | null;
   /** With the holds placed: each replayed instance of a kit buff or enemy status, and why it is a clock of them or not (holds.ts ClockWhy; `zmdlogs holds --why`). */
@@ -339,6 +352,13 @@ export interface BuffReplay {
   readonly spTopUps: readonly { readonly frame: number; readonly operator: string; readonly skillId: string; readonly sp: number }[];
 }
 
+/**
+ * Where a logged hit's crit in the replay comes from (BuffReplay.critSource): `log` its flag; `shown` a trigger on crits
+ * its logged hits show (shownCrits); `layers` the layers such a trigger adds (layerCrits); `values` the hits' values
+ * (valueCrits); `none` nothing: the replay the check reads lands it without a crit.
+ */
+export type CritSource = "log" | "shown" | "layers" | "values" | "none";
+
 /** A logged cast the replay made against its kit (BuffReplay.castFlags). */
 export interface CastFlag {
   readonly cast: ReplayedCast;
@@ -348,9 +368,11 @@ export interface CastFlag {
   readonly frame: number;
   /**
    * "forced": its kit says the skill isn't available then (KitSkill.available: a stance holds the slot), and no variant
-   * is; "inside": the operator's running action can't be cut yet (its exclusive frames), so the cast ended it early.
+   * is; "inside": the operator's running action can't be cut yet (its exclusive frames: the gates alone, earliestStart
+   * with `at`), so the cast ended it early; "cuts": a legal interrupt that cancels hits of the running cast still due
+   * (timing.ts ownHitsLanded), not against the kit but worth seeing (round 8: "inside" used to count these too).
    */
-  readonly kind: "forced" | "inside";
+  readonly kind: "forced" | "inside" | "cuts";
   readonly why: string;
 }
 
@@ -1898,7 +1920,10 @@ export interface ReplayOptions {
    * (timeline/assumptions.ts, e.g. control-immunity), for measuring a reading on the logs. Absent: the defaults.
    */
   readonly assume?: Readonly<Record<string, string>>;
-  /** Kit buffs (`owner:id`) whose instances' expiries to trace step by step (BuffReplay.traces; `zmdlogs replay --trace-buff`). */
+  /**
+   * Kit buffs (`owner:id`) whose instances' expiries to trace step by step (BuffReplay.traces; `zmdlogs replay
+   * --trace-buff`), and enemy statuses (`status:<status>`, `status:*`: BuffReplay.statusTraces).
+   */
   readonly trace?: readonly string[];
   /**
    * More bounds on the hidden holds (hidden-holds `placed`/`holds`), beside the replay's own clocks: clocks only a reading
@@ -1916,11 +1941,18 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
   }
   const cur = st.acting[c.operator];
   if (!cur || cur.auto || cur.skill === skillId) return undefined;
-  const until = exclusiveUntil(ctx, st, c.operator);
-  if (until <= f + 1) return undefined;
-  const r = earliestStart(ctx, st, { operator: c.operator, skill: skillId });
-  if ("error" in r || r.frame <= f + 1) return undefined;
-  return { cast: c, skillId, frame: f, kind: "inside", why: `${r.frame - f} frame(s) before ${cur.skill} lets it start (its uncuttable frames: the kit allows it from ${((r.frame * 1000) / FPS / 1000).toFixed(2)} s)` };
+  const sec = (frame: number) => ((frame * 1000) / FPS / 1000).toFixed(2);
+  // The gates alone (`at`: an interrupt doesn't wait for the running cast's hits): its uncuttable frames.
+  if (exclusiveUntil(ctx, st, c.operator) > f + 1) {
+    const r = earliestStart(ctx, st, { operator: c.operator, skill: skillId, at: f });
+    if (!("error" in r) && r.frame > f + 1) return { cast: c, skillId, frame: f, kind: "inside", why: `${r.frame - f} frame(s) before ${cur.skill} lets it start (its uncuttable frames: the kit allows it from ${sec(r.frame)} s)` };
+  }
+  // A legal interrupt that cancels hits of the running cast still due (round 8: the flag counted these as uncuttable).
+  const landed = ownHitsLanded(st, c.operator);
+  if (landed <= f + 1) return undefined;
+  const index = cur.cast ?? st.casts.findLastIndex((x) => x.operator === c.operator);
+  const pending = st.scheduled.filter((x) => x.kind === "hit" && x.cast?.operator === c.operator && x.cast.index === index && x.frame > f).length;
+  return { cast: c, skillId, frame: f, kind: "cuts", why: `cuts ${pending} pending hit(s) of ${cur.skill} (its own hits due until ${sec(landed)} s): an interrupt the kit allows` };
 }
 
 /**
@@ -2184,7 +2216,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
   const shownByHits = shownCrits(kits, fx, placement);
   const byLayers = new Map([...shownByHits, ...layerCrits(kits, fx, placement, shownByHits)]);
-  const shown = new Map([...byLayers, ...valueCrits(kits, fx, placement, byLayers)]);
+  const byValues = valueCrits(kits, fx, placement, byLayers);
+  const shown = new Map([...byLayers, ...byValues]);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   const input: ReplayInput = { data, fx, opts, control, kitIds, team, edge, sampleFrames, crits: shown, stagger };
   /** A replay of the casts (by default the logged ones with the missed casts found so far), the holds as placed so far. */
@@ -2343,6 +2376,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerCuts: main?.staggerCuts ?? [],
     castFlags: main?.flags ?? [],
     traces: main?.traces ?? [],
+    statusTraces: main?.statusTraces ?? [],
+    appliedStops: main?.appliedStops ?? [],
     hiddenHolds: placedHolds,
     holdClocks,
     spTopUps: main ? main.made.flatMap((m) => {
@@ -2387,6 +2422,11 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return n;
     },
     castFacts,
+    critSource(hit) {
+      if (hit.crit !== null) return "log";
+      const i = hitIndex.get(hit) as number;
+      return shownByHits.has(i) ? "shown" : byLayers.has(i) ? "layers" : byValues.has(i) ? "values" : "none";
+    },
     landing(hit) {
       const found = landed.get(String(hitIndex.get(hit)));
       if (found) return found;

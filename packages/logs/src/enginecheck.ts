@@ -470,6 +470,22 @@ export interface TotalsComparison {
    * the kinds keep the replay's burst.
    */
   readonly recordedShifts: readonly RecordedShift[];
+  /**
+   * The simulated total's parts: each landing it counted with the damage it counted (`logged`: the logged hit it stands
+   * for, absent for a replay-only landing), in frame order (`zmdlogs totals`: a total can move while every logged hit
+   * gets closer, by its replay-only side: 458b's Laevatain, two replay-only finisher landings).
+   */
+  readonly parts: readonly TotalPart[];
+}
+
+/** One landing the simulated total counted (TotalsComparison.parts). */
+export interface TotalPart {
+  readonly operator: string;
+  readonly skillId: string;
+  readonly hitId: string;
+  readonly frame: number;
+  readonly damage: number;
+  readonly logged?: LogHit;
 }
 
 /** One recorded burst's move in its operator's simulated total (TotalsComparison.recordedShifts). */
@@ -590,6 +606,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
   const counted = new Set<LandedHit>();
+  const parts: TotalPart[] = [];
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
     const m = matched.get(l);
     const capped = cappedHit.get(l);
@@ -602,6 +619,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     else damage = l.exact;
     if (capped) damage = Math.min(damage, capped.value);
     counted.add(l);
+    const of = m?.hit ?? capped;
+    parts.push({ operator: l.operator, skillId: l.skillId, hitId: l.hitId, frame: l.frame, damage, ...(of ? { logged: of } : {}) });
     sim.damage += damage;
     if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
     add(sim.perOperator, l.operator, damage);
@@ -620,7 +639,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, recordedShifts };
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, recordedShifts, parts };
 }
 
 /** A totals comparison as rounded percentage errors (simulated / logged − 1, to 0.1 %), for the report and the verdict snapshots. */

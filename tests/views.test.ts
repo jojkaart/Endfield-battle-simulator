@@ -57,8 +57,14 @@ describe("the placement and replay views", () => {
     // A cast its kit makes unavailable (9c0b: Camille's combo_skill_2 at 12.70 s; a7a7, used here before, has none since Si's strokes are read from the log, 2026-11-23).
     const { replay } = logBuffReplay(data, pending);
     expect(replay.castFlags.some((x) => x.kind === "forced")).toBe(true);
-    expect(replay.castFlags.some((x) => x.kind === "inside")).toBe(true);
+    // A legal interrupt that cancels the running cast's pending hits is CUTS, not INSIDE (round 8: INSIDE counted the
+    // wait for the cast's own hits too; 9c0b's one INSIDE was such a cut).
+    expect(replay.castFlags.some((x) => x.kind === "cuts")).toBe(true);
+    expect(replay.castFlags.some((x) => x.kind === "inside")).toBe(false);
     expect(replayView(data, pending)).toMatch(/\d+ cast\(s\) FORCED .*\n[\s\S]*FORCED .* made against its kit: its kit makes it unavailable then/);
+    expect(replayView(data, pending)).toMatch(/CUTS {3}\S+ \S+: cuts \d+ pending hit\(s\) of \S+ \(its own hits due until \d+\.\d\d s\): an interrupt the kit allows/);
+    // 0eef: its INSIDE flags are casts inside uncuttable frames (the gates alone).
+    expect(logBuffReplay(data, fx).replay.castFlags.filter((x) => x.kind === "inside").length).toBeGreaterThan(0);
     const laev = readLogFixture(join(ROOT, "fixtures/zmdlogs-40d9a3c1da37.json"));
     const text = replayView(data, laev, { trace: ["chr_0016_laevat:twilight"], to: 20000 });
     expect(text).toMatch(/TRACE {2}chr_0016_laevat:twilight from 3\.03: expiry none → \d+\.\d\d s at cast chr_0016_laevat_ultimate_skill/);

@@ -79,12 +79,12 @@ export interface RecordFilter {
  * (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called); from the per-fixture cache when
  * the code and the fixture are unchanged (hitsCacheKey). `reading` "log": the text lines also give the log's reading.
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
   // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
   const assume = opts.assume ?? {};
   const under = Object.keys(assume).length > 0;
   const records = await collectRecords(data, selectedFiles(sel, "hits"), opts.workers, opts, opts.progress, (opts.cache ?? true) && !under, assume);
-  return records.map((r) => formatRecord(r, opts.json, opts.reading)).join("\n");
+  return records.map((r) => formatRecord(r, opts.json, opts.reading, opts.zones === true)).join("\n");
 }
 
 /**
@@ -168,7 +168,7 @@ export function castsReport(data: GameData, fx: LogFixture, filter: ViewFilter):
 }
 
 /** `efsim zmdlogs replay`: the replay view of one log, with the named kit buffs' windows. */
-export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>> }): string {
+export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean }): string {
   return replayView(data, fx, filter);
 }
 
