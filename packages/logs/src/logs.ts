@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { Build, GameData } from "@efsim/engine";
-import { sourceCommit, SOURCES } from "@efsim/data";
+import { loadGameData, operatorId, sourceCommit, SOURCES } from "@efsim/data";
 import { enemiesHit, fetchBattle, zmdlogsCasts, zmdlogsHits, zmdlogsToFixture, type BuildOverride, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -114,16 +114,18 @@ export interface DevFixture {
 /**
  * The development logs as fixtures, for scratch scripts and scans (never a hold-out: logFixtureFiles): by default the
  * verified and pending ones (the checked logs), `dirs` to choose (multi: the multi-target ones), `ids` to name some
- * (resolveFixture), `withOperators` only those whose team has every one of them (operator ids).
+ * (resolveFixture), `withOperators` only those whose team has every one of them (operator ids, or names: "Arcane",
+ * resolved by @efsim/data operatorId, which refuses an unknown or ambiguous one).
  */
 export function devFixtures(opts: { readonly dirs?: readonly LogDir[]; readonly ids?: readonly string[]; readonly withOperators?: readonly string[]; readonly root?: string } = {}): DevFixture[] {
   const root = opts.root ?? ROOT;
   const dirs = opts.dirs ?? (["verified", "pending"] as const);
   const files = opts.ids?.length ? opts.ids.map((a) => resolveFixture(a, root)) : dirs.flatMap((d) => logFixtureFiles(root, [LOG_DIRS[d]]));
+  const withOperators = opts.withOperators?.map((op) => (/^chr_\d+_/.test(op) ? op : operatorId(loadGameData(), op)));
   const dirOf = (f: string): LogDir => (isMultiTarget(f, root) ? "multi" : resolve(dirname(f)) === resolve(root, LOG_DIRS.pending) ? "pending" : "verified");
   return files.flatMap((file) => {
     const fx = readLogFixture(file);
-    if (opts.withOperators?.length && !opts.withOperators.every((op) => fx.team.some((b) => b.operator === op))) return [];
+    if (withOperators?.length && !withOperators.every((op) => fx.team.some((b) => b.operator === op))) return [];
     return [{ file, id: fx.id, short: shortId(fx.id), dir: dirOf(file), fx }];
   });
 }

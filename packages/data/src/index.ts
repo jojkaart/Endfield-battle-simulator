@@ -5,6 +5,7 @@ export * from "./sources.ts";
 export * from "./cache.ts";
 export * from "./crossCheck.ts";
 export * from "./names.ts";
+export * from "./operatorIds.ts";
 export * from "./skillData.ts";
 export * from "./gameData.ts";
 export * from "./tables/battleConst.ts";

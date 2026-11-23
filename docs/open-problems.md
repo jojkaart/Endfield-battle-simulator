@@ -25,6 +25,11 @@ by one factor on most hits: `efsim zmdlogs fit-build <fixture> --operator
 doesn't hide a kit error; its fit goes into the fixture's
 `buildOverrides`.
 
+Operators are named here by display name; their ids (an internal name:
+Arcane is `chr_0032_lizhiyan`, Gilberta `chr_0013_aglina`) come from `efsim
+find --operators`, or `operatorId(data, "Arcane")` (@efsim/data) in a
+script; `devFixtures({ withOperators })` takes names too.
+
 Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
