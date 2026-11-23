@@ -338,13 +338,16 @@ export interface ReplayedCast extends LoggedCast {
    * A logged cast event of a skill whose damage the log shows elsewhere, kept only for the slot it stands for: the replay
    * makes it only when the skill can't start there and another of the operator's skills of its kind can (replayedSkill:
    * Si's second battle-skill press under Artful Intent is logged as her battle skill, and is Initial Stroke). Only one
-   * that `leadsTo` an inferred cast is made so (castsFromBuffEnds): a press is shown as another skill only where the log
-   * shows what that skill leads to (Liino's battle skill at 4187 ms in 0eef2474a26f, during her Vocalist Stance, would be
-   * End Stance, but the log keeps the stance's ATK on her team after it).
+   * that `leadsTo` an inferred cast (castsFromBuffEnds) or is the variant pulling a buff (`as`: pullingPresses) is made
+   * so: a press is shown as another skill only where the log shows what that skill leads to (Liino's battle skill at
+   * 4187 ms in 0eef2474a26f, during her Vocalist Stance, would be End Stance, but the log keeps the stance's ATK on her
+   * team after it).
    */
   readonly slot?: true;
   /** The skill of the inferred cast the press leads to: the press is made as another variant, a step before it. */
   readonly leadsTo?: string;
+  /** The variant the press is made as while the slot holds it (pullingPresses: Si's first press after her battle skill is Initial Stroke). */
+  readonly as?: string;
   /**
    * A slot cast's variants (skills of its kind, not cast near it) whose own keys the log shows within SLOT_SHOWS_MS
    * after the press: the press is the one of them its kit says the slot holds then (3aa6ab93bad4: Zhuang Fangyi's
@@ -537,6 +540,8 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
     // The trigger's actions the logged hits come from: their conditions say which state the buff ended in.
     const ids = new Set([...placement.hits].flatMap(([h, p]) => (p.cast === pc ? p.hits.filter((k) => k.events.length === 0 || k.events.includes(h.event)).map((k) => k.id) : [])));
     const branches = allActions(t.do).filter((a) => a.kind === "hits" && a.hits.some((k) => ids.has(k.id)));
+    // The skill the logged hits' Stagger is credited to (LogHit.poise.origin: the cast whose id the hit's skill inherits).
+    const origins = new Set([...placement.hits].flatMap(([h, p]) => (p.cast === pc && h.poise?.origin ? [h.poise.origin] : [])));
     for (const e of kit.triggers) {
       if (e.on.event !== "cast" || !e.on.skills?.length || !allActions(e.do).some((a) => a.kind === "endBuff" && a.buff === buff)) continue;
       const skillId = e.on.skills[0] as string;
@@ -547,7 +552,12 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
       // burst, inkmark_projhit, is Artful Intent's end without one: 0c14fb3ce77d at 66.37 s, 489c0be3e162 at 100.2 s,
       // each made a Final Stroke against its kit and a Yinglung's Edge layer the combo's damage doesn't have;
       // bdf223db8e49 at 24.32 s). The buff ends at the logged end, with no cast.
-      if (branches.length && branches.every((a) => excludes(a.if, skill.available))) {
+      // So is a skill the logged hits aren't credited to, where the log says whose they are (LogHit.poise.origin): Si's
+      // Final Stroke casts the Inksoul's return inheriting its own cast (origin normal_skill_2, 0eef2474a26f at 10030 ms);
+      // the Inksoul returning by itself at Artful Intent's expiry has its own (normal_skill_inkmove_2: c83c75d02a85 at
+      // 23.54, 57.26 and 87.89 s, 9555de54bb3d at 53.09 and 85.56 s, each 2–3 s after her last press, where a Final
+      // Stroke inferred from the burst gave a Type 50 Yinglung's Edge layer the combo's damage doesn't have).
+      if ((branches.length && branches.every((a) => excludes(a.if, skill.available))) || (origins.size > 0 && !origins.has(skillId))) {
         added.push({ operator: pc.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start: pc.start, lastHit: pc.start, keepPrevious: false, landings: [], whileBuff: { buff, endsAt: pc.start }, expires: true });
         break;
       }
@@ -571,6 +581,52 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
     const prev = all.slice(0, i).reverse().find((x) => x.operator === c.operator);
     return prev && added.some((a) => a.operator === prev.operator && a.start === prev.start && a.skillId === prev.skillId) && prev.whileBuff && c.start < (prev.whileBuff.endsAt as number) ? { ...c, keepPrevious: true } : c;
   });
+}
+
+/**
+ * Slot presses that are the variant pulling a buff: a skill castable only while one buff is on and another off (its
+ * `available`: all of A, not B) whose cast gives B (a trigger on its cast with a `buff` of it): Si's Initial Stroke,
+ * castable under Artful Intent before the Inksoul, which it pulls. The first slot press of its kind after each landed
+ * cast whose hits apply A (her battle skill's hit), before the next, is made as that variant (ReplayedCast.as), unless
+ * the log shows A ending on a branch without B (the mark's own burst, inkmark_projhit: no Initial Stroke; its one press,
+ * 20–34 s after the battle skill, ends Artful Intent and gives no Type 50 Yinglung's Edge layer: 0c14fb3ce77d 81.7,
+ * 4e3651100056 37.4). The logs make the first press after her battle skill Initial Stroke: the Inksoul's bursts at
+ * Artful Intent's end (inkmove_2) need it, and Type 50 Yinglung's Edge counts it (c83c75d02a85 35.8 and 82.3 s,
+ * 0c14fb3ce77d 122.1, e9896c8d02be 53.0; open-problems "Type 50 Yinglung's Edge"). Her later presses under Artful
+ * Intent (every ~3.3 s) leave nothing in the log: no hit, no end, her basic chain goes on (in-game test 16), no layer:
+ * not made (replayedSkill), as before.
+ */
+export function pullingPresses(kits: readonly OperatorKit[], placement: Placement, casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const marks = new Map<number, string>();
+  for (const kit of kits) {
+    for (const v of kit.skills) {
+      const all = v.available && "all" in v.available ? v.available.all : [];
+      const on = all.flatMap((p) => ("buffActive" in p ? [p.buffActive] : []));
+      const off = all.flatMap((p) => ("not" in p && "buffActive" in p.not ? [p.not.buffActive] : []));
+      const pulled = kit.triggers.filter((t) => t.on.event === "cast" && (t.on.skills ?? []).includes(v.skillId)).flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "buff" && off.includes(a.buff) ? [a.buff] : [])));
+      const [a] = on;
+      if (on.length !== 1 || a === undefined || pulled.length === 0) continue;
+      const appliers = new Set(kit.skills.filter((s) => s.hits.some((h) => (h.buffs ?? []).some((b) => b.buff === a))).map((s) => s.skillId));
+      // A's logged ends on a branch without the pulled buff: a trigger on A's end whose logged hits come only from such branches.
+      const noPull: number[] = [];
+      for (const pc of placement.casts) {
+        const t = kit.triggers.find((x) => pc.operator === kit.operator && `trigger:${x.id}` === pc.group);
+        if (!t || t.on.event !== "buffEnded" || !("buff" in t.on) || t.on.buff !== a) continue;
+        const ids = new Set([...placement.hits].flatMap(([h, p]) => (p.cast === pc ? p.hits.filter((k) => k.events.length === 0 || k.events.includes(h.event)).map((k) => k.id) : [])));
+        const branches = allActions(t.do).filter((x) => x.kind === "hits" && x.hits.some((k) => ids.has(k.id)));
+        if (branches.length && branches.every((x) => x.if !== undefined && "not" in x.if && neededBuffs(x.if.not).some((b) => pulled.includes(b)))) noPull.push(pc.start);
+      }
+      const own = casts.flatMap((c, i) => (c.operator === kit.operator ? [{ c, i }] : []));
+      const starts = own.filter(({ c }) => appliers.has(c.skillId) && c.landings.length > 0);
+      for (const [k, { c }] of starts.entries()) {
+        const next = starts[k + 1]?.c;
+        if (noPull.some((t) => t > c.lastHit && t <= (next?.lastHit ?? Infinity))) continue;
+        const press = own.find(({ c: x }) => x.slot && x.kind === v.kind && x.start > c.lastHit && x.start < (next?.start ?? Infinity));
+        if (press && !marks.has(press.i)) marks.set(press.i, v.skillId);
+      }
+    }
+  }
+  return marks.size ? casts.map((c, i) => (marks.has(i) ? { ...c, as: marks.get(i) as string } : c)) : [...casts];
 }
 
 /**
@@ -925,12 +981,13 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
 /**
  * The casts the replay makes, before control and the casts that hit nothing: the placed casts (not follow-up-only
  * skills), the log's hitless cast events it lacks (withLoggedCasts), and the casts inferred from buff lanes, trigger
- * hits, buff ends and exits (castsFromBuffLanes, castsFromTriggerHits, castsFromBuffEnds, exitPresses).
+ * hits, buff ends and exits (castsFromBuffLanes, castsFromTriggerHits, castsFromBuffEnds, exitPresses), and the presses
+ * that pull a buff (pullingPresses).
  */
 export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[]): ReplayedCast[] {
   if (kits.length === 0) return [];
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts)))))));
+  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts))))))));
 }
 
 /**
@@ -1405,6 +1462,13 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
   const w = c.whileBuff;
   if (w && !st.buffs.some((b) => (b.id === w.buff || (w.or ?? []).includes(b.id)) && b.owner === c.operator && activeAt(b, f) && b.expiresAt > Math.round((w.endsAt * FPS) / 1000) + EXPIRY_MARGIN_FRAMES)) return null;
   if (c.slot) {
+    // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all
+    // by its kit's state then (earliestStart alone waits for that state: 3f78ceb15bc3's press at 19708 ms, in her
+    // ultimate, read as her battle skill after Artful Intent's end, so Initial Stroke wasn't made and the Inksoul's burst
+    // at 22689 ms took the mark's branch).
+    const available = (skill: string) => skillAvailable(ctx, st, c.operator, skill, f) && !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));
+    // The variant pulling a buff (pullingPresses): made as it while the slot holds it.
+    if (c.as) return available(c.as) ? c.as : null;
     // A press the log shows as a variant by its own keys: the variant the kit says the slot holds then.
     if (!c.leadsTo && c.shows?.length) return skillAvailable(ctx, st, c.operator, c.skillId, f) ? null : (c.shows.find((s) => skillAvailable(ctx, st, c.operator, s, f)) ?? null);
     // A press whose hits had no one to land on (`unseen`) is its own skill while the slot holds it (d774d0ce7bd3: Liino's
@@ -1413,13 +1477,8 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
     // which the stance and its volleys go on), or the press did nothing (dbaee23b801d: Arcane's at 2706 ms, while
     // Typhoeus's hits land).
     if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && startsBy(c.skillId) ? c.skillId : null;
-    // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all
-    // by its kit's state then (earliestStart alone waits for that state: 3f78ceb15bc3's press at 19708 ms, in her
-    // ultimate, read as her battle skill after Artful Intent's end, so Initial Stroke wasn't made and the Inksoul's burst
-    // at 22689 ms took the mark's branch). It is a step before the inferred cast, never that cast again (the inferred one
-    // is timed by the log's buff end: e9896c8d02be's press at 67244 ms, under the Inksoul, isn't the Final Stroke whose
-    // burst comes at 69192 ms).
-    const available = (skill: string) => skillAvailable(ctx, st, c.operator, skill, f) && !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));
+    // A step before the inferred cast, never that cast again (the inferred one is timed by the log's buff end:
+    // e9896c8d02be's press at 67244 ms, under the Inksoul, isn't the Final Stroke whose burst comes at 69192 ms).
     if (available(c.skillId)) return null;
     return kit?.skills.find((k) => k.skillId !== c.skillId && k.skillId !== c.leadsTo && k.kind === c.kind && !k.followUpOnly && available(k.skillId))?.skillId ?? null;
   }

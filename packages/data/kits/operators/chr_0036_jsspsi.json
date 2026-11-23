@@ -179,13 +179,14 @@
       },
       "by": "self",
       "delay": 8,
+      "detached": true,
       "do": [
         {
           "kind": "buff",
           "buff": "inksoul"
         }
       ],
-      "note": "SkillData normal_skill_1: CreateBuff xianjing_linkline (the Inksoul pulled from the target) at frame 8."
+      "note": "SkillData normal_skill_1 spawns an ability entity at frame 0 (SpawnAbilityEntity abilityentity_chr_0036_jsspsi_combo_skill, skill normal_skill_abilityrange) whose frame 8 creates xianjing_linkline (the Inksoul pulled from the target): detached like Si's other entities, so the Inksoul comes even when another action cuts the stroke before frame 8 (her presses don't end her basic chain: in-game test 16; c83c75d02a85 29.30 s, the next basic attack in the replay cut it, and the Inksoul's burst at 57.26 s took the mark's branch)."
     },
     {
       "id": "final_stroke",
