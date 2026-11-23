@@ -3,7 +3,7 @@
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, mixedPerHit, movedCasts, negativeControl, overlay, selectLogs } from "../scripts/measure.ts";
+import { hitChanges, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -63,6 +63,14 @@ describe("measure --hits", () => {
     expect(summary).toContain("    2.50 s op skill: mismatch ×1.200 → plain ×1.000");
     expect(full).toHaveLength(3);
     expect(hitChanges([], before, after).summary).toEqual(["Hits whose verdict changed (--hits; development logs whose entry moved): none (no development log's entry moved)"]);
+  });
+});
+
+describe("measure --hits: the modifiers that moved at a hit", () => {
+  it("names the kit buffs gone, new and changed in value", () => {
+    expect(modifierChange(["a:x dmg 0.3", "b:y atk 0.1"], ["b:y atk 0.2", "c:z dmg 0.1"])).toBe(" [modifiers: −a:x dmg 0.3; +c:z dmg 0.1; b:y atk 0.1 → 0.2]");
+    expect(modifierChange(["a:x dmg 0.3"], ["a:x dmg 0.3"])).toBe("");
+    expect(modifierChange(undefined, ["a:x dmg 0.3"])).toBe("");
   });
 });
 

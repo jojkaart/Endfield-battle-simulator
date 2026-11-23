@@ -464,14 +464,33 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
       kinds.set(kind, [...(kinds.get(kind) ?? []), c]);
     }
     summary.push(`  ${k}: ${changed.length} hits: ${[...kinds].sort((x, y) => y[1].length - x[1].length).map(([kind, cs]) => `${kind} ${cs.length}`).join(", ")}`);
-    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}`;
+    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}${modifierChange(c.was[5], c.now[5])}`;
     for (const [, cs] of kinds) for (const c of cs.slice(0, examples)) summary.push(`    ${line(c)}`);
     full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`));
   }
   return { summary, full };
 }
 
-const readTracked = (tree: string, rel: string) => (existsSync(join(tree, rel)) ? readFileSync(join(tree, rel), "utf8") : "");
+/**
+ * What changed in a hit's primary reading's modifiers (HitRow's sixth part: "<kit buff or source> <zone> <value>"): the
+ * ones gone (−), new (+) and moved in value (a → b), as " [modifiers: …]"; empty when either side lacks them or none moved.
+ */
+export function modifierChange(was: readonly string[] | undefined, now: readonly string[] | undefined): string {
+  if (!was || !now) return "";
+  const split = (m: string) => {
+    const i = m.lastIndexOf(" ");
+    return [m.slice(0, i), m.slice(i + 1)] as const;
+  };
+  const [a, b] = [new Map(was.map(split)), new Map(now.map(split))];
+  const parts = [
+    ...[...a].filter(([k]) => !b.has(k)).map(([k, v]) => `−${k} ${v}`),
+    ...[...b].filter(([k]) => !a.has(k)).map(([k, v]) => `+${k} ${v}`),
+    ...[...b].filter(([k, v]) => a.has(k) && a.get(k) !== v).map(([k, v]) => `${k} ${a.get(k) as string} → ${v}`),
+  ];
+  return parts.length ? ` [modifiers: ${parts.join("; ")}]` : "";
+}
+
+const readTracked =(tree: string, rel: string) => (existsSync(join(tree, rel)) ? readFileSync(join(tree, rel), "utf8") : "");
 
 function git(args: readonly string[]): string {
   return execFileSync("git", args, { cwd: ROOT, encoding: "utf8" }).trim();

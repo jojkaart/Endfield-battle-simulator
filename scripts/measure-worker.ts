@@ -25,8 +25,13 @@ export interface MeasureJob {
    */
   readonly fixtures?: string;
 }
-/** One hit's verdict for measure --hits: time (s), operator, event, verdict count (plain, mismatch, ...), logged ÷ primary. */
-export type HitRow = readonly [t: number, operator: string, event: string, verdict: string, ratio: number | null];
+/**
+ * One hit's verdict for measure --hits: time (s), operator, event, verdict count (plain, mismatch, ...), logged ÷
+ * primary, and the primary reading's modifiers at the landing ("<kit buff or source> <zone> <value>", sorted; absent
+ * where the commit's code can't say), so a changed verdict names the buffs that moved at it (rossi-gilberta report
+ * point 1: a scratch hitdiff.py did this).
+ */
+export type HitRow = readonly [t: number, operator: string, event: string, verdict: string, ratio: number | null, modifiers?: readonly string[]];
 /** A log's per-hit fit: over every logged hit with a primary reading, how many and the mean |logged ÷ primary − 1|. */
 export interface PerHit {
   readonly n: number;
@@ -73,12 +78,32 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
   });
   const perHit = { n: errors.length, meanAbs: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : 0 };
   if (!withHits) return { entry: { ...counts, totals }, perHit };
+  // The primary reading's modifiers at each landing, where the commit's code has the calls (round 3 on).
+  const modsOf = modifiersAt(fx, replay);
   // The verdicts are in fx.hits' order (checkLog maps over them).
   const hits = (verdicts as any[]).map((v): HitRow => {
     const p = byHit.get(v.hit)?.primary;
-    return [v.hit.t, v.hit.operator, v.hit.event, v.kind === "match" ? v.class : v.kind, typeof p === "number" && p > 0 ? v.hit.value / p : null];
+    const mods = modsOf(v.hit);
+    const [t, op, event, verdict, ratio] = [v.hit.t, v.hit.operator, v.hit.event, v.kind === "match" ? v.class : v.kind, typeof p === "number" && p > 0 ? v.hit.value / p : null];
+    return mods ? [t, op, event, verdict, ratio, mods] : [t, op, event, verdict, ratio];
   });
   return { entry: { ...counts, totals }, perHit, hits };
+}
+
+/** A hit's primary reading's modifiers (HitRow), or null where the tree's code lacks the calls or the hit has no landing. */
+function modifiersAt(fx: any, replay: any): (hit: any) => string[] | null {
+  if (typeof logs.engineCheck !== "function" || typeof logs.readingBasis !== "function" || typeof logs.hitPlace !== "function") return () => null;
+  const placement = logs.placeHits(data, fx);
+  const c = logs.engineCheck(data, fx, replay.replay);
+  return (hit) => {
+    try {
+      const basis = logs.readingBasis(c, hit, logs.hitPlace(data, fx, placement, replay, hit));
+      if (!basis || "unknown" in basis.landing) return null;
+      return ((basis.primary.options.modifiers ?? []) as any[]).map((m) => `${m.kitBuff ? `${m.kitBuff.owner}:${m.kitBuff.id}` : m.source} ${m.zone} ${Number(m.value.toFixed(4))}`).sort();
+    } catch {
+      return null;
+    }
+  };
 }
 
 function placementOf(fx: any, withCasts = false): { placement: string; casts?: string[] } {
