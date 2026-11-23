@@ -403,8 +403,13 @@ detail):
   pauses such as 9c0b's first ten seconds). Buffs and the enemy's tick
   timers alike run that much longer in the log's time than the placed
   casts' stops say: a run listed past the replay's expiry is the game's
-  (the damage agrees, 802 hits against 92), and the replay keeps it on
-  (engine assumption `hidden-holds`, buffreplay.ts `heldToLoggedEnds`).
+  (the damage agrees, 802 hits against 92). The replay places the holds
+  once per fight from every clock the log shows (its buffs' runs against
+  the replay's own expiries, the enemy's tick series; packages/logs
+  holds.ts) and holds the world's clock there for every timer, then keeps
+  a listed buff on to the log's end (engine assumption `hidden-holds`,
+  default `placed`; buffreplay.ts `heldToLoggedEnds`). Where they fall:
+  `efsim zmdlogs holds <fixture>`.
 - **Cast events** (`LogFixture.casts`: the detail's skill events without a
   damage value) are presses as the log has them, not the kit's frame 0:
   - battle skills: the event is at the placed start (within a frame or
@@ -566,6 +571,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
 | The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` |
+| The fight's hidden holds (unlogged dodges, pauses) the replay places: each 0.512 s unit, its earliest and latest time, the clocks spanning it | `efsim zmdlogs holds <fixture> [--verbose]` |
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
 | Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
 | A skill's frames, windows, uncuttable frames, skill group, what each hit inflicts | `efsim kit <operator> [--skill <re>]` |

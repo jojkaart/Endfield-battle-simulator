@@ -1371,10 +1371,62 @@ all but the hold-outs plain 55.7 → 57.5%, mismatch 18.8% unchanged, mean |dama
 hold-outs unchanged; per-hit error closer in 15 of the 16 mixed logs. Simulations don't read it (they dodge with
 `--dodge`).
 
+**Placed (2026-11-23): the holds once per fight, for every timer** (engine assumption `hidden-holds`, new default
+`placed`; packages/logs holds.ts, `efsim zmdlogs holds <fixture>`). The replay runs once without holds; each of its
+buffs that ran out (as `log` takes them) bounds the hidden clock P against the log's run of it: P(last listed hit) −
+P(application) at least its lateness over the replay's expiry, P(next hit without it) − P(application) at most, both
+±0.2 s and in world time past the expiry (a placed stop after it holds the buff once it lasts: without that, b6aa's
+Xaihi debuff ran to 46.6 s against 43.8). The enemy's tick series (Combustion, Rossi's bleed, Typhoeus's combo field,
+Aurora's ultimate) bound it per pair and per tick against its chain's first (a tick's jitter doesn't add up along a
+chain). P rises no faster than real time and not inside the replay's Stagger. Difference constraints; a bound in a
+negative cycle is dropped (the largest ask first, a tick's at half weight). The estimate is the least total hold, midway
+between its earliest and latest placement (feasible: the bounds are convex), held on the world's clock a frame at a
+time (timeline/clock.ts `holdWorld`: buffs, the enemy's statuses and debuffs, combo windows; not cooldowns, which the
+perfect dodge's slow-down doesn't hold by the data, nor SP or the operators' own timing, which is the log's). Then `log`
+keeps a listed buff to its listing's end.
+- **How well determined** (`zmdlogs holds` shows each log's; the totals: scratch/hh/determined.ts in .claude/worktrees/agent-a0dca79328f59b7d9):
+  108.6 s of holds over the 60 logs' 5,899 s (verified, development, earlier pending; 1.8%, 211 dodge-sized units of 0.512 s; per log
+  0–9.2 s, c4f3 9.2, fc63 5.9, 0c14 5.7, de6a 5.5, af7b 5.2, 9c0b 3.9, e989 0.2, 3f78 / 5082 / 6339 / 7b54 none). Of
+  the units, 50 are placed within 1 s (earliest to latest), 92 within 3 s; every unit is spanned by a kept clock, 56 by
+  one only, 155 by two or more (median 3). Bounds kept: 897 buff runs (45 dropped), 1,559 tick bounds (255 dropped,
+  most in 489c, fc63, 04d4; in 489c the bleed's ticks inside the Stagger run 0.2–0.3 s fast across the placed stops
+  there, which no hold can explain). The least total is a lower bound: a span no clock covers gets none (dodges there are invisible).
+- **Measured against `log`** (scoreboard): development plain 59.9 → 62.8%, mismatch 16.4 → 15.6%, mean |damage error|
+  9.2 → 9.1%, within 5% 14 → 16; hold-outs 69.6 → 69.9%, 6.7 → 6.6%, 11.0% (2 better, 1 worse); earlier pending 53.1
+  → 54.0%, 23.3%, 8.1%; verified 75.6 → 77.4% (matched 95.6 → 98.0%); all but the hold-outs 57.5 → 59.6%, 18.8 →
+  18.3%, 8.1 → 8.0%, within 5% 31 → 34. Better: db87 (plain 121 → 166, mismatch 109 → 59), f879 (651 → 772), af7b
+  (473 → 560, mismatch 16 → 0), 4bfc (692 → 767, damage −6.8 → −1.4%), 9847, 489c, 00ae. Worse: d572 (921 → 908,
+  mismatch 17 → 26: Wolven Blood at max stacks from 30.1 s, a layer held past its end; Corrosion's ramp a step behind at
+  68–76 s, held by a hold that its listed levels say didn't hold it), 0c14 (135 → 133, damage 14.5 → 16.3%: Wolven Blood
+  again, and Endministrator's P2 talent ATK held past 51.8 s), de6a (73 → 71: Pogranichnik's Never Rest held 0.1 s past
+  92.27 s), a27b, ad7f, 4e5e (damage only, ≤0.6 pt); over-predicting logs over-predict more (c83c 6.9 → 8.2%, fc63 5.4
+  → 7.2%: more buffs held). Held on the operators' clocks too (slowDown with nobody exempt), the holds moved kit-timed
+  landings off the log's: bdf2 lost Typhoeus's Nature burst at 13.14 s to one frame of hold at 12.27 s (verified mean
+  |damage error| 1.9 → 3.2%); on the world's clock alone 1.9%. Simulations unchanged (team-ab against 6b117c1: every
+  team's fight the same).
+- **The dodger's own clock:** the data's dodge holds the world 0.512 s (layer 0, the dodger exempt) and the dodger 0.315 s
+  (layer 1, ten frames at 0.06). Pairs of runs in one log with nearly the same window (overlap ≥ 60%), one whose owner
+  was controlled through ≥ 60% of it, one whose owner was controlled ≤ 25%: excess ratio median 1.12 (62 pairs, p25 0.71,
+  p75 1.98), not the 0.62 a buff on its dodging owner's clock would show; by holder 1.00 (213 pairs: one instance stands
+  for every holder). So no sign of the dodger's own time scale on its buffs; the 0.315 s stays the dodger's freeze (its
+  actions), as the engine has it. Rossi's Wolven Blood, short against Si's Amp on the same window in 489c (2.3 against
+  3.8 s) and held too long in d572 / 0c14, is the one buff that looks like its own clock.
+- **Arcane's Imprisonment** (its end from the log, so not a bound): the 37 seals with a hold placed inside run 0.484 s
+  from the free seals' median world length, 0.450 s with the placed holds taken out (102 not ended early): barely
+  better; the seal's ±0.5 s doesn't follow the clock. **Gilberta's Vulnerable** stacks on the tower bosses (4360 116.0
+  s, 9847 126.1 s: listed 0.39 / 0.36, the replay's 0.33 / 0.30): unchanged, the clock places too little in those 20 s
+  windows (4360 1.1 s in all, 9847 2.8 s; one clock spans each unit).
+
 **Still possible / open:**
-- Where in a window the holds fall (the clock's solution isn't unique); the dodger's own buffs held 0.315 s, not 0.512
-  (one clock per owner fits a little better than one per log: 118 against 152 dropped runs).
-- What else besides dodges: holds after the ultimates' stops (0.1–0.25 s per tick pair across a stop), pauses.
+- Where in a window the holds fall: half the units are placed only to 3 s or worse; the least total misses dodges no
+  clock sees.
+- **What else besides dodges** (holds a dodge can't be): 12 units fall in hitless spans of 3 s or more (0c14, 458b, a9d7,
+  abfd, b6aa, c4f3, de6a: pauses the log's clock runs through, as 9c0b's and 4d60's); 9c0b's ~7.5 s after Laevatain's
+  ultimate is placed only 3.9 s (its Forgeborn and Amp runs conflict, 7 dropped). Holds inside ultimates' stops: 489c's
+  Amp asks 3 s more inside 24.7–30.6 s, where three ultimates and a combo overlap (the placed stops leave 3.3 s of world
+  time there), against Wolven Blood's 2.3 s over the same span: the stops of overlapping ultimates held longer than the
+  lowest-scale union (ruled out as a sum in 4f7e, not as something less). Ticks inside the Stagger running fast across
+  placed stops (489c 52–64 s, −0.2 s a pair): stops in the Stagger holding the enemy's ticks less than the engine says.
 - The other direction: runs that end before the replay's expiry (about 7%: a refresh or a cut the replay doesn't make,
   or a kit's duration).
 - Liino's beats running fast (4d60 1.36 s for 1.5) are the other direction: not a hold.
@@ -1382,8 +1434,9 @@ hold-outs unchanged; per-hit error closer in 15 of the 16 mixed logs. Simulation
   8.6–12.5 s (beyond 40%: a refresh?); her Vulnerable stacks outliving 20 s by 0.4–1.6 s on the tower bosses: within
   what dodges hold.
 
-**Next check:** test 111 (perfect dodges during Si's Amp, counted); then the replay placing the holds once for every
-timer (enemy statuses, unlisted buffs) from the shared clock, rather than per listed buff.
+**Next check:** test 111 (perfect dodges during Si's Amp, counted: whether the holds are dodges at all); Corrosion's
+listed ramp levels as a clock (d572's 68–76 s); Wolven Blood's layers on their own (Rossi's) clock; the Stagger's
+ticks across stops (489c).
 
 ## Laevatain's Twilight runs longer than its model (tests 17, 18, 21; 2026-11-22: her buffs' clock, not Twilight's)
 
@@ -1990,9 +2043,18 @@ cast).
 **Ruled out (2026-11-13):** Liino's "presses" in Vocalist Stance: her
 stance's beats (the owner), replayed as such, no SP.
 
-**Still possible:** perfect dodges (7 SP each, none logged; the logs'
-unexplained ~0.5 s world holds are about one each: "The buff clock",
-2026-11-22); teammates' basic attacks the replay doesn't land
+**Ruled out as the gap (2026-11-23):** perfect dodges where the clocks place
+holds. The placed holds ("The buff clock", `placed`), read as dodges (one per
+0.512 s, 7 SP each at its time, credit for the casts after it, the cap
+ignored: an upper bound), are 185 dodges, 1,295 SP over the 60 logs but the
+hold-outs, and cover 87 of the replay's 1,766 SP short at 50 casts
+in 16 logs (BuffReplay.spTopUps; scratch/hh/sp.ts in .claude/worktrees/agent-a0dca79328f59b7d9): the shortfall sits where
+the clocks place almost nothing (04d4 650 SP with 0.7 s of holds, 6339 236
+with none, db87 272 with 1.9 s, 79cc 169 with 1.9 s), and the logs with the
+most holds are short of nothing (c4f3, de6a, fc63). Neither evidence for nor
+against the dodge reading: dodges no clock sees are possible anywhere.
+
+**Still possible:** perfect dodges no clock sees (7 SP each); teammates' basic attacks the replay doesn't land
 (their Final Strikes' SP; the earlier probe granted SP at every logged
 Final Strike); Purrchena's block refund (+20 at her counter, about 240
 SP, more if repeated blocks count); teammates' Final Strikes give SP too
@@ -2395,7 +2457,10 @@ in 9847).
 **Still possible:** an enemy-side clock these bosses run slower than the
 world's (the same open question as their 18–20 s Stagger windows,
 above); the fight's unlogged holds (perfect dodges, 0.512 s each: "The buff
-clock", 2026-11-22), within which 0.4–1.6 s falls; stops the engine holds shorter (the ComboSkill curve; four to six
+clock", 2026-11-22), within which 0.4–1.6 s falls, though the holds placed
+from the logs' clocks (2026-11-23, `placed`) leave both counts as they were
+(4360 116.0 s 0.33 against 0.39, 9847 126.1 s 0.30 against 0.36: too few
+clocks in those windows to place that much); stops the engine holds shorter (the ComboSkill curve; four to six
 combos between in each case); the stack timer restarting on something
 the engine doesn't count. The end scatter shares a cause with the
 Stagger's (above).

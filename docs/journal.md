@@ -4,9 +4,52 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 118 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 119 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Hidden holds placed once for every timer
+
+**Goal:** the buff clock's next step (docs/journal/2026-11-22-03-the-buff-clock-unlogged-world-holds-keep-buffs-past-their.md):
+estimate where each fight's unlogged world holds fall from every clock the log shows, hold every timer there once, and
+see whether the holds, read as perfect dodges, explain the Team SP shortfall.
+
+**Done (open-problems "The buff clock", "Placed"):**
+- packages/logs holds.ts: one hidden clock P per fight. Bounds: each buff that ran out in a first replay without holds
+  against the log's run of it (lateness at its last listed hit, at most by the next hit without it, in world time past
+  the expiry), the enemy's tick series as chains (Combustion, Rossi's bleed, Typhoeus's combo field, Aurora's
+  ultimate); P rises no faster than real time and not in the Stagger. Difference constraints, a conflicting bound
+  dropped; the least total hold, midway between the earliest and latest placement. `efsim zmdlogs holds <fixture>`.
+- The replay holds the world's clock there (engine timeline/clock.ts `holdWorld`: buffs, the enemy's statuses and
+  debuffs, combo windows; not cooldowns, SP or the operators' timing), then keeps listed buffs to the log's end.
+  Engine assumption `hidden-holds`, new default `placed` (`holds`: the holds alone). BuffReplay.spTopUps: the SP
+  replayCast raises at each cast.
+- Scoreboard (`log` → `placed`): development plain 59.9 → 62.8%, mismatch 16.4 → 15.6%, mean |damage error| 9.2 → 9.1%,
+  within 5% 14 → 16; hold-outs 69.6 → 69.9%, 6.7 → 6.6%, 11.0% unchanged (2 better, 1 worse); earlier pending 53.1 →
+  54.0%; verified 75.6 → 77.4%; all but the hold-outs 57.5 → 59.6%, 18.8 → 18.3%, 8.1 → 8.0%, within 5% 31 → 34.
+  Development 12 better, 2 worse (a27b, ad7f: damage only), 11 mixed; worse elsewhere d572, 0c14 (Wolven Blood layers
+  held to max stacks early; d572's Corrosion ramp a step behind), de6a (a 4% buff held 0.1 s past a hit). Team-ab
+  against 6b117c1: every team's fight the same.
+- How well determined: 108.6 s of holds in 5,899 s of the 60 logs (1.8%), 211 units of 0.512 s, 50 placed within 1 s,
+  92 within 3 s, every one spanned by a kept clock (median 3).
+- SP: the holds as dodges (185, 1,295 SP) cover 87 of the 1,766 SP the replay lacks: the shortfall is where the clocks
+  place nothing (04d4, 6339, db87, 79cc). Not the gap; no evidence for or against the dodge reading.
+- The dodger's own 0.315 s (the data's layer 1): pairs of runs on one window, owner controlled or not, ratio median 1.12
+  (62 pairs), not 0.62: no sign of a dodger's clock on its buffs.
+
+**Decisions:** the world's clock alone: holding the operators' clocks too (slowDown, nobody exempt) moved kit-timed
+landings off the log's (bdf2 lost a Nature burst to one frame of hold; verified damage error 1.9 → 3.2%). The midpoint
+rather than one extreme: it's feasible and splits the uncertainty. The log's ends stay on top: they are facts, the holds
+an estimate.
+
+**Dead ends:** bounds from the run's end less the expiry in real time: holds then carried b6aa's Xaihi debuff 2.8 s past
+the log's end (the stops after its old expiry held it again); world time past the expiry fixed it. The first pass kept
+buffs to the log's end (its `log` ends were on) and so saw no lateness at all. A cap of world time per span dropped
+489c's Si's Amp (3 s of holds inside three overlapping ultimates' stops).
+
+**Left:** test 111; Corrosion's listed ramp levels and Wolven Blood's layers as clocks; pauses (12 units in hitless
+spans) and overlapping ultimates' stops, which a dodge can't be; Gilberta's tower-boss Vulnerable stacks and Arcane's
+seal unchanged by the holds.
 
 ## 2026-11-22: The buff clock: unlogged world holds keep buffs past their end
 
@@ -336,48 +379,3 @@ phantom "replay only" hits of Rossi's (late, hit_ai) that the log doesn't have; 
 now land (d774's ×1.39 strikes from 97.87 s not looked into).
 
 **Also:** census's rerun line prints `--window=a,b` (a negative window failed as printed).
-
-## 2026-11-22: Arcane's Imprisonment end and her INT lasers
-
-**Goal:** Arcane's Imprisonment ended late in the replay against the log's natural-end "cast" (median +0.3 s, 4d60
-+1 s, ad7f +2.5 s); the seal buff's abilityEvents 8 / 1403 / 1601 undecoded; a7a7's INT early-end lasers 0.4 and
-1.1 s early. Details: docs/open-problems.md "Arcane's mismatches as one group", Fixed 4.
-
-**Found (game data):**
-- The natural end is the seal's one tick, not its end: the combo sets `trigger_time` = duration_final − 0.5
-  (SimpleCalcBB), the seal ticks once at it (buffEvent 1) and casts `abilityentity_end` (explosion 14 frames later);
-  the seal and its child Susceptibility end 0.5 s after. The logged end is 6.0 s after the touch where nothing holds
-  it, and the Susceptibility's logged lane ends 0.5 s after it. The kit cast the explosion at the seal's end.
-- abilityEvents 8 / 1403 / 1601 (seal, combo_skill_precheck) cast the same end when the holder goes (defeated,
-  removed, handed over; with 1401 / 1402 in Wulfgard's and Arcane's files): none mid-fight.
-- Si's freeze doesn't hold the seal (b6aa 19.56 s, ad7f 3.91 s).
-- INT: seal2 (the early end's window) ends with the tick; a late hit in the seal's last 0.5 s still casts seal_again
-  (its 12 s Susceptibility, no lasers: 8915 109.94 s). The log's combo event 0–4 frames before the first laser is the
-  lasers' start (seal_finisher_wisd); seal_again's frame 41 comes 0–1.1 s later than the hit + 41 frames + holds
-  (not decoded).
-
-**Done:** kit `imprisonment` ticks (`every`), `explosion` on the tick, `early_end_window`, `laser_wait` +
-`int_lasers`, `post_susceptibility_lasers` / `_late`; KitBuff `runsThroughFreeze` (engine clock.ts shiftDebuffs),
-`endFollowsTick` and `childOf` (the replay moves the seal's and its Susceptibility's end with a logged tick); the
-seal's and the lasers' ticks `ticksLoggedAs` the combo; buffreplay.ts: a due tick waits up to 1 s for a logged one
-(TICK_HOLD_FRAMES), and for a ticked skill a combo's own event is one within 1.5 s of it (COMBO_EVENT_MS); docs
-(game-data-format abilityEvents, data.md "Hidden casts", open-problems, roadmap).
-
-**Decisions:** the replay takes the logged end as a timing fact where the game's (±0.5 s unexplained) can't be
-known. COMBO_EVENT_MS for every combo was tried and made the hold-out's mismatch 6.7 → 6.9% and its damage error
-12.1 → 12.3%: limited to skills a buff's ticks are logged under (Arcane's combo).
-
-**Scoreboard** (docs/accuracy.md from `npm run snapshots:update`, against 1ab4647): development plain 52.0 → 52.7%,
-mismatch 18.2 → 18.2%, mean |damage error| 12.6 → 12.4%; hold-out plain 67.3 → 68.7%, mismatch 6.7 → 6.7%, mean
-|damage error| 12.1 → 11.9% (9 logs better, 0 worse, 1 mixed); Arcane's row plain 61.7 → 63.5%, mismatch 15.5 →
-15.3% (863 → 854 hits outside the multi-target logs), mean |damage error| 14.2 → 14.3% (9c6e's Arcane total −33.9 →
-−41.1%, below). Development 16 better, 2 worse (9c6e, e9896c8d02be: below), 5 mixed.
-
-**Teams** (`node scripts/team-ab.ts --base 1ab4647`, 32 seeds): Estella, Si, Akekuri, Arcane 53,162 → 53,103 / 52,826 →
-52,717 (full / zero); Typhoeus, Arcane, Liino, Perlica 52,949 → 52,955 / 50,194 → 50,177: within the noise (sd
-1,300–1,900); a line on each team page.
-
-**Left:** the seal's ±0.5 s where nothing holds it (4d60 short, 1d91 / af7b / fc63 long); seal_again's delay;
-e9896c8d02be's combo pressed before her own ultimate (placed after its stop; its end not held by the stop while its
-Susceptibility was): Arcane, Si plain 252 → 246; 9c6e's total −10.0 → −10.7% (its hits after the seal's logged end
-lose the Susceptibility, closer each: 665 / 892 against 494 / 743 logged, was 785 / 1053).

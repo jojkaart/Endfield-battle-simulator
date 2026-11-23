@@ -18,6 +18,7 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
+import type { PlacedHolds } from "./holds.ts";
 import { castTimeStops, distinctCasts, placeHits } from "./logcasts.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -409,4 +410,42 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     for (const { r, q } of own) out.push(`  ${fxLabel(r.fixture)} ${s(r.t)} ${r.event} logged ${r.value} predicted ${r.predicted ?? "-"} ×${q?.toFixed(4) ?? "-"}${r.differences?.length ? `  ${r.differences.map((d) => `${d.kind}:${d.what}`).join("; ")}` : ""}`);
   }
   return out.join("\n");
+}
+
+/** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */
+const HOLD_UNIT_MS = 512;
+
+/** A clock's earliest or latest P at a time (ms, linear between nodes), and the time P first reaches a mass. */
+function clockAt(h: PlacedHolds, P: readonly number[], t: number): number {
+  let i = 1;
+  while (i < h.times.length - 1 && (h.times[i] as number) < t) i++;
+  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
+  return t1 === t0 ? p1 : p0 + (p1 - p0) * Math.max(0, Math.min(1, (t - t0) / (t1 - t0)));
+}
+function clockReaches(h: PlacedHolds, P: readonly number[], m: number): number {
+  const i = P.findIndex((x) => x >= m - 1e-6);
+  if (i <= 0) return h.times[0] as number;
+  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
+  return p1 === p0 ? t1 : t0 + ((m - p0) / (p1 - p0)) * (t1 - t0);
+}
+
+/**
+ * `zmdlogs holds`: the fight's hidden holds the replay places (engine assumption hidden-holds, reading `placed`:
+ * holds.ts placeHolds): the least total, each dodge-sized unit of it with its earliest and latest time and the clocks
+ * spanning it (a buff's run, a tick series), the bounds dropped as conflicting, and (with `verbose`) every bound.
+ */
+export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean } = {}): string {
+  const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { "hidden-holds": "placed" } }).replay;
+  const h = r.hiddenHolds;
+  if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
+  const series = (tag: string) => tag.replace(/ [0-9]+[→⇒][0-9]+ ms$/, "");
+  const lines = [`${fx.id}: ${s(h.total)} s of hidden holds placed (the least total the clocks allow; ${Math.round(h.total / HOLD_UNIT_MS)} perfect dodges' worth at 0.512 s), ${new Set(h.kept.filter((b) => b.kind === "run").map((b) => b.tag)).size} buff runs and ${new Set(h.kept.filter((b) => b.kind === "tick").map((b) => series(b.tag))).size} tick series kept, ${h.dropped.length} bound(s) dropped; times in s`];
+  for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
+    const [early, late, mid] = [clockReaches(h, h.early, m), clockReaches(h, h.late, m), clockReaches(h, h.mid, m)];
+    const clocks = [...new Set(h.kept.filter((b) => b.a <= early && late <= b.b).map((b) => (b.kind === "run" ? b.tag : series(b.tag))))];
+    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}`);
+  }
+  for (const b of h.dropped) lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)`);
+  if (opts.verbose) for (const b of h.kept) lines.push(`  bound: ${b.tag}: P(${s(b.b)}) − P(${s(b.a)}) in [${Number.isFinite(b.min) ? s(b.min) : "−∞"}, ${Number.isFinite(b.max) ? s(b.max) : "∞"}] s; placed ${s(clockAt(h, h.mid, b.b) - clockAt(h, h.mid, b.a))}`);
+  return lines.join("\n");
 }

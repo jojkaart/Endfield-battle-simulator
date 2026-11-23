@@ -59,6 +59,18 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 }
 
 /**
+ * The world's clock held `frames` frames from `frame` by nothing a cast places (shiftWorld: the enemy's timers, every
+ * buff, combo windows, energy blocks); the operators' clocks, cooldowns and SP run on. The log check's replay places
+ * the fight's hidden holds with it (engine assumption hidden-holds, reading `placed`: packages/logs holds.ts), where
+ * the operators' timing is the log's own: holding their clocks too moved kit-timed landings off the log's (2026-11-23:
+ * btl_upload_bdf223db8e49 lost Typhoeus's Nature burst at 13.14 s to one frame of hold at 12.27 s; the scoreboard's
+ * verified mean |damage error| 1.9 → 3.2%, world only 1.9%). A simulation places its dodges itself (advance.ts enemyAct).
+ */
+export function holdWorld(st: TimelineState, frame: number, frames: number): TimelineState {
+  return shiftWorld(st, frame, frames);
+}
+
+/**
  * The world's frames the time stops and slow-downs running at `frame` still take from it (the lowest scale where they
  * overlap, as slowDown counts them): what a buff created at `frame` is held by, as the buffs already running were when
  * each began (engine assumption `buff-in-stop`, reading `held`; actions.ts addBuff). 0 outside every stop.

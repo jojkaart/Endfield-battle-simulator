@@ -81,10 +81,12 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "hidden-holds",
     test: "111",
-    question: "What holds the operators' buffs past their modelled end in some windows (docs/open-problems.md \"The buff clock\")? The logs show unlogged world holds of about a perfect dodge's 0.512 s (enemy tick series, never while the enemy is Staggered) that hold buffs and the enemy's ticks alike. The log check's replay can't place the dodges; this decides whether it takes a decided buff's end from the log's listing where that runs later (packages/logs buffreplay.ts heldToLoggedEnds). Simulations place dodges themselves (--dodge) and don't read it.",
-    default: "log",
+    question: "What holds the operators' buffs and the enemy's timers past their modelled end in some windows (docs/open-problems.md \"The buff clock\")? The logs show unlogged world holds on one clock per fight, of about a perfect dodge's 0.512 s (enemy tick series, never while the enemy is Staggered), and longer pauses. The log check's replay can't see them; this decides whether it places them from the log's clocks (packages/logs holds.ts) and takes a decided buff's end from the log's listing where that runs later (buffreplay.ts heldToLoggedEnds). Simulations place dodges themselves (--dodge) and don't read it.",
+    default: "placed",
     readings: {
+      placed: "the fight's hidden holds placed once from every clock the log shows (its buffs' runs against the replay's own expiries, the enemy's tick series; none while Staggered; the least total hold, midway between its earliest and latest placement: packages/logs holds.ts placeHolds) and held on the world's clock for every timer (timeline/clock.ts holdWorld: buffs, the enemy's statuses and debuffs, combo windows; not cooldowns, which the perfect dodge's slow-down doesn't hold, nor the operators' own timing, which is the log's), then `log` on top; measured against log 2026-11-23: development plain 59.9 → 62.6%, mismatch 16.4 → 15.6%, hold-outs 69.6 → 69.9%",
       log: "a buff the log lists past the replay's expiry (a single run from its application, not refreshed, no hit of a holder past the expiry without it) runs on to its last listed hit, up to 40% of its life (HIDDEN_HOLD_SHARE); measured against none 2026-11-22: all but the hold-outs plain 55.7 → 57.5%, mean |damage error| 8.3 → 8.1%; the hold-outs unchanged",
+      holds: "the placed holds alone, without `log` (what the holds do by themselves)",
       none: "the replay's own expiry: holds only by the casts it places (the replay until 2026-11-22)",
     },
   },

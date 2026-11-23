@@ -11,13 +11,14 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, holdWorld, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type Predicate, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { placeHolds, tickBounds, type HoldBound, type PlacedHolds } from "./holds.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -223,6 +224,13 @@ export interface BuffReplay {
   readonly castFlags: readonly CastFlag[];
   /** With ReplayOptions.trace: each change of a traced kit buff's instances (start, end moved, gone), step by step. */
   readonly traces: readonly BuffTrace[];
+  /** The fight's hidden holds the replay placed (engine assumption hidden-holds, reading `placed`: holds.ts), else null. */
+  readonly hiddenHolds: PlacedHolds | null;
+  /**
+   * The SP each logged cast lacked in the replay (its cost less the team's SP then; drivers.ts replayCast raises it to the
+   * cost silently: docs/open-problems.md "Team SP"), for the casts that lacked any.
+   */
+  readonly spTopUps: readonly { readonly frame: number; readonly operator: string; readonly skillId: string; readonly sp: number }[];
 }
 
 /** A logged cast the replay made against its kit (BuffReplay.castFlags). */
@@ -1314,6 +1322,56 @@ export const HIDDEN_HOLD_SHARE = 0.4;
  */
 const RUN_START_MS = 3000;
 
+/** Ms of a frame. */
+function msOfFrame(f: number): number {
+  return (f * 1000) / FPS;
+}
+
+/** How far a run's logged end may miss the bound it gives the hidden holds (ms): its brackets' and the frame grid's slack. */
+const HOLD_BOUND_TOL_MS = 200;
+
+/**
+ * The bounds the replay's buffs give the hidden holds (holds.ts; hidden-holds `placed`): each instance that ran out in
+ * the replay without them (a timed kit buff with one game buff run per instance, as loggedEndOf takes them), against
+ * the log's run of it from its application (±RUN_START_MS, not refreshed) on the same holder: its last listed hit (the
+ * holds from its application to there at least its lateness over the replay's expiry, in world time: the placed stops
+ * after the expiry hold it too once it lasts) and the next hit of the holder without it (at most). Not a run that ends more than 0.4 s before the replay's expiry (a refresh or cut the replay
+ * doesn't make: not a clock) or past HIDDEN_HOLD_SHARE of its life.
+ */
+function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; end: number; expired: boolean }[]>, defs: ReadonlyMap<string, KitBuff>, ends: LoggedLaneEnds, stops: readonly TimeStop[]): HoldBound[] {
+  const out: HoldBound[] = [];
+  const seen = new Set<string>();
+  for (const [key, list] of kitInstances) {
+    const [kitKey, op] = key.split("|") as [string, string];
+    const def = defs.get(kitKey);
+    if (!def || def.every !== undefined || def.consumedBy || def.link || def.endsWithCast || def.maxStacks !== undefined || def.sharedTimer || def.ticksShownByHits || def.ticksLoggedAs || def.endFollowsTick || def.childOf || def.instances !== undefined) continue;
+    const owner = kitKey.slice(0, kitKey.indexOf(":"));
+    const holder = def.target === "enemy" ? "enemy" : op;
+    for (const w of list) {
+      if (!w.expired || !Number.isFinite(w.end)) continue;
+      const [S, E] = [msOfFrame(w.start), msOfFrame(w.end)];
+      for (const g of loggedNames(def)) {
+        const k = `${g}|${owner}`;
+        for (const r of ends.runs.get(k) ?? []) {
+          if (r.refreshed || r.holder !== holder || r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+          const id = `${k}|${r.since}|${holder}|${w.start}`;
+          if (seen.has(id)) continue;
+          seen.add(id);
+          const off = ends.hits.find((h) => h.t > r.lastListed && (holder === "enemy" || h.operator === holder) && !h.listed.has(k));
+          // Past its expiry, the placed stops then hold it too (a stop after E didn't hold the instance that ended at E).
+          const late = (t: number) => (t >= E ? worldMs(E, t, stops) : t - E);
+          const [lo, hi] = [late(r.lastListed), off === undefined ? Infinity : late(off.t)];
+          if (hi < -2 * HOLD_BOUND_TOL_MS || lo > HIDDEN_HOLD_SHARE * (E - S)) continue;
+          const tag = `run ${g}|${owner} on ${holder} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : "–end"} ms over ${Math.round(E)}`;
+          if (lo > -HOLD_BOUND_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - HOLD_BOUND_TOL_MS, max: Infinity, kind: "run", tag, ex: lo / 1000 });
+          if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "run", tag, ex: hi / 1000 });
+        }
+      }
+    }
+  }
+  return out;
+}
+
 /**
  * The state with each buff due to expire by `frame` kept on while the log still lists it (engine assumption
  * hidden-holds, reading `log`): the world held it in ways no logged cast shows (perfect dodges: a 0.512 s world
@@ -1729,8 +1787,16 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // With the casts that hit nothing the log needs (missedCasts), added below.
   let casts: readonly ReplayedCast[] = logged;
   // Engine assumption hidden-holds: with `log`, the buffs the log lists past their expiry run on to its end (heldToLoggedEnds).
-  const hiddenHolds = (opts.assume?.["hidden-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "hidden-holds")?.default) === "log";
-  const laneEnds: LoggedLaneEnds = hiddenHolds ? loggedLaneEnds(fx) : { runs: new Map(), hits: [], decided: new Map() };
+  const holdsReading = opts.assume?.["hidden-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "hidden-holds")?.default;
+  const hiddenHolds = holdsReading === "log" || holdsReading === "placed";
+  // With `placed` (and `holds`, the placed holds alone), the world holds placed once for every timer (holds.ts), from a first replay without them.
+  const placing = holdsReading === "placed" || holdsReading === "holds";
+  let worldHolds: readonly { readonly frame: number; readonly frames: number }[] = [];
+  let placedHolds: PlacedHolds | null = null;
+  const noEnds = (): LoggedLaneEnds => ({ runs: new Map(), hits: [], decided: new Map() });
+  // Placing, the first replay keeps no buff to the log's end: its expiries are the clocks' (runBounds).
+  let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx) : noEnds();
+  const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx) : laneEnds;
   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
   const held = (st: TimelineState, frame: number) => heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
@@ -1863,10 +1929,12 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // Casts and samples in frame order; a cast before a sample at its frame (its frame-0 hits land first); the log's
     // Stagger recoveries before both (the bar is full for that frame's hits), and its bar a frame before its hits.
     // At one frame: the log's Stagger end before its bar (the bar is the hit's), and its Stagger after it.
-    type Step = { frame: number; cast: ReplayedCast | null; recover: boolean; bar?: number; calm?: boolean; through?: number; endBar?: number | null };
-    const rank = (s: Step) => (s.recover ? 0 : s.cast ? 1 : s.endBar !== undefined ? 2 : s.bar !== undefined ? 3 : s.through !== undefined ? 4 : 5);
+    // A hidden hold (worldHolds) before the casts at its frame: what's due after it is held.
+    type Step = { frame: number; cast: ReplayedCast | null; recover: boolean; bar?: number; calm?: boolean; through?: number; endBar?: number | null; hold?: number };
+    const rank = (s: Step) => (s.recover ? 0 : s.hold !== undefined ? 1 : s.cast ? 2 : s.endBar !== undefined ? 3 : s.bar !== undefined ? 4 : s.through !== undefined ? 5 : 6);
     const steps: Step[] = [
       ...recoveries.map((frame) => ({ frame, cast: null as ReplayedCast | null, recover: true })),
+      ...worldHolds.map((h) => ({ frame: h.frame, cast: null as ReplayedCast | null, recover: false, hold: h.frames })),
       ...poiseBars.map((g) => ({ frame: g.frame, cast: null as ReplayedCast | null, recover: false, bar: g.bar, calm: g.calm })),
       ...staggerState.map((g) => ({ ...g, cast: null as ReplayedCast | null, recover: false })),
       ...list.filter((c) => !c.beforeLog).map((c) => ({ frame: Math.max(0, frameOf(c.start)), cast: c as ReplayedCast | null, recover: false })),
@@ -1920,6 +1988,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           st = refillPoise(ctx, st);
           continue;
         }
+        if (s.hold !== undefined) {
+          st = holdWorld(st, st.frame, s.hold);
+          continue;
+        }
         if (s.bar !== undefined) {
           if (s.calm === true) cut();
           st = setPoise(ctx, st, s.bar, s.calm === true);
@@ -1955,6 +2027,17 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     return { ctx, st, instances, brokenAt, made, needs, steps, checkpoints, castErrors, flags, traces, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows, staggerHolds, staggerCuts };
   };
   let main = kits.length > 0 ? run("never") : null;
+  if (main && placing) {
+    // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
+    const stops = castTimeStops(data, placement.casts);
+    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops), ...tickBounds(fx, stops)], {
+      end: Math.max(0, ...fx.hits.map((h) => h.t)),
+      still: main.staggerWindows.map((w) => [msOfFrame(w.start), msOfFrame(Number.isFinite(w.end) ? w.end : frameOf(Math.max(0, ...fx.hits.map((h) => h.t))))] as const),
+    });
+    worldHolds = placedHolds.holds;
+    if (hiddenHolds) laneEnds = loggedLaneEnds(fx);
+    if (worldHolds.length || hiddenHolds) main = run("never");
+  }
   // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the
   // replay made again with its casts, until no need is left that such casts meet.
   const tried = new Set<ReplayedCast>();
@@ -2095,6 +2178,11 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerCuts: main?.staggerCuts ?? [],
     castFlags: main?.flags ?? [],
     traces: main?.traces ?? [],
+    hiddenHolds: placedHolds,
+    spTopUps: main ? main.made.flatMap((m) => {
+      const lack = spCostAt(main.ctx, m.pre, m.c.operator, skillCosts(main.ctx, m.c.operator, m.skillId, m.f), m.f) - spAt(m.pre, m.f);
+      return lack > 1e-6 ? [{ frame: m.f, operator: m.c.operator, skillId: m.skillId, sp: lack }] : [];
+    }) : [],
     brokenAt,
     statusLanding(hit) {
       const found = statusLanded.get(hit);

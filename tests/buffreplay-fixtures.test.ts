@@ -285,4 +285,17 @@ describe("b6aa15281db4: a buff the log lists past the replay's expiry (engine as
     expect(log).toBeLessThan(43880);
     expect(Math.abs((end("none") as number) - 39767)).toBeLessThan(40);
   });
+
+  it("places the fight's hidden holds outside the Stagger, and keeps the log's end on top of them (placed)", () => {
+    const r = logBuffReplay(data, fx, placement, { assume: { "hidden-holds": "placed" } }).replay;
+    const h = r.hiddenHolds;
+    expect(h?.total).toBeGreaterThan(500);
+    expect(h?.holds.filter((x) => r.staggerSpans.some((s) => x.frame >= s.start && x.frame < s.end))).toEqual([]);
+    // Held to the stops past its expiry in world time (holds.ts bounds), the placed holds don't carry it past the log's end.
+    const placed = end("placed") as number;
+    expect(placed).toBeGreaterThan(43780);
+    expect(placed).toBeLessThan(43880);
+    // The holds alone hold it past the replay's own expiry.
+    expect(end("holds") as number).toBeGreaterThan(40000);
+  });
 });

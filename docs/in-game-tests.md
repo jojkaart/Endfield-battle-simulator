@@ -3046,8 +3046,12 @@ clock per fight that the enemy's tick timers share; the enemy's 1 s ticks come
 about 0.5 s late now and then (34 of 378 tick pairs), never while it's
 Staggered (1 of 92), and a perfect dodge's world slow-down holds 0.512 s by the
 data. The log records no dodge, so only the game can say whether they are the
-holds. The log check now keeps a buff on to where the log lists it (engine
-assumption `hidden-holds`); simulations dodge only with `--dodge`.
+holds. The log check now places the holds from the log's clocks and holds every
+timer there, and keeps a listed buff on to where the log lists it (engine
+assumption `hidden-holds`, `placed`, 2026-11-23); simulations dodge only with
+`--dodge`. The answer also says whether the holds' 7 SP each (none logged) is
+real: the placed holds, read as dodges, don't fall where the replay runs short of
+SP (open-problems "Team SP").
 **How:** record the fight with ZMDLogs. Against an enemy that attacks often,
 not Staggered: cast Si's ultimate, then do nothing but dodge its attacks until
 the Amp's icon is gone, perfectly (the slow-motion flash) exactly 4 times; no

@@ -157,13 +157,22 @@ of 1,378 conflict with it, 341 with the excesses shuffled); its holds are
 about a perfect dodge's 0.512 s each and never come while the enemy is
 Staggered (tick pairs: 34 of 378 outside, 1 of 92 inside); the damage
 sides with the listing (802 hits against 92). The replay keeps a listed
-buff on to the log's end (engine assumption `hidden-holds`, default `log`:
-plain 55.7 → 57.5% but for the hold-outs, unchanged). Next: in-game test
-111 (counted perfect dodges during Si's Amp); then the holds placed once
-for every timer from the shared clock (enemy statuses, unlisted buffs, the
-dodges' SP for "Team SP"), and the dodger's own 0.315 s; simulations
-already dodge with `--dodge`, and the owner's dodge rate would decide how
-much rides on it.
+buff on to the log's end (engine assumption `hidden-holds`, `log`:
+plain 55.7 → 57.5% but for the hold-outs, unchanged). **Placed
+(2026-11-23):** the holds estimated once per fight from every clock the
+log shows (the replay's buff expiries against the log's runs, the enemy's
+tick series; the least total, midway between its earliest and latest
+placement; packages/logs holds.ts, `efsim zmdlogs holds`) and held on the
+world's clock for every timer, then the log's ends (default `placed`):
+development plain 59.9 → 62.8%, mismatch 16.4 → 15.6%, hold-outs 69.6 →
+69.9%. 108.6 s of holds in 5,899 s of fights, a quarter of the 0.512 s
+units placed within 1 s. Read as dodges they cover 87 of the 1,766 SP the
+replay lacks (not the gap); no sign of the dodger's own 0.315 s clock on
+its buffs (pairs: ratio 1.12). Next: test 111; Corrosion's listed ramp
+levels and Rossi's Wolven Blood layers as clocks (d572, 0c14 worse);
+pauses and overlapping ultimates' stops (489c), which a dodge can't be;
+simulations already dodge with `--dodge`, and the owner's dodge rate
+would decide how much rides on it.
 
 **Stagger windows (2026-11-17, accuracy plan B1 follow-up):** the replay
 follows the log's Stagger listing (the damage confirms it). The game's

@@ -48,9 +48,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   freeze, Haste isn't attack speed, teammates' pause 6.5 s); tests 9, 17,
   22, 46 decided and 21, 43 partly from the logs (2026-11-18: buffs created
   in a stop are held; Twilight still 0.1–4.6 s longer than its model, 2026-11-22: as are her other buffs, a buff-clock question;
-  the buff clock 2026-11-22: unlogged world holds, about a perfect dodge each, on one clock per fight; the
-  replay keeps a listed buff to the log's end, `hidden-holds`; next test 111, then the holds placed once for
-  every timer); Arcane's misses grouped (2026-11-18: 908 → 866;
+  the buff clock 2026-11-22: unlogged world holds, about a perfect dodge each, on one clock per fight;
+  2026-11-23 the replay places them once from the log's clocks for every timer, `hidden-holds` `placed`:
+  development plain 59.9 → 62.8%; they don't explain the SP shortfall; next test 111, Corrosion's ramp and
+  Wolven Blood's layers as clocks); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
