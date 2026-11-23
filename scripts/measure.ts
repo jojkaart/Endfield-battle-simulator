@@ -26,7 +26,8 @@
 //   --hits              also list, for each development log whose entry moved, the hits whose verdict changed
 //                       (time, operator, event, verdict and logged ÷ primary before and after; the reference's code
 //                       is measured for those logs when there is no --base): a few per change in the summary, every
-//                       one in <out>/hits.txt. Hold-outs never.
+//                       one in <out>/hits.txt. Hold-outs never. A log new since the reference (or --base) commit
+//                       is measured there on this tree's copy of the fixture.
 //   --live              read the working tree when the run starts (after the queue's wait), not as it was queued
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
@@ -242,7 +243,15 @@ async function main(argv: string[]): Promise<number> {
     const rows = hitRows.get(t) ?? new Map<string, readonly HitRow[]>();
     hitRows.set(t, rows);
     const start = performance.now();
-    await pool(t, which.map((key) => ({ key, what: "entry" as const, ...(values.hits && !isHoldout(key) ? { hits: true } : {}) })), workers, (a) => {
+    // A log new since that commit (an import on this branch): its code reads the measured tree's copy of the fixture.
+    const fresh = new Set(t === tree ? [] : which.filter((k) => !existsSync(join(t, "fixtures", k))));
+    if (fresh.size) say(`measure: ${label}${fresh.size} log(s) new since that commit, read from the measured tree: ${[...fresh].map((k) => (isHoldout(k) ? "a hold-out log" : k)).join(", ")}`);
+    await pool(t, which.map((key) => ({ key, what: "entry" as const, ...(values.hits && !isHoldout(key) ? { hits: true } : {}), ...(fresh.has(key) ? { fixtures: join(tree, "fixtures") } : {}) })), workers, (a) => {
+      if ("error" in a && fresh.has(a.key)) {
+        // The older code can't read a newer fixture (its schema, say): the log stays "new" on that side.
+        say(`measure: ${label}${isHoldout(a.key) ? "a hold-out log" : a.key} not measured (new since that commit and its code can't read it: ${a.error.split("\n")[0]})`);
+        return;
+      }
       if ("error" in a) throw new Error(`${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
       if (!("entry" in a)) return;
       got.set(a.key, a.entry);
@@ -353,7 +362,7 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
   for (const k of logs) {
     const [a, b] = [before.get(k), after.get(k)];
     if (!a || !b || a.length !== b.length) {
-      summary.push(`  ${k}: per-hit verdicts not comparable (${!a || !b ? "not measured" : "the fixture's hits differ"})`);
+      summary.push(`  ${k}: per-hit verdicts not comparable (${!a || !b ? "not measured on both sides" : "the fixture's hits differ"})`);
       continue;
     }
     const changed = b.flatMap((h, i) => (h[3] !== (a[i] as HitRow)[3] ? [{ was: a[i] as HitRow, now: h }] : []));
