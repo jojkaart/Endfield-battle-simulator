@@ -38,6 +38,7 @@ import {
   replayReport,
   scalesReport,
   staggerReport,
+  stopsView,
   timingReport,
   totalsAllReport,
   totalsView,
@@ -141,6 +142,10 @@ export default command({
                                           engine's
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
+  efsim zmdlogs stops <fixture…|--all>    replay --stops' STOP lines over several logs (default: every verified and
+                                          pending development log with --all), then a count per kind (as listed,
+                                          covered, length, timeline only, list only) and how many logs have each
+                [--differ] [--operator <op>]  Only the lines that differ (not as listed, not covered); these operators
   efsim zmdlogs totals <fixture>          The simulated total's parts per operator: the landings standing for
                                           logged hits (predicted vs logged), the replay-only landings (largest
                                           first) and the logged hits without a counted landing: which side moved a
@@ -269,6 +274,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     stops: { type: "boolean", default: false },
     zones: { type: "boolean", default: false },
     by: { type: "string" },
+    differ: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -383,6 +389,13 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       return totalsView(data(), readDevFixture(arg), { operators, ...top, assume: parseAssume(data(), values.assume), byEvent: values.by === "event" });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
+    if (sub === "stops") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs stops takes fixtures (ids such as 0c14) or --all (every verified and pending development log; --differ, --operator op)");
+      if (named.length && values.all) throw new Error("zmdlogs stops: fixtures or --all, not both");
+      const logs = devFixtures(named.length ? { ids: named } : {});
+      return stopsView(data(), logs, { differ: values.differ, operators, progress });
+    }
     if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, cache: !values["no-cache"], progress });
     if (sub === "groups") {
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");

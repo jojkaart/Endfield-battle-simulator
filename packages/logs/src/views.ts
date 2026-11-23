@@ -120,6 +120,60 @@ export function stopsAgainstList<L extends { readonly start: number; readonly sc
   return { pairs: applied.map((x) => ({ applied: x, listed: found.get(x) ?? null })), unapplied: listed.filter((l) => free.has(l)) };
 }
 
+/** How an applied slow-down and the log tools' stop list compare (stopLines): the same, another length, one side only, or a timeline-only one a listed one covers. */
+export type StopKind = "as listed" | "length" | "timeline only" | "covered" | "list only";
+
+/**
+ * The STOP lines of `zmdlogs replay --stops` and `zmdlogs stops`: each slow-down the replay's timeline applied against
+ * the log tools' stop list of its casts (stopsAgainstList), and each listed one never applied, with its kind.
+ */
+export function stopLines(data: GameData, fx: LogFixture, replay: BuffReplay, f: ViewFilter = {}): { t: number; kind: StopKind; text: string }[] {
+  const out: { t: number; kind: StopKind; text: string }[] = [];
+  const { pairs, unapplied } = stopsAgainstList(replay.appliedStops, replayTimeStops(data, fx));
+  for (const { applied: x, listed: l } of pairs) {
+    const t = msOf(x.start);
+    if (!inWindow(f, t) || (x.operator !== null && !mine(f, x.operator))) continue;
+    // One the list lacks beside a listed one of its start and caster running at least as low at every frame (a jump's
+    // own slow-down at the jump's frame next to the frame-0 one: Purrchena's shielded combo, Rossi's combo_3 judged
+    // late) holds nothing more.
+    const covering = !l ? pairs.find((p) => p.listed && p.applied.start === x.start && p.applied.operator === x.operator && x.scales.every((v, i) => (p.listed?.scales[i] ?? 1) <= v)) : undefined;
+    const kind: StopKind = !l ? (covering ? "covered" : "timeline only") : l.scales.length !== x.scales.length ? "length" : "as listed";
+    const vs = !l ? (covering ? `not in the log tools' list, covered by its ${covering.listed?.scales.length}-frame one (the same holds)` : "not in the log tools' list") : l.scales.length !== x.scales.length ? `the log tools' list has ${l.scales.length} frames (${shortSkill(l.skillId)})` : `as listed (${shortSkill(l.skillId)})`;
+    out.push({ t, kind, text: `STOP   the timeline's ${x.ultimate ? "ultimate stop" : "slow-down"} of ${x.operator ? label(data, x.operator) : "-"} ${s(t)}–${s(msOf(x.start + x.scales.length))} s (${x.scales.length} frames, lowest ×${Number(Math.min(...x.scales).toPrecision(2))}): ${vs}` });
+  }
+  for (const l of unapplied) {
+    const t = msOf(l.start);
+    if (!inWindow(f, t) || !mine(f, l.operator)) continue;
+    out.push({ t, kind: "list only", text: `STOP   listed for ${label(data, l.operator)} ${shortSkill(l.skillId)} at ${s(t)} s (${l.scales.length} frames): the timeline never applied it` });
+  }
+  return out;
+}
+
+/**
+ * `efsim zmdlogs stops <fixture…|--all>`: the STOP lines of several logs (`replay --stops`'s), with `differ` only those
+ * that aren't "as listed" or "covered", then a count per kind over the logs (stop-lists report point 1: a loop of
+ * `replay --stops` over 80 fixtures took 6 minutes a run, mostly the CLI's start-up).
+ */
+export function stopsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly differ?: boolean; readonly operators?: readonly string[]; readonly progress?: (line: string) => void } = {}): string {
+  const total = new Map<StopKind, number>();
+  const logsWith = new Map<StopKind, Set<string>>();
+  const out = [`The slow-downs each replay's timeline applied (BuffReplay.appliedStops) against the log tools' stop list of its casts (replayTimeStops), as \`zmdlogs replay --stops\` gives them${opts.differ ? "; only those that differ (not as listed, not covered)" : ""}; times in s.`];
+  for (const { short, fx } of logs) {
+    opts.progress?.(`stops ${short}`);
+    const { replay } = logBuffReplay(data, fx);
+    const lines = stopLines(data, fx, replay, { operators: opts.operators ?? [] }).sort((a, b) => a.t - b.t);
+    for (const l of lines) {
+      total.set(l.kind, (total.get(l.kind) ?? 0) + 1);
+      logsWith.set(l.kind, (logsWith.get(l.kind) ?? new Set()).add(short));
+    }
+    const shown = opts.differ ? lines.filter((l) => l.kind !== "as listed" && l.kind !== "covered") : lines;
+    if (shown.length) out.push(`${short}:`, ...shown.map((l) => `  ${l.text}`));
+  }
+  const kinds: StopKind[] = ["as listed", "covered", "length", "timeline only", "list only"];
+  out.push("", `Over ${logs.length} logs: ${kinds.map((k) => `${k} ${total.get(k) ?? 0}${k !== "as listed" && logsWith.get(k)?.size ? ` (${logsWith.get(k)?.size} logs)` : ""}`).join(", ")}`);
+  return out.join("\n");
+}
+
 /** The replay's landing of each logged hit (the hit it stands for), as the log check finds it. */
 function landingsOf(replay: BuffReplay, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
   const byLanding = new Map<LandedHit, LogHit>();
@@ -204,24 +258,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     }
   }
   // The slow-downs the replay's timeline applied against the stop list the log tools build for its casts (replayTimeStops).
-  if (f.stops) {
-    const { pairs, unapplied } = stopsAgainstList(replay.appliedStops, replayTimeStops(data, fx));
-    for (const { applied: x, listed: l } of pairs) {
-      const t = msOf(x.start);
-      if (!inWindow(f, t) || (x.operator !== null && !mine(f, x.operator))) continue;
-      // One the list lacks beside a listed one of its start and caster running at least as low at every frame (a jump's
-      // own slow-down at the jump's frame next to the frame-0 one: Purrchena's shielded combo, Rossi's combo_3 judged
-      // late) holds nothing more.
-      const covering = !l ? pairs.find((p) => p.listed && p.applied.start === x.start && p.applied.operator === x.operator && x.scales.every((v, i) => (p.listed?.scales[i] ?? 1) <= v)) : undefined;
-      const vs = !l ? (covering ? `not in the log tools' list, covered by its ${covering.listed?.scales.length}-frame one (the same holds)` : "not in the log tools' list") : l.scales.length !== x.scales.length ? `the log tools' list has ${l.scales.length} frames (${shortSkill(l.skillId)})` : `as listed (${shortSkill(l.skillId)})`;
-      lines.push({ t, order: 0, text: `STOP   the timeline's ${x.ultimate ? "ultimate stop" : "slow-down"} of ${x.operator ? label(data, x.operator) : "-"} ${s(t)}–${s(msOf(x.start + x.scales.length))} s (${x.scales.length} frames, lowest ×${Number(Math.min(...x.scales).toPrecision(2))}): ${vs}` });
-    }
-    for (const l of unapplied) {
-      const t = msOf(l.start);
-      if (!inWindow(f, t) || !mine(f, l.operator)) continue;
-      lines.push({ t, order: 0, text: `STOP   listed for ${label(data, l.operator)} ${shortSkill(l.skillId)} at ${s(t)} s (${l.scales.length} frames): the timeline never applied it` });
-    }
-  }
+  if (f.stops) for (const l of stopLines(data, fx, replay, f)) lines.push({ t: l.t, order: 0, text: l.text });
   for (const w of replay.staggerSpans) {
     const [a, z] = [msOf(w.start), msOf(w.end)];
     if (z >= (f.from ?? -Infinity) && a <= (f.to ?? Infinity)) lines.push({ t: a, order: 0, text: `STAGGER the replay's window ${s(a)}–${s(z)} s` });
