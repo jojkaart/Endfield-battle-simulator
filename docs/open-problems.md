@@ -1618,7 +1618,16 @@ keeps a listed buff to its listing's end.
     event at 34.70 s, which the replay casts at 35.70 s; an event's time is the press, so its reset is no time to cut
     at (logcasts.ts placeHits says so). A test now keeps the stop lists on skillStops + withResets
     (tests/stops-source.test.ts); `efsim gamedata dilations` lists what the compiler drops (204 switched off, 49 on
-    layer 1, no unknown curve).
+    layer 1, no unknown curve). **Open (round 8, `zmdlogs replay --stops`):** the engine applies a reset only to the
+    slow-downs running when the resetting cast starts (slowDown cuts at its own call), so a teammate's combo slow-down
+    that starts between Arcane's combo and her frame 9 runs whole in the timeline, while the views' lists (withResets)
+    cut it at the reset as the one-dilation-per-priority rule says: 1d91 at 50.30 s (Typhoeus's combo, 25 frames in
+    the timeline, 3 in the lists), 7910 at 4.90 s (Ardelia's, 24 against 4), 9555 at 31.73 s (Xaihi's, 27 against 2);
+    of 21 length differences between the timeline's applied slow-downs and the lists over the development and verified
+    logs most are this. Not fixed (an improvement round): cutting a slow-down at a pending reset of its priority when
+    it starts (an engine change: smoke, team-ab, measure). Also seen there: Purrchena's combo (04d4, 99fb) has 30 stops
+    in the lists the timeline never applied and 6 the other way (her casts made as other skills or paths; not
+    diagnosed).
   - **The application's logged ms (a7a7 3.87 s and 20.53 s, 489c 49.31 s):** readings that put the log's ramp ahead
     of real time since its `since` (a7a7 20.65 s: step 1 at 0.12 s), so the application was earlier than logged.
     a7a7 3.87: Arcane's battle-skill event at 2.31 s puts its hit (frame 20) at 2.98 s, just before Liino's combo

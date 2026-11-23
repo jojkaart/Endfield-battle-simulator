@@ -61,3 +61,10 @@ main at 8daa9e9.
   `engineReading` call; the test compares both readings directly.
 - The snapshot history (`git show <ref>:tests/snapshots/log-verdicts-pending.json` in a loop) located 458b's
   6.1 → 7.5% at 74bc686 in seconds, ruling the ticks out.
+
+## Outcome (round 8)
+
+- 1 (The brief's diagnosis named the wrong buff, and no view said which zone moved): done (95cf3f6, 4ed0ddf): `zmdlogs hits <fixture> --zones` text lines carry the primary reading's zones, the replay's crit and its source and the modifiers by source, so `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` prints each moved hit's zones and modifiers before and after (docs/design/data.md's table); `differences` / `groups` mark an "other values" difference whose sums per zone agree as "same totals (cosmetic)" (LogDifference.sameTotals).
+- 2 (Instance buffs fall out of the log's own end silently): done (4ed0ddf): loggedEndOf records why it kept an instance to the log's end or not (ticking, layered, an instance buff, a notAClock field, no run listed past its expiry, past HIDDEN_HOLD_SHARE), BuffReplay.logEnds; `zmdlogs holds --why <re>` prints it after the clock verdicts (5082: "Xaihi:wpn_funnel_0010.atk from 27.37: not taken: an instance buff").
+- 3 (Crit-less hits: three inferences, no view of them): done (95cf3f6): BuffReplay.critSource (log, shown, layers, values, none); `hits --json` has `replayCrit` and `critSource`, `zmdlogs replay`'s LAND lines `[crit yes|no: <source>]` where the log gives none.
+- 4 (The worktree sandbox refuses a heredoc even for a test file append): nothing to do: CLAUDE.md already names a multi-line `python3 -c` beside the heredoc ("even where one has worked before").

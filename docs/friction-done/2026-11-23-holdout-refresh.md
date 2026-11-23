@@ -53,3 +53,9 @@ worktree's (scripts/holdout-refresh.ts).
   identity check and no cache, and the tests run it on a synthetic root; nothing had to be refactored.
 - scripts/holdout-split.ts was a good model for "edit hold-outs by code, print only counts".
 - `npm run snapshots:update`'s summary gives exactly the hold-out aggregates and better/worse counts the task needed.
+
+## Outcome (round 8)
+
+- 1 (`zmdlogs refresh` refused both verified fixtures over a field nobody reads for a verdict): done (19d4905): RefreshMismatch carries `values` (the fixture's and the detail's values at the first differing hits, JSON cut at 300 characters; a new `unquantified` entry by itself), kept out of the message so scripts/holdout-refresh.ts still prints only the category; `zmdlogs refresh` (development fixtures only: refreshFromDetail reads through readDevFixture) prints them under the reason (tests/zmdrefresh.test.ts).
+- 2 (Nothing tells an agent how long the downloads take): done (19d4905): docs/data-sources.md's raw-cache paragraph (up to a minute a detail, about 45 s each for the hold-outs; more than two in the background, don't restart a slow one).
+- 3 (Hold-out safety rests on remembering which git commands print file names): done (19d4905): scripts/merge.ts merges with `--no-stat` and prints conflicted hold-out fixtures as a count (shownPaths, tested); scripts/premerge.sh's dirty-tree listing leaves fixtures/holdout out (a count); runstate --touching counts them too; CLAUDE.md names the git listings to avoid after a commit that touched fixtures/holdout/.

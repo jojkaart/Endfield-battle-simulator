@@ -16,17 +16,18 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–7
-  done (round 7, 2026-11-23: `zmdlogs holds --why` and scripts/cli-ab.ts
-  for what a bound change moved, one stop-list rule under a test, measure
-  `--variant`, the negative control in every measure, `--hits` against
-  the snapshots' own code with the modifiers that moved, `ramp --held`,
-  the compiler's dropped dilations listed, `verify-at --test`; the 13
-  hold-outs refreshed blind with `since` 2026-11-23, scripts/holdout-refresh.ts:
-  hold-out plain 74.0 → 77.6%, the placed holds confirmed there); the
-  backlog ([2026-11-23-backlog-after-round-7.md](friction/2026-11-23-backlog-after-round-7.md),
-  8 live points, the replay's run() refactor the largest) joins the next
-  round once about five new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–8
+  done (round 8, 2026-11-23: the replay's run as `replayOnce` with its
+  steps and record in modules of their own; `zmdlogs totals`, `replay
+  --stops` / `--trace-buff status:<s>`, kit window chains, crit sources and
+  `hits --zones`, CUTS apart from INSIDE, `holds --why`'s log-end side,
+  `measure --patch`, held frames per slow-down, `runstate --touching`,
+  hold-out-safe merge and premerge); the backlog
+  ([2026-11-23-backlog-after-round-8.md](friction/2026-11-23-backlog-after-round-8.md),
+  1 live point, the layers views) joins the next round once about five new
+  reports have collected; its accuracy list has the engine's combo-reset
+  reach (a slow-down starting before Arcane's frame 9 isn't cut) and
+  pinned expiries, measured.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

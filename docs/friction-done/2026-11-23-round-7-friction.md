@@ -49,3 +49,9 @@ aren't repeated.
 - `npm run measure` fixing its code at queue time let the round keep editing during every run; the new
   `--variant` and the corrected `--hits` reference were tested by the round's own measurements.
 - `scripts/friction.ts outcomes` and `carry` made the paperwork quick (one bug found and fixed in carry).
+
+## Outcome (round 8)
+
+- 1 ("Who else is editing this file" is guesswork): done (19d4905): `node scripts/runstate.ts --touching [base]` lists, per other worktree with work beyond base, the files its branch changed and its uncommitted ones (read-only; hold-out fixtures only as a count); CLAUDE.md asks the lead's brief to name the files each parallel agent is expected to edit.
+- 2 (A chained `&& git commit` after a piped typecheck commits anyway): done (19d4905): CLAUDE.md's commit recipe: commit in a call of its own once the checks passed, never chained after them.
+- 3 (The heredoc reflex): nothing new, as the report says. It recurred in round 8: one multi-line `python3 -I -c` (a test append) slipped through and ran (the round-8 friction report).
