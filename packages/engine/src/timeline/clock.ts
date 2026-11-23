@@ -2,6 +2,7 @@
 
 import type { SkillTiming } from "../model.ts";
 import type { ActiveBuff } from "../buffs.ts";
+import type { EnemyStatus } from "../status.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
@@ -87,6 +88,21 @@ export function heldFromNow(st: TimelineState, frame: number, ultimatesOnly = fa
     held += 1 - m;
   }
   return Math.round(held);
+}
+
+/**
+ * The enemy after an application at `frame`: the reaction statuses it created then (not one it left as it was) held by
+ * the rest of the time stops and slow-downs running (heldFromNow), as a buff created then is (engine assumption
+ * `status-in-stop`, default `held`; `runs`: as they are).
+ */
+export function holdNewStatuses(ctx: TimelineContext, st: TimelineState, before: EnemyStatus, after: EnemyStatus, frame: number): EnemyStatus {
+  if (engineReading(ctx.scenario, "status-in-stop") !== "held") return after;
+  const n = heldFromNow(st, frame);
+  if (n <= 0) return after;
+  // Its ramp (Corrosion's appliedAt) too; a Combustion keeps its appliedAt, by which its snapshot is retaken.
+  const kept = (x: EnemyStatus["statuses"][number]) => before.statuses.some((y) => y.status === x.status && y.appliedAt === x.appliedAt && y.expiresAt === x.expiresAt && y.level === x.level);
+  const statuses = after.statuses.map((x) => (x.appliedAt === frame && !kept(x) ? { ...x, ...(x.status === "corrosion" ? { appliedAt: x.appliedAt + n } : {}), expiresAt: x.expiresAt + n, ...(x.nextTickAt !== undefined ? { nextTickAt: x.nextTickAt + n } : {}) } : x));
+  return { ...after, statuses };
 }
 
 /**

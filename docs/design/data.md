@@ -397,6 +397,13 @@ detail):
   under ~0.2 s, or one at a ms many hits share, isn't timing evidence;
   "uneven batches" of a periodic hit may be the log's, not the game's.
   World time between two moments: `efsim zmdlogs worldtime`.
+- **A hit inside its own cast's stop** (2026-11-23) is logged where the
+  stop ends, not at its frame: Liino's combo hit 1 (frame 9, the world at
+  0.01 to frame 10) comes 0.1–0.9 s (median 0.23 s) before hit 2 (frame
+  33), and no teammate's hit is logged in the second before it. The
+  placement starts such a cast from the stop's end (logcasts.ts
+  `ownStopLoggedFrame`, a scale of 0.05 or less at the hit's frame: today
+  Liino's combo and Last Rite's ultimate slash).
 - **Holds no cast explains** (2026-11-22, open-problems "The buff clock"):
   the log's ms run through world holds it records nothing of (perfect
   dodges' 0.512 s slow-down each, never while the enemy is Staggered;

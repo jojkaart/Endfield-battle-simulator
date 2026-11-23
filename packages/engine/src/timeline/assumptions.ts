@@ -39,6 +39,16 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "status-in-stop",
+    test: "18",
+    question: "Is an enemy status (Corrosion, Electrification, Combustion, Solidification) applied while a time stop or slow-down runs held by the rest of it, as a buff created then is (buff-in-stop; timeline/clock.ts holdNewStatuses)?",
+    default: "held",
+    readings: {
+      held: "held: its timer and ramp start when the world's clock runs again, as buff-in-stop's `held` for buffs: one world clock (2026-11-23, measured against runs with Liino's combo placed from its stop's end: development plain 60.0 → 60.1%, hold-out 70.0 → 70.1% (5 better, 0 worse); 9090afbacec9 +9 plain (Perlica's Electrification applied inside Liino's combo slow-down, listed to 16 s), fc63a2001251 +4, 3f78ceb15bc3 −2)",
+      runs: "runs: its timer and ramp start at once; only a stop that begins later holds it (the engine until 2026-11-23)",
+    },
+  },
+  {
     id: "battle-sub-skills",
     test: "29",
     question: "Does a battle-type sub-skill's cast (SkillData normalSkillSubType 1: Si's Initial and Final Stroke, Liino's End Stance, Camille's, Mi Fu's and Purrchena's follow-ups) count as a battle-skill cast for triggers that listen by skill type (CheckSkillType [2]: Type 50 Yinglung's Edge, talents on a battle-skill cast)? Link isn't part of it.",

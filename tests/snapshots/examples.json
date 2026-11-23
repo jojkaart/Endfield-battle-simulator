@@ -281,19 +281,19 @@
   ]
  },
  "ink-melt.scenario.json": {
-  "total": 3414967.299,
-  "hits": 462,
+  "total": 3410561.953,
+  "hits": 461,
   "casts": 169,
   "perOperator": {
    "chr_0016_laevat": 2050587.801,
-   "chr_0036_jsspsi": 780836.181,
-   "chr_0006_wolfgd": 361363.983,
+   "chr_0036_jsspsi": 780329.371,
+   "chr_0006_wolfgd": 357465.447,
    "chr_0025_ardelia": 222179.334
   },
-  "digest": "ef1e00d1f2d2",
+  "digest": "ff262d09d8df",
   "windows": [
-   "c5db5ea5dcf6",
-   "ea9d5de797b8",
+   "5dfa5226ab61",
+   "3455b1cecb18",
    "2328901c660b",
    "eccc290cc2a4",
    "0de21f4d89c1",
@@ -435,19 +435,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2682788.232,
+  "total": 2674108.921,
   "hits": 169,
   "casts": 64,
   "perOperator": {
-   "chr_0036_jsspsi": 698335.8,
-   "chr_0016_laevat": 1650249.966,
-   "chr_0035_liino": 208232.276,
-   "chr_0013_aglina": 125970.189
+   "chr_0036_jsspsi": 696731.672,
+   "chr_0016_laevat": 1643334.876,
+   "chr_0035_liino": 208314.915,
+   "chr_0013_aglina": 125727.459
   },
-  "digest": "e16113d648c5",
+  "digest": "98b6ef090c45",
   "windows": [
-   "e0a4075ce9b1",
-   "d9c73ca6b113"
+   "b0c782d11f81",
+   "c61a3f2e5566"
   ]
  },
  "si-laevatain.scenario.json": {
@@ -514,22 +514,22 @@
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5722829.245,
+  "total": 5705860.799,
   "hits": 440,
   "casts": 164,
   "perOperator": {
-   "chr_0034_typhoea": 4284456.131,
-   "chr_0032_lizhiyan": 384852.63,
-   "chr_0035_liino": 321736.221,
-   "chr_0004_pelica": 731784.264
+   "chr_0034_typhoea": 4265780.245,
+   "chr_0032_lizhiyan": 384977.58,
+   "chr_0035_liino": 320163.853,
+   "chr_0004_pelica": 734939.122
   },
-  "digest": "067abfa48427",
+  "digest": "76de988e7b3d",
   "windows": [
    "10005e4cadde",
-   "d04988f2ba1b",
-   "1a183f74db8a",
-   "3322bf62b830",
-   "0b8577668ae2",
+   "63d7c213afde",
+   "99631c700601",
+   "214d890bf1fe",
+   "111a170075c0",
    "06525c85da44"
   ]
  },
@@ -559,9 +559,9 @@
    "chr_0006_wolfgd": 79415.939,
    "chr_0022_bounda": 26221.529
   },
-  "digest": "cf7aad109b10",
+  "digest": "41ae8fcd8e92",
   "windows": [
-   "e7d6d2178098",
+   "b3fb6536d390",
    "530fce4b32c9",
    "435c0a1eaa62"
   ]
@@ -583,17 +583,17 @@
   ]
  },
  "yvonne-fluorite.scenario.json": {
-  "total": 393674.263,
+  "total": 402919.533,
   "hits": 121,
   "casts": 44,
   "perOperator": {
-   "chr_0017_yvonne": 362128.129,
+   "chr_0017_yvonne": 371373.398,
    "chr_0022_bounda": 31546.135
   },
-  "digest": "e20e96199f15",
+  "digest": "f04aa58a8fcf",
   "windows": [
    "583c5a7b3fe5",
-   "98596f761b73",
+   "9f31b8424080",
    "3ad8b2bd81db",
    "61ccf3636f10"
   ]

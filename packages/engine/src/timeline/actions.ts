@@ -13,7 +13,7 @@ import { FPS } from "../units.ts";
 import type { Clock, Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
-import { controlImmune, heldFromNow, shiftDebuffs, shiftEnemy } from "./clock.ts";
+import { controlImmune, heldFromNow, holdNewStatuses, shiftDebuffs, shiftEnemy } from "./clock.ts";
 import { engineReading } from "./assumptions.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
@@ -246,7 +246,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
           const side = st;
           const r = applyToEnemy(withLoggedReactionLevel(ctx, expireStatus(st.enemy, frame), resolved, frame, owner), resolved, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame), () => attackerSide(side, owner, frame));
           const fromKind = origin && origin.operator === owner ? origin.kind : "none";
-          const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, fromKind);
+          const d = delayBursts(ctx, { ...st, enemy: holdNewStatuses(ctx, st, st.enemy, r.state, frame) }, r.events, fromKind);
           for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
           if (ctx.beforeDamage && d.now.some((x) => x.kind === "reaction" && x.status === "combustion")) {
             // A Combustion keeps the attacker side with what the triggers on its application give (retakeCombustionSnapshots):

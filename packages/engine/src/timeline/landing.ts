@@ -16,7 +16,7 @@ import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resourc
 import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
 import { ofKind, schedule } from "./schedule.ts";
-import { operatorClockDue } from "./clock.ts";
+import { holdNewStatuses, operatorClockDue } from "./clock.ts";
 import { windowKey } from "./timing.ts";
 
 /** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
@@ -362,7 +362,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       if (!resolved) continue;
       const side = st;
       const r = applyToEnemy(withLoggedReactionLevel(ctx, st.enemy, resolved, hit.frame, hit.operator), resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame), () => attackerSide(side, hit.operator, hit.frame));
-      const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, kind, castIndex);
+      const d = delayBursts(ctx, { ...st, enemy: holdNewStatuses(ctx, st, st.enemy, r.state, hit.frame) }, r.events, kind, castIndex);
       st = d.state;
       out.push(...d.now);
       for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;

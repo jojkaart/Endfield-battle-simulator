@@ -60,7 +60,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   are the buff clock's); Gilberta's Vulnerable count at her ultimate
   (2026-11-22: 489c / d572 fixed, Rossi's combo 3 landed twice; left 4360 /
   9847, stacks outliving 20 s on the tower bosses); Si's strokes from the log (2026-11-23: Initial Stroke at the first
-  press, Final Stroke by the burst's origin; Yinglung's Edge 61 / 68, left the boss's phase pause, test 106); build offsets fitted, not hand-set (`zmdlogs
+  press, Final Stroke by the burst's origin; Yinglung's Edge 61 / 68, left the boss's phase pause, test 106); four
+  smaller leads (2026-11-23: Hard 27's resistance 11 from a second player's log; Liino's combo placed from its stop's
+  end; statuses created in a stop held; d774's ×1.39 and db87's ramp are the buff clock's hidden holds on enemy
+  statuses); build offsets fitted, not hand-set (`zmdlogs
   fit-build`, fixture `buildOverrides`, 2026-11-18; next: weapon levels
   bounded by their skill levels, the old hand fits moved over); then the
   screened logs' leads
