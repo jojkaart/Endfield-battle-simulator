@@ -971,7 +971,7 @@ f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
   - f879: 4 ticks at 71–83 s ×0.83–0.95 (was 10, ×0.83–1.14) and the
     Heat burst at 105.5 s ×0.84.
   - 458b: the re-snapshot pattern (×1.28 / ×1.18 at 88–94 s after a Heat
-    infliction on a burning enemy), Wulfgard's ticks at 162–164 s ×1.91
+    infliction on a burning enemy; the tick before's side, fixed 2026-11-23 below), Wulfgard's ticks at 162–164 s ×1.91
     and 227–234 s ×1.49–1.62 (were ×2.33 and ×1.82–1.97).
   - db87: ×1.4353 ticks at 37.5, 47.4, 49.3 s and ×0.7353 at 50.7–53.7 s
     (the ratio's inverse: as if the snapshots of two Combustions were
@@ -1013,22 +1013,21 @@ potential), his weapons pistol_0004 and 0009, enemy level/DEF, food and a
 fight-wide factor for c83c, c7790, f879, f978. For the ticks left: the
 buffs a Combustion's own application creates (in the snapshot now).
 
-**458b (2026-11-23, looked at, not fixed):** Wulfgard's Combustion from
-~84.7 s: the log's ticks read 1917 (79.33, 82.33 s), 2493 at 85.70 s (=
-1917 × the Stagger's 1.3, Staggered from 85.60 s), 3190 at 86.69 and
-88.33 s (×1.28: Si's ultimate Amp and her set's team DMG, which the
-replay's landings there carry but the snapshot leaves out), 2941 from
-89.34 s (×0.922: Akekuri's squad ATK gone). The replay's ticks come 0.3–0.5
-s later than the log's (hidden holds placed at 80.95, 83.17 and 85.39 s
-move them), are matched one behind from 88.33 s, and stay at 2493: its
-snapshot doesn't follow what the log's ticks do. Whether the hold clocks
-round's 6.1 → 7.5% is these ticks: not checked (an A/B at 235d717 against
-its parent on 458b's Wulfgard hits would say).
+**458b (2026-11-23): found and fixed (ticks and layers).** Wulfgard's ticks read 1917 (79.33, 82.33 s), 2493 at
+85.70 s (the Stagger's ×1.3 only, though Akekuri's ATK, +0.28 as the engine counts it, came at 84.37 s), 3190 at
+86.69 and 88.33 s (with it: ×1.2796 = 1.28), 2941 from 89.34 s (×1.18: her potential's +0.10 gone by the 88.33 s
+listing); at 230.62 s 3190 though its own listing lacks the +0.10 (the 229.58 s one has it). Each tick deals with the
+owner's attacker side as it was at the tick before: the snapshot is taken again at every tick for the next (engine
+assumption `combustion-snapshot`, `last-tick`; situation.ts `retakeTickSnapshots`; combat-mechanics §3.3). Across
+the 21 Combustion logs 52 ticks plain that weren't, 1 the other way (f978 23.68 s: the replay has no tick near the
+log's 22.62 s one, so its tick before is another). Left in 458b: 86.69 s (×1.28, the replay's tick before comes
+before Akekuri's ultimate in its timing), 227.60 s (×1.49, a first tick). **458b's damage 6.1 → 7.5% isn't the
+ticks:** the snapshots' history puts it at 74bc686 (Si's strokes merged onto the placed holds), all in Laevatain's
+total (9.0 → 11.3%; Wulfgard −0.1%); this fix moves 458b 7.8 → 7.9%. Not traced.
 
-**Still possible (ticks left):** a snapshot retaken when Heat lands on a
-burning enemy (458b ×1.28, f879); which Combustion a logged tick belongs
-to where two overlap (db87's swapped ratios); ticks the log drops or the
-engine adds under time stops (c7790's 7 against 10).
+**Still possible (ticks left):** which Combustion a logged tick belongs to where two overlap (db87's swapped ratios);
+ticks the log drops or the engine adds under time stops (c7790's 7 against 10); 4e36's Wulfgard ticks (×1.1315 with
+the application's side, ×0.954 with the tick before's: between); 0c14's and 489c's Rossi ticks, c83c's Laevatain.
 
 **Check improvement:** the build-offset line only reads hits with
 `crit === false`; Si's hits there have crit null, so no offset was
@@ -2754,10 +2753,18 @@ bound builders there were another agent's).
 ## Smaller, not yet diagnosed
 
 - 5082 after the hold bounds moved to the replay's own stops (2026-11-23, with main's instance-buff clocks): damage
-  −2.1 → −8.2%. A 0.77 s hidden-hold unit moves from 38.14 to 36.77 s (Yvonne's ultimate counted at its stop, not at its
-  38.16 s event); at her ultimate finisher (49.78 s, 0.6 and 1.2 M) and Arcane's hits at 50.51 s the log is ×1.17–1.18
-  above the replay, as a second layer of Arcane's weapon Arts DMG Taken (listed ×2) would be. Next: that buff's
-  instances there (`zmdlogs clock --kit-buff`), and whether the moved unit cut one short.
+  −2.1 → −8.2%. **Found and mostly fixed (2026-11-23, ticks and layers):** not Arcane's Arts DMG Taken (the replay has
+  both layers, 0.216, on every hit there) and not the moved 0.77 s unit (36.77 or 38.14 s, both inside the instances it
+  spans). Arcane's combo reset (engine, same round) made the replay's own clock 0.1–0.2 s shorter for every instance,
+  which tipped two buffs over hits: (1) Yvonne's MI Security layers (×1.166 on her finisher at 49.78 s), refreshed by
+  her crits: the log gives none of her 85 ultimate hits a crit flag, so the replay let them run out at 49.73 s (49.83 s
+  before), though the log lists them on her to the end. Fixed by crits read from the values (buffreplay.ts
+  `valueCrits`): 5082 −8.2 → +0.7%. (2) Xaihi's weapon team ATK (`wpn_funnel_0010.atk`, ×1.18 on Arcane's hits from
+  50.51 s and Yvonne's power attack at 51.11 s): the instance from 27.37 s is listed on Arcane and Yvonne to 51.1 s,
+  1.67 s of world time past its own expiry (49.43 s), over INSTANCE_LATE_MS (1 s), so it isn't a clock; the placed holds
+  give it 1.04 s (ends 50.47 s). With the cap at 2 s, 2.17 s of holds fit every clock (none dropped). **Still possible:**
+  more hidden holds in 27.4–51.1 s (nothing bounds them from above); a refresh the replay doesn't make. Not changed:
+  the cap's other evidence (4d60's Arcane runs, 7.7 s) says refreshes in place, and one log doesn't move it.
 - db87 after the ultimate-placement fix (2026-11-18): Laevatain's ultimate now
   starts at 16.60 s (its event at 18.62 s, the last hit 2.19 s before it, the team
   resuming 0.36 s after, her first enhanced cast at 19.01 s, which the old start
@@ -2795,6 +2802,12 @@ bound builders there were another agent's).
   started earlier; the Corrosion formed inside Liino's stop (the hit pinned
   at its logged time, the stop's end, not its kit frame). The same knock-on
   of the move in 4d60 (−6 plain), 9847 and c6d8 (−1), not traced.
+  **Fixed 2026-11-23 (ticks and layers):** a landing logged at another cast's frozen stop's end whose cast event puts it
+  just before the stop (≤ 0.2 s) landed there: the cast starts at its event and that landing, with what it set off
+  (its reaction, a trigger's hit), lands at its kit frame (logcasts.ts `beforeStopStart`, LoggedCast.beforeStop;
+  buffreplay.ts `batchedFrame`). a7a7's Corrosion from 2.97 s: ramp readings off the replay's step 15 → 4. Not 489c's
+  49.31 s: there Arcane's event (48.11 s) puts the hit inside Rossi's combo slow-down (48.37–49.00 s), logged 0.31 s
+  after it, so the placement's held start (48.21 s) stays; 48 of its 204 readings are off a step.
 - d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
   2.6 s before its event (the same placement rule); her simulated total +11.3 →
   +15.4%, no verdict moved. Not looked into.
