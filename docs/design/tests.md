@@ -132,7 +132,10 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   the patch's own effect. One half of a change, a log tool's old rule, an
   experiment: write it, `git diff > scratch/x.diff`, `git checkout` the
   files, measure (round 8: an edit-and-revert of three call sites, and a
-  half-reverted tree's risk, otherwise).
+  half-reverted tree's risk, otherwise). A diff measured and dropped goes
+  to [docs/tried/](../tried/README.md) with its measure in a header, named
+  in its open-problems paragraph, so `--patch docs/tried/<file>` measures
+  it again once what blocked it is fixed (round 9).
 - **The negative control in every measure** (round 7): the verified
   logs measured are also checked with every value ×0.97 and ×1.03, the
   bound test:logs fails on, flagged `!`; a reading fitted to the damage it

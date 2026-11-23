@@ -90,15 +90,18 @@ To try an idea, measure instead: `npm run measure [-- --with <op>]`
 (about a minute for every log, writes only `scratch/measure/`; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
 an open reading, `--variant <id>=<r>` (repeatable) for several in one run
-instead of chained measures: [docs/design/tests.md](docs/design/tests.md#measuring-a-change)),
+instead of chained measures, `--patch <diff>` for a change that is none:
+[docs/design/tests.md](docs/design/tests.md#measuring-a-change); a change
+measured and dropped keeps its diff in [docs/tried/](docs/tried/README.md)),
 and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards). Diagnosis views: `efsim zmdlogs
 groups|differences|casts|replay|stagger|holds --why`; one command at two
 commits' code, the lines that differ: `node scripts/cli-ab.ts <ref> --
 <efsim args>` (`--holds <fixture>`: which bounds a change moved). A new
 test that should fail before the change: `node scripts/verify-at.ts <base>
---test <file> -t <name>`. A build offset: `efsim zmdlogs
-fit-build <fixture> --operator <op>`, kept as the fixture's `buildOverrides` (first steps in
+--test <file> -t <name>`. A build offset: `efsim zmdlogs offsets --all`
+finds them, `efsim zmdlogs fit-build <fixture> --operator <op>` fits one,
+kept as the fixture's `buildOverrides` (first steps in
 [docs/open-problems.md](docs/open-problems.md)). After a fixture move, `node scripts/snapshot-keys.ts <file> --rename
 <regex> <to>` renames snapshot keys (counts only, no values shown).
 

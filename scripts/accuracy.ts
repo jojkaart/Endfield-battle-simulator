@@ -32,6 +32,11 @@ const SPLIT = "fixtures/holdout/holdout.json";
 /** Where the split was before the hold-out logs got their own directory (2026-11-16): read at older refs. */
 const OLD_SPLIT = "fixtures/pending/holdout.json";
 const TOTALS = "totals";
+/** The totals keys of where the error lives (packages/logs snapshotentry.ts SHARE_KEYS): shown, never a verdict. */
+const SHARES = { matched: "share matched", replayOnly: "share replay-only", logOnly: "share log-only" } as const;
+const isShareKey = (k: string) => k.startsWith("share ");
+/** An entry without the share keys: what `direction` compares. */
+const verdictPart = (e: Entry): Entry => (e[TOTALS] ? { ...e, [TOTALS]: Object.fromEntries(Object.entries(e[TOTALS]).filter(([k]) => !isShareKey(k))) } : e);
 
 /** A log's snapshot entry: per operator its verdict counts, and under "totals" its totals' errors in %. */
 export type Entry = Readonly<Record<string, Readonly<Record<string, number | null>>>>;
@@ -101,10 +106,11 @@ export type Direction = "better" | "worse" | "mixed" | "other" | "same";
 /**
  * A log's direction against its snapshot entry, by the fit measure: more plain matches, fewer mismatches and a smaller
  * |total damage error| are each better. Better: at least one better and none worse; worse: the reverse; mixed: both;
- * other: the entry changed, but none of the three (e.g. assumed matches became fallbacks); same: no change at all.
+ * other: the entry changed, but none of the three (e.g. assumed matches became fallbacks); same: no change at all
+ * (the totals' share keys aside: where the error lives isn't a verdict, and their arrival in round 9 moved nothing).
  */
 export function direction(was: Entry, now: Entry): Direction {
-  if (JSON.stringify(was) === JSON.stringify(now)) return "same";
+  if (JSON.stringify(verdictPart(was)) === JSON.stringify(verdictPart(now))) return "same";
   const a = fitOf(was);
   const b = fitOf(now);
   const moves = [Math.sign(b.plain - a.plain), Math.sign(a.mismatch - b.mismatch)];
@@ -142,7 +148,7 @@ export interface FieldChange {
   readonly operatorsGone: readonly string[];
 }
 
-const totalsKind = (k: string) => (k.startsWith("operator ") ? "operator" : k.startsWith("kind ") ? "kind" : k);
+const totalsKind = (k: string) => (k.startsWith("operator ") ? "operator" : k.startsWith("kind ") ? "kind" : isShareKey(k) ? "share" : k);
 
 export function fieldChange(was: Entry, now: Entry): FieldChange {
   const classes = new Map<string, number>();
@@ -304,6 +310,27 @@ export function groupAggregates(s: Snapshots): Map<Group, Aggregate> {
   return new Map(GROUPS.map((g) => [g, aggregate(logs.filter((l) => l.group === g).map((l) => l.entry))]));
 }
 
+/** A group's totals by where the error lives: the mean shares over its fights that have them, and how many are one-sided. */
+interface SharesAggregate {
+  readonly fights: number;
+  readonly matched: number;
+  readonly replayOnly: number;
+  readonly logOnly: number;
+  /** Fights whose replay-only and log-only shares together outweigh |matched| (measure's "one-sided"). */
+  readonly oneSided: number;
+}
+
+function sharesAggregate(entries: readonly Entry[]): SharesAggregate | null {
+  const xs = entries.flatMap((e) => {
+    const t = e[TOTALS];
+    const [m, r, l] = [t?.[SHARES.matched], t?.[SHARES.replayOnly], t?.[SHARES.logOnly]];
+    return typeof m === "number" && typeof r === "number" && typeof l === "number" ? [{ m, r, l }] : [];
+  });
+  if (!xs.length) return null;
+  const mean = (f: (x: (typeof xs)[number]) => number) => xs.reduce((s, x) => s + f(x), 0) / xs.length;
+  return { fights: xs.length, matched: mean((x) => Math.abs(x.m)), replayOnly: mean((x) => x.r), logOnly: mean((x) => -x.l), oneSided: xs.filter((x) => x.r - x.l > Math.abs(x.m)).length };
+}
+
 const pct = (n: number, of: number) => (of ? `${((100 * n) / of).toFixed(1)}%` : "-");
 const err = (x: number | null) => (x === null ? "-" : `${x.toFixed(1)}%`);
 
@@ -343,6 +370,7 @@ export function render(s: Snapshots): string {
     ...GROUPS.map((g) => row(GROUP_LABEL[g], groups.get(g) as Aggregate)),
     row("All but the hold-outs", all),
     "",
+    ...sharesTable(s),
     "## By operator (every log but the hold-outs)",
     "",
     "| Operator | Fights | Hits | Plain | Mismatch | Mean \\|damage error\\| |",
@@ -351,6 +379,32 @@ export function render(s: Snapshots): string {
     "",
   ];
   return lines.join("\n");
+}
+
+/**
+ * The scoreboard's "where the error lives" table: per group the mean |matched|, replay-only and log-only shares of the
+ * fights' logged totals and the one-sided fights (empty for snapshots from before the share keys).
+ */
+function sharesTable(s: Snapshots): string[] {
+  const logs = [...allLogs(s).values()];
+  const rows = GROUPS.flatMap((g) => {
+    const a = sharesAggregate(logs.filter((l) => l.group === g).map((l) => l.entry));
+    return a ? [`| ${GROUP_LABEL[g]} | ${a.fights} | ${a.matched.toFixed(1)}% | ${a.replayOnly.toFixed(1)}% | ${a.logOnly.toFixed(1)}% | ${a.oneSided} |`] : [];
+  });
+  if (!rows.length) return [];
+  return [
+    "## Where the total's error lives",
+    "",
+    "Each fight's simulated total against its logged one, split (`efsim zmdlogs totals --all`): the landings standing for",
+    "logged hits (|matched|: predicted − logged), the landings no logged hit stands for (replay-only) and the logged hits",
+    "without one (log-only), as means of % of each fight's logged total. One-sided: replay-only and log-only together",
+    "over |matched|, so the error is in what lands, not in its scale.",
+    "",
+    "| Logs | Fights | \\|Matched\\| | Replay-only | Log-only | One-sided |",
+    "|---|---|---|---|---|---|",
+    ...rows,
+    "",
+  ];
 }
 
 /** The comparison against older snapshots: each group's aggregates before → after, and the logs' directions. */

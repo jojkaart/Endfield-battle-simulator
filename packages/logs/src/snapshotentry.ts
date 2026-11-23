@@ -12,10 +12,18 @@ import { totalsShares, type TotalsShares } from "./enginecheck.ts";
 /** The key of a snapshot entry that holds the totals' errors instead of an operator's counts. */
 export const SNAPSHOT_TOTALS_KEY = "totals";
 
+/**
+ * The totals keys that hold where the total's error lives (TotalsShares, % of the logged total, to 0.1): kept in the
+ * snapshots so the scoreboard shows the groups' means, the hold-outs' included, and a merge's diff moves them (fight
+ * totals 2 report point 2: they were measure's alone). Not verdicts: scripts/accuracy.ts `direction` leaves them out.
+ */
+export const SHARE_KEYS = { matched: "share matched", replayOnly: "share replay-only", logOnly: "share log-only" } as const;
+
 export interface SnapshotEntry {
-  /** Per operator its verdict counts, and under SNAPSHOT_TOTALS_KEY the totals' errors in % (engineReport errors). */
+  /** Per operator its verdict counts, and under SNAPSHOT_TOTALS_KEY the totals' errors in % (engineReport errors) and the shares (SHARE_KEYS). */
   readonly entry: Record<string, Record<string, number | null>>;
   readonly counts: ReturnType<typeof verdictCounts>;
+  /** engineReport's errors and, under SHARE_KEYS, where the error lives. */
   readonly totals: ReturnType<typeof engineReport>["errors"];
   /** The totals' error by where it lives (not in the snapshots: measure's aggregates, `zmdlogs totals --all`). */
   readonly shares: TotalsShares;
@@ -32,6 +40,8 @@ export function snapshotEntry(data: GameData, fx: LogFixture, opts: Pick<ReplayO
   const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
   const counts = verdictCounts(fx, verdicts);
   const report = engineReport(data, fx, replay, byHit, verdicts);
-  const totals = report.errors;
-  return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares: totalsShares(fx.hits, report.totals), replay, byHit, verdicts };
+  const shares = totalsShares(fx.hits, report.totals);
+  const r1 = (x: number) => Math.round(x * 10) / 10 + 0; // + 0: no -0 in the snapshots
+  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly) };
+  return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares, replay, byHit, verdicts };
 }

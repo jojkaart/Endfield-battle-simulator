@@ -43,6 +43,18 @@ describe("the fit measure (direction)", () => {
     expect(direction(log(10, 5, 2, 1), log(10, 5, 2, 2))).toBe("other");
     expect(direction(log(10, 5, 2), log(10, 5, 2))).toBe("same");
     expect(direction(log(10, 5, 2), log(10, 5, null))).toBe("worse");
+    // Where the error lives (the totals' share keys) isn't a verdict.
+    const shared = (m: number): Entry => ({ op: counts(10, 5), totals: { damage: 2, "share matched": m, "share replay-only": 1, "share log-only": -1 } });
+    expect(direction(log(10, 5, 2), shared(0.5))).toBe("same");
+    expect(direction(shared(0.5), shared(0.7))).toBe("same");
+  });
+
+  it("shows each group's mean shares of where the total's error lives in the scoreboard, the hold-outs' as a group", () => {
+    const split = { development: new Set(["zmdlogs-d"]), holdout: new Set(["zmdlogs-h"]) };
+    const e = (m: number, r: number, l: number): Entry => ({ op: counts(1, 0), totals: { damage: m + r + l, "share matched": m, "share replay-only": r, "share log-only": l } });
+    const text = render({ verified: {}, pending: { "pending/zmdlogs-d.json": e(-2, 5, -1), "holdout/zmdlogs-h.json": e(1, 0.5, 0) }, split });
+    expect(text).toMatch(/^\| Development \(.*\) \| 1 \| 2\.0% \| 5\.0% \| 1\.0% \| 1 \|$/m);
+    expect(text).toMatch(/^\| Hold-out \(.*\) \| 1 \| 1\.0% \| 0\.5% \| 0\.0% \| 0 \|$/m);
   });
 
   it("counts hold-out logs only by group, and names the others", () => {

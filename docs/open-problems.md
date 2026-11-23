@@ -23,7 +23,11 @@ for each idea (docs/design/tests.md "Measuring a change"). An operator off
 by one factor on most hits: `efsim zmdlogs fit-build <fixture> --operator
 <op>` first (attribute nodes, weapon level, food), so a build offset
 doesn't hide a kit error; its fit goes into the fixture's
-`buildOverrides`.
+`buildOverrides`. Which operators those are, over every development log:
+`efsim zmdlogs offsets --all` (a tight median of logged ÷ primary off by
+3% or more; the log suites fail on one nothing accounts for). A fix tried
+and dropped keeps its diff in [docs/tried/](tried/README.md), named here
+with its measure, so it can be measured again later.
 
 Operators are named here by display name; their ids (an internal name:
 Arcane is `chr_0032_lizhiyan`, Gilberta `chr_0013_aglina`) come from `efsim

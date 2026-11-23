@@ -614,7 +614,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Which bounds and holds a change moved (bounds added, removed, each unit and bound before and after) | `node scripts/cli-ab.ts <ref> --holds <fixture>`; any command at two commits: `node scripts/cli-ab.ts <ref> [--key <re>] -- <efsim args>` |
 | Corrosion's ramp as the hits read it: each hit's fitting step against the replay's, the hidden hold that allows against the one placed | `efsim zmdlogs ramp <fixture> [--verbose]`; `--held`: what held the replay's ramp (each stop's share, placed holds, the rest) |
 | What the data compiler made of a skill's time dilations (slow-down, reset, dropped and why), and the world frames each slow-down holds (Σ(1 − scale); several together) | `efsim kit <operator> --skill <re>` ("time dilations", "holds"); every skill: `efsim gamedata dilations [--dropped]` |
-| The slow-downs the replay's timeline applied against the log tools' stop list | `efsim zmdlogs replay <fixture> --stops` (STOP: as listed, another length, or on one side only) |
+| The slow-downs the replay's timeline applied against the log tools' stop list | `efsim zmdlogs replay <fixture> --stops` (STOP: as listed, another length, or on one side only); over several logs, the differing ones and a count per kind: `efsim zmdlogs stops --all --differ` |
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
 | Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
 | A skill's frames, windows, uncuttable frames, skill group, what each hit inflicts | `efsim kit <operator> [--skill <re>]` |
@@ -627,11 +627,12 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | How a kit buff's expiry moved; which window a refresh replaced | `efsim zmdlogs replay <fixture> --trace-buff owner:id`; `--kit-buff owner:id` ("refreshes the one from") |
 | An enemy status's life in the replay: applications, holds (a moved application), expiry, beside the log's runs | `efsim zmdlogs replay <fixture> --trace-buff status:<status>` (`status:*` every one) |
 | Which landings make a total: matched (predicted vs logged), replay only, log only | `efsim zmdlogs totals <fixture> [--operator <op>] [--by event]`; between two commits with `node scripts/cli-ab.ts <ref> -- zmdlogs totals …` |
-| Every fight's total by where its error lives (matched, replay-only, log-only shares), largest first, and each group's means | `efsim zmdlogs totals --all --workers 3` (development logs); the hold-outs' means only in `npm run measure`'s summary ("Totals by where the error lives") |
+| Every fight's total by where its error lives (matched, replay-only, log-only shares), largest first, and each group's means | `efsim zmdlogs totals --all --workers 3` (development logs); each group's means, the hold-outs' too, in docs/accuracy.md ("Where the total's error lives", from the snapshots' share keys) and `npm run measure`'s summary |
 | Does a kit buff run long or short: each instance's first expiry, its expiry on the replay's own clock (no hidden holds, no log ends), how it ended there and in the check's replay, the log's run and the lateness past the own expiry | `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (default every development log with the owner; `kitBuffClock` in a script). The check's window (`replay --kit-buff`) is already cut or held to the log's end: not the buff's natural end |
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | Which zone or modifier moved at each hit between two commits | `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
+| Which operators are off by one factor all fight, over every log (a missing food, a node, a weapon level) | `efsim zmdlogs offsets --all --workers 3` (a tight median of logged ÷ primary off by 3% or more: `*`, with the fit-build command; the log suites fail on one no buildOverride or OFFSETS_EXPLAINED entry accounts for) |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
 | Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]` |
 | Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
