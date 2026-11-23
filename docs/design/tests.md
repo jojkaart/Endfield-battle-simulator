@@ -89,11 +89,19 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   to `scratch/measure/<time>/` and prints the scoreboard's change and each
   log's direction against the snapshots committed at HEAD. Nothing tracked
   is written; hold-outs only count. `--with <op>` / `--logs <ids>` measure
-  a selection (the rest keep the reference's entries), `--changed
+  a selection (the rest keep the reference's entries; an id part matches
+  an id's start first, as the docs' four-digit ids mean), `--changed
   placement` only the logs whose placed casts differ from the reference
   code's, `--assume <id>=<reading>` an open reading (the kits' or the
   engine's). On a clean tree it ends "The log verdict snapshots would stay
   as they are (byte for byte)".
+- **What kind of field moved** (round 9): a log whose direction is
+  "other" (neither plain, mismatch nor |damage error| moved) says which
+  fields did: the verdict classes' net change ("assumed −2, fallback +2"),
+  the totals keys, operators new or gone. The hold-outs' moves the same
+  way, summed per direction with operator keys as counts, then how many
+  moved hold-outs have each operator (never which log): enough to judge
+  "a reclassification" or "the Endministrator's hold-out" blind.
 - **The code is fixed at queue time** (round 5): a measure that waits
   for the lock runs a snapshot of the working tree as it was when queued
   (scripts/at-commit.ts `snapshotCommit`: a commit made with a temporary
@@ -110,7 +118,10 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   wrote the reference's snapshots (round 7: after a code-only commit,
   HEAD's code is the measured code and "no hit's verdict changed").
   `--changed placement` also names the casts placed only before (-) and
-  only now (+).
+  only now (+). Under `--hits` each moved log's placed hidden holds
+  (`zmdlogs holds`' 0.512 s units: placed, earliest–latest) come too,
+  the units placed elsewhere, new or gone listed: "the holds placed
+  again" in one line instead of a diff of traces (round 9).
 - **Several readings at once:** `--variant <id>=<r>[,<id>=<r>…]`
   (repeatable) measures each on the same snapshot in one run (summaries
   per variant, files under `variant-<n>/`); not chained measures, each

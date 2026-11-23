@@ -32,6 +32,16 @@ export interface MeasureJob {
  * point 1: a scratch hitdiff.py did this).
  */
 export type HitRow = readonly [t: number, operator: string, event: string, verdict: string, ratio: number | null, modifiers?: readonly string[]];
+/**
+ * One 0.512 s unit of the fight's placed hidden holds (BuffReplay.hiddenHolds, `zmdlogs holds`' unit lines): where the
+ * placement puts it and its earliest and latest time (ms). measure --hits compares them, so a worse log that moved
+ * because the holds were placed again says so in one line (stop-lists report point 4).
+ */
+export interface HoldUnit {
+  readonly mid: number;
+  readonly early: number;
+  readonly late: number;
+}
 /** A log's per-hit fit: over every logged hit with a primary reading, how many and the mean |logged ÷ primary − 1|. */
 export interface PerHit {
   readonly n: number;
@@ -43,6 +53,8 @@ export type MeasureAnswer =
       readonly entry: Record<string, Record<string, number | null>>;
       readonly perHit?: PerHit;
       readonly hits?: readonly HitRow[];
+      /** With hits: the placed hidden holds' units (absent where the commit's replay places none). */
+      readonly holds?: readonly HoldUnit[];
       /** The log lists effects but none with `since` and `source` (imported before 2026-11-16): a change resting on the lanes can't move it. */
       readonly untimed?: boolean;
       /** The totals' error by where it lives (TotalsShares; where the commit's code has snapshotEntry's `shares`): measure's aggregates, hold-outs only in them. */
@@ -80,7 +92,7 @@ if (under) {
   for (const [id, r] of Object.entries(under.assume)) if (!known.some((a) => a.id === id && r in a.readings)) throw new Error(`--assume ${id}=${r}: no such reading (${known.map((a) => a.id).join(", ")})`);
 }
 
-function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[]; shares?: Shares } {
+function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[]; holds?: HoldUnit[]; shares?: Shares } {
   // The snapshots' own computation (packages/logs/src/snapshotentry.ts) where the commit has it; before it, its five calls.
   const own = typeof logs.snapshotEntry === "function" ? logs.snapshotEntry(data, fx, under ?? {}) : undefined;
   const replay = own?.replay ?? (under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx));
@@ -105,7 +117,22 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
     const [t, op, event, verdict, ratio] = [v.hit.t, v.hit.operator, v.hit.event, v.kind === "match" ? v.class : v.kind, typeof p === "number" && p > 0 ? v.hit.value / p : null];
     return mods ? [t, op, event, verdict, ratio, mods] : [t, op, event, verdict, ratio];
   });
-  return { entry: { ...counts, totals }, perHit, hits, ...(shares ? { shares } : {}) };
+  const holds = holdUnits(replay.replay?.hiddenHolds);
+  return { entry: { ...counts, totals }, perHit, hits, ...(holds ? { holds } : {}), ...(shares ? { shares } : {}) };
+}
+
+/** The placed holds' units (views.ts holdsView's unit lines: the clocks' earliest, latest and midpoint at each 0.512 s of hold). */
+function holdUnits(h: any): HoldUnit[] | undefined {
+  if (!h || !Array.isArray(h.times) || !h.times.length) return undefined;
+  const reaches = (P: readonly number[], m: number) => {
+    const i = P.findIndex((x) => x >= m - 1e-6);
+    if (i <= 0) return h.times[0] as number;
+    const [t0, t1, p0, p1] = [h.times[i - 1], h.times[i], P[i - 1] as number, P[i] as number];
+    return p1 === p0 ? t1 : t0 + ((m - p0) / (p1 - p0)) * (t1 - t0);
+  };
+  const out: HoldUnit[] = [];
+  for (let m = 256; m < h.total; m += 512) out.push({ mid: reaches(h.mid, m), early: reaches(h.early, m), late: reaches(h.late, m) });
+  return out;
 }
 
 /**

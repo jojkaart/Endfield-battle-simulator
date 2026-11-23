@@ -3,7 +3,7 @@
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs, sharesLines } from "../scripts/measure.ts";
+import { hitChanges, holdChanges, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs, sharesLines } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -18,6 +18,12 @@ describe("measure's log selection", () => {
     expect(() => selectLogs(keys, ["bbb"], holdouts)).toThrow(/2 logs match/);
     expect(() => selectLogs(keys, ["dddd"], holdouts)).toThrow(/no development or verified log/);
     expect(() => selectLogs(keys, ["cccc"], holdouts)).toThrow(/hold-out/);
+  });
+
+  it("matches a part at an id's start first, inside one only where none starts with it", () => {
+    const ks = ["pending/zmdlogs-489c0be3e162.json", "pending/zmdlogs-9c0bb09daff2.json"];
+    expect(selectLogs(ks, ["9c0b", "489c"], new Set())).toEqual(["pending/zmdlogs-9c0bb09daff2.json", "pending/zmdlogs-489c0be3e162.json"]);
+    expect(selectLogs(ks, ["0be3"], new Set())).toEqual(["pending/zmdlogs-489c0be3e162.json"]);
   });
 });
 
@@ -77,6 +83,23 @@ describe("measure --hits", () => {
     expect(summary).toContain("    2.50 s op skill: mismatch ×1.200 → plain ×1.000");
     expect(full).toHaveLength(3);
     expect(hitChanges([], before, after).summary).toEqual(["Hits whose verdict changed (--hits; development logs whose entry moved): none (no development log's entry moved)"]);
+  });
+});
+
+describe("measure --hits: the hidden holds that moved", () => {
+  it("pairs the units by their place in the total and lists those placed elsewhere, new or gone", () => {
+    const u = (mid: number, early = mid - 1000, late = mid + 1000) => ({ mid, early, late });
+    const k = "pending/zmdlogs-a.json";
+    const { summary, full } = holdChanges([k, "pending/zmdlogs-b.json"], new Map([[k, [u(10000), u(45200)]]]), new Map([[k, [u(10020), u(52100), u(60000)]]]));
+    expect(summary).toEqual([
+      "Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s):",
+      `  ${k}: hidden holds 2 → 3 units (1.02 → 1.54 s), 2 placed elsewhere or new or gone`,
+      "    unit 2: 45.20 (44.20–46.20) → 52.10 (51.10–53.10) s",
+      "    unit 3: - → 60.00 (59.00–61.00) s",
+    ]);
+    expect(full).toHaveLength(3);
+    expect(holdChanges([k], new Map([[k, [u(1)]]]), new Map([[k, [u(1)]]])).summary[1]).toMatch(/placed as before$/);
+    expect(holdChanges([k], new Map(), new Map()).summary).toEqual([]);
   });
 });
 

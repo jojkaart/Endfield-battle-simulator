@@ -43,7 +43,9 @@
 //                       reference's snapshots, not a later code-only commit, which would be the measured code
 //                       itself and show no hit changed): a few per change in the summary, every
 //                       one in <out>/hits.txt. Hold-outs never. A log new since the reference (or --base) commit
-//                       is measured there on this tree's copy of the fixture.
+//                       is measured there on this tree's copy of the fixture. Also, per such log, the placed hidden
+//                       holds' units that moved (zmdlogs holds' unit lines: placed, earliest, latest), the commonest
+//                       cause of a small worse log ("the holds placed again")
 //   --live              read the working tree when the run starts (after the queue's wait), not as it was queued
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
@@ -68,7 +70,7 @@ import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
 import { compare, direction, GROUPS, groupOf, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
-import type { HitRow, MeasureAnswer, MeasureJob, NegativeCount, PerHit, Shares } from "./measure-worker.ts";
+import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, Shares } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
@@ -93,12 +95,18 @@ export function logKeys(tree: string): string[] {
 const isHoldout = (key: string) => key.startsWith("holdout/");
 const idOf = (key: string) => (key.split("/").pop() as string).replace(/\.json$/, "");
 
-/** `--logs` values matched to keys: each must name exactly one log, and never a hold-out. */
+/**
+ * `--logs` values matched to keys: each must name exactly one log, and never a hold-out. A part matches the start of
+ * an id first ("9c0b" is 9c0b…, not 489c0be3…: the docs name a log by its first four hex digits, as resolveFixture
+ * does), and only where no id starts with it anywhere inside one; a part inside a hold-out's id still refuses.
+ */
 export function selectLogs(keys: readonly string[], wanted: readonly string[], holdoutIds: ReadonlySet<string>): string[] {
+  const bare = (id: string) => id.replace(/^zmdlogs-/, "");
   return wanted.map((w) => {
     const id = w.replace(/\.json$/, "").split("/").pop() as string;
     if ([...holdoutIds].some((h) => h.includes(id)) || keys.some((k) => isHoldout(k) && idOf(k).includes(id))) throw new Error(`--logs ${w}: names a hold-out log (never measured by name: docs/accuracy-plan.md, "Choosing logs"); give more of the id`);
-    const hits = keys.filter((k) => idOf(k).includes(id));
+    const prefixed = keys.filter((k) => bare(idOf(k)).startsWith(bare(id)) || idOf(k).startsWith(id));
+    const hits = prefixed.length ? prefixed : keys.filter((k) => idOf(k).includes(id));
     if (hits.length !== 1) throw new Error(`--logs ${w}: ${hits.length ? `${hits.length} logs match (${hits.join(", ")})` : "no development or verified log matches"}`);
     return hits[0] as string;
   });
@@ -263,6 +271,7 @@ async function main(argv: string[]): Promise<number> {
   };
   const perHit = new Map<string, Map<string, PerHit>>();
   const hitRows = new Map<string, Map<string, readonly HitRow[]>>();
+  const holdRows = new Map<string, Map<string, readonly HoldUnit[]>>();
   const sharesBy = new Map<string, Map<string, Shares>>();
   // Per tree and readings (`slot`: a --variant's measurements of the same tree apart).
   const measureTree = async (t: string, label: string, which: readonly string[] = order, readings: Readonly<Record<string, string>> = t === tree ? assume : {}, slot = t) => {
@@ -271,6 +280,8 @@ async function main(argv: string[]): Promise<number> {
     perHit.set(slot, fits);
     const rows = hitRows.get(slot) ?? new Map<string, readonly HitRow[]>();
     hitRows.set(slot, rows);
+    const holds = holdRows.get(slot) ?? new Map<string, readonly HoldUnit[]>();
+    holdRows.set(slot, holds);
     const shares = sharesBy.get(slot) ?? new Map<string, Shares>();
     sharesBy.set(slot, shares);
     const start = performance.now();
@@ -289,6 +300,7 @@ async function main(argv: string[]): Promise<number> {
       if (a.untimed) untimed.add(a.key);
       if (a.perHit) fits.set(a.key, a.perHit);
       if (a.hits) rows.set(a.key, a.hits);
+      if (a.holds) holds.set(a.key, a.holds);
       if (a.shares) shares.set(a.key, a.shares);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
     }, readings);
@@ -350,7 +362,8 @@ async function main(argv: string[]): Promise<number> {
     }
     const mixedLines = mixedPerHit(mixed, (refTree && perHit.get(refTree)) || new Map(), perHit.get(`${tree}#${vi}`) ?? new Map());
     const hitLines = values.hits ? hitChanges(moved, (refTree && hitRows.get(refTree)) || new Map(), hitRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
-    if (hitLines?.full.length) writeFileSync(join(dir, "hits.txt"), hitLines.full.join("\n") + "\n");
+    const holdLines = values.hits ? holdChanges(moved, (refTree && holdRows.get(refTree)) || new Map(), holdRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
+    if (hitLines?.full.length || holdLines?.full.length) writeFileSync(join(dir, "hits.txt"), [...(hitLines?.full ?? []), ...(holdLines?.full.length ? ["", "Hidden holds:", ...holdLines.full] : [])].join("\n") + "\n");
 
     writeFileSync(join(dir, VERIFIED), formatSnapshot(after.verified as Entries, true));
     const files = splitPending(after.pending);
@@ -362,6 +375,7 @@ async function main(argv: string[]): Promise<number> {
       ...compare(before, after),
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
+      ...(holdLines?.summary ?? []),
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
@@ -517,6 +531,37 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
     full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`));
   }
   return { summary, full };
+}
+
+/**
+ * measure --hits: per development log whose entry moved, the placed hidden holds' units before and after (paired by
+ * their place in the total: the k-th 0.512 s of hold), those whose placement moved by more than `tolMs`, a few per log
+ * in the summary and every one in hits.txt; units gone or new where the total changed. Logs whose commit places no
+ * holds on either side are left out.
+ */
+export function holdChanges(logs: readonly string[], before: ReadonlyMap<string, readonly HoldUnit[]>, after: ReadonlyMap<string, readonly HoldUnit[]>, examples = 3, tolMs = 50): { summary: string[]; full: string[] } {
+  const s = (ms: number) => (ms / 1000).toFixed(2);
+  const unit = (u: HoldUnit) => `${s(u.mid)} (${s(u.early)}–${s(u.late)})`;
+  const summary: string[] = [];
+  const full: string[] = [];
+  for (const k of logs) {
+    const [a, b] = [before.get(k), after.get(k)];
+    if (!a && !b) continue;
+    if (!a || !b) {
+      summary.push(`  ${k}: hidden holds placed on one side only (${a ? "before" : "now"}: ${(a ?? b ?? []).length} units)`);
+      continue;
+    }
+    const moved: string[] = [];
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      const [x, y] = [a[i], b[i]];
+      if (x && y && Math.abs(x.mid - y.mid) <= tolMs && Math.abs(x.early - y.early) <= tolMs && Math.abs(x.late - y.late) <= tolMs) continue;
+      moved.push(`unit ${i + 1}: ${x ? unit(x) : "-"} → ${y ? unit(y) : "-"} s`);
+    }
+    const head = `  ${k}: hidden holds ${a.length} → ${b.length} units (${s(a.length * 512)} → ${s(b.length * 512)} s), ${moved.length ? `${moved.length} placed elsewhere or new or gone` : "placed as before"}`;
+    summary.push(head, ...moved.slice(0, examples).map((m) => `    ${m}`), ...(moved.length > examples ? [`    … ${moved.length - examples} more (hits.txt)`] : []));
+    if (moved.length) full.push(`${k}:`, ...moved.map((m) => `  ${m}`));
+  }
+  return { summary: summary.length ? ["Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s):", ...summary] : [], full };
 }
 
 /**

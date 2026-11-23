@@ -126,6 +126,80 @@ export function fitChange(was: Entry, now: Entry): string {
   return parts.join(", ");
 }
 
+/**
+ * Which kinds of field of an entry moved (round 8's friction point 1: a hold-out's "other" said that something moved,
+ * not what): the verdict classes summed over the operators (net change per class), the totals keys that moved (by
+ * kind: `damage`, `kind <k>`, `operator <id>`, the rest by name) and operators come or gone. Categories and counts only.
+ */
+export interface FieldChange {
+  /** Net change per verdict class over every operator, non-zero only. */
+  readonly classes: ReadonlyMap<string, number>;
+  /** The operators whose own counts moved (with a net of zero too: hits moved between classes). */
+  readonly operatorsMoved: readonly string[];
+  /** Totals keys whose value moved, grouped by kind ("damage", "kind", "operator", or the key itself). */
+  readonly totals: ReadonlyMap<string, readonly string[]>;
+  readonly operatorsNew: readonly string[];
+  readonly operatorsGone: readonly string[];
+}
+
+const totalsKind = (k: string) => (k.startsWith("operator ") ? "operator" : k.startsWith("kind ") ? "kind" : k);
+
+export function fieldChange(was: Entry, now: Entry): FieldChange {
+  const classes = new Map<string, number>();
+  const ops = new Set([...operators(was), ...operators(now)].map(([op]) => op));
+  const moved: string[] = [];
+  for (const op of ops) {
+    const [a, b] = [was[op] ?? {}, now[op] ?? {}];
+    let any = false;
+    for (const c of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      const d = (b[c] ?? 0) - (a[c] ?? 0);
+      if (d) {
+        classes.set(c, (classes.get(c) ?? 0) + d);
+        any = true;
+      }
+    }
+    if (any && was[op] && now[op]) moved.push(op);
+  }
+  for (const [c, d] of classes) if (!d) classes.delete(c);
+  const totals = new Map<string, string[]>();
+  const [ta, tb] = [was[TOTALS] ?? {}, now[TOTALS] ?? {}];
+  for (const k of new Set([...Object.keys(ta), ...Object.keys(tb)])) if (ta[k] !== tb[k]) totals.set(totalsKind(k), [...(totals.get(totalsKind(k)) ?? []), k]);
+  return {
+    classes,
+    operatorsMoved: moved,
+    totals,
+    operatorsNew: [...ops].filter((op) => op !== TOTALS && !was[op] && now[op]),
+    operatorsGone: [...ops].filter((op) => op !== TOTALS && was[op] && !now[op]),
+  };
+}
+
+/**
+ * A FieldChange in words: "verdict classes assumed −2, fallback +2; totals: damage, kind 2, operator 1". With `blind`
+ * (hold-outs) the totals' operator keys and the operators are counts, never ids.
+ */
+export function formatFieldChange(c: FieldChange, blind = false): string {
+  const signed = (n: number) => (n > 0 ? `+${n}` : `−${-n}`);
+  const parts: string[] = [];
+  if (c.classes.size) parts.push(`verdict classes ${[...c.classes].map(([k, n]) => `${k} ${signed(n)}`).join(", ")}`);
+  else if (c.operatorsMoved.length) parts.push(`verdict counts moved within ${blind ? `${c.operatorsMoved.length} operator(s)` : c.operatorsMoved.join(", ")} (net zero per class)`);
+  if (c.totals.size) parts.push(`totals ${[...c.totals].map(([kind, keys]) => (kind === "operator" && blind ? `operator keys ${keys.length}` : keys.length > 1 && kind !== "operator" && kind !== "kind" ? `${kind} ×${keys.length}` : keys.join(", "))).join(", ")}`);
+  if (c.operatorsNew.length) parts.push(`operators new ${blind ? c.operatorsNew.length : c.operatorsNew.join(", ")}`);
+  if (c.operatorsGone.length) parts.push(`operators gone ${blind ? c.operatorsGone.length : c.operatorsGone.join(", ")}`);
+  return parts.join("; ");
+}
+
+/** FieldChanges summed over several entries (the moved hold-outs): classes added, totals keys counted by kind. */
+export function sumFieldChanges(cs: readonly FieldChange[]): FieldChange {
+  const classes = new Map<string, number>();
+  const totals = new Map<string, string[]>();
+  for (const c of cs) {
+    for (const [k, n] of c.classes) classes.set(k, (classes.get(k) ?? 0) + n);
+    for (const [kind, keys] of c.totals) totals.set(kind, [...(totals.get(kind) ?? []), ...keys]);
+  }
+  for (const [k, n] of classes) if (!n) classes.delete(k);
+  return { classes, totals, operatorsMoved: cs.flatMap((c) => c.operatorsMoved), operatorsNew: cs.flatMap((c) => c.operatorsNew), operatorsGone: cs.flatMap((c) => c.operatorsGone) };
+}
+
 export interface Aggregate {
   readonly logs: number;
   readonly hits: number;
@@ -307,6 +381,9 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
   for (const g of GROUPS) {
     const counts: Record<Direction | "new" | "gone", number> = { better: 0, worse: 0, mixed: 0, other: 0, same: 0, new: 0, gone: 0 };
     const named: string[] = [];
+    // Hold-outs: what kind of field moved, per direction, and which operators the moved ones have (counts, no log).
+    const blind = new Map<Direction, FieldChange[]>();
+    const byOperator = new Map<string, Map<Direction, number>>();
     for (const [k, l] of b) {
       if (l.group !== g) continue;
       const was = a.get(k);
@@ -316,17 +393,33 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
       }
       const d = direction(was.entry, l.entry);
       counts[d]++;
-      if (g !== "holdout" && d !== "same") named.push(`  ${d}: ${k} (${fitChange(was.entry, l.entry) || "other counts"})`);
+      if (d === "same") continue;
+      if (g !== "holdout") named.push(`  ${d}: ${k} (${(d === "other" ? formatFieldChange(fieldChange(was.entry, l.entry)) : fitChange(was.entry, l.entry)) || "other counts"})`);
+      else {
+        blind.set(d, [...(blind.get(d) ?? []), fieldChange(was.entry, l.entry)]);
+        for (const [op] of operators(l.entry)) {
+          const m = byOperator.get(op) ?? new Map<Direction, number>();
+          m.set(d, (m.get(d) ?? 0) + 1);
+          byOperator.set(op, m);
+        }
+      }
     }
     for (const [k, l] of a) if (!b.has(k) && l.group === g) counts.gone++;
     const moved = counts.better + counts.worse + counts.mixed + counts.other + counts.new + counts.gone;
     if (!moved) continue;
     out.push(`${GROUP_LABEL[g]}: ${counts.better} better, ${counts.worse} worse, ${counts.mixed} mixed, ${counts.other} other, ${counts.same} unchanged${counts.new ? `, ${counts.new} new` : ""}${counts.gone ? `, ${counts.gone} gone` : ""}`);
     out.push(...named);
+    for (const [d, cs] of blind) out.push(`  ${d} (${cs.length}, summed, counts only): ${formatFieldChange(sumFieldChanges(cs), true) || "other counts"}`);
+    if (byOperator.size) {
+      const sorted = [...byOperator].sort((x, y) => sumOf(y[1]) - sumOf(x[1]) || x[0].localeCompare(y[0]));
+      out.push(`  moved hold-outs by operator (how many have each; never which log): ${sorted.map(([op, m]) => `${op} ${sumOf(m)} (${[...m].map(([d, n]) => `${n} ${d}`).join(", ")})`).join("; ")}`);
+    }
   }
   if (!out.length) out.push("No log's verdicts moved.");
   return out;
 }
+
+const sumOf = (m: ReadonlyMap<string, number>) => [...m.values()].reduce((s, n) => s + n, 0);
 
 /** The snapshots as committed at a git ref. */
 export function snapshotsAt(ref: string): Snapshots {
