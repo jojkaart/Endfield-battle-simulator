@@ -11,6 +11,7 @@ export * from "./zmdraw.ts";
 export * from "./logcasts.ts";
 export * from "./logeffects.ts";
 export * from "./hitvalues.ts";
+export * from "./holds.ts";
 export * from "./buffreplay.ts";
 export * from "./recordedburst.ts";
 export * from "./reactioncheck.ts";

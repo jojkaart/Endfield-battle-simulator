@@ -21,7 +21,7 @@ import { engineReading } from "./assumptions.ts";
  * everything after the slow-down's start by the lost frames: exact for a
  * stop, and for a partial slow-down after it ends.
  */
-export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: Pick<SkillTiming, "specification" | "slowdowns">, frame: number): TimelineState {
+export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
   for (const d of timing.slowdowns) {
@@ -59,14 +59,15 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 }
 
 /**
- * The world held `frames` frames from `frame` by nothing a cast places: a full stop that exempts no one (the world's
- * clock and every operator's lose the frames, pinned landings stay, cooldowns run on), as slowDown makes it. The log
- * check's replay places the fight's hidden holds with it (engine assumption hidden-holds, reading `placed`:
- * packages/logs holds.ts); a simulation places its dodges itself (advance.ts enemyAct).
+ * The world's clock held `frames` frames from `frame` by nothing a cast places (shiftWorld: the enemy's timers, every
+ * buff, combo windows, energy blocks); the operators' clocks, cooldowns and SP run on. The log check's replay places
+ * the fight's hidden holds with it (engine assumption hidden-holds, reading `placed`: packages/logs holds.ts), where
+ * the operators' timing is the log's own: holding their clocks too moved kit-timed landings off the log's (2026-11-23:
+ * btl_upload_bdf223db8e49 lost Typhoeus's Nature burst at 13.14 s to one frame of hold at 12.27 s; the scoreboard's
+ * verified mean |damage error| 1.9 → 3.2%, world only 1.9%). A simulation places its dodges itself (advance.ts enemyAct).
  */
-export function holdWorld(ctx: TimelineContext, st: TimelineState, frame: number, frames: number): TimelineState {
-  if (frames <= 0) return st;
-  return slowDown(ctx, st, "", { specification: 0, slowdowns: [{ from: 0, scales: new Array<number>(frames).fill(0) }] }, frame);
+export function holdWorld(st: TimelineState, frame: number, frames: number): TimelineState {
+  return shiftWorld(st, frame, frames);
 }
 
 /**

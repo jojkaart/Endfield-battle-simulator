@@ -14,6 +14,7 @@ import {
   instancesView,
   lanesView,
   worldTimeView,
+  holdsView,
   parseSelector,
   checkReactions,
   castsReport,
@@ -157,6 +158,9 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
   efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the placed
                                           casts' time stops, and the stops between (operator, skill, frames, lowest
                                           scale)
+  efsim zmdlogs holds <fixture>           The fight's hidden holds the replay places (hidden-holds placed): the
+                                          least total, each 0.512 s unit with its earliest and latest time and the
+                                          clocks spanning it, the bounds dropped; --verbose every bound
   efsim zmdlogs control <fixture>         Who the log shows controlled when (a basic hit with Stagger is the
                                           controlled operator's: controlledFromLog) and every cast, logged or
                                           inferred from hits, with who was controlled at its start; --operator
@@ -230,6 +234,10 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       const [from, to] = [Number(args[2]), Number(args[3])];
       if (args.length !== 4 || !arg || !Number.isFinite(from) || !Number.isFinite(to)) throw new Error("zmdlogs worldtime takes one fixture and two times in seconds: <fixture> <from s> <to s>");
       return worldTimeView(data(), readDevFixture(arg), from * 1000, to * 1000);
+    }
+    if (sub === "holds") {
+      if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14)");
+      return holdsView(data(), readDevFixture(arg), { verbose: values.verbose });
     }
     if (sub === "instances" || sub === "control" || sub === "lanes") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture (a path or an id such as 0c14)`);

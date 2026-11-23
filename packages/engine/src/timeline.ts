@@ -32,7 +32,7 @@ export type { ReplayCastOptions, TimelineResult, RunSpread } from "./timeline/dr
 // (what a skill costs, the team's SP at a frame, an operator's energy cap, combo windows, Stagger, a kit skill), so
 // none of them imports timeline/* internals. Planning code should import these from here (architecture review item 12).
 export { kitSkill, skillCosts, maxPoise } from "./timeline/context.ts";
-export { spAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
+export { spAt, spCostAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
 export { windowKey, windowOpen, needsWindow } from "./timeline/timing.ts";
 export { nextChangeAfter } from "./timeline/wake.ts";
 
