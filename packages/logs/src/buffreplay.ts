@@ -17,7 +17,7 @@ import {
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
-import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { HOLD_BOUND_TOL_MS, placeHolds, RUN_START_MS, statusBounds, statusLanes, tickBounds, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /**
@@ -988,6 +988,22 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => fx.hits.some((x) => x.operator === lc.operator && x.event === e)));
     return { ...base, fate: shownElsewhere ? "press" : "cast" };
   });
+}
+
+/**
+ * The time stops of casts the replay makes (a slot press only when made as a variant, `as`), each with whether the
+ * placement has the cast from its hits (`placed`: false for one from its cast event or inferred, such as an ultimate
+ * placed at its logged stop's end: db8711232de9's Laevatain at 16.60 s, which castTimeStops of the placed casts lacks).
+ */
+export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]): (TimeStop & { readonly placed: boolean })[] {
+  return withResets(
+    casts.flatMap((c) => {
+      if (c.slot && c.as === undefined) return [];
+      const skillId = c.as ?? c.skillId;
+      const { stops, resets } = skillStops(data, skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId, kind: c.kind });
+      return [{ stops: stops.map((s) => ({ ...s, placed: c.landings.length > 0 })), resets }];
+    }),
+  );
 }
 
 /**
@@ -2125,7 +2141,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   let main = kits.length > 0 ? run("never") : null;
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
-    const stops = castTimeStops(data, placement.casts);
+    // On the replay's own casts' stops (replayedCastStops): the placed casts' miss an ultimate placed from its cast event.
+    const stops = replayedCastStops(data, assembled);
     const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE);
     placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),
