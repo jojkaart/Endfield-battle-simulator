@@ -94,7 +94,7 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
     return typeof p === "number" && p > 0 ? [Math.abs(h.value / p - 1)] : [];
   });
   const perHit = { n: errors.length, meanAbs: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : 0 };
-  const shares: Shares | undefined = own?.shares ? { error: own.shares.error, matched: own.shares.matched, replayOnly: own.shares.replayOnly, logOnly: own.shares.logOnly } : undefined;
+  const shares = sharesOf(fx, own, replay, byHit, verdicts);
   if (!withHits) return { entry: { ...counts, totals }, perHit, ...(shares ? { shares } : {}) };
   // The primary reading's modifiers at each landing, where the commit's code has the calls (round 3 on).
   const modsOf = modifiersAt(fx, replay);
@@ -106,6 +106,30 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
     return mods ? [t, op, event, verdict, ratio, mods] : [t, op, event, verdict, ratio];
   });
   return { entry: { ...counts, totals }, perHit, hits, ...(shares ? { shares } : {}) };
+}
+
+/**
+ * A fight's Shares: snapshotEntry's where the commit has them, else from its engine report's parts (fightTotals'
+ * TotalPart, 2026-11-23 on; the same sums as enginecheck.ts totalsShares), so a --base before them has a side too.
+ */
+function sharesOf(fx: any, own: any, replay: any, byHit: any, verdicts: any): Shares | undefined {
+  const pick = (x: any): Shares => ({ error: x.error, matched: x.matched, replayOnly: x.replayOnly, logOnly: x.logOnly });
+  if (own?.shares) return pick(own.shares);
+  const t = logs.engineReport(data, fx, replay, byHit, verdicts).totals;
+  if (!t?.parts) return undefined;
+  const L = t.logged.damage as number;
+  let matched = 0;
+  let replayOnly = 0;
+  const counted = new Set<any>();
+  for (const p of t.parts as any[]) {
+    if (p.logged) {
+      matched += p.damage - (counted.has(p.logged) ? 0 : p.logged.value);
+      counted.add(p.logged);
+    } else replayOnly += p.damage;
+  }
+  const logOnly = -(fx.hits as any[]).filter((h) => !counted.has(h)).reduce((a, h) => a + h.value, 0);
+  const pct = (x: number) => (L === 0 ? 0 : (100 * x) / L);
+  return pick({ error: pct(t.simulated.damage - L), matched: pct(matched), replayOnly: pct(replayOnly), logOnly: pct(logOnly) });
 }
 
 /** A hit's primary reading's modifiers (HitRow), or null where the tree's code lacks the calls or the hit has no landing. */

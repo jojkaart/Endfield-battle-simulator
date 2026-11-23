@@ -606,11 +606,76 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     const starts = new Map<string, number[]>();
     for (const p of new Set([...first.values()].map((x) => x.cast))) starts.set(p.group, [...(starts.get(p.group) ?? []), p.start]);
     const placed = pass(starts);
+    realignUltimates(placed, (c, key) => {
+      const g = groups.find((x) => x.id === c.group);
+      return g && exactSlots(g, key) ? slots(g, key) : null;
+    }, others);
     for (const [h, p] of placed) hits.set(h, p);
     casts.push(...new Set([...placed.values()].map((p) => p.cast)));
   }
   return { hits, casts };
 }
+
+/**
+ * An ultimate's landings of a key fewer than its slots: the landings take the slots their world time from the first
+ * landing fits best (in order, the first keeping its slot), not the first ones in turn. An ultimate isn't cut, so a
+ * landing the log lacks may be any of them (3f78ceb15bc3: Rossi's at 18.98 s, 26 of her 27 landings logged, a stab
+ * missing: her two slashes, ×10–30 a stab, took the last stab's and slash 1's slots, 9 and 11 frames off their own).
+ * Applied only when it fits better than the turn order by REALIGN_MS in all; `slotsOf` gives a cast's key's slots when
+ * all are known (exactSlots), else null.
+ */
+function realignUltimates(placed: Map<LogHit, PlacedHit>, slotsOf: (c: LoggedCast, key: string) => readonly Slot[] | null, stops: readonly TimeStop[]): void {
+  const byCast = new Map<string, { cast: LoggedCast; key: string; hits: LogHit[] }>();
+  for (const [h, p] of placed) {
+    if (p.cast.kind !== "ultimate" || p.sameAs) continue;
+    const k = `${p.cast.group}|${p.cast.start}|${h.event}`;
+    const e = byCast.get(k) ?? { cast: p.cast, key: h.event, hits: [] };
+    e.hits.push(h);
+    byCast.set(k, e);
+  }
+  for (const { cast, key, hits } of byCast.values()) {
+    const s = slotsOf(cast, key);
+    if (!s || hits.length < 2 || hits.length >= s.length) continue;
+    const list = [...hits].sort((a, b) => a.t - b.t);
+    const j0 = (placed.get(list[0] as LogHit) as PlacedHit).index;
+    if (list.length > s.length - j0) continue;
+    const base = (s[j0] as Slot).frame;
+    const w = list.map((h) => worldMs((list[0] as LogHit).t, h.t, stops));
+    const cost = (i: number, j: number) => Math.abs((w[i] as number) - msOf((s[j] as Slot).frame - base));
+    // best[i][j]: the least cost of landings 1..i with landing i at slot j (slots after j0, in order).
+    const n = list.length;
+    const best: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(Infinity));
+    const from: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(-1));
+    (best[0] as number[])[j0] = 0;
+    for (let i = 1; i < n; i++) {
+      for (let j = j0 + i; j <= s.length - (n - i); j++) {
+        for (let k = j0 + i - 1; k < j; k++) {
+          const c = (best[i - 1] as number[])[k] as number;
+          // Ties keep the earlier slot (the turn order's).
+          if (c + cost(i, j) < ((best[i] as number[])[j] as number) - 1e-9) {
+            (best[i] as number[])[j] = c + cost(i, j);
+            (from[i] as number[])[j] = k;
+          }
+        }
+      }
+    }
+    const last = best[n - 1] as number[];
+    let jEnd = -1;
+    for (let j = 0; j < s.length; j++) if (Number.isFinite(last[j] as number) && (jEnd < 0 || (last[j] as number) < (last[jEnd] as number) - 1e-9)) jEnd = j;
+    const turn = list.reduce((a, _h, i) => a + (i === 0 ? 0 : cost(i, j0 + i)), 0);
+    if (jEnd < 0 || (last[jEnd] as number) > turn - REALIGN_MS) continue;
+    const at: number[] = new Array<number>(n);
+    for (let i = n - 1, j = jEnd; i >= 0; j = (from[i] as number[])[j] as number, i--) at[i] = j;
+    list.forEach((h, i) => {
+      const p = placed.get(h) as PlacedHit;
+      const slot = s[at[i] as number] as Slot;
+      placed.set(h, { ...p, index: at[i] as number, hits: slot.hits, frame: slot.frame });
+    });
+  }
+}
+
+/** How much better (ms, summed over the landings) a realigned ultimate's slots must fit than the turn order (realignUltimates). */
+const REALIGN_MS = 150;
 
 /**
  * The cast of the same skill, placed from another key, that a key's first logged landing belongs to: the latest that

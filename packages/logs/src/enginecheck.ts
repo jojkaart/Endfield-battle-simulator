@@ -685,7 +685,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     }
     // A fight that ends in a kill has no HP left for a landing no logged hit stands for at the killing blow's frame or
     // after it (4360447193ac: Avywenna's four returning lances at the kill's 119.20 s, 0.29M, 6.5% of the fight).
-    if (kill !== null && !m && !capped && l.frame >= killFrame) continue;
+    if (kill !== null && !m && !capped && !fixedHit.has(l) && l.frame >= killFrame) continue;
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined || killing.has(m.hit) ? m.hit.value : Infinity);
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
