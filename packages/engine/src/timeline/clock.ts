@@ -21,7 +21,7 @@ import { engineReading } from "./assumptions.ts";
  * everything after the slow-down's start by the lost frames: exact for a
  * stop, and for a partial slow-down after it ends.
  */
-export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
+export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: Pick<SkillTiming, "specification" | "slowdowns">, frame: number): TimelineState {
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
   for (const d of timing.slowdowns) {
@@ -56,6 +56,17 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);
+}
+
+/**
+ * The world held `frames` frames from `frame` by nothing a cast places: a full stop that exempts no one (the world's
+ * clock and every operator's lose the frames, pinned landings stay, cooldowns run on), as slowDown makes it. The log
+ * check's replay places the fight's hidden holds with it (engine assumption hidden-holds, reading `placed`:
+ * packages/logs holds.ts); a simulation places its dodges itself (advance.ts enemyAct).
+ */
+export function holdWorld(ctx: TimelineContext, st: TimelineState, frame: number, frames: number): TimelineState {
+  if (frames <= 0) return st;
+  return slowDown(ctx, st, "", { specification: 0, slowdowns: [{ from: 0, scales: new Array<number>(frames).fill(0) }] }, frame);
 }
 
 /**

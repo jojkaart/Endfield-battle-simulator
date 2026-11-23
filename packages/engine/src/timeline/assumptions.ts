@@ -86,6 +86,8 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       log: "a buff the log lists past the replay's expiry (a single run from its application, not refreshed, no hit of a holder past the expiry without it) runs on to its last listed hit, up to 40% of its life (HIDDEN_HOLD_SHARE); measured against none 2026-11-22: all but the hold-outs plain 55.7 → 57.5%, mean |damage error| 8.3 → 8.1%; the hold-outs unchanged",
       none: "the replay's own expiry: holds only by the casts it places (the replay until 2026-11-22)",
+      placed: "the fight's hidden holds placed once from every clock the log shows (its buffs' runs against the replay's expiries, the enemy's tick series; none while Staggered: packages/logs holds.ts) and held as world stops for every timer (timeline/clock.ts holdWorld), then `log` on top",
+      holds: "the placed holds alone, without `log` (for measuring what the holds do)",
     },
   },
   {
