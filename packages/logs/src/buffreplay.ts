@@ -326,7 +326,11 @@ export interface BuffTrace {
   /** The step's frame and what it was (a cast, the log's Stagger steps, or time passing to a sample). */
   readonly frame: number;
   readonly step: string;
-  /** Its expiry before and after the step (null: it didn't exist / is gone). */
+  /**
+   * Its expiry before and after the step (null: it didn't exist / is gone). The state is sampled after each step, so a
+   * buff that ran out between two steps shows gone at the later step's frame with `from` its expiry (`from <= frame`):
+   * it ran out then, the step didn't cut it (round 6: `zmdlogs clock` first read such an end as a cut).
+   */
   readonly from: number | null;
   readonly to: number | null;
 }

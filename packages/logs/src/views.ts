@@ -49,10 +49,24 @@ const render = (lines: Line[]) =>
     .map((l) => `${s(l.t).padStart(7)}  ${l.text}`)
     .join("\n");
 
+/** More logged hits than this at one ms: the log batched their timestamps (docs/design/data.md "Timestamps are batched"). */
+const BATCH_HITS = 3;
+
+/** A mark after a logged hit's time when more than BATCH_HITS hits share its ms (a residual there isn't timing evidence). */
+function batchMark(fx: LogFixture): (t: number) => string {
+  const at = new Map<number, number>();
+  for (const h of fx.hits) at.set(h.t, (at.get(h.t) ?? 0) + 1);
+  return (t) => {
+    const n = at.get(t) ?? 0;
+    return n > BATCH_HITS ? ` [batched: ${n} hits at this ms]` : "";
+  };
+}
+
 /** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
 export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): string {
   const placement = placeHits(data, fx);
   const lines: Line[] = [];
+  const batched = batchMark(fx);
   for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ t: c.t, order: 0, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
   for (const c of distinctCasts(placement)) {
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
@@ -74,7 +88,11 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): s
     }
     const p = placement.hits.get(h);
     const where = p ? `${shortSkill(p.cast.group)}@${s(p.cast.start)} #${p.index}${p.frame !== undefined ? ` frame ${p.frame}` : ""}${p.sameAs ? " (same landing as another enemy's)" : ""}` : parseReactionEvent(h.event) ? "a status event" : "unplaced";
-    lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}` });
+    // Whose skill the log credits the hit's Stagger to (LogHit.poise.origin), where that isn't the hit's own key or cast:
+    // a projectile's or an entity's skill (Si's bursts by the stroke or Inksoul behind them).
+    const origin = h.poise?.origin;
+    const credited = origin !== undefined && origin !== h.event && !h.event.startsWith(origin) && origin !== p?.cast.skillId ? ` (origin ${shortSkill(origin)})` : "";
+    lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}` });
   }
   return [`${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)`, render(lines)].join("\n");
 }
@@ -101,11 +119,12 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const { replay } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(f.trace?.length ? { trace: f.trace } : {}) });
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
+  const batched = batchMark(fx);
   for (const l of replay.hits) {
     const t = msOf(l.frame);
     if (!inWindow(f, t) || !mine(f, l.operator)) continue;
     const h = byLanding.get(l);
-    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}` : "replay only";
+    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}` : "replay only";
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
   }
   for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
@@ -137,7 +156,9 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     if (!inWindow(f, t)) continue;
     const exp = (v: number | null) => (v === null ? "none" : v === Infinity ? "never" : `${s(msOf(v))} s`);
     const moved = x.from !== null && x.to !== null ? ` (${x.to - x.from > 0 ? "+" : ""}${x.to - x.from} frames)` : "";
-    lines.push({ t, order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: expiry ${exp(x.from)} → ${exp(x.to)}${moved} at ${x.step}` });
+    // Gone with its expiry already past: it ran out between steps (BuffTrace.to), not cut by this one.
+    if (x.to === null && x.from !== null && x.from <= x.frame) lines.push({ t: msOf(x.from), order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: ran out at its expiry ${exp(x.from)} (seen gone at ${x.step}, ${s(t)} s)` });
+    else lines.push({ t, order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: expiry ${exp(x.from)} → ${exp(x.to)}${moved} at ${x.step}` });
   }
   for (const w of replay.staggerSpans) {
     const [a, z] = [msOf(w.start), msOf(w.end)];
