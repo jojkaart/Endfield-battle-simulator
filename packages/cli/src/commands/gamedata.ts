@@ -15,12 +15,10 @@ function dilationsView(data: GameData, re: RegExp | undefined, dropped: boolean)
     // The compiled slow-downs (SkillTiming.slowdowns) and the world frames each holds (heldFrames), by their frame.
     const slowdowns = data.skills[id]?.timing?.slowdowns ?? [];
     const held = heldFrames(slowdowns);
-    // The nth slow-down compiled at a frame is the nth "slow-down" dilation there (Rossi's combo_3 has two at frame 0).
-    const taken = new Set<number>();
-    const holds = (frame: number) => {
-      const i = slowdowns.findIndex((x, k) => x.from === frame && !taken.has(k));
+    // A dilation's compiled slow-down is the one carrying its index (SkillTiming.slowdowns' `n`: Rossi's combo_3 has two at frame 0).
+    const holds = (n: number) => {
+      const i = slowdowns.findIndex((x) => x.n === n);
       if (i < 0) return "";
-      taken.add(i);
       return ` (${slowdowns[i]?.scales.length} frames, lowest ×${Number(Math.min(...(slowdowns[i]?.scales ?? [1])).toPrecision(2))}, holds ${(held.each[i] as number).toFixed(1)} frames)`;
     };
     let shown = 0;
@@ -28,7 +26,7 @@ function dilationsView(data: GameData, re: RegExp | undefined, dropped: boolean)
       if (d.compiled.startsWith("dropped")) why.set(d.compiled, (why.get(d.compiled) ?? 0) + 1);
       if (dropped && !d.compiled.startsWith("dropped")) continue;
       shown++;
-      lines.push(`${id} frame ${d.frame}: ${d.type}${d.layer !== null ? ` layer ${d.layer}` : ""}${d.curve ? ` (${d.curve})` : ""}${d.priority !== null ? ` priority ${d.priority}` : ""}: ${d.compiled}${d.compiled === "slow-down" ? holds(d.frame) : ""}`);
+      lines.push(`${id} frame ${d.frame}: ${d.type}${d.layer !== null ? ` layer ${d.layer}` : ""}${d.curve ? ` (${d.curve})` : ""}${d.priority !== null ? ` priority ${d.priority}` : ""}: ${d.compiled}${d.compiled === "slow-down" ? holds(d.n) : ""}`);
     }
     if (shown && !dropped && slowdowns.length > 1) lines.push(`${id}: its ${slowdowns.length} slow-downs hold ${held.together.toFixed(1)} frames together at the lowest scale (each alone ${held.each.map((x) => x.toFixed(1)).join(" + ")}; a path's ends and jumps can leave some out: pathSlowdowns)`);
   }

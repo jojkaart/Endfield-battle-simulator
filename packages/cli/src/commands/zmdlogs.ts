@@ -29,6 +29,7 @@ import {
   groupsCliReport,
   hitsReport,
   importBattle,
+  offsetsReport,
   operatorNamed,
   rawDetail,
   rawDir,
@@ -37,6 +38,7 @@ import {
   replayReport,
   scalesReport,
   staggerReport,
+  stopsView,
   timingReport,
   totalsAllReport,
   totalsView,
@@ -112,6 +114,13 @@ export default command({
                                           operator's clean hits (log and replay agree) within ±1; the evidence for a
                                           fixture's buildOverrides
                 [--top n] [--no-foods]    Candidates shown (default 8); without trying foods
+  efsim zmdlogs offsets <fixture…|--all>  The build-offset screen: per log and operator, the median of logged ÷ the
+                                          primary reading over non-crit kit hits and the share within 1% of it; a
+                                          tight median off by 3% or more (*) is one factor all fight (a food, a node,
+                                          a weapon level): fit-build's next candidate (tests/slow/ fails on one
+                                          nothing accounts for). From scratch/hits-cache/ as hits
+                [--operator <op>] [--top n] [--workers n] [--no-cache]  Only these operators; rows (default 25, 0
+                                          every one)
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim zmdlogs casts <fixture>           The placement in time order: each logged hit with the cast, slot and
@@ -133,6 +142,10 @@ export default command({
                                           engine's
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
+  efsim zmdlogs stops <fixture…|--all>    replay --stops' STOP lines over several logs (default: every verified and
+                                          pending development log with --all), then a count per kind (as listed,
+                                          covered, length, timeline only, list only) and how many logs have each
+                [--differ] [--operator <op>]  Only the lines that differ (not as listed, not covered); these operators
   efsim zmdlogs totals <fixture>          The simulated total's parts per operator: the landings standing for
                                           logged hits (predicted vs logged), the replay-only landings (largest
                                           first) and the logged hits without a counted landing: which side moved a
@@ -261,6 +274,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     stops: { type: "boolean", default: false },
     zones: { type: "boolean", default: false },
     by: { type: "string" },
+    differ: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -375,11 +389,19 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       return totalsView(data(), readDevFixture(arg), { operators, ...top, assume: parseAssume(data(), values.assume), byEvent: values.by === "event" });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
+    if (sub === "stops") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs stops takes fixtures (ids such as 0c14) or --all (every verified and pending development log; --differ, --operator op)");
+      if (named.length && values.all) throw new Error("zmdlogs stops: fixtures or --all, not both");
+      const logs = devFixtures(named.length ? { ids: named } : {});
+      return stopsView(data(), logs, { differ: values.differ, operators, progress });
+    }
     if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, cache: !values["no-cache"], progress });
     if (sub === "groups") {
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
       return groupsCliReport(data, values.operator[0] as string, selection, { workers: values.workers, verbose: values.verbose, cache: !values["no-cache"], progress });
     }
+    if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], progress });
     if (sub === "fit-build") {
       if (args.length !== 2 || !arg || values.operator.length !== 1) throw new Error("zmdlogs fit-build takes one fixture file and one --operator <op> (--top n, --no-foods)");
       return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"] });

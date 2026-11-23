@@ -32,6 +32,11 @@ const SPLIT = "fixtures/holdout/holdout.json";
 /** Where the split was before the hold-out logs got their own directory (2026-11-16): read at older refs. */
 const OLD_SPLIT = "fixtures/pending/holdout.json";
 const TOTALS = "totals";
+/** The totals keys of where the error lives (packages/logs snapshotentry.ts SHARE_KEYS): shown, never a verdict. */
+const SHARES = { matched: "share matched", replayOnly: "share replay-only", logOnly: "share log-only" } as const;
+const isShareKey = (k: string) => k.startsWith("share ");
+/** An entry without the share keys: what `direction` compares. */
+const verdictPart = (e: Entry): Entry => (e[TOTALS] ? { ...e, [TOTALS]: Object.fromEntries(Object.entries(e[TOTALS]).filter(([k]) => !isShareKey(k))) } : e);
 
 /** A log's snapshot entry: per operator its verdict counts, and under "totals" its totals' errors in %. */
 export type Entry = Readonly<Record<string, Readonly<Record<string, number | null>>>>;
@@ -101,10 +106,11 @@ export type Direction = "better" | "worse" | "mixed" | "other" | "same";
 /**
  * A log's direction against its snapshot entry, by the fit measure: more plain matches, fewer mismatches and a smaller
  * |total damage error| are each better. Better: at least one better and none worse; worse: the reverse; mixed: both;
- * other: the entry changed, but none of the three (e.g. assumed matches became fallbacks); same: no change at all.
+ * other: the entry changed, but none of the three (e.g. assumed matches became fallbacks); same: no change at all
+ * (the totals' share keys aside: where the error lives isn't a verdict, and their arrival in round 9 moved nothing).
  */
 export function direction(was: Entry, now: Entry): Direction {
-  if (JSON.stringify(was) === JSON.stringify(now)) return "same";
+  if (JSON.stringify(verdictPart(was)) === JSON.stringify(verdictPart(now))) return "same";
   const a = fitOf(was);
   const b = fitOf(now);
   const moves = [Math.sign(b.plain - a.plain), Math.sign(a.mismatch - b.mismatch)];
@@ -124,6 +130,80 @@ export function fitChange(was: Entry, now: Entry): string {
   if (a.mismatch !== b.mismatch) parts.push(`mismatch ${a.mismatch} → ${b.mismatch}`);
   if (a.damage !== b.damage) parts.push(`damage ${a.damage ?? "-"} → ${b.damage ?? "-"}%`);
   return parts.join(", ");
+}
+
+/**
+ * Which kinds of field of an entry moved (round 8's friction point 1: a hold-out's "other" said that something moved,
+ * not what): the verdict classes summed over the operators (net change per class), the totals keys that moved (by
+ * kind: `damage`, `kind <k>`, `operator <id>`, the rest by name) and operators come or gone. Categories and counts only.
+ */
+export interface FieldChange {
+  /** Net change per verdict class over every operator, non-zero only. */
+  readonly classes: ReadonlyMap<string, number>;
+  /** The operators whose own counts moved (with a net of zero too: hits moved between classes). */
+  readonly operatorsMoved: readonly string[];
+  /** Totals keys whose value moved, grouped by kind ("damage", "kind", "operator", or the key itself). */
+  readonly totals: ReadonlyMap<string, readonly string[]>;
+  readonly operatorsNew: readonly string[];
+  readonly operatorsGone: readonly string[];
+}
+
+const totalsKind = (k: string) => (k.startsWith("operator ") ? "operator" : k.startsWith("kind ") ? "kind" : isShareKey(k) ? "share" : k);
+
+export function fieldChange(was: Entry, now: Entry): FieldChange {
+  const classes = new Map<string, number>();
+  const ops = new Set([...operators(was), ...operators(now)].map(([op]) => op));
+  const moved: string[] = [];
+  for (const op of ops) {
+    const [a, b] = [was[op] ?? {}, now[op] ?? {}];
+    let any = false;
+    for (const c of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      const d = (b[c] ?? 0) - (a[c] ?? 0);
+      if (d) {
+        classes.set(c, (classes.get(c) ?? 0) + d);
+        any = true;
+      }
+    }
+    if (any && was[op] && now[op]) moved.push(op);
+  }
+  for (const [c, d] of classes) if (!d) classes.delete(c);
+  const totals = new Map<string, string[]>();
+  const [ta, tb] = [was[TOTALS] ?? {}, now[TOTALS] ?? {}];
+  for (const k of new Set([...Object.keys(ta), ...Object.keys(tb)])) if (ta[k] !== tb[k]) totals.set(totalsKind(k), [...(totals.get(totalsKind(k)) ?? []), k]);
+  return {
+    classes,
+    operatorsMoved: moved,
+    totals,
+    operatorsNew: [...ops].filter((op) => op !== TOTALS && !was[op] && now[op]),
+    operatorsGone: [...ops].filter((op) => op !== TOTALS && was[op] && !now[op]),
+  };
+}
+
+/**
+ * A FieldChange in words: "verdict classes assumed −2, fallback +2; totals: damage, kind 2, operator 1". With `blind`
+ * (hold-outs) the totals' operator keys and the operators are counts, never ids.
+ */
+export function formatFieldChange(c: FieldChange, blind = false): string {
+  const signed = (n: number) => (n > 0 ? `+${n}` : `−${-n}`);
+  const parts: string[] = [];
+  if (c.classes.size) parts.push(`verdict classes ${[...c.classes].map(([k, n]) => `${k} ${signed(n)}`).join(", ")}`);
+  else if (c.operatorsMoved.length) parts.push(`verdict counts moved within ${blind ? `${c.operatorsMoved.length} operator(s)` : c.operatorsMoved.join(", ")} (net zero per class)`);
+  if (c.totals.size) parts.push(`totals ${[...c.totals].map(([kind, keys]) => (kind === "operator" && blind ? `operator keys ${keys.length}` : keys.length > 1 && kind !== "operator" && kind !== "kind" ? `${kind} ×${keys.length}` : keys.join(", "))).join(", ")}`);
+  if (c.operatorsNew.length) parts.push(`operators new ${blind ? c.operatorsNew.length : c.operatorsNew.join(", ")}`);
+  if (c.operatorsGone.length) parts.push(`operators gone ${blind ? c.operatorsGone.length : c.operatorsGone.join(", ")}`);
+  return parts.join("; ");
+}
+
+/** FieldChanges summed over several entries (the moved hold-outs): classes added, totals keys counted by kind. */
+export function sumFieldChanges(cs: readonly FieldChange[]): FieldChange {
+  const classes = new Map<string, number>();
+  const totals = new Map<string, string[]>();
+  for (const c of cs) {
+    for (const [k, n] of c.classes) classes.set(k, (classes.get(k) ?? 0) + n);
+    for (const [kind, keys] of c.totals) totals.set(kind, [...(totals.get(kind) ?? []), ...keys]);
+  }
+  for (const [k, n] of classes) if (!n) classes.delete(k);
+  return { classes, totals, operatorsMoved: cs.flatMap((c) => c.operatorsMoved), operatorsNew: cs.flatMap((c) => c.operatorsNew), operatorsGone: cs.flatMap((c) => c.operatorsGone) };
 }
 
 export interface Aggregate {
@@ -230,6 +310,27 @@ export function groupAggregates(s: Snapshots): Map<Group, Aggregate> {
   return new Map(GROUPS.map((g) => [g, aggregate(logs.filter((l) => l.group === g).map((l) => l.entry))]));
 }
 
+/** A group's totals by where the error lives: the mean shares over its fights that have them, and how many are one-sided. */
+interface SharesAggregate {
+  readonly fights: number;
+  readonly matched: number;
+  readonly replayOnly: number;
+  readonly logOnly: number;
+  /** Fights whose replay-only and log-only shares together outweigh |matched| (measure's "one-sided"). */
+  readonly oneSided: number;
+}
+
+function sharesAggregate(entries: readonly Entry[]): SharesAggregate | null {
+  const xs = entries.flatMap((e) => {
+    const t = e[TOTALS];
+    const [m, r, l] = [t?.[SHARES.matched], t?.[SHARES.replayOnly], t?.[SHARES.logOnly]];
+    return typeof m === "number" && typeof r === "number" && typeof l === "number" ? [{ m, r, l }] : [];
+  });
+  if (!xs.length) return null;
+  const mean = (f: (x: (typeof xs)[number]) => number) => xs.reduce((s, x) => s + f(x), 0) / xs.length;
+  return { fights: xs.length, matched: mean((x) => Math.abs(x.m)), replayOnly: mean((x) => x.r), logOnly: mean((x) => -x.l), oneSided: xs.filter((x) => x.r - x.l > Math.abs(x.m)).length };
+}
+
 const pct = (n: number, of: number) => (of ? `${((100 * n) / of).toFixed(1)}%` : "-");
 const err = (x: number | null) => (x === null ? "-" : `${x.toFixed(1)}%`);
 
@@ -269,6 +370,7 @@ export function render(s: Snapshots): string {
     ...GROUPS.map((g) => row(GROUP_LABEL[g], groups.get(g) as Aggregate)),
     row("All but the hold-outs", all),
     "",
+    ...sharesTable(s),
     "## By operator (every log but the hold-outs)",
     "",
     "| Operator | Fights | Hits | Plain | Mismatch | Mean \\|damage error\\| |",
@@ -277,6 +379,32 @@ export function render(s: Snapshots): string {
     "",
   ];
   return lines.join("\n");
+}
+
+/**
+ * The scoreboard's "where the error lives" table: per group the mean |matched|, replay-only and log-only shares of the
+ * fights' logged totals and the one-sided fights (empty for snapshots from before the share keys).
+ */
+function sharesTable(s: Snapshots): string[] {
+  const logs = [...allLogs(s).values()];
+  const rows = GROUPS.flatMap((g) => {
+    const a = sharesAggregate(logs.filter((l) => l.group === g).map((l) => l.entry));
+    return a ? [`| ${GROUP_LABEL[g]} | ${a.fights} | ${a.matched.toFixed(1)}% | ${a.replayOnly.toFixed(1)}% | ${a.logOnly.toFixed(1)}% | ${a.oneSided} |`] : [];
+  });
+  if (!rows.length) return [];
+  return [
+    "## Where the total's error lives",
+    "",
+    "Each fight's simulated total against its logged one, split (`efsim zmdlogs totals --all`): the landings standing for",
+    "logged hits (|matched|: predicted − logged), the landings no logged hit stands for (replay-only) and the logged hits",
+    "without one (log-only), as means of % of each fight's logged total. One-sided: replay-only and log-only together",
+    "over |matched|, so the error is in what lands, not in its scale.",
+    "",
+    "| Logs | Fights | \\|Matched\\| | Replay-only | Log-only | One-sided |",
+    "|---|---|---|---|---|---|",
+    ...rows,
+    "",
+  ];
 }
 
 /** The comparison against older snapshots: each group's aggregates before → after, and the logs' directions. */
@@ -307,6 +435,9 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
   for (const g of GROUPS) {
     const counts: Record<Direction | "new" | "gone", number> = { better: 0, worse: 0, mixed: 0, other: 0, same: 0, new: 0, gone: 0 };
     const named: string[] = [];
+    // Hold-outs: what kind of field moved, per direction, and which operators the moved ones have (counts, no log).
+    const blind = new Map<Direction, FieldChange[]>();
+    const byOperator = new Map<string, Map<Direction, number>>();
     for (const [k, l] of b) {
       if (l.group !== g) continue;
       const was = a.get(k);
@@ -316,17 +447,33 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
       }
       const d = direction(was.entry, l.entry);
       counts[d]++;
-      if (g !== "holdout" && d !== "same") named.push(`  ${d}: ${k} (${fitChange(was.entry, l.entry) || "other counts"})`);
+      if (d === "same") continue;
+      if (g !== "holdout") named.push(`  ${d}: ${k} (${(d === "other" ? formatFieldChange(fieldChange(was.entry, l.entry)) : fitChange(was.entry, l.entry)) || "other counts"})`);
+      else {
+        blind.set(d, [...(blind.get(d) ?? []), fieldChange(was.entry, l.entry)]);
+        for (const [op] of operators(l.entry)) {
+          const m = byOperator.get(op) ?? new Map<Direction, number>();
+          m.set(d, (m.get(d) ?? 0) + 1);
+          byOperator.set(op, m);
+        }
+      }
     }
     for (const [k, l] of a) if (!b.has(k) && l.group === g) counts.gone++;
     const moved = counts.better + counts.worse + counts.mixed + counts.other + counts.new + counts.gone;
     if (!moved) continue;
     out.push(`${GROUP_LABEL[g]}: ${counts.better} better, ${counts.worse} worse, ${counts.mixed} mixed, ${counts.other} other, ${counts.same} unchanged${counts.new ? `, ${counts.new} new` : ""}${counts.gone ? `, ${counts.gone} gone` : ""}`);
     out.push(...named);
+    for (const [d, cs] of blind) out.push(`  ${d} (${cs.length}, summed, counts only): ${formatFieldChange(sumFieldChanges(cs), true) || "other counts"}`);
+    if (byOperator.size) {
+      const sorted = [...byOperator].sort((x, y) => sumOf(y[1]) - sumOf(x[1]) || x[0].localeCompare(y[0]));
+      out.push(`  moved hold-outs by operator (how many have each; never which log): ${sorted.map(([op, m]) => `${op} ${sumOf(m)} (${[...m].map(([d, n]) => `${n} ${d}`).join(", ")})`).join("; ")}`);
+    }
   }
   if (!out.length) out.push("No log's verdicts moved.");
   return out;
 }
+
+const sumOf = (m: ReadonlyMap<string, number>) => [...m.values()].reduce((s, n) => s + n, 0);
 
 /** The snapshots as committed at a git ref. */
 export function snapshotsAt(ref: string): Snapshots {

@@ -2,7 +2,7 @@
 // slow-downs of its priority, its own too (engine assumption combo-reset), and a freeze holds Corrosion's end but not
 // its ramp (freeze-ramp). timeline/clock.ts cutAtResets, resetSlowdowns, rampRunsOn.
 import { describe, expect, it } from "vitest";
-import { loadGameData } from "@efsim/data";
+import { loadGameData, readSkillFile } from "@efsim/data";
 import { rampElapsed, type SkillTiming, type TimelineContext, type TimelineState } from "@efsim/engine";
 import { cutAtResets, rampRunsOn, shiftEnemy, slowDown } from "../packages/engine/src/timeline/clock.ts";
 
@@ -21,6 +21,16 @@ const state = (): TimelineState =>
     enemy: { vulnerable: null, physical: [], controls: [], infliction: null, statuses: [corrosion] },
   }) as unknown as TimelineState;
 const expiry = (st: TimelineState) => st.buffs[0]?.expiresAt;
+
+describe("a slow-down's identity", () => {
+  it("carries its dilation's index in the skill file, so two at one frame are told apart (Rossi's combo_3)", () => {
+    const rossi = timingOf("chr_0028_wulfa_combo_3_skill").slowdowns.filter((d) => d.from === 0);
+    expect(rossi.length).toBe(2);
+    expect(new Set(rossi.map((d) => d.n)).size).toBe(2);
+    const file = readSkillFile("chr_0028_wulfa_combo_3_skill");
+    for (const d of rossi) expect(file?.dilations.find((x) => x.n === d.n)).toMatchObject({ frame: 0, compiled: "slow-down" });
+  });
+});
 
 describe("resets", () => {
   it("the data: Arcane's combo resets the combo priority at its frame 9, its own 18-frame slow-down among them", () => {

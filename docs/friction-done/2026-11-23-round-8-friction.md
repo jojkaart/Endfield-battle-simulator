@@ -70,3 +70,23 @@ aren't repeated.
   replayrecord.ts and the views, each checked by a second byte-for-byte measure.
 - `scripts/friction.ts outcomes` and `carry` again made the paperwork quick; `npm run snapshots:update`'s "No log's
   verdicts moved" was the behaviour check in one line.
+
+## Outcome (round 9)
+
+- 1 (A hold-out's "other" says that something moved, not what): done (c5dab99). scripts/accuracy.ts fieldChange /
+  formatFieldChange: an "other" development log names the verdict classes' net change, the totals keys and operators
+  new or gone; the hold-outs' moves summed per direction, operator keys as counts ("verdict classes assumed −2,
+  fallback +2; totals operator keys 1"), in measure's and snapshots:update's summaries alike. Checked on a measure
+  under combo-reset=resets: the two moved hold-outs' lines said which classes and kinds of totals moved.
+- 2 (Two slow-downs of one cast at one frame: nothing identifies them): half done (64a1dd5). The compiler gives each
+  SkillDilation its index in the skill file (`n`) and each compiled slow-down the index of its dilation
+  (SkillTiming.slowdowns `n`); `gamedata dilations` matches by it (output identical to ece5983's). Carrying `n` into
+  TimeStop (logcasts.ts skillStops), TimelineState.slowdowns and AppliedStop (replayrecord.ts) and pairing by it in
+  stopsAgainstList is backlog point 1 of round 9: logcasts.ts and replayrecord.ts were another agent's files.
+- 3 (An id part in `measure --logs` matches inside other ids): done (c5dab99): a part matches an id's start first,
+  inside one only where none starts with it; a part inside a hold-out's id still refuses (tests/measure.test.ts with
+  489c / 9c0b). resolveFixture already matched by prefix.
+- 4 (The multi-line `python3 -c` reflex again): done mechanically (84e1676, 96a59bd): scripts/edit.ts (exact
+  replacements from an edits file written with the Write tool, all or nothing), the doc damage check in `npm test`
+  (scripts/check-links.ts damagedText) and scripts/bash-guard.ts, a PreToolUse hook script for the owner to wire. See
+  docs/friction-done/2026-11-23-round-9.md.

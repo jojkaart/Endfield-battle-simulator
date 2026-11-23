@@ -127,3 +127,10 @@ docs/journal/2026-11-23-06-the-hold-outs-refreshed-blind-the-lane-rules-tested-o
 The reports named the exact view or flag they had wanted and the episode it would have shortened (458b's replay-only
 finishers, 9c0b's INSIDE, 5082's Xaihi instance, Rossi's combo_3 curves), so each was built and checked on that
 episode; and the replay's run as replayOnce with its record apart made five of them edits to one small module.
+
+## Outcome (round 9)
+
+- 1 (A layered or consumed buff's layers: per hit and per cast, log against replay): parked (its second carry with no
+  new report hitting it: docs/friction/2026-11-23-backlog-after-round-9.md "Parked", full text here). The parked
+  list and the accuracy list are carried there, the latter without the items closed by
+  worktree-agent-a432f82c25a7b4d6b.

@@ -43,6 +43,18 @@ describe("the fit measure (direction)", () => {
     expect(direction(log(10, 5, 2, 1), log(10, 5, 2, 2))).toBe("other");
     expect(direction(log(10, 5, 2), log(10, 5, 2))).toBe("same");
     expect(direction(log(10, 5, 2), log(10, 5, null))).toBe("worse");
+    // Where the error lives (the totals' share keys) isn't a verdict.
+    const shared = (m: number): Entry => ({ op: counts(10, 5), totals: { damage: 2, "share matched": m, "share replay-only": 1, "share log-only": -1 } });
+    expect(direction(log(10, 5, 2), shared(0.5))).toBe("same");
+    expect(direction(shared(0.5), shared(0.7))).toBe("same");
+  });
+
+  it("shows each group's mean shares of where the total's error lives in the scoreboard, the hold-outs' as a group", () => {
+    const split = { development: new Set(["zmdlogs-d"]), holdout: new Set(["zmdlogs-h"]) };
+    const e = (m: number, r: number, l: number): Entry => ({ op: counts(1, 0), totals: { damage: m + r + l, "share matched": m, "share replay-only": r, "share log-only": l } });
+    const text = render({ verified: {}, pending: { "pending/zmdlogs-d.json": e(-2, 5, -1), "holdout/zmdlogs-h.json": e(1, 0.5, 0) }, split });
+    expect(text).toMatch(/^\| Development \(.*\) \| 1 \| 2\.0% \| 5\.0% \| 1\.0% \| 1 \|$/m);
+    expect(text).toMatch(/^\| Hold-out \(.*\) \| 1 \| 1\.0% \| 0\.5% \| 0\.0% \| 0 \|$/m);
   });
 
   it("counts hold-out logs only by group, and names the others", () => {
@@ -56,5 +68,16 @@ describe("the fit measure (direction)", () => {
     // A hold-out moved to fixtures/holdout/ is the same log as under pending/ at an older ref.
     const moved: Snapshots = { verified: {}, pending: { "pending/zmdlogs-d.json": log(1, 0, 1), "holdout/zmdlogs-h.json": log(1, 0, 1) }, split };
     expect(directionSummary(at(1, 1), moved)).toEqual(["No log's verdicts moved."]);
+  });
+
+  it("says what kind of field moved in an 'other' entry, a hold-out's as counts and its operators without the log", () => {
+    const split = { development: new Set(["zmdlogs-d"]), holdout: new Set(["zmdlogs-h"]) };
+    const e = (assumed: number, fallback: number, kindBasic: number, opTotal: number): Entry => ({ chr_a: { plain: 5, assumed, fallback }, totals: { damage: 1, "kind basic": kindBasic, "operator chr_a": opTotal } });
+    const at = (d: Entry, h: Entry): Snapshots => ({ verified: {}, pending: { "pending/zmdlogs-d.json": d, "pending/zmdlogs-h.json": h }, split });
+    const lines = directionSummary(at(e(3, 0, 1, 1), e(3, 0, 1, 1)), at(e(1, 2, 1.1, 1), e(1, 2, 1, 1.2)));
+    expect(lines).toContain("  other: pending/zmdlogs-d.json (verdict classes assumed −2, fallback +2; totals kind basic)");
+    expect(lines).toContain("  other (1, summed, counts only): verdict classes assumed −2, fallback +2; totals operator keys 1");
+    expect(lines).toContain("  moved hold-outs by operator (how many have each; never which log): chr_a 1 (1 other)");
+    expect(lines.join("\n")).not.toMatch(/zmdlogs-h/);
   });
 });

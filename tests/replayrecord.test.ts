@@ -4,7 +4,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { formatRecord, hitRecords, holdsView, logBuffReplay, readLogFixture, replayTimeStops, replayView, stopsAgainstList, totalsView, type AppliedStop } from "@efsim/logs";
+import { formatRecord, hitRecords, holdsView, logBuffReplay, readLogFixture, replayTimeStops, replayView, stopsAgainstList, stopsView, totalsView, type AppliedStop } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -42,6 +42,11 @@ describe("the replay's record", () => {
     expect(unapplied).toEqual([]);
     expect(pairs.every((p) => p.listed !== null && p.listed.scales.length === p.applied.scales.length)).toBe(true);
     expect(replayView(data, b7b3, { stops: true })).toMatch(/STOP {3}the timeline's ultimate stop of \S+ .*: as listed/);
+    // `zmdlogs stops`: the same lines over several logs, a count per kind; with differ, only the differing ones.
+    const all = stopsView(data, [{ short: "b7b3", fx: b7b3 }]);
+    expect(all).toMatch(/^b7b3:$/m);
+    expect(all).toMatch(new RegExp(`Over 1 logs: as listed ${pairs.length}, covered 0, length 0, timeline only 0, list only 0$`));
+    expect(stopsView(data, [{ short: "b7b3", fx: b7b3 }], { differ: true })).not.toMatch(/^b7b3:$/m);
   });
 
   it("pairs two slow-downs of one cast at one frame by their lengths (Rossi's combo_3)", () => {

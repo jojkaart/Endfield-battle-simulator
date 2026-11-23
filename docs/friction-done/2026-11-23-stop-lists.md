@@ -56,3 +56,19 @@ worktree-agent-a432f82c25a7b4d6b.
   (Arcane's Susceptibility, her gear set) that the timing change brought in.
 - `measure --patch` re-measured round 8's pinned-expiries diff from its scratch file unchanged.
 - `replay --stops` itself: the evidence (burst timings, volleys) sat next to the STOP lines.
+
+## Outcome (round 9)
+
+- 1 (No command lists the stop-list differences over every log): done (d5bc0a5). `efsim zmdlogs stops
+  <fixture…|--all> [--differ] [--operator]`: replay --stops' STOP lines (views.ts stopLines, which replayView now
+  uses: output identical, cli-ab on 0c14) per log, then a count per kind and how many logs have each; one process,
+  about 1.5 s a log. No worker threads (not needed at that speed).
+- 2 (The replay's record merged two slow-downs of one start and priority): fixed in that branch; the WeakMap idea
+  goes with backlog point 1 of round 9 (the dilation index carried into the record), not done separately.
+- 3 (A kit value written as "the data's length minus what the engine holds"): not done: an engine feature (an
+  extendBuff that subtracts what the world's clock held since the cast) is an engine timing change with smoke and
+  team-ab, out of a tools round with another agent on accuracy. Backlog point 2 of round 9.
+- 4 (A measure's worse logs need three tools to explain): done (c5dab99). measure --hits gives each moved
+  development log's placed hidden holds (measure-worker.ts holdUnits from BuffReplay.hiddenHolds, any commit that
+  places them, the per-hit reference's included): the units placed elsewhere, new or gone, a few in the summary and
+  all in hits.txt. Checked under combo-reset=resets: 9555's unit 2 31.84 → 54.86 s, 489c's unit 5 91.68 → 102.57 s.
