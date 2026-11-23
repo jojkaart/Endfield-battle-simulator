@@ -35,7 +35,7 @@
   "totals": {"damage":2.9,"operator chr_0021_whiten":-3.2,"operator chr_0024_deepfin":-4.4,"operator chr_0003_endminf":9.5,"operator chr_0005_chen":-36.3,"kind basic":1.7,"kind battle":-3.8,"kind combo":23.6,"kind none":-14.2,"kind status":-57.8,"kind ultimate":205,"hits":12.7,"status hits":-22.2,"staggered hits":12.5,"last hit":0,"crit share (points)":0.1}
  },
  "holdout/zmdlogs-14a91e99b8d7.json": {
-  "chr_0016_laevat": {"plain":155,"assumed":7,"fallback":5,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
+  "chr_0016_laevat": {"plain":155,"assumed":8,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0036_jsspsi": {"plain":100,"assumed":2,"fallback":0,"mismatch":2,"unvalued":0,"unquantified":3,"uncovered":0},
   "chr_0006_wolfgd": {"plain":107,"assumed":6,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0025_ardelia": {"plain":179,"assumed":3,"fallback":1,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -63,11 +63,11 @@
   "totals": {"damage":0,"operator chr_0036_jsspsi":-0.9,"operator chr_0032_lizhiyan":0.2,"operator chr_0035_liino":0.3,"operator chr_0013_aglina":-0.3,"kind basic":-0.3,"kind battle":0.2,"kind combo":-1.8,"kind none":0,"kind status":0,"kind ultimate":0.7,"hits":-0.8,"status hits":0,"staggered hits":3.7,"last hit":0,"crit share (points)":0.1}
  },
  "holdout/zmdlogs-7be1ca9f455b.json": {
-  "chr_0036_jsspsi": {"plain":60,"assumed":12,"fallback":1,"mismatch":1,"unvalued":0,"unquantified":9,"uncovered":0},
-  "chr_0028_wulfa": {"plain":92,"assumed":91,"fallback":3,"mismatch":1,"unvalued":0,"unquantified":17,"uncovered":0},
-  "chr_0013_aglina": {"plain":51,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":163,"assumed":9,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":16,"uncovered":0},
-  "totals": {"damage":0.4,"operator chr_0036_jsspsi":-1.4,"operator chr_0028_wulfa":-0.7,"operator chr_0032_lizhiyan":16.5,"operator chr_0013_aglina":-2.3,"kind basic":-8.2,"kind battle":0,"kind combo":-2.5,"kind none":3.9,"kind status":16.6,"kind ultimate":0.3,"hits":0.6,"status hits":5,"staggered hits":1.5,"last hit":0,"crit share (points)":-0.1}
+  "chr_0036_jsspsi": {"plain":59,"assumed":15,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":8,"uncovered":0},
+  "chr_0028_wulfa": {"plain":91,"assumed":91,"fallback":2,"mismatch":3,"unvalued":0,"unquantified":17,"uncovered":0},
+  "chr_0013_aglina": {"plain":51,"assumed":2,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":162,"assumed":6,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":20,"uncovered":0},
+  "totals": {"damage":0.7,"operator chr_0036_jsspsi":-1.1,"operator chr_0028_wulfa":-0.5,"operator chr_0032_lizhiyan":16.9,"operator chr_0013_aglina":-1.6,"kind basic":-8.4,"kind battle":0.7,"kind combo":-1.8,"kind none":3.9,"kind status":16.7,"kind ultimate":0.3,"hits":0.6,"status hits":5,"staggered hits":1.5,"last hit":0,"crit share (points)":-0.1}
  },
  "holdout/zmdlogs-890bcadb4933.json": {
   "chr_0030_zhuangfy": {"plain":141,"assumed":12,"fallback":30,"mismatch":26,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -86,8 +86,8 @@
  "holdout/zmdlogs-eb8f397da7ed.json": {
   "chr_0016_laevat": {"plain":19,"assumed":17,"fallback":114,"mismatch":3,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":12,"assumed":19,"fallback":19,"mismatch":15,"unvalued":0,"unquantified":2,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":18,"assumed":25,"fallback":46,"mismatch":8,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":18,"assumed":26,"fallback":46,"mismatch":7,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0006_wolfgd": {"plain":0,"assumed":0,"fallback":0,"mismatch":68,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":28.7,"operator chr_0006_wolfgd":72.1,"operator chr_0016_laevat":25.7,"operator chr_0036_jsspsi":33.3,"operator chr_0032_lizhiyan":19,"kind basic":16.2,"kind battle":29.4,"kind combo":18.8,"kind status":213.9,"kind ultimate":17.5,"hits":13.5,"status hits":145,"staggered hits":0,"last hit":0,"crit share (points)":0.4}
+  "totals": {"damage":28.5,"operator chr_0006_wolfgd":75.3,"operator chr_0016_laevat":25.2,"operator chr_0036_jsspsi":33.3,"operator chr_0032_lizhiyan":19.4,"kind basic":16.2,"kind battle":28.5,"kind combo":18.9,"kind status":214.6,"kind ultimate":17.5,"hits":13.8,"status hits":150,"staggered hits":0,"last hit":0,"crit share (points)":0.4}
  }
 }
