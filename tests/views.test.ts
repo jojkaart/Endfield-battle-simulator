@@ -41,7 +41,8 @@ describe("the placement and replay views", () => {
   });
 
   it("flags casts made against the kit and traces a kit buff's expiry step by step", () => {
-    const pending = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-a7a7a40c97ed.json"));
+    const pending = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-9c0bb09daff2.json"));
+    // A cast its kit makes unavailable (9c0b: Camille's combo_skill_2 at 12.70 s; a7a7, used here before, has none since Si's strokes are read from the log, 2026-11-23).
     const { replay } = logBuffReplay(data, pending);
     expect(replay.castFlags.some((x) => x.kind === "forced")).toBe(true);
     expect(replay.castFlags.some((x) => x.kind === "inside")).toBe(true);
