@@ -251,6 +251,17 @@
    ]
   }
  ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0003_endminf",
+   "set": {
+    "skillLevels": {
+     "basic": 9
+    }
+   },
+   "why": "Skill levels the roster doesn't give (12 assumed for each): her basic attacks are basic level 9. Read with her kit (the male's keys: logs.ts withEndminVariant), her attack 1-5 and finisher hits are x0.794-0.807 of level 12's, attack 4's first hits x0.842, the ratios of their scales at level 9 and 12 (SkillPatchTable: attack 1 0.41 / 0.51, attack 4 0.16 / 0.19 and 0.62 / 0.78, finisher 7.2 / 9); her battle skill and combo hits fit level 12 (x1.000). Her ultimate and Originium Crystals hits read x0.74-0.78 together at each cast, as a shared modifier would, not a level (left: docs/open-problems.md)."
+  }
+ ],
  "hits": [
   {
    "t": 579,

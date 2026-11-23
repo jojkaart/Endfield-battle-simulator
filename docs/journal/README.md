@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-23: Fight totals: the enemy away, the Endministrator's shatters, Hard 27's Electrification](2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)
 - [2026-11-23: Arcane's reset reaches a combo inside her first 9 frames; Purrchena's stops; pinned expiries](2026-11-23-09-arcane-s-reset-reaches-a-combo-inside-her-first-9-frames.md)
 - [2026-11-23: Improvement round 8: the replay split, views on its record](2026-11-23-08-improvement-round-8-the-replay-split-views-on-its-record.md)
 - [2026-11-23: A finisher cut by an ultimate, late instance runs, cut casts' later stops](2026-11-23-07-a-finisher-cut-by-an-ultimate-late-instance-runs-cut-casts.md)

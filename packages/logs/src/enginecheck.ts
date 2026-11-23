@@ -8,7 +8,7 @@
 // replacing them: where they differ is reported (logDifferences). docs/design/data.md, "The log check's rule".
 
 import {
-  Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
+  Attr, activeModifiers, corrosionModifier, effectiveKit, ENGINE_ASSUMPTIONS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
 import { affixesAsChild } from "@efsim/data";
@@ -71,8 +71,33 @@ export function engineModels(names: TeamBuffNames, buff: string): boolean {
 /** The effects of a logged hit (inside it, or at its boundary) that the engine doesn't model and the log supplies: buffs no kit defines, not the timeline's statuses, not the hitter's food its panel has. */
 export function logOnly(data: GameData, fx: LogFixture, names: TeamBuffNames, hit: LogHit): { effects: LogEffect[]; boundary: LogEffect[] } {
   const h = withoutOwnFood(data, fx, hit);
-  const keep = (e: LogEffect) => !engineModels(names, e.buff);
+  const staged = listsGivers(fx);
+  const keep = (e: LogEffect) => !engineModels(names, e.buff) || (staged && stageStatus(e));
   return { effects: h.effects.filter(keep), boundary: h.boundaryEffects.filter(keep) };
+}
+
+/**
+ * An enemy status the log lists with no giver in a fixture that names the givers (since the 2026-11-16 refresh): the
+ * stage's, which no team member applies and the replay can't make, so the log supplies it like a buff no kit defines.
+ * The only ones in the development logs are Hard 27's Electrification (Arts DMG Taken +0.24 from ~20 s, renewed about
+ * every 20 s: 207fff414d82, 2fd915292bb7, 99fb3c35fda2; every one of their Electrifications, none in a team with an
+ * Electric operator), whose Arts hits read ×1.18 without it. Team-applied statuses carry their giver (3,497 of 3,505
+ * Electrifications the replay has: docs/open-problems.md, Arts Intensity). Stagger is the replay's own (loggedStaggerSteps).
+ */
+function stageStatus(e: LogEffect): boolean {
+  return (e.source === undefined || e.source === null) && /_triggered_do$|_corrupt_do$/.test(e.buff);
+}
+
+const giversListed = new WeakMap<LogFixture, boolean>();
+
+/** Whether a fixture's effects name their givers (imports and refreshes since 2026-11-16). */
+function listsGivers(fx: LogFixture): boolean {
+  let v = giversListed.get(fx);
+  if (v === undefined) {
+    v = fx.hits.some((h) => h.effects.some((e) => e.source !== undefined && e.source !== null));
+    giversListed.set(fx, v);
+  }
+  return v;
 }
 
 /** A reading of a logged hit through the engine's damage path: its damage, and what it takes for granted that the replay doesn't know. */
@@ -477,6 +502,11 @@ export interface TotalsComparison {
   /** The fixture's absent landings (LogFixture.absent) the totals left out, and those the replay had none for. */
   readonly absent: { readonly leftOut: number; readonly unmatched: readonly AbsentLanding[] };
   /**
+   * The stretches the log has no hit in for ENEMY_AWAY_MS or more (ms; none under enemy-away `counted`), and how many
+   * replay landings standing for no logged hit the totals left out inside them.
+   */
+  readonly away: { readonly windows: readonly { readonly from: number; readonly to: number }[]; readonly leftOut: number };
+  /**
    * Per recorded burst (Si's Artful Intent), what its operator's simulated total moved by in `simulated.perOperator`
    * (recordedBurstShifts): its teammates' share of the record taken as logged, not as replayed. The team's total and
    * the kinds keep the replay's burst.
@@ -595,6 +625,14 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     const l = c.replay.landing(h);
     if (!("unknown" in l)) cappedHit.set(l, h);
   }
+  // The other landings of logged hits without a reading (Si's bursts, Fixed DMG) count at the replay's own damage, as
+  // that hit's part (TotalPart.logged): 0c14's burst at 40.33 s was a replay-only landing beside a log-only hit.
+  const fixedHit = new Map<LandedHit, LogHit>();
+  for (const h of fx.hits) {
+    if (primary.has(h) || h.uncapped !== undefined) continue;
+    const l = c.replay.landing(h);
+    if (!("unknown" in l) && l.fixed && !matched.has(l)) fixedHit.set(l, h);
+  }
   // The log's damage ends at its last hit, the kill's too when the fight ends in one (the log's total is the enemy's
   // HP): the replay's damage is summed to that moment as well, past its own HP if it gets there sooner, so both totals
   // and each operator's cover the same span (b7b3: capping the replay at Rhodagn's 2.29M stopped it at 17.0 s, 1 s
@@ -617,6 +655,10 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // A fight that ends in a kill: its last logged hits are capped at the enemy's remaining HP, whether or not the log
   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
+  const away = engineReadingOf(c.replay.assume, "enemy-away") === "away" ? awayWindows(fx) : [];
+  const isAway = (frame: number) => away.some((w) => (frame * 1000) / 30 > w.from + AWAY_EDGE_MS && (frame * 1000) / 30 < w.to - AWAY_EDGE_MS);
+  let awayLeftOut = 0;
+  const killFrame = Math.round((logged.last * 30) / 1000);
   const counted = new Set<LandedHit>();
   const parts: TotalPart[] = [];
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
@@ -625,13 +667,20 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     // A landing of a logged hit counts wherever the replay put it; others only up to the log's end (a27b: the
     // killing blow landed 65 ms after the log's).
     if ((l.frame > end && !m && !capped) || absent.has(l)) continue;
+    if (!m && !capped && isAway(l.frame)) {
+      awayLeftOut++;
+      continue;
+    }
+    // A fight that ends in a kill has no HP left for a landing no logged hit stands for at the killing blow's frame or
+    // after it (4360447193ac: Avywenna's four returning lances at the kill's 119.20 s, 0.29M, 6.5% of the fight).
+    if (kill !== null && !m && !capped && l.frame >= killFrame) continue;
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined || killing.has(m.hit) ? m.hit.value : Infinity);
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
     else damage = l.exact;
     if (capped) damage = Math.min(damage, capped.value);
     counted.add(l);
-    const of = m?.hit ?? capped;
+    const of = m?.hit ?? capped ?? fixedHit.get(l);
     parts.push({ operator: l.operator, skillId: l.skillId, hitId: l.hitId, frame: l.frame, damage, ...(of ? { logged: of } : {}) });
     sim.damage += damage;
     if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
@@ -651,7 +700,25 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, recordedShifts, parts };
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts };
+}
+
+/** A stretch with no logged hit at least this long is the enemy out of reach (engine assumption enemy-away). */
+export const ENEMY_AWAY_MS = 6000;
+/** How far inside such a stretch a replay landing must be to be left out (a hit at its edge may be a logged one's twin). */
+const AWAY_EDGE_MS = 300;
+
+/** The fight's stretches between consecutive logged hits of ENEMY_AWAY_MS or more (ms). */
+export function awayWindows(fx: LogFixture): { readonly from: number; readonly to: number }[] {
+  const ts = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
+  const out: { from: number; to: number }[] = [];
+  for (let i = 1; i < ts.length; i++) if ((ts[i] as number) - (ts[i - 1] as number) >= ENEMY_AWAY_MS) out.push({ from: ts[i - 1] as number, to: ts[i] as number });
+  return out;
+}
+
+/** An engine assumption's reading under a replay's `assume` (its default when not set). */
+function engineReadingOf(assume: Readonly<Record<string, string>>, id: string): string | undefined {
+  return assume[id] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === id)?.default;
 }
 
 /** A totals comparison as rounded percentage errors (simulated / logged − 1, to 0.1 %), for the report and the verdict snapshots. */

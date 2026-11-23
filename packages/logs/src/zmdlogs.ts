@@ -105,7 +105,11 @@ export interface LogFixture {
 /** Build fields a fixture sets over an exported build (LogFixture.buildOverrides): `weapon` only the fields it changes. */
 export interface BuildOverride {
   readonly operator: string;
-  readonly set: Partial<Omit<Build, "operator" | "weapon" | "gear" | "skillLevels">> & { readonly weapon?: Partial<Pick<NonNullable<Build["weapon"]>, "level" | "skillLevels">> };
+  readonly set: Partial<Omit<Build, "operator" | "weapon" | "gear" | "skillLevels">> & {
+    readonly weapon?: Partial<Pick<NonNullable<Build["weapon"]>, "level" | "skillLevels">>;
+    /** Only the skill groups it changes. */
+    readonly skillLevels?: Partial<Build["skillLevels"]>;
+  };
   readonly why: string;
 }
 
