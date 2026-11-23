@@ -90,6 +90,15 @@ describe("zmdlogs refresh", () => {
     const text = readFileSync(file, "utf8");
     expect(() => refreshFixture(file, changed)).toThrow(RefreshMismatch);
     expect(() => refreshFixture(file, changed)).toThrow(/value on 1 hit/);
+    // The values that differ, apart from the message (round 8): `zmdlogs refresh` prints them for a development fixture.
+    let refused: unknown;
+    try {
+      refreshFixture(file, changed);
+    } catch (e) {
+      refused = e;
+    }
+    expect(refused instanceof RefreshMismatch && refused.values).toEqual(["hit 1 value: fixture 400 / detail 401"]);
+    expect((refused as Error).message).not.toMatch(/fixture 400/);
     const fewer = syntheticDetail(ID, BOSS, buffs, events.slice(0, 3));
     expect(() => refreshFixture(file, fewer)).toThrow(/2 damage events \(total 1300\), the fixture 3 hits \(total 2500\)/);
     const otherBuff = syntheticDetail(ID, BOSS, buffs.map((b, i) => (i === 0 ? { ...b, effects: [{ zone: "fragile", rate: 0.2, element: "natural" }] } : b)), events);
@@ -135,6 +144,11 @@ describe("zmdlogs refresh", () => {
     const plain = oldFixture("aaaaaaaaaaa9", { casts: true, poise: true });
     const text = readFileSync(plain, "utf8");
     expect(() => refreshFixture(plain, old)).toThrow(/unquantified on 1 hit/);
+    try {
+      refreshFixture(plain, old);
+    } catch (e) {
+      expect((e as RefreshMismatch).values.join("\n")).toMatch(/^hit \d+ unquantified: new in the detail \[\{/m);
+    }
     expect(readFileSync(plain, "utf8")).toBe(text);
   });
 

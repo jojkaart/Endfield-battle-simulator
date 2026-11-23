@@ -29,7 +29,10 @@ done_init premerge "against $base"
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "premerge: the tree has uncommitted changes:" >&2
-  git status --short >&2
+  # Never a hold-out fixture's name (CLAUDE.md, hold-out logs): those only as a count.
+  git status --short -- . ':!fixtures/holdout' >&2
+  held="$(git status --porcelain -- fixtures/holdout | wc -l)"
+  if [ "$held" -gt 0 ]; then echo "  and $held file(s) under fixtures/holdout/ (not named)" >&2; fi
   exit 1
 fi
 

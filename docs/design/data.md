@@ -154,7 +154,11 @@ the hit that forms the Corrosion, not on its own: 3f78, 4a64).
 **Kit buffs in the log check** (2026-10-22, owner: the engine activates
 buffs from the events that trigger them, not from the log's listing).
 `efsim zmdlogs check` replays the logged casts on the timeline
-(`packages/logs/src/buffreplay.ts`, engine `replayCast`): each placed cast
+(`packages/logs/src/buffreplay.ts`, engine `replayCast`; since round 8 one
+pass is `replayOnce(input, pass)` there, its steps and their order in
+replaysteps.ts and what it records for the views, the kit windows, traces
+and applied slow-downs, in replayrecord.ts: a view's new output is an
+edit there, a rule's in buffreplay.ts): each placed cast
 (logcasts.ts) starts at its logged frame without a rotation's checks, its
 logged landings land at their logged frames (pinned: later time stops
 don't move them, the log's time has them in), an operator's earlier cast
@@ -587,10 +591,11 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
 | The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` (the stops of the replay's casts: placed, from a cast event, inferred; `replayTimeStops` in a script, not `castTimeStops`, which has the placed casts' only) |
 | The fight's hidden holds (unlogged dodges, pauses) the replay places: each 0.512 s unit, its earliest and latest time, the clocks spanning it | `efsim zmdlogs holds <fixture> [--verbose]` |
-| Why a buff's or status's run is (not) a clock of the holds: the run paired with each instance, the rule that skipped it, kept or dropped | `efsim zmdlogs holds <fixture> --why <re>` (`owner:id`, `Perlica:wpn`, `status:corrosion`) |
+| Why a buff's or status's run is (not) a clock of the holds: the run paired with each instance, the rule that skipped it, kept or dropped | `efsim zmdlogs holds <fixture> --why <re>` (`owner:id`, `Perlica:wpn`, `status:corrosion`); its last lines: whether each instance was kept to the log's end, and why not (heldToLoggedEnds) |
 | Which bounds and holds a change moved (bounds added, removed, each unit and bound before and after) | `node scripts/cli-ab.ts <ref> --holds <fixture>`; any command at two commits: `node scripts/cli-ab.ts <ref> [--key <re>] -- <efsim args>` |
 | Corrosion's ramp as the hits read it: each hit's fitting step against the replay's, the hidden hold that allows against the one placed | `efsim zmdlogs ramp <fixture> [--verbose]`; `--held`: what held the replay's ramp (each stop's share, placed holds, the rest) |
-| What the data compiler made of a skill's time dilations (slow-down, reset, dropped and why) | `efsim kit <operator> --skill <re>` ("time dilations"); every skill: `efsim gamedata dilations [--dropped]` |
+| What the data compiler made of a skill's time dilations (slow-down, reset, dropped and why), and the world frames each slow-down holds (Σ(1 − scale); several together) | `efsim kit <operator> --skill <re>` ("time dilations", "holds"); every skill: `efsim gamedata dilations [--dropped]` |
+| The slow-downs the replay's timeline applied against the log tools' stop list | `efsim zmdlogs replay <fixture> --stops` (STOP: as listed, another length, or on one side only) |
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
 | Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
 | A skill's frames, windows, uncuttable frames, skill group, what each hit inflicts | `efsim kit <operator> [--skill <re>]` |
@@ -599,13 +604,16 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | The open assumptions `--assume` takes, their readings | `efsim assumptions [<re>]` |
 | Operator ids and weapon names of the logs | `efsim zmdlogs list --ids [--with <op>]` |
 | Where the placement put each hit and cast | `efsim zmdlogs casts <fixture> [--from --to]` |
-| The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE, EVENT) |
-| How a kit buff's expiry moved | `efsim zmdlogs replay <fixture> --trace-buff owner:id` |
+| The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE: uncuttable frames; CUTS: a legal interrupt cancelling pending hits; EVENT; `[crit …: source]` on a landing the log gives no crit) |
+| How a kit buff's expiry moved; which window a refresh replaced | `efsim zmdlogs replay <fixture> --trace-buff owner:id`; `--kit-buff owner:id` ("refreshes the one from") |
+| An enemy status's life in the replay: applications, holds (a moved application), expiry, beside the log's runs | `efsim zmdlogs replay <fixture> --trace-buff status:<status>` (`status:*` every one) |
+| Which landings make a total: matched (predicted vs logged), replay only, log only | `efsim zmdlogs totals <fixture> [--operator <op>]`; between two commits with `node scripts/cli-ab.ts <ref> -- zmdlogs totals …` |
 | Does a kit buff run long or short: each instance's first expiry, its expiry on the replay's own clock (no hidden holds, no log ends), how it ended there and in the check's replay, the log's run and the lateness past the own expiry | `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (default every development log with the owner; `kitBuffClock` in a script). The check's window (`replay --kit-buff`) is already cut or held to the log's end: not the buff's natural end |
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
+| Which zone or modifier moved at each hit between two commits | `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
-| Does a change help | `npm run measure [-- --with <op>]` |
+| Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]` |
 | Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
 | Which casts a placement change moved | `npm run measure -- --changed placement` |
 
@@ -615,7 +623,10 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 `predicted` and `error` (the primary reading of the replay's landing: not
 the verdict's where it fell back or the log gives no crit),
 `logReading` / `logError` (every kit buff as the log lists it), `listed`,
-`differences` (`kind` engine / log / values), and under `landing`:
+`differences` (`kind` engine / log / values; `sameTotals` where the values'
+sums agree: cosmetic), `replayCrit` and `critSource` (the crit the replay's
+landing took: `log`, or inferred `shown` / `layers` / `values`, or `none`),
+and under `landing`:
 `modifiers` (with `kitBuff`), `zones`, `scaleParts`, `enemy` (statuses with
 `appliedAtMs`). They are cached per fixture and code in scratch/hits-cache/.
 

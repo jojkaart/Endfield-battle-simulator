@@ -13,6 +13,8 @@ export * from "./logeffects.ts";
 export * from "./hitvalues.ts";
 export * from "./holds.ts";
 export * from "./rampsteps.ts";
+export * from "./replaysteps.ts";
+export * from "./replayrecord.ts";
 export * from "./buffreplay.ts";
 export * from "./recordedburst.ts";
 export * from "./reactioncheck.ts";

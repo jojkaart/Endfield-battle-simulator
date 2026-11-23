@@ -12,6 +12,7 @@ import type { LogFixture } from "./zmdlogs.ts";
 import { engineCheck, logDifferences, readingBasis, type LogDifference } from "./enginecheck.ts";
 import { placeHits } from "./logcasts.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
+import type { CritSource } from "./buffreplay.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 
@@ -55,6 +56,10 @@ export interface HitRecord {
   readonly logError?: number | null;
   /** Why the replay has no landing for the hit. */
   readonly unknown?: string;
+  /** The crit the replay's landing took (LandedHit.crit; null where the hit can't crit), with a landing. */
+  readonly replayCrit?: boolean | null;
+  /** Where that crit comes from (buffreplay.ts CritSource: the log, an inference from the log, or none). */
+  readonly critSource?: CritSource;
   /** The game buffs the log lists at the hit (its effects, one entry per buff with its instance count when above 1: "id ×2"). */
   readonly listed: readonly string[];
   /**
@@ -108,6 +113,7 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       class: verdictCount(v),
       ...verdictReadingOf(v),
       listed: listedBuffs(hit.effects),
+      critSource: replay.replay.critSource(hit),
     };
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;
@@ -134,6 +140,8 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
     const differences = landing.inputs ? logDifferences(c, hit, landing as typeof landing & { readonly inputs: NonNullable<typeof landing.inputs> }) : [];
     return {
       ...base,
+      // A logged (or inferred) crit is the landing's; one the log doesn't give lands without one in the replay the check reads.
+      replayCrit: typeof landing.loggedCrit === "boolean" ? landing.loggedCrit : (landing.crit ?? (landing.loggedCrit === null ? false : null)),
       ...(differences.length ? { differences } : {}),
       predicted: predicted ?? roundDamage(d.exact),
       error: hit.value / (predicted ?? roundDamage(d.exact)) - 1,
@@ -187,12 +195,28 @@ export function filterRecords(records: readonly HitRecord[], opts: { readonly ki
   return records.filter((r) => (opts.kind === undefined || r.kind === opts.kind) && (!opts.operators?.length || opts.operators.includes(r.operator)) && (!opts.event || opts.event.test(r.event)));
 }
 
-/** One line per record: JSON Lines with `json`, else a readable table row (`reading` "log": the log's reading beside the primary). */
-export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "log" = "primary"): string {
+/**
+ * One line per record: JSON Lines with `json`, else a readable table row (`reading` "log": the log's reading beside the
+ * primary; `zones`: the primary reading's zones, the replay's crit and its source, and the modifiers by source, so
+ * `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` shows which zone
+ * and modifier moved at each hit between two commits: round 8, an hour of hand diffing per regression).
+ */
+export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "log" = "primary", zones = false): string {
   if (json) return JSON.stringify(r);
   const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
   const log = reading === "log" ? `  log reading ${r.logReading ?? "-"}  ${pct(r.logError)}` : "";
-  return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}`;
+  const z = zones && r.landing ? `  ${zoneWords(r)}` : "";
+  return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}${z}`;
+}
+
+/** A record's zones, crit and modifiers in words (formatRecord `zones`): numbers to 4 significant digits. */
+function zoneWords(r: HitRecord): string {
+  const l = r.landing as NonNullable<HitRecord["landing"]>;
+  const n = (v: number) => String(Number(v.toPrecision(4)));
+  const zs = Object.entries(l.zones).map(([k, v]) => `${k} ${n(v as number)}`).join(", ");
+  const crit = `crit ${r.replayCrit === null || r.replayCrit === undefined ? "-" : r.replayCrit ? "yes" : "no"} (${r.critSource ?? "-"})`;
+  const mods = [...l.modifiers].map((m) => `${m.kitBuff ?? m.source}:${m.zone} ${n(m.value)}`).sort().join("; ");
+  return `zones ${zs}; ${crit}; modifiers ${mods || "none"}`;
 }
 
 /** The hits of a list of fixtures, read one at a time (readFixture), each record handed to `out` as it's made. */

@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { cacheDir } from "@efsim/data";
 import { fetchDetail } from "./zmdlogs.ts";
-import { readDevFixture, refreshFixture, refuseHoldout, type RefreshResult } from "./logs.ts";
+import { readDevFixture, refreshFixture, RefreshMismatch, refuseHoldout, type RefreshResult } from "./logs.ts";
 
 export function rawDir(): string {
   return join(cacheDir(), "zmdlogs");
@@ -46,13 +46,22 @@ export async function rawDetail(battleId: string, fetch: (id: string) => Promise
  * from the cached detail, else fetched once (rawDetail) and cached. Refuses a hold-out.
  */
 export async function refreshFromDetail(file: string, opts: { readonly detailFile?: string; readonly fetch?: (id: string) => Promise<unknown> } = {}): Promise<RefreshResult & { readonly fetched: boolean }> {
+  // A development fixture (readDevFixture refuses a hold-out): a refusal names what differs, values included.
   const battleId = readDevFixture(file).provenance.battleId;
+  const withValues = <T>(f: () => T): T => {
+    try {
+      return f();
+    } catch (e) {
+      if (e instanceof RefreshMismatch && e.values.length) throw new RefreshMismatch(`${e.message}\n${e.values.map((v) => `  ${v}`).join("\n")}`, e.values);
+      throw e;
+    }
+  };
   if (opts.detailFile !== undefined) {
     const detail: unknown = JSON.parse(readFileSync(opts.detailFile, "utf8"));
-    return { ...refreshFixture(file, detail, (d) => cacheRawDetail(battleId, d)), fetched: false };
+    return { ...withValues(() => refreshFixture(file, detail, (d) => cacheRawDetail(battleId, d))), fetched: false };
   }
   const { detail, fetched } = await rawDetail(battleId, opts.fetch);
-  return { ...refreshFixture(file, detail), fetched };
+  return { ...withValues(() => refreshFixture(file, detail)), fetched };
 }
 
 type Json = Record<string, unknown>;

@@ -38,6 +38,7 @@ import {
   scalesReport,
   staggerReport,
   timingReport,
+  totalsView,
 } from "@efsim/logs";
 import { readFileSync } from "node:fs";
 import { parseAssume } from "../assume.ts";
@@ -66,6 +67,9 @@ export default command({
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
                 [--reading log]           Text lines also give the log's reading and its error: off under both is the
                                           build or a kit value, off only under the primary the replay's timing
+                [--zones]                 Text lines also give the primary reading's zones, the replay's crit and
+                                          its source (log, shown, layers, values, none) and the modifiers; with
+                                          scripts/cli-ab.ts <ref> --key '^(\\S+  t=\\d+  \\S+  \\S+)' which zone moved
                 [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1)
   efsim zmdlogs raw <fixture | id>        A battle's raw detail as ZMDLogs recorded it: buff lanes (key, target,
                                           source, start–end, effects) and events (key, value, the skill a Stagger is
@@ -116,11 +120,24 @@ export default command({
   efsim zmdlogs replay <fixture>          The replay in time order: its landings with the logged hit each stands for
                                           (or "replay only"), logged hits without a landing and why, casts it
                                           couldn't make or made without the log, its Stagger windows
-                [--kit-buff owner:id[@op]] Also a kit buff's windows at an operator (default its owner; repeatable)
+                [--kit-buff owner:id[@op]] Also a kit buff's windows at an operator (default its owner; repeatable),
+                                          each saying which window it refreshes (the log keeps a refreshed run's since)
                 [--trace-buff owner:id]   Each change of a kit buff's expiry and the step that made it (a cast, a
                                           pause or stop, the log's Stagger steps; repeatable)
+                [--trace-buff status:<s>] The same for an enemy status (corrosion, electrification, vulnerable, a
+                                          physical status; status:* every one), keyed by status and applier (a moved
+                                          application is a hold), with the log's runs of it (LANE)
+                [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
+                                          the log tools build for its casts: where they differ, the list isn't the
+                                          engine's
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
+  efsim zmdlogs totals <fixture>          The simulated total's parts per operator: the landings standing for
+                                          logged hits (predicted vs logged), the replay-only landings (largest
+                                          first) and the logged hits without a counted landing: which side moved a
+                                          total (with scripts/cli-ab.ts: between two commits)
+                [--operator <op>] [--top n] [--assume <id>=<reading>]  Only these operators; landings listed
+                                          (default 10)
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
                                           windows and where the engine's own would have ended; with several logs
                                           (default: every development log) a summary of the shortfalls
@@ -233,6 +250,8 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     world: { type: "boolean", default: false },
     why: { type: "string" },
     held: { type: "boolean", default: false },
+    stops: { type: "boolean", default: false },
+    zones: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -322,7 +341,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     if (sub === "hits") {
       if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
       const reading = values.reading === "log" ? "log" : "primary";
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
@@ -337,7 +356,11 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       };
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: values["trace-buff"], assume: parseAssume(data(), values.assume) });
+      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: values["trace-buff"], assume: parseAssume(data(), values.assume), stops: values.stops });
+    }
+    if (sub === "totals") {
+      if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --assume id=reading)");
+      return totalsView(data(), readDevFixture(arg), { operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume: parseAssume(data(), values.assume) });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
     if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, cache: !values["no-cache"], progress });

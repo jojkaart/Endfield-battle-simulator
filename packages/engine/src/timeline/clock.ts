@@ -127,7 +127,14 @@ function resetSlowdowns(ctx: TimelineContext, st: TimelineState, reset: { readon
   return s;
 }
 
-/** A frame after `start` moved `n` frames (n < 0: sooner, but not to `start` or before). */
+/**
+ * A frame after `start` moved `n` frames (n < 0: sooner, but not to `start` or before): the one mapping of an event time
+ * under a slow-down or its reset (an expiry, a tick, a window's or freeze's end, a scheduled item), which every shift
+ * function below uses. A reference a reading subtracts from is not an event and takes no floor: Corrosion's appliedAt
+ * (shiftEnemy), read inside a stop only through rampElapsed, never as `frame - appliedAt` (btl_upload_4d60e7fe92c2 at
+ * 73.65 s); a buff's appliedAt is its identity and never moves. Round 8 looked for other anchor readings in the engine
+ * (`frame - x.appliedAt` and the like): there are none; an operator's running action moves whole (shiftOperator).
+ */
 function moved(start: number, n: number): (f: number) => number {
   return (f) => (f > start ? (n >= 0 ? f + n : Math.max(start + 1, f + n)) : f);
 }

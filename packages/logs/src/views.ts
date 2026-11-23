@@ -18,10 +18,11 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
-import type { ClockWhy, PlacedHolds } from "./holds.ts";
+import { statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
+import type { AppliedStop, TracedStatus } from "./replayrecord.ts";
 import { distinctCasts, placeHits } from "./logcasts.ts";
 import { replayTimeStops } from "./query.ts";
-import { corrosionRamp, logBuffReplay } from "./logcheck.ts";
+import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
@@ -97,6 +98,27 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): s
   return [`${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)`, render(lines)].join("\n");
 }
 
+/**
+ * The slow-downs a replay's timeline applied (BuffReplay.appliedStops) paired with the log tools' stop list of its casts
+ * (replayTimeStops): each applied one with its listed one (same start and caster, the same length and priority first:
+ * a skill may start two at one frame, Rossi's combo_3), or null; and the listed ones no applied one took.
+ */
+export function stopsAgainstList<L extends { readonly start: number; readonly scales: readonly number[]; readonly operator: string; readonly priority?: number }>(applied: readonly AppliedStop[], listed: readonly L[]): { pairs: { applied: AppliedStop; listed: L | null }[]; unapplied: L[] } {
+  const free = new Set(listed);
+  const take = (ok: (l: L) => boolean): L | null => {
+    for (const l of free) if (ok(l)) {
+      free.delete(l);
+      return l;
+    }
+    return null;
+  };
+  const same = (x: AppliedStop, l: L) => l.start === x.start && l.operator === x.operator;
+  const found = new Map<AppliedStop, L | null>();
+  for (const x of applied) found.set(x, take((l) => same(x, l) && l.scales.length === x.scales.length && l.priority === x.priority));
+  for (const x of applied) if (found.get(x) === null) found.set(x, take((l) => same(x, l) && l.priority === x.priority) ?? take((l) => same(x, l)));
+  return { pairs: applied.map((x) => ({ applied: x, listed: found.get(x) ?? null })), unapplied: listed.filter((l) => free.has(l)) };
+}
+
 /** The replay's landing of each logged hit (the hit it stands for), as the log check finds it. */
 function landingsOf(replay: BuffReplay, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
   const byLanding = new Map<LandedHit, LogHit>();
@@ -115,7 +137,7 @@ function landingsOf(replay: BuffReplay, fx: LogFixture): { byLanding: Map<Landed
  * the kit buffs named (`owner:id`, at the owner unless `@operator` follows); under other readings of open assumptions
  * with `assume` (as `zmdlogs check --assume`).
  */
-export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean } = {}): string {
   const { replay } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(f.trace?.length ? { trace: f.trace } : {}) });
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
@@ -124,7 +146,9 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const t = msOf(l.frame);
     if (!inWindow(f, t) || !mine(f, l.operator)) continue;
     const h = byLanding.get(l);
-    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}` : "replay only";
+    // Where the log gives no crit: the crit the replay took and which inference gave it (BuffReplay.critSource).
+    const crit = h && h.crit === null && l.loggedCrit !== undefined ? ` [crit ${l.loggedCrit ? "yes" : "no"}: ${replay.critSource(h)}]` : "";
+    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}${crit}` : "replay only";
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
   }
   for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
@@ -149,7 +173,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   }
   for (const x of replay.castFlags) {
     const t = msOf(x.frame);
-    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `${x.kind === "forced" ? "FORCED" : "INSIDE"} ${label(data, x.cast.operator)} ${shortSkill(x.skillId)} made against its kit: ${x.why}` });
+    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: x.kind === "cuts" ? `CUTS   ${label(data, x.cast.operator)} ${shortSkill(x.skillId)}: ${x.why}` : `${x.kind === "forced" ? "FORCED" : "INSIDE"} ${label(data, x.cast.operator)} ${shortSkill(x.skillId)} made against its kit: ${x.why}` });
   }
   for (const x of replay.traces) {
     const t = msOf(x.frame);
@@ -160,6 +184,39 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     if (x.to === null && x.from !== null && x.from <= x.frame) lines.push({ t: msOf(x.from), order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: ran out at its expiry ${exp(x.from)} (seen gone at ${x.step}, ${s(t)} s)` });
     else lines.push({ t, order: 0, text: `TRACE  ${x.buff} from ${s(msOf(x.appliedAt))}: expiry ${exp(x.from)} → ${exp(x.to)}${moved} at ${x.step}` });
   }
+  // An enemy status's changes (`--trace-buff status:<status>`): keyed by status and applier, so a moved application is
+  // a hold, not a new one; beside the log's runs of it (holds.ts statusLanes: since, last listed hit, by applier).
+  const st = (x: TracedStatus | null) =>
+    x === null ? "none" : `level ${x.level}${x.appliedAt !== undefined ? ` applied ${s(msOf(x.appliedAt))}` : ""} expiry ${Number.isFinite(x.expiresAt) ? s(msOf(x.expiresAt)) : "never"}${x.rampHeld ? ` (its ramp held at ${s(msOf(x.rampHeld.elapsed))} s until ${s(msOf(x.rampHeld.until))})` : ""}`;
+  for (const x of replay.statusTraces) {
+    const t = msOf(x.frame);
+    if (!inWindow(f, t)) continue;
+    const moved = x.from?.appliedAt !== undefined && x.to?.appliedAt !== undefined && x.from.appliedAt !== x.to.appliedAt ? ` (application moved ${x.to.appliedAt - x.from.appliedAt > 0 ? "+" : ""}${x.to.appliedAt - x.from.appliedAt} frames: a hold, not a reapplication)` : "";
+    lines.push({ t, order: 0, text: `TRACE  status:${x.status} by ${x.operator ? label(data, x.operator) : "-"}: ${st(x.from)} → ${st(x.to)}${moved} at ${x.step}` });
+  }
+  const tracedStatuses = (f.trace ?? []).filter((x) => x.startsWith("status:")).map((x) => x.slice("status:".length));
+  if (tracedStatuses.length) {
+    for (const [key, runs] of statusLanes(fx).runs) {
+      const [status, applier] = key.split("|") as [string, string];
+      if (!tracedStatuses.includes(status) && !tracedStatuses.includes("*")) continue;
+      for (const r of runs) if (r.lastListed >= (f.from ?? -Infinity) && r.since <= (f.to ?? Infinity)) lines.push({ t: r.since, order: 0, text: `LANE   status:${status} by ${label(data, applier)}: the log's run since ${s(r.since)}, listed to ${s(r.lastListed)}${r.refreshed ? " (refreshed in the log)" : ""}` });
+    }
+  }
+  // The slow-downs the replay's timeline applied against the stop list the log tools build for its casts (replayTimeStops).
+  if (f.stops) {
+    const { pairs, unapplied } = stopsAgainstList(replay.appliedStops, replayTimeStops(data, fx));
+    for (const { applied: x, listed: l } of pairs) {
+      const t = msOf(x.start);
+      if (!inWindow(f, t) || (x.operator !== null && !mine(f, x.operator))) continue;
+      const vs = !l ? "not in the log tools' list" : l.scales.length !== x.scales.length ? `the log tools' list has ${l.scales.length} frames (${shortSkill(l.skillId)})` : `as listed (${shortSkill(l.skillId)})`;
+      lines.push({ t, order: 0, text: `STOP   the timeline's ${x.ultimate ? "ultimate stop" : "slow-down"} of ${x.operator ? label(data, x.operator) : "-"} ${s(t)}–${s(msOf(x.start + x.scales.length))} s (${x.scales.length} frames, lowest ×${Number(Math.min(...x.scales).toPrecision(2))}): ${vs}` });
+    }
+    for (const l of unapplied) {
+      const t = msOf(l.start);
+      if (!inWindow(f, t) || !mine(f, l.operator)) continue;
+      lines.push({ t, order: 0, text: `STOP   listed for ${label(data, l.operator)} ${shortSkill(l.skillId)} at ${s(t)} s (${l.scales.length} frames): the timeline never applied it` });
+    }
+  }
   for (const w of replay.staggerSpans) {
     const [a, z] = [msOf(w.start), msOf(w.end)];
     if (z >= (f.from ?? -Infinity) && a <= (f.to ?? Infinity)) lines.push({ t: a, order: 0, text: `STAGGER the replay's window ${s(a)}–${s(z)} s` });
@@ -169,13 +226,16 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const operator = at ?? buff.split(":")[0] ?? "";
     for (const w of replay.kitWindows(buff, operator)) {
       if (w.end < (f.from ?? -Infinity) || w.start > (f.to ?? Infinity)) continue;
-      lines.push({ t: w.start, order: 0, text: `BUFF   ${buff} at ${label(data, operator)} ${s(w.start)}–${w.end === Infinity ? "end" : s(w.end)}${w.expired ? " (ran out)" : ""}` });
+      const chain = w.replaces !== undefined ? ` (refreshes the one from ${s(w.replaces)}: the log keeps a refreshed run's since)` : "";
+      lines.push({ t: w.start, order: 0, text: `BUFF   ${buff} at ${label(data, operator)} ${s(w.start)}–${w.end === Infinity ? "end" : s(w.end)}${w.expired ? " (ran out)" : ""}${chain}` });
     }
   }
   const forced = replay.castFlags.filter((x) => x.kind === "forced").length;
-  const inside = replay.castFlags.length - forced;
-  const flagged = replay.castFlags.length ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}LAND its landings, NOLAND logged hits without one, EVENT the log's cast events and what the replay made of each, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry and the step that made it" : ""}`;
+  const inside = replay.castFlags.filter((x) => x.kind === "inside").length;
+  const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
+  const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
+  const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one, EVENT the log's cast events and what the replay made of each, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines)].join("\n");
 }
 
@@ -323,7 +383,7 @@ export function differencesReport(records: readonly HitRecord[], opts: { readonl
       baseline++;
       continue;
     }
-    for (const d of ds) add(`${d.what} | ${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : "other values"}`, r, `engine [${d.engine.join(", ")}] log [${d.log.join(", ")}]`);
+    for (const d of ds) add(`${d.what} | ${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"}`, r, `engine [${d.engine.join(", ")}] log [${d.log.join(", ")}]`);
   }
   const rows = [...groups].sort((a, b) => b[1].n - a[1].n);
   const out = [`Where the log's listing and the replay disagree at kit hits with a landing (${records.length} records, ${baseline} without a difference); ratio = logged value ÷ the engine's primary reading (quartiles):`];
@@ -425,7 +485,7 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     ...by(({ r }) => [event(r)]),
     "",
     "Own mismatches by where the log and the replay disagree (none: they agree on every buff they both model):",
-    ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
+    ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
     "",
     ...fallbackGroups(records.filter((r) => r.operator === operator)),
   ];
@@ -462,7 +522,7 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { "hidden-holds": "placed" } }).replay;
   const h = r.hiddenHolds;
   if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
-  if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why);
+  if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why, r.logEnds);
   const series = (tag: string) => tag.replace(/ [0-9]+[→⇒][0-9]+ ms$/, "");
   const lines = [`${fx.id}: ${s(h.total)} s of hidden holds placed (the least total the clocks allow; ${Math.round(h.total / HOLD_UNIT_MS)} perfect dodges' worth at 0.512 s), ${new Set(h.kept.filter((b) => b.kind === "run").map((b) => b.tag)).size} buff runs and ${new Set(h.kept.filter((b) => b.kind === "tick").map((b) => series(b.tag))).size} tick series kept, ${h.dropped.length} bound(s) dropped; times in s`];
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
@@ -481,7 +541,7 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
  * placement or not (holds.ts ClockWhy: the one place runBounds and statusBounds say so), and for a bound whether the
  * placement kept or dropped it.
  */
-function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h: PlacedHolds, re: RegExp): string {
+function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h: PlacedHolds, re: RegExp, logEnds: BuffReplay["logEnds"] = []): string {
   // By id (owner:id, status:<name>) or with the owner's name (Perlica:wpn_funnel_0008.arts_taken), case aside.
   const named = (c: ClockWhy) => (c.clock.startsWith("status:") ? c.clock : `${label(data, c.clock.slice(0, c.clock.indexOf(":")))}${c.clock.slice(c.clock.indexOf(":"))}`);
   const ci = new RegExp(re.source, re.flags.includes("i") ? re.flags : `${re.flags}i`);
@@ -501,6 +561,10 @@ function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h
     const verdict = tag === null ? c.verdict : `a clock (asks ${(c.ask ?? 0).toFixed(2)} s): ${dropped.has(tag) ? "dropped by the placement as conflicting" : kept.has(tag) ? "kept" : "not placed"}`;
     lines.push(`  ${named(c)} ${who} ${inst}${run}: ${verdict.replace(/chr_\d{4}_[a-z0-9]+/g, (op) => label(data, op))}`);
   }
+  // The log-end side (heldToLoggedEnds): each instance that reached its expiry in the check's replay, kept to the log's end or not, and why.
+  const ends = logEnds.filter((e) => ci.test(e.buff) || ci.test(`${label(data, e.buff.slice(0, e.buff.indexOf(":")))}${e.buff.slice(e.buff.indexOf(":"))}`)).sort((a, b) => a.buff.localeCompare(b.buff) || a.appliedAt - b.appliedAt);
+  if (ends.length) lines.push("the log's end (heldToLoggedEnds, in the check's replay): each instance that reached its expiry");
+  for (const e of ends) lines.push(`  ${label(data, e.buff.slice(0, e.buff.indexOf(":")))}${e.buff.slice(e.buff.indexOf(":"))} from ${s(msOf(e.appliedAt))}: ${e.why}`);
   return lines.join("\n");
 }
 
@@ -556,4 +620,44 @@ export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbos
     }
   }
   return lines.join("\n");
+}
+
+/**
+ * `zmdlogs totals`: the simulated total split into its parts, per operator: the landings that stand for logged hits
+ * (their predictions against the logged values), the replay-only landings (no logged hit: listed largest first) and
+ * the logged hits the total has no landing for (the log's side only), with the recorded bursts' shifts (Si's Artful
+ * Intent). A total that moves while the per-hit views improve is a compensating error: its other side shows here
+ * (round 8: 458b's Laevatain, 9.0 → 11.3% from two replay-only finisher landings, found by hand from a replay dump).
+ */
+export function totalsView(data: GameData, fx: LogFixture, f: { readonly operators?: readonly string[]; readonly top?: number; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+  const replay = f.assume && Object.keys(f.assume).length ? logBuffReplay(data, fx, undefined, { assume: f.assume }) : logBuffReplay(data, fx);
+  const byHit = engineHits(data, fx, replay);
+  const t = engineReport(data, fx, replay, byHit, checkLog(data, fx, { replay, engineHits: byHit })).totals;
+  const top = f.top ?? 10;
+  const pct = (sim: number, log: number) => (log === 0 ? "n/a" : `${sim / log - 1 > 0 ? "+" : ""}${(100 * (sim / log - 1)).toFixed(1)}%`);
+  const n = (x: number) => Math.round(x).toLocaleString("en-US");
+  const counted = new Set(t.parts.flatMap((p) => (p.logged ? [p.logged] : [])));
+  const ops = [...new Set([...Object.keys(t.logged.perOperator), ...Object.keys(t.simulated.perOperator)])].filter((op) => !f.operators?.length || f.operators.includes(op));
+  const out = [
+    `${fx.id}: the simulated total's parts (enginecheck.ts fightTotals; damage simulated vs logged). matched: the landings standing for logged hits, predicted vs their logged values; replay only: landings no logged hit stands for (counted to the log's last hit); log only: logged hits the total has no landing for; shifts: recorded bursts' teammate shares taken as logged.`,
+    `  team: ${n(t.simulated.damage)} vs ${n(t.logged.damage)} (${pct(t.simulated.damage, t.logged.damage)})`,
+  ];
+  for (const op of ops) {
+    const mine = t.parts.filter((p) => p.operator === op);
+    const matched = mine.filter((p) => p.logged);
+    const only = mine.filter((p) => !p.logged).sort((a, b) => b.damage - a.damage);
+    const logOnly = fx.hits.filter((h) => h.operator === op && !counted.has(h));
+    const sum = (xs: readonly { damage: number }[]) => xs.reduce((a, x) => a + x.damage, 0);
+    const loggedOf = matched.reduce((a, p) => a + (p.logged as LogHit).value, 0);
+    const logOnlySum = logOnly.reduce((a, h) => a + h.value, 0);
+    const shift = t.recordedShifts.filter((x) => x.operator === op).reduce((a, x) => a + x.amount, 0);
+    out.push(
+      `  ${label(data, op)}: ${n(t.simulated.perOperator[op] ?? 0)} vs ${n(t.logged.perOperator[op] ?? 0)} (${pct(t.simulated.perOperator[op] ?? 0, t.logged.perOperator[op] ?? 0)}): matched ${n(sum(matched))} vs ${n(loggedOf)} (${pct(sum(matched), loggedOf)}, ${matched.length} landing(s)); simulated + replay only ${n(sum(only))} (${only.length} landing(s))${shift ? ` + shifts ${n(shift)}` : ""}; logged + log only ${n(logOnlySum)} (${logOnly.length} hit(s))`,
+    );
+    for (const p of only.slice(0, top)) out.push(`      replay only ${s(msOf(p.frame))} s  ${shortSkill(p.skillId)} ${p.hitId}  ${n(p.damage)}`);
+    if (only.length > top) out.push(`      … and ${only.length - top} more replay-only landing(s), ${n(sum(only.slice(top)))}`);
+    for (const h of [...logOnly].sort((a, b) => b.value - a.value).slice(0, top)) out.push(`      log only    ${s(h.t)} s  ${shortSkill(h.event)}  ${n(h.value)}`);
+    if (logOnly.length > top) out.push(`      … and ${logOnly.length - top} more logged hit(s) without a counted landing`);
+  }
+  return out.join("\n");
 }

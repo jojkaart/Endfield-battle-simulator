@@ -26,6 +26,10 @@
 //                       same code and against the same reference, in one run and one snapshot: the summary per
 //                       variant, files under <out>/variant-<n>/ (separating two readings' effects without chaining
 //                       measures, each taking its own snapshot)
+//   --patch <file>      measure the code with this diff applied on top (git apply; the code at --at, else the tree
+//                       as queued): one half of a change, or the old reading of a log tool's rule, without editing
+//                       and reverting the tree (round 8). The diff is copied at queue time; with --base HEAD the
+//                       patch's own effect. Not with --live
 //   --no-negative       skip the negative control (by default the verified logs measured are also checked with
 //                       every value ×0.97 and ×1.03, as tests/slow/negative-control.test.ts does, and a count over
 //                       its bound is flagged: a reading fitted to the data it is judged on shows at the first
@@ -173,6 +177,7 @@ async function main(argv: string[]): Promise<number> {
       live: { type: "boolean", default: false },
       snapshot: { type: "string" },
       "snapshot-head": { type: "string" },
+      patch: { type: "string" },
     },
     allowNegative: true,
   });
@@ -181,11 +186,13 @@ async function main(argv: string[]): Promise<number> {
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const say = (l: string) => process.stdout.write(l + "\n");
 
-  // The code: --at's commit, the snapshot taken when the run was queued (the entry point below), or the tree as it is now.
-  const at = values.at ?? values.snapshot;
-  const tree = at ? resolve(ROOT, "scratch/at", `${values.at ? "" : "measure-"}${git(["rev-parse", "--short=9", "--verify", `${at}^{commit}`])}`) : ROOT;
-  const ownTree = values.at === undefined && values.snapshot !== undefined && !existsSync(tree);
-  if (at) atCommit(at, tree);
+  // The code: --at's commit, the snapshot taken when the run was queued (the entry point below), or the tree as it is now;
+  // with --patch, that commit with the diff applied in a worktree of its own (removed after).
+  if (values.patch !== undefined && values.live) throw new Error("--patch applies to a commit (--at, or the tree as queued): not with --live");
+  const at = values.at ?? values.snapshot ?? (values.patch !== undefined ? "HEAD" : undefined);
+  const tree = at ? resolve(ROOT, "scratch/at", `${values.at && values.patch === undefined ? "" : "measure-"}${git(["rev-parse", "--short=9", "--verify", `${at}^{commit}`])}${values.patch !== undefined ? `-patch-${process.pid}` : ""}`) : ROOT;
+  const ownTree = (values.patch !== undefined || (values.at === undefined && values.snapshot !== undefined)) && !existsSync(tree);
+  if (at) atCommit(at, tree, values.patch);
   if (ownTree) {
     // The snapshot's worktree goes when the run ends, a signal included (testlock.ts passes a kill on).
     process.on("exit", () => removeAtCommit(tree));
@@ -204,7 +211,8 @@ async function main(argv: string[]): Promise<number> {
         ? `the code at HEAD (${short(snapshot)}; the tree was clean when queued)`
         : `the working tree as queued (snapshot ${short(snapshot)} on ${short(values["snapshot-head"] ?? "HEAD")})`
       : "the working tree";
-  const what = `${code}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
+  const patched = values.patch !== undefined ? `${code} with ${values.patch} applied` : code;
+  const what = `${patched}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
 
   // The selection.
   const split = readSplit(readFileSync(join(tree, "fixtures/holdout/holdout.json"), "utf8"));
@@ -518,6 +526,15 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     // worktree under scratch/at/ and removed after. --at names a commit itself; --live reads the tree at the start.
     const own = argv.some((a) => a === "--at" || a.startsWith("--at=") || a === "--live" || a === "--snapshot" || a.startsWith("--snapshot="));
     const args = [...argv];
+    // A --patch file as it is now (edits during the wait don't reach the run), under scratch/measure/patches/.
+    const pi = args.findIndex((a) => a === "--patch");
+    if (pi >= 0 && args[pi + 1] !== undefined) {
+      const dir = join(ROOT, "scratch/measure/patches");
+      mkdirSync(dir, { recursive: true });
+      const copy = join(dir, `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${process.pid}.diff`);
+      writeFileSync(copy, readFileSync(resolve(args[pi + 1] as string)));
+      args[pi + 1] = copy;
+    }
     if (!own) {
       const snap = snapshotCommit(ROOT);
       args.push("--snapshot", snap.commit.slice(0, 12), "--snapshot-head", snap.head.slice(0, 12));

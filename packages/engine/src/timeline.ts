@@ -20,7 +20,7 @@ export { ENGINE_ASSUMPTIONS, engineReading, type EngineAssumption } from "./time
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { setPoise, refillPoise, holdStagger, staggerFrames } from "./timeline/resources.ts";
 export { cutAtResets, holdWorld, pathSlowdowns } from "./timeline/clock.ts";
-export { exclusiveUntil, earliestStart, enhancedBasic, skillAvailable } from "./timeline/timing.ts";
+export { exclusiveUntil, earliestStart, enhancedBasic, ownHitsLanded, skillAvailable } from "./timeline/timing.ts";
 export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";

@@ -48,7 +48,8 @@ import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
 import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
-import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
+import { REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK } from "./replayrecord.ts";
+import { atLayers, disagreementRuns, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
 
 export type { Assumption, AssumptionKind } from "./assumptions.ts";
 import type { Assumption } from "./assumptions.ts";

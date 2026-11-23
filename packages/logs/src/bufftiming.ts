@@ -14,7 +14,9 @@ import { engineCheck, loggedEntries, readingBasis, type Alternative, type Engine
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
 import { placeHits, type Placement, type TimeStop } from "./logcasts.ts";
 import { replayTimeStops } from "./query.ts";
-import { loggedRecoveries, type BuffReplay, type KitWindow } from "./buffreplay.ts";
+import type { BuffReplay } from "./buffreplay.ts";
+import type { KitWindow } from "./replayrecord.ts";
+import { loggedRecoveries } from "./replaysteps.ts";
 import { teamPanels } from "./logeffects.ts";
 
 /** For a buff the engine misses or starts late, casts that would apply it are looked for this far before the window too (ms). */

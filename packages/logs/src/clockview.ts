@@ -14,7 +14,8 @@
 //   for: since, last listed hit, next unlisted hit; and the last listed hit's lateness past `own`, in real and in
 //   world time (the replay's casts' stops out: replayTimeStops).
 // Instances of the same kit buff on several recipients share one start and are one row (the traces key by owner, id
-// and start).
+// and start). An instance whose application cut an earlier one on the own clock says so ("refreshes the one from"):
+// the log keeps a refreshed run's `since`, the replay starts a new instance (round 8).
 
 import { FPS, type GameData } from "@efsim/engine";
 import { teamBuffNames } from "./enginecheck.ts";
@@ -22,7 +23,7 @@ import { logBuffReplay } from "./logcheck.ts";
 import { worldMs } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
 import { buffLanes, operatorLabel, replayTimeStops, type BuffLane } from "./query.ts";
-import type { BuffTrace } from "./buffreplay.ts";
+import type { BuffTrace } from "./replayrecord.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
@@ -50,6 +51,11 @@ export interface ClockRow {
   readonly lane: Pick<BuffLane, "buff" | "since" | "firstListed" | "lastListed" | "nextUnlisted"> | null;
   /** The last listed hit less `own`, real and world time (ms; null without a lane or an own expiry). */
   readonly late: { readonly real: number; readonly world: number } | null;
+  /**
+   * The start of the instance this one's application cut on the replay's own clock (a refresh in the replay: the
+   * log keeps a refreshed run's `since`, the replay starts a new instance), if one did.
+   */
+  readonly replaces?: number;
 }
 
 interface Instance {
@@ -101,7 +107,9 @@ export function kitBuffClock(data: GameData, fx: LogFixture, kitBuff: string, as
     const lane = lanes.filter((l) => (l.since ?? l.firstListed) >= i.start - 300 && (l.since ?? l.firstListed) < next - 300).sort((a, b) => (a.since ?? a.firstListed) - (b.since ?? b.firstListed))[0];
     const c = check.find((x) => x.start === i.start) ?? null;
     const late = lane && i.own !== null && Number.isFinite(i.own) ? { real: lane.lastListed - i.own, world: lane.lastListed >= i.own ? worldMs(i.own, lane.lastListed, stops) : -worldMs(lane.lastListed, i.own, stops) } : null;
-    return { start: i.start, first: i.first, own: i.own, ended: i.ended, check: c ? c.ended : null, lane: lane ? { buff: lane.buff, since: lane.since, firstListed: lane.firstListed, lastListed: lane.lastListed, nextUnlisted: lane.nextUnlisted } : null, late };
+    // Cut at the step that applied this one (the same frame): this one refreshed it.
+    const replaced = own.find((o) => o.start < i.start && o.ended.how.startsWith("cut") && o.ended.at !== null && Math.abs(o.ended.at - i.start) <= 1000 / FPS);
+    return { ...(replaced ? { replaces: replaced.start } : {}), start: i.start, first: i.first, own: i.own, ended: i.ended, check: c ? c.ended : null, lane: lane ? { buff: lane.buff, since: lane.since, firstListed: lane.firstListed, lastListed: lane.lastListed, nextUnlisted: lane.nextUnlisted } : null, late };
   });
 }
 
@@ -127,7 +135,8 @@ export function clockView(data: GameData, logs: readonly DevFixture[], kitBuff: 
       if (x.late && x.lane?.nextUnlisted !== null) lates.push(x.late.world);
       const log = x.lane ? `log since ${t(x.lane.since)}, listed to ${t(x.lane.lastListed)}, next unlisted ${t(x.lane.nextUnlisted)}` : "log: no run listed";
       const late = x.late ? `; late ${x.late.real >= 0 ? "+" : ""}${s(x.late.real)} (world ${x.late.world >= 0 ? "+" : ""}${s(x.late.world)})` : "";
-      out.push(`    ${t(x.start).padStart(7)}  first ${t(x.first)}, own ${t(x.own)}, ended ${end(x.ended)}; check ${end(x.check)}; ${log}${late}`);
+      const chain = x.replaces !== undefined ? ` (refreshes the one from ${t(x.replaces)})` : "";
+      out.push(`    ${t(x.start).padStart(7)}${chain}  first ${t(x.first)}, own ${t(x.own)}, ended ${end(x.ended)}; check ${end(x.check)}; ${log}${late}`);
     }
   }
   if (!rows) out.push("  no instance in these logs");

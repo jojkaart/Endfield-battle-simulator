@@ -69,6 +69,12 @@ export function sharedCode(ours: readonly string[], theirs: readonly string[]): 
   return [...out].sort();
 }
 
+/** Paths to print: a hold-out fixture's never by name (CLAUDE.md, hold-out logs), only as a count. */
+export function shownPaths(paths: readonly string[]): string[] {
+  const hidden = paths.filter((p) => p.startsWith("fixtures/holdout/"));
+  return [...paths.filter((p) => !p.startsWith("fixtures/holdout/")), ...(hidden.length ? [`${hidden.length} file(s) under fixtures/holdout/ (not named)`] : [])];
+}
+
 /** The files each side changed since the merge base of HEAD and the branch (before merging it). */
 export function sides(root: string, branch: string): { ours: string[]; theirs: string[] } {
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -83,7 +89,8 @@ export function mergeBranch(root: string, branch: string, opts: { readonly snaps
   const journal = (...args: string[]) => execFileSync("node", ["scripts/journal.ts", ...args], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   const journalStale = () => spawnSync("node", ["scripts/journal.ts", "--check"], { cwd: root }).status !== 0;
 
-  const m = spawnSync("git", ["merge", "--no-ff", "--no-edit", branch], { cwd: root, encoding: "utf8" });
+  // --no-stat: a merge's diffstat names every file, hold-out fixtures included (round 8; CLAUDE.md, hold-out logs).
+  const m = spawnSync("git", ["merge", "--no-ff", "--no-edit", "--no-stat", branch], { cwd: root, encoding: "utf8" });
   if (m.status === 0) {
     log(`merge: merged ${branch} cleanly`);
     if (!journalStale()) return { merged: true, committed: true, rebuiltJournal: false, snapshots: [], left: [] };
@@ -115,7 +122,7 @@ export function mergeBranch(root: string, branch: string, opts: { readonly snaps
     git("add", ...c.snapshots);
   }
   if (c.left.length) {
-    log(`merge: resolve by hand, then commit: ${c.left.join(", ")}`);
+    log(`merge: resolve by hand, then commit: ${shownPaths(c.left).join(", ")}`);
     return { merged: false, committed: false, rebuiltJournal, snapshots: c.snapshots, left: c.left };
   }
   if (c.snapshots.length && !opts.snapshots && !opts.snapshotsLater) {

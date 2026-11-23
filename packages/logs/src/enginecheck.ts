@@ -90,6 +90,11 @@ export interface LogDifference {
   /** The engine's and the log's entries (zone element value). */
   readonly engine: readonly string[];
   readonly log: readonly string[];
+  /**
+   * "values" whose sums per zone agree (one side lists as one entry what the other has as layers: 0.216 against two of
+   * 0.108): cosmetic, the damage can't tell them apart (round 8: such a group carried the ratio of whatever else moved).
+   */
+  readonly sameTotals?: true;
 }
 
 /** What the check knows of a logged hit besides its landing: the kit hits its event can be, its cast's kind and facts, and the hit a Combustion tick keeps its attacker side from. */
@@ -428,7 +433,14 @@ export function logDifferences(c: EngineCheck, hit: LogHit, landing: LandedHit &
     }
     if (!engineOnly.length && !logOnlyHere.length) continue;
     const kind = !mine.length ? "log" : !logged.length ? "engine" : "values";
-    out.push({ what: [...g].sort().join(" + "), kind, engine: engineOnly, log: logOnlyHere });
+    const totals = (m: ReadonlyMap<string, { zone: string; value: number; n: number }>) => {
+      const t = new Map<string, number>();
+      for (const x of m.values()) t.set(x.zone, (t.get(x.zone) ?? 0) + x.value * x.n);
+      return t;
+    };
+    const [et, lt] = [totals(ei), totals(li)];
+    const same = kind === "values" && [...new Set([...et.keys(), ...lt.keys()])].every((z) => Math.abs((et.get(z) ?? 0) - (lt.get(z) ?? 0)) < 1e-6);
+    out.push({ what: [...g].sort().join(" + "), kind, engine: engineOnly, log: logOnlyHere, ...(same ? { sameTotals: true as const } : {}) });
   }
   const loggedStagger = hit.effects.some((e) => /poise_break/.test(e.buff));
   const engineStagger = landing.inputs.options.staggered;
@@ -470,6 +482,22 @@ export interface TotalsComparison {
    * the kinds keep the replay's burst.
    */
   readonly recordedShifts: readonly RecordedShift[];
+  /**
+   * The simulated total's parts: each landing it counted with the damage it counted (`logged`: the logged hit it stands
+   * for, absent for a replay-only landing), in frame order (`zmdlogs totals`: a total can move while every logged hit
+   * gets closer, by its replay-only side: 458b's Laevatain, two replay-only finisher landings).
+   */
+  readonly parts: readonly TotalPart[];
+}
+
+/** One landing the simulated total counted (TotalsComparison.parts). */
+export interface TotalPart {
+  readonly operator: string;
+  readonly skillId: string;
+  readonly hitId: string;
+  readonly frame: number;
+  readonly damage: number;
+  readonly logged?: LogHit;
 }
 
 /** One recorded burst's move in its operator's simulated total (TotalsComparison.recordedShifts). */
@@ -590,6 +618,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
   const counted = new Set<LandedHit>();
+  const parts: TotalPart[] = [];
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
     const m = matched.get(l);
     const capped = cappedHit.get(l);
@@ -602,6 +631,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     else damage = l.exact;
     if (capped) damage = Math.min(damage, capped.value);
     counted.add(l);
+    const of = m?.hit ?? capped;
+    parts.push({ operator: l.operator, skillId: l.skillId, hitId: l.hitId, frame: l.frame, damage, ...(of ? { logged: of } : {}) });
     sim.damage += damage;
     if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
     add(sim.perOperator, l.operator, damage);
@@ -620,7 +651,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, recordedShifts };
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, recordedShifts, parts };
 }
 
 /** A totals comparison as rounded percentage errors (simulated / logged − 1, to 0.1 %), for the report and the verdict snapshots. */
