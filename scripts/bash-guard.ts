@@ -22,6 +22,18 @@ const INLINE = /(?:^|[\s;&|(])(?:python3?|node|perl|ruby|(?:ba|z)?sh)(?:\s+-[A-Z
 /** A heredoc (<<WORD, <<-WORD, <<'WORD', <<"WORD"), not a here-string (<<<). */
 const HEREDOC = /(?:^|[^<])<<-?\s*(?:'[^']+'|"[^"]+"|\\?[A-Za-z_][\w.-]*)/;
 
+/** Whether the command has a backtick the shell would run: outside single quotes and not escaped. */
+export function liveBacktick(command: string): boolean {
+  let single = false;
+  for (let i = 0; i < command.length; i++) {
+    const c = command[i];
+    if (c === "\\" && !single) i++;
+    else if (c === "'") single = !single;
+    else if (c === "`" && !single) return true;
+  }
+  return false;
+}
+
 /** Why the command is refused, or undefined. */
 export function refusal(command: string): string | undefined {
   // Text inside single quotes can hold "<<" harmlessly only as data; a heredoc there is rare enough to refuse too.
@@ -30,6 +42,10 @@ export function refusal(command: string): string | undefined {
     if (command.includes("\n")) return `an inline script over several lines (python3 -c / node -e / bash -c with a newline: CLAUDE.md forbids it). ${SAFE}`;
     if (command.includes("`")) return `an inline script with a backtick (in double quotes the shell runs it as a command and puts its output in the text: how docs/open-problems.md got "the  assumption ()"). ${SAFE}`;
   }
+  // A commit message typed into the command (round 9's own slip: a multi-line `git commit -m "…"` with code spans).
+  if (/(?:^|[\s;&|])git\s+commit\b[^\n]*\s-[a-zA-Z]*m\b/.test(command) && command.includes("\n")) return `a multi-line commit message in the command (CLAUDE.md: write scratch/msg.txt with the Write tool, then git commit -F scratch/msg.txt -- <paths>)`;
+  // Backtick substitution anywhere outside single quotes: in a message or a doc's text it runs the span as a command.
+  if (liveBacktick(command)) return `a backtick the shell would run as a command (outside single quotes): Markdown code spans in an argument become their command's output. ${SAFE}`;
   return undefined;
 }
 

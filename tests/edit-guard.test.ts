@@ -81,6 +81,14 @@ describe("scripts/bash-guard.ts", () => {
     expect(refusal(`python3 -c "s = s.replace('${B}x${B}', 'y')"`)).toMatch(/backtick/);
     expect(refusal("node -e \"a\nb\"")).toMatch(/several lines/);
     expect(refusal("bash -c 'a\nb'")).toMatch(/several lines/);
+    expect(refusal("git commit -q -m \"title\n\nbody\" -- a.ts")).toMatch(/multi-line commit message/);
+    expect(refusal(`git commit -m "the ${B}x${B} view" -- a.ts`)).toMatch(/backtick the shell would run/);
+    expect(refusal(`echo "${B}date${B}" > a.md`)).toMatch(/backtick the shell would run/);
+  });
+
+  it("lets a backtick in single quotes or escaped through", () => {
+    expect(refusal(`grep -n '${B}x${B}' docs/a.md`)).toBeUndefined();
+    expect(refusal(`echo "a \\${B}b\\${B}"`)).toBeUndefined();
   });
 
   it("lets plain commands through", () => {
