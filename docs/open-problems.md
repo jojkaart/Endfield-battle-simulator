@@ -1533,7 +1533,9 @@ keeps a listed buff to its listing's end.
   application in whole seconds, against the replay's own world time there (its Corrosion's time at the landing, its
   placed holds added back: the placement's stops lack an ultimate the replay places from its event, db87's Laevatain
   at 16.60 s, which made a first version double-count 1.5 s). logcheck.ts `logBuffReplay` places the holds again with
-  these bounds (first and last hit per run of steps). A log listing no Corrosion (db87) takes the replay's. **db87:**
+  these bounds (first and last hit per run of steps), a step from the replay's at most (the ramp is read from the
+  damage the check judges: three steps let the negative control's ×0.97 values place holds that fit them, bdf2 34
+  chance matches). A log listing no Corrosion (db87) takes the replay's. **db87:**
   190 readings, 3 off the replay's step (was 24 of 186), plain 166 → 206, mismatch 59 → 18.
 - **The ramp inside a stop** (engine, timeline/clock.ts shiftEnemy, status.ts `rampElapsed`): a running Corrosion's
   appliedAt moved past a stop at its start, so a hit inside the stop read a ramp younger by the rest of the stop

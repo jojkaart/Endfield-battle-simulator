@@ -40,11 +40,13 @@ describe("per-hit records of the log check", () => {
   });
 
   it("gives the reading the verdict rests on beside the primary (verdictReading, verdictError)", () => {
-    for (const r of records) {
-      if (r.verdict === "match") expect(Math.abs(r.value - (r.verdictReading as number)), `${r.t} ${r.event}`).toBeLessThanOrEqual(1);
+    records.forEach((r, i) => {
+      // A match is judged on the uncapped value where the log has one (the killing blow: 0eef 10030 ms, 17238 of 173880).
+      const judged = fx.hits[i]?.uncapped ?? r.value;
+      if (r.verdict === "match") expect(Math.abs(judged - (r.verdictReading as number)), `${r.t} ${r.event}`).toBeLessThanOrEqual(1);
       if (r.verdict === "uncovered") expect(r.verdictReading).toBeNull();
       if (r.verdictReading) expect(r.verdictError).toBeCloseTo(r.value / r.verdictReading - 1, 9);
-    }
+    });
   });
 
   it("gives a plain match's reading with its scale parts, zones and modifier sources, a status hit's reaction, a kit hit's enemy statuses", () => {

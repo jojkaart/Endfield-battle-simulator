@@ -88,7 +88,8 @@ closure stays: the ramp pass composes outside it (one more replayKitBuffs with `
 
 **Dead ends:** reading the ramp only from the log's listed Corrosion: db87's log lists none (the replay's application
 stands in). A ramp reading far from the replay's step (Arcane's seal finisher at step 2 of 10): a coincidence, now
-skipped beyond 3 steps.
+skipped beyond one step: the ramp is read from the damage the check judges, and with three steps the
+negative control found 34 chance matches of 167 in bdf2 at ×0.97 (none with one; the logs' verdicts the same).
 
 **Left:** test 111; the combo slow-downs that over-hold the ramp; crits a buff's listed layers show (Wolven Blood); the
 replay's own stops for every view and bound (friction report docs/friction/2026-11-23-hold-clocks.md).

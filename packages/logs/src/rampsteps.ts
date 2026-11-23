@@ -38,8 +38,13 @@ export interface RampStep {
 /** Steps tried at most (Corrosion's cap comes at 10 s and less). */
 const MAX_STEPS = 30;
 
-/** How many steps the log's may be from the replay's (the most hold a Corrosion's life sees is a few seconds). */
-const MAX_STEP_LAG = 3;
+/**
+ * How many steps the log's may be from the replay's (the replay already has the other clocks' holds). The ramp is read
+ * from the damage the check then judges, so a reading may only move the clock a step: with 3, the negative control
+ * (tests/slow/negative-control.test.ts) found 34 chance matches of 167 in bdf2 at ×0.97 (the scaled values read as a
+ * younger ramp, and the holds placed for it); with 1, none, and no development log's verdicts move (2026-11-23).
+ */
+const MAX_STEP_LAG = 1;
 
 /** How far the replay's application of its Corrosion may be from the log's and still be the same instance (ms). */
 const SAME_APPLICATION_MS = 500;
