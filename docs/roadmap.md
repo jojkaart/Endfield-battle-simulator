@@ -65,8 +65,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   Arcane's reset reaches a combo pressed inside her first 9 frames, Purrchena's combo paths end at her loop's cast
   2026-11-23 (7910 +15 plain, 9555 +9; 489c's bleed series isn't a reapplication: a hold-unit conflict under the
   ramp's cap, next); fight totals 2026-11-23 (the enemy away in Si's phases, the Endministrator's shatters and male
-  kit, Hard 27's stage Electrification: development 8.7 → 8.1%, hold-out 10.2 → 9.1%, earlier 8.1 → 5.3%; next a9d7's
-  fight-wide factor, 3f78's Rossi ultimate slots, fc63's burst keys, 4360's kill); Arcane's misses grouped (2026-11-18: 908 → 866;
+  kit, Hard 27's stage Electrification: development 8.7 → 8.1%, hold-out 10.2 → 9.1%, earlier 8.1 → 5.3%; round 2
+  2026-11-23: `zmdlogs totals --all`, build offsets fitted in seven logs (a9d7's and d9e5's missing foods), kills from a
+  capped last hit, an ultimate's slots by time, Typhoeus's 4th shot: development 8.1 → 7.3%, earlier 5.3 → 4.9%,
+  hold-out 9.1%, one-sided; next an offsets screen as a command and test, the hold-outs' one-sided landings, 2fd9's
+  Crush stacks); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds

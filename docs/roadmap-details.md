@@ -142,6 +142,16 @@ matched −19.6% (a fight-wide factor), 2fd9's Mi Fu Crush ×1.90, 3f78's Rossi 
 slashes in the wrong slots: placement by value), 9c6e's two targets, fc63's Typhoeus burst keys, 4360's kill not
 detected (capped last hit, data HP not the total), then matched scale in d9e5, e82d, 1cd1, 7910, db87.
 
+**Fight totals, round 2 (2026-11-23, [journal](journal/2026-11-23-11-fight-totals-2-an-all-fights-view-kills-from-capped-hits.md)):**
+`efsim zmdlogs totals --all` and measure's per-group shares (the hold-outs: 12 of 13 one-sided). Done: a9d7 and d9e5
+were missing foods, five more logs a node count or weapon level (fixture `buildOverrides`, fit-build); a capped last
+hit is a kill; an ultimate's fewer landings by time (3f78); Typhoeus's off-field 5th-shot key and burst joins (fc63 and
+six more). Next: (1) an offsets screen (per log and operator, the median logged ÷ primary and its tightness) as a
+command and a slow test, so a missing food never waits for a totals round; (2) what the hold-outs' replay-only and
+log-only landings are by kind (measure: counts per landing kind, no log named); (3) 2fd9's Crush stack count; (4)
+fc63's Hunting Arrows after the hovering ultimate and the 5th shot's burst's Hovering ATK; (5) Chen's readings (d4fb,
+a9d7), e82d's Si combo listing.
+
 **Tests 18, 19, 101, 104 from the logs (2026-11-16,
 [journal](journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md)):** bosses freeze by default, control immunity per enemy
 (Chiliarch, the enemy Si; packages/data/src/enemyFacts.ts); cooldowns run

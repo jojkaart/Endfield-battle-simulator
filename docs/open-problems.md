@@ -73,30 +73,64 @@ large errors weren't matched scale: they were landings on one side only.
 skills, Arcane's combo; a9d7 158.6–166.2 s cuts Chen's ultimate before its final hit); a Hard 27 team buff (the
 Electrification has no giver in three logs from two players).
 
-**Still possible / left (largest first):**
-- **a9d7 −18.5%:** matched −19.6% spread over Chen (−11.1), Estella (−5.1), Alesh (−2.0), Wulfgard's combo: a fight-wide
-  factor (listed under Arts Intensity's multi-target / a9d7 note); not a placement.
-- **2fd9 −13.1%:** Mi Fu's three Crush hits −6.7% (×1.90 low each, the replay's 2 Vulnerable stacks against the
-  log's value; the hits' DMG bonus lacks her weapon's and set's lines the log doesn't list), her battle skill 3 −1.8%.
-- **9c6e −12.6%:** Typhoeus log-only −31% against replay-only +17% (two targets: "9c6e97486a9d: two hits per shot").
-- **3f78 −8.0%:** Rossi's ultimate at 18.98 s has 26 logged landings of its key, one stab fewer than the kit's 27, so
-  its two slashes took the last stab's and slash 1's slots (matched −16.7%, slash 2 replay-only +10.4%; net −6.3%).
-  The other 15 Rossi ultimates in the logs have 27. A placement by value (the slashes are ×10–30 a stab), or slots
-  filled from the end for an ultimate (which isn't cut), would fix it; neither built (one cast).
-- **d9e5 −11.5%** (Typhoeus's natural bursts −4.8%, Arcane's battle skill −2.3%), **e82d −8.9%** (Si's combo final
-  hit ×1.30 low: her Yinglung's Edge / Jade Vessel listing, "Type 50 Yinglung's Edge"), **1cd1 −7.2%** (Typhoeus
-  matched −7.0%), **7910 −5.9%** (Tangtang matched −7.5%), **db87 −4.5%** (Laevatain matched −9.0%): matched scale,
-  not looked into.
-- **Over:** c83c +7.9% (Si replay-only +5.2%), fc63 +7.2% (Typhoeus's hover bursts replay-only +7.2% against her natural
-  bursts log-only −3.8%: the burst keys the replay and the log use differ), 4360 +6.9% (Avywenna's four returning lances
-  at 119.20 s, the log's last hit 119.24 s; the kill isn't detected: tower016's HP from the data isn't the logged total,
-  though the last hit is capped).
-- The hold-outs: 10.2 → 9.1% (3 better, 1 mixed). The Endministrator changes alone (measured with `enemy-away=counted`)
-  moved them 10.2 → 10.6% (1 better, 1 mixed, plain 77.3 → 77.5%): one hold-out's total now carries an Endministrator
-  build error, as d4fb's did, presumably; hold-outs aren't traced.
+**Round 2 (2026-11-24): found and fixed.** The view first: `efsim zmdlogs totals --all` (every development fight's
+shares, largest |error| first) and measure's "Totals by where the error lives" (each group's means, the hold-outs'
+only view). The hold-outs are one-sided: 12 of 13 have replay-only + log-only over |matched| (replay-only 7.3%, log-only
+6.2%, |matched| 2.5%), the development logs 24 of 32 (6.4%, 3.9%, 5.3%).
+6. **Build offsets: one factor per operator for the whole fight.** a9d7's "fight-wide factor" was every operator's food
+   (Jakub's Legacy, ATK +27%; no log against eny_0134_jsspsi lists food, the other seven have theirs by hand): hits
+   ×1.15–1.24 from the first second, different per operator by their ATK%; `zmdlogs fit-build` fits Estella 9 of 10
+   clean, Pogranichnik 18 of 20 (fixture `buildOverrides`). A screen over every development log (scratch/op-medians.py
+   over `zmdlogs hits --all --json`: per log and operator the median logged ÷ predicted of non-crit hits, and how many
+   sit within 1% of it) found six more, each confirmed by fit-build: d9e5 every operator's Ginseng Meat Stew (Liino 24 of
+   24, Gilberta 8 of 8), 012a Akekuri attribute nodes 0 (14 of 14 clean), 92b4 Liino weapon level 80 (9 of 9), c3c7
+   Xaihi nodes 0 and weapon level 1 (29 of 29), ad7f Alesh nodes 0 and weapon 80 (4 of 5), d4fb Lifeng weapon 82 (4 of
+   5). a9d7 −18.5 → −5.0%, d9e5 −11.5 → +0.2%; plain +95, +86, +37, +9, +48, +16, +97.
+7. **A kill from a capped last hit** (4360). The data's HP is the stage's ÷5.5 (tower016), ÷7.6 (tower015), ÷2 (Si's
+   phases): only the Rodin fights were read as kills. Now a capped last logged hit makes the fight a kill (the log's
+   total its HP), and the killing frame is the replay's landing of a killing hit when sooner (4360's twelve returning
+   lances land in one frame at 119.20 s; the log has eight up to 119.235 s): 4360 +6.9 → +0.5%. A Fixed DMG landing
+   standing for a logged hit still counts there (0eef −4.4 → −20.3% otherwise). Compensating errors exposed: 2fd9
+   −13.1 → −15.6% (Mi Fu's mangle splitter and a shatter at the killing Crush's frame, the replay's only), dbae −2.3 →
+   −2.6%.
+8. **An ultimate's fewer landings by time** (3f78). An ultimate isn't cut: when its landings of a key are fewer than
+   its slots they take the slots their world time from the first landing fits best (logcasts.ts `realignUltimates`,
+   when better than the turn order by 150 ms in all; not for a random landed count, Ardelia's sheep): Rossi's two
+   slashes into the slashes' slots (frames 122 and 131, from 111 and 122). 3f78 −8.0 → −3.4%, 7910 −5.9 → −5.8%.
+9. **Typhoeus's 4th shot as her 5th** (fc63, 9090, 1d91, 00ae, af7b, bdf2, 9c6e): an off-field-only hit isn't a
+   candidate while the log shows its operator controlled, and a cast with a delayed landing logged already isn't joined
+   by an earlier frame's landing ("Typhoeus, Arcane, Liino, Perlica" below, with what it exposed: the 5th shot's burst's
+   Hovering ATK). fc63 +7.2 → +6.8%.
 
-**Next check:** the kill detection from a capped last hit (4360); Rossi's ultimate placed by value (3f78); fc63's
-burst keys.
+**Ruled out (round 2):** a9d7's factor as the enemy's (the other seven fights against the same boss and stage,
+dung02_bossrush04_03, have no such factor; the factor differs per operator, as an ATK% food does); Si's combo final in
+e82d as a placement (one hit, ×1.30 the primary, the log's listing reading it exactly: a listing difference, Yinglung's
+Edge and Jade Vessel against the log's damageTaken entries); an ATK snapshot for Typhoeus's bursts (BuffData
+takeAtkSnapshot false).
+
+**Still possible / left (largest first; `zmdlogs totals --all`):**
+- **The stage logs** (8915 +62%, 7b54 +49%, c6d8 +42%, 6339 +38%): the stages' shields and phase factors (×0.1–0.7 on
+  every hit; "Arcane's mismatches", "Hard 33's slug"), not the totals' to fix.
+- **2fd9 −15.6%:** Mi Fu's Crush ×1.90 low at 2 Vulnerable stacks (22.3, 47.9 s), while her killing Crush at 3 stacks
+  is ×1.02 uncapped: the stack count the replay consumes (4.5 against 7.5 would be ×1.67), or her weapon's and set's
+  DMG lines the log doesn't list; not checked further.
+- **9c6e −12.6%:** two targets (Typhoeus log-only −31%, replay-only +17%): a multi-target import.
+- **d4fb +9.6%:** Chen's ultimate matched +6.0% (28 hits); her hits ×1.11 the replay's elsewhere, 0 clean hits to fit.
+  Chen's readings mismatch in most logs (35% overall): a Chen kit question first.
+- **e82d −8.9%:** one hit, Si's combo final (above). **1cd1 −7.2%** (Typhoeus matched −7.0%), **7910 −5.8%** (Tangtang
+  matched −7.5%, replay-only +6.2%), **db87 −4.5%** (Laevatain −9.0 / +4.9): not looked into.
+- **Over:** c83c +7.9% (Si's combo final at 56.73 s replay-only, 384k: the log has no final there), fc63 +6.8% (her
+  95.1 and 96.5 s shots plain in the log, power shots with bursts in the replay: the replay's Hunting Arrows after her
+  hovering ultimate; 88.35 s a burst the replay doesn't land).
+- **Si's Artful Intent burst paths** as replay-only / log-only twins (c779 60.4 s burst_mark against the log's
+  inkmove_2, 4e36 35.9 against inkmark_projhit 36.8 s, 9a80 36.0 s a combo final 1.1 s off): "Si's Artful Intent bursts
+  that fit no reading".
+- The hold-outs: 9.1 → 9.1% (2 better, 1 mixed); their error is one-sided landings (above), which no round-2 fix but
+  the kill and the placement touched.
+
+**Next check:** an offsets screen as a command and a test (friction 2026-11-24 point 1), the hold-outs' one-sided
+share (placement: which kinds of landings are replay-only), Mi Fu's Crush stacks (2fd9), fc63's arrows after the
+ultimate.
 
 ## Arts Intensity: what the logs settle and what they leave (2026-11-16)
 
@@ -158,8 +192,8 @@ enemy facts list reaction statuses, not physical ones (scratch check,
 - Ember's status hits in 04d4 are ×1.0226 at AI 0 and 12 alike (Knock
   Down and Shatter): AI-independent, the ×1.023 her other hits there have
   too (accuracy plan: Ember low in every log, uniformly per build).
-- Multi-target logs (10df, 8273) and a9d7's fight-wide factor leave their
-  Breach hits as mismatches.
+- Multi-target logs (10df, 8273) leave their Breach hits as mismatches
+  (a9d7's "fight-wide factor" was its team's food: fixed 2026-11-24, "Fight totals").
 
 ## Buff timing leads (the buff timing report, 2026-11-15)
 
@@ -1165,8 +1199,8 @@ next-combo 0.3–0.7, not a multiple of 0.2, so the two separate) and the
 same from the replay's reading; a combo is decided when a reading's
 median over its hits sits within 0.05 layer of a count (two exact
 readings that differ leave it open). Decided: 68 Si and Bounda combos.
-Left out with their non-Edge causes: a9d7 (a stage factor on every
-operator), 8915 to 86.8 s (the stage's shields), 7b54's split combos,
+Left out with their non-Edge causes: a9d7 (then a factor on every
+operator: its team's food, fixed 2026-11-24), 8915 to 86.8 s (the stage's shields), 7b54's split combos,
 7e19's Chen (the readings disagree), 4e36 11.6, 9c0b 71.5 (two exact
 readings: the replay's ATK buff and one layer, or neither and two), 489c
 50.5, a7a7 45.4; Estella's five single-hit combos (the Razorhorn ATK on
@@ -2593,7 +2627,26 @@ From the kit check before simulating the team
     merges the 4th shot (placed as floating_attack5 by its off-field key)
     with the 5th (bdf2 −11%, 00ae −7%): not kept. Root: the 5th shot's
     off-field key is the other shots' key, so the placement anchors a 4th
-    shot to the 5th's cast.
+    shot to the 5th's cast. **Fixed 2026-11-24** (logcasts.ts): a hit that
+    happens only off-field (`if: not controlled`) isn't a candidate while the
+    log shows its operator controlled (`controlEvidence`: the nearest
+    controlled-only Stagger hit is hers; `zmdlogs control`: Typhoeus is
+    controlled throughout fc63), and with that the join rule above
+    is kept (a cast with a delayed landing of a later frame logged already
+    isn't joined by an earlier frame's landing). The 4th and 5th shots now
+    plain (×1.538 → ×1.000) in fc63, 9090, 1d91, 00ae, af7b, bdf2; fc63's
+    88–94 s shots and bursts pair up (+7.2 → +6.8%). **Exposed:** the 5th
+    shot's burst, logged 0.67–0.72 s after its arrow with no stop between
+    (fc63 16.00 s, bdf2 16.30 s, 9090 28.26, 120.97, 143.97 s), carries
+    Hovering ATK in the log, but the replay's hover ends at the 5th shot's
+    frame 15 (0.5 s): those hits plain → assumed ×1.09–1.13 (9090 −0.6 →
+    −0.9%, bdf2 −0.1 → −0.7%). Ruled out: an ATK snapshot (the burst's
+    BuffData buff_common_natural_natural_triggered_typhoea has
+    takeAtkSnapshot false). Still possible: floatingmode ends later than
+    frame 15 after a controlled 5th shot; the 5th shot's burst isn't the
+    10-frame enemy delay of shots 1–4 (0.7 s logged, 0.33 s kit) and reads
+    the attacker's side at its arrow. Next: the five bursts' other zones
+    (a teammate buff starting between arrow and burst decides between them).
   - 9c6e: two targets in a single-target fixture (two hits per shot, and
     of Li Zhiyan's and Liino's skills). Since 2026-11-18 a landing logged
     at its cast's last landing's time, all of the cast's landings logged,
@@ -2608,7 +2661,12 @@ From the kit check before simulating the team
     after the 5th shot's hover end), 00ae 30.0 s, 9c6e 52.5 s: not touched
     by the 2026-11-18 placement fix (no stop between those casts and their
     landings; fc63 92–98 s: bursts logged before their shots' projectiles
-    still open casts, as before).
+    still open casts, as before; 2026-11-24 they no longer do). Left in
+    fc63 95.1 and 96.5 s: the log's two shots after its ultimate's first two
+    are plain (14,064 and 8,876, no burst: no Hunting Arrow left), the
+    replay's power shots with bursts (+4.0% of the fight): the replay has
+    more arrows after the hovering ultimate than the game (its
+    arrow_num_given, or the combo's Sign arrows at 93.10 s); not checked.
 - **Typhoeus's smaller misfits seen deciding tests 9, 43, 46 (2026-11-18).** 1cd1
   40.12 s: her burst logged ×1.300 the replay's, whose arrow (39.69 s) consumed no Nature
   Infliction in the replay: an infliction the replay lacks (whose: not checked). d9e5
