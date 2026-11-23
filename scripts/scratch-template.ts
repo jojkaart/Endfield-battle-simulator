@@ -24,8 +24,12 @@
 // views.ts) for a script that needs more. Times: the log's are ms, the engine's frames (docs/design/data.md "What the
 // log records"; its "Common misreadings" box before counting anything).
 //
+// Operators: docs name them, scripts need ids, and an id's second part is an internal name (Arcane is chr_0032_lizhiyan,
+// Gilberta chr_0013_aglina): `operatorId(data, "Arcane")` from @efsim/data (refuses an unknown or ambiguous name),
+// `efsim find --operators` for the table.
+//
 // Logs: `devFixtures()` (every verified and pending development log as a fixture, never a hold-out; `ids: ["0c14"]`,
-// `withOperators`), and `loggedSkillInstances(data, fx)` for "the casts of X" (combos from hits, an ultimate's
+// `withOperators: ["Arcane"]`, ids or names), and `loggedSkillInstances(data, fx)` for "the casts of X" (combos from hits, an ultimate's
 // repeated events grouped, hitless events apart). fixtures/holdout/ is never opened by hand (docs/accuracy-plan.md,
 // "Choosing logs"). The log tooling is @efsim/logs (packages/logs).
 

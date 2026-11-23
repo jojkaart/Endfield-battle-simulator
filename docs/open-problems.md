@@ -25,6 +25,11 @@ by one factor on most hits: `efsim zmdlogs fit-build <fixture> --operator
 doesn't hide a kit error; its fit goes into the fixture's
 `buildOverrides`.
 
+Operators are named here by display name; their ids (an internal name:
+Arcane is `chr_0032_lizhiyan`, Gilberta `chr_0013_aglina`) come from `efsim
+find --operators`, or `operatorId(data, "Arcane")` (@efsim/data) in a
+script; `devFixtures({ withOperators })` takes names too.
+
 Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
@@ -1083,8 +1088,8 @@ hypothesis is a rule on the log's casts (`zmdlogs instances`: placed
 casts and cast events; Laevatain's event and her during-ultimate hits
 one press; Last Rite's battle skill from her phantom's keys), scored
 exact / first-combo lower bound (layers from before the log may add) /
-wrong, of 68. Scripts: scratch/edge-export.ts, edge-score.py,
-edge-search.py (not committed: scratch).
+wrong, of 68. Scripts: scripts/probes/edge/ (edge-export.ts, edge-score.py);
+edge-search.py stayed in that session's scratch.
 
 | Hypothesis | Exact | Lower | Wrong |
 |---|---|---|---|
@@ -1216,7 +1221,7 @@ Initial Stroke at 33.15 s; that combo is out of the Edge test, its hits'
 other zones off by the slug's caps: no truth either way).
 
 **Pauses (N1), 2026-11-23:** every pause of 4.5 s or more in the logs
-(scratch/pause-bars.py: each pause's Stagger bars and listed enemy
+(scripts/probes/stagger/pause-bars.py: each pause's Stagger bars and listed enemy
 debuffs either side): the bar is back to full after every pause of ~5 s or more (abfd
 174 → 275 over 4.9 s, 7b54 7 → 55 over 5.9 s, c3c7 128 → 315 over 7.4 s),
 so it marks no new enemy. The two clear cases, 3f78 (22.7–43.5 s) and
@@ -1396,7 +1401,7 @@ boundary hit, or from the raw detail's lane end for the 19 cached), its length i
 taken out, `worldMs`) against the data's duration, and against the replay's own expiry. 6,991 runs; 724 single runs
 (not refreshed in the log, bracket ≤ 1.5 s, a canonical duration, excess −1…8 s; one per log, buff, owner, start and
 end) run a median **+0.49 s** of world time past their duration (quartiles +0.03 / +1.35; within ±0.25 s: 23%).
-The commonest (scratch/bc/ in the session's worktree: lanes.ts, table.ts):
+The commonest (scripts/probes/buff-clock/lanes.ts, and table.ts in that session's scratch/bc/):
 
 | buff | owner | D (s) | runs (logs) | world excess: median (p10–p90) | no ultimate inside: median (n) | over the replay: median |
 |---|---|---|---|---|---|---|
@@ -1425,17 +1430,17 @@ whatever each holder's own stops or hits; exactly on time where no other ultimat
 **Found (what holds them):**
 - **The buffs really act there** (not a listing lag): of the hits the log lists a buff on past the replay's expiry (runs
   ≥ 0.4 s past it), the damage fits the log's reading (buff on) at 802, the engine's (off) at 92, both 195, neither 703
-  (`zmdlogs hits --all --json`, scratch/bc/dmg.ts).
+  (`zmdlogs hits --all --json`, scripts/probes/buff-clock/dmg.ts).
 - **One clock per fight, shared by the buffs and the enemy's ticks.** Hidden holds P(t) (what the placed stops don't
   explain), nondecreasing, one per log: each run asks P(end) − P(start) ≈ its world excess (±0.2 s); difference
-  constraints, the conflicting run with the largest excess dropped until feasible (scratch/bc/clock2.ts). Of 1,378 runs,
+  constraints, the conflicting run with the largest excess dropped until feasible (scripts/probes/buff-clock/clock2.ts). Of 1,378 runs,
   one clock per log drops 152 (each run alone, about 106 can't be met at all: ended early); with the runs' excesses
   shuffled among the log's runs, 341. Adding the 588 consecutive pairs of the enemy's 1 s tick series (Combustion,
   Rossi's bleed: each pair's world gap less 1 s, ±0.15 s) costs 6 more runs and drops 28 pairs. The 8 runs a tick
   series covers end where its ticks say: all within 0.3 s (2fd9 Mi Fu's set +0.98 against +0.99).
 - **The holds are about a perfect dodge each, and never while the enemy is Staggered.** Tick pairs with no placed stop
   between: median residual 0, and 34 of 378 outside the log's Stagger come +0.31–0.79 s late (most +0.42–0.56 s), 1 of
-  92 inside it (scratch/bc/tickstag.ts). A perfect dodge's world slow-down (buff_common_dash_behit_listener,
+  92 inside it (scripts/probes/buff-clock/tickstag.ts). A perfect dodge's world slow-down (buff_common_dash_behit_listener,
   TimeDilationAction layer 0, the dodger exempt; the engine's `--dodge` reads it) holds 0.512 s; a Staggered enemy
   doesn't attack, so nothing is dodged. Two series see the same hold at once (489c 36.55→37.97 and 37.43→38.98 s). The
   log records no dodge (no event, and the SP they give, 7 each, is in no log: "Team SP" below runs short).
@@ -1480,7 +1485,7 @@ between its earliest and latest placement (feasible: the bounds are convex), hel
 time (timeline/clock.ts `holdWorld`: buffs, the enemy's statuses and debuffs, combo windows; not cooldowns, which the
 perfect dodge's slow-down doesn't hold by the data, nor SP or the operators' own timing, which is the log's). Then `log`
 keeps a listed buff to its listing's end.
-- **How well determined** (`zmdlogs holds` shows each log's; the totals: scratch/hh/determined.ts in .claude/worktrees/agent-a0dca79328f59b7d9):
+- **How well determined** (`zmdlogs holds` shows each log's; the totals: scripts/probes/hidden-holds/determined.ts):
   108.6 s of holds over the 60 logs' 5,899 s (verified, development, earlier pending; 1.8%, 211 dodge-sized units of 0.512 s; per log
   0–9.2 s, c4f3 9.2, fc63 5.9, 0c14 5.7, de6a 5.5, af7b 5.2, 9c0b 3.9, e989 0.2, 3f78 / 5082 / 6339 / 7b54 none). Of
   the units, 50 are placed within 1 s (earliest to latest), 92 within 3 s; every unit is spanned by a kept clock, 56 by
@@ -2053,7 +2058,7 @@ first windows' ×1.012–1.014 is Corrosion's ramp one step ahead in the
 log**, not a level or a Will buff: read as a resistance step (level 1 at
 Arcane's Arts Intensity: 1.48 points, ×1.0138), every such hit is exactly
 one step past the replay's, every other hit between is plain at the
-replay's step (scratch/corrosion-lag.ts in the session's worktree). The
+replay's step (scripts/probes/corrosion/corrosion-lag.ts). The
 replay holds the ramp too long across the opener: Corrosion at 1.33 s
 (3f78) and 4.52 s (4a64), then Gilberta's combo slow-down and Si's and
 Arcane's, both pressed inside Gilberta's (their cast events at its end:
@@ -2177,7 +2182,7 @@ holds. The placed holds ("The buff clock", `placed`), read as dodges (one per
 0.512 s, 7 SP each at its time, credit for the casts after it, the cap
 ignored: an upper bound), are 185 dodges, 1,295 SP over the 60 logs but the
 hold-outs, and cover 87 of the replay's 1,766 SP short at 50 casts
-in 16 logs (BuffReplay.spTopUps; scratch/hh/sp.ts in .claude/worktrees/agent-a0dca79328f59b7d9): the shortfall sits where
+in 16 logs (BuffReplay.spTopUps; scripts/probes/hidden-holds/sp.ts): the shortfall sits where
 the clocks place almost nothing (04d4 650 SP with 0.7 s of holds, 6339 236
 with none, db87 272 with 1.9 s, 79cc 169 with 1.9 s), and the logs with the
 most holds are short of nothing (c4f3, de6a, fc63). Neither evidence for nor
@@ -2607,13 +2612,12 @@ time after the last Vulnerable add on another enemy.
   (16.70–17.20 s) and holds the ramp 0.5 s less. **Decided (2026-11-23): the
   lowest scale stays; the 0.5 s is a hidden hold, not the stops' sum.** Read
   from every db87 hit with the replay's Corrosion (the logged value ÷ the
-  primary as a resistance step, scratch/corrosion-lag.ts in the session's
-  worktree), the log's ramp runs behind the replay's by a growing amount:
+  primary as a resistance step, scripts/probes/corrosion/corrosion-lag.ts), the log's ramp runs behind the replay's by a growing amount:
   0.11–0.45 s at 19.0–19.4 s, 0.26–0.47 s at 20.2–20.4 s, 0.51–0.63 s at
   23.2–23.3 s, 0.57–0.72 s at 24.3–25.4 s. A sum would add Camille's 0.5 s at
   once from 17.2 s and, at 22.0–22.9 s where Si's, Camille's and Laevatain's
   combo slow-downs overlap, 0.60 s more (held 1.32 s summed against 0.72 s at
-  the lowest scale: scratch/stop-sum.ts): over 0.86 s by 23.3 s, above the
+  the lowest scale: scripts/probes/corrosion/stop-sum.ts): over 0.86 s by 23.3 s, above the
   0.63 s the hits allow. A growth of 0.05–0.37 s over 20.4–23.3 s is what the
   buff clock's hidden holds give (Si's Amp runs +2.49 s long in db87), and
   the buff clock already rules the sum out for buffs (4f7e, 458b). Across the
@@ -2621,10 +2625,10 @@ time after the last Vulnerable add on another enemy.
   (1cd1, 5082, 7910, 79cc, af7b, f879, f978, bdf2, b6aa), with or without an
   overlap. Exceptions run ahead: 3f78 and 4a64's openers (below, "3f78 and
   4a64"). **Left:** the holds placed once for every timer (enemy statuses
-  among them) would take db87's ramp from the shared clock. Tool gap: the
-  views on the placed casts' stops (`zmdlogs worldtime`, `lanes --world`,
-  `cadence`) don't have an ultimate the replay places from its cast event
-  only (db87's Laevatain at 16.60 s).
+  among them) would take db87's ramp from the shared clock. (The world-time
+  views `zmdlogs worldtime`, `lanes --world` and `cadence` count the stops of
+  the replay's casts since round 6, db87's Laevatain at 16.60 s, placed from
+  its cast event, among them.)
 - a7a7 after Liino's combo placement (2026-11-23, plain 386 → 351): her
   first combo (hit 1 logged at 3.86 s) now starts at 3.0 s, its stop ending
   before the Corrosion Arcane's battle skill forms (logged at 3.86 s, the
