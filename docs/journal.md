@@ -4,9 +4,60 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 126 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 127 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Crits from values, Combustion ticks from the tick before, landings batched at a stop's end
+
+**Goal:** four leads after the hold-clocks round (docs/journal/2026-11-23-03-corrosion-s-ramp-under-slow-downs-arcane-s-reset-freezes.md):
+5082's regression (−2.1 → −8.2%), 458b's Wulfgard Combustion ticks, a battle skill's hit logged at another cast's stop's
+end (a7a7 3.87 s), Rossi's combo_3 dilations.
+
+**Found and done:**
+- **5082** (open-problems "Smaller"): not Arcane's Arts DMG Taken (the replay has both layers) nor the moved 0.77 s
+  hold unit. Arcane's combo reset shortened the replay's own clock 0.1–0.2 s for every instance, which tipped two buffs
+  over hits: Yvonne's MI Security layers ran out 0.05 s before her finisher (×1.166), because the log gives none of her
+  85 ultimate hits a crit flag, though their values are two levels ×3.0 apart and the log lists the layers to the end;
+  and Xaihi's weapon team ATK on Arcane from 50.51 s (×1.18), an instance 1.67 s late, past INSTANCE_LATE_MS (left).
+  buffreplay.ts `valueCrits`: a crit-less hit CRIT_APART above the lowest of its key, skill and scale within 1 s is a
+  crit (not where logged non-crits split by themselves, nor a slot of two scales). Cross-validated with half the flags
+  hidden (scripts/probes/crits/value-xval.ts): 442 of 445 right for the operators with crit triggers (Rossi, Chen,
+  Yvonne), 0.90 over every operator against a base rate of 0.10; values shuffled within a key 0.24. 5082 −8.2 → +0.7%.
+- **458b** (open-problems "Ink Melt logs"): each Combustion tick deals with the owner's attacker side as it was at the
+  tick before (85.70 s without Akekuri's ATK from 84.37 s, 86.69 s with it, 230.62 s with her potential's +0.10 that
+  only the tick before lists). Engine assumption `combustion-snapshot` (`last-tick`, default; `application`):
+  situation.ts `retakeTickSnapshots`. Over the 21 Combustion logs 52 ticks plain that weren't, 1 the other way. 458b's
+  6.1 → 7.5% is Laevatain's total at 74bc686 (Si's strokes onto the placed holds), not the ticks.
+- **a7a7 3.87 s** (open-problems "Smaller"): a landing logged at another cast's frozen stop's end whose cast event puts
+  it just before the stop landed there: the cast starts at the event, the batched landings (and what they set off)
+  land at their kit frames (logcasts.ts `beforeStopStart`, LoggedCast.beforeStop; buffreplay.ts `batchedFrame`). a7a7's
+  Corrosion ramp readings off the replay's step 15 → 4. 489c 49.31 s is another case (the hit inside Rossi's combo
+  slow-down, logged 0.31 s after it), left.
+
+**Scoreboard** (`npm run snapshots:update`, after merging main at aa29bac): development plain 65.2 → 65.4%, mismatch
+14.8%, mean |damage error| 8.9 → 8.6%, within 5% 16 → 19; hold-outs 73.7 → 74.0%, 6.4%, 10.8% (5 better, 1 worse,
+1 mixed: aggregates only); earlier pending 57.9 → 58.5%, 18.2 → 17.8%, 8.3 → 8.4%; all but the hold-outs 62.6 → 63.0%,
+15.8 → 15.6%, 8.0 → 7.9%; verified unchanged. Development 10 better, 0 worse, 4 mixed (489c, db87, f978: per-hit
+closer, totals ±0.2 pt; 9a80 −1 plain: Si's combo at 35.05 s reads the Stagger's ×1.3, a knock-on of a cast placed
+from its event); earlier pending a7a7 376 → 405 (mismatch 45 → 14), 458b 1048 → 1064 (mismatch 22 → 12), abfd plain
+313 → 333 but total −1.3 → +3.9% (Yvonne's crit-refreshed buffs now on: the old −1.3% hid them), 4e36 mixed.
+Teams (team-ab against 8daa9e9, seeds 1001–1032): Estella's sustained DPS −0.01% full / −0.00% zero, 60 s timelines
++0.00%; Typhoeus's fight the same. Examples snapshot moved with the ticks.
+
+**Decisions:** crits inferred only upwards and only for operators whose kits have crit triggers (the replay's buffs);
+the check's own verdicts try both crits anyway. INSTANCE_LATE_MS kept at 1 s: 5082 fits 2 s (2.17 s of holds, no bound
+dropped) but 4d60's refreshed Arcane runs are why the cap exists, and one log doesn't move it. The tick rule as an
+engine reading with the old one kept: its mechanism (the snapshot taken after each tick) is the logs', not the data's.
+
+**Dead ends:** valueCrits keyed by hit id within one placed cast (Yvonne's ultimate is eight-shot casts, one landing per
+id: nothing inferred); by the key and scale names alone (0.72: Purrchena's attack1 slot holds hits of 367 and 551, both
+logged non-crits; scale names repeat across skills); a crit-zone check from the stat panel (Yvonne's ultimate adds Crit
+DMG the panel lacks).
+
+**Left:** Xaihi's weapon instance in 5082; 458b's 86.69 s and 227.60 s ticks (the replay's tick before is elsewhere);
+4e36's Wulfgard ticks between the two readings; Rossi's combo_3 dilations (two at frame 0, 12 and 19 frames, different
+priorities: one replacing the other would hold 7 frames less, about the 0.15–0.2 s 3f78 and 4a64 ask; not built).
 
 ## 2026-11-23: Improvement round 7: the placement explained, one stop list, measure's checks
 
@@ -398,34 +449,3 @@ can't place the dodges, and the damage agrees with the log. Not a kit change (no
 statuses, unlisted buffs, the dodges' SP for "Team SP"); the dodger's own 0.315 s; runs ending before the replay's
 expiry (~7%); Liino's beats running fast (the other direction). The hold-outs' aggregate doesn't move, so
 it isn't confirmed there.
-
-## 2026-11-22: Improvement round 5: the lock's queue, premerge's done line, diagnosis views
-
-Goal: improvement round 5 (docs/friction/README.md, step 2) over the eleven open reports (round 4's backlog and
-report, the finisher gate, the eight 2026-11-22 accuracy branches) and the lead's own friction from merging their
-batch. Summary and outcomes: docs/friction-done/2026-11-22-round-5.md; what's left:
-docs/friction/2026-11-22-backlog-after-round-5.md.
-
-Done:
-- premerge's last line comes from scripts/done-line.sh: "pass" only from its own end, "killed" from a signal trap.
-  The false pass was bash's: a shell killed by a signal runs its EXIT trap with `$?` of the last finished command
-  (0). Long steps now run in the background and are waited for, so the trap runs at once (bash defers traps during a
-  foreground command) and stops them; tests/done-line.test.ts.
-- The test lock: fair shares between worktrees (a worktree's n-th waiting job counts as arriving n × 20 min later),
-  the estimated wait plus run against the 2 h background limit on the first waiting line, a kill in the queue named
-  on the DONE line. measure and team-ab fix their code at queue time with a snapshot commit of the working tree
-  (temporary index, own worktree, removed after): agents keep editing while they wait. team-ab's identity check runs
-  in the short lane, its 32 seeds only for the moved teams.
-- `npm run merge -- <branch>…`: a batch with one snapshots run, then `vitest related` on the code both sides changed.
-- Views: `zmdlogs worldtime`, `lanes --world`, `measure --hits` and moved casts under `--changed placement`, the
-  replay's EVENT lines (`loggedCastFates`, the same matcher as withLoggedCasts), fallback matches in `groups`,
-  `verdictReading` in `hits --json`, `efsim assumptions`, skill groups and applications in `efsim kit`.
-- Docs: batched timestamps, how the placement picks among groups sharing a key, misreadings, limits; `.prettierignore`.
-
-Decisions: no hard one-job-per-agent cap (fair shares get the same without idling the machine); no more jobs in the
-side lane (timeouts and incomparable measurements; the snapshot makes the wait free instead); `hits --json` fields
-added, not renamed (scripts read `predicted`); the hold-out snapshot file stays where it is (a grep exclusion instead
-of moving a file three scripts and the snapshots glob name); a replay-only buff-duration option and the `beside`
-exemption for `launch` are behaviour changes, left to accuracy tasks.
-
-Checked: `npm run measure -- --hits` at the views commit, every log byte for byte; team-ab against HEAD unchanged.

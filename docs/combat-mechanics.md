@@ -318,9 +318,15 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   Work in 458b, 012a, c83c, e989, f879; situation.ts
   `retakeCombustionSnapshots`). In a log, those buffs are at the
   application hit's boundary.
-- 458b shows a tick ×1.28 after a Heat infliction lands on a burning enemy,
-  as if the snapshot were taken anew. [OPEN] (accuracy plan "458b's
-  Combustion ticks")
+- Each tick takes the snapshot again for the next one: a tick deals with
+  the applier's attacker side as it was at the tick before (the first at
+  the application's). [LOGS] (2026-11-23, engine assumption
+  `combustion-snapshot`, reading `last-tick`; 458b's Wulfgard ticks:
+  85.70 s ×1.3 only though Akekuri's ATK came at 84.37 s, 86.69 s with it,
+  89.34 s without her potential's +0.10, 230.62 s with it where only the
+  tick before lists it; across the Combustion logs 52 ticks plain that
+  weren't, 1 the other way, f978 23.68 s, where the replay misses the
+  tick before. The 458b ×1.28 "after a Heat infliction" was this.)
 - Rossi's bleed uses the same snapshot flag. A `buffTick` trigger's hit
   takes it through `atkSnapshot`. [DATA]
 

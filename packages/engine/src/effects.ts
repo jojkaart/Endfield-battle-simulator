@@ -55,7 +55,8 @@ export type Zone = (typeof ZONES)[number];
  * Susceptibility ended is lower by exactly that. ATK too:
  * pending/zmdlogs-458b03609665.json's ticks at 82333 / 85696 ms are ×1.3
  * apart (the Stagger), though team ATK buffs started between (in-game test
- * 77 answered). Amp is on the same side; crit doesn't act on ticks.
+ * 77 answered). Amp is on the same side; crit doesn't act on ticks. A Combustion takes it again at each tick for the
+ * next one (engine assumption combustion-snapshot, timeline/situation.ts retakeTickSnapshots).
  */
 export const SNAPSHOT_ZONES: ReadonlySet<Zone> = new Set(["atk", "attribute", "damageBonus", "amp", "critRate", "critDamage", "artsIntensity"]);
 

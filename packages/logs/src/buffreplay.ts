@@ -174,6 +174,55 @@ export function layerCrits(kits: readonly OperatorKit[], fx: LogFixture, placeme
   return out;
 }
 
+/** How far either side of a crit-less hit (ms) valueCrits looks for the lowest hit of its group. */
+const VALUE_CRIT_NEAR_MS = 1000;
+
+/**
+ * Crits the log leaves out (LogHit.crit null) that the hits' own values show: hits of one key, skill and scale differ
+ * only by the buffs that change between them and the crit zone (×1.5 or more), so a hit CRIT_APART above the lowest of
+ * its group within VALUE_CRIT_NEAR_MS (a logged non-crit or another crit-less hit) is a crit. Not a group whose logged
+ * non-crits stand that far apart by themselves, nor a slot that can be kit hits of two scales. 5082ceaffad1 leaves the
+ * crit out of all 85 hits of Yvonne's ultimate; their values are two levels ×3.0 apart (34125 and 11375 at 45.6–46.0 s),
+ * and MI Security's layers, which each of her crits refreshes, are listed on her to the fight's end: without the crits
+ * the replay let them run out 0.05 s before her finisher (49.78 s, ×1.17). Cross-validated on the development logs
+ * (half the logged flags hidden, two folds; scripts/probes/crits/value-xval.ts, 2026-11-23): 1132 of 1260 inferred
+ * crits right over every operator (0.90; base rate 0.10), 442 of 445 for Rossi, Chen and Yvonne, whose kits have crit
+ * triggers; with each hit's value from another hit of its key (negative control) 0.24. Only for an operator whose kit
+ * has a trigger on its own crits; added after the logged crits and those shownCrits and layerCrits give.
+ */
+export function valueCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement, known: ReadonlyMap<number, boolean> = new Map()): Map<number, boolean> {
+  const out = new Map<number, boolean>();
+  const ops = new Set(kits.filter((k) => k.triggers.some((t) => t.on.event === "hit" && t.on.crit !== undefined && t.by === "self")).map((k) => k.operator));
+  const groups = new Map<string, { h: LogHit; i: number; crit: boolean | null }[]>();
+  for (const [i, h] of fx.hits.entries()) {
+    if (!ops.has(h.operator) || !(h.value > 0)) continue;
+    const p = placement.hits.get(h);
+    if (!p || p.sameAs) continue;
+    const crit = h.crit ?? known.get(i) ?? null;
+    if (crit === true) continue;
+    // One scale for the slot: a slot that can be hits of two scales isn't a group.
+    const scales = new Set(p.hits.map((x) => x.scale.join("+")));
+    if (scales.size !== 1) continue;
+    const key = `${h.operator}|${h.event}|${p.cast.skillId}|${[...scales][0]}`;
+    groups.set(key, [...(groups.get(key) ?? []), { h, i, crit }]);
+  }
+  const lowest = (g: readonly { h: LogHit; crit: boolean | null }[], h: LogHit, only: (c: boolean | null) => boolean) => {
+    const near = g.filter((x) => x.h !== h && only(x.crit) && Math.abs(x.h.t - h.t) <= VALUE_CRIT_NEAR_MS);
+    return near.length ? Math.min(...near.map((x) => x.h.value)) : null;
+  };
+  for (const g of groups.values()) {
+    // A group whose logged non-crits stand apart by themselves splits for another reason (a kit hit the slot doesn't
+    // tell apart: Purrchena's attack1, 367 and 551 both logged without a crit in 04d401ad257e).
+    if (g.some((x) => x.crit === false && x.h.value >= CRIT_APART * (lowest(g, x.h, (c) => c === false) ?? Infinity))) continue;
+    for (const { h, i, crit } of g) {
+      if (crit !== null) continue;
+      const low = lowest(g, h, () => true);
+      if (low !== null && h.value >= CRIT_APART * low) out.set(i, true);
+    }
+  }
+  return out;
+}
+
 /**
  * The triggers on crits behind one of a kit's buffs: those that apply it on a crit, and those behind a buff a trigger
  * that applies it listens to (to a depth of a few links). Whose hits each listens to (KitTrigger.by).
@@ -1183,6 +1232,19 @@ function withCastBeforeLog(ctx: TimelineContext, st: TimelineState, c: ReplayedC
   };
 }
 
+/** How close (ms) to a cast's batched landings' ms (LoggedCast.beforeStop) a logged hit of it is one of them. */
+const BATCHED_MS = 50;
+
+/**
+ * Where a logged hit landed when the log batched it with an operator's cast's landings at another cast's stop's end
+ * (LoggedCast.beforeStop): at that cast's first landing (what the hit set off, its reaction or a trigger's hit, landed
+ * with it), else null.
+ */
+function batchedFrame(casts: readonly ReplayedCast[], h: Pick<LogHit, "t" | "operator">): number | null {
+  const c = casts.find((x) => x.operator === h.operator && x.beforeStop !== undefined && Math.abs(h.t - x.beforeStop) <= BATCHED_MS && x.landings.length > 0);
+  return c ? Math.min(...c.landings.map((l) => l.frame)) : null;
+}
+
 export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits">): ReplayedCast[] {
   const casts = distinctCasts(placement);
   // A landing's reference: its logged hit's index in the fixture (replayCast `ref`: its LandedHit carries it).
@@ -1207,7 +1269,9 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
       if (nth < 0) continue;
       taken.add(nth);
       used.set(key, taken);
-      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: frameOf(h.t), ref: String(hitIndex.get(h)), ms: h.t }]);
+      // Batched at another cast's stop's end, it landed at its kit frame before the stop (LoggedCast.beforeStop).
+      const at = d.beforeStop !== undefined && Math.abs(h.t - d.beforeStop) <= BATCHED_MS ? frameOf(d.start) + p.frame : frameOf(h.t);
+      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: at, ref: String(hitIndex.get(h)), ms: h.t }]);
     }
   }
   const out: ReplayedCast[] = [];
@@ -2074,7 +2138,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const held = (st: TimelineState, frame: number) => heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
   const shownByHits = shownCrits(kits, fx, placement);
-  const shown = new Map([...shownByHits, ...layerCrits(kits, fx, placement, shownByHits)]);
+  const byLayers = new Map([...shownByHits, ...layerCrits(kits, fx, placement, shownByHits)]);
+  const shown = new Map([...byLayers, ...valueCrits(kits, fx, placement, byLayers)]);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */
@@ -2128,8 +2193,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
       // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.
-      // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits) or by the layers it adds
-      // (layerCrits) count as logged.
+      // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits), by the layers it adds
+      // (layerCrits) or the hits' values show (valueCrits) count as logged.
       loggedCrits: fx.hits.flatMap((h, i) => {
         const crit = h.crit ?? shown.get(i) ?? null;
         return crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit, ref: String(i) }];
@@ -2348,7 +2413,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const taken = new Set<LandedHit>();
     for (const [i, h] of [...fx.hits.entries()].sort((a, b) => a[1].t - b[1].t)) {
       if (landed.has(String(i))) continue;
-      const f = frameOf(h.t);
+      const f = batchedFrame(casts, h) ?? frameOf(h.t);
       let best: LandedHit | null = null;
       for (const x of free) {
         if (taken.has(x) || x.operator !== h.operator || Math.abs(x.frame - f) > NEAR_FRAMES || !eventsOf.get(`${x.operator}|${x.skillId}|${x.hitId}`)?.includes(h.event)) continue;
@@ -2428,7 +2493,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     for (const h of [...fx.hits].sort((a, b) => a.t - b.t)) {
       const r = parseReactionEvent(h.event);
       if (!r) continue;
-      const f = frameOf(h.t);
+      const f = batchedFrame(casts, h) ?? frameOf(h.t);
       let best: LandedHit | null = null;
       for (const x of free) {
         if (taken.has(x) || x.operator !== h.operator || x.skillId !== `reaction:${r.kind}` || x.element !== r.element || Math.abs(x.frame - f) > NEAR_FRAMES) continue;

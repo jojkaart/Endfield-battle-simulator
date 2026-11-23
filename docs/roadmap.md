@@ -56,8 +56,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   development plain 59.9 → 62.8%; they don't explain the SP shortfall; 2026-11-23 the enemy's statuses and
   Corrosion's ramp as clocks too, d774 and db87 fixed; Wolven Blood's unlogged crits from its listed layers
   2026-11-23, 489c 517 → 546; the ramp's over-holds 2026-11-23 (freezes run the ramp on; Arcane's combo resets the
-  combo slow-down at its frame 9); next test 111, a battle skill's hit logged at a stop's end, Rossi's combo_3
-  dilations, Rossi's bleed ticks landed off the log's); Arcane's misses grouped (2026-11-18: 908 → 866;
+  combo slow-down at its frame 9); crits from the hits' values, Combustion ticks with the tick before's side, landings
+  batched at a stop's end 2026-11-23 (5082 −8.2 → +0.7%, a7a7 376 → 405); next test 111, Xaihi's weapon instance in
+  5082 (1.67 s late), Rossi's combo_3 dilations, Rossi's bleed ticks landed off the log's); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds
