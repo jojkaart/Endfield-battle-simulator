@@ -24,6 +24,7 @@ import { distinctCasts, placeHits } from "./logcasts.ts";
 import { replayTimeStops } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
+import type { TotalsComparison, TotalsShares } from "./enginecheck.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -633,10 +634,11 @@ export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbos
  * Intent). A total that moves while the per-hit views improve is a compensating error: its other side shows here
  * (round 8: 458b's Laevatain, 9.0 → 11.3% from two replay-only finisher landings, found by hand from a replay dump).
  */
-export function totalsView(data: GameData, fx: LogFixture, f: { readonly operators?: readonly string[]; readonly top?: number; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+export function totalsView(data: GameData, fx: LogFixture, f: { readonly operators?: readonly string[]; readonly top?: number; readonly assume?: Readonly<Record<string, string>>; readonly byEvent?: boolean } = {}): string {
   const replay = f.assume && Object.keys(f.assume).length ? logBuffReplay(data, fx, undefined, { assume: f.assume }) : logBuffReplay(data, fx);
   const byHit = engineHits(data, fx, replay);
   const t = engineReport(data, fx, replay, byHit, checkLog(data, fx, { replay, engineHits: byHit })).totals;
+  if (f.byEvent) return totalsByEvent(data, fx, t, f);
   const top = f.top ?? 10;
   const pct = (sim: number, log: number) => (log === 0 ? "n/a" : `${sim / log - 1 > 0 ? "+" : ""}${(100 * (sim / log - 1)).toFixed(1)}%`);
   const n = (x: number) => Math.round(x).toLocaleString("en-US");
@@ -664,5 +666,103 @@ export function totalsView(data: GameData, fx: LogFixture, f: { readonly operato
     for (const h of [...logOnly].sort((a, b) => b.value - a.value).slice(0, top)) out.push(`      log only    ${s(h.t)} s  ${shortSkill(h.event)}  ${n(h.value)}`);
     if (logOnly.length > top) out.push(`      … and ${logOnly.length - top} more logged hit(s) without a counted landing`);
   }
+  return out.join("\n");
+}
+
+/** `zmdlogs totals --by event`: the parts per operator and logged event (replay-only per skill and hit), as % of the logged total, largest |share| first. */
+function totalsByEvent(data: GameData, fx: LogFixture, t: TotalsComparison, f: { readonly operators?: readonly string[]; readonly top?: number }): string {
+  const L = t.logged.damage;
+  const rows = new Map<string, { m: number; n: number; o: number; no: number; lo: number; nlo: number }>();
+  const row = (k: string) => rows.get(k) ?? (rows.set(k, { m: 0, n: 0, o: 0, no: 0, lo: 0, nlo: 0 }), rows.get(k) as { m: number; n: number; o: number; no: number; lo: number; nlo: number });
+  const counted = new Set(t.parts.flatMap((p) => (p.logged ? [p.logged] : [])));
+  const mine = (op: string) => !f.operators?.length || f.operators.includes(op);
+  for (const p of t.parts) {
+    if (!mine(p.operator)) continue;
+    if (p.logged) {
+      const r = row(`${label(data, p.operator)} ${shortSkill(p.logged.event)}`);
+      r.m += p.damage - p.logged.value;
+      r.n++;
+    } else {
+      const r = row(`${label(data, p.operator)} [replay only] ${shortSkill(p.skillId)} ${p.hitId}`);
+      r.o += p.damage;
+      r.no++;
+    }
+  }
+  for (const h of fx.hits) {
+    if (counted.has(h) || !mine(h.operator)) continue;
+    const r = row(`${label(data, h.operator)} ${shortSkill(h.event)}`);
+    r.lo -= h.value;
+    r.nlo++;
+  }
+  const pc = (x: number) => `${x >= 0 ? "+" : ""}${((100 * x) / L).toFixed(2)}%`;
+  const all = [...rows].sort((a, b) => Math.abs(b[1].m + b[1].o + b[1].lo) - Math.abs(a[1].m + a[1].o + a[1].lo));
+  const out = [`${fx.id}: the total ${pc(t.simulated.damage - L)} by operator and logged event (% of the logged total): matched (predicted − logged), replay only, log only`];
+  for (const [k, r] of all.slice(0, f.top ?? 25)) {
+    const parts = [r.n ? `matched ${pc(r.m)} (${r.n})` : "", r.no ? `replay only ${pc(r.o)} (${r.no})` : "", r.nlo ? `log only ${pc(r.lo)} (${r.nlo})` : ""].filter(Boolean);
+    out.push(`  ${pc(r.m + r.o + r.lo).padStart(8)}  ${k}: ${parts.join(", ")}`);
+  }
+  if (all.length > (f.top ?? 25)) out.push(`  … and ${all.length - (f.top ?? 25)} more`);
+  return out.join("\n");
+}
+
+/** One fight's row of `zmdlogs totals --all`: its short id, its group (TOTALS_GROUPS) and its shares. */
+export interface TotalsRow {
+  readonly short: string;
+  readonly group: TotalsGroup;
+  readonly shares: TotalsShares;
+}
+export type TotalsGroup = "verified" | "development" | "earlier" | "multi";
+const TOTALS_GROUPS: readonly TotalsGroup[] = ["verified", "development", "earlier", "multi"];
+
+/** The group means of some fights' shares (|error|, |matched|, replay-only, |log-only|) and how many are one-sided (replay-only + |log-only| over |matched|). */
+export function totalsAggregate(shares: readonly TotalsShares[]): { readonly n: number; readonly error: number; readonly matched: number; readonly replayOnly: number; readonly logOnly: number; readonly oneSided: number; readonly within5: number } {
+  const mean = (f: (x: TotalsShares) => number) => (shares.length ? shares.reduce((a, x) => a + f(x), 0) / shares.length : 0);
+  return {
+    n: shares.length,
+    error: mean((x) => Math.abs(x.error)),
+    matched: mean((x) => Math.abs(x.matched)),
+    replayOnly: mean((x) => x.replayOnly),
+    logOnly: mean((x) => -x.logOnly),
+    oneSided: shares.filter((x) => x.replayOnly - x.logOnly > Math.abs(x.matched)).length,
+    within5: shares.filter((x) => Math.abs(x.error) <= 5).length,
+  };
+}
+
+/** An aggregate's line (totalsAggregate): the same for a group of development logs and for the hold-outs (measure). */
+export function formatTotalsAggregate(name: string, a: ReturnType<typeof totalsAggregate>): string {
+  const p = (x: number) => `${x.toFixed(1)}%`;
+  return `  ${name}: ${a.n} fight(s), mean |error| ${p(a.error)} (within 5%: ${a.within5}); mean |matched| ${p(a.matched)}, replay-only ${p(a.replayOnly)}, log-only ${p(a.logOnly)}; one-sided (replay-only + log-only over |matched|) ${a.oneSided}`;
+}
+
+/**
+ * `zmdlogs totals --all`: every fight's total error split into matched scale, replay-only and log-only landings (shares
+ * of the logged total: TotalsShares), largest |error| first, with the operators carrying most of it; then each group's
+ * means. A cause shared by several fights shows as a column or an operator recurring (2026-11-23: the enemy away and
+ * the Endministrator's shatters were found from this table, built by hand). Hold-outs only as aggregates: measure.
+ */
+export function totalsAllView(data: GameData, rows: readonly TotalsRow[], f: { readonly operators?: readonly string[]; readonly top?: number } = {}): string {
+  const sign = (x: number) => `${x >= 0 ? "+" : ""}${x.toFixed(1)}`.padStart(6);
+  const top = f.top ?? 3;
+  const out = [
+    "Every fight's total error by where it lives, as % of its logged total (enginecheck.ts totalsShares): error = matched (the landings standing for logged hits, predicted − logged) + replay only (landings no logged hit stands for) + log only (logged hits without a counted landing). away: replay-only landings left out in stretches without logged hits (enemy-away), and those stretches' seconds. Operators: their matched / replay-only / log-only (+ shifts: a recorded burst's teammate share) shares, largest first.",
+    "id    group        error matched replay  log  away     operators",
+  ];
+  const shown = [...rows].filter((r) => !f.operators?.length || r.shares.perOperator.some((o) => f.operators?.includes(o.operator))).sort((a, b) => Math.abs(b.shares.error) - Math.abs(a.shares.error));
+  for (const r of shown) {
+    const x = r.shares;
+    const ops = x.perOperator
+      .filter((o) => !f.operators?.length || f.operators.includes(o.operator))
+      .slice(0, top)
+      .map((o) => `${label(data, o.operator)} ${sign(o.matched).trim()}/${sign(o.replayOnly).trim()}/${sign(o.logOnly).trim()}${Math.abs(o.shifts) >= 0.05 ? ` (${sign(o.shifts).trim()})` : ""}`)
+      .join("; ");
+    const away = x.awayLeftOut ? `${String(x.awayLeftOut).padStart(3)}/${x.awaySeconds.toFixed(0).padStart(3)}s` : "        ";
+    out.push(`${r.short.padEnd(5)} ${r.group.padEnd(11)} ${sign(x.error)} ${sign(x.matched)}  ${sign(x.replayOnly)} ${sign(x.logOnly)} ${away}  ${ops}`);
+  }
+  out.push("", "Means per group:");
+  for (const g of TOTALS_GROUPS) {
+    const of = shown.filter((r) => r.group === g).map((r) => r.shares);
+    if (of.length) out.push(formatTotalsAggregate(g, totalsAggregate(of)));
+  }
+  out.push("Hold-outs: only their aggregates, from `npm run measure` (its summary's \"Totals by where the error lives\").");
   return out.join("\n");
 }

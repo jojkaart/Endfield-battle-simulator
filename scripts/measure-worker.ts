@@ -45,11 +45,20 @@ export type MeasureAnswer =
       readonly hits?: readonly HitRow[];
       /** The log lists effects but none with `since` and `source` (imported before 2026-11-16): a change resting on the lanes can't move it. */
       readonly untimed?: boolean;
+      /** The totals' error by where it lives (TotalsShares; where the commit's code has snapshotEntry's `shares`): measure's aggregates, hold-outs only in them. */
+      readonly shares?: Shares;
       readonly seconds: number;
     }
   | { readonly key: string; readonly placement: string; readonly casts?: readonly string[]; readonly seconds: number }
   | { readonly key: string; readonly negative: readonly NegativeCount[]; readonly seconds: number }
   | { readonly key: string; readonly error: string };
+/** A fight's TotalsShares (packages/logs enginecheck.ts), as far as measure reads them. */
+export interface Shares {
+  readonly error: number;
+  readonly matched: number;
+  readonly replayOnly: number;
+  readonly logOnly: number;
+}
 /** The negative control's count for one factor: chance matches among the judged hits (the test's own counting). */
 export interface NegativeCount {
   readonly factor: number;
@@ -71,7 +80,7 @@ if (under) {
   for (const [id, r] of Object.entries(under.assume)) if (!known.some((a) => a.id === id && r in a.readings)) throw new Error(`--assume ${id}=${r}: no such reading (${known.map((a) => a.id).join(", ")})`);
 }
 
-function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[] } {
+function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[]; shares?: Shares } {
   // The snapshots' own computation (packages/logs/src/snapshotentry.ts) where the commit has it; before it, its five calls.
   const own = typeof logs.snapshotEntry === "function" ? logs.snapshotEntry(data, fx, under ?? {}) : undefined;
   const replay = own?.replay ?? (under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx));
@@ -85,7 +94,8 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
     return typeof p === "number" && p > 0 ? [Math.abs(h.value / p - 1)] : [];
   });
   const perHit = { n: errors.length, meanAbs: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : 0 };
-  if (!withHits) return { entry: { ...counts, totals }, perHit };
+  const shares: Shares | undefined = own?.shares ? { error: own.shares.error, matched: own.shares.matched, replayOnly: own.shares.replayOnly, logOnly: own.shares.logOnly } : undefined;
+  if (!withHits) return { entry: { ...counts, totals }, perHit, ...(shares ? { shares } : {}) };
   // The primary reading's modifiers at each landing, where the commit's code has the calls (round 3 on).
   const modsOf = modifiersAt(fx, replay);
   // The verdicts are in fx.hits' order (checkLog maps over them).
@@ -95,7 +105,7 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
     const [t, op, event, verdict, ratio] = [v.hit.t, v.hit.operator, v.hit.event, v.kind === "match" ? v.class : v.kind, typeof p === "number" && p > 0 ? v.hit.value / p : null];
     return mods ? [t, op, event, verdict, ratio, mods] : [t, op, event, verdict, ratio];
   });
-  return { entry: { ...counts, totals }, perHit, hits };
+  return { entry: { ...counts, totals }, perHit, hits, ...(shares ? { shares } : {}) };
 }
 
 /** A hit's primary reading's modifiers (HitRow), or null where the tree's code lacks the calls or the hit has no landing. */

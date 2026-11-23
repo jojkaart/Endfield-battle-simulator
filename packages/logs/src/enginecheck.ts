@@ -640,7 +640,11 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // the time to kill (killMs).
   const end = (fx.hits.reduce((m, h) => Math.max(m, h.t), 0) * 30) / 1000 + 1;
   const hp = data.enemies[fx.enemy.id]?.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
-  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : null;
+  // A kill: the log's total is the data's HP, or its last hit is capped at the enemy's remaining HP (the stages scale
+  // the data's HP: tower016 ×5.5, tower015 ×7.6, Si's phases ×2; 4360's four returning lances after the kill counted,
+  // +6.5% of the fight, while the last hit was capped), the log's total then being the HP.
+  const lastCapped = fx.hits.some((h) => h.t === logged.last && h.uncapped !== undefined && h.uncapped > h.value);
+  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : lastCapped ? logged.damage : null;
   let simKill: number | null = null;
   // Landings the log can't have (the fixture's `absent`, judged by hand): each the nearest of its operator's skill and hit.
   const absent = new Set<LandedHit>();
@@ -658,7 +662,15 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const away = engineReadingOf(c.replay.assume, "enemy-away") === "away" ? awayWindows(fx) : [];
   const isAway = (frame: number) => away.some((w) => (frame * 1000) / 30 > w.from + AWAY_EDGE_MS && (frame * 1000) / 30 < w.to - AWAY_EDGE_MS);
   let awayLeftOut = 0;
-  const killFrame = Math.round((logged.last * 30) / 1000);
+  // The killing blow's frame: the log's, or the replay's landing of a killing hit if sooner (4360: the battle skill's
+  // twelve returning lances land in one frame at 119.20 s, the log's eight before the kill end at 119.235 s).
+  const killFrame = Math.min(
+    Math.round((logged.last * 30) / 1000),
+    ...[...killing].flatMap((h) => {
+      const l = c.replay.landing(h);
+      return "unknown" in l ? [] : [l.frame];
+    }),
+  );
   const counted = new Set<LandedHit>();
   const parts: TotalPart[] = [];
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
@@ -719,6 +731,54 @@ export function awayWindows(fx: LogFixture): { readonly from: number; readonly t
 /** An engine assumption's reading under a replay's `assume` (its default when not set). */
 function engineReadingOf(assume: Readonly<Record<string, string>>, id: string): string | undefined {
   return assume[id] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === id)?.default;
+}
+
+/**
+ * A fight's total error split by where it lives, each as a share of the logged total (%): `matched`, the landings
+ * standing for logged hits (predicted − their logged values); `replayOnly`, landings no logged hit stands for;
+ * `logOnly` (≤ 0), logged hits the total has no landing for. The team's error is their sum; an operator's adds
+ * `shifts` (recorded bursts' teammate shares, TotalsComparison.recordedShifts). `zmdlogs totals --all`'s rows and
+ * measure's aggregates: most large errors are one-sided landings, not matched scale (2026-11-23).
+ */
+export interface TotalsShares {
+  readonly logged: number;
+  readonly error: number;
+  readonly matched: number;
+  readonly replayOnly: number;
+  readonly logOnly: number;
+  /** Replay-only landings the totals left out where the enemy was away (enemy-away), and the away stretches' seconds. */
+  readonly awayLeftOut: number;
+  readonly awaySeconds: number;
+  readonly perOperator: readonly { readonly operator: string; readonly matched: number; readonly replayOnly: number; readonly logOnly: number; readonly shifts: number }[];
+}
+
+/** TotalsShares of one fight's totals (`hits` the fixture's logged hits). */
+export function totalsShares(hits: readonly LogHit[], t: TotalsComparison): TotalsShares {
+  const L = t.logged.damage;
+  const pct = (x: number) => (L === 0 ? 0 : (100 * x) / L);
+  const ops = new Map<string, { matched: number; replayOnly: number; logOnly: number; shifts: number }>();
+  const op = (o: string) => ops.get(o) ?? (ops.set(o, { matched: 0, replayOnly: 0, logOnly: 0, shifts: 0 }), ops.get(o) as { matched: number; replayOnly: number; logOnly: number; shifts: number });
+  const counted = new Set<LogHit>();
+  for (const p of t.parts) {
+    if (p.logged) {
+      // A logged hit is one part's at most (fightTotals maps landings to hits one to one); guard anyway, so the shares add up.
+      op(p.operator).matched += p.damage - (counted.has(p.logged) ? 0 : p.logged.value);
+      counted.add(p.logged);
+    } else op(p.operator).replayOnly += p.damage;
+  }
+  for (const h of hits) if (!counted.has(h)) op(h.operator).logOnly -= h.value;
+  for (const s of t.recordedShifts) op(s.operator).shifts += s.amount;
+  const sum = (k: "matched" | "replayOnly" | "logOnly") => [...ops.values()].reduce((a, x) => a + x[k], 0);
+  return {
+    logged: L,
+    error: pct(t.simulated.damage - L),
+    matched: pct(sum("matched")),
+    replayOnly: pct(sum("replayOnly")),
+    logOnly: pct(sum("logOnly")),
+    awayLeftOut: t.away.leftOut,
+    awaySeconds: t.away.windows.reduce((a, w) => a + (w.to - w.from) / 1000, 0),
+    perOperator: [...ops].map(([operator, x]) => ({ operator, matched: pct(x.matched), replayOnly: pct(x.replayOnly), logOnly: pct(x.logOnly), shifts: pct(x.shifts) })).sort((a, b) => Math.abs(b.matched + b.replayOnly + b.logOnly + b.shifts) - Math.abs(a.matched + a.replayOnly + a.logOnly + a.shifts)),
+  };
 }
 
 /** A totals comparison as rounded percentage errors (simulated / logged − 1, to 0.1 %), for the report and the verdict snapshots. */

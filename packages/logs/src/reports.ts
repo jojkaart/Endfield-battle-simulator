@@ -4,14 +4,16 @@
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { exportHits, exportHitsParallel, filterRecords, formatRecord, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 import { gameDataCacheKey, REPO_ROOT } from "@efsim/data";
-import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures } from "./logs.ts";
-import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, type ViewFilter } from "./views.ts";
+import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
+import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, type TotalsGroup, type ViewFilter } from "./views.ts";
+import type { TotalsShares } from "./enginecheck.ts";
+import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fitBuild, type BuildCandidate } from "./buildfit.ts";
 
@@ -199,6 +201,93 @@ export async function groupsCliReport(data: () => GameData, operator: string, se
   const files = named.length ? named : listLogs({ dirs: ["verified", "pending"], withOperators: [id] }).map((l) => join(REPO_ROOT, l.file));
   const records = await collectRecords(data, files, opts.workers, {}, opts.progress, opts.cache ?? true);
   return groupsReport(records, id, { verbose: opts.verbose, fixtureLabel });
+}
+
+/**
+ * `efsim zmdlogs totals --all` (or named fixtures with several): every selected development log's totals split by where
+ * the error lives (TotalsShares), on `workers` threads (hitsworker.ts), from the per-fixture cache where the code and
+ * the fixture are unchanged (as the hit records; not under another reading). Never a hold-out: their aggregates come
+ * from measure.
+ */
+export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void }): Promise<string> {
+  const files = selectedFiles(sel, "totals");
+  const workers = opts.workers === undefined ? 1 : Number(opts.workers);
+  if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
+  const assume = opts.assume ?? {};
+  const cache = (opts.cache ?? true) && !Object.keys(assume).length;
+  const shares = new Map<string, TotalsShares>();
+  const todo: string[] = [];
+  for (const f of files) {
+    const c = cache ? readSharesCache(f) : undefined;
+    if (c) shares.set(f, c);
+    else todo.push(f);
+  }
+  if (files.length > 1) opts.progress?.(`totals: ${files.length - todo.length} of ${files.length} logs from the cache (${HITS_CACHE}), ${todo.length} to check`);
+  const got = (f: string, s: TotalsShares) => {
+    shares.set(f, s);
+    if (cache) writeSharesCache(f, s);
+  };
+  if (workers > 1 && todo.length > 1) await sharesParallel(todo, workers, got, assume, opts.progress);
+  else
+    for (const f of todo) {
+      opts.progress?.(`totals ${fixtureLabel(f)}`);
+      got(f, snapshotEntry(data(), readLogFixture(f), Object.keys(assume).length ? { assume } : {}).shares);
+    }
+  const split = readLogSplit(REPO_ROOT);
+  const dev = new Set(split.development.map((d) => d.replace(/^zmdlogs-/, "")));
+  const groupOf = (f: string): TotalsGroup => (isMultiTarget(f) ? "multi" : !resolve(f).startsWith(resolve(REPO_ROOT, LOG_DIRS.pending) + "/") ? "verified" : dev.has(fixtureLabel(f).replace(/^zmdlogs-/, "")) ? "development" : "earlier");
+  const rows = files.map((f) => ({ short: shortId(fixtureLabel(f)), group: groupOf(f), shares: shares.get(f) as TotalsShares }));
+  return totalsAllView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
+}
+
+function sharesCacheFile(file: string): string {
+  return hitsCacheFile(file).replace(/\.json$/, ".shares.json");
+}
+
+function readSharesCache(file: string): TotalsShares | undefined {
+  const c = sharesCacheFile(file);
+  if (!existsSync(c)) return undefined;
+  try {
+    return JSON.parse(readFileSync(c, "utf8")) as TotalsShares;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeSharesCache(file: string, s: TotalsShares): void {
+  mkdirSync(dirname(sharesCacheFile(file)), { recursive: true });
+  writeFileSync(sharesCacheFile(file), JSON.stringify(s));
+}
+
+/** The shares of `files` on `workers` threads of hitsworker.ts, each answer to `got`. */
+async function sharesParallel(files: readonly string[], workers: number, got: (file: string, s: TotalsShares) => void, assume: Readonly<Record<string, string>>, progress?: (line: string) => void): Promise<void> {
+  const { Worker } = await import("node:worker_threads");
+  const queue = [...files];
+  const one = () =>
+    new Promise<void>((done, reject) => {
+      const w = new Worker(new URL("./hitsworker.ts", import.meta.url));
+      const next = () => {
+        const file = queue.shift();
+        if (file === undefined) {
+          void w.terminate().then(() => done());
+          return;
+        }
+        progress?.(`totals ${fixtureLabel(file)}`);
+        w.postMessage({ file, shares: true, ...(Object.keys(assume).length ? { assume: { ...assume } } : {}) });
+      };
+      w.on("message", (m: { file: string; shares?: TotalsShares; error?: string }) => {
+        if (m.error !== undefined || !m.shares) {
+          void w.terminate();
+          reject(new Error(`${m.file}: ${m.error ?? "no shares"}`));
+          return;
+        }
+        got(m.file, m.shares);
+        next();
+      });
+      w.on("error", reject);
+      next();
+    });
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(workers, files.length)) }, one));
 }
 
 /** `efsim zmdlogs scales`: the multiplier each logged hit of an operator implies, one line each. */
