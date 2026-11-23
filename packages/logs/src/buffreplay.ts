@@ -61,6 +61,9 @@ function healsControlled(kit: OperatorKit): boolean {
   return kitHitEntries(kit).some((e) => e.hit.heals === "controlled") || kit.triggers.some((t) => allActions(t.do).some((a) => a.kind === "heal" && a.target === "controlled"));
 }
 
+/** How close (ratio) the lowest of the hits taken for crits at one moment may be to the highest of the rest. */
+const CRIT_APART = 1.4;
+
 /**
  * Crits the log leaves out (LogHit.crit null) that a trigger on crits shows by its own logged hits, per logged hit
  * index. Every development log leaves the crit out of Rossi's ultimate stabs (and of hits during it), yet logs the
@@ -68,10 +71,10 @@ function healsControlled(kit: OperatorKit): boolean {
  * 94430 ms: one stab of 16604 and one extra; 95000 ms: stabs of 16604, 16604 and 6386 and two extras): at a moment with
  * m such hits (less the logged crits that may have fired them), the m largest of the operator's hits there of the
  * trigger's kinds with no logged crit are crits, when they stand apart from the rest (crit and non-crit values of one
- * key differ by the crit zone, ×1.5 or more). Without the inference the replay's main run lands none of the extras and
+ * key differ by the crit zone, ×1.5 or more: CRIT_APART). Without the inference the replay's main run lands none of the extras and
  * the Wolven Blood layers those crits add.
  */
-function shownCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement): Map<number, boolean> {
+export function shownCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement): Map<number, boolean> {
   const out = new Map<number, boolean>();
   const index = new Map(fx.hits.map((h, i) => [h, i]));
   for (const k of kits) for (const t of k.triggers) {
@@ -99,7 +102,72 @@ function shownCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Pla
       const crits = sorted.slice(0, Math.min(m, sorted.length));
       const rest = sorted.slice(crits.length);
       const lowest = crits.at(-1) as LogHit;
-      if (rest.length > 0 && lowest.value < 1.4 * (rest[0] as LogHit).value) continue;
+      if (rest.length > 0 && lowest.value < CRIT_APART * (rest[0] as LogHit).value) continue;
+      for (const h of crits) out.set(index.get(h) as number, true);
+    }
+  }
+  return out;
+}
+
+/**
+ * The instances of a game buff the log lists as starting at each ms, on an operator's hits (its effects and the
+ * boundary's): per start, the entries with that `since` over the kinds of entry (zone and element) among them, the most
+ * any one hit lists. Wolven Blood (buff_wpn_sword_0022_layer) is listed once per layer and element (Physical, Heat):
+ * two layers from one moment are four entries.
+ */
+export function listedStarts(fx: LogFixture, operator: string, gameBuff: string): Map<number, number> {
+  const out = new Map<number, number>();
+  for (const h of fx.hits) {
+    if (h.operator !== operator) continue;
+    const bySince = new Map<number, LogEffect[]>();
+    for (const e of [...h.effects, ...h.boundaryEffects]) {
+      if (e.buff !== gameBuff || e.since === undefined || (e.source !== undefined && e.source !== operator)) continue;
+      bySince.set(e.since, [...(bySince.get(e.since) ?? []), e]);
+    }
+    for (const [s, es] of bySince) out.set(s, Math.max(out.get(s) ?? 0, es.length / new Set(es.map((e) => `${e.zone}|${e.element}`)).size));
+  }
+  return out;
+}
+
+/**
+ * Crits the log leaves out (LogHit.crit null) that a trigger on crits shows by the layers it adds: a trigger on its
+ * operator's crits that adds a layer of a buff the log lists with its start (LogEffect.since) adds one per crit, so n
+ * layers listed from a moment are n crits there. 489c (pending/zmdlogs-489c0be3e162.json) lists Rossi's Wolven Blood
+ * layers from 54406 ms, then one from 55610 ms with the max-stack final, on a power attack whose crit the log doesn't
+ * give (and one from each of her next five crit-less hits); without it the replay reaches 16 layers 3.9 s later. Taken
+ * after the logged crits and those `shown` (shownCrits) at the moment: n − those are crits among the rest of the
+ * operator's crit-less hits there of the trigger's kinds; all of them when there are as many, else the largest when
+ * they stand apart (CRIT_APART). Not a buff the replay can't decide (a chance, an enemy's action). The count can only
+ * add crits: at the buff's maximum a new layer replaces one, and the listing can show fewer than were dealt.
+ */
+export function layerCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement, shown: ReadonlyMap<number, boolean> = new Map()): Map<number, boolean> {
+  const out = new Map<number, boolean>();
+  const index = new Map(fx.hits.map((h, i) => [h, i]));
+  for (const k of kits) for (const t of k.triggers) {
+    if (t.on.event !== "hit" || t.on.crit !== true || t.by !== "self" || t.chance !== undefined) continue;
+    const first = t.do[0];
+    const def = first?.kind === "buff" && !first.if ? k.buffs.find((d) => d.id === first.buff) : undefined;
+    if (!def?.gameBuff || undecidedBuff(k, def.id)) continue;
+    const kinds = t.on.kinds;
+    const starts = listedStarts(fx, k.operator, def.gameBuff);
+    if (starts.size === 0) continue;
+    const byMs = new Map<number, LogHit[]>();
+    for (const h of fx.hits) {
+      if (h.operator !== k.operator || !starts.has(h.t)) continue;
+      if (kinds) {
+        const kind = placement.hits.get(h)?.cast.kind;
+        if (!kind || !kinds.includes(kind as SkillType)) continue;
+      }
+      byMs.set(h.t, [...(byMs.get(h.t) ?? []), h]);
+    }
+    for (const [ms, hits] of byMs) {
+      const crit = (h: LogHit) => h.crit ?? shown.get(index.get(h) as number) ?? out.get(index.get(h) as number) ?? null;
+      const m = (starts.get(ms) as number) - hits.filter((h) => crit(h) === true).length;
+      const open = hits.filter((h) => crit(h) === null).sort((a, b) => b.value - a.value);
+      if (m <= 0 || open.length === 0) continue;
+      const crits = open.slice(0, m);
+      const rest = open.slice(crits.length);
+      if (rest.length > 0 && (crits.at(-1) as LogHit).value < CRIT_APART * (rest[0] as LogHit).value) continue;
       for (const h of crits) out.set(index.get(h) as number, true);
     }
   }
@@ -1896,7 +1964,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
   const held = (st: TimelineState, frame: number) => heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
-  const shown = shownCrits(kits, fx, placement);
+  const shownByHits = shownCrits(kits, fx, placement);
+  const shown = new Map([...shownByHits, ...layerCrits(kits, fx, placement, shownByHits)]);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */
@@ -1950,7 +2019,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
       // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.
-      // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits) count as logged.
+      // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits) or by the layers it adds
+      // (layerCrits) count as logged.
       loggedCrits: fx.hits.flatMap((h, i) => {
         const crit = h.crit ?? shown.get(i) ?? null;
         return crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit, ref: String(i) }];
