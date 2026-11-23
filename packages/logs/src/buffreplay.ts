@@ -1531,6 +1531,8 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
           const late = (t: number) => (t >= E ? worldMs(E, t, stops) : t - E);
           const [lo, hi] = [late(r.lastListed), off === undefined ? Infinity : late(off.t)];
           if (hi < -2 * HOLD_BOUND_TOL_MS || lo > HIDDEN_HOLD_SHARE * (E - S)) continue;
+          // An instance buff's run later than INSTANCE_LATE_MS: a refresh in place is likelier than holds.
+          if (def.instances !== undefined && lo > INSTANCE_LATE_MS) continue;
           const tag = `run ${g}|${owner} on ${holder} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : "–end"} ms over ${Math.round(E)}`;
           if (lo > -HOLD_BOUND_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - HOLD_BOUND_TOL_MS, max: Infinity, kind: "run", tag, ex: lo / 1000 });
           if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "run", tag, ex: hi / 1000 });
@@ -1545,8 +1547,16 @@ function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; e
 const APART_MS = 1000;
 
 /**
+ * How late (ms, world time past the replay's expiry) an instance buff's run may be and still be a clock: about two
+ * perfect dodges. Arcane's will_dmg / will_atk runs, refreshed in place with their start kept, ask 2–8 s (b6aa15281db4
+ * from 2.1 s, 4d60e7fe92c2 from 10.8 s: 7.7 s); Perlica's Arts DMG Taken in 4360447193ac 0.74 s. An interim bound.
+ */
+const INSTANCE_LATE_MS = 1000;
+
+/**
  * Whether the log shows a run `r` of an instance buff as an instance of its own: each of the replay's applications
- * (`list`) after `w` and inside the run has a run of its own in the log, and every run overlapping `r` ends at
+ * (`list`) after `w` and inside the run has a run of its own in the log, some run overlaps `r` (a lone run may be one
+ * the game refreshed in place: b6aa15281db4, Arcane's will_atk from 2.1 s listed to 31.8 s), and every run overlapping it ends at
  * least APART_MS from it (two runs ending together: a reapplication that refreshed both; 9c0bb09daff2, Arcane's will_dmg
  * from 31.5 and 34.3 s both listed to 70.2 s). 4360447193ac: Perlica's Arts DMG Taken from 92.24 s ends at 108.27 s
  * beside the one from 104.92 s, listed to 119.2 s.
@@ -1556,7 +1566,7 @@ function runApart(list: readonly { start: number }[], w: { start: number }, r: L
   const later = list.filter((x) => x.start > w.start && msOfFrame(x.start) <= r.lastListed);
   if (!later.every((x) => on.some((o) => Math.abs(o.since - msOfFrame(x.start)) <= RUN_START_MS))) return false;
   const overlaps = (o: LoggedLaneEnd) => o.since <= r.lastListed && r.since <= o.lastListed;
-  return on.every((o) => !overlaps(o) || Math.abs(o.lastListed - r.lastListed) >= APART_MS);
+  return on.some(overlaps) && on.every((o) => !overlaps(o) || Math.abs(o.lastListed - r.lastListed) >= APART_MS);
 }
 
 /** Whether `r` is the run on its holder whose start is nearest `S` (ms): the one an instance applied at S stands for. */

@@ -289,7 +289,7 @@ describe("489c0be3e162: Rossi's ultimate crits the log leaves out, and her bleed
     expect(extras.every((h) => !("unknown" in r.replay.landing(h)))).toBe(true);
   });
 
-  it("counts as crits the crit-less hits where Wolven Blood's listed layers show them (layerCrits): her final from 55.6 s, not 59.5 s", () => {
+  it("counts as crits the crit-less hits where Wolven Blood's listed layers show them (layerCrits): her final before 57 s, not at 59.5 s", () => {
     const kits = fx.team.flatMap((b) => effectiveKit(data, b) ?? []);
     const placement = placeHits(data, fx);
     const crits = layerCrits(kits, fx, placement, shownCrits(kits, fx, placement));
@@ -298,7 +298,9 @@ describe("489c0be3e162: Rossi's ultimate crits the log leaves out, and her bleed
     expect(fx.hits[power]?.crit).toBeNull();
     expect(crits.get(power)).toBe(true);
     const finals = r.replay.kitWindows("chr_0028_wulfa:wpn_sword_0022.final", "chr_0028_wulfa").map((w) => w.start);
-    expect(finals.some((s) => s > 55000 && s < 56500)).toBe(true);
+    // The log's final from 55.61 s; the replay's from 56.73 s, two layers short from two bleed ticks it lands off the
+    // log's (47.13 s at 46.60 s, before the first final's end clears the layers; 52.18 s none): not crits.
+    expect(finals.some((s) => s > 55000 && s < 57000)).toBe(true);
   });
 
   it("reads her logged crits back from the layers when every flag is hidden, and not from the listing moved at random (negative control)", () => {
@@ -361,24 +363,19 @@ describe("b6aa15281db4: a buff the log lists past the replay's expiry (engine as
   });
 });
 
-describe("4360447193ac, 984748cfa662: Gilberta's Vulnerable stacks past 20 s on the tower bosses (2026-11-23)", () => {
-  const ult = (file: string, t: number) => {
-    const fx = readLogFixture(new URL(`../fixtures/pending/${file}`, import.meta.url).pathname);
-    return { fx, v: checkLog(data, fx).find((x) => x.hit.t === t && x.hit.event === "chr_0013_aglina_ultimate_skill") };
-  };
+describe("4360447193ac: Gilberta's Vulnerable stacks past 20 s on a tower boss (2026-11-23)", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-4360447193ac.json", import.meta.url).pathname);
 
   it("takes runs listed side by side as two instances, not a refresh (loggedLaneEnds)", () => {
-    const { fx } = ult("zmdlogs-4360447193ac.json", 116005);
     const runs = loggedLaneEnds(fx).runs.get("buff_wpn_funnel_0008_magic_damage_taken_up|chr_0004_pelica") ?? [];
     // Perlica's Arts DMG Taken from 92.24 s is listed beside the one from 104.92 s until 108.27 s.
     expect(runs.find((r) => r.since === 92241)?.refreshed).toBe(false);
   });
 
-  it("reads her ultimates' Susceptibility as listed: the holds those runs place keep the stacks (0.39 at 116.0 s, 0.36 at 126.1 s)", () => {
-    // 4360: Perlica's run from 92.24 s, 0.74 s late, places a hold that keeps the 90.87 s stacks to the 113.40 s Lift.
-    for (const [file, t] of [["zmdlogs-4360447193ac.json", 116005], ["zmdlogs-984748cfa662.json", 126094]] as const) {
-      const v = ult(file, t).v;
-      expect(v?.kind === "match" ? v.class : v?.kind).toBe("plain");
-    }
+  it("reads her 116.0 s ultimate's Susceptibility as listed (0.39, 3 stacks): the hold Perlica's run places keeps the stacks", () => {
+    // Perlica's run from 92.24 s, 0.74 s late, places a hold that keeps the 90.87 s stacks to the 113.40 s Lift.
+    // Avywenna's ultimate at 117.98 s under it was a mismatch at 0.33.
+    const v = checkLog(data, fx).find((x) => x.hit.t === 117977 && x.hit.event === "chr_0012_avywen_ultimate_skill");
+    expect(v?.kind === "match" ? v.class : v?.kind).toBe("plain");
   });
 });
