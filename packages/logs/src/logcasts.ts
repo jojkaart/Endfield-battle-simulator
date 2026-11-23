@@ -487,8 +487,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
   const hits = new Map<LogHit, PlacedHit>();
   const casts: LoggedCast[] = [];
   const sorted = [...fx.hits].sort((a, b) => a.t - b.t);
+  const teamGroups = new Map(fx.team.map((b) => [b.operator, groupsOf(data, b, computeStats(data, b), fx)]));
+  const controlled = controlEvidence(fx, teamGroups);
   for (const build of fx.team) {
-    const groups = groupsOf(data, build, computeStats(data, build), fx);
+    const groups = teamGroups.get(build.operator) ?? [];
     if (groups.length === 0) continue;
     const mine = sorted.filter((h) => h.operator === build.operator);
     const others = stops.filter((x) => x.operator !== build.operator);
@@ -498,7 +500,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       if (!slotCache.has(k)) slotCache.set(k, slotsOf(g, key));
       return slotCache.get(k) ?? null;
     };
-    const groupsWith = (key: string) => groups.filter((g) => g.hits.some((h) => h.events.includes(key)));
+    // A hit of a key that happens only off-field isn't a candidate while the log shows its operator controlled
+    // (fc63a2001251: Typhoeus's 4th shot at 89.24 s, keyed as her shots 1–4, taken for her 5th shot's off-field arrow,
+    // which made the 5th shot's burst a shot of its own and shifted every shot after it).
+    const offField = (h: KitHit) => JSON.stringify(h.if) === JSON.stringify({ not: { controlled: true } });
+    const groupsWith = (key: string, t?: number) =>
+      groups.filter((g) => g.hits.some((h) => h.events.includes(key) && !(t !== undefined && offField(h) && controlled(build.operator, t))));
     const kitSkills = new Set(groups.filter((g) => g.kind !== null).map((g) => g.skillId));
     // Not one logged at another operator's time-stopping cast's event: pressed during its stop, the log has it at the
     // stop's end (5082ceaffad1: Yvonne's and Ardelia's combos at Seraph's ultimate's 33.71 s; e82d45c46040: Li Zhiyan's at
@@ -516,7 +523,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       // whose windows list one).
       const skillCasts: LoggedCast[] = [];
       for (const h of mine) {
-        const candidates = groupsWith(h.event);
+        const candidates = groupsWith(h.event, h.t);
         if (candidates.length === 0) continue;
         if (!starts && candidates.length > 1) continue; // the first pass places only keys of one group
         const cur = current.get(h.event);
@@ -562,6 +569,11 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           continue;
         }
         const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
+        // A cast with a landing of a later frame logged already, a delayed one (a burst after its arrow), isn't joined
+        // by a landing of an earlier frame: that landing is a later cast's (fc63a2001251 87–97 s: each of Typhoeus's
+        // bursts opened a cast that the next shot's arrow joined, a shot late; tried 2026-11-18 without the off-field
+        // rule, when bdf2 and 00ae lost a shot to it).
+        const landedLater = (c: LoggedCast, frame: number) => [...placed].some(([x, p]) => p.cast === c && x.t < h.t && p.frame !== undefined && p.frame > frame && p.hits.some((k) => k.enemyDelay !== undefined));
         const late = joinDelayed(candidates, h, slots, opened, stops, free);
         // A trigger on casts fires once per cast: no new cast of its group once one was placed since the anchor before
         // the latest one it could be (a cast of the skills it fires on, plus its delay, placed up to the skill's duration
@@ -592,7 +604,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
+        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
@@ -615,6 +627,26 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
   }
   return { hits, casts };
 }
+
+/**
+ * Whether the log shows an operator controlled at a time (ms), from the log alone: the logged hit with Stagger nearest
+ * that time among the kit hits whose Stagger only the controlled operator deals (poiseControlledOnly: basic attacks,
+ * as buffreplay.ts controlSwaps reads them) is the operator's, within CONTROL_EVIDENCE_MS. False without such a hit
+ * (unknown).
+ */
+function controlEvidence(fx: LogFixture, groups: ReadonlyMap<string, readonly Group[]>): (operator: string, t: number) => boolean {
+  const keys = new Map<string, Set<string>>();
+  for (const [op, gs] of groups) keys.set(op, new Set(gs.flatMap((g) => (g.kind === "basic" ? g.hits.filter((h) => h.poise !== undefined && h.poiseControlledOnly).flatMap((h) => h.events) : []))));
+  const shown = fx.hits.filter((h) => h.poise !== undefined && keys.get(h.operator)?.has(h.event));
+  return (operator, t) => {
+    let best: LogHit | undefined;
+    for (const h of shown) if (!best || Math.abs(h.t - t) < Math.abs(best.t - t)) best = h;
+    return best !== undefined && best.operator === operator && Math.abs(best.t - t) <= CONTROL_EVIDENCE_MS;
+  };
+}
+
+/** How far from a time a hit showing control may be and still say who was controlled then (controlEvidence). */
+const CONTROL_EVIDENCE_MS = 10_000;
 
 /**
  * An ultimate's landings of a key fewer than its slots: the landings take the slots their world time from the first
