@@ -1583,7 +1583,7 @@ keeps a listed buff to its listing's end.
   replay counts as crits that many of Rossi's crit-less hits at the moment, after the logged and shownCrits ones (all
   of them when as many, else the largest when they stand apart ×1.4). Every crit flag of the operator hidden, over the
   development logs: 956 of 973 inferred crits right (0.98; base rate 0.64); the listed starts moved to random other
-  moments of her hits (the negative control): 0.63, the base rate (scratch/wb-xval.ts; the test on 489c in
+  moments of her hits (the negative control): 0.63, the base rate (scripts/probes/crits/layer-xval.ts; the test on 489c in
   tests/buffreplay-fixtures.test.ts). 489c's final now starts at 56.73 s (the log's 55.61 s; 55.93 s before the hold
   bounds below moved its bleed ticks); the 1.1 s left is two layers from bleed ticks the replay lands off the log's: the
   47.13 s tick at 46.60 s, before the first final's end (46.60 s) clears the layers, and the 52.18 s tick not at all ("a

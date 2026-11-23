@@ -175,9 +175,15 @@ listed statuses' runs and Corrosion's ramp steps (read from the hits'
 damage, `efsim zmdlogs ramp`), and the engine's ramp standing still inside
 a stop: d774's strikes and db87's ramp fixed (numbers in the journal).
 Rossi's Wolven Blood has no clock of its own: its misfits are its 16th
-layer's crit (no logged crit). Next: test 111; the combo slow-downs that
+layer's crit (no logged crit): fixed 2026-11-23 (layerCrits: n layers listed
+from a moment are n crits; 0.98 right with the flags hidden, the base rate
+with the listing moved). Instance buffs' runs are clocks too where the log
+shows them apart (4360's tower-boss Vulnerable stacks fixed; 9847 left: a
+Vulnerable-count clock from Gilberta's listed Susceptibility, a holds.ts
+bound). Next: test 111; the combo slow-downs that
 hold the ramp longer than the game (139 of 146 over-held readings; 3f78,
-4a64, a7a7 openers, f978, 9c6e); crits a buff's listed layers show;
+4a64, a7a7 openers, f978, 9c6e); Rossi's bleed ticks the replay lands off
+the log's (489c 46.60 s for 47.13 s, 52.18 s none: her final 1.1 s late);
 pauses and overlapping ultimates' stops (489c), which a dodge can't be;
 simulations already dodge with `--dodge`, and the owner's dodge rate
 would decide how much rides on it.

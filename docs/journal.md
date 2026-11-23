@@ -4,9 +4,53 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 123 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 124 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Wolven Blood's crits from its listed layers; Gilberta's tower-boss stacks from an instance buff's clock
+
+**Goal:** two leads from docs/journal/2026-11-23-02-hold-clocks-enemy-statuses-and-corrosion-s-ramp.md: Rossi's Wolven
+Blood starting late where the log gives her hits no crit (489c's 16th layer at 55.61 s, the replay's at 59.5 s), and
+Gilberta's Vulnerable stacks outliving 20 s on the tower bosses (4360 116.0 s, 9847 126.1 s; 9847 310 → 300 from the
+ramp cap).
+
+**Done (open-problems "The buff clock" Wolven Blood bullet, "Gilberta's Susceptibility"):**
+- buffreplay.ts `layerCrits`: a trigger on its operator's crits that adds a layer of a buff the log lists with its start
+  adds one per crit, so n layers listed from a moment (`listedStarts`: entries with that `since` over the entry kinds)
+  are n crits there, after the logged and shownCrits ones: all the crit-less hits there when as many, else the largest
+  standing apart ×1.4 (CRIT_APART, shared with shownCrits). Cross-validation with every flag of the operator hidden
+  (development logs; Rossi, Chen's and Yvonne's crit sets too): 956 of 973 right (0.98, base rate 0.64); the listed
+  starts moved to random moments of her hits (negative control): 0.63. Both in tests/buffreplay-fixtures.test.ts on 489c.
+- loggedLaneEnds: a run is refreshed only when it stops being listed within 200 ms of the other's start (runs listed side
+  by side are two instances). runBounds: an instance buff's run (KitBuff.instances, excluded before) is a clock where the
+  log shows it apart (`runApart`: each replay application inside it has its own run, some run overlaps it, none ends
+  within 1 s of it), it is the run nearest the instance (`nearestRun`), and it is at most 1 s late (INSTANCE_LATE_MS).
+  4360: Perlica's Arts DMG Taken from 92.24 s, 0.74 s late, places a hold that keeps the 90.87 s stacks: Gilberta's
+  116.0 s Susceptibility reads 0.39 (3 stacks), Avywenna's ultimate under it plain.
+- Scoreboard (`npm run snapshots:update`): development plain 64.4 → 64.9%, mismatch 15.2 → 15.0%, mean |damage error|
+  9.3 → 8.8%, within 5% 16 → 17; hold-outs unchanged; earlier pending 57.3 → 57.7%, 18.4%, 8.0 → 8.3% (0c14); all but the
+  hold-outs 61.9 → 62.3%, 16.1 → 15.9%, 8.1 → 7.9%. Rossi 39.8 → 41.8% plain. Development 11 better (489c 517 → 546,
+  mismatch 57 → 38; 207f 106 → 121; 5082 damage −18.1 → −2.1%), 3 worse: 4a64 (150 → 140: the Wolven Blood runs moved
+  the placed holds, Corrosion read a step ahead at 16.8 s and Gilberta's Pursuit lost at 28.3 s), 9847 (one mismatch,
+  Gilberta's attack 3 at 140.3 s, the moved holds), 9a80 (damage 0.5 → 1.4%); 0c14's total +16.4 → +26.1% (Rossi's own
+  −10.8 → +1.6%, Si's +14.1 → +21.9%: her replay-only Artful Intent burst records Rossi's larger damage). No engine or kit
+  change: the simulated fights are the same (team-ab not run).
+
+**Decisions:** the crit count only adds crits (at 16 layers a new one replaces one; the listing undercounts there). An
+ambiguous moment is left alone unless the largest stand apart: the hit's own verdict tries both crits anyway, what matters
+is the count. Instance buffs as clocks only with the log's evidence that the run is an instance of its own: Arcane's
+will_dmg / will_atk runs keep their start through refreshes (489c, 9c0b: overlapping runs end together; b6aa, 4d60:
+lone runs 2–8 s late; 4d60 placed 11 s of holds before the 1 s cap). holds.ts statusLanes keeps the old refresh rule
+(another agent's file).
+
+**Dead ends:** instance buffs allowed wholesale (489c plain 517 → 475: Arcane's refreshed runs asked 2.6 s of holds);
+the per-buff independence test (9c0b's will_dmg passed it); without the nearest-run rule 489c's 12.0 s instance paired
+with the 14.6 s run.
+
+**Left:** 9847 126.1 s (0.30 against 0.36): no listed clock asks the 0.73 s more before the ultimate; Gilberta's listed
+Susceptibility as a Vulnerable-count clock (a holds.ts bound builder). 489c's final 1.1 s late from two bleed ticks the
+replay lands off the log's (ticksShownByHits), d572's one layer short from ~8 s with every crit logged.
 
 ## 2026-11-23: Improvement round 6: a kit buff's clock, probes, the split
 
@@ -368,37 +412,3 @@ hit, Forgeborn +6–7.8 s), hit-stops in part. Next: the buff clock over every l
 listed buff's natural end against the replay's. Friction report
 docs/friction/2026-11-22-twilight.md (a `--long` trace and a lane-end view would have
 found the probe in minutes).
-
-## 2026-11-22: The rule search decides: an objective across starts, rule sets, setups
-
-**Goal:** the owner: "The whole point of this simulator is to discover [the rules] for each team." Three rule
-questions had been left as the owner's call because the guided search had no objective across the fight's two starts
-(full energy, the zero-energy companion). Later the same day, also from the owner: conditionally active rule sets, so a
-team with Arcane and a non-Nature inflicter can play a Corrosion setup phase.
-
-**Done** (docs/design/rules.md "The objective across starts", "Rule sets", "The search decides"):
-- **The objective:** every list played on both starts on the same seeds, each seed scored by the two starts' mean
-  sustained DPS (`startsObjective`); the guided search's default (`--objective mean`; `first` the old veto), per-start
-  gains in its report, `efsim rules --compare` the same. Chosen over one long fight from zero because both starts
-  happen in play and a fight from zero never returns to four full bars.
-- **Cues:** `ultimates` (how many ready at once, rank 4), `energy` (an ultimate's gauge, rank 5), `statusLevel` (a
-  status at a level, rank 3: Corrosion at full strength is level 4). In guideCues, the rule search's pool and its
-  threshold moves.
-- **Rule sets:** `sets: [{ name, when }]` and a rule's `set`; one ordered list, a set rule read only while its
-  condition holds (`effectiveRules`); the condition counts once in the learnability; flat lists unchanged.
-- **Search moves:** reaction setup sets (`reactionSetupEdits`: the applier at 4 stacks of another element, else the
-  inflicter, from spare SP or not, with the list's own guards), rules moved between sets (`setMoveEdits`), an edit
-  split by a start cue into two sets (`splitEdit`, after a round that keeps nothing or a kept edit that disagrees
-  between the starts), the rule search's `editSets`.
-- **Searches** (with-lock, 15–49 min each): the owner's team kept a Corrosion setup set: +1.06% ± 0.33 on 64 fresh
-  seeds with Akekuri's ultimate guard (+1.71% as found; Arcane's press alone +0.94%). Ink Melt: Laevatain's ultimate
-  waits for Corrosion, Si's for Combustion and Twilight: +3.21% ± 0.73 (64). Typhoeus's: ultimates wait for the hover,
-  Arcane's battle skill while the Stagger bar is below half: +8.62% ± 0.65 (32). Questions: Estella on Stagger no; Ink
-  Melt's rule 7 `shows` no (a loss from both starts now); the Twilight hold kept (dropping it −2.3%). Arcane INT
-  (Hot Work), each mode with its own searched list: −1.91% ± 0.60 (64): not worth farming. Examples changed; an INT variant in examples/variants/.
-
-**Problems:** the 2026-11-16 numbers behind the questions had all moved (the engine changes since): measured per start
-before designing anything. The owner's setup as found pressed Akekuri's battle skill inside her ultimate; the rules
-check in the test suite caught it, the setup move now copies the list's guards. The first INT search hit the 2 h
-background limit (queue wait included): rerun with 4 rounds from the new WILL list. `npx prettier` reformatted a file
-(no config in the repository): rebuilt from `git show HEAD`. Friction: docs/friction/2026-11-22-rule-objective.md.
