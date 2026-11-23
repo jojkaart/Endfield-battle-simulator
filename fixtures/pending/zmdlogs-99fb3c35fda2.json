@@ -249,6 +249,17 @@
    ]
   }
  ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0009_azrila",
+   "set": {
+    "weapon": {
+     "level": 80
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-23), with Hard 27's logged resistances (11: packages/data/src/enemyFacts.ts LOGGED_RESISTANCES): as exported 0 of 22 landed hits within \u00b11 (\u00d70.9390); weapon level 80 alone fits 15 of 22 (9 of 10 clean, median \u00d71.0001) (her weapon's skills [4, 6, 6] are below 9, so the breakthrough stage doesn't pin level 90: docs/accuracy-plan.md \"The weapon's level\"); 2fd915292bb7 (same player, same weapon) fits level 80 on all 21."
+  }
+ ],
  "hits": [
   {
    "t": 5112,

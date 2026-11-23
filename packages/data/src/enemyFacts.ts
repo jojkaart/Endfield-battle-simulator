@@ -14,6 +14,25 @@
 //
 // An alias (a stage variant, `eny_0134_jsspsi_…`) takes its template's entry (gameData.ts copies the template).
 
+/**
+ * Resistances the logs show where the tables give others: enemy id (a stage variant's own) → the elements' resistance
+ * points and the evidence. Only the elements the logs' hits pin; the rest stay the table's.
+ */
+export const LOGGED_RESISTANCES: Readonly<Record<string, { readonly resistance: Readonly<Partial<Record<"physical" | "natural" | "cryst" | "pulse" | "fire", number>>>; readonly evidence: string }>> = {
+  // Hard 27 (indie_hard027_s), YSTF Captain Blightshade. EnemyTable gives this variant the base template's attributes
+  // (attrTemplateId eny_0124_kltdcap, no attrModifiers): physical 20, pulse 35, the rest 0; its born buffs
+  // (buff_eny_klcommon_mech, buff_eny_0121_klbud_tdcapeye) have no BuffData file in the data. Every hit fits 11 for
+  // each element the logs have, from the first hit on, under no buff: two players, two game versions. 2fd915292bb7 and
+  // 99fb3c35fda2 (one player, parser v58): Mi Fu's and Rossi's physical hits ×1.1125 (zone 0.89 for 0.80), Rossi's
+  // Heat hits ×0.890. 207fff414d82 (another player, parser v59, 2026-10-22): Rossi's physical hits from 4.7 s ×1.112,
+  // Si's Cryo and Arcane's and Gilberta's Nature hits ×0.890 (zone 0.89 for 1.00). Not DEF (it would move every
+  // element alike). Electric (35 in the table) isn't in any log: the table's.
+  eny_0124_kltdcap_hdg027: {
+    resistance: { physical: 11, natural: 11, cryst: 11, fire: 11 },
+    evidence: "2fd915292bb7, 99fb3c35fda2 (physical ×1.1125, Heat ×0.890), 207fff414d82 (another player: physical ×1.112, Cryo and Nature ×0.890)",
+  },
+};
+
 /** Template enemy id → the logs' evidence that it's control-immune. */
 export const CONTROL_IMMUNE_ENEMIES: Readonly<Record<string, string>> = {
   // Alleikhreos, Chiliarch (Boss). c3c735dbb022 (Si's freezes): frozen, Ardelia's Arts Susceptibility is held past

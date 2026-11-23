@@ -233,6 +233,26 @@
    ]
   }
  ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0009_azrila",
+   "set": {
+    "weapon": {
+     "level": 80
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-23), with Hard 27's logged resistances (11: packages/data/src/enemyFacts.ts LOGGED_RESISTANCES): as exported 0 of 21 landed hits within \u00b11 (every hit \u00d70.9389: her ATK about 6% high, open-problems \"Hard 27\"); weapon level 80 alone fits 21 of 21 (21 clean, median \u00d71.0000) (her weapon's skills [4, 6, 6] are below 9, so the breakthrough stage doesn't pin level 90: docs/accuracy-plan.md \"The weapon's level\"). The pair with 1 attribute node, level 86 and a food fits as well but needs three inputs; 99fb3c35fda2 (same player, same weapon) fits level 80 too."
+  },
+  {
+   "operator": "chr_0014_aurora",
+   "set": {
+    "weapon": {
+     "level": 20
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-23), with Hard 27's logged resistances: as exported 0 of 23 landed hits within \u00b11 (every hit \u00d70.5897, the \u00d70.655 open-problems \"Hard 27\" had before the resistances); weapon level 20 alone fits 14 of 23 (14 of 20 clean, median \u00d71.0012). Its skills [2, 1, 6] (the first two well below 9) fit a weapon at a low breakthrough stage, which the export doesn't give (its level is written as 90). The other 6 clean misfits aren't explained."
+  }
+ ],
  "hits": [
   {
    "t": 4503,

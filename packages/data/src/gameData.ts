@@ -37,7 +37,7 @@ import { loadSkills } from "./tables/skills.ts";
 import { loadWeaponCurves, loadWeapons } from "./tables/weapons.ts";
 import { loadUseItems } from "./tables/useItems.ts";
 import { loadFoods } from "./foods.ts";
-import { CONTROL_IMMUNE_ENEMIES } from "./enemyFacts.ts";
+import { CONTROL_IMMUNE_ENEMIES, LOGGED_RESISTANCES } from "./enemyFacts.ts";
 
 // CharGrowthTable skillGroupType → the build's skill level that applies.
 const SKILL_GROUP_TYPES: Record<number, SkillType> = { 0: "basic", 1: "battle", 2: "ultimate", 3: "combo" };
@@ -256,6 +256,12 @@ function build(): GameData {
       return out;
     };
     enemies[alias.id] = { ...template, id: alias.id, levels: template.levels.map(apply), staticAttrs: apply(template.staticAttrs) };
+  }
+  // Resistances the logs show where the tables give others (enemyFacts.ts LOGGED_RESISTANCES).
+  for (const [id, fact] of Object.entries(LOGGED_RESISTANCES)) {
+    const e = enemies[id];
+    if (!e) throw new DataError(PRIMARY, `enemyFacts.ts LOGGED_RESISTANCES.${id}`, "no such enemy");
+    enemies[id] = { ...e, resistance: { ...e.resistance, ...fact.resistance } };
   }
 
   const { foods, notFoods } = loadFoods(loadUseItems(PRIMARY), itemName);
