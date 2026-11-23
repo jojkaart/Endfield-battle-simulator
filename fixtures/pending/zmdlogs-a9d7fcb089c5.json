@@ -18,7 +18,8 @@
    "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-24, buildOverrides): every operator's food Jakub's Legacy (ATK +27%), fitted with efsim zmdlogs fit-build: the fight's hits were ×1.17–1.24 the replay's from its first second (docs/open-problems.md \"Fight totals\")."
   ]
  },
  "enemy": {
@@ -63517,6 +63518,36 @@
    "t": 268379,
    "operator": "chr_0021_whiten",
    "skill": "chr_0021_whiten_normal_skill"
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0021_whiten",
+   "set": {
+    "food": "item_agrange_1_erhound_1_sp_1_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): the team's food, which no log of eny_0134_jsspsi lists (the other seven fights against it have theirs by hand: Jakub's Legacy, ATK +27%, in e989 and de6a); as exported 0 of 59 landed hits within ±1 (×1.2348); Jakub's Legacy alone fits 24 of 59 (9 of 10 clean, median ×1.0001)."
+  },
+  {
+   "operator": "chr_0029_pograni",
+   "set": {
+    "food": "item_agrange_1_erhound_1_sp_1_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): the team's food, which no log of eny_0134_jsspsi lists (the other seven fights against it have theirs by hand: Jakub's Legacy, ATK +27%, in e989 and de6a); as exported 0 of 105 within ±1 (×1.1741); Jakub's Legacy alone fits 42 of 105 (18 of 20 clean, median ×0.9999)."
+  },
+  {
+   "operator": "chr_0024_deepfin",
+   "set": {
+    "food": "item_agrange_1_erhound_1_sp_1_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): the team's food, which no log of eny_0134_jsspsi lists (the other seven fights against it have theirs by hand: Jakub's Legacy, ATK +27%, in e989 and de6a); as exported 0 of 63 within ±1 (×1.2371); Jakub's Legacy alone fits 21 of 63 (3 of 7 clean, median ×1.0042)."
+  },
+  {
+   "operator": "chr_0005_chen",
+   "set": {
+    "food": "item_agrange_1_erhound_1_sp_1_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): the team's food, which no log of eny_0134_jsspsi lists (the other seven fights against it have theirs by hand: Jakub's Legacy, ATK +27%, in e989 and de6a); no clean hit of hers to fit (her readings and the log's listing disagree on every hit): the food her three teammates fit, which brings her hits' median from ×1.2766 to ×1.0889 (a food is each operator's: de6a's Chen has Kunst Tube, which would read about the same; her residual is her own misfits)."
   }
  ]
 }

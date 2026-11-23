@@ -22,7 +22,8 @@
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-24, buildOverrides): Lifeng's weapon level 82, fitted with efsim zmdlogs fit-build (a per-operator factor constant over the fight, found from every development log's per-operator medians; docs/open-problems.md \"Fight totals\")."
   ]
  },
  "enemy": {
@@ -260,6 +261,15 @@
     }
    },
    "why": "Skill levels the roster doesn't give (12 assumed for each): her basic attacks are basic level 9. Read with her kit (the male's keys: logs.ts withEndminVariant), her attack 1-5 and finisher hits are x0.794-0.807 of level 12's, attack 4's first hits x0.842, the ratios of their scales at level 9 and 12 (SkillPatchTable: attack 1 0.41 / 0.51, attack 4 0.16 / 0.19 and 0.62 / 0.78, finisher 7.2 / 9); her battle skill and combo hits fit level 12 (x1.000). Her ultimate and Originium Crystals hits read x0.74-0.78 together at each cast, as a shared modifier would, not a level (left: docs/open-problems.md)."
+  },
+  {
+   "operator": "chr_0015_lifeng",
+   "set": {
+    "weapon": {
+     "level": 82
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 182 landed hits within ±1 (×0.9506); weapon level 82 alone fits 95 of 182 (4 of 5 clean, median ×0.9999) (her weapon's skills [5, 7, 2] don't pin the breakthrough stage at level 90: docs/accuracy-plan.md \"The weapon's level\"). The fits with a food need three inputs."
   }
  ],
  "hits": [

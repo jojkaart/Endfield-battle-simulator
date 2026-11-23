@@ -23,7 +23,8 @@
    "Ardelia's weapon (Dreams of the Starry Beach) at level 60 and no attribute node, not the assumed 90 and every node (2026-11-14): her hits are ×0.767–0.774 the assumed readings (not one factor: the ATK buffs at each hit move it), and level 60 with no node gives ATK ×0.7681 (2379 against 3098): 143 of her 164 non-crit hits then have an exact engine reading, against 139 at level 56 with 2 nodes (×0.7688) and at most 125 for any other weapon level from 50 to 64 with 0–3 nodes; and her weapon's logged skill levels (7, 6, 4) need its third breakthrough, at 60 (WeaponBreakThroughTemplateTable: its first skill goes up to 6 before it), which rules out 56. The log check's build offset doesn't report it (the spread: under 75% of her hits within ±0.003 of one ratio). The export has no weapon level or attribute nodes.",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-24, buildOverrides): Xaihi's attribute nodes 0 and weapon level 1, fitted with efsim zmdlogs fit-build (a per-operator factor constant over the fight, found from every development log's per-operator medians; docs/open-problems.md \"Fight totals\")."
   ]
  },
  "enemy": {
@@ -27814,6 +27815,18 @@
    "t": 114222,
    "operator": "chr_0036_jsspsi",
    "skill": "chr_0036_jsspsi_combo_skill"
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0011_seraph",
+   "set": {
+    "attributeNodes": 0,
+    "weapon": {
+     "level": 1
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 55 landed hits within ±1 (×0.4027); attribute nodes 0 with weapon level 1 fits 47 of 55 (29 of 29 clean, median ×0.9999): a weapon never levelled (its skills [2, 2, 4] allow the first breakthrough stage); no one-input fit comes near."
   }
  ]
 }

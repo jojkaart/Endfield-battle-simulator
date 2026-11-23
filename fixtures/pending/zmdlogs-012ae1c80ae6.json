@@ -20,7 +20,8 @@
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-24, buildOverrides): Akekuri's attribute nodes 0, fitted with efsim zmdlogs fit-build (a per-operator factor constant over the fight, found from every development log's per-operator medians; docs/open-problems.md \"Fight totals\")."
   ]
  },
  "enemy": {
@@ -51177,6 +51178,15 @@
    "t": 57139,
    "operator": "chr_0016_laevat",
    "skill": "chr_0016_laevat_combo_skill"
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0019_karin",
+   "set": {
+    "attributeNodes": 0
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 36 landed hits within ±1 (×0.8924); attribute nodes 0 alone fits 36 of 36 (14 of 14 clean, median ×1.0002)."
   }
  ]
 }

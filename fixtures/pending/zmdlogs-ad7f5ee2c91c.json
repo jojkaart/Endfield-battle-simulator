@@ -18,7 +18,8 @@
    "Enemy level 90 from the stage's DungeonTable entry (indie_battletower004_ex).",
    "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
    "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh).",
+   "Build override (2026-11-24, buildOverrides): Alesh's attribute nodes 0 and weapon level 80, fitted with efsim zmdlogs fit-build (a per-operator factor constant over the fight, found from every development log's per-operator medians; docs/open-problems.md \"Fight totals\")."
   ]
  },
  "enemy": {
@@ -26300,6 +26301,18 @@
    "t": 49721,
    "operator": "chr_0032_lizhiyan",
    "skill": "chr_0032_lizhiyan_combo_skill"
+  }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0024_deepfin",
+   "set": {
+    "attributeNodes": 0,
+    "weapon": {
+     "level": 80
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 18 landed hits within ±1 (×0.8503); attribute nodes 0 with weapon level 80 fits 16 of 18 (4 of 5 clean, median ×1.0001) (his weapon's skills [7, 7, 4] allow it); the one-input fits fit fewer."
   }
  ]
 }
