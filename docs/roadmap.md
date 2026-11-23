@@ -64,7 +64,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   reapplication (489c 52–60 s), a Corrosion end read from the hits as a bound (4d60 102.98 s), 6339's missing hit_2);
   Arcane's reset reaches a combo pressed inside her first 9 frames, Purrchena's combo paths end at her loop's cast
   2026-11-23 (7910 +15 plain, 9555 +9; 489c's bleed series isn't a reapplication: a hold-unit conflict under the
-  ramp's cap, next); Arcane's misses grouped (2026-11-18: 908 → 866;
+  ramp's cap, next); fight totals 2026-11-23 (the enemy away in Si's phases, the Endministrator's shatters and male
+  kit, Hard 27's stage Electrification: development 8.7 → 8.1%, hold-out 10.2 → 9.1%, earlier 8.1 → 5.3%; next a9d7's
+  fight-wide factor, 3f78's Rossi ultimate slots, fc63's burst keys, 4360's kill); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds

@@ -283,6 +283,18 @@ engine's Stagger. Where the engine's own Stagger ran short of the log's
 is in `BuffReplay.staggerHolds`. Landings a log can't
 have (a hit that didn't reach the logged enemy) are named by hand in the
 fixture's `absent`, each with why, and left out of the replay's side.
+So are, by rule, the replay's landings no logged hit stands for inside a
+stretch of 6 s or more with no logged hit at all (engine assumption
+`enemy-away`, read only here: a boss phase, Si's 20–24 s and 13–14 s
+ones; `zmdlogs totals` names the stretches) and, in a fight that ends in
+a kill, at the killing blow's frame or after it (2026-11-23). A landing
+of a logged hit without a reading (Si's burst, Fixed DMG) is that hit's
+part at the replay's own damage. An enemy status the log lists with no
+giver in a fixture that names givers is the stage's (Hard 27's
+Electrification) and comes from the log like a buff no kit defines
+(enginecheck.ts `logOnly`). The Endministrator is read as the variant
+her keys name (logs.ts `withEndminVariant`: chr_0002_endminm_* beyond
+the combo is the male's kit).
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
 sets fields over it when the fixture is read (logs.ts `readLogFixture`;
@@ -297,7 +309,11 @@ fewest changes, not a ratio's nearest ATK. Older hand fits are still
 written into `team` with a note (not migrated). The weapon's level isn't
 yet bounded by its logged skill levels (WeaponBreakThroughTemplateTable's
 `skillLevelBounds`, not in packages/data/tables.json): check a fitted
-level by hand.
+level by hand. An override may set skill levels group by group
+(`skillLevels: { basic: 9 }`, 2026-11-23) where the export has none (the
+Endministrator's roster entry: 12 assumed); fit-build doesn't vary them,
+so the evidence is a skill's hits at one ratio of its scales
+(SkillPatchTable).
 
 **Why the check missed the Stagger bug** (journal 2026-10-25): until then
 `checkLog` computed every hit through options of its own (`staggered:

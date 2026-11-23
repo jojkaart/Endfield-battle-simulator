@@ -134,6 +134,14 @@ press, not statically).
 
 ## Engine accuracy
 
+**Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**
+the large total errors were landings on one side only, not matched scale: replay landings while the enemy is away
+(engine assumption `enemy-away`, read by the totals only), the Endministrator's crystal shatters placed as ultimates
+and her male kit's keys, Hard 27's giver-less Electrification. Left, by share (open-problems "Fight totals"): a9d7's
+matched −19.6% (a fight-wide factor), 2fd9's Mi Fu Crush ×1.90, 3f78's Rossi ultimate with one stab fewer logged (its
+slashes in the wrong slots: placement by value), 9c6e's two targets, fc63's Typhoeus burst keys, 4360's kill not
+detected (capped last hit, data HP not the total), then matched scale in d9e5, e82d, 1cd1, 7910, db87.
+
 **Tests 18, 19, 101, 104 from the logs (2026-11-16,
 [journal](journal/2026-11-17-01-tests-18-19-101-104-from-the-logs-bosses-freeze-haste-isn-t.md)):** bosses freeze by default, control immunity per enemy
 (Chiliarch, the enemy Si; packages/data/src/enemyFacts.ts); cooldowns run

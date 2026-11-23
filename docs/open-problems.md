@@ -34,6 +34,70 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Fight totals: what moves them (2026-11-23)
+
+**Shows:** the mean |damage error| of the fight totals had stalled (development 8.7%, hold-out 10.2%, earlier pending
+8.1%) while per-hit matching improved. Every development and earlier-pending fight (but 7b54, 6339, 8915, c6d8) split by
+`zmdlogs totals` into matched scale (predicted − logged of the landings standing for logged hits), replay-only and
+log-only landings, as shares of the logged total (scratch/totals-split.ts, scratch/matched-by-event.ts). Most of the
+large errors weren't matched scale: they were landings on one side only.
+
+**Found and fixed** (shares of the fight's logged total):
+1. **The enemy away (Si's phases).** Gaps between consecutive logged hits fall apart at 6 s (18 of 4–6 s, 1 of 6–7 s,
+   30 of 7–46 s), every long one against a boss with phases: 19 in the 8 fights against Si (eny_0134_jsspsi: one of
+   about 20–24 s, then 13–14 s, the team pressing and nothing logged), 7 against eny_0125_fdcentur, 3 against
+   eny_0128_babyents_hdg031, 2 against tower015. The replay kept landing there (Zhuang Fangyi's Empyrean strikes and
+   finale, Liino's finale, Si's Inksoul bursts, Combustion and bleed ticks): d774 25.9%, 4a64 11.1%, 3f78 9.7%, 0c14
+   8.4%, 3aa6 5.6%, a9d7 4.8%, e989 2.6%, 9c6e 2.4%. Engine assumption `enemy-away` (`away`; `counted` the old totals),
+   read only by fightTotals. d774 +27.2 → +3.7%, 4a64 +11.4 → +1.4%, e989 +3.3 → +0.7%, 3aa6 +3.0 → −2.1%; worse where
+   the landings hid an under-prediction: 3f78 −5.0 → −8.0%, a9d7 −13.9 → −18.5%, 9c6e −10.2 → −12.6%.
+2. **The Endministrator's crystal shatters placed as ultimates.** buff_common_originum_frozen is both her ultimate's
+   third hit and her crystals' trigger hit; the placement chose the ultimate whenever no ultimate was near, so every
+   shatter at a teammate's Lift made an ultimate the log doesn't have (0c14: 7, each at Rossi's Lift's very ms, 19.5% of
+   the fight; 7e19: 2, 12.5%). Triggers on physical statuses are now placed from the logged status hits (logcasts.ts
+   `statusHits`, a trigger's `firedAt`). 0c14 +26.1 → −3.4%, 7e19 +10.4 → +2.0%.
+3. **The male Endministrator read with the female's kit.** d4fb's hits are keyed chr_0002_endminm_* for every skill
+   (the import reads the roster's virtual ID as the female's): none had a landing (log-only 36.1%, her ultimates
+   replay-only 20.0%). logs.ts `withEndminVariant` reads such a log as the male's kit. Her basic attacks were then
+   ×0.804 high: basic level 9, not the assumed 12 (the roster gives no skill levels; a `buildOverrides` may now set
+   skill levels). d4fb −8.5 → +10.2% (plain 198 → 368, per-hit 7.4 → 4.9%): a compensating error gone.
+4. **Hard 27's Electrification.** 207f, 2fd9 and 99fb list buff_common_pulse_pulse_conduct_triggered_do (Arts DMG Taken
+   +0.24) with no giver from ~20 s, renewed about every 20 s; no team member is Electric, and it is the only giver-less
+   status in the development logs. The stage's: read from the log (enginecheck.ts `stageStatus`). Rossi's fire hits
+   ×1.18 → plain (207f mismatch 79 → 16). 207f −15.0 → −1.2%, 2fd9 −19.1 → −13.1%, 99fb −7.4 → −2.5%.
+5. Smaller: a kill leaves no HP for replay-only landings at the killing blow's frame (abfd 3.9 → 3.7%); Si's bursts
+   (Fixed DMG, no reading) are now their logged hits' parts in `zmdlogs totals`, not a replay-only landing beside a
+   log-only hit (no total moves).
+
+**Ruled out:** that the long gaps are the team idling (presses inside them: d774 30.6–54.6 s Liino's ultimate and battle
+skills, Arcane's combo; a9d7 158.6–166.2 s cuts Chen's ultimate before its final hit); a Hard 27 team buff (the
+Electrification has no giver in three logs from two players).
+
+**Still possible / left (largest first):**
+- **a9d7 −18.5%:** matched −19.6% spread over Chen (−11.1), Estella (−5.1), Alesh (−2.0), Wulfgard's combo: a fight-wide
+  factor (listed under Arts Intensity's multi-target / a9d7 note); not a placement.
+- **2fd9 −13.1%:** Mi Fu's three Crush hits −6.7% (×1.90 low each, the replay's 2 Vulnerable stacks against the
+  log's value; the hits' DMG bonus lacks her weapon's and set's lines the log doesn't list), her battle skill 3 −1.8%.
+- **9c6e −12.6%:** Typhoeus log-only −31% against replay-only +17% (two targets: "9c6e97486a9d: two hits per shot").
+- **3f78 −8.0%:** Rossi's ultimate at 18.98 s has 26 logged landings of its key, one stab fewer than the kit's 27, so
+  its two slashes took the last stab's and slash 1's slots (matched −16.7%, slash 2 replay-only +10.4%; net −6.3%).
+  The other 15 Rossi ultimates in the logs have 27. A placement by value (the slashes are ×10–30 a stab), or slots
+  filled from the end for an ultimate (which isn't cut), would fix it; neither built (one cast).
+- **d9e5 −11.5%** (Typhoeus's natural bursts −4.8%, Arcane's battle skill −2.3%), **e82d −8.9%** (Si's combo final
+  hit ×1.30 low: her Yinglung's Edge / Jade Vessel listing, "Type 50 Yinglung's Edge"), **1cd1 −7.2%** (Typhoeus
+  matched −7.0%), **7910 −5.9%** (Tangtang matched −7.5%), **db87 −4.5%** (Laevatain matched −9.0%): matched scale,
+  not looked into.
+- **Over:** c83c +7.9% (Si replay-only +5.2%), fc63 +7.2% (Typhoeus's hover bursts replay-only +7.2% against her natural
+  bursts log-only −3.8%: the burst keys the replay and the log use differ), 4360 +6.9% (Avywenna's four returning lances
+  at 119.20 s, the log's last hit 119.24 s; the kill isn't detected: tower016's HP from the data isn't the logged total,
+  though the last hit is capped).
+- The hold-outs: 10.2 → 9.1% (3 better, 1 mixed). The Endministrator changes alone (measured with `enemy-away=counted`)
+  moved them 10.2 → 10.6% (1 better, 1 mixed, plain 77.3 → 77.5%): one hold-out's total now carries an Endministrator
+  build error, as d4fb's did, presumably; hold-outs aren't traced.
+
+**Next check:** the kill detection from a capped last hit (4360); Rossi's ultimate placed by value (3f78); fc63's
+burst keys.
+
 ## Arts Intensity: what the logs settle and what they leave (2026-11-16)
 
 The owner asked whether the engine's Arts Intensity handling is right (it
@@ -621,6 +685,10 @@ doesn't vary an operator's level.
 **Still possible:** what sets the 11 (the born buffs; Hard 15's own
 template is a uniform 12 and fits). Electric on this enemy (no log).
 Snowshine's 6 other clean misfits; Purrchena's level.
+
+**Found (2026-11-23, fight totals):** the stage also Electrifies the enemy (Arts DMG Taken +0.24, no giver, from
+~20 s, renewed about every 20 s, in all three logs): read from the log (enginecheck.ts `stageStatus`); Rossi's fire
+hits ×1.18 → plain in 207f. Left in 2fd9: Mi Fu's Crush hits ×1.90 low ("Fight totals" above).
 
 **Next check:** a Hard 27 log with Electric hits (Electric 35 or 11).
 
@@ -2158,6 +2226,10 @@ effect whose `since` no replayed cast explains, like
 castsFromBuffEnds for ends): not built; Alesh's combo here is its first
 case.
 
+**Found (2026-11-23, fight totals):** the +26.1% was the Endministrator's crystal shatters at Rossi's Lifts placed
+as seven ultimates the log doesn't have (19.5% of the fight) and Si's bursts in her two phases ("Fight totals" above):
+now −3.4%.
+
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window (2026-11-22: the max-stack bonus's length is the open
 part, "Rossi: her bleed" above).
@@ -2907,7 +2979,8 @@ bound builders there were another agent's).
   (it and the 54–56 s hold can't both be under the ramp's cap), or whether the ramp's application at 49.31 s is early.
 - d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
   2.6 s before its event (the same placement rule); her simulated total +11.3 →
-  +15.4%, no verdict moved. Not looked into.
+  +15.4%, no verdict moved. **Explained 2026-11-23** ("Fight totals" above): the replay's strikes and finales in
+  Si's two phases (30.6–54.6 s, 124.5–137.8 s), where the log has no hit; with `enemy-away` +27.2 → +3.7%.
 - Zhuang Fangyi's `attack1_ult_2_abilityrange` (seen 2026-11-18; **found
   and fixed 2026-11-22**): Empyrean attacks 1 and 2 both spawn four
   entities, `attack1_ult_1..4_abilityrange` (SpawnAbilityEntity at 12–15
