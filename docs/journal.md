@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 124 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 125 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -51,6 +51,73 @@ with the 14.6 s run.
 **Left:** 9847 126.1 s (0.30 against 0.36): no listed clock asks the 0.73 s more before the ultimate; Gilberta's listed
 Susceptibility as a Vulnerable-count clock (a holds.ts bound builder). 489c's final 1.1 s late from two bleed ticks the
 replay lands off the log's (ticksShownByHits), d572's one layer short from ~8 s with every crit logged.
+
+## 2026-11-23: Corrosion's ramp under slow-downs: Arcane's reset, freezes
+
+**Goal:** the hold clocks' open direction (docs/journal/2026-11-23-02-hold-clocks-enemy-statuses-and-corrosion-s-ramp.md):
+146 of 3,553 ramp readings show the game's Corrosion ramp ahead of the replay's, 139 with a combo slow-down in the
+window. Which slow-downs over-hold it, and why; then the hold bounds on the replay's own stops; then 458b's Wulfgard
+Combustion ticks.
+
+**Found (open-problems "The buff clock", What over-holds it):** four causes, not one combo rule.
+- **Freezes** (f978's 33 readings, the largest bucket, and 7910): the replay's freeze held Corrosion's ramp its whole
+  length; the log's steps run on (Si's Immobilization in f978 at 57.6 s: ≤ 0.51 s held of 1.5 s; a7a7 18.1 s ≤ 0.68 s;
+  Tangtang's stare in 7910 47.8 s about 0.7 s of 4 s). The probe had counted Laevatain's combo in f978's window.
+- **Arcane's combo resets the combo slow-down:** its SkillData has a layer-0 TimeDilationAction back to scale 1 (curve
+  RESETto1) at frame 9, in the same priority tag as every combo's dilation (−593023102). Under the lowest-scale rule it
+  would do nothing; the game keeps one dilation per priority, so it ends her own 0.6 s slow-down at frame 9 and a
+  teammate's running then. 3f78's opener (an application the battle-skill event confirms): steps allow 0.61–0.73 s by
+  3.0 s, lowest scale 0.92 s, with the reset 0.72 s; 4a64 likewise.
+- **The application's logged ms** (a7a7 3.87 and 20.53 s, 489c 49.31 s): readings ahead of real time since `since`.
+  a7a7: Arcane's battle-skill event (2.31 s) puts its hit at 2.98 s, before Liino's combo stop, logged at the stop's
+  end (3.86 s); the placement starts the cast through the stop, so the replay applies Corrosion 0.9 s late.
+- **Left:** Rossi's combo_3 (two dilations at frame 0 in different priorities) in 3f78 / 4a64, ~0.15–0.2 s; Zhuang
+  Fangyi's ultimate placed from its event in 4d60 (0.17 s).
+
+**Done:**
+- Data: each compiled slow-down's `priority`, SkillTiming.resets (skillData.ts). Engine: `combo-reset` (default
+  `resets`): a reset ends the running slow-downs of its priority, its own too, and gives each clock back what they would
+  still have taken (clock.ts `cutAtResets`, `resetSlowdowns`; the shift functions take negative frames, floored after
+  the reset). `freeze-ramp` (default `runs`): a freeze holds Corrosion's end, not its ramp (`rampRunsOn`).
+  tests/slowdown-reset.test.ts.
+- Logs: every stop list is cut at the resets among its casts (logcasts.ts `skillStops`, `withResets`); the hold bounds
+  use the replay's own casts' stops (buffreplay.ts `replayedCastStops`, which `replayTimeStops` now calls). Probes
+  corrosion/ramp-pairs.ts (pairs of readings cap the model's hold between them, independent of `since`) and
+  freezeramp.ts.
+
+**Scoreboard** (`npm run snapshots:update` against 6921b3f): development plain 64.4 → 64.6%, mismatch 15.2 → 15.1%,
+|damage| 9.3%; hold-outs 73.5 → 73.7%, 6.4%, 10.8% (5 better, 4 worse); earlier pending 57.3 → 57.5%, 18.4 → 18.2%,
+8.0 → 7.9%; verified 77.7 → 77.9%, 1.9 → 1.8%. Better: f978 (444 → 469), a7a7 (351 → 376, mismatch 71 → 45), 3f78
+(53 → 63), 4a64 (150 → 156, mismatch 2 → 0), 9c6e, 891566, 7910, 9a80, c83c, b6aa, 2fd9, 99fb, 0eef, b7b3. Worse
+(knock-ons of the hidden holds placed again, small): 4d60 −4 plain (Zhuang Fangyi's strikes at 151.7–152.4 s land
+0.15–0.3 s off the log's), 79cc −4 (a Corrosion step ahead at 50.1–53.6 s, ×0.987: after Arcane's cut combo the log
+asks a dodge-sized hidden hold the bounds now place elsewhere), 9090 −3, 1d91 −1, af7b −1, d9e5 damage −0.1 pt; mixed
+00ae (−9 plain, a mismatch fewer), 489c, 9c0b, fc63, 1cd1. Measured apart: freeze-ramp alone 3 better, 0 worse
+(hold-outs 73.5 → 74.0%, 2 better, 0 worse); the reset alone, the stop lists uncut, mixed (hold-outs 73.4%, 4 worse);
+cutting the lists then 2 better, 0 worse on the hold-outs; the bounds on the replay's stops alone: 2 better, 1 mixed.
+
+**After merging main** (d9b1d2d: Wolven Blood's crits, instance buffs' runs as clocks; `snapshots:update` against
+main's snapshots): development plain 64.9 → 65.2%, mismatch 15.0 → 14.8%, |damage| 8.8 → 8.9%; earlier pending 57.7 →
+57.9%, 18.4 → 18.2%, 8.3%; 489c 546 → 573 (mismatch 38 → 31, damage −1.8 → −0.7%). One combination regression:
+5082 damage −2.1 → −8.2% (plain 227 → 224): with the bounds on the replay's own stops (Yvonne's ultimate at its stop,
+not at its 38.16 s event) and main's instance-buff clocks, a 0.77 s hidden-hold unit moves from 38.14 to 36.77 s
+(now placed within 0.1 s), and at Yvonne's ultimate finisher (49.78 s, two hits of 0.6 and 1.2 M) and Arcane's hits
+at 50.51 s the replay lacks a ×1.17–1.18 the log has, matching a second layer of Arcane's weapon Arts DMG Taken (listed
+×2); not traced further. statusLanes takes main's 200 ms refresh rule too (no verdict moves).
+
+**Teams** (team-ab against 6921b3f, seeds 1001–1032; both teams have Arcane, whose combo now holds the world 9
+frames): Estella's sustained DPS +0.10% full / −0.13% zero (60 s timeline +4.92% / −1.61%: one rotation's casts moved),
+Typhoeus's +0.34% / −0.04% (as a bot at zero energy +4.40%; 60 s timeline −0.26% / −0.01%). Sustained numbers within
+their seed spread; the owner's rules need no re-search for this. Examples snapshot moved accordingly.
+
+**Decisions:** the reset in the engine, not a per-log fix: the data carries it, and only a replacing dilation makes
+it mean anything. One priority tag per dilation recorded for every slow-down (the reset names its priority). The
+views and bounds cut at resets whatever the `combo-reset` reading (they have no scenario). Lead 3 (458b) looked at,
+not fixed (open-problems "Ink Melt logs").
+
+**Dead ends:** per-cluster brackets of the hold across a stop from the ramp (a step is 1 s wide: brackets of ±1 s,
+uninformative); the readings with the application as one end (they mix in the application's logged-ms errors: the
+pairwise test without it separates them).
 
 ## 2026-11-23: Improvement round 6: a kit buff's clock, probes, the split
 
@@ -367,48 +434,3 @@ combos don't decide anything (her Razorhorn ATK was fitted on the same hits).
 **Left:** c779's moved layer, 0c14 166.7 (two layers and Jade Vessel short); the replay's stroke reading (Final
 Stroke only with a press just before the burst; Initial Stroke at the first press). In-game test 106 now asks only
 (e) a pause / leaving combat and (d) whether Final Stroke gives a stack.
-
-## 2026-11-22: Twilight's excess is her buffs' clock, not Twilight's
-
-**Goal:** why Laevatain's Twilight still lasts 0.1–4.6 s longer than modelled in the
-closed windows (open-problems "Laevatain's Twilight runs longer than its model", in-game
-tests 18 and 21), and fix it.
-
-**Done:** every Twilight window of the 18 Laevatain logs bracketed again (last enhanced
-cast, first plain cast, from `zmdlogs instances`), with the replay's holds counted from a
-run with Twilight 45 s long (so holds after the modelled end count). Then each candidate
-tested per window (open-problems has the table): a constant, show_weapon's 16 s, the
-battle skill's full 115-frame pause, a combo hold other than 1.9 s, every 1- and
-2-feature linear model over her combos, battle skills, others' ultimates and combos,
-her hit-stops, a clock rate, others' stops longer than their UltimateTimeAction (bounded
-by the hit-free gaps), the Stagger, P5's kill extension, refreshes by a combo or a
-Scorching Heart start, a later start, an enhanced step after the end. None fits all
-windows: c83c needs ≥3.1 s where f879 45.4 s allows ≤1.2 s. The game data has no
-mechanism beyond the engine's (`gamedata who buff_chr_0016_laevat_ult_end`: her combo's
-channel, potential_5 and show_weapon's start).
-
-The decisive probe: Forgeborn Scathe's 20 s buff (`buff_wpn_sword_0006_valid`, listed on
-her hits), created by the same ultimate and with none of Twilight's own pauses, runs past
-the replay by about as much in the same windows (0.9–2.8 s in the closed ones, 3–8 s in
-3440 and 9c0b). Twilight less Forgeborn contains 0 in five of nine windows and misses it by
-0.09–0.43 s in four, both ways. So Twilight's model holds; what runs long is her buffs'
-clock in those windows (Scorching Heart's natural ends outside Twilight too: 0.2–1.5 s in
-8 of 9). Measured Twilight 17 s (+2) on every Laevatain log: no verdict moves at all, the
-development and hold-out rows unchanged.
-
-**Decision:** no kit change (a longer Twilight would put a world-clock effect into one
-kit, and the accuracy doesn't ask for it). Registered kit assumption
-`laevatain-twilight-clock` (test 21): `model` (default) or `forgeborn` (+1.8 s, Forgeborn's
-median excess; trigger `twilight_clock_excess`), the switch for what rides on it: Ink Melt
-59,662 → 61,930 (+3.80% ± 1.30, seeds 1001–1032, full energy, `efsim rules …
---assumptions`). Scoreboard unchanged (development 52.0% plain, hold-out 67.3%); team-ab
-against 1ab4647 identical (the default is the old kit). Smoke: one failure, the timeline
-test's list of her kit triggers (fixed). Docs: open-problems (table, ruled out, still possible),
-in-game tests 18 and 21, design/rules.md's assumption list, roadmap.
-
-**Left open:** what holds her buffs (and not cooldowns, test 18): perfect dodges' 0.6 s
-world slow-down (the log records no dodges), pauses at a fight's start (9c0b: 10 s with no
-hit, Forgeborn +6–7.8 s), hit-stops in part. Next: the buff clock over every log, each
-listed buff's natural end against the replay's. Friction report
-docs/friction/2026-11-22-twilight.md (a `--long` trace and a lane-end view would have
-found the probe in minutes).

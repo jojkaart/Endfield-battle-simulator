@@ -101,9 +101,16 @@ export interface SkillTiming {
   /**
    * Global time slow-downs the skill causes for everyone but its caster
    * (UltimateTimeAction, global-layer TimeDilationAction): from frame
-   * `from`, the world's time scale for each following frame.
+   * `from`, the world's time scale for each following frame. `priority`: the
+   * dilation's priority tag (timeDilationPriority), which `resets` name.
    */
-  readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[] }[];
+  readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[]; readonly priority?: number }[];
+  /**
+   * Global dilations back to scale 1 (TimeDilationAction, curve RESETto1) at frame `at`: every running slow-down of
+   * the same priority ends there, the skill's own too (Arcane's combo at its frame 9; engine assumption combo-reset,
+   * timeline/clock.ts resetSlowdowns).
+   */
+  readonly resets?: readonly { readonly at: number; readonly priority: number }[];
   /**
    * JumpToAction on the skill's own timeline (not inside a condition or an
    * event handler): at frame `at` the playhead moves forward to `to`, and the

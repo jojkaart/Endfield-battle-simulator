@@ -16,7 +16,7 @@
 // - cadence: one event key's hit groups across logs with the world-time gaps between them (time stops taken out).
 
 import { effectiveKit, FPS, type GameData, type SkillType } from "@efsim/engine";
-import { assembleCasts, controlSwaps } from "./buffreplay.ts";
+import { assembleCasts, controlSwaps, replayedCastStops } from "./buffreplay.ts";
 import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
 import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
@@ -48,12 +48,7 @@ export function replayTimeStops(data: GameData, fx: LogFixture, placement: Place
     const k = effectiveKit(data, b);
     return k ? [k] : [];
   });
-  return assembleCasts(data, fx, placement, kits).flatMap((c) => {
-    if (c.slot && c.as === undefined) return [];
-    const skillId = c.as ?? c.skillId;
-    const at = Math.round((c.start * FPS) / 1000);
-    return (data.skills[skillId]?.timing?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, operator: c.operator, skillId, kind: c.kind, placed: c.landings.length > 0 }));
-  });
+  return replayedCastStops(data, assembleCasts(data, fx, placement, kits));
 }
 
 const notPlaced = (st: ReplayTimeStop) => (st.placed ? "" : " [no placed hits: from its cast event or inferred]");

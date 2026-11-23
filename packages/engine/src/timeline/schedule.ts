@@ -88,12 +88,14 @@ export function castBound(x: Scheduled): number | null {
  * that clock: clock.ts); pinned ones stay.
  */
 export function shiftClock(list: readonly Scheduled[], on: (c: Clock, x: Scheduled) => boolean, start: number, n: number): readonly Scheduled[] {
-  if (n <= 0) return list;
+  if (n === 0) return list;
+  // Sooner (n < 0: a reset, clock.ts resetSlowdowns) but not to `start` or before.
+  const later = (f: number) => (n > 0 ? f + n : Math.max(start + 1, f + n));
   let changed = false;
   const out = list.map((x) => {
     if (x.pinned || x.frame <= start || !on(x.clock, x)) return x;
     changed = true;
-    return { ...x, frame: x.frame + n, ...(x.launchAt !== undefined && x.launchAt > start ? { launchAt: x.launchAt + n } : {}) };
+    return { ...x, frame: later(x.frame), ...(x.launchAt !== undefined && x.launchAt > start ? { launchAt: later(x.launchAt) } : {}) };
   });
   return changed ? out : list;
 }

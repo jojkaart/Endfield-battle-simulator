@@ -435,9 +435,10 @@ export interface TimelineState {
   /**
    * Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from
    * `start`, all but `exempt` (the caster). `ultimate`: an ultimate's (its caster isn't held by another ultimate's while
-   * it runs: clock.ts slowDown).
+   * it runs: clock.ts slowDown). `priority`: its dilation's priority tag, which a reset of the same priority ends
+   * (SkillTiming.resets: clock.ts resetSlowdowns).
    */
-  readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string; readonly ultimate?: true }[];
+  readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string; readonly ultimate?: true; readonly priority?: number }[];
   readonly enemy: EnemyStatus;
   /**
    * Timed buffs and debuffs from skills: only those still active. `advance` prunes a buff once it has ended, so the

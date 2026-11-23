@@ -180,10 +180,15 @@ from a moment are n crits; 0.98 right with the flags hidden, the base rate
 with the listing moved). Instance buffs' runs are clocks too where the log
 shows them apart (4360's tower-boss Vulnerable stacks fixed; 9847 left: a
 Vulnerable-count clock from Gilberta's listed Susceptibility, a holds.ts
-bound). Next: test 111; the combo slow-downs that
-hold the ramp longer than the game (139 of 146 over-held readings; 3f78,
-4a64, a7a7 openers, f978, 9c6e); Rossi's bleed ticks the replay lands off
-the log's (489c 46.60 s for 47.13 s, 52.18 s none: her final 1.1 s late);
+bound). **The ramp's over-holds (2026-11-23):** four causes, not one combo
+rule: freezes (the ramp runs on: `freeze-ramp`), Arcane's combo reset at
+its frame 9 (a RESETto1 dilation in the combo priority: `combo-reset`,
+every stop list cut the same way), the application's logged ms (a
+battle-skill hit before a stop logged at its end: a7a7), Rossi's combo_3
+(two dilations). Next: test 111; castStart from a battle skill's event
+when its hit falls just before a stop; Rossi's combo_3; Rossi's bleed
+ticks the replay lands off the log's (489c 46.60 s for 47.13 s, 52.18 s
+none: her final 1.1 s late);
 pauses and overlapping ultimates' stops (489c), which a dodge can't be;
 simulations already dodge with `--dodge`, and the owner's dodge rate
 would decide how much rides on it.

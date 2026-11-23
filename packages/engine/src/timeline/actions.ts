@@ -13,7 +13,7 @@ import { FPS } from "../units.ts";
 import type { Clock, Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
-import { controlImmune, heldFromNow, holdNewStatuses, shiftDebuffs, shiftEnemy } from "./clock.ts";
+import { controlImmune, heldFromNow, holdNewStatuses, rampRunsOn, shiftDebuffs, shiftEnemy } from "./clock.ts";
 import { engineReading } from "./assumptions.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
@@ -132,7 +132,8 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
       if (!controlImmune(ctx)) {
         const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
         const stagger = st.stagger;
-        st = { ...shiftDebuffs(shiftEnemy(st, e.frame, lost), e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
+        const frozen = shiftEnemy(st, e.frame, lost);
+        st = { ...shiftDebuffs(engineReading(ctx.scenario, "freeze-ramp") === "runs" ? rampRunsOn(st, frozen) : frozen, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
         // The engine assumption `stagger-freeze` (test 110): whether the freeze holds a running Stagger's end too.
         if (engineReading(ctx.scenario, "stagger-freeze") === "runs") st = { ...st, stagger };
       } else {

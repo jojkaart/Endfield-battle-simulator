@@ -342,11 +342,12 @@ describe("b6aa15281db4: a buff the log lists past the replay's expiry (engine as
 
   it("runs on to its last listed hit (43.78 s), not past the first hit without it (43.88 s), held by the stops between (log)", () => {
     // The run from 28.21 s: listed to 43.78 s on four operators' hits, the next hit without it at 43.88 s; the replay's own
-    // expiry 39.77 s. Kept a step at a time, Last Rite's ultimate stop at 40.9 s doesn't hold it past the log's end.
+    // expiry 39.67 s (39.77 s before Arcane's combo at 37.27 s held the world only to its reset, 9 frames: engine
+    // assumption combo-reset). Kept a step at a time, Last Rite's ultimate stop at 40.9 s doesn't hold it past the log's end.
     const log = end("log") as number;
     expect(log).toBeGreaterThan(43780);
     expect(log).toBeLessThan(43880);
-    expect(Math.abs((end("none") as number) - 39767)).toBeLessThan(40);
+    expect(Math.abs((end("none") as number) - 39667)).toBeLessThan(40);
   });
 
   it("places the fight's hidden holds outside the Stagger, and keeps the log's end on top of them (placed)", () => {

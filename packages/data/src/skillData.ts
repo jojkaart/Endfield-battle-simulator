@@ -82,6 +82,12 @@ export function slowdownOf(o: Record<string, unknown>, intervalFrames: number): 
   return scales.every((x) => x >= 1) ? null : scales;
 }
 
+/** A time dilation's priority tag (timeDilationPriority.tagId: one per kind, every combo's -593023102), or null without one. */
+function dilationPriority(o: Record<string, unknown>): number | null {
+  const tag = (o["timeDilationPriority"] as { tagId?: unknown } | undefined)?.tagId;
+  return typeof tag === "number" && tag !== 0 ? tag : null;
+}
+
 export function globToRegExp(glob: string): RegExp {
   return new RegExp("^" + glob.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$");
 }
@@ -156,7 +162,8 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
   // ComboCacheAction mappings of the basic-attack input (cmdType 0): what the next attack input becomes.
   const inputMap = new Set<string>();
   const channels: { from: number; to: number; cantCastSkill: boolean; cantSwitch: boolean }[] = [];
-  const slowdowns: { from: number; scales: number[] }[] = [];
+  const slowdowns: { from: number; scales: number[]; priority?: number }[] = [];
+  const resets: { at: number; priority: number }[] = [];
   // `conditional`: under a TogglableAction or an IfElse branch, the window is open only when its condition holds (the kit says when).
   const find = (node: unknown, from: number, to: number, conditional = false) => {
     if (Array.isArray(node)) return node.forEach((x) => find(x, from, to, conditional));
@@ -171,11 +178,16 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     }
     if (o["isEnable"] !== false && type.includes("UltimateTimeAction")) {
       const scale = typeof o["timeScale"] === "number" ? o["timeScale"] : 0;
-      slowdowns.push({ from, scales: Array.from({ length: Math.max(0, to - from) }, () => scale) });
+      const priority = dilationPriority(o);
+      slowdowns.push({ from, scales: Array.from({ length: Math.max(0, to - from) }, () => scale), ...(priority !== null ? { priority } : {}) });
     }
     if (o["isEnable"] !== false && type.includes("TimeDilationAction") && o["layer"] === 0) {
       const d = slowdownOf(o, to - from);
-      if (d) slowdowns.push({ from, scales: d });
+      const priority = dilationPriority(o);
+      if (d) slowdowns.push({ from, scales: d, ...(priority !== null ? { priority } : {}) });
+      // A global dilation back to scale 1 (curve RESETto1): it takes the place of the running ones of its priority
+      // (SkillTiming.resets).
+      else if (o["useCurveKey"] === true && o["curveKey"] === "RESETto1" && priority !== null) resets.push({ at: from, priority });
     }
     if (o["isEnable"] !== false && type.includes("ChannelingCastingAction")) channels.push({ from, to, cantCastSkill: o["cantCastSkill"] === true, cantSwitch: o["cantSwitchPosition"] === true });
     // A finisher's disable-cast buff for the action's frames blocks casts as a cantCastSkill channel does.
@@ -219,6 +231,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     keepsChain: j["dontInterruptCombo"] === true,
     ...(j["normalSkillSubType"] === 1 ? { subSkill: true as const } : {}),
     slowdowns,
+    ...(resets.length ? { resets: resets.sort((a, b) => a.at - b.at) } : {}),
     jumps: jumps.filter((j, i) => jumps.findIndex((k) => k.at === j.at && k.to === j.to && k.conditional === j.conditional) === i).sort((a, b) => a.at - b.at),
     ends: ends.sort((a, b) => a - b),
     ...(interruptibleFrom.length ? { interruptibleFrom: [...new Set(interruptibleFrom)].sort((a, b) => a - b) } : {}),

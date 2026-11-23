@@ -25,8 +25,15 @@ import { engineReading } from "./assumptions.ts";
 export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
-  for (const d of timing.slowdowns) {
-    const start = frame + d.from;
+  // Its resets end the running slow-downs of their priority (others' and, below, its own) where they come.
+  const resets = engineReading(ctx.scenario, "combo-reset") === "resets" ? (timing.resets ?? []).map((r) => ({ frame: frame + r.at, priority: r.priority })) : [];
+  for (const r of resets) s = resetSlowdowns(ctx, s, r);
+  const own = cutAtResets(
+    timing.slowdowns.map((d) => ({ start: frame + d.from, scales: d.scales, ...(d.priority !== undefined ? { priority: d.priority } : {}) })),
+    resets,
+  ).filter((d) => d.scales.length > 0);
+  for (const d of own) {
+    const start = d.start;
     const scaleAt = (who: string | null, f: number) => {
       let m = 1;
       for (const x of s.slowdowns) if (x.exempt !== who && f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
@@ -52,11 +59,59 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     };
     const world = lost(null).n;
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
-    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}) }] };
+    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
     for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n);
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);
+}
+
+/**
+ * Slow-downs after resets (SkillTiming.resets): a reset at `frame` ends every slow-down of its priority that started
+ * before it and runs past it. The game keeps one dilation per priority, the latest taking the place of the one running
+ * (a reset is a dilation at scale 1; under the lowest-scale rule it would do nothing): Arcane's combo resets the combo
+ * priority at its frame 9, so its own 0.6 s slow-down holds the world only those 9 frames, and a teammate's combo
+ * slow-down running then ends with it (btl_upload_3f78ceb15bc3's opener: Gilberta's combo, then Si's and Arcane's;
+ * Corrosion's ramp, applied at 1.33 s before them, reads a step ahead of the lowest-scale rule's at 3.06–3.18 s, the
+ * replay holding 0.93 s where the steps allow 0.73 s; with the reset 0.72 s). Engine assumption combo-reset.
+ */
+export function cutAtResets<T extends { readonly start: number; readonly scales: readonly number[]; readonly priority?: number }>(stops: readonly T[], resets: readonly { readonly frame: number; readonly priority: number }[]): T[] {
+  if (resets.length === 0) return [...stops];
+  return stops.map((s) => {
+    const at = resets.filter((r) => r.priority === s.priority && r.frame > s.start && r.frame < s.start + s.scales.length).reduce((m, r) => Math.min(m, r.frame), Infinity);
+    return Number.isFinite(at) ? { ...s, scales: s.scales.slice(0, at - s.start) } : s;
+  });
+}
+
+/**
+ * The running slow-downs of a reset's priority end at its frame (cutAtResets): what they would still have taken from
+ * the world's clock and each operator's after it comes back (everything there happens that much sooner), as slowDown
+ * counts it: the lowest scale of the slow-downs holding a clock, none in its own ultimate's stop.
+ */
+function resetSlowdowns(ctx: TimelineContext, st: TimelineState, reset: { readonly frame: number; readonly priority: number }): TimelineState {
+  const cut = cutAtResets(st.slowdowns, [reset]);
+  if (cut.every((x, i) => x.scales.length === (st.slowdowns[i] as (typeof st.slowdowns)[number]).scales.length)) return st;
+  const R = reset.frame;
+  const last = Math.max(...st.slowdowns.map((x) => x.start + x.scales.length));
+  const lostAfter = (list: typeof st.slowdowns, who: string | null): number => {
+    let sum = 0;
+    for (let f = R; f < last; f++) {
+      if (who !== null && list.some((x) => x.ultimate && x.exempt === who && f >= x.start && f < x.start + x.scales.length)) continue;
+      let m = 1;
+      for (const x of list) if (x.exempt !== who && f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
+      sum += 1 - m;
+    }
+    return sum;
+  };
+  const back = (who: string | null) => Math.round(lostAfter(st.slowdowns, who) - lostAfter(cut, who));
+  let s: TimelineState = { ...shiftWorld(st, R, -back(null)), slowdowns: cut };
+  for (const b of ctx.scenario.team) s = shiftOperator(s, b.operator, R, -back(b.operator));
+  return s;
+}
+
+/** A frame after `start` moved `n` frames (n < 0: sooner, but not to `start` or before). */
+function moved(start: number, n: number): (f: number) => number {
+  return (f) => (f > start ? (n >= 0 ? f + n : Math.max(start + 1, f + n)) : f);
 }
 
 /**
@@ -68,7 +123,7 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
  * verified mean |damage error| 1.9 → 3.2%, world only 1.9%). A simulation places its dodges itself (advance.ts enemyAct).
  */
 export function holdWorld(st: TimelineState, frame: number, frames: number): TimelineState {
-  return shiftWorld(st, frame, frames);
+  return frames > 0 ? shiftWorld(st, frame, frames) : st;
 }
 
 /**
@@ -157,8 +212,8 @@ export function controlImmune(ctx: TimelineContext): boolean {
  * on it (enemy-target buffs): shiftDebuffs.
  */
 export function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState {
-  if (n <= 0) return st;
-  const later = (f: number) => (f > start ? f + n : f);
+  if (n === 0) return st;
+  const later = moved(start, n);
   const e = st.enemy;
   return {
     ...st,
@@ -177,7 +232,12 @@ export function shiftEnemy(st: TimelineState, start: number, n: number): Timelin
         // 2.6 s younger than the log's).
         ...(x.appliedAt <= start && x.expiresAt > start
           ? { appliedAt: x.appliedAt + n, ...(x.status === "corrosion" ? { rampHeld: { until: Math.max(start + n, x.rampHeld && x.rampHeld.until > start ? x.rampHeld.until + n : 0), elapsed: rampElapsed(x, start) } } : {}) }
-          : {}),
+          : // Sooner (a reset: resetSlowdowns): one applied inside the slow-down, whose timer and ramp start when it ends
+            // (holdNewStatuses), starts that much sooner too.
+            // appliedAt is the ramp's reference there, not an event: no floor.
+            n < 0 && x.appliedAt > start && x.expiresAt > start
+            ? { appliedAt: x.appliedAt + n, ...(x.rampHeld && x.rampHeld.until > start ? { rampHeld: { ...x.rampHeld, until: Math.max(start, x.rampHeld.until + n) } } : {}) }
+            : {}),
       })),
     },
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
@@ -185,6 +245,25 @@ export function shiftEnemy(st: TimelineState, start: number, n: number): Timelin
     enemyFrozenUntil: later(st.enemyFrozenUntil),
     scheduled: shiftClock(st.scheduled, (c) => c === "enemy", start, n),
   };
+}
+
+/**
+ * The enemy after a freeze held its clock (shiftEnemy from `before`), with Corrosion's ramp as it was: a freeze holds
+ * the ramp's end, not its steps (engine assumption freeze-ramp, reading `runs`: actions.ts runTriggers). The log's
+ * ramp steps run on across Si's Immobilization (f978430a083a 57.6 s: at most 0.51 s held of its 1.5 s, a7a7a40c97ed
+ * 18.1 s 0.68 s) and Tangtang's stare (791020039384 47.8 s: about 0.7 s of 4 s), where the replay held the ramp the
+ * freeze's whole length and read Ardelia's and Arcane's hits a step behind (scripts/probes/corrosion/freezeramp.ts).
+ */
+export function rampRunsOn(before: TimelineState, after: TimelineState): TimelineState {
+  const was = before.enemy.statuses;
+  if (!was.some((x) => x.status === "corrosion")) return after;
+  const statuses = after.enemy.statuses.map((x, i) => {
+    const y = was[i];
+    if (x.status !== "corrosion" || !y || y.status !== "corrosion") return x;
+    const { rampHeld: _, ...rest } = x;
+    return { ...rest, appliedAt: y.appliedAt, ...(y.rampHeld ? { rampHeld: y.rampHeld } : {}) };
+  });
+  return { ...after, enemy: { ...after.enemy, statuses } };
 }
 
 /**
@@ -198,14 +277,14 @@ export function shiftDebuffs(st: TimelineState, start: number, n: number, owner?
 }
 
 function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {
-  const later = (f: number) => (f > start ? f + n : f);
+  const later = moved(start, n);
   return b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b;
 }
 
 /** Everything on the world's clock after `start` happens `n` frames later: the enemy's, every buff, combo windows, energy blocks. */
 function shiftWorld(st: TimelineState, start: number, n: number): TimelineState {
-  if (n <= 0) return st;
-  const later = (f: number) => (f > start ? f + n : f);
+  if (n === 0) return st;
+  const later = moved(start, n);
   const e = shiftEnemy(st, start, n);
   return {
     ...e,
@@ -225,8 +304,8 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
  * operator's clock (as endCurrentSkill and takeJump treat it); a delayed action of no cast on its trigger's owner's.
  */
 export function shiftOperator(st: TimelineState, operator: string, start: number, n: number, bursts = true): TimelineState {
-  if (n <= 0) return st;
-  const later = (f: number) => (f > start ? f + n : f);
+  if (n === 0) return st;
+  const later = moved(start, n);
   const shift = (c: ChainStep): ChainStep => ({ skill: c.skill, from: later(c.from), until: later(c.until) });
   const cur = st.acting[operator];
   const chain = st.chainNext[operator];

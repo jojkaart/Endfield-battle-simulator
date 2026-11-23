@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, effectiveKit, FPS, hitAvailable, hitDecorations, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /**
@@ -28,14 +28,33 @@ export interface TimeStop {
   readonly skillId: string;
   /** The cast kind of the skill that made it (absent: unknown). */
   readonly kind?: SkillType | null;
+  /** Its dilation's priority tag, which a reset of the same priority ends (SkillTiming.resets). */
+  readonly priority?: number;
+}
+
+/**
+ * A cast's time stops from frame `at` (its skill's slow-downs, with their priority) and its resets as frames. Stops are
+ * cut at the resets of every cast among them (withResets), as the engine does (timeline/clock.ts cutAtResets).
+ */
+export function skillStops(data: GameData, skillId: string, at: number, who: Omit<TimeStop, "start" | "scales" | "priority">): { readonly stops: TimeStop[]; readonly resets: { readonly frame: number; readonly priority: number }[] } {
+  const t = data.skills[skillId]?.timing;
+  return {
+    stops: (t?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, ...who, ...(d.priority !== undefined ? { priority: d.priority } : {}) })),
+    resets: (t?.resets ?? []).map((r) => ({ frame: at + r.at, priority: r.priority })),
+  };
+}
+
+/** Stops cut at the resets among their casts (skillStops; Arcane's combo at its frame 9: engine assumption combo-reset). */
+export function withResets<T extends TimeStop>(parts: readonly { readonly stops: readonly T[]; readonly resets: readonly { readonly frame: number; readonly priority: number }[] }[]): T[] {
+  return cutAtResets(
+    parts.flatMap((p) => p.stops),
+    parts.flatMap((p) => p.resets),
+  ).filter((s) => s.scales.length > 0);
 }
 
 /** The time stops of logged casts of skills that have them, each cast placed from its first logged hit. */
 export function castTimeStops(data: GameData, casts: readonly LoggedCast[]): TimeStop[] {
-  return distinctCasts({ hits: new Map(), casts }).flatMap((c) => {
-    const at = Math.round((c.start * FPS) / 1000);
-    return (data.skills[c.skillId]?.timing?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, operator: c.operator, skillId: c.skillId, kind: c.kind }));
-  });
+  return withResets(distinctCasts({ hits: new Map(), casts }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind })));
 }
 
 /** The world's time from `from` to `to` ms under time stops, in ms: each frame counts at the lowest scale of the stops then (1 without one). */
@@ -360,7 +379,7 @@ function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly Logg
     if (placed.some((c) => c.operator === lc.operator && castEventOf(lc.skill, c.skillId, kit) && Math.abs(c.start - lc.t) <= UNPLACED_CAST_MS)) continue;
     const at = Math.round((lc.t * FPS) / 1000);
     const kind = skills.find((s) => castEventOf(lc.skill, s.skillId, kit))?.kind;
-    out.push(...timing.slowdowns.map((d) => ({ start: at + d.from, scales: d.scales, operator: lc.operator, skillId: lc.skill, ...(kind ? { kind } : {}) })));
+    out.push(...skillStops(data, lc.skill, at, { operator: lc.operator, skillId: lc.skill, ...(kind ? { kind } : {}) }).stops);
   }
   return out;
 }
