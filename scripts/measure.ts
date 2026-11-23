@@ -22,10 +22,22 @@
 //                       development log, the casts placed only before (-) and only now (+)
 //   --assume <id>=<r>   replay under another reading of a kit's or the engine's open assumption (e.g.
 //                       control-immunity=bosses; repeatable): the reading's effect against the reference
+//   --variant <id>=<r>[,<id>=<r>…]  measure once per --variant (repeatable; each on top of --assume), all of the
+//                       same code and against the same reference, in one run and one snapshot: the summary per
+//                       variant, files under <out>/variant-<n>/ (separating two readings' effects without chaining
+//                       measures, each taking its own snapshot)
+//   --no-negative       skip the negative control (by default the verified logs measured are also checked with
+//                       every value ×0.97 and ×1.03, as tests/slow/negative-control.test.ts does, and a count over
+//                       its bound is flagged: a reading fitted to the data it is judged on shows at the first
+//                       measure, not at premerge; seconds)
+// The summary also counts the logs whose listed effects carry no since / source (imported before 2026-11-16; hold-outs
+// as a count only): a change that rests on the log's lanes can't move them, so "unchanged" there means untested.
 //   --workers <n>       worker threads (default 3, as test:logs)
 //   --hits              also list, for each development log whose entry moved, the hits whose verdict changed
 //                       (time, operator, event, verdict and logged ÷ primary before and after; the reference's code
-//                       is measured for those logs when there is no --base): a few per change in the summary, every
+//                       is measured for those logs when there is no --base: the code of the commit that wrote the
+//                       reference's snapshots, not a later code-only commit, which would be the measured code
+//                       itself and show no hit changed): a few per change in the summary, every
 //                       one in <out>/hits.txt. Hold-outs never. A log new since the reference (or --base) commit
 //                       is measured there on this tree's copy of the fixture.
 //   --live              read the working tree when the run starts (after the queue's wait), not as it was queued
@@ -52,7 +64,7 @@ import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
 import { compare, direction, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
-import type { HitRow, MeasureAnswer, MeasureJob, PerHit } from "./measure-worker.ts";
+import type { HitRow, MeasureAnswer, MeasureJob, NegativeCount, PerHit } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
@@ -156,10 +168,13 @@ async function main(argv: string[]): Promise<number> {
       workers: { type: "string", default: String(Math.min(3, Math.max(1, cpus().length - 1))) },
       out: { type: "string" },
       hits: { type: "boolean", default: false },
+      variant: { type: "string", multiple: true, default: [] },
+      negative: { type: "boolean", default: true },
       live: { type: "boolean", default: false },
       snapshot: { type: "string" },
       "snapshot-head": { type: "string" },
     },
+    allowNegative: true,
   });
   if (values.changed !== undefined && values.changed !== "placement") throw new Error("--changed takes placement");
   const workers = Number(values.workers);
@@ -179,11 +194,7 @@ async function main(argv: string[]): Promise<number> {
   const against = values.base ?? values.against ?? values.at ?? values["snapshot-head"] ?? "HEAD";
   const baseTree = values.base ? resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${values.base}^{commit}`])) : undefined;
   if (values.base && baseTree) atCommit(values.base, baseTree);
-  const assume = Object.fromEntries(values.assume.map((a) => {
-    const [id, reading] = a.split("=");
-    if (!id || !reading) throw new Error("--assume takes <id>=<reading>");
-    return [id, reading];
-  }));
+  const assume = parseReadings(values.assume);
   const short = (ref: string) => git(["rev-parse", "--short=9", ref]);
   const snapshot = values.snapshot && !values.at ? values.snapshot : undefined;
   const code = values.at
@@ -234,14 +245,23 @@ async function main(argv: string[]): Promise<number> {
 
   const cost = costs(tree, keys);
   const order = [...keys].sort((a, b) => (cost.get(b) as number) - (cost.get(a) as number) || a.localeCompare(b));
+  // The logs whose listed effects have no `since` / `source` (imported before 2026-11-16): a change resting on the
+  // lanes can't move them, so "unchanged" there means untested (buff-clock report point 5). Hold-outs only counted.
+  const untimed = new Set<string>();
+  const untimedLine = (): string[] => {
+    const hold = [...untimed].filter(isHoldout).length;
+    const dev = [...untimed].filter((k) => !isHoldout(k)).sort();
+    return untimed.size ? [`Logs whose effects carry no since / source (a change resting on the lanes can't move them): ${hold} of ${keys.filter(isHoldout).length} hold-outs measured${dev.length ? `; ${dev.join(", ")}` : ""}`] : [];
+  };
   const perHit = new Map<string, Map<string, PerHit>>();
   const hitRows = new Map<string, Map<string, readonly HitRow[]>>();
-  const measureTree = async (t: string, label: string, which: readonly string[] = order) => {
+  // Per tree and readings (`slot`: a --variant's measurements of the same tree apart).
+  const measureTree = async (t: string, label: string, which: readonly string[] = order, readings: Readonly<Record<string, string>> = t === tree ? assume : {}, slot = t) => {
     const got = new Map<string, Entry>();
-    const fits = perHit.get(t) ?? new Map<string, PerHit>();
-    perHit.set(t, fits);
-    const rows = hitRows.get(t) ?? new Map<string, readonly HitRow[]>();
-    hitRows.set(t, rows);
+    const fits = perHit.get(slot) ?? new Map<string, PerHit>();
+    perHit.set(slot, fits);
+    const rows = hitRows.get(slot) ?? new Map<string, readonly HitRow[]>();
+    hitRows.set(slot, rows);
     const start = performance.now();
     // A log new since that commit (an import on this branch): its code reads the measured tree's copy of the fixture.
     const fresh = new Set(t === tree ? [] : which.filter((k) => !existsSync(join(t, "fixtures", k))));
@@ -255,57 +275,137 @@ async function main(argv: string[]): Promise<number> {
       if ("error" in a) throw new Error(`${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
       if (!("entry" in a)) return;
       got.set(a.key, a.entry);
+      if (a.untimed) untimed.add(a.key);
       if (a.perHit) fits.set(a.key, a.perHit);
       if (a.hits) rows.set(a.key, a.hits);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
-    }, t === tree ? assume : {});
+    }, readings);
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
     return got;
   };
-  const measured = await measureTree(tree, "");
-  const reference = snapshotsAt(against);
-  const before = baseTree ? overlay(reference, await measureTree(baseTree, `base ${values.base}: `)) : reference;
-  const after = overlay(before, measured, split);
-  // The mixed logs' per-hit fit on both sides (the reference's code measured for them alone when it wasn't already).
+  // The negative control (tests/slow/negative-control.test.ts) on the verified logs measured: a reading fitted to the
+  // data it is judged on shows here at the first measure, not at premerge's test:logs (hold-clocks report point 4).
+  const negativeLines = async (readings: Readonly<Record<string, string>>, label: string): Promise<string[]> => {
+    const verified = keys.filter((k) => !k.includes("/"));
+    if (!values.negative || !verified.length) return [];
+    const counts = new Map<string, readonly NegativeCount[]>();
+    await pool(tree, verified.map((key) => ({ key, what: "negative" as const, factors: NEGATIVE_FACTORS })), workers, (a) => {
+      if ("error" in a) throw new Error(`negative control of ${a.key}: ${a.error}`);
+      if ("negative" in a) counts.set(a.key, a.negative);
+    }, readings);
+    say(`measure: ${label}negative control on ${counts.size} verified log(s)`);
+    return negativeControl(counts);
+  };
+  const variants = values.variant.length ? values.variant.map((v) => ({ text: v, readings: { ...assume, ...parseReadings(v.split(",")) } })) : [{ text: "", readings: assume }];
   const entryOf = (s: Snapshots, k: string) => (k.includes("/") ? s.pending[k] : s.verified[k]);
-  const mixed = keys.filter((k) => {
-    const [a, b] = [entryOf(before, k), entryOf(after, k)];
-    return a !== undefined && b !== undefined && direction(a, b) === "mixed";
-  });
-  // --hits: the development logs whose entry moved, hit by hit.
-  const moved = values.hits ? keys.filter((k) => !isHoldout(k) && JSON.stringify(entryOf(before, k)) !== JSON.stringify(entryOf(after, k))) : [];
+  const reference = snapshotsAt(against);
+  let before: Snapshots | undefined;
+  // The per-hit reference (mixed logs, --hits): --base's code, else the code that wrote the snapshots at `against`
+  // (hold-clocks report point 2: after a code-only commit, HEAD's code is the measured code itself).
   let refTree = baseTree;
-  if ((mixed.length || moved.length) && !baseTree) {
-    refTree = resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${against}^{commit}`]));
-    atCommit(against, refTree);
-    const which = [...new Set([...mixed, ...moved])];
-    say(`measure: ${which.length} log(s) mixed${values.hits ? " or moved (--hits)" : ""}: their per-hit fit at ${against}'s code`);
-    await measureTree(refTree, `reference ${against}: `, which);
-  }
-  const mixedLines = mixedPerHit(mixed, (refTree && perHit.get(refTree)) || new Map(), perHit.get(tree) ?? new Map());
-  const hitLines = values.hits ? hitChanges(moved, (refTree && hitRows.get(refTree)) || new Map(), hitRows.get(tree) ?? new Map()) : undefined;
-  if (hitLines?.full.length) writeFileSync(join(out, "hits.txt"), hitLines.full.join("\n") + "\n");
+  let refLabel = values.base ?? against;
+  const allLines: string[] = [];
+  for (const [vi, v] of variants.entries()) {
+    const label = variants.length > 1 ? `variant ${vi + 1} (${v.text}): ` : "";
+    const dir = variants.length > 1 ? join(out, `variant-${vi + 1}`) : out;
+    mkdirSync(dir, { recursive: true });
+    const measured = await measureTree(tree, label, order, v.readings, `${tree}#${vi}`);
+    before ??= baseTree ? overlay(reference, await measureTree(baseTree, `base ${values.base}: `)) : reference;
+    const after = overlay(before, measured, split);
+    // The mixed logs' per-hit fit on both sides (the reference's code measured for them alone when it wasn't already).
+    const mixed = keys.filter((k) => {
+      const [a, b] = [entryOf(before as Snapshots, k), entryOf(after, k)];
+      return a !== undefined && b !== undefined && direction(a, b) === "mixed";
+    });
+    // --hits: the development logs whose entry moved, hit by hit.
+    const moved = values.hits ? keys.filter((k) => !isHoldout(k) && JSON.stringify(entryOf(before as Snapshots, k)) !== JSON.stringify(entryOf(after, k))) : [];
+    if ((mixed.length || moved.length) && !baseTree) {
+      if (!refTree) {
+        const writer = snapshotWriter(against);
+        if (writer.commit !== git(["rev-parse", `${against}^{commit}`])) {
+          say(`measure: the snapshots at ${against} were written at ${short(writer.commit)}, and ${writer.changed} code file(s) changed since: the per-hit reference runs ${short(writer.commit)}'s code (--base <ref> for another)`);
+          refLabel = short(writer.commit);
+        }
+        refTree = resolve(ROOT, "scratch/at", short(writer.commit));
+        atCommit(writer.commit, refTree);
+      }
+      const done = perHit.get(refTree) ?? new Map();
+      const which = [...new Set([...mixed, ...moved])].filter((k) => !done.has(k));
+      if (which.length) {
+        say(`measure: ${which.length} log(s) mixed${values.hits ? " or moved (--hits)" : ""}: their per-hit fit at ${refLabel}'s code`);
+        await measureTree(refTree, `reference ${refLabel}: `, which);
+      }
+    }
+    const mixedLines = mixedPerHit(mixed, (refTree && perHit.get(refTree)) || new Map(), perHit.get(`${tree}#${vi}`) ?? new Map());
+    const hitLines = values.hits ? hitChanges(moved, (refTree && hitRows.get(refTree)) || new Map(), hitRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
+    if (hitLines?.full.length) writeFileSync(join(dir, "hits.txt"), hitLines.full.join("\n") + "\n");
 
-  writeFileSync(join(out, VERIFIED), formatSnapshot(after.verified as Entries, true));
-  const files = splitPending(after.pending);
-  writeFileSync(join(out, PENDING), formatSnapshot(files.pending, true));
-  writeFileSync(join(out, HOLDOUT), formatSnapshot(files.holdout, true));
-  writeFileSync(join(out, "accuracy.md"), render(after));
-  const lines = [
-    `Accuracy of ${what} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
-    ...compare(before, after),
-    ...mixedLines,
-    ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(out, "hits.txt")})`] : [])] : []),
-  ];
-  if (keys.length === logKeys(tree).length && !baseTree) {
-    const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(out, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
-    lines.push(same ? "The log verdict snapshots would stay as they are (byte for byte)." : "The log verdict snapshots would change: `npm run snapshots:update` before committing.");
+    writeFileSync(join(dir, VERIFIED), formatSnapshot(after.verified as Entries, true));
+    const files = splitPending(after.pending);
+    writeFileSync(join(dir, PENDING), formatSnapshot(files.pending, true));
+    writeFileSync(join(dir, HOLDOUT), formatSnapshot(files.holdout, true));
+    writeFileSync(join(dir, "accuracy.md"), render(after));
+    const lines = [
+      `Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
+      ...compare(before, after),
+      ...mixedLines,
+      ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
+      ...(await negativeLines(v.readings, label)),
+      ...(vi === 0 ? untimedLine() : []),
+    ];
+    if (keys.length === logKeys(tree).length && !baseTree) {
+      const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(dir, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
+      lines.push(same ? "The log verdict snapshots would stay as they are (byte for byte)." : "The log verdict snapshots would change: `npm run snapshots:update` before committing.");
+    }
+    writeFileSync(join(dir, "summary.txt"), lines.join("\n") + "\n");
+    allLines.push(...(allLines.length ? [""] : []), ...lines);
   }
-  writeFileSync(join(out, "summary.txt"), lines.join("\n") + "\n");
+  if (variants.length > 1) writeFileSync(join(out, "summary.txt"), allLines.join("\n") + "\n");
   say("");
-  for (const l of lines) say(l);
+  for (const l of allLines) say(l);
   return 0;
 }
+
+/** `<id>=<reading>` pairs as readings (--assume, --variant). */
+function parseReadings(list: readonly string[]): Record<string, string> {
+  return Object.fromEntries(list.map((a) => {
+    const [id, reading] = a.split("=");
+    if (!id || !reading) throw new Error(`--assume / --variant take <id>=<reading> (got ${a})`);
+    return [id, reading];
+  }));
+}
+
+/**
+ * The commit whose code wrote the verdict snapshots `ref` has: the last commit at or before it that changed
+ * tests/snapshots/, and how many code files changed from it to `ref` (docs, Markdown and snapshots aside).
+ */
+function snapshotWriter(ref: string): { readonly commit: string; readonly changed: number } {
+  const commit = git(["log", "-1", "--format=%H", ref, "--", "tests/snapshots/"]) || git(["rev-parse", `${ref}^{commit}`]);
+  const files = git(["diff", "--name-only", commit, ref]).split("\n").filter((f) => f && !f.startsWith("docs/") && !f.startsWith("tests/snapshots/") && !f.endsWith(".md"));
+  return { commit, changed: files.length };
+}
+
+/**
+ * The negative control's lines (tests/slow/negative-control.test.ts: every value ×0.97 and ×1.03, chance matches at
+ * most MAX_CHANCE_SHARE of the judged hits, at least 1): one per verified log, its counts per factor, `!` over the bound.
+ */
+export function negativeControl(counts: ReadonlyMap<string, readonly NegativeCount[]>): string[] {
+  const bound = (judged: number) => Math.max(1, Math.ceil(judged * NEGATIVE_MAX_SHARE));
+  const over: string[] = [];
+  const lines = [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([k, cs]) => {
+    const parts = cs.map((c) => {
+      const bad = c.matches > bound(c.judged);
+      if (bad) over.push(`${k} ×${c.factor}`);
+      return `×${c.factor} ${c.matches}${bad ? " !" : ""}`;
+    });
+    return `  ${k}: ${parts.join(", ")} of ${cs[0]?.judged ?? 0} judged (bound ${bound(cs[0]?.judged ?? 0)})`;
+  });
+  return [`Negative control (verified logs, every value ×${NEGATIVE_FACTORS.join(" / ×")}: chance matches, at most ${100 * NEGATIVE_MAX_SHARE}% of the judged hits; test:logs fails over it): ${over.length ? `over the bound: ${over.join(", ")}` : "within the bound"}`, ...lines];
+}
+
+/** tests/slow/negative-control.test.ts FACTORS and MAX_CHANCE_SHARE. */
+const NEGATIVE_FACTORS = [0.97, 1.03];
+const NEGATIVE_MAX_SHARE = 0.01;
 
 /**
  * The mixed logs (a fit measure better, another worse) by their mean |per-hit error| (logged ÷ the primary reading − 1,
@@ -376,14 +476,33 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
       kinds.set(kind, [...(kinds.get(kind) ?? []), c]);
     }
     summary.push(`  ${k}: ${changed.length} hits: ${[...kinds].sort((x, y) => y[1].length - x[1].length).map(([kind, cs]) => `${kind} ${cs.length}`).join(", ")}`);
-    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}`;
+    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}${modifierChange(c.was[5], c.now[5])}`;
     for (const [, cs] of kinds) for (const c of cs.slice(0, examples)) summary.push(`    ${line(c)}`);
     full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`));
   }
   return { summary, full };
 }
 
-const readTracked = (tree: string, rel: string) => (existsSync(join(tree, rel)) ? readFileSync(join(tree, rel), "utf8") : "");
+/**
+ * What changed in a hit's primary reading's modifiers (HitRow's sixth part: "<kit buff or source> <zone> <value>"): the
+ * ones gone (−), new (+) and moved in value (a → b), as " [modifiers: …]"; empty when either side lacks them or none moved.
+ */
+export function modifierChange(was: readonly string[] | undefined, now: readonly string[] | undefined): string {
+  if (!was || !now) return "";
+  const split = (m: string) => {
+    const i = m.lastIndexOf(" ");
+    return [m.slice(0, i), m.slice(i + 1)] as const;
+  };
+  const [a, b] = [new Map(was.map(split)), new Map(now.map(split))];
+  const parts = [
+    ...[...a].filter(([k]) => !b.has(k)).map(([k, v]) => `−${k} ${v}`),
+    ...[...b].filter(([k]) => !a.has(k)).map(([k, v]) => `+${k} ${v}`),
+    ...[...b].filter(([k, v]) => a.has(k) && a.get(k) !== v).map(([k, v]) => `${k} ${a.get(k) as string} → ${v}`),
+  ];
+  return parts.length ? ` [modifiers: ${parts.join("; ")}]` : "";
+}
+
+const readTracked =(tree: string, rel: string) => (existsSync(join(tree, rel)) ? readFileSync(join(tree, rel), "utf8") : "");
 
 function git(args: readonly string[]): string {
   return execFileSync("git", args, { cwd: ROOT, encoding: "utf8" }).trim();

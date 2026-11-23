@@ -89,10 +89,15 @@ hand. Quote the scoreboard's numbers, not scratch sums, in the journal.
 To try an idea, measure instead: `npm run measure [-- --with <op>]`
 (about a minute for every log, writes only `scratch/measure/`; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
-an open reading: [docs/design/tests.md](docs/design/tests.md#measuring-a-change)),
+an open reading, `--variant <id>=<r>` (repeatable) for several in one run
+instead of chained measures: [docs/design/tests.md](docs/design/tests.md#measuring-a-change)),
 and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards). Diagnosis views: `efsim zmdlogs
-groups|differences|casts|replay|stagger`; a build offset: `efsim zmdlogs
+groups|differences|casts|replay|stagger|holds --why`; one command at two
+commits' code, the lines that differ: `node scripts/cli-ab.ts <ref> --
+<efsim args>` (`--holds <fixture>`: which bounds a change moved). A new
+test that should fail before the change: `node scripts/verify-at.ts <base>
+--test <file> -t <name>`. A build offset: `efsim zmdlogs
 fit-build <fixture> --operator <op>`, kept as the fixture's `buildOverrides` (first steps in
 [docs/open-problems.md](docs/open-problems.md)). After a fixture move, `node scripts/snapshot-keys.ts <file> --rename
 <regex> <to>` renames snapshot keys (counts only, no values shown).
@@ -143,7 +148,9 @@ complex to verify"):
   A sequence mixing `git` with other commands goes into `scratch/x.sh`,
   run with `bash scratch/x.sh`. Commit messages: write `scratch/msg.txt`
   with the Write tool, then `git commit -F scratch/msg.txt -- <paths>`
-  (by pathspec; `git mv` / `git rm` stage on their own). The words
+  (by pathspec; `git mv` / `git rm` stage on their own, but only the
+  index's text: move first, edit after, and commit by the pathspecs of
+  both folders, `-- docs/friction docs/friction-done`). The words
   `source`, `eval` and `exec` are refused anywhere in a command, as an
   argument too (`node scratch/x.ts source` was): name things otherwise.
 - Never a heredoc or a multi-line `python3 -c`, even where one has worked

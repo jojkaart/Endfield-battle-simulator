@@ -3,7 +3,7 @@
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, mixedPerHit, movedCasts, overlay, selectLogs } from "../scripts/measure.ts";
+import { hitChanges, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -63,6 +63,26 @@ describe("measure --hits", () => {
     expect(summary).toContain("    2.50 s op skill: mismatch ×1.200 → plain ×1.000");
     expect(full).toHaveLength(3);
     expect(hitChanges([], before, after).summary).toEqual(["Hits whose verdict changed (--hits; development logs whose entry moved): none (no development log's entry moved)"]);
+  });
+});
+
+describe("measure --hits: the modifiers that moved at a hit", () => {
+  it("names the kit buffs gone, new and changed in value", () => {
+    expect(modifierChange(["a:x dmg 0.3", "b:y atk 0.1"], ["b:y atk 0.2", "c:z dmg 0.1"])).toBe(" [modifiers: −a:x dmg 0.3; +c:z dmg 0.1; b:y atk 0.1 → 0.2]");
+    expect(modifierChange(["a:x dmg 0.3"], ["a:x dmg 0.3"])).toBe("");
+    expect(modifierChange(undefined, ["a:x dmg 0.3"])).toBe("");
+  });
+});
+
+describe("measure's negative control", () => {
+  it("flags a verified log's chance matches over 1% of its judged hits (at least 1), as test:logs would fail", () => {
+    const lines = negativeControl(new Map([
+      ["zmdlogs-a.json", [{ factor: 0.97, matches: 1, judged: 50 }, { factor: 1.03, matches: 0, judged: 50 }]],
+      ["zmdlogs-b.json", [{ factor: 0.97, matches: 34, judged: 167 }, { factor: 1.03, matches: 2, judged: 167 }]],
+    ]));
+    expect(lines[0]).toMatch(/over the bound: zmdlogs-b\.json ×0\.97$/);
+    expect(lines[1]).toBe("  zmdlogs-a.json: ×0.97 1, ×1.03 0 of 50 judged (bound 1)");
+    expect(lines[2]).toBe("  zmdlogs-b.json: ×0.97 34 !, ×1.03 2 of 167 judged (bound 2)");
   });
 });
 

@@ -21,6 +21,18 @@ describe("the placement and replay views", () => {
     expect(text).toMatch(/EVENT {2}/);
   });
 
+  it("marks a hit credited to another skill (poise.origin) and a time many hits share (batched)", () => {
+    // 0eef: Si's Inksoul burst at 10.03 s, credited to her battle skill 2.
+    expect(castsView(data, fx, { from: 10000, to: 10100 })).toMatch(/HIT {4}Si normal_skill_inkmove_2 \d+ → .* \(origin normal_skill_2\)/);
+    const t = [...new Set(fx.hits.map((h) => h.t))].find((x) => fx.hits.filter((h) => h.t === x).length > 3);
+    if (t !== undefined) expect(castsView(data, fx, { from: t, to: t })).toMatch(/\[batched: \d+ hits at this ms\]/);
+  });
+
+  it("db87's casts view has the replay's stops, Laevatain's ultimate from its cast event marked", () => {
+    const db87 = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-db8711232de9.json"));
+    expect(castsView(data, db87, { from: 16000, to: 17000 })).toMatch(/STOP {3}Laevatain ultimate_skill 16\.\d\d–\d+\.\d\d s .*\[no placed hits/);
+  });
+
   it("marks each replay landing with the logged hit it stands for or as the replay's own", () => {
     const text = replayView(data, fx, { from: 3000, to: 5000 });
     expect(text).toMatch(/LAND .* = logged \S+ \d+ at \d+\.\d\d/);

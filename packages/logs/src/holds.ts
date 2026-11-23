@@ -4,9 +4,47 @@
 // log shows bounds it: a listed buff's run against the replay's own expiry, an enemy tick series against its period.
 // The replay (buffreplay.ts) then holds the world there once, for every timer.
 
-import { FPS } from "@efsim/engine";
+import { FPS, type KitBuff } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { worldMs, type TimeStop } from "./logcasts.ts";
+
+/**
+ * Why a replayed instance is or isn't a clock of the hidden holds (`zmdlogs holds --why`, rossi-gilberta report point
+ * 2: the rules were spread over three silent filters): the clock (`owner:id`, or `status:<status>` for an enemy status),
+ * its holder (an operator or "enemy"; a status's applier), the instance (frames; null: the kit buff as a whole), the log's
+ * run it was paired with (ms), and the verdict ("bound", or the rule that skipped it), with the hold a bound asks (s).
+ */
+export interface ClockWhy {
+  readonly clock: string;
+  readonly holder: string;
+  readonly instance: { readonly start: number; readonly end: number; readonly expired: boolean } | null;
+  readonly run?: { readonly name: string; readonly since: number; readonly lastListed: number };
+  readonly verdict: string;
+  readonly ask?: number;
+}
+
+/**
+ * The kit fields that make a buff no clock of the holds (its end follows something other than its own timer, or the log
+ * shows its instances merged), for runBounds and for buffreplay.ts loggedEndOf (`every`: a ticking buff, runBounds only;
+ * loggedEndOf reads it off the active buff).
+ */
+const NOT_A_CLOCK = ["consumedBy", "link", "endsWithCast", "maxStacks", "sharedTimer", "ticksShownByHits", "ticksLoggedAs", "endFollowsTick", "childOf"] as const;
+
+/** The first field that makes `def` no clock (NOT_A_CLOCK; `every` too with `opts.every`), or null. */
+export function notAClock(def: KitBuff, opts: { readonly every?: boolean } = {}): string | null {
+  if (opts.every && def.every !== undefined) return "every";
+  for (const k of NOT_A_CLOCK) if (k === "maxStacks" ? def.maxStacks !== undefined : Boolean(def[k])) return k;
+  return null;
+}
+
+/**
+ * Whether the log shows run `r` refreshed: another run of the same lane (`same`) starts inside it and `r` isn't listed
+ * past that start by more than REFRESH_OVERLAP_MS (runs listed side by side longer are two instances). The one rule for
+ * buff runs (buffreplay.ts loggedLaneEnds) and the enemy's statuses (statusLanes).
+ */
+export function refreshedIn<T extends { readonly since: number; readonly lastListed: number }>(r: T, all: readonly T[], same: (a: T, b: T) => boolean): boolean {
+  return all.some((o) => o !== r && same(o, r) && o.since > r.since && o.since <= r.lastListed && r.lastListed - o.since <= REFRESH_OVERLAP_MS);
+}
 
 /**
  * One clock's bound on the hidden holds P (ms of world hold no placed stop explains, P(0) = 0): `min` ≤ P(b) − P(a) ≤
@@ -107,7 +145,7 @@ export function statusLanes(fx: Pick<LogFixture, "hits">): StatusLanes {
   const out = new Map<string, { since: number; lastListed: number; refreshed: boolean }[]>();
   const all = [...runs.values()];
   for (const r of all) {
-    const refreshed = all.some((o) => o !== r && o.key === r.key && o.since > r.since && o.since <= r.lastListed && r.lastListed - o.since <= REFRESH_OVERLAP_MS);
+    const refreshed = refreshedIn(r, all, (a, b) => a.key === b.key);
     out.set(r.key, [...(out.get(r.key) ?? []), { since: r.since, lastListed: r.lastListed, refreshed }]);
   }
   return { runs: out, hits };
@@ -121,22 +159,47 @@ export function statusLanes(fx: Pick<LogFixture, "hits">): StatusLanes {
  * doesn't list it at most, but only for a status no kit of the team consumes (`consumable`: a consumed status ends early
  * in the log, which says nothing of its clock: d774's Electrification, taken by Zhuang Fangyi's battle skill at 97.44 s).
  */
-export function statusBounds(instances: readonly StatusInstance[], lanes: StatusLanes, stops: readonly TimeStop[], consumable: ReadonlySet<string>, share: number): HoldBound[] {
+export function statusBounds(instances: readonly StatusInstance[], lanes: StatusLanes, stops: readonly TimeStop[], consumable: ReadonlySet<string>, share: number, why?: ClockWhy[]): HoldBound[] {
   const out: HoldBound[] = [];
   const ms = (f: number) => (f * 1000) / FPS;
   for (const w of instances) {
-    if (!w.expired) continue;
+    const instance = { start: w.start, end: w.end, expired: w.expired };
+    const note = (verdict: string, run?: ClockWhy["run"], ask?: number) => why?.push({ clock: `status:${w.status}`, holder: w.operator, instance, ...(run ? { run } : {}), verdict, ...(ask !== undefined ? { ask } : {}) });
+    if (!w.expired) {
+      note("didn't run out in the replay (replaced, consumed, or on at the fight's end)");
+      continue;
+    }
     const [S, E] = [ms(w.start), ms(w.end)];
     const key = `${w.status}|${w.operator}`;
+    let near = 0;
     for (const r of lanes.runs.get(key) ?? []) {
-      if (r.refreshed || r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+      if (r.since < S - RUN_START_MS || r.since > S + RUN_START_MS) continue;
+      near++;
+      const run = { name: w.status, since: r.since, lastListed: r.lastListed };
+      if (r.refreshed) {
+        note("refreshed in the log (another run starts inside it; holds.ts refreshedIn)", run);
+        continue;
+      }
       const late = (t: number) => (t >= E ? worldMs(E, t, stops) : t - E);
       const off = consumable.has(w.status) ? undefined : lanes.hits.find((h) => h.t > r.lastListed && !h.listed.has(key));
       const [lo, hi] = [late(r.lastListed), off === undefined ? Infinity : late(off.t)];
-      if (hi < -2 * HOLD_BOUND_TOL_MS || lo > share * (E - S)) continue;
+      if (hi < -2 * HOLD_BOUND_TOL_MS) {
+        note(`ends ${(-hi / 1000).toFixed(2)} s before the replay's expiry (a cut the replay doesn't make: not a clock)`, run);
+        continue;
+      }
+      if (lo > share * (E - S)) {
+        note(`asks ${(lo / 1000).toFixed(2)} s, over ${share} of its life (a refresh the replay missed, or a kit's error)`, run, lo / 1000);
+        continue;
+      }
       const tag = `status ${key} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : consumable.has(w.status) ? "–(consumable)" : "–end"} ms over ${Math.round(E)}`;
       if (lo > -STATUS_END_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - STATUS_END_TOL_MS, max: Infinity, kind: "status", tag, ex: lo / 1000 });
       if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "status", tag, ex: hi / 1000 });
+      note(lo > -STATUS_END_TOL_MS || off ? `bound: ${tag}` : "no bound (listed only before its expiry, and no later hit without it: consumable or the fight's end)", run, lo / 1000);
+    }
+    if (near === 0) {
+      const runs = lanes.runs.get(key) ?? [];
+      const nearest = runs.length ? Math.min(...runs.map((r) => Math.abs(r.since - S))) : null;
+      note(nearest === null ? `the log lists no run of it from ${w.operator}` : `no run of it starts within ${RUN_START_MS / 1000} s of the application (the nearest ${(nearest / 1000).toFixed(2)} s away)`);
     }
   }
   return out;

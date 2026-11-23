@@ -33,6 +33,11 @@ export interface RampStep {
    * the log's application's lead over the replay's.
    */
   readonly world: number;
+  /**
+   * The replay's side, for `zmdlogs ramp --why` (what held its ramp): its application and the landing (ms) and its
+   * Corrosion's own time between (ms, engine rampElapsed: the stops and placed holds held it, freezes don't).
+   */
+  readonly replay?: { readonly applied: number; readonly landing: number; readonly elapsed: number };
 }
 
 /** Steps tried at most (Corrosion's cap comes at 10 s and less). */
@@ -124,7 +129,7 @@ export function rampSteps(c: EngineCheck, fx: Pick<LogFixture, "hits">, place: (
     if (low > replayStep + MAX_STEP_LAG || high < replayStep - MAX_STEP_LAG) continue;
     const appliedMs = (applied.frame * 1000) / FPS;
     const world = elapsed + held(appliedMs, (frame * 1000) / FPS) + (appliedMs - since);
-    out.push({ hit, since, source: s.operator, level: s.level, replayStep, low, high, capped: high === values.length - 1, reading, world });
+    out.push({ hit, since, source: s.operator, level: s.level, replayStep, low, high, capped: high === values.length - 1, reading, world, replay: { applied: appliedMs, landing: (frame * 1000) / FPS, elapsed } });
   }
   return out.sort((x, y) => x.hit.t - y.hit.t);
 }

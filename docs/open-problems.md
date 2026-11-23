@@ -1414,6 +1414,13 @@ holds Corrosion's end but not its ramp in a freeze (assumption
 
 ## The buff clock: unlogged world holds keep buffs past their end (2026-11-22; test 111)
 
+**The hold-outs can't test the lane-based rules (round 7):** `npm run measure` now counts the logs whose listed
+effects carry no `since` / `source` (imported before 2026-11-16): all 13 hold-outs, and the verified 40d9 and 4e5e.
+Every rule below that reads the log's runs (the hidden holds' run and status clocks, `heldToLoggedEnds`, Wolven
+Blood's `layerCrits`) has nothing to read there, so the hold-out row's "unchanged" for those changes means untested,
+not confirmed; their tick and ramp clocks still apply. Re-importing them with `since` (`zmdlogs refresh`, run blind
+on the split's ids so nobody reads them) needs the downloads and the owner's go-ahead.
+
 **Shows:** every run of a listed game buff a team kit stands for, over the 77 development logs whose listings carry the
 runs' start and owner (verified, pending, multi-target; 40d9 and 4e5e don't): its start as logged (the lane's
 `since`), its end bracketed by the last hit that lists it and the next hit of a holder that doesn't (exact at a
@@ -1592,7 +1599,12 @@ keeps a listed buff to its listing's end.
     `combo-reset`, default `resets` (the views cut at resets whatever the reading). 3f78 plain 53 → 63, 4a64 150 →
     156 (mismatch 2 → 0), 9c6e 164 → 169, 9a80 221 → 223. Alone (with the views uncut) it was mixed (hold-outs 73.5
     → 73.4%: the bounds counted her stop whole while the engine cut it); with the views cut, against that: hold-outs
-    2 better, 0 worse.
+    2 better, 0 worse. **Ruled out (round 7):** cutting the placement's unplaced cast events' stops at resets too
+    (and their resets cutting the placed stops): 1cd1 plain 182 → 177, Typhoeus's basics moved by Arcane's combo
+    event at 34.70 s, which the replay casts at 35.70 s; an event's time is the press, so its reset is no time to cut
+    at (logcasts.ts placeHits says so). A test now keeps the stop lists on skillStops + withResets
+    (tests/stops-source.test.ts); `efsim gamedata dilations` lists what the compiler drops (204 switched off, 49 on
+    layer 1, no unknown curve).
   - **The application's logged ms (a7a7 3.87 s and 20.53 s, 489c 49.31 s):** readings that put the log's ramp ahead
     of real time since its `since` (a7a7 20.65 s: step 1 at 0.12 s), so the application was earlier than logged.
     a7a7 3.87: Arcane's battle-skill event at 2.31 s puts its hit (frame 20) at 2.98 s, just before Liino's combo
