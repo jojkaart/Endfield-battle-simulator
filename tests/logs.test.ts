@@ -9,7 +9,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData, sourceCommit, SOURCES } from "@efsim/data";
-import { readLogFixture, simulateLog, snapshotEntry, verificationProblems, type EngineHits, type HitVerdict, type LogBuffReplay, type SnapshotEntry } from "@efsim/logs";
+import { offsetHits, readLogFixture, screenOffsets, simulateLog, snapshotEntry, unexplainedOffsets, verificationProblems, type EngineHits, type HitVerdict, type LogBuffReplay, type SnapshotEntry } from "@efsim/logs";
 import { changes, entry, logFixtures, regressions, ROOT, totalsChanges, totalsOf, type FixtureCounts } from "./logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "./snapshot.ts";
 
@@ -85,5 +85,11 @@ describe.each(files)("%s", (file) => {
     const gained = [...changes(now, stored), ...totalsChanges(totals, totalsOf(stored))];
     // process.stdout.write, not console.info: vitest shows a passing file's console output only with --silent=false.
     if (gained.length) process.stdout.write(`${file}: counts or totals moved from the snapshot (update it to keep the gain): ${gained.join("; ")}\n`);
+  });
+
+  it("has no operator off by one factor all fight that nothing accounts for (the build-offset screen)", () => {
+    const { byHit, verdicts } = checked();
+    const open = unexplainedOffsets(fx, screenOffsets(offsetHits(fx, byHit, verdicts)));
+    expect(open.map((o) => `${o.operator} ×${o.median.toFixed(4)} over ${o.n} hits, ${(100 * o.tight).toFixed(0)}% within 1%`), "a build offset: zmdlogs fit-build, then a buildOverrides entry, or an OFFSETS_EXPLAINED one (packages/logs/src/buildoffsets.ts)").toEqual([]);
   });
 });

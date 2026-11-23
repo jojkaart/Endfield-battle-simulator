@@ -15,7 +15,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { readLogFixture, snapshotEntry } from "@efsim/logs";
+import { offsetHits, readLogFixture, screenOffsets, snapshotEntry, unexplainedOffsets, type OperatorOffset } from "@efsim/logs";
 import { changes, entry, logFixtures, ROOT, shard, totalsChanges, totalsOf, type FixtureCounts } from "../logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "../snapshot.ts";
 import { direction, fitChange, GROUPS, groupOf, readSplit, type Direction, type Entry, type Group } from "../../scripts/accuracy.ts";
@@ -38,6 +38,8 @@ export function pendingSuite(index: number): void {
   const storedAll: Readonly<Record<string, FixtureCounts>> = { ...pendingSnapshot.stored, ...holdoutSnapshot.stored };
   const split = readSplit();
   const moved = new Map<Group, Direction[]>();
+  // The build-offset screen's candidates per development log, from the snapshot check's own computation (no second run).
+  const offsets = new Map<string, OperatorOffset[]>();
   afterAll(() => {
     pendingSnapshot.write((key) => !key.startsWith("holdout/") && existsSync(join(ROOT, "fixtures", key)));
     holdoutSnapshot.write((key) => key.startsWith("holdout/") && existsSync(join(ROOT, "fixtures", key)));
@@ -65,7 +67,8 @@ export function pendingSuite(index: number): void {
     it("checks as its snapshot says", () => {
       const fx = readLogFixture(join(ROOT, "fixtures", file));
       // Its verdict counts and its totals' errors (the simulation of the logged casts against the log), as measure computes them.
-      const { counts: now, totals } = snapshotEntry(data, fx);
+      const { counts: now, totals, byHit, verdicts } = snapshotEntry(data, fx);
+      if (!file.startsWith("holdout/")) offsets.set(file, unexplainedOffsets(fx, screenOffsets(offsetHits(fx, byHit, verdicts))));
       const current = entry(now, totals);
       const stored = snapshotOf(file).record(file, current);
       if (stored === undefined) return;
@@ -75,6 +78,13 @@ export function pendingSuite(index: number): void {
       if (UPDATING) return;
       const how = group === "holdout" ? d : `${d}${d === "same" ? "" : `: ${fitChange(stored as unknown as Entry, current as unknown as Entry)}`}`;
       expect([...changes(now, stored), ...totalsChanges(totals, totalsOf(stored))], `verdict counts or totals moved from the snapshot (by the fit measure ${how}; ${UPDATE_HINT})`).toEqual([]);
+    });
+
+    // Development logs only: a hold-out is never debugged, so its offsets are never screened.
+    it.skipIf(file.startsWith("holdout/"))("has no operator off by one factor all fight that nothing accounts for (the build-offset screen)", () => {
+      const open = offsets.get(file);
+      if (!open) return; // the check above failed before the screen ran: its failure says why
+      expect(open.map((o) => `${o.operator} ×${o.median.toFixed(4)} over ${o.n} hits, ${(100 * o.tight).toFixed(0)}% within 1%`), "a build offset (efsim zmdlogs offsets): zmdlogs fit-build, then a buildOverrides entry, or an OFFSETS_EXPLAINED one (packages/logs/src/buildoffsets.ts)").toEqual([]);
     });
   });
 }

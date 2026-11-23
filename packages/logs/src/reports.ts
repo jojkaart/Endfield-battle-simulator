@@ -16,6 +16,7 @@ import type { TotalsShares } from "./enginecheck.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fitBuild, type BuildCandidate } from "./buildfit.ts";
+import { offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -238,6 +239,23 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
   const groupOf = (f: string): TotalsGroup => (isMultiTarget(f) ? "multi" : !resolve(f).startsWith(resolve(REPO_ROOT, LOG_DIRS.pending) + "/") ? "verified" : dev.has(fixtureLabel(f).replace(/^zmdlogs-/, "")) ? "development" : "earlier");
   const rows = files.map((f) => ({ short: shortId(fixtureLabel(f)), group: groupOf(f), shares: shares.get(f) as TotalsShares }));
   return totalsAllView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
+}
+
+/**
+ * `efsim zmdlogs offsets [fixture…|--all]`: the build-offset screen (buildoffsets.ts) over the selected development
+ * logs' hit records (from the per-fixture cache where the code and the fixture are unchanged, else checked on
+ * `workers` threads). Multi-target logs are left out (their verdicts mean nothing); never a hold-out.
+ */
+export async function offsetsReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly progress?: (line: string) => void }): Promise<string> {
+  const files = selectedFiles(sel, "offsets").filter((f) => !isMultiTarget(f));
+  const records = await collectRecords(data, files, opts.workers, {}, opts.progress, opts.cache ?? true);
+  const byFile = new Map<string, HitRecord[]>();
+  for (const r of records) byFile.set(r.fixture, [...(byFile.get(r.fixture) ?? []), r]);
+  const rows = files.flatMap((f) => {
+    const fx = readLogFixture(f);
+    return screenOffsets(offsetHitsOfRecords(byFile.get(f) ?? [])).map((offset) => ({ short: shortId(fixtureLabel(f)), fx, offset }));
+  });
+  return offsetsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
 }
 
 function sharesCacheFile(file: string): string {

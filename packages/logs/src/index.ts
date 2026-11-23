@@ -22,6 +22,7 @@ export * from "./enginecheck.ts";
 export * from "./logcheck.ts";
 export * from "./hitexport.ts";
 export * from "./buildfit.ts";
+export * from "./buildoffsets.ts";
 export * from "./bufftiming.ts";
 export * from "./reports.ts";
 export * from "./views.ts";

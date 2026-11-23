@@ -29,6 +29,7 @@ import {
   groupsCliReport,
   hitsReport,
   importBattle,
+  offsetsReport,
   operatorNamed,
   rawDetail,
   rawDir,
@@ -112,6 +113,13 @@ export default command({
                                           operator's clean hits (log and replay agree) within ±1; the evidence for a
                                           fixture's buildOverrides
                 [--top n] [--no-foods]    Candidates shown (default 8); without trying foods
+  efsim zmdlogs offsets <fixture…|--all>  The build-offset screen: per log and operator, the median of logged ÷ the
+                                          primary reading over non-crit kit hits and the share within 1% of it; a
+                                          tight median off by 3% or more (*) is one factor all fight (a food, a node,
+                                          a weapon level): fit-build's next candidate (tests/slow/ fails on one
+                                          nothing accounts for). From scratch/hits-cache/ as hits
+                [--operator <op>] [--top n] [--workers n] [--no-cache]  Only these operators; rows (default 25, 0
+                                          every one)
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim zmdlogs casts <fixture>           The placement in time order: each logged hit with the cast, slot and
@@ -380,6 +388,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
       return groupsCliReport(data, values.operator[0] as string, selection, { workers: values.workers, verbose: values.verbose, cache: !values["no-cache"], progress });
     }
+    if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], progress });
     if (sub === "fit-build") {
       if (args.length !== 2 || !arg || values.operator.length !== 1) throw new Error("zmdlogs fit-build takes one fixture file and one --operator <op> (--top n, --no-foods)");
       return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"] });
