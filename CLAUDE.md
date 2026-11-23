@@ -157,13 +157,17 @@ complex to verify"):
   argument too (`node scratch/x.ts source` was): name things otherwise.
 - Never a heredoc or a multi-line `python3 -c`, even where one has worked
   before: the guard judges the whole text, so the same form passes once
-  and is refused the next time. Write the file with the Write tool, then
-  run it with one plain command. File edits with the Write/Edit tools; a
-  batch of replacements: a new `scratch/patch-<n>.py` per batch (plain
-  Python strings, `assert old in s` before each replace; never rewrite one
-  a shell command touched: the Write tool then refuses it) run with
-  `python3 -I scratch/patch-<n>.py`,
-  never TypeScript inlined in `python3 -c`. No code formatter
+  and is refused the next time, and in double quotes the shell runs a
+  doc's backticks as commands (round 8 wrote `the  assumption ()` into
+  open-problems.md). Write the file with the Write tool, then run it with
+  one plain command. File edits with the Write/Edit tools; a batch of
+  replacements (backticks and all): write `scratch/edits-<n>.txt` with the
+  Write tool, then `node scripts/edit.ts scratch/edits-<n>.txt` (exact,
+  all or nothing, the format in its header: `@@@ <path>`, then
+  `<<<<<<<` old `=======` new `>>>>>>>` blocks; `<<<<<<< end` appends).
+  `npm test` flags a doc with that damage's shapes (scripts/check-links.ts
+  damagedText); `node scripts/bash-guard.ts --check '<cmd>'` says whether
+  a command is one of the forbidden forms. No code formatter
   (`.prettierignore` keeps `npx prettier` off): format by hand.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
@@ -180,8 +184,9 @@ complex to verify"):
   progress to a new file per run, then wait with Monitor on
   `until grep -q '^EFSIM-DONE <job> ' scratch/x.log; do sleep 15; done`
   with the job's own name (snapshots, premerge, measure, verify-at end with
-  `EFSIM-DONE <job> pass|fail|killed`, with-lock `EFSIM-DONE <--name>
-  exit <n>`; a foreground `sleep` is refused). Every job that takes the
+  `EFSIM-DONE <job> pass|fail|killed` on stdout, with-lock `EFSIM-DONE
+  <--name> exit <n>` on stderr, so a redirected stdout keeps only the
+  command's output; a foreground `sleep` is refused). Every job that takes the
   test lock (measure too) runs this way from the start, with the 2 h limit:
   the queue's wait counts against it ([limits](docs/design/tests.md#measuring-a-change)).
   measure and team-ab fix the code when queued: keep editing meanwhile. Minutes of CPU (seed

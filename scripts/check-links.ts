@@ -91,9 +91,58 @@ export function brokenLinks(files: readonly string[] = markdownFiles(), root: st
   return out;
 }
 
+export interface DamagedLine {
+  readonly line: number;
+  readonly why: string;
+  readonly text: string;
+}
+
+/**
+ * Lines of a Markdown text that look like a shell's substitution damage: what a doc edit passed through `python3 -c
+ * "…"` or a heredoc leaves when the shell runs the text's `code spans` (or `$x`) as commands and puts their (empty)
+ * output in their place (fight-totals report point 3: "the  assumption ()" in docs/open-problems.md). In prose, outside
+ * fenced blocks, code spans and tables: an empty code span, two spaces between words, "()" not after a name, a space
+ * before a comma, full stop or closing parenthesis. The docs have none of these on purpose; scripts/edit.ts checks the
+ * files it edits, tests/doc-links.test.ts every doc.
+ */
+export function damagedText(text: string): DamagedLine[] {
+  const fill = (m: string) => m.replace(/[^\n]/g, "x");
+  const lines = text.split("\n");
+  // Fenced blocks blanked (kept as lines); then code spans, which may run over lines of one paragraph, filled with x.
+  const unfenced = text.replace(/^(\s*)(```|~~~)[^\n]*\n[\s\S]*?^\s*\2[^\n]*$/gm, (m) => m.replace(/[^\n]/g, ""));
+  // Double-backtick spans (`` ` ``) first, so what is left of "``" is an empty span.
+  const doubled = unfenced.replace(/`` (?:[^`\n]|`(?!`)|\n(?!\s*\n))+? ``/g, fill);
+  const raw = doubled.split("\n");
+  const prose = doubled.replace(/(?<!`)`(?!`)(?:[^`\n]|\n(?!\s*\n))+`/g, fill).split("\n");
+  const out: DamagedLine[] = [];
+  const checks: [RegExp, string, "raw" | "prose"][] = [
+    [/(^|[^`])``([^`]|$)/, "an empty code span", "raw"],
+    [/\S {2,}\S/, "two spaces between words", "prose"],
+    [/(^|[^\w\]])\(\s*\)/, '"()" with nothing in it', "prose"],
+    [/\w [,.)](\s|$)/, "a space before a comma, full stop or parenthesis", "prose"],
+  ];
+  prose.forEach((p, i) => {
+    if (/^\s*\|/.test(p) || /^\s*<!--/.test(p)) return;
+    for (const [re, why, which] of checks) {
+      if (re.test(which === "raw" ? (raw[i] as string) : p)) {
+        out.push({ line: i + 1, why, text: (lines[i] as string).trim().slice(0, 120) });
+        break;
+      }
+    }
+  });
+  return out;
+}
+
+/** damagedText over the docs: file, line and why. */
+export function damagedDocs(files: readonly string[] = markdownFiles(), root: string = ROOT): (DamagedLine & { readonly file: string })[] {
+  return files.flatMap((rel) => damagedText(readFileSync(join(root, rel), "utf8")).map((d) => ({ file: rel, ...d })));
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const broken = brokenLinks();
   for (const b of broken) process.stdout.write(`${b.file}:${b.line}: ${b.target} — ${b.why}\n`);
-  process.stdout.write(`check-links: ${broken.length} broken relative link${broken.length === 1 ? "" : "s"} in ${markdownFiles().length} Markdown files\n`);
-  process.exitCode = broken.length ? 1 : 0;
+  const damaged = damagedDocs();
+  for (const d of damaged) process.stdout.write(`${d.file}:${d.line}: ${d.why} (a shell substitution's damage?): ${d.text}\n`);
+  process.stdout.write(`check-links: ${broken.length} broken relative link${broken.length === 1 ? "" : "s"}, ${damaged.length} damaged-looking line${damaged.length === 1 ? "" : "s"} in ${markdownFiles().length} Markdown files\n`);
+  process.exitCode = broken.length || damaged.length ? 1 : 0;
 }

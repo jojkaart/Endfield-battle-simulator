@@ -379,9 +379,10 @@ const SIGNALS = { SIGINT: 2, SIGTERM: 15, SIGHUP: 1 } as const;
 /**
  * As runLocked, but asynchronous, so a signal (a `timeout`, Ctrl-C, the Bash tool stopping a background job) is
  * handled: the ticket is released, the command (if running) gets the same signal, `EFSIM-DONE <done> killed` is
- * printed on stdout when `done` names the job, and the process exits with 128 + the signal's number.
+ * printed on stdout (`doneTo` "stderr": there) when `done` names the job, and the process exits with 128 + the
+ * signal's number.
  */
-export async function runLockedAsync(command: readonly string[], opts: LockOptions & { readonly done?: string }): Promise<number> {
+export async function runLockedAsync(command: readonly string[], opts: LockOptions & { readonly done?: string; readonly doneTo?: "stdout" | "stderr" }): Promise<number> {
   const lock = testLockFile();
   const env = { ...(opts.env ?? process.env), EFSIM_TEST_LOCK_HELD: "1" };
   const w = lock ? new Waiter(lock, command, opts) : undefined;
@@ -392,7 +393,7 @@ export async function runLockedAsync(command: readonly string[], opts: LockOptio
     if (child && child.exitCode === null) child.kill(sig);
     const queued = claimed === undefined && w !== undefined;
     const where = queued ? ` (in the queue after ${minutes(Date.now() - w.mine.arrival)}: nothing ran; the background limit counts the wait)` : "";
-    if (opts.done) process.stdout.write(`EFSIM-DONE ${opts.done} killed${where}\n`);
+    if (opts.done) (opts.doneTo === "stderr" ? process.stderr : process.stdout).write(`EFSIM-DONE ${opts.done} killed${where}\n`);
     process.stderr.write(`${opts.who}: killed by ${sig}${queued ? " while waiting for the test lock" : ""}\n`);
     process.exit(128 + SIGNALS[sig]);
   };

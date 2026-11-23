@@ -2,10 +2,11 @@
 // suites and premerge ahead of jobs that arrived up to 20 min before them), so it queues behind other worktrees'
 // suites and heavy jobs instead of running beside them: measurements stay comparable, and nobody's tests time out
 // because someone is benchmarking. On stderr: the estimated wait at the start, a heartbeat line every minute while it
-// waits, then the elapsed time (wait included) and the load average before and after. On stdout: only the command's
-// own output, then a last line `EFSIM-DONE <name> exit <n>` to wait for (`EFSIM-DONE <name> killed` when a signal
-// stopped it; name: --name, default with-lock). Wait for your own job's name: a script running several jobs prints
-// several such lines.
+// waits, then the elapsed time (wait included) and the load average before and after, and a last line
+// `EFSIM-DONE <name> exit <n>` to wait for (`EFSIM-DONE <name> killed` when a signal stopped it; name: --name, default
+// with-lock). On stdout: only the command's own output, so a JSON export redirected to a file stays clean (fight
+// totals 2 report point 5: the done line went into the JSONL while the wait read the stderr log). Wait for your own
+// job's name: a script running several jobs prints several such lines.
 //
 // Wrap each job on its own: a shell script running several jobs holds the lock for the whole batch, so others wait
 // for all of it (a warning says so; --batch silences it when that is really meant). Never wrap it in `timeout`: the
@@ -70,9 +71,9 @@ async function main(argv: string[]): Promise<number> {
   if (warning) process.stderr.write(warning + "\n");
   const start = performance.now();
   const before = load();
-  const status = await runLockedAsync(argv, { kind, who: `with-lock ${name}`, cwd: process.cwd(), exclusive, done: name });
+  const status = await runLockedAsync(argv, { kind, who: `with-lock ${name}`, cwd: process.cwd(), exclusive, done: name, doneTo: "stderr" });
   process.stderr.write(`with-lock: ${argv.join(" ")}: exit ${status} after ${((performance.now() - start) / 1000).toFixed(0)} s (load ${before} → ${load()})\n`);
-  process.stdout.write(`EFSIM-DONE ${name} exit ${status}\n`);
+  process.stderr.write(`EFSIM-DONE ${name} exit ${status}\n`);
   return status;
 }
 

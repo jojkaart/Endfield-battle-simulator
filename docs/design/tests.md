@@ -197,7 +197,8 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   hold from one, hit-shown bleed ticks from the other).
 - **Long runs end with one line** `EFSIM-DONE <job> pass|fail`
   (snapshots, premerge, measure, verify-at, team-ab, smoke; with-lock
-  `EFSIM-DONE <name> exit <n>`, name from `--name`) and `EFSIM-DONE <job>
+  `EFSIM-DONE <name> exit <n>`, name from `--name`, on stderr since round
+  9, so a redirected stdout is the command's own output) and `EFSIM-DONE <job>
   killed` when a signal stops measure, snapshots, premerge, team-ab or
   with-lock (waiting included). premerge's "pass" comes only from its own
   end with every step passed (scripts/done-line.sh; round 5, after a
