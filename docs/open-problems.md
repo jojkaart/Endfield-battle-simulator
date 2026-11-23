@@ -1513,9 +1513,43 @@ keeps a listed buff to its listing's end.
   s, 9847 126.1 s: listed 0.39 / 0.36, the replay's 0.33 / 0.30): unchanged, the clock places too little in those 20 s
   windows (4360 1.1 s in all, 9847 2.8 s; one clock spans each unit).
 
+**More clocks (2026-11-23, docs/journal/2026-11-23-02-hold-clocks-enemy-statuses-and-corrosion-s-ramp.md):**
+- **The enemy's listed statuses** (holds.ts `statusBounds`): each Electrification, Corrosion or Breach the replay
+  without holds let run out, against the log's run of it (same applier, from its application ±3 s, not refreshed;
+  the enemy's side of every hit lists them, whatever the element): the last listed hit at least its lateness (±70 ms:
+  no holder's hits bracket a status), the next hit without it at most, but only for a status no team kit consumes
+  (d774's Electrification ends at Zhuang Fangyi's battle skill, not its clock). **d774 fixed:** Perlica's forced
+  Electrification (87.22 s, listed to 97.44 s, the replay's out at 96.6 s) asks 0.84 s; placed 0.83 s, the first
+  Sunderblade strike at 97.87 s now plain (12127), and all eight strikes land one for one with the log's (lead 4's
+  extra strike gone).
+- **Corrosion's ramp** (rampsteps.ts, `efsim zmdlogs ramp <fixture>`): every hit under Corrosion read at each step of
+  the replay's Corrosion (its level, applier's Arts Intensity, cap, carried shred); the steps whose damage fits the
+  logged value (±1; the primary reading, else the log's listing of the kit buffs) give the log's world time since its
+  application in whole seconds, against the replay's own world time there (its Corrosion's time at the landing, its
+  placed holds added back: the placement's stops lack an ultimate the replay places from its event, db87's Laevatain
+  at 16.60 s, which made a first version double-count 1.5 s). logcheck.ts `logBuffReplay` places the holds again with
+  these bounds (first and last hit per run of steps). A log listing no Corrosion (db87) takes the replay's. **db87:**
+  190 readings, 3 off the replay's step (was 24 of 186), plain 166 → 206, mismatch 59 → 18.
+- **The ramp inside a stop** (engine, timeline/clock.ts shiftEnemy, status.ts `rampElapsed`): a running Corrosion's
+  appliedAt moved past a stop at its start, so a hit inside the stop read a ramp younger by the rest of the stop
+  (4d60 73.65 s: Arcane's hit inside Zhuang Fangyi's ultimate stop read a level-4 Corrosion 2.6 s younger, 14.4 against
+  22.5 shred, logged step 4); now it stands at what it reached until the stop ends (ActiveStatus.rampHeld).
+- **What the ramp says against the other clocks:** 9847's tower boss (Gilberta's Corrosion from 126.1 s) allows 0.6–0.94
+  s of hold before 134.2 s and the Stagger after, where her Vulnerable spell run asks 1.76 s (dropped): the Vulnerable
+  stacks outliving 20 s there are **not** the world's hidden holds (10 hits ×0.975 at 138.5–139.6 s turned mismatch).
+- **The other direction is the replay's stops:** across the 28 development logs with Corrosion (3,553 readings:
+  scratch/rampprobe.ts in .claude/worktrees/agent-a282e2913f0921fbe), the replay's ramp runs behind the log's (needs a
+  hold below zero) on 146 readings, 139 of them with a combo slow-down in the window (f978 33, 3f78 26, 9c6e 25, a7a7
+  22, 4d60 20, 9a80 8, 4a64 4), against 669 that need a hidden hold:
+  the replay holds the ramp longer than the game across some combos (a combo pressed inside another's slow-down: 3f78,
+  4a64, a7a7's openers), which no hidden hold can undo. a7a7 (lead 3: Si's combo stop alone holds 0.53 s where the log
+  allows 0.42) is one of them: unchanged.
+
 **Still possible / open:**
 - Where in a window the holds fall: half the units are placed only to 3 s or worse; the least total misses dodges no
   clock sees.
+- Which combo slow-downs hold Corrosion's ramp less than the engine (above: 139 of the 146 over-held readings with a
+  combo in the window; most combo windows need no less).
 - **What else besides dodges** (holds a dodge can't be): 12 units fall in hitless spans of 3 s or more (0c14, 458b, a9d7,
   abfd, b6aa, c4f3, de6a: pauses the log's clock runs through, as 9c0b's and 4d60's); 9c0b's ~7.5 s after Laevatain's
   ultimate is placed only 3.9 s (its Forgeborn and Amp runs conflict, 7 dropped). Holds inside ultimates' stops: 489c's
@@ -1530,9 +1564,18 @@ keeps a listed buff to its listing's end.
   8.6–12.5 s (beyond 40%: a refresh?); her Vulnerable stacks outliving 20 s by 0.4–1.6 s on the tower bosses: within
   what dodges hold.
 
-**Next check:** test 111 (perfect dodges during Si's Amp, counted: whether the holds are dodges at all); Corrosion's
-listed ramp levels as a clock (d572's 68–76 s); Wolven Blood's layers on their own (Rossi's) clock; the Stagger's
-ticks across stops (489c).
+- **Rossi's Wolven Blood is not on a clock of its own** (2026-11-23): the data has no time scale of its own
+  (buff_wpn_sword_0022_final and _layer: onlyUseSelfTimeDilation and useTimeDilationDt false, as on Si's Amp); its
+  bounded runs last 19.5–20.8 s of world time under the placed casts' stops (d572 four, 2fd9, 99fb, 489c's second),
+  489c's first 21.9–22.3 s (the overlapping ultimates above). Its misfits are its start: the 16th layer. 489c's second
+  final is listed from 55.61 s, on a power attack the log gives no crit (and Rossi's next five hits none either: crit
+  null), so the replay (crit `never` there) reaches 16 layers at 59.5 s; d572's 9.89 / 79.87 s finals start 0.03–0.2 s
+  late in the replay. The replay's 0.1–0.2 s overhang at d572 30.0 s is that start. Next: crits a buff's listed layer
+  count shows (a layer more on the next hit), as shownCrits does for Seething Blood.
+
+**Next check:** test 111 (perfect dodges during Si's Amp, counted: whether the holds are dodges at all); the combo
+slow-downs that over-hold the ramp (3f78, 9c6e, a7a7, 4d60: which combo, pressed when); the Stagger's ticks across
+stops (489c).
 
 ## Laevatain's Twilight runs longer than its model (tests 17, 18, 21; 2026-11-22: her buffs' clock, not Twilight's)
 
@@ -2620,8 +2663,9 @@ time after the last Vulnerable add on another enemy.
   Corrosion logs the ramps mostly run 0.1–0.8 s behind the replay's
   (1cd1, 5082, 7910, 79cc, af7b, f879, f978, bdf2, b6aa), with or without an
   overlap. Exceptions run ahead: 3f78 and 4a64's openers (below, "3f78 and
-  4a64"). **Left:** the holds placed once for every timer (enemy statuses
-  among them) would take db87's ramp from the shared clock. Tool gap: the
+  4a64"). **Fixed 2026-11-23:** the ramp's steps are a clock of the hidden
+  holds ("The buff clock", More clocks): db87 plain 166 → 206, mismatch
+  59 → 18, 3 of 190 readings off the replay's step. Tool gap: the
   views on the placed casts' stops (`zmdlogs worldtime`, `lanes --world`,
   `cadence`) don't have an ultimate the replay places from its cast event
   only (db87's Laevatain at 16.60 s).
@@ -2674,10 +2718,10 @@ time after the last Vulnerable add on another enemy.
   times before Liino's combo stop where the log struck once, because the
   placement put her combo 0.6 s late (**fixed 2026-11-23**, logcasts.ts
   `ownStopLoggedFrame`: a hit inside its own cast's stop is logged at the
-  stop's end; every Liino combo in the logs shows it). Left: the replay
-  still strikes once more than the log before her ultimate (the log's world
-  holds 0.83 s between strikes 1 and 3, her combo's slow-down 0.61 s), and
-  the strikes' pairing with the Electrification fixed by the holds.
+  stop's end; every Liino combo in the logs shows it). **Fixed 2026-11-23 (the
+  enemy's statuses as clocks, "The buff clock"):** the Electrification's
+  run places 0.83 s of hold before 97.44 s; the first strike is plain
+  (12127) and the eight strikes land one for one with the log's.
 
 - Si's talent Haste after a burst without an Inksoul (2026-11-16): the
   data (only xianjing_linkline's finish and xianjing_inkboom create

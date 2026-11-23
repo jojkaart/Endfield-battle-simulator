@@ -2,8 +2,8 @@
 // `placed`): the least total hold the bounds allow, its earliest and latest placement, a conflicting bound dropped,
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
-import { holdWorld, FPS, type TimelineState } from "@efsim/engine";
-import { placeHolds, tickBounds, type HoldBound } from "@efsim/logs";
+import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
+import { placeHolds, rampBounds, statusBounds, statusLanes, tickBounds, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -64,5 +64,56 @@ describe("holdWorld", () => {
     expect(held.enemy.statuses[0]).toMatchObject({ expiresAt: 415, nextTickAt: 125, appliedAt: 65 });
     expect(held.comboWindow["a"]?.until).toBe(145);
     expect(held.sp).toBe(120);
+  });
+});
+
+describe("statusBounds", () => {
+  const hit = (t: number, since: number | null, boundary = false) => ({
+    t, operator: "x", event: "e", unquantified: [],
+    effects: since !== null && !boundary ? [{ buff: "buff_common_pulse_pulse_conduct_triggered_do", zone: "damageTaken", value: 0.1, source: "p", since }] : [],
+    boundaryEffects: since !== null && boundary ? [{ buff: "buff_common_pulse_pulse_conduct_triggered_do", zone: "damageTaken", value: 0.1, source: "p", since }] : [],
+  });
+  // Electrification from 1 s, the replay's ran out at 9 s (frame 270); the log lists it to 9.6 s, not at 9.8 s.
+  const fx = { hits: [hit(1000, 1000, true), hit(5000, 1000), hit(9600, 1000), hit(9800, null)] } as never;
+  const inst = [{ status: "electrification", operator: "p", start: 30, end: 270, expired: true }];
+
+  it("bounds the holds by a listed status's run against the replay's expiry, both ways where no kit consumes it", () => {
+    const b = statusBounds(inst, statusLanes(fx), [], new Set(), 0.4);
+    expect(b.map((x) => [x.a, x.b, Math.round(x.min), Math.round(x.max)])).toEqual([[1000, 9600, 530, Infinity], [1000, 9800, -Infinity, 1000]]);
+  });
+
+  it("only from below for a status a kit consumes (its log end may be the consumption)", () => {
+    const b = statusBounds(inst, statusLanes(fx), [], new Set(["electrification"]), 0.4);
+    expect(b).toHaveLength(1);
+    expect(b[0]?.max).toBe(Infinity);
+  });
+});
+
+describe("rampBounds", () => {
+  const step = (t: number, low: number, high: number, world: number, capped = false): RampStep =>
+    ({ hit: { t } as never, since: 1000, source: "a", level: 1, replayStep: low, low, high, capped, reading: "primary", world });
+  it("bounds P(hit) − P(since) by the world time the replay had less the log's steps", () => {
+    // 3.4 s of the replay's world time, the log at step 2: the log's world time is 2–3 s, so 0.4–1.4 s of hidden hold.
+    const [b] = rampBounds([step(4400, 2, 2, 3400)]);
+    expect(b).toMatchObject({ a: 1000, b: 4400, kind: "ramp" });
+    expect(b?.min).toBeCloseTo(400 - 70, 6);
+    expect(b?.max).toBeCloseTo(1400 + 70, 6);
+    // At the cap no bound from below.
+    expect(rampBounds([step(9000, 10, 10, 9000, true)])[0]?.min).toBe(-Infinity);
+  });
+});
+
+describe("Corrosion's ramp inside a stop", () => {
+  it("stands at what it had reached until the stop ends, then runs on from there", () => {
+    const corrosion = { status: "corrosion", level: 1, appliedAt: 0, expiresAt: 900, operator: "a", artsIntensity: 0 };
+    const st = { frame: 60, link: [], scheduled: [], enemyFrozenUntil: 0, enemyFrozenBy: {}, energyBlockedUntil: {}, comboWindow: {}, stagger: { until: null }, buffs: [],
+      enemy: { vulnerable: null, physical: [], controls: [], infliction: null, statuses: [corrosion] } } as unknown as TimelineState;
+    const held = holdWorld(st, 60, 45).enemy.statuses[0] as typeof corrosion;
+    // 2 s in when 1.5 s of stop begins: 2 s through the stop, 2.5 s half a second after it.
+    expect(rampElapsed(held, 60)).toBe(60);
+    expect(rampElapsed(held, 100)).toBe(60);
+    expect(rampElapsed(held, 120)).toBe(75);
+    const shred = (f: number) => statusModifiers({ ...st.enemy, statuses: [held] } as never, f).find((m) => m.zone === "ignoreResistance")?.value;
+    expect(shred(100)).toBeCloseTo(shred(60) as number, 9);
   });
 });
