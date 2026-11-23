@@ -490,13 +490,34 @@ function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h
  * replay placed. A hit outside its range says the placed holds miss the ramp there (`!`). `verbose`: every hit, not only
  * those where the log's step differs from the replay's or the placed hold falls outside.
  */
-export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean } = {}): string {
+export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: boolean } = {}): string {
   const placement = placeHits(data, fx);
   const { replay } = logBuffReplay(data, fx, placement);
   const steps = corrosionRamp(data, fx, placement, replay);
   const h = replay.hiddenHolds;
   if (steps.length === 0) return `${fx.id}: no hit under the log's Corrosion reads a step (none listed, no landing with the replay's Corrosion, or no step fits)`;
-  const lines = [`${fx.id}: ${steps.length} hits read Corrosion's ramp (steps: whole seconds of its world time; hold: P(hit) − P(since) in s, as the steps allow and as placed)`];
+  const lines = [`${fx.id}: ${steps.length} hits read Corrosion's ramp (steps: whole seconds of its world time; hold: P(hit) − P(since) in s, as the steps allow and as placed)${opts.why ? "; held: what held the replay's ramp from its application to the landing (time stops of the replay's casts, at their lowest scale; placed hidden holds; the rest: statuses created in a stop, the stop a reset cut, the frame grid; freezes run the ramp on)" : ""}`];
+  const stops = opts.why ? replayTimeStops(data, fx, placement) : [];
+  const heldText = (x: (typeof steps)[number]): string => {
+    if (!x.replay) return "";
+    const { applied, landing, elapsed } = x.replay;
+    const real = landing - applied;
+    const [a, b] = [Math.round((applied * FPS) / 1000), Math.round((landing * FPS) / 1000)];
+    // Each stop's share: the frames it is the lowest scale in, at 1 less that scale.
+    const share = new Map<string, number>();
+    for (let f = a; f < b; f++) {
+      let low: (typeof stops)[number] | null = null;
+      for (const st of stops) if (f >= st.start && f < st.start + st.scales.length && (low === null || (st.scales[f - st.start] as number) < (low.scales[f - low.start] as number))) low = st;
+      if (!low) continue;
+      const k = `${label(data, low.operator)} ${shortSkill(low.skillId)}@${s(msOf(low.start))}`;
+      share.set(k, (share.get(k) ?? 0) + msOf(1 - (low.scales[f - low.start] as number)));
+    }
+    const byStops = [...share.values()].reduce((t, v) => t + v, 0);
+    const holds = h ? h.holds.filter((y) => y.frame >= a && y.frame < b).reduce((t, y) => t + msOf(y.frames), 0) : 0;
+    const rest = real - elapsed - byStops - holds;
+    const parts = [...share].sort((p, q) => q[1] - p[1]).map(([k, v]) => `${k} ${s(v)}`);
+    return `; held ${s(real - elapsed)} s of ${s(real)}: stops ${s(byStops)}${parts.length ? ` (${parts.join(", ")})` : ""}, holds ${s(holds)}, rest ${s(rest)}${x.since !== Math.round(applied) ? `; the log's application ${s(x.since)}, the replay's ${s(applied)}` : ""}`;
+  };
   const by = new Map<string, typeof steps>();
   for (const x of steps) by.set(`${x.source}|${x.since}`, [...(by.get(`${x.source}|${x.since}`) ?? []), x]);
   for (const [k, list] of by) {
@@ -510,7 +531,7 @@ export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbos
       const outside = placed < lo - 70 || placed > hi + 70;
       if (!opts.verbose && !outside && x.replayStep >= x.low && x.replayStep <= x.high) continue;
       const steps = `${x.low}${x.high !== x.low ? `–${x.high}` : ""}${x.capped ? "+" : ""}`;
-      lines.push(`    ${s(x.hit.t)} ${label(data, x.hit.operator)} ${x.hit.event}: log step ${steps}, replay ${x.replayStep} (${x.reading}); hold ${Number.isFinite(lo) ? s(lo) : "−∞"}…${s(hi)}, placed ${s(placed)}${outside ? " !" : ""}`);
+      lines.push(`    ${s(x.hit.t)} ${label(data, x.hit.operator)} ${x.hit.event}: log step ${steps}, replay ${x.replayStep} (${x.reading}); hold ${Number.isFinite(lo) ? s(lo) : "−∞"}…${s(hi)}, placed ${s(placed)}${outside ? " !" : ""}${opts.why ? heldText(x) : ""}`);
     }
   }
   return lines.join("\n");

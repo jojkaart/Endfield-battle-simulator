@@ -181,6 +181,8 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
   efsim zmdlogs ramp <fixture>            Corrosion's ramp as the logged hits read it: per listed Corrosion, the
                                           hits whose fitting step differs from the replay's or whose placed hold
                                           falls outside what the steps allow (--verbose every hit)
+                [--held]                  Each reading with what held the replay's ramp since its application:
+                                          each time stop's share, the placed hidden holds, the rest
   efsim zmdlogs control <fixture>         Who the log shows controlled when (a basic hit with Stagger is the
                                           controlled operator's: controlledFromLog) and every cast, logged or
                                           inferred from hits, with who was controlled at its start; --operator
@@ -230,6 +232,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     buff: { type: "string", multiple: true, default: [] },
     world: { type: "boolean", default: false },
     why: { type: "string" },
+    held: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -258,7 +261,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     }
     if (sub === "ramp") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs ramp takes one fixture (a path or an id such as db87)");
-      return rampView(data(), readDevFixture(arg), { verbose: values.verbose });
+      return rampView(data(), readDevFixture(arg), { verbose: values.verbose, why: values.held });
     }
     if (sub === "holds") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14)");
