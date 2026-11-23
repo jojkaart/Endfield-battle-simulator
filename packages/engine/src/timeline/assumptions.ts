@@ -68,6 +68,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "combustion-snapshot",
+    question: "When does a Combustion take the attacker side its ticks deal with (DamageAction takeAtkSnapshot: ATK, DMG bonus, Amp; status.ts ActiveStatus.snapshot)? The enemy's side is read at each tick either way (timeline/advance.ts, the statusTick step).",
+    default: "last-tick",
+    readings: {
+      "last-tick": "at its application, then again at each tick for the next one: a tick deals with its owner's side as it was at the tick before (pending/zmdlogs-458b03609665.json, Wulfgard's Combustions: 85.70 s ×1.3 only, though Akekuri's ATK came at 84.37 s, then 86.69 s with it; 230.62 s with Akekuri's potential ATK the tick before lists, gone from its own listing; 232.58 s without) (2026-11-23)",
+      application: "at its application only (retaken after the triggers on its own reaction: c7790d76a4f0), the engine until 2026-11-23",
+    },
+  },
+  {
     id: "battle-sub-skills",
     test: "29",
     question: "Does a battle-type sub-skill's cast (SkillData normalSkillSubType 1: Si's Initial and Final Stroke, Liino's End Stance, Camille's, Mi Fu's and Purrchena's follow-ups) count as a battle-skill cast for triggers that listen by skill type (CheckSkillType [2]: Type 50 Yinglung's Edge, talents on a battle-skill cast)? Link isn't part of it.",

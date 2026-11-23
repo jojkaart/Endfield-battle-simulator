@@ -41,6 +41,24 @@ export function retakeCombustionSnapshots(st: TimelineState, events: readonly St
 }
 
 /**
+ * The Combustions that ticked in these status events, with their snapshot taken again now for the next tick (engine
+ * assumption combustion-snapshot, reading `last-tick`): a tick deals with its owner's attacker side as it was at the
+ * tick before (the first at the application's). pending/zmdlogs-458b03609665.json: Wulfgard's ticks at 85.70 s carry the
+ * Stagger's ×1.3 but not Akekuri's team ATK from 84.37 s (+0.28: the tick before was in her ultimate's stop and Laevatain's
+ * combo's), those at 86.69 and 88.33 s carry it, and that at 89.34 s doesn't (her potential's +0.10 gone by the 88.33 s
+ * listing); at 230.62 s the +0.10 is in the tick though its listing lacks it, the 229.58 s listing has it.
+ */
+export function retakeTickSnapshots(st: TimelineState, events: readonly StatusEvent[]): TimelineState {
+  let enemy = st.enemy;
+  for (const e of events) {
+    if (e.kind !== "combustionTick" || e.snapshot === undefined) continue;
+    const side = attackerSide(st, e.operator, e.frame);
+    enemy = { ...enemy, statuses: enemy.statuses.map((x) => (x.status === "combustion" && x.operator === e.operator && x.snapshot !== undefined ? { ...x, snapshot: side } : x)) };
+  }
+  return enemy === st.enemy ? st : { ...st, enemy };
+}
+
+/**
  * `cast`: the hit's cast, for buffs a cast consumed (they act on its hits
  * only). `snapshot`: the attacker-side modifiers taken at an earlier
  * application (attackerSide), used instead of the buffs' current ones in
