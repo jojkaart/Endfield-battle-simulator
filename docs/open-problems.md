@@ -539,7 +539,7 @@ Imprisonment early); then take Imprisonment's end from the log's
 natural-end cast in the replay, as the reaction levels are; Alesh's own
 ×0.85 on every hit in ad7f (his build).
 
-## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
+## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb; resistance 11, fixed 2026-11-23)
 
 (Ember is chr_0009_azrila; this entry called her Azrila before 2026-11-12.)
 
@@ -591,8 +591,33 @@ Mi Fu's and Rossi's ratio is 1.1125–1.1130 whatever their other zones.
 - The two factors (physical ×1.11, all-element ×1.044) being one term in
   different zones.
 
-**Next check:** a log with physical hits on this enemy from another
-player; Aurora's and Ember's builds.
+**Found and fixed (2026-11-23): the enemy's resistance is 11 for every
+element the logs have.** A log from another player on the same stage,
+parser v59 (game 1.6; the pair is v58, before 1.6), Rossi, Si, Arcane and
+Gilberta: fixtures/pending/zmdlogs-207fff414d82.json. Rossi's physical
+hits from the first (attack 4 at 4.7 s, no buff) are ×1.112, the same
+×1.1125; Si's Cryo and Arcane's and Gilberta's Nature hits are ×0.890
+from their first (zone 0.89 for 1.00). Its first check: 0 plain of 342,
+damage −12.4%. So not a player's build input, food, a game version or
+Ember: the live enemy has resistance 11 where the table (the base
+template's, attrTemplateId eny_0124_kltdcap, no attrModifiers) has
+physical 20 and 0 for the others. Its two born buffs
+(buff_eny_klcommon_mech, buff_eny_0121_klbud_tdcapeye) have no BuffData
+file in the data, the likeliest place. Now an enemy fact from the logs
+(packages/data/src/enemyFacts.ts `LOGGED_RESISTANCES`: physical, Nature,
+Cryo, Heat 11; Electric, which no log has, stays the table's 35).
+207f plain 0 → 102. **Builds:** with it Ember's hits are ×0.9389 in
+both logs; weapon level 80 alone fits 21 of 21 (2fd9) and 9 of 10 clean
+(99fb): a `buildOverrides` in both. Snowshine (chr_0014_aurora) ×0.590:
+weapon level 20 fits 14 of 20 clean (its skills [2, 1, 6]): 2fd9's
+override. Purrchena (level 1 in 99fb's export, ×2.47) stays: fit-build
+doesn't vary an operator's level.
+
+**Still possible:** what sets the 11 (the born buffs; Hard 15's own
+template is a uniform 12 and fits). Electric on this enemy (no log).
+Snowshine's 6 other clean misfits; Purrchena's level.
+
+**Next check:** a Hard 27 log with Electric hits (Electric 35 or 11).
 
 ## Hard 33's slug: debuffs the engine keeps don't act (7b54, 6339)
 
@@ -1894,8 +1919,37 @@ Corrosion levels (the log's now).
   sum) isn't computable; Rossi's Seething Blood extras after null-crit
   stabs need the stab's crit.
 
-**Next check:** the Will buffs' instances in 3f78; the hits at
-reactions' own milliseconds; why the first windows' hits miss in the check.
+**Found (2026-11-23):** the totals are no longer −36.5%: 3f78 −6.1%,
+4a64 +7.6% (the scoreboard's snapshots; the earlier rounds' fixes). **The
+first windows' ×1.012–1.014 is Corrosion's ramp one step ahead in the
+log**, not a level or a Will buff: read as a resistance step (level 1 at
+Arcane's Arts Intensity: 1.48 points, ×1.0138), every such hit is exactly
+one step past the replay's, every other hit between is plain at the
+replay's step (scratch/corrosion-lag.ts in the session's worktree). The
+replay holds the ramp too long across the opener: Corrosion at 1.33 s
+(3f78) and 4.52 s (4a64), then Gilberta's combo slow-down and Si's and
+Arcane's, both pressed inside Gilberta's (their cast events at its end:
+2.23 s, 5.41 s); the replay holds 0.93 s (3f78) and 0.91 s (4a64) at the
+lowest scale, the log's steps allow at most 0.73 s and 0.75 s (lag
+−0.2…−0.9 s and −0.17…−0.3 s through the window). The other direction
+from the hidden holds elsewhere (db87 above). Ruled out for these windows:
+the Corrosion level (the hits between steps fit it exactly), a team buff
+(Gilberta's, Si's, Arcane's and Rossi's hits move alike, by one shred
+step), food.
+
+**Still possible (the first windows):** Si's and Arcane's combos starting
+earlier inside Gilberta's stop than their hits place them (a combo pressed
+during another's slow-down: the placement doesn't hold a combo by
+another's, castStart), so their slow-downs overlap more; a combo's
+slow-down not holding the world while another's runs (the lowest-scale rule
+is per frame); the slow-down curves' ramps. Rossi's ultimate stabs at
+58.8–59.3 s ×2.7 and their Seething Blood extras ×2.1 in 3f78 are Rossi's
+crit reading ("Rossi: her bleed…"), not food.
+
+**Next check:** the same opener in other logs (a combo pressed in
+another's combo stop, a timer running across): whether the logs' holds
+fit an earlier start of the pressed combos; then the Will buffs' instances
+in 3f78's second window.
 
 ## The slow-down rule's reach (2026-11-11)
 
@@ -2410,11 +2464,37 @@ time after the last Vulnerable add on another enemy.
   at 18.62 s put inside her 73-frame cast). Plain 152 → 114: Arcane's level-4
   Corrosion shreds 20.9 instead of 17.6 Heat RES at 20.1 s (Camille's hits ×0.973
   low from 19 s), because her stop now overlaps Camille's combo slow-down
-  (16.70–17.20 s) and holds the ramp 0.5 s less. **Still possible:** overlapping
-  stops holding a Corrosion ramp for their sum (the engine takes the lowest scale,
-  T3); Camille's combo placed 0.5 s early; the old placement's fit a coincidence of
-  two errors. **Next check:** other Corrosion ramps across an ultimate stop that
-  overlaps a combo slow-down.
+  (16.70–17.20 s) and holds the ramp 0.5 s less. **Decided (2026-11-23): the
+  lowest scale stays; the 0.5 s is a hidden hold, not the stops' sum.** Read
+  from every db87 hit with the replay's Corrosion (the logged value ÷ the
+  primary as a resistance step, scratch/corrosion-lag.ts in the session's
+  worktree), the log's ramp runs behind the replay's by a growing amount:
+  0.11–0.45 s at 19.0–19.4 s, 0.26–0.47 s at 20.2–20.4 s, 0.51–0.63 s at
+  23.2–23.3 s, 0.57–0.72 s at 24.3–25.4 s. A sum would add Camille's 0.5 s at
+  once from 17.2 s and, at 22.0–22.9 s where Si's, Camille's and Laevatain's
+  combo slow-downs overlap, 0.60 s more (held 1.32 s summed against 0.72 s at
+  the lowest scale: scratch/stop-sum.ts): over 0.86 s by 23.3 s, above the
+  0.63 s the hits allow. A growth of 0.05–0.37 s over 20.4–23.3 s is what the
+  buff clock's hidden holds give (Si's Amp runs +2.49 s long in db87), and
+  the buff clock already rules the sum out for buffs (4f7e, 458b). Across the
+  Corrosion logs the ramps mostly run 0.1–0.8 s behind the replay's
+  (1cd1, 5082, 7910, 79cc, af7b, f879, f978, bdf2, b6aa), with or without an
+  overlap. Exceptions run ahead: 3f78 and 4a64's openers (below, "3f78 and
+  4a64"). **Left:** the holds placed once for every timer (enemy statuses
+  among them) would take db87's ramp from the shared clock. Tool gap: the
+  views on the placed casts' stops (`zmdlogs worldtime`, `lanes --world`,
+  `cadence`) don't have an ultimate the replay places from its cast event
+  only (db87's Laevatain at 16.60 s).
+- a7a7 after Liino's combo placement (2026-11-23, plain 386 → 351): her
+  first combo (hit 1 logged at 3.86 s) now starts at 3.0 s, its stop ending
+  before the Corrosion Arcane's battle skill forms (logged at 3.86 s, the
+  stop's end), so Si's combo stop (3.97–4.77 s) alone holds the ramp
+  0.53 s where the log allows at most 0.42 s; the old placement overlapped
+  the two stops (0.30 s): ×1.013 on 35 hits, 5.3–22 s. **Still possible:**
+  Si's combo, pressed during Liino's stop (its event at the stop's end),
+  started earlier; the Corrosion formed inside Liino's stop (the hit pinned
+  at its logged time, the stop's end, not its kit frame). The same knock-on
+  of the move in 4d60 (−6 plain), 9847 and c6d8 (−1), not traced.
 - d774's totals (2026-11-18): Zhuang Fangyi's ultimate at 102.17 s now starts
   2.6 s before its event (the same placement rule); her simulated total +11.3 →
   +15.4%, no verdict moved. Not looked into.
@@ -2438,9 +2518,26 @@ time after the last Vulnerable add on another enemy.
   s, logged at its end, 102.17 s) held the battle skill's strikes, which a
   buff on her deals (normal_skill_trigger_sword). 4d60 the same: the final
   at 157.42 s, her ultimate's logged end. The strikes are now on the
-  world's clock (KitHit.world). Left there: the log's strikes are ×1.39
-  the replay's from 97.87 s (the 8751 vs 12127 run; not looked into) and
-  the replay's strikes at 98.10 / 98.30 s fall in a 0.9 s logged gap.
+  world's clock (KitHit.world). **The ×1.39 (2026-11-23): an
+  Electrification the replay let expire.** The first strike's ×1.3858 is
+  exactly a consumed level-1 Electrification: the scale's conductCnt 1
+  (atk_scale + atk_up_per_conduct × 1: ×1.2) and one more layer each of
+  Lone Barge's consume DMG (+0.32) and Xiranflow (+0.15), DMG 3.037 →
+  3.507 (8751 × 1.2 × 3.507 / 3.037 = 12126; logged 12127). The log lists
+  Perlica's forced Electrification (since 87.22 s, P1's 8.75 s) to 97.44 s,
+  where the battle skill (event 97.24 s, its consumption at frame 6) takes
+  it: 9.61 s of world time against 8.75 s; the replay's ended at ~96.6 s
+  (no Electrification on Perlica's hit at 96.69 s). So the cause is the
+  buff clock's hidden holds on an enemy status ("The buff clock": the holds
+  placed once for every timer), not the strikes' zones. The remaining
+  ×1.342 on strikes 2–4 was the strikes' Amp marks: the replay struck 3
+  times before Liino's combo stop where the log struck once, because the
+  placement put her combo 0.6 s late (**fixed 2026-11-23**, logcasts.ts
+  `ownStopLoggedFrame`: a hit inside its own cast's stop is logged at the
+  stop's end; every Liino combo in the logs shows it). Left: the replay
+  still strikes once more than the log before her ultimate (the log's world
+  holds 0.83 s between strikes 1 and 3, her combo's slow-down 0.61 s), and
+  the strikes' pairing with the Electrification fixed by the holds.
 
 - Si's talent Haste after a burst without an Inksoul (2026-11-16): the
   data (only xianjing_linkline's finish and xianjing_inkboom create

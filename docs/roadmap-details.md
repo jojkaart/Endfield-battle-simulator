@@ -185,7 +185,9 @@ basic attacks, Purrchena's blocks; Liino's beats done 2026-11-13, 1d91's
 extra heal left);
 next the screened logs' leads ([open-problems.md](open-problems.md):
 what each has ruled out and what still stands; Rossi's ultimate ×1.081 in 2fd9 (9a80's fits since before 2026-11-22), Mi Fu ×1.11 in Hard
-27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
+27 (done 2026-11-23: the enemy's resistance 11, from a second player's log, 207f; Ember's and Snowshine's weapon levels
+fitted), the food logs' openers (3f78, 4a64: the replay holds Corrosion's ramp 0.2–0.3 s too long across Gilberta's,
+Si's and Arcane's combos; next the same opener elsewhere), Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
 eny_0134 logs' food in de6a (0c14's: Kunst Tube on all but Alesh, 2026-11-18); Yvonne −23% in 5082 and
 Ardelia's sheep ×1.407 in 791, both unmasked 2026-11-14), diagnosed in parallel (small
 models first, the owner's call 2026-11-11); then the favourites' kit
