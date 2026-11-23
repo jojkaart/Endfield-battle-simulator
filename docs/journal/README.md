@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-23: The hold-outs refreshed blind: the lane rules tested on them](2026-11-23-06-the-hold-outs-refreshed-blind-the-lane-rules-tested-on-them.md)
 - [2026-11-23: Crits from values, Combustion ticks from the tick before, landings batched at a stop's end](2026-11-23-05-crits-from-values-combustion-ticks-from-the-tick-before.md)
 - [2026-11-23: Improvement round 7: the placement explained, one stop list, measure's checks](2026-11-23-04-improvement-round-7-the-placement-explained-one-stop-list.md)
 - [2026-11-23: Wolven Blood's crits from its listed layers; Gilberta's tower-boss stacks from an instance buff's clock](2026-11-23-03-wolven-blood-s-crits-from-its-listed-layers-gilberta-s-tower.md)

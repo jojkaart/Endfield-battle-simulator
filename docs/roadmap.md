@@ -21,8 +21,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   for what a bound change moved, one stop-list rule under a test, measure
   `--variant`, the negative control in every measure, `--hits` against
   the snapshots' own code with the modifiers that moved, `ramp --held`,
-  the compiler's dropped dilations listed, `verify-at --test`; all 13
-  hold-outs lack the `since` the lane rules read, the lead's call); the
+  the compiler's dropped dilations listed, `verify-at --test`; the 13
+  hold-outs refreshed blind with `since` 2026-11-23, scripts/holdout-refresh.ts:
+  hold-out plain 74.0 → 77.6%, the placed holds confirmed there); the
   backlog ([2026-11-23-backlog-after-round-7.md](friction/2026-11-23-backlog-after-round-7.md),
   8 live points, the replay's run() refactor the largest) joins the next
   round once about five new reports have collected.
