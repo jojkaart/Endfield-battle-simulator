@@ -1569,7 +1569,7 @@ keeps a listed buff to its listing's end.
 - Liino's beats running fast (4d60 1.36 s for 1.5) are the other direction: not a hold.
 - Rossi's combo Crit DMG window both longer and shorter than the replay's; Gilberta's 5 s Susceptibility listed
   8.6–12.5 s (beyond 40%: a refresh?); her Vulnerable stacks outliving 20 s by 0.4–1.6 s on the tower bosses: within
-  what dodges hold.
+  what dodges hold (4360 fixed 2026-11-23: an instance buff's run as a clock; 9847 open, "Gilberta's Susceptibility").
 
 - **Rossi's Wolven Blood is not on a clock of its own** (2026-11-23): the data has no time scale of its own
   (buff_wpn_sword_0022_final and _layer: onlyUseSelfTimeDilation and useTimeDilationDt false, as on Si's Amp); its
@@ -1577,8 +1577,20 @@ keeps a listed buff to its listing's end.
   489c's first 21.9–22.3 s (the overlapping ultimates above). Its misfits are its start: the 16th layer. 489c's second
   final is listed from 55.61 s, on a power attack the log gives no crit (and Rossi's next five hits none either: crit
   null), so the replay (crit `never` there) reaches 16 layers at 59.5 s; d572's 9.89 / 79.87 s finals start 0.03–0.2 s
-  late in the replay. The replay's 0.1–0.2 s overhang at d572 30.0 s is that start. Next: crits a buff's listed layer
-  count shows (a layer more on the next hit), as shownCrits does for Seething Blood.
+  late in the replay. The replay's 0.1–0.2 s overhang at d572 30.0 s is that start. **Fixed 2026-11-23 (layerCrits):**
+  the log lists each layer with its start (`since`, one entry per layer and element), so n layers listed from a moment
+  are n crits there (abilityEvent 44: one layer per crit, any hit kind, Seething Blood extras and Lifts included); the
+  replay counts as crits that many of Rossi's crit-less hits at the moment, after the logged and shownCrits ones (all
+  of them when as many, else the largest when they stand apart ×1.4). Every crit flag of the operator hidden, over the
+  development logs: 956 of 973 inferred crits right (0.98; base rate 0.64); the listed starts moved to random other
+  moments of her hits (the negative control): 0.63, the base rate (scripts/probes/crits/layer-xval.ts; the test on 489c in
+  tests/buffreplay-fixtures.test.ts). 489c's final now starts at 56.73 s (the log's 55.61 s; 55.93 s before the hold
+  bounds below moved its bleed ticks); the 1.1 s left is two layers from bleed ticks the replay lands off the log's: the
+  47.13 s tick at 46.60 s, before the first final's end (46.60 s) clears the layers, and the 52.18 s tick not at all ("a
+  landing whose order the kit doesn't give"). Not crits: the bleed's pinning (ticksShownByHits). d572's
+  10.10 / 80.00 s finals (log 9.89 / 79.87 s) are one layer short from ~8 s on, with every crit logged and landed: not
+  crits; not traced. The count can't see crits at the cap (a layer at 16 replaces one) or on hits the log doesn't list
+  (4a64 18.78 s: six layers from a moment with four logged crits and four crit-less projectiles that don't fit crits).
 
 **Next check:** test 111 (perfect dodges during Si's Amp, counted: whether the holds are dodges at all); the combo
 slow-downs that over-hold the ramp (3f78, 9c6e, a7a7, 4d60: which combo, pressed when); the Stagger's ticks across
@@ -2617,7 +2629,7 @@ as listed (489c 30.02 / 92.31, d572 52.14 / 117.47 s). Of the 21
 ultimates whose Susceptibility is listed (11 logs), 18 now agree with the
 replay's stack count (a scratch census: her ultimate's listed value
 against the replay's latest Vulnerable add before it).
-**Open, 4360 and 9847 (0 / 1 against 2 / 3):** the stacks outlive 20 s.
+**Open, 4360 and 9847 (0 / 1 against 2 / 3; 4360 fixed 2026-11-23, below):** the stacks outlive 20 s.
 4360's 54.97 s ultimate lists 2 stacks 24.4 s after her last Lift (30.60
 s), 9847's 126.09 s 2 stacks 24.7 s after its last (101.43 s); 4360's
 116.00 s lists 3, so its 70.83 / 90.87 s stacks lasted past 113.40 s
@@ -2633,18 +2645,45 @@ ExtendBuff or PauseBuffTime names buff_physical_no_guard or its tag
 1075718177, whose only holder is buff_physical_no_guard); another buff
 counted by the tag (none applies it); the replay's Stagger (none between
 in 9847).
-**Still possible:** an enemy-side clock these bosses run slower than the
-world's (the same open question as their 18–20 s Stagger windows,
-above); the fight's unlogged holds (perfect dodges, 0.512 s each: "The buff
-clock", 2026-11-22), within which 0.4–1.6 s falls, though the holds placed
-from the logs' clocks (2026-11-23, `placed`) leave both counts as they were
-(4360 116.0 s 0.33 against 0.39, 9847 126.1 s 0.30 against 0.36: too few
-clocks in those windows to place that much); stops the engine holds shorter (the ComboSkill curve; four to six
-combos between in each case); the stack timer restarting on something
-the engine doesn't count. The end scatter shares a cause with the
-Stagger's (above).
-**Next check:** an upper bound: a log with her ultimate 21–30 s of world
-time after the last Vulnerable add on another enemy.
+**Found and fixed for 4360 (2026-11-23): the hidden holds, with a clock the
+replay had thrown away.** The windows' world time, counted again with
+today's placement (`zmdlogs worldtime`): 4360 90.88–113.42 s is 20.41 s
+(0.41 s past 20 s), 30.59–54.97 s 18.84 s (no longer open), 9847
+101.43–126.09 s 21.24 s (1.24 s past). Inside 4360's, Perlica's Arts DMG
+Taken (wpn_funnel_0008, enemy-side, 15 s) from 92.24 s is listed to
+108.27 s, 0.74 s of world time past the replay's expiry: a clock asking a
+hold there. Two rules had dropped it: loggedLaneEnds called the run
+refreshed because another run (from 104.92 s) starts inside it, though the
+two are listed side by side to 108.27 s (two instances of a stackingType 1
+buff, not a refresh); and runBounds took no instance buff
+(KitBuff.instances). Now a run is refreshed only when it stops being
+listed within 200 ms of the other's start; an instance buff's run is a
+clock where the log shows it apart (every replay application inside it has
+its own run, some run overlaps it and none ends within 1 s of it), it is
+the run nearest the instance, and it is at most 1 s late (Arcane's
+will_dmg / will_atk runs are refreshed in place with their start kept: 489c
+12.0 / 14.6 s, 9c0b 31.5 / 34.3 s end together; b6aa's from 2.1 s asks
+2.2 s, 4d60's from 10.8 s 7.7 s, which placed 11 s of holds there before the
+cap). The hold then placed (4360 0.68 → 1.37 s, a unit at 94.6 s) keeps
+the stacks: Gilberta's 116.0 s Susceptibility reads 3 (0.39, as listed;
+Avywenna's ultimate at 117.98 s under it was a mismatch, now plain:
+tests/buffreplay-fixtures.test.ts). So not an enemy-side clock (the same
+bosses' Perlica and Avywenna debuffs run +0.07 to +1.28 s late, the holds'
+size), not the stack timer, not the data (no time dilation on
+buff_physical_no_guard; its stackingType 8 shared timer is the engine's).
+**Still open: 9847 126.1 s** (0.30 against 0.36): the clocks place 0.51 s
+in its window (a unit at 103.6 s) and the next unit at 126.13–126.74 s,
+just after the ultimate; nothing listed asks the other 0.73 s before 126.09
+s. A clock the replay doesn't have yet: the Vulnerable count her listed
+Susceptibility shows (rate × (1 + 0.1 × stacks)), read as a bound on the
+holds since the last add (P(read) − P(add) ≥ the world time past 20 s, when
+the listed count is above the replay's); a bound builder for holds.ts. 9847's
+plain count is 300 (as before the ramp cap); its one new mismatch is
+Gilberta's attack 3 at 140.30 s (×0.975), from the moved holds.
+**Still open:** her 5 s Susceptibility listed 8.6–12.5 s (d572's runs 8.8
+s too: not the tower bosses'); holds.ts statusLanes keeps the old
+`refreshed` rule for the enemy's statuses (left alone in this branch: the
+bound builders there were another agent's).
 
 ## Smaller, not yet diagnosed
 
