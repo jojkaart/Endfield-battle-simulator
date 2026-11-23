@@ -58,6 +58,16 @@ export interface Shares {
   readonly matched: number;
   readonly replayOnly: number;
   readonly logOnly: number;
+  /** The one-sided landings by kind (TotalsShares.kinds, where the commit's code has them): never their operators or keys. */
+  readonly kinds?: readonly ShareKind[];
+}
+/** One kind of one-sided landings' share of a fight's logged total (packages/logs onesided.ts KindShare, as measure reads it). */
+export interface ShareKind {
+  readonly context: string;
+  readonly nature: string;
+  readonly skill: string;
+  readonly replay: number;
+  readonly log: number;
 }
 /** The negative control's count for one factor: chance matches among the judged hits (the test's own counting). */
 export interface NegativeCount {
@@ -113,7 +123,10 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
  * TotalPart, 2026-11-23 on; the same sums as enginecheck.ts totalsShares), so a --base before them has a side too.
  */
 function sharesOf(fx: any, own: any, replay: any, byHit: any, verdicts: any): Shares | undefined {
-  const pick = (x: any): Shares => ({ error: x.error, matched: x.matched, replayOnly: x.replayOnly, logOnly: x.logOnly });
+  const pick = (x: any): Shares => ({
+    error: x.error, matched: x.matched, replayOnly: x.replayOnly, logOnly: x.logOnly,
+    ...(Array.isArray(x.kinds) ? { kinds: (x.kinds as any[]).map((k): ShareKind => ({ context: k.context, nature: k.nature, skill: k.skill, replay: k.replay, log: k.log })) } : {}),
+  });
   if (own?.shares) return pick(own.shares);
   const t = logs.engineReport(data, fx, replay, byHit, verdicts).totals;
   if (!t?.parts) return undefined;

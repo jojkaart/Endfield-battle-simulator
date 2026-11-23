@@ -16,6 +16,7 @@ import { type AbsentLanding, type LogEffect, type LogFixture, type LogHit } from
 import type { BuffReplay, Fact, ReplayCastFacts } from "./buffreplay.ts";
 import type { Assumption } from "./assumptions.ts";
 import { isRecordedBurst, recordedBurst, replayRecord } from "./recordedburst.ts";
+import { kindShares, oneSidedLandings, type CountedLanding, type KeyShare, type KindShare, type OneSided } from "./onesided.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 
 /**
@@ -518,6 +519,8 @@ export interface TotalsComparison {
    * gets closer, by its replay-only side: 458b's Laevatain, two replay-only finisher landings).
    */
   readonly parts: readonly TotalPart[];
+  /** Every replay-only landing and log-only hit of the parts, classified by kind (onesided.ts: `zmdlogs totals --kinds`). */
+  readonly oneSided: readonly OneSided[];
 }
 
 /** One landing the simulated total counted (TotalsComparison.parts). */
@@ -673,19 +676,28 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   );
   const counted = new Set<LandedHit>();
   const parts: TotalPart[] = [];
+  const countedLandings: CountedLanding[] = [];
+  const uncounted = new Map<LandedHit, string>();
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
     const m = matched.get(l);
     const capped = cappedHit.get(l);
     // A landing of a logged hit counts wherever the replay put it; others only up to the log's end (a27b: the
     // killing blow landed 65 ms after the log's).
-    if ((l.frame > end && !m && !capped) || absent.has(l)) continue;
+    if ((l.frame > end && !m && !capped) || absent.has(l)) {
+      uncounted.set(l, absent.has(l) ? "absent" : "past the log's end");
+      continue;
+    }
     if (!m && !capped && isAway(l.frame)) {
       awayLeftOut++;
+      uncounted.set(l, "away");
       continue;
     }
     // A fight that ends in a kill has no HP left for a landing no logged hit stands for at the killing blow's frame or
     // after it (4360447193ac: Avywenna's four returning lances at the kill's 119.20 s, 0.29M, 6.5% of the fight).
-    if (kill !== null && !m && !capped && !fixedHit.has(l) && l.frame >= killFrame) continue;
+    if (kill !== null && !m && !capped && !fixedHit.has(l) && l.frame >= killFrame) {
+      uncounted.set(l, "after the kill");
+      continue;
+    }
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined || killing.has(m.hit) ? m.hit.value : Infinity);
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
@@ -694,6 +706,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     counted.add(l);
     const of = m?.hit ?? capped ?? fixedHit.get(l);
     parts.push({ operator: l.operator, skillId: l.skillId, hitId: l.hitId, frame: l.frame, damage, ...(of ? { logged: of } : {}) });
+    countedLandings.push({ landing: l, damage, ...(of ? { logged: of } : {}) });
     sim.damage += damage;
     if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
     add(sim.perOperator, l.operator, damage);
@@ -712,7 +725,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts };
+  const oneSided = oneSidedLandings(data, fx, c.replay, countedLandings, away, (l) => uncounted.get(l));
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts, oneSided };
 }
 
 /** A stretch with no logged hit at least this long is the enemy out of reach (engine assumption enemy-away). */
@@ -750,6 +764,10 @@ export interface TotalsShares {
   readonly awayLeftOut: number;
   readonly awaySeconds: number;
   readonly perOperator: readonly { readonly operator: string; readonly matched: number; readonly replayOnly: number; readonly logOnly: number; readonly shifts: number }[];
+  /** The replay-only and log-only shares by kind (onesided.ts kindShares: context, nature, skill kind): measure's hold-out aggregates read only these. */
+  readonly kinds: readonly KindShare[];
+  /** The same by operator and key (development views only: `zmdlogs totals --kinds`). */
+  readonly keys: readonly KeyShare[];
 }
 
 /** TotalsShares of one fight's totals (`hits` the fixture's logged hits). */
@@ -778,6 +796,7 @@ export function totalsShares(hits: readonly LogHit[], t: TotalsComparison): Tota
     awayLeftOut: t.away.leftOut,
     awaySeconds: t.away.windows.reduce((a, w) => a + (w.to - w.from) / 1000, 0),
     perOperator: [...ops].map(([operator, x]) => ({ operator, matched: pct(x.matched), replayOnly: pct(x.replayOnly), logOnly: pct(x.logOnly), shifts: pct(x.shifts) })).sort((a, b) => Math.abs(b.matched + b.replayOnly + b.logOnly + b.shifts) - Math.abs(a.matched + a.replayOnly + a.logOnly + a.shifts)),
+    ...kindShares(t.oneSided, L),
   };
 }
 

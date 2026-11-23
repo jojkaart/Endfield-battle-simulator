@@ -3,7 +3,7 @@
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs, sharesLines } from "../scripts/measure.ts";
+import { hitChanges, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs, sharesLines } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -65,6 +65,22 @@ describe("measure's totals by where the error lives", () => {
     expect(lines[2]).toBe("  holdout: 1 fight(s), |error| 10.0 → 10.0%, |matched| 1.0 → 1.0%, replay-only 12.0 → 12.0%, log-only 3.0 → 3.0%, one-sided 1 → 1");
     expect(lines.join("\n")).not.toMatch(/cccc/);
     expect(sharesLines(new Map(), split)).toEqual([]);
+  });
+
+  it("ranks the one-sided landings by kind per group, the hold-outs by kind only", () => {
+    const split = { development: new Set(["zmdlogs-bbbb11112222"]), holdout: new Set(["zmdlogs-cccc11112222", "zmdlogs-cccd11112222"]) };
+    const k = (context: string, nature: string, replay: number, log: number) => ({ context, nature, skill: "basic", replay, log });
+    const s = (kinds: ReturnType<typeof k>[]) => ({ error: 0, matched: 0, replayOnly: 0, logOnly: 0, kinds });
+    const after = new Map([
+      ["pending/zmdlogs-bbbb11112222.json", s([k("cast tail", "kit hit", 2, 0), k("twin like", "burst", 1, -1)])],
+      ["holdout/zmdlogs-cccc11112222.json", s([k("cast tail", "kit hit", 4, 0)])],
+      ["holdout/zmdlogs-cccd11112222.json", s([k("no cast", "tick", 1, 0), k("cast tail", "kit hit", 2, 0)])],
+    ]);
+    const lines = kindLines(after, split);
+    expect(lines.find((l) => l.startsWith("  development, by where they sit "))).toBe("  development, by where they sit (1 fight(s)): 2.00% (+2.00 / 0.00) cast tail; 2.00% (+1.00 / -1.00) twin like");
+    expect(lines.find((l) => l.startsWith("  holdout, by where they sit · nature "))).toBe("  holdout, by where they sit · nature (2 fight(s)): 3.00% (+3.00 / 0.00) cast tail · kit hit; 0.50% (+0.50 / 0.00) no cast · tick");
+    expect(lines.join("\n")).not.toMatch(/cccc|cccd/);
+    expect(kindLines(new Map([["pending/zmdlogs-bbbb11112222.json", { error: 0, matched: 0, replayOnly: 0, logOnly: 0 }]]), split)).toEqual([]);
   });
 });
 

@@ -68,7 +68,7 @@ import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
 import { compare, direction, GROUPS, groupOf, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
-import type { HitRow, MeasureAnswer, MeasureJob, NegativeCount, PerHit, Shares } from "./measure-worker.ts";
+import type { HitRow, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
@@ -363,6 +363,7 @@ async function main(argv: string[]): Promise<number> {
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
+      ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
     ];
@@ -399,6 +400,46 @@ export function sharesLines(after: ReadonlyMap<string, Shares>, split: Split, be
     const f = (k: "error" | "matched" | "replayOnly" | "logOnly") => `${b && b.n ? `${b[k].toFixed(1)} → ` : ""}${a[k].toFixed(1)}%`;
     out.push(`  ${g}: ${a.n} fight(s), |error| ${f("error")}, |matched| ${f("matched")}, replay-only ${f("replayOnly")}, log-only ${f("logOnly")}, one-sided ${b && b.n ? `${b.oneSided} → ` : ""}${a.oneSided}`);
   }
+  return out;
+}
+
+/** How many kinds per group kindLines shows. */
+const KIND_LINES = 8;
+
+/**
+ * The measured fights' one-sided landings by kind (Shares.kinds, packages/logs onesided.ts: where they sit, and where
+ * they sit · nature), as the mean % of a fight's logged total per scoreboard group: gross (replay-only + |log-only|),
+ * replay-only, log-only, largest gross first. The hold-outs' only view of which landings are one-sided: by kind, never
+ * a log, an operator or a key. With `before` each gross as before → after.
+ */
+export function kindLines(after: ReadonlyMap<string, Shares>, split: Split, before?: ReadonlyMap<string, Shares>, beforeLabel?: string): string[] {
+  if (![...after.values()].some((x) => x.kinds)) return [];
+  const agg = (m: ReadonlyMap<string, Shares> | undefined, g: string, by: (k: ShareKind) => string) => {
+    const xs = [...(m ?? new Map<string, Shares>())].filter(([k, x]) => groupOf(k, split) === g && x.kinds).map(([, x]) => x.kinds as readonly ShareKind[]);
+    const out = new Map<string, { replay: number; log: number }>();
+    for (const f of xs)
+      for (const k of f) {
+        const a = out.get(by(k)) ?? { replay: 0, log: 0 };
+        out.set(by(k), a);
+        a.replay += k.replay / xs.length;
+        a.log += k.log / xs.length;
+      }
+    return { n: xs.length, kinds: out };
+  };
+  const out = [`One-sided landings by kind (mean % of a fight's logged total: gross = replay-only + |log-only|, then replay-only / log-only; onesided.ts; zmdlogs totals --all --kinds for the development rows)${before ? `, gross ${beforeLabel ?? "base"} → measured` : ""}:`];
+  const ways: [string, (k: ShareKind) => string][] = [["where they sit", (k) => k.context], ["where they sit · nature", (k) => `${k.context} · ${k.nature}`]];
+  for (const g of GROUPS)
+    for (const [name, by] of ways) {
+      const a = agg(after, g, by);
+      if (!a.n) continue;
+      const b = before ? agg(before, g, by) : undefined;
+      const ranked = [...a.kinds].sort((x, y) => y[1].replay - y[1].log - (x[1].replay - x[1].log));
+      const line = ([k, v]: [string, { replay: number; log: number }]) => {
+        const was = b?.n ? b.kinds.get(k) : undefined;
+        return `${b?.n ? `${was ? (was.replay - was.log).toFixed(2) : "0.00"} → ` : ""}${(v.replay - v.log).toFixed(2)}% (+${v.replay.toFixed(2)} / ${v.log.toFixed(2)}) ${k}`;
+      };
+      out.push(`  ${g}, by ${name} (${a.n} fight(s)): ${ranked.slice(0, KIND_LINES).map(line).join("; ")}`);
+    }
   return out;
 }
 

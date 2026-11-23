@@ -11,7 +11,7 @@ import { exportHits, exportHitsParallel, filterRecords, formatRecord, type HitRe
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 import { gameDataCacheKey, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
-import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, type TotalsGroup, type ViewFilter } from "./views.ts";
+import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
 import type { TotalsShares } from "./enginecheck.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
@@ -209,7 +209,7 @@ export async function groupsCliReport(data: () => GameData, operator: string, se
  * the fixture are unchanged (as the hit records; not under another reading). Never a hold-out: their aggregates come
  * from measure.
  */
-export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void }): Promise<string> {
+export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly kinds?: boolean; readonly progress?: (line: string) => void }): Promise<string> {
   const files = selectedFiles(sel, "totals");
   const workers = opts.workers === undefined ? 1 : Number(opts.workers);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
@@ -237,6 +237,7 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
   const dev = new Set(split.development.map((d) => d.replace(/^zmdlogs-/, "")));
   const groupOf = (f: string): TotalsGroup => (isMultiTarget(f) ? "multi" : !resolve(f).startsWith(resolve(REPO_ROOT, LOG_DIRS.pending) + "/") ? "verified" : dev.has(fixtureLabel(f).replace(/^zmdlogs-/, "")) ? "development" : "earlier");
   const rows = files.map((f) => ({ short: shortId(fixtureLabel(f)), group: groupOf(f), shares: shares.get(f) as TotalsShares }));
+  if (opts.kinds) return totalsKindsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
   return totalsAllView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
 }
 

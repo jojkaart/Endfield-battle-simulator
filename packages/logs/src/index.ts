@@ -19,6 +19,7 @@ export * from "./buffreplay.ts";
 export * from "./recordedburst.ts";
 export * from "./reactioncheck.ts";
 export * from "./enginecheck.ts";
+export * from "./onesided.ts";
 export * from "./logcheck.ts";
 export * from "./hitexport.ts";
 export * from "./buildfit.ts";

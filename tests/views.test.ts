@@ -142,6 +142,8 @@ describe("zmdlogs totals --all", () => {
     const shares = (error: number, matched: number, replayOnly: number, logOnly: number) => ({
       logged: 1e6, error, matched, replayOnly, logOnly, awayLeftOut: 0, awaySeconds: 0,
       perOperator: [{ operator: "chr_0036_jsspsi", matched, replayOnly, logOnly, shifts: 0 }],
+      kinds: [],
+      keys: [],
     });
     const text = totalsAllView(data, [
       { short: "aaaa", group: "development", shares: shares(2, 1, 2, -1) },
