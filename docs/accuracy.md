@@ -25,7 +25,7 @@ commit, and how many logs got better or worse.
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 77.9% | 99.1% | 0.0% | 1.8% | 6 |
 | Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 65.4% | 80.2% | 14.8% | 8.6% | 19 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 74.0% | 91.7% | 6.4% | 10.8% | 7 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 77.6% | 92.1% | 6.3% | 10.6% | 8 |
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 58.5% | 79.2% | 17.8% | 8.4% | 12 |
 | All but the hold-outs | 61 | 29035 | 63.0% | 80.3% | 15.6% | 7.9% | 37 |
 

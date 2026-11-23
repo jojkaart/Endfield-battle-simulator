@@ -10,6 +10,7 @@
 //
 // Usage: node scripts/holdout-refresh.ts [--dry-run]
 //          --dry-run: fetch and refresh the temporary copies, write nothing back
+//          (about 45 s a fixture: the details are large; run it in the Bash tool's background mode)
 //        then `npm run snapshots:update` (the hold-out row of the scoreboard, aggregates only). Commit the refreshed
 //        files by their directory (`git commit -q -F scratch/msg.txt -- fixtures/holdout`); never `git status`,
 //        `git diff --stat` or `git show --stat` without excluding it (`-- . ':!fixtures/holdout'`): they name the files.
