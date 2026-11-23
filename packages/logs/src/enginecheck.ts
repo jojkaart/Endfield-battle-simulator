@@ -71,8 +71,33 @@ export function engineModels(names: TeamBuffNames, buff: string): boolean {
 /** The effects of a logged hit (inside it, or at its boundary) that the engine doesn't model and the log supplies: buffs no kit defines, not the timeline's statuses, not the hitter's food its panel has. */
 export function logOnly(data: GameData, fx: LogFixture, names: TeamBuffNames, hit: LogHit): { effects: LogEffect[]; boundary: LogEffect[] } {
   const h = withoutOwnFood(data, fx, hit);
-  const keep = (e: LogEffect) => !engineModels(names, e.buff);
+  const staged = listsGivers(fx);
+  const keep = (e: LogEffect) => !engineModels(names, e.buff) || (staged && stageStatus(e));
   return { effects: h.effects.filter(keep), boundary: h.boundaryEffects.filter(keep) };
+}
+
+/**
+ * An enemy status the log lists with no giver in a fixture that names the givers (since the 2026-11-16 refresh): the
+ * stage's, which no team member applies and the replay can't make, so the log supplies it like a buff no kit defines.
+ * The only ones in the development logs are Hard 27's Electrification (Arts DMG Taken +0.24 from ~20 s, renewed about
+ * every 20 s: 207fff414d82, 2fd915292bb7, 99fb3c35fda2; every one of their Electrifications, none in a team with an
+ * Electric operator), whose Arts hits read ×1.18 without it. Team-applied statuses carry their giver (3,497 of 3,505
+ * Electrifications the replay has: docs/open-problems.md, Arts Intensity). Stagger is the replay's own (loggedStaggerSteps).
+ */
+function stageStatus(e: LogEffect): boolean {
+  return (e.source === undefined || e.source === null) && /_triggered_do$|_corrupt_do$/.test(e.buff);
+}
+
+const giversListed = new WeakMap<LogFixture, boolean>();
+
+/** Whether a fixture's effects name their givers (imports and refreshes since 2026-11-16). */
+function listsGivers(fx: LogFixture): boolean {
+  let v = giversListed.get(fx);
+  if (v === undefined) {
+    v = fx.hits.some((h) => h.effects.some((e) => e.source !== undefined && e.source !== null));
+    giversListed.set(fx, v);
+  }
+  return v;
 }
 
 /** A reading of a logged hit through the engine's damage path: its damage, and what it takes for granted that the replay doesn't know. */
@@ -600,6 +625,14 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     const l = c.replay.landing(h);
     if (!("unknown" in l)) cappedHit.set(l, h);
   }
+  // The other landings of logged hits without a reading (Si's bursts, Fixed DMG) count at the replay's own damage, as
+  // that hit's part (TotalPart.logged): 0c14's burst at 40.33 s was a replay-only landing beside a log-only hit.
+  const fixedHit = new Map<LandedHit, LogHit>();
+  for (const h of fx.hits) {
+    if (primary.has(h) || h.uncapped !== undefined) continue;
+    const l = c.replay.landing(h);
+    if (!("unknown" in l) && l.fixed && !matched.has(l)) fixedHit.set(l, h);
+  }
   // The log's damage ends at its last hit, the kill's too when the fight ends in one (the log's total is the enemy's
   // HP): the replay's damage is summed to that moment as well, past its own HP if it gets there sooner, so both totals
   // and each operator's cover the same span (b7b3: capping the replay at Rhodagn's 2.29M stopped it at 17.0 s, 1 s
@@ -643,7 +676,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     else damage = l.exact;
     if (capped) damage = Math.min(damage, capped.value);
     counted.add(l);
-    const of = m?.hit ?? capped;
+    const of = m?.hit ?? capped ?? fixedHit.get(l);
     parts.push({ operator: l.operator, skillId: l.skillId, hitId: l.hitId, frame: l.frame, damage, ...(of ? { logged: of } : {}) });
     sim.damage += damage;
     if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
