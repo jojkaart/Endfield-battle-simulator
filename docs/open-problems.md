@@ -125,16 +125,76 @@ takeAtkSnapshot false).
   matched −7.5%, replay-only +6.2%), **db87 −4.5%** (Laevatain −9.0 / +4.9): not looked into.
 - **Over:** c83c +7.9% (Si's combo final at 56.73 s replay-only, 384k: the log has no final there), fc63 +6.8% (her
   95.1 and 96.5 s shots plain in the log, power shots with bursts in the replay: the replay's Hunting Arrows after her
-  hovering ultimate; 88.35 s a burst the replay doesn't land).
+  hovering ultimate, **fixed round 3**, item 12; 88.35 s a burst the replay doesn't land).
 - **Si's Artful Intent burst paths** as replay-only / log-only twins (c779 60.4 s burst_mark against the log's
-  inkmove_2, 4e36 35.9 against inkmark_projhit 36.8 s, 9a80 36.0 s a combo final 1.1 s off): "Si's Artful Intent bursts
-  that fit no reading".
+  inkmove_2, 4e36 35.9 against inkmark_projhit 36.8 s: **fixed round 3**, item 11; 9a80 36.0 s a combo final 1.1 s off,
+  open: below).
 - The hold-outs: 9.1 → 9.1% (2 better, 1 mixed); their error is one-sided landings (above), which no round-2 fix but
   the kill and the placement touched.
 
-**Next check:** an offsets screen as a command and a test (friction 2026-11-24 point 1), the hold-outs' one-sided
-share (placement: which kinds of landings are replay-only), Mi Fu's Crush stacks (2fd9), fc63's arrows after the
-ultimate.
+**Round 3 (2026-11-23, the one-sided landings by kind).** The view first: onesided.ts classifies every replay-only
+landing and log-only hit of a fight's totals by where it sits (a twin: an opposite-side landing of its operator within
+1.5 s, values within ×1.5 "like" or ×3 "other"; `unread`; `twin uncounted (<why>)`: a landing the totals left out;
+then a replay-only landing's cast: `no cast`, `cast unlogged`, `cast tail` / `head` / `gap` against its cast's logged
+landings; a log-only hit's: the replay's reason for no landing, for a status whether it was dealt within 5 s, by
+another operator, or not at all), its nature (kit hit, trigger hit, Fixed DMG, burst, reaction, tick, physical), its
+skill kind and flags (`stop`, `cut`, `next cast`, `end`, `away`). `efsim zmdlogs totals <fx> --kinds` lists a fight's,
+`zmdlogs totals --all --kinds` ranks them per group and by operator and key; measure's summary gives each group's
+means by kind, the hold-outs' only view (no log, operator or key). Before the fixes (development, earlier pending and
+verified but the stage logs and 9c6e, 54 fights: mean gross one-sided 4.70% of a fight): twin like 1.10%, a landing
+the replay didn't land 0.89%, cast tail 0.84%, no cast 0.70%; by operator and key: Zhuang Fangyi's Sunderblade strikes
+log-only (3aa6 −6.5%, d774 −4.6%, 4d60 −3.8%, 4bfc −1.4%), Si's Artful Intent bursts as twins (c779, 4e36), Typhoeus's
+bursts (fc63, 1d91), Rossi's Seething Blood extras without a cast (7 fights). The hold-outs' means: cast tail · kit
+hit 2.2%, twin like 2.3%, no cast 2.3% (no cast · Fixed DMG 1.0%: Si's bursts), fight end 2.8%.
+
+**Found and fixed (round 3):**
+10. **Zhuang Fangyi's Sunderblade variants unpinned.** strike_N / final_N are slotted by the variant with the most
+    landings (strike_9's frames 22, 28 … and final_9 73); another variant's hits were alternatives only where they fell
+    on a slot's frame, which an 8-blade cast's (23, 29 …, final 70) never do, so none was pinned and the logged strikes
+    took the replay's landings nearest in time: 3aa6 at 83.7–87.5 s matched a strike to final_8 (82,869 for 13,193) and
+    left the logged final (124,304) log-only. Now a variant's n-th landing of the key is the slot's n-th turn at its
+    own frame (logcasts.ts `Slot.at`, buffreplay.ts replayedCasts): the final lands on the logged final, exactly.
+    3aa6 −2.1 → −1.6% (plain 380 → 394), 4bfc and d774 closer per hit, 4d60, c6d8.
+11. **A trigger's alternative paths as twins.** Si's Artful Intent burst is one landing by one of two hits actions
+    (through the Inksoul, inkmove_2; as the mark, inkmark_projhit), the same damage (the record) either way; a log of
+    one path didn't take the replay's landing of the other (c779 60.37 s: the log's through an Inksoul the replay
+    lacked: its Final Stroke there is FORCED), and the replay's record can end 0.9 s from the game's (4e36). Now a
+    trigger's hits actions under complementary conditions share their events (buffreplay.ts `alternativeEvents`: Si's
+    burst, Typhoeus's arrow rain sub1 / sub2, Last Rite's phantom), and a recorded burst looks 60 frames either way.
+    The hold-outs 9.1 → 8.2% (1 better, 1 mixed; their "no cast · Fixed DMG" 1.0% gone).
+12. **Typhoeus's Barrage Array tick as a combo** (fc63). Her combo's field ticks 18 times every 1/3 s while the enemy
+    stands in it; across her own ultimate's stop (90.6–92.7 s: not taken out of its own cast's elapsed time) the 18th
+    tick at 94.26 s fell out of its cast's reach and was placed as a combo of its own, which the replay cast as the
+    hovering combo: its conversion gave three Hunting Arrows, so her 95.1 and 96.5 s shots (plain in the log, 14,064 and
+    8,876) were power shots with bursts. Now a detached series takes its next slot when its landing comes within the
+    slots' gap of the last one's (logcasts.ts `paced`). fc63 +6.8 → +3.3%; no other log moved.
+
+**Ruled out (round 3):** the hold-outs' log-only physical hits as landings the totals left out (after the kill, away:
+no `twin uncounted` among them); for Typhoeus's 5th shot's burst (bdf2, 9090), an ATK or attacker-side snapshot at the
+arrow: bdf2's combo tick at the burst's ms (+706 ms) lists Hovering ATK too, while the hover's end varies from before
++524 ms (9090 67.67 s, a combo tick without it) to after +706 ms (bdf2), every one past frame 15 (500 ms): the hover's
+end comes on her own clock, later than the data's frame 15 by a varying 0.03–0.2 s (hit-stop on a final strike?).
+
+**Still possible / left (round 3; `zmdlogs totals --all --kinds`):**
+- **Cast tails** (development 1.9%, hold-outs 2.3%): many small basic-attack tails (Si's attack 4, Mi Fu's hit_2, Rossi's
+  attack 4, Laevatain's ult_attack2: a dodge or a swap the log doesn't show, or a miss) and a few big ones (c83c Si's
+  combo final +5.0%, d774 Zhuang Fangyi's Empyrean strikes +4.4%, 7910 Tangtang's rogue wave +2.5%, fc63 Typhoeus's
+  first shots' bursts 40.4 and 84.5 s). Within a cast, a logged hit placed in the wrong slot leaves the other slot's
+  landing replay-only (scratch/misslot.ts: mean 0.18%, 9a80 6.6% Si's combo final against a slash, 7910 1.1%, a9d7
+  0.7%, a27b Mi Fu's attack 3 hit_2 against hit): slots by value as well as time, not built.
+- **Zhuang Fangyi's Sunderblade count** (4d60 −10.8% log-only): the replay's casts make 6 and 8 Sunderblades where the
+  log shows 8 and 9 (77.8 and 83.8 s), so the logged finals have no slot: her Sunderblade gains (a kit question).
+- **The hold-outs' log-only physical status hits** (2.45%, "no landing: a status the replay didn't deal near the logged
+  hit"): 2.08% of it none within 5 s (measure's split: no such status by anyone near, so a physical status the replay
+  never makes: a Lift, Knock Down, Crush, Breach or Shatter from an infliction or a Vulnerable count it lacks, not a
+  timing), 0.45% by another operator (in development 04d4's Ember shatters, which the replay deals as Catcher's,
+  1.6%).
+- **Rossi's Seething Blood extras** (no cast, 7 fights, 207f 1.9%, 4a64 2.0%): one per crit stab in the replay, fewer in
+  the log (207f 41.0–41.5 s): the crits the replay infers for her ultimate (`values`) or the extra's own condition.
+
+**Next check:** slots by value within a cast (9a80, 7910, a27b), Zhuang Fangyi's Sunderblade gains (4d60), the
+hold-outs' physical misses by the new split, an offsets screen as a command and a test (friction 2026-11-24 point 1),
+Mi Fu's Crush stacks (2fd9).
 
 ## Arts Intensity: what the logs settle and what they leave (2026-11-16)
 
@@ -2646,7 +2706,11 @@ From the kit check before simulating the team
     frame 15 (0.5 s): those hits plain → assumed ×1.09–1.13 (9090 −0.6 →
     −0.9%, bdf2 −0.1 → −0.7%). Ruled out: an ATK snapshot (the burst's
     BuffData buff_common_natural_natural_triggered_typhoea has
-    takeAtkSnapshot false). Still possible: floatingmode ends later than
+    takeAtkSnapshot false); an attacker-side snapshot at the arrow (2026-11-23,
+    scratch/shot5.ts: bdf2's combo tick at the burst's ms, +706 ms, lists
+    Hovering ATK too; the end varies from before +524 ms, 9090 67.67 s, to
+    after +706 ms, bdf2 15.60 s, always past frame 15: her own clock, e.g.
+    hit-stop on the final strike, "Fight totals" round 3). Still possible: floatingmode ends later than
     frame 15 after a controlled 5th shot; the 5th shot's burst isn't the
     10-frame enemy delay of shots 1–4 (0.7 s logged, 0.33 s kit) and reads
     the attacker's side at its arrow. Next: the five bursts' other zones

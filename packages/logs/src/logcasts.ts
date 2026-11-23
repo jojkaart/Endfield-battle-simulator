@@ -256,6 +256,8 @@ interface Slot {
   readonly hits: readonly KitHit[];
   /** The slots follow one of the key's variants (variantOrder): a cast may make fewer of them. */
   readonly variant?: true;
+  /** The other variants' hits at this slot (their landing of the same turn), each at its own frame in its cast. */
+  readonly at?: ReadonlyMap<KitHit, number>;
 }
 
 export interface LoggedCast {
@@ -286,6 +288,8 @@ export interface PlacedHit {
   readonly hits: readonly KitHit[];
   /** The slot's frame in its cast (absent when the key's landing order is unknown). */
   readonly frame?: number;
+  /** The slot's hits of other variants at their own frames (Slot.at): where one of them is the cast's, it lands there. */
+  readonly at?: ReadonlyMap<KitHit, number>;
   /** The same landing on another enemy (a fight against several in a single-target log): the logged hit whose landing it shares. */
   readonly sameAs?: LogHit;
 }
@@ -384,9 +388,21 @@ function slotsOf(g: Group, key: string): Slot[] | null {
     if (last && last.frame === l.frame && conditional(l.hit) && last.hits.every((x) => x !== l.hit && conditional(x))) last.hits.push(l.hit);
     else slots.push({ frame: l.frame, hits: [l.hit] });
   }
-  // The other variants' hits are alternatives where they land at a slot's frame.
-  for (const slot of slots) for (const h of order.others) if ((loggedFrames(h) as number[]).includes(slot.frame) && !slot.hits.includes(h)) slot.hits.push(h);
-  return order.others.length ? slots.map((x) => ({ ...x, variant: true as const })) : slots;
+  // The other variants' hits are alternatives in turn: a variant's n-th landing of the key is the cast's n-th logged one,
+  // at that variant's own frame (3aa6ab93bad4: an 8-Sunderblade cast's strikes at frames 23, 29…, its final at 70, against
+  // the slots of the 9-blade variant's 22, 28… 73: none fell on a slot's frame, so none was pinned, and the logged strikes
+  // took the replay's landings nearest in time, a final for a strike).
+  const at = slots.map(() => new Map<KitHit, number>());
+  for (const variant of order.others) {
+    const turns = variant.flatMap((h) => (loggedFrames(h) as number[]).map((frame, i) => ({ frame, hit: h, i }))).sort((a, b) => a.frame - b.frame || a.i - b.i);
+    turns.forEach((x, j) => {
+      const slot = slots[j];
+      if (!slot || slot.hits.includes(x.hit)) return;
+      slot.hits.push(x.hit);
+      (at[j] as Map<KitHit, number>).set(x.hit, x.frame);
+    });
+  }
+  return order.others.length ? slots.map((x, j) => ({ ...x, variant: true as const, ...((at[j] as Map<KitHit, number>).size ? { at: at[j] as Map<KitHit, number> } : {}) })) : slots;
 }
 
 /**
@@ -395,7 +411,7 @@ function slotsOf(g: Group, key: string): Slot[] | null {
  * hits are only alternatives at its frames (3aa6ab93bad4: final_1 at frame 32, between strike_9's 27 and 33, took a
  * cast's second strike, so its seven strikes went to three casts). Without such variants every hit is slotted.
  */
-function variantOrder(hits: readonly KitHit[]): { slotted: readonly KitHit[]; others: readonly KitHit[] } {
+function variantOrder(hits: readonly KitHit[]): { slotted: readonly KitHit[]; others: readonly (readonly KitHit[])[] } {
   const byStack = new Map<string, Map<string, KitHit[]>>();
   // A stack range as a requirement or as the hit's whole condition.
   const rangeOf = (h: KitHit): { stack: string; atLeast?: unknown; below?: unknown } | null => {
@@ -412,13 +428,18 @@ function variantOrder(hits: readonly KitHit[]): { slotted: readonly KitHit[]; ot
     byStack.set(r.stack, ranges);
   }
   const others = new Set<KitHit>();
+  const variants: KitHit[][] = [];
   for (const ranges of byStack.values()) {
     if (ranges.size < 3) continue; // two ranges are alternatives at one frame (an arrow or none)
     const count = (list: readonly KitHit[]) => list.reduce((a, h) => a + (loggedFrames(h)?.length ?? 0), 0);
     const best = [...ranges.values()].reduce((a, b) => (count(b) > count(a) ? b : a));
-    for (const list of ranges.values()) if (list !== best) for (const h of list) others.add(h);
+    for (const list of ranges.values())
+      if (list !== best) {
+        for (const h of list) others.add(h);
+        variants.push(list);
+      }
   }
-  return { slotted: hits.filter((h) => !others.has(h)), others: hits.filter((h) => others.has(h)) };
+  return { slotted: hits.filter((h) => !others.has(h)), others: variants };
 }
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
@@ -552,7 +573,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // targets, two hits per Typhoeus shot, were two shots each, which ended her hovers early): the same slot.
         if (cur && used && h.t === cur.last.t) {
           const slot = cur.slots?.[cur.index];
-          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame } : {}), sameAs: cur.last });
+          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last });
           continue;
         }
         // An ultimate isn't cast again within its own action: a landing of its key within the skill's duration is the same
@@ -560,12 +581,18 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // at random, so off their slots' frames, made three casts from 41880 to 45866 ms, around her combo's bomb;
         // af7b7f865906: five sheep, four casts, around her attack 3 at 59.7 s).
         const sameUltimate = cur !== undefined && cur.cast.kind === "ultimate" && (cur.slots === null || cur.index + 1 < cur.slots.length) && worldMs(cur.cast.start, h.t, others) <= cur.longest + CAST_SLACK_MS;
-        if (cur && !used && (sameUltimate || (!superseded && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome)))) {
+        // A series of landings on their way (detached: a field's ticks) goes on at its own pace, however long its pauses
+        // made it: the next slot's landing within its gap from the last one's (ON_TIME_MS) is the same cast's
+        // (fc63a2001251: Typhoeus's Barrage Array, 18 ticks from 81.47 s, its 18th at 94.26 s after her ultimate's stop,
+        // 0.34 s after the 17th, was placed as a combo of its own, whose hovering conversion gave three Hunting Arrows).
+        const atSlot = cur?.slots?.[cur.index];
+        const paced = cur !== undefined && next !== undefined && atSlot !== undefined && next.hits.every((x) => x.detached) && worldMs(cur.last.t, h.t, others) <= msOf(next.frame - atSlot.frame) + ON_TIME_MS;
+        if (cur && !used && (sameUltimate || (!superseded && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) {
           cur.index++;
           cur.last = h;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;
-          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame } : {}) });
+          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}) });
           continue;
         }
         const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
@@ -610,7 +637,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
         current.set(h.event, { cast, first: h.t, last: h, index: 0, span, longest, slots: s, exact: exactSlots(g, h.event) });
-        placed.set(h, { cast, index: 0, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame } : {}) });
+        placed.set(h, { cast, index: 0, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}) });
       }
       return placed;
     };
@@ -702,7 +729,8 @@ function realignUltimates(placed: Map<LogHit, PlacedHit>, slotsOf: (c: LoggedCas
     list.forEach((h, i) => {
       const p = placed.get(h) as PlacedHit;
       const slot = s[at[i] as number] as Slot;
-      placed.set(h, { ...p, index: at[i] as number, hits: slot.hits, frame: slot.frame });
+      const { at: _at, ...rest } = p;
+      placed.set(h, { ...rest, index: at[i] as number, hits: slot.hits, frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) });
     });
   }
 }

@@ -154,11 +154,16 @@ export default command({
                                           (default 10)
                 [--by event]              Instead: the parts per operator and logged event (matched, replay-only
                                           by skill and hit, log-only), largest |share| first
+                [--kinds]                 Instead: every replay-only landing and log-only hit, largest first, with
+                                          its kind (onesided.ts: where it sits, nature, skill kind, flags) and twin
   efsim zmdlogs totals --all | <fixture…>  Every fight's total error split into matched / replay-only / log-only
                                           shares of its logged total, largest |error| first, with the operators
                                           carrying it and each group's means (hold-outs: measure's summary only)
                 [--workers n] [--operator <op>] [--top n] [--no-cache]  Threads; only fights with these operators;
                                           operators per row (default 3); recompute what scratch/hits-cache holds
+                [--kinds]                 Instead: the one-sided landings ranked by kind (where they sit, nature,
+                                          skill kind) per group, then by operator and key (hold-outs: measure's
+                                          summary, by kind only)
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
                                           windows and where the engine's own would have ended; with several logs
                                           (default: every development log) a summary of the shortfalls
@@ -275,6 +280,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     zones: { type: "boolean", default: false },
     by: { type: "string" },
     differ: { type: "boolean", default: false },
+    kinds: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
@@ -383,10 +389,10 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
-      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
-      if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event, --assume id=reading), or several / --all for the table of every fight (--workers n)");
+      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), kinds: values.kinds, progress });
+      if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
       if (values.by !== undefined && values.by !== "event") throw new Error("--by takes event");
-      return totalsView(data(), readDevFixture(arg), { operators, ...top, assume: parseAssume(data(), values.assume), byEvent: values.by === "event" });
+      return totalsView(data(), readDevFixture(arg), { operators, ...top, assume: parseAssume(data(), values.assume), byEvent: values.by === "event", kinds: values.kinds });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
     if (sub === "stops") {

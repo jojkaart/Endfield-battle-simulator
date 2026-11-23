@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 134 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 135 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -40,6 +40,48 @@ dilation index through the stop lists and the record (the other agent's files), 
 
 **Problems:** this round's own agent typed a multi-line `git commit -m` with escaped code spans after building the
 guard (intact by luck): the reason the hook, not prose, is the answer.
+
+## 2026-11-23: Fight totals 3: the one-sided landings by kind, Sunderblade variants, Si's burst paths, the Barrage Array's pace
+
+**Goal:** the totals' error is mostly one-sided (12 of 13 hold-outs: replay-only 7.3%, log-only 6.2%, |matched|
+2.5%): classify every one-sided landing by kind, rank the kinds, fix the largest shared ones.
+
+**Done** (docs/open-problems.md "Fight totals", round 3, items 10–12):
+- **The view.** packages/logs/src/onesided.ts: each replay-only landing and log-only hit by where it sits (twin like /
+  other: an opposite-side landing of its operator within 1.5 s; unread; twin uncounted; its cast's logged landings:
+  no cast, cast unlogged / tail / head / gap; the replay's reason for no landing, a status's split by dealt within 5 s,
+  by another operator, not at all), nature, skill kind and flags (stop, cut, next cast, end, away).
+  `efsim zmdlogs totals <fx> --kinds`, `totals --all --kinds` (per group, then by operator and key); measure's summary
+  "One-sided landings by kind" (each group's means, the hold-outs' only view, never a log, operator or key).
+- **Zhuang Fangyi's Sunderblade variants in turn.** Another variant's hits were slot alternatives only at a slot's
+  frame, which an 8-blade cast's never are: nothing pinned, strikes matched by time, a final for a strike (3aa6 87.5 s).
+  Now a variant's n-th landing is the slot's n-th turn at its own frame (logcasts.ts `Slot.at`).
+- **A trigger's alternative paths, one landing.** Si's Artful Intent burst through the Inksoul or as the mark (and
+  Typhoeus's arrow rain sub1 / sub2, Last Rite's phantom): a logged hit of one path takes the replay's landing of the
+  other (buffreplay.ts `alternativeEvents`), a recorded burst within 60 frames (c779, 4e36).
+- **A detached series at its own pace.** Typhoeus's Barrage Array's 18th tick, after her own ultimate's stop, was a
+  combo of its own whose hovering conversion gave three Hunting Arrows (fc63 95.1, 96.5 s power shots the log hasn't):
+  the next slot's landing within the slots' gap of the last one's is the same cast's (`paced`).
+
+**Scoreboard** (`npm run snapshots:update`): development plain 67.1%, matched 83.4%, mismatch 11.7%, mean |damage
+error| 7.3 → 7.2%, within 5% 24 → 25; hold-out 77.5%, 91.8 → 91.9%, 6.2%, 9.1 → 8.2% (1 better, 1 mixed, 2 other);
+earlier pending 62.7 → 63.0%, 84.9 → 85.2%, 14.8 → 14.5%, 4.9 → 4.8%; verified unchanged; all but the hold-outs 5.9 →
+5.8%, within 5% 48 → 49. Better: fc63 +6.8 → +3.3%, 3aa6 −2.1 → −1.6% (plain 380 → 394), 4d60, c6d8; mixed, closer per
+hit: 4bfc −1.6 → −1.7% (plain 773 → 787), d774 +3.7 → +3.8% (plain 365 → 372; the 0.1 pt not looked into);
+other: 04d4 (a Purrchena hit fallback → assumed), 4e36 (Si's per-operator total 1.9 → 1.6%). The one-sided gross
+(development, earlier, verified, the stage logs and 9c6e aside) 4.70 → 4.15% of a fight before the Barrage Array fix.
+
+**Decisions:** the classification lives in fightTotals' result (TotalsComparison.oneSided), so the totals and the kinds
+can't disagree; the hold-outs' kinds only as group means in measure. No engine or kit change (team-ab not needed).
+Value-aware slots within a cast (9a80's Si combo final placed on a slash: 6.6%) measured as a scratch count first
+(scratch/misslot.ts: mean 0.18% of a fight), not built: one fight carries most of it.
+
+**Left:** cast tails (development 1.9%, hold-outs 2.3%: basic attacks cut by inputs the log doesn't show, a few big
+ones), Zhuang Fangyi's Sunderblade count in 4d60, the hold-outs' log-only physical status hits (2.45%), Rossi's
+Seething Blood extras, Typhoeus's 5th-shot Hovering ATK (narrowed: no snapshot, the hover's end varies 0.52–0.71 s).
+
+**Problems:** two multi-line `python3 -c` and two heredocs typed from habit (friction report); `zmdlogs totals --all`
+can't show one fight's kinds, so the analysis needed a JSONL dump script (scratch/onesided-dump.ts).
 
 ## 2026-11-23: Fight totals 2: an all-fights view, kills from capped hits, missing foods, Typhoeus's shots
 
@@ -348,47 +390,3 @@ code-only commit printed "no hit's verdict changed" for a moved log: hold-clocks
 **Problems:** friction.ts carry put the carried-from note in the middle of a wrapped From line (fixed). Two empty
 heredocs typed from habit (not refused); a chained `&& git commit` ran after a typecheck error piped through `head`
 (amended).
-
-## 2026-11-23: Wolven Blood's crits from its listed layers; Gilberta's tower-boss stacks from an instance buff's clock
-
-**Goal:** two leads from docs/journal/2026-11-23-02-hold-clocks-enemy-statuses-and-corrosion-s-ramp.md: Rossi's Wolven
-Blood starting late where the log gives her hits no crit (489c's 16th layer at 55.61 s, the replay's at 59.5 s), and
-Gilberta's Vulnerable stacks outliving 20 s on the tower bosses (4360 116.0 s, 9847 126.1 s; 9847 310 → 300 from the
-ramp cap).
-
-**Done (open-problems "The buff clock" Wolven Blood bullet, "Gilberta's Susceptibility"):**
-- buffreplay.ts `layerCrits`: a trigger on its operator's crits that adds a layer of a buff the log lists with its start
-  adds one per crit, so n layers listed from a moment (`listedStarts`: entries with that `since` over the entry kinds)
-  are n crits there, after the logged and shownCrits ones: all the crit-less hits there when as many, else the largest
-  standing apart ×1.4 (CRIT_APART, shared with shownCrits). Cross-validation with every flag of the operator hidden
-  (development logs; Rossi, Chen's and Yvonne's crit sets too): 956 of 973 right (0.98, base rate 0.64); the listed
-  starts moved to random moments of her hits (negative control): 0.63. Both in tests/buffreplay-fixtures.test.ts on 489c.
-- loggedLaneEnds: a run is refreshed only when it stops being listed within 200 ms of the other's start (runs listed side
-  by side are two instances). runBounds: an instance buff's run (KitBuff.instances, excluded before) is a clock where the
-  log shows it apart (`runApart`: each replay application inside it has its own run, some run overlaps it, none ends
-  within 1 s of it), it is the run nearest the instance (`nearestRun`), and it is at most 1 s late (INSTANCE_LATE_MS).
-  4360: Perlica's Arts DMG Taken from 92.24 s, 0.74 s late, places a hold that keeps the 90.87 s stacks: Gilberta's
-  116.0 s Susceptibility reads 0.39 (3 stacks), Avywenna's ultimate under it plain.
-- Scoreboard (`npm run snapshots:update`): development plain 64.4 → 64.9%, mismatch 15.2 → 15.0%, mean |damage error|
-  9.3 → 8.8%, within 5% 16 → 17; hold-outs unchanged; earlier pending 57.3 → 57.7%, 18.4%, 8.0 → 8.3% (0c14); all but the
-  hold-outs 61.9 → 62.3%, 16.1 → 15.9%, 8.1 → 7.9%. Rossi 39.8 → 41.8% plain. Development 11 better (489c 517 → 546,
-  mismatch 57 → 38; 207f 106 → 121; 5082 damage −18.1 → −2.1%), 3 worse: 4a64 (150 → 140: the Wolven Blood runs moved
-  the placed holds, Corrosion read a step ahead at 16.8 s and Gilberta's Pursuit lost at 28.3 s), 9847 (one mismatch,
-  Gilberta's attack 3 at 140.3 s, the moved holds), 9a80 (damage 0.5 → 1.4%); 0c14's total +16.4 → +26.1% (Rossi's own
-  −10.8 → +1.6%, Si's +14.1 → +21.9%: her replay-only Artful Intent burst records Rossi's larger damage). No engine or kit
-  change: the simulated fights are the same (team-ab not run).
-
-**Decisions:** the crit count only adds crits (at 16 layers a new one replaces one; the listing undercounts there). An
-ambiguous moment is left alone unless the largest stand apart: the hit's own verdict tries both crits anyway, what matters
-is the count. Instance buffs as clocks only with the log's evidence that the run is an instance of its own: Arcane's
-will_dmg / will_atk runs keep their start through refreshes (489c, 9c0b: overlapping runs end together; b6aa, 4d60:
-lone runs 2–8 s late; 4d60 placed 11 s of holds before the 1 s cap). holds.ts statusLanes keeps the old refresh rule
-(another agent's file).
-
-**Dead ends:** instance buffs allowed wholesale (489c plain 517 → 475: Arcane's refreshed runs asked 2.6 s of holds);
-the per-buff independence test (9c0b's will_dmg passed it); without the nearest-run rule 489c's 12.0 s instance paired
-with the 14.6 s run.
-
-**Left:** 9847 126.1 s (0.30 against 0.36): no listed clock asks the 0.73 s more before the ultimate; Gilberta's listed
-Susceptibility as a Vulnerable-count clock (a holds.ts bound builder). 489c's final 1.1 s late from two bleed ticks the
-replay lands off the log's (ticksShownByHits), d572's one layer short from ~8 s with every crit logged.

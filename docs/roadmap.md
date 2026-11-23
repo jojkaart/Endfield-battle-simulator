@@ -68,8 +68,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   kit, Hard 27's stage Electrification: development 8.7 → 8.1%, hold-out 10.2 → 9.1%, earlier 8.1 → 5.3%; round 2
   2026-11-23: `zmdlogs totals --all`, build offsets fitted in seven logs (a9d7's and d9e5's missing foods), kills from a
   capped last hit, an ultimate's slots by time, Typhoeus's 4th shot: development 8.1 → 7.3%, earlier 5.3 → 4.9%,
-  hold-out 9.1%, one-sided; next an offsets screen as a command and test, the hold-outs' one-sided landings, 2fd9's
-  Crush stacks); Arcane's misses grouped (2026-11-18: 908 → 866;
+  hold-out 9.1%, one-sided; round 3 2026-11-23: the one-sided landings by kind (`zmdlogs totals --kinds`, measure's
+  hold-out means by kind), Zhuang Fangyi's Sunderblade variants in turn, Si's burst paths one landing, Typhoeus's
+  Barrage Array at its pace: hold-out 9.1 → 8.2%, development 7.3 → 7.2%, earlier 4.9 → 4.8%; next slots by value
+  within a cast, Zhuang Fangyi's Sunderblade gains, the hold-outs' physical misses, an offsets screen, 2fd9's Crush
+  stacks); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds

@@ -12,11 +12,12 @@
 
 import {
   activeAt, advance, allActions, ENGINE_ASSUMPTIONS, holdWorld, ownHitsLanded, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
-  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type Predicate, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
+  type ActiveBuff, type GameData, type KitBuff, type KitHit, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type Predicate, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
+import { isRecordedBurst } from "./recordedburst.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { loggedStagger, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { REPLAY_EDGE_MS, replayRecorder, type AppliedStop, type BuffTrace, type Change, type KitWindow, type ReplayRecord, type StatusTrace } from "./replayrecord.ts";
@@ -24,6 +25,41 @@ import { HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, st
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
 const NEAR_FRAMES = 16;
+/** The same for a recorded burst (Si's Artful Intent: one per record, at most one in 20 s), whose record's end can be the replay's own. */
+const RECORDED_NEAR_FRAMES = 60;
+
+/** Whether two conditions are each other's complement: X and {not: X}, or a stack's `atLeast a` and `below a`. */
+function complementary(a: unknown, b: unknown): boolean {
+  const j = (x: unknown) => JSON.stringify(x);
+  const not = (x: unknown) => (typeof x === "object" && x !== null && "not" in x ? (x as { not: unknown }).not : undefined);
+  if (a === undefined || b === undefined) return false;
+  if (j(not(a)) === j(b) || j(not(b)) === j(a)) return true;
+  const range = (x: unknown) => (typeof x === "object" && x !== null && "stack" in x ? (x as { stack: unknown; atLeast?: unknown; below?: unknown }) : null);
+  const [x, y] = [range(a), range(b)];
+  if (!x || !y || x.stack !== y.stack || Object.keys(x).length !== 2 || Object.keys(y).length !== 2) return false;
+  return (x.atLeast !== undefined && x.atLeast === y.below) || (y.atLeast !== undefined && y.atLeast === x.below);
+}
+
+/**
+ * A trigger's hits whose actions are alternatives (two `hits` actions of one trigger under complementary conditions:
+ * Si's Artful Intent burst through the Inksoul or as the mark, Typhoeus's arrow rain's sub1 / sub2, Last Rite's
+ * phantom controlled or not), each with the events of both: one landing, by one path or the other, so a logged hit of
+ * one path takes the replay's landing of the other (c779 60.37 s: the log's burst through an Inksoul the replay
+ * hadn't, which landed the mark's; the damage is the record's either way).
+ */
+function alternativeEvents(kit: OperatorKit): ReadonlyMap<KitHit, readonly string[]> {
+  const out = new Map<KitHit, readonly string[]>();
+  for (const t of kit.triggers) {
+    const actions = allActions(t.do).filter((a): a is Extract<typeof a, { kind: "hits" }> => a.kind === "hits");
+    for (const a of actions)
+      for (const b of actions) {
+        if (a === b || !complementary((a as { if?: unknown }).if, (b as { if?: unknown }).if)) continue;
+        const events = [...new Set([...a.hits, ...b.hits].flatMap((h) => h.events))];
+        for (const h of a.hits) out.set(h, [...new Set([...(out.get(h) ?? h.events), ...events])]);
+      }
+  }
+  return out;
+}
 
 /** Trigger events a log doesn't let the replay judge: the enemy's own actions. */
 const UNJUDGED_EVENTS: ReadonlySet<string> = new Set(["attacked", "perfectDodge", "enemyCharge"]);
@@ -1181,7 +1217,9 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
       // The n-th landing of the kit hit at the slot's frame not taken yet (several landings may share a frame).
       const key = `${d.operator}|${d.start}|${k.id}`;
       const taken = used.get(key) ?? new Set<number>();
-      const nth = frames.findIndex((f, i) => f === p.frame && !taken.has(i));
+      // Another variant's hit at its own frame for the slot's turn (Slot.at: Zhuang Fangyi's strike_8 against strike_9's slots).
+      const frame = p.at?.get(k) ?? p.frame;
+      const nth = frames.findIndex((f, i) => f === frame && !taken.has(i));
       if (nth < 0) continue;
       taken.add(nth);
       used.set(key, taken);
@@ -2277,15 +2315,23 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     for (const h of st.hits) if (h.ref !== undefined) landed.set(h.ref, h);
     // Landings a trigger made (not pinned): each logged hit without a pinned landing takes the nearest of its operator's
     // with its event, within NEAR_FRAMES, in time order (each landing once).
-    const eventsOf = new Map(kits.flatMap((k) => kitHitEntries(k).map((e) => [`${k.operator}|${e.skillId}|${e.hit.id}`, e.hit.events] as const)));
-    const free = st.hits.filter((h) => h.ref === undefined && h.facts);
+    // A trigger's hit takes its alternatives' events too (alternativeEvents: one landing by one path or the other).
+    const eventsOf = new Map(kits.flatMap((k) => {
+      const alternatives = alternativeEvents(k);
+      return kitHitEntries(k).map((e): [string, readonly string[]] => [`${k.operator}|${e.skillId}|${e.hit.id}`, alternatives.get(e.hit) ?? e.hit.events]);
+    }));
+    // A recorded burst (Si's Artful Intent) is one landing per record, whatever its path: the replay's record may end
+    // later or sooner than the game's (4e36: the log's burst 0.9 s after the replay's), so it looks further.
+    const recorded = new Set<string>(kits.flatMap((k) => kitHitEntries(k).filter((e) => isRecordedBurst(e.hit)).map((e) => `${k.operator}|${e.skillId}|${e.hit.id}`)));
+    const free = st.hits.filter((h) => h.ref === undefined && (h.facts || recorded.has(`${h.operator}|${h.skillId}|${h.hitId}`)));
     const taken = new Set<LandedHit>();
     for (const [i, h] of [...fx.hits.entries()].sort((a, b) => a[1].t - b[1].t)) {
       if (landed.has(String(i))) continue;
       const f = batchedFrame(casts, h) ?? frameOf(h.t);
       let best: LandedHit | null = null;
       for (const x of free) {
-        if (taken.has(x) || x.operator !== h.operator || Math.abs(x.frame - f) > NEAR_FRAMES || !eventsOf.get(`${x.operator}|${x.skillId}|${x.hitId}`)?.includes(h.event)) continue;
+        const k = `${x.operator}|${x.skillId}|${x.hitId}`;
+        if (taken.has(x) || x.operator !== h.operator || Math.abs(x.frame - f) > (recorded.has(k) ? RECORDED_NEAR_FRAMES : NEAR_FRAMES) || !eventsOf.get(k)?.includes(h.event)) continue;
         if (!best || Math.abs(x.frame - f) < Math.abs(best.frame - f)) best = x;
       }
       if (best) {

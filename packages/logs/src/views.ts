@@ -25,6 +25,7 @@ import { replayTimeStops } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import type { TotalsComparison, TotalsShares } from "./enginecheck.ts";
+import { kindsAggregate, type KindShare } from "./onesided.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -671,11 +672,12 @@ export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbos
  * Intent). A total that moves while the per-hit views improve is a compensating error: its other side shows here
  * (round 8: 458b's Laevatain, 9.0 → 11.3% from two replay-only finisher landings, found by hand from a replay dump).
  */
-export function totalsView(data: GameData, fx: LogFixture, f: { readonly operators?: readonly string[]; readonly top?: number; readonly assume?: Readonly<Record<string, string>>; readonly byEvent?: boolean } = {}): string {
+export function totalsView(data: GameData, fx: LogFixture, f: { readonly operators?: readonly string[]; readonly top?: number; readonly assume?: Readonly<Record<string, string>>; readonly byEvent?: boolean; readonly kinds?: boolean } = {}): string {
   const replay = f.assume && Object.keys(f.assume).length ? logBuffReplay(data, fx, undefined, { assume: f.assume }) : logBuffReplay(data, fx);
   const byHit = engineHits(data, fx, replay);
   const t = engineReport(data, fx, replay, byHit, checkLog(data, fx, { replay, engineHits: byHit })).totals;
   if (f.byEvent) return totalsByEvent(data, fx, t, f);
+  if (f.kinds) return totalsOneSided(data, fx, t, f);
   const top = f.top ?? 10;
   const pct = (sim: number, log: number) => (log === 0 ? "n/a" : `${sim / log - 1 > 0 ? "+" : ""}${(100 * (sim / log - 1)).toFixed(1)}%`);
   const n = (x: number) => Math.round(x).toLocaleString("en-US");
@@ -750,6 +752,84 @@ export interface TotalsRow {
 }
 export type TotalsGroup = "verified" | "development" | "earlier" | "multi";
 const TOTALS_GROUPS: readonly TotalsGroup[] = ["verified", "development", "earlier", "multi"];
+
+const sharePct = (x: number) => `${x >= 0 ? "+" : ""}${x.toFixed(2)}%`;
+
+/** `zmdlogs totals <fx> --kinds`: the fight's one-sided landings (onesided.ts), by where they sit, then each, largest first. */
+function totalsOneSided(data: GameData, fx: LogFixture, t: TotalsComparison, f: { readonly operators?: readonly string[]; readonly top?: number }): string {
+  const L = t.logged.damage;
+  const items = t.oneSided.filter((x) => !f.operators?.length || f.operators.includes(x.operator));
+  const byContext = kindsAggregate([items.map((x): KindShare => ({ context: x.context, nature: x.nature, skill: x.skill, replay: x.side === "replay" ? (100 * x.damage) / L : 0, log: x.side === "log" ? (100 * x.damage) / L : 0, n: 1, flagged: {} }))], (k) => k.context);
+  const out = [
+    `${fx.id}: the one-sided landings (onesided.ts; % of the logged total): replay-only (+) and log-only (−), each with where it sits (twin: an opposite-side landing of its operator within 1.5 s; cast tail / head / gap / unlogged: its cast's landings standing for logged hits; no landing: the replay's reason), its nature and skill kind, and flags (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past its operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits).`,
+    "  by where they sit:",
+    ...byContext.map((k) => `    ${sharePct(k.replay)} ${sharePct(k.log)}  ${k.kind}`),
+    "  each:",
+  ];
+  const top = f.top ?? 40;
+  const sorted = [...items].sort((a, b) => Math.abs(b.damage) - Math.abs(a.damage));
+  for (const x of sorted.slice(0, top)) {
+    const twin = x.twin ? `  ↔ ${s(x.twin.t)} s ${shortSkill(x.twin.key)} ${sharePct((100 * x.twin.damage) / L)}` : "";
+    out.push(`    ${sharePct((100 * x.damage) / L).padStart(7)} ${s(x.t).padStart(7)} s  ${label(data, x.operator)} ${x.side.padEnd(6)} ${shortSkill(x.key)}  [${x.context}; ${x.nature} · ${x.skill}${x.flags.length ? `; ${x.flags.join(", ")}` : ""}]${twin}`);
+  }
+  if (sorted.length > top) out.push(`    … and ${sorted.length - top} more`);
+  return out.join("\n");
+}
+
+/** A kind aggregate's lines (kindsAggregate): gross, replay-only, log-only, net, the fights it occurs in, flags' shares. */
+export function formatKindLines(agg: ReturnType<typeof kindsAggregate>, top: number): string[] {
+  const flags = (x: Readonly<Record<string, number>>) => {
+    const parts = Object.entries(x).filter(([, v]) => v >= 0.005).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toFixed(2)}`);
+    return parts.length ? `  [${parts.join(", ")}]` : "";
+  };
+  const lines = agg.slice(0, top).map((k) => `    ${(k.replay - k.log).toFixed(2).padStart(6)}%  ${sharePct(k.replay).padStart(7)} ${sharePct(k.log).padStart(7)}  net ${sharePct(k.replay + k.log).padStart(7)}  ${String(k.fights).padStart(3)} fight(s)  ${k.kind}${flags(k.flagged)}`);
+  if (agg.length > top) lines.push(`    … and ${agg.length - top} more kinds, ${agg.slice(top).reduce((a, k) => a + k.replay - k.log, 0).toFixed(2)}% gross`);
+  return lines;
+}
+
+/**
+ * `zmdlogs totals --all --kinds`: the one-sided landings of every selected fight ranked by kind (onesided.ts: where
+ * they sit, nature, skill kind; mean share of a fight's logged total), per group, then by operator and key over the
+ * development, earlier-pending and verified fights with the fights carrying most. Hold-outs: measure, by kind only.
+ */
+export function totalsKindsView(data: GameData, rows: readonly TotalsRow[], f: { readonly operators?: readonly string[]; readonly top?: number } = {}): string {
+  const top = f.top ?? 15;
+  const kindsOf = (r: TotalsRow) => (r.shares.kinds ?? []).filter(() => !f.operators?.length || r.shares.perOperator.some((o) => f.operators?.includes(o.operator)));
+  const out = [
+    "The one-sided landings by kind (onesided.ts), as mean % of a fight's logged total: gross (replay-only + |log-only|), replay-only, log-only, net, the fights with any, and the flags' gross shares (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past the operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits). Where they sit: unread (a logged hit's own landing without a reading), twin like / other (an opposite-side landing of the operator within 1.5 s, values within ×1.5 or ×3), then the replay's cast (no cast, cast unlogged / tail / head / gap) or the log's reason (no landing: …).",
+  ];
+  const groups: { name: string; rows: TotalsRow[] }[] = [
+    { name: "development, earlier pending and verified", rows: rows.filter((r) => r.group !== "multi") },
+    ...TOTALS_GROUPS.filter((g) => g !== "multi").map((g) => ({ name: g, rows: rows.filter((r) => r.group === g) })),
+  ];
+  for (const g of groups) {
+    if (!g.rows.length) continue;
+    const fights = g.rows.map(kindsOf);
+    out.push("", `${g.name}: ${g.rows.length} fight(s); by where they sit:`, ...formatKindLines(kindsAggregate(fights, (k) => k.context), top));
+    out.push(`  by nature:`, ...formatKindLines(kindsAggregate(fights, (k) => k.nature), top));
+    out.push(`  by where they sit · nature · skill kind:`, ...formatKindLines(kindsAggregate(fights), top));
+  }
+  const all = rows.filter((r) => r.group !== "multi");
+  const keys = new Map<string, { operator: string; side: string; key: string; context: string; share: number; n: number; fights: Map<string, number> }>();
+  for (const r of all)
+    for (const k of r.shares.keys ?? []) {
+      if (f.operators?.length && !f.operators.includes(k.operator)) continue;
+      const id = `${k.operator}|${k.side}|${k.key}|${k.context}`;
+      const a = keys.get(id) ?? { operator: k.operator, side: k.side, key: k.key, context: k.context, share: 0, n: 0, fights: new Map() };
+      keys.set(id, a);
+      a.share += k.share / all.length;
+      a.n += k.n;
+      a.fights.set(r.short, (a.fights.get(r.short) ?? 0) + k.share);
+    }
+  const ranked = [...keys.values()].sort((a, b) => Math.abs(b.share) - Math.abs(a.share));
+  out.push("", `By operator, side, key and where they sit (mean % over the ${all.length} fights; the fights carrying most):`);
+  for (const k of ranked.slice(0, top * 2)) {
+    const fights = [...k.fights].sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 4).map(([id, v]) => `${id} ${sharePct(v)}`).join(", ");
+    out.push(`  ${sharePct(k.share).padStart(7)}  ${label(data, k.operator)} ${k.side} ${shortSkill(k.key)} [${k.context}] ×${k.n}: ${fights}${k.fights.size > 4 ? ` … (${k.fights.size})` : ""}`);
+  }
+  out.push("Hold-outs: only their means by kind, from `npm run measure` (its summary's \"One-sided landings by kind\").");
+  return out.join("\n");
+}
 
 /** The group means of some fights' shares (|error|, |matched|, replay-only, |log-only|) and how many are one-sided (replay-only + |log-only| over |matched|). */
 export function totalsAggregate(shares: readonly TotalsShares[]): { readonly n: number; readonly error: number; readonly matched: number; readonly replayOnly: number; readonly logOnly: number; readonly oneSided: number; readonly within5: number } {
