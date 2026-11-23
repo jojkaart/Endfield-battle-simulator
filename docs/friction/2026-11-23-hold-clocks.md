@@ -52,6 +52,18 @@ the worktree's own (agent-a282e…), on main at 235d717.
   readings (buff layers' ramps, ticking buffs' counters) and route them through one helper like `rampElapsed`.
 - **Why it helps:** the jump would have shown in one command; the next anchor-based value won't repeat the bug.
 
+## 4. A circular reading surfaced only at premerge (the negative control)
+
+- **What happened:** the ramp clock reads holds from the same damage the check then judges. `npm run measure` and
+  `snapshots:update` both looked fine (+1.9 pt development plain); only premerge's `test:logs` negative control
+  (tests/slow/negative-control.test.ts) showed bdf2 with 34 chance matches of 167 at ×0.97, after about two hours of
+  work built on it. Restricting readings to a step from the replay's fixed it with no verdict change.
+- **Cause:** measure reports accuracy only; nothing in the measuring loop asks "would scaled values match too?", the
+  one question that catches a reading fitted to the data it is judged on.
+- **Suggestion:** `npm run measure -- --negative` (or always for the six verified logs: seconds) running the negative
+  control's ×0.97 / ×1.03 counts beside the scoreboard change, flagging any above its bound.
+- **Why it helps:** overfitting shows at the first measure, not at premerge; cheap (six small logs).
+
 ## What worked well
 
 - `npm run measure -- --base <ref> --hits` with the changed hits per log made each regression (af7b, 9847, 4d60)
