@@ -667,7 +667,8 @@ function realignUltimates(placed: Map<LogHit, PlacedHit>, slotsOf: (c: LoggedCas
   }
   for (const { cast, key, hits } of byCast.values()) {
     const s = slotsOf(cast, key);
-    if (!s || hits.length < 2 || hits.length >= s.length) continue;
+    // Not hits whose landings are a random count off their frames (KitHit.landedCount: Ardelia's sheep, 5082 af7b).
+    if (!s || hits.length < 2 || hits.length >= s.length || s.some((x) => x.hits.some((k) => k.landedCount !== undefined))) continue;
     const list = [...hits].sort((a, b) => a.t - b.t);
     const j0 = (placed.get(list[0] as LogHit) as PlacedHit).index;
     if (list.length > s.length - j0) continue;
