@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-23: Si's strokes from the log: Initial Stroke at the first press, the burst's origin](2026-11-23-01-si-s-strokes-from-the-log-initial-stroke-at-the-first-press.md)
 - [2026-11-23: Hidden holds placed once for every timer](2026-11-23-01-hidden-holds-placed-once-for-every-timer.md)
 - [2026-11-22: The buff clock: unlogged world holds keep buffs past their end](2026-11-22-03-the-buff-clock-unlogged-world-holds-keep-buffs-past-their.md)
 - [2026-11-22: Improvement round 5: the lock's queue, premerge's done line, diagnosis views](2026-11-22-02-improvement-round-5-the-lock-s-queue-premerge-s-done-line.md)

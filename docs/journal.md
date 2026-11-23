@@ -4,9 +4,41 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 119 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 120 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-23: Si's strokes from the log: Initial Stroke at the first press, the burst's origin
+
+**Goal:** the brief after the Yinglung's Edge hypotheses (2026-11-22): what each of Si's logged presses is and when
+Artful Intent ends, then whether N2 (her first press counts for the set) follows; and whether anything in the logs or
+the data marks leaving combat (N1).
+
+**Done:** the bursts' `poise.origin` tells how each Artful Intent ended: `normal_skill_2` Final Stroke (26), the
+Inksoul returning by itself at expiry `normal_skill_inkmove_2` (22), the mark's burst (`inkmark_projhit`, 26: no
+Inksoul, ended at its one press 20–34 s after the hit). Initial Stroke is the first press after the battle skill; her
+other presses under Artful Intent (269 of her 276 hitless events, every ~3.3 s) do nothing the log shows. Built in the
+replay (2a9a267): castsFromBuffEnds infers Final Stroke only from a burst credited to it (or to nothing); pullingPresses
+makes the first press Initial Stroke (ReplayedCast.as) unless the mark's burst ends that Artful Intent; the kit's
+initial_stroke trigger detached (the Inksoul comes from the entity spawned at frame 0). The engine's Edge score 54 / 4 /
+10 → 61 / 2 / 5 of 68 (N2 follows from the strokes). Scoreboard: development plain 59.9 → 60.1%, mismatch 16.4 →
+16.2%, mean |damage error| 9.2 → 9.3%; earlier pending 53.1 → 53.2%; verified and hold-out unchanged; c83c mismatches
+31 → 0, 9555 11 → 1; 7b54 damage 48.2 → 49.0% (a combo out of the Edge test, an Initial Stroke layer more). Team
+numbers unchanged (team-ab against 6b117c1: every team's own fight identical), so the owner's rules need no re-search. The detached Initial Stroke broke
+examples/ink-melt-zero (its second Initial Stroke at 6.67 s, after one cut by her combo at 3.8 s, now finds the
+Inksoul up): that step dropped by hand (`repair --write` dropped 80 steps instead), total 2,844,498 → 2,853,256. c83c,
+e989 and 0c14's mean |damage error| +0.1–0.3 points with the layers their combos imply.
+
+**Decisions:** Final Stroke's layer stays counted as the kit has it: no log tells (always past the cap or before the
+same combo). N1 not built: the set's buffs handle no battle exit in the data (ability event 7 only in six buffs, Si's
+normal_skill_check among them), the layer is the caster detector's child buff but the wearer's own layers go too; the
+two clear cases are the boss Si's half-HP pause (3f78, 4a64), 7b54's is ambiguous (Jade Vessel or Camille's hitless
+press). Test 106 (e) now asks about that phase change.
+
+**Dead ends / found:** a Stagger bar back to full after a pause marks nothing (every ~5 s pause refills it). 0c14
+166.7 and its ×0.288 burst: a battle skill at 157.42 s whose hit the log lacks restarted the record (0.17 × the hits
+from 158.76 s = the logged 90,026). Why Artful Intent without Initial Stroke lasts until a press, and what the later
+presses are, stay open.
 
 ## 2026-11-23: Hidden holds placed once for every timer
 
@@ -343,39 +375,3 @@ engine waits for a cast's own launches before any other cast of its operator, he
 **Left** (open-problems.md, "Liino's Cosmovoice beats"): the replay's stops around some beats (Perlica's ultimate in
 4d60 at 92.8 s); Cosmovoice ending before its logged finale in the replay (9090, 8915, 4bfc: the finale ×0.64–0.70);
 a pinned beat ordered after another's hit at its frame (9847 60.77 s); beats never logged (an enemy out of reach).
-
-## 2026-11-22: Gilberta's Vulnerable count, Zhuang Fangyi's Empyrean entity keys
-
-**Goal:** two accuracy leads: the replay's Vulnerable count one or two low at Gilberta's ultimate (4360, 489c, 9847,
-d572; her Susceptibility is 0.30 × (1 + 0.1 × stacks)), and Zhuang Fangyi's `attack1_ult_2_abilityrange`, a logged key
-no kit hit named (32 unplaced groups), with her d774 Sunderblade lead.
-
-**Zhuang Fangyi (data):** Empyrean attacks 1 and 2 each spawn four entities `attack1_ult_1..4_abilityrange`, cylinders
-at their own offsets; each hits only without the 0.4 s marker the one that hit leaves, so one hit per attack, logged
-under whichever entity held the target (_1, _2, _3 all in the logs). Both kit hits name the four keys. The two attacks
-then share every key; the placement told them apart by kit order only (attack 2's hits read ×1.4), so `choose` now
-picks, for steps alike in every key, the one whose window of the latest cast lies nearest, past a skill that keeps the
-chain (her Empyrean battle skill). A first, general version moved Ardelia's, Typhoeus's and Rossi's casts in five
-logs: restricted to steps alike in every key. **The Sunderblade lead was a misreading:** d774's battle skill at 97.24 s
-has all 8 strikes, the last 3 and the final after her ultimate's stop (her ultimate is logged at its end, 102.17 s;
-4d60 157.42 s the same). Her strikes come from a buff on her, so her own stop holds them: a skill hit can now be on the
-world's clock (`KitHit.world`, as trigger hits could); her Empyrean strikes (an entity's) keep their pace through her
-own combo slow-down in 4bfc and stay on hers.
-
-**Gilberta:** in 489c and d572 the replay landed Rossi's combo 3 twice: the late path's hit (the kit's jump 0 → 212
-without the ring) and the logged perfect hit pinned 14 frames later; the late one consumed the infliction the perfect
-one's Lift and extra Vulnerable need (+1 where the game gave +2). The replay now drops a jump that would skip a pinned
-landing of a hit only the skipped part has (not Pogranichnik's combo, whose slashes land on both paths: a first version
-cost c4f3 17 plain hits), with its path; that also ends Rossi's attack 4 landing its controlled and uncontrolled hits
-both (2fd9, 99fb). Then 9a80's perfect hit lost its consumption to Gilberta's ultimate landing in the same frame first
-(by operator id): pinned landings of a frame now land in the log's order (`loggedMs`). The four ultimates read 4 as
-listed; 18 of the 21 listed ultimates agree. **Open:** 4360 and 9847 (tower bosses), where the stacks outlive 20 s by
-0.4–1.6 s of world time (open-problems.md, with what's ruled out).
-
-**Numbers (scoreboard):** development plain 52.0 → 52.1%, mismatch 18.2%, damage error 12.6 → 12.4%; earlier pending
-plain 48.9 → 50.2%, damage error 8.3 → 8.6%; hold-out plain 67.3 → 67.5%, mismatch 6.7%, damage error 12.1 → 12.2%;
-verified 4e5e −1.7 → −3.8%. d572 plain 655 → 788. The totals that fall (4e5e, 4a64, 2fd9, 99fb, 489c, 0c14) lose
-phantom "replay only" hits of Rossi's (late, hit_ai) that the log doesn't have; d774 and c6d8 rise as her Empyrean hits
-now land (d774's ×1.39 strikes from 97.87 s not looked into).
-
-**Also:** census's rerun line prints `--window=a,b` (a negative window failed as printed).

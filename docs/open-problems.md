@@ -1081,9 +1081,19 @@ edge-search.py (not committed: scratch).
 | **N2** H3 + Si's first hitless press within 20 s after her battle-skill hit (her stroke under Artful Intent) | 61 | 1 | 6 |
 | **N1 + N2** (5 s) | **64** | 1 | **3** |
 | N1 + N2 (10 s) | 63 | 1 | 4 |
+| **S** (2026-11-23) H3 + Si's strokes from her bursts: Initial Stroke at her first press after each battle-skill hit unless the burst is the mark's (no Inksoul); Final Stroke where the burst's poise.origin is normal_skill_2 | 62 | 1 | 5 |
+| S + N1 (5 s) | **65** | 1 | **2** |
+| S, Final Stroke's layer left out | 62 | 1 | 5 |
+| S, Initial Stroke at the last press before a Final Stroke | 61 | 2 | 5 |
+| S, Initial Stroke also at the press that ends a mark-burst Artful Intent (20–34 s after the hit) | 59 | 1 | 8 |
+| **H0 the engine's replay, 2026-11-23** (S built: 2a9a267) | **61** | 2 | **5** |
 
 (N2 with the first two presses, or within 10 s: the same counts; all her
-presses within 20 s: 60 / 1 / 7, wrong 9555 92.3 and c83c 55.1.)
+presses within 20 s: 60 / 1 / 7, wrong 9555 92.3 and c83c 55.1.) The
+engine's 5 wrong after S: 3f78 46.9 and 4a64 53.8 (N1), 0c14 166.7, c779
+43.7, db87 41.2 (Laevatain's battle skill made twice, below); against
+base 6b117c1 it gains 0c14 122.1, c83c 55.1, 82.3, 97.9 and 9555 92.3, and
+two first combos (c83c 9.0, e989 6.9) become exact.
 
 **Decided by the logs:** anyone's battle skill feeds every wearer (H5, H6
 out; abfd: Si's and Bounda's counts from the same casts, ad7f Si's 3 and
@@ -1121,46 +1131,107 @@ her battle skill and the placed counter its next step), and the two kits
 look alike to a static rule (`not X` / `X`): the replay's state at the
 press has to decide (reverted, 69360fd).
 
-**Left (3 of 68 for N1 + N2):** c779 43.7 fits 2 and 64.9 fits 3 where
-N1 + N2 give 3 and 2 (one layer moved between two consecutive combos;
-which cast is the odd one the log can't say: the aura's reach isn't in
-it); 0c14 166.7 fits 3 with Jade Vessel's bonus, the engine has neither
-(two layers short after the 17.9 s pause). **The engine's replay, for
-N2:** it makes a press a stroke only where the log shows what it leads to
-(an inferred Final Stroke): it misses c83c 82.3's and 0c14 122.1's
-presses, makes a slot press there (c83c 51.8 s), and infers Final Strokes
-from Inksoul bursts (c83c 87.1, 9555 84.7 s) that come 2–3 s after the
-last press, which fits Artful Intent's expiry with the Inksoul up (its
-burst on that branch) better than Final Stroke (the Inksoul's burst is
-0.77–1.45 s after a press in 19 of 34, below): each a layer the damage
-hasn't. So a Final Stroke wants a press just before the burst; without
-one the end is the expiry (as (1)); not built.
+**Si's strokes from the log (2026-11-23, built: 2a9a267).** What each
+press is and how each Artful Intent ended, from her bursts
+(the hits' `poise.origin`, in imports and refreshes since 2026-11-16;
+73 bursts in the development and multi-target logs; scratch scripts, not
+committed: si-bursts.py, si-after.py, press-where.py, ai-natural.ts,
+edge-strokes.py):
+- **The burst's origin says the end.** Final Stroke's inkboom casts the
+  Inksoul's return inheriting its cast (SkillData normal_skill_2 →
+  BuffData xianjing_inkboom → CastSkill normal_skill_inkmove_2,
+  inheritSourceSkillCastId): origin `normal_skill_2`, 26 bursts, 6–26 s
+  after the battle-skill hit. The Inksoul returning by itself as Artful
+  Intent runs out: origin `normal_skill_inkmove_2`, 22 bursts, 20–38 s
+  after (on the replay's enemy clock within −1.0 to +0.8 s of its expiry,
+  but for 0c14 181.4 and 458b 85.6). The mark's own burst (no Inksoul):
+  `inkmark_projhit`, origin `normal_skill` (Artful Intent's own
+  LaunchProjectile at its end), 26 bursts.
+- **Initial Stroke is the first press after the battle skill.** Of her
+  276 hitless battle-button events, 269 fall inside an Artful Intent (the
+  other 7 at a log's start or at an edge), every 2.7–14 s (quartiles 3.2 /
+  3.4 / 3.9 s, 180 intervals). An Artful Intent with an Inksoul burst has
+  its first press 1.6–19.4 s after the hit; scoring Initial Stroke at the
+  first press beats the last press before Final Stroke (S rows above:
+  e989 53.0 needs the first).
+- **Her later presses under Artful Intent do nothing the log shows:** no
+  hit, no end (by the kit the second would be Final Stroke and end it),
+  her basic chain goes on (test 16), no layer. What they are (strokes the
+  game refuses, presses without SP) is open; the replay doesn't make them.
+- **A mark-burst Artful Intent ends at its one press.** All 26 have
+  exactly one press before the burst, 20.6–33.7 s after the hit, the burst
+  0.42–0.58 s after it (13–17 frames: the projectile's own) in 20, up to
+  1.16 s in 6; on the replay's clock the press is 1.44 s before to 3.80 s
+  after the expiry (4e36 36.8: still recording at 32.92 s, 1.0 s past the
+  replay's expiry). So without Initial Stroke Artful Intent lasts until
+  that press; the press gives no layer (S with it: 59 / 1 / 8, 0c14 81.7,
+  489c 107.6, 4e36 37.4 wrong). The replay ends it at the logged end (an
+  `expires` step, as before).
+- **Final Stroke's layer:** no log tells (S with and without it: the same
+  counts); in each case its layer falls past the cap of 3 or before the
+  same combo as another (test 106 (d) stays).
 
-**Si's presses and Artful Intent's bursts (censuses):** 243 battle-skill
-instances of hers, 68 with a battle-skill hit 0–1.5 s after (rerun: `efsim
-zmdlogs census --select 'cast:jsspsi_normal_skill$' --operator
-chr_0036_jsspsi --near 'event:normal_skill_abilityrange_1' --near-operator
-chr_0036_jsspsi --window 0,1500`); 118 of them 1–20 s after one (`--window
--20000,-1000`). The mark's own burst comes 0.42–1.16 s after a hitless
-press in 16 of 21 (rerun: `efsim zmdlogs census --select
-'event:normal_skill_inkmark_projhit' --operator chr_0036_jsspsi --near
-'cast:jsspsi_normal_skill$' --near-operator chr_0036_jsspsi --window
--2000,0`), the Inksoul's in 19 of 34 (0.77–1.45 s; same with
-`event:normal_skill_inkmove_2`), never after a battle-skill hit within
-2 s: so a press can end Artful Intent without an Inksoul, which the kit
-can't (its only end before expiry is Final Stroke); 0c14 81.7 says that
-press gives no layer. Her basic attack: 28 hitless presses have her Final
-Strike 0–0.98 s after (test 16), so they replace no action.
+The replay (buffreplay.ts): castsFromBuffEnds infers a cast that ends a
+buff only from a logged hit credited to it (poise.origin) or credited to
+nothing (fixtures before 2026-11-16); else the end is an expiry.
+pullingPresses makes the first slot press after each landed battle skill
+Initial Stroke (ReplayedCast.as: the variant castable under Artful Intent
+before the Inksoul, whose cast gives the Inksoul), unless the log shows
+the mark's burst for that Artful Intent. The kit's initial_stroke trigger
+is detached (the Inksoul comes from the entity Initial Stroke spawns at
+frame 0: SpawnAbilityEntity, normal_skill_abilityrange frame 8): the
+replay's next basic attack cut it before frame 8 (c83c 29.30 s), so its
+burst at 57.26 s took the mark's branch. Bursts the replay lands: a7a7
+17.22 now (was none), c83c 87.89 at +15 ms (was +415); none lost.
+Scoreboard (measure): development plain 59.9 → 60.1%, mismatch 16.4 →
+16.2%, mean |damage error| 9.2 → 9.3%; earlier pending 53.1 → 53.2% plain;
+verified and hold-out unchanged. c83c mismatches 31 → 0, 9555 11 → 1;
+7b54 damage 48.2 → 49.0% (its combo at 46.7 s now has 3 layers, from
+Initial Stroke at 33.15 s; that combo is out of the Edge test, its hits'
+other zones off by the slug's caps: no truth either way).
 
-**Still possible:** what ends Artful Intent at a press without an Inksoul
-(Initial Stroke failing to pull it: its SkillData ChangeSkillAction
-`failActions`), and whether Final Stroke counts (`switchToBuffConfig`
-`asSkillCast`); a pause clearing the layers (leaving battle) — not
-modelled: the simulator's fights have no pause; c779's moved layer.
+**Pauses (N1), 2026-11-23:** every pause of 4.5 s or more in the logs
+(scratch/pause-bars.py: each pause's Stagger bars and listed enemy
+debuffs either side): the bar is back to full after every pause of ~5 s or more (abfd
+174 → 275 over 4.9 s, 7b54 7 → 55 over 5.9 s, c3c7 128 → 315 over 7.4 s),
+so it marks no new enemy. The two clear cases, 3f78 (22.7–43.5 s) and
+4a64 (29.2–51.3 s), are the boss Si's (eny_0134) half-HP pause: ~21 s, at
+50.3% / 51.8% of the logged damage, most enemy debuffs gone after (2 of
+11, 1 of 13 still listed); the same pause in 0c14 (87.4–107.3 s, 51.2%)
+and e989 (19.7–43.1 s, 50.9%) fits either way. 7b54's 5.9 s pause (the
+slug, 38% dealt) is weak: its 31.4 combo reads 3.00, one layer with Jade
+Vessel (on: Si's Immobilization at 29.0 s) or three without, and one of
+the casts before it is Camille's hitless press at 19.9 s. 0c14 166.7 is
+no pause case: its burst at 181.4 s (×0.288 of the reading, below) fits
+0.17 × every hit from 155.79 (exclusive) to 158.76 s (inclusive) onward
+(90,026 logged, 90,026 computed), so a battle skill re-made Artful Intent
+then (her press at 157.42 s, its hit not in the log): with it and
+Initial Stroke at 160.48 s, the combo's 3 layers. **The data has no
+battle-exit clear for the set:** none of its four buffs handles leaving
+battle (ability event 7; event 6 is entering it: buff_chr_0016_laevat
+_potential_1), and no buff field ends a buff out of battle
+(`finishOnRepatriate` is false); event 7 is in six buffs only (Laevatain's
+P1, three of Typhoeus's, Si's normal_skill_check: exit_fight_delay 2 s,
+then Artful Intent ends; her inkhurteffect's own is disabled). The layer
+is a child of the caster's detector (aruadetect CreateBuffAction
+`asChildBuff`), so a member's layers go with that member's aura buff;
+but 3f78 and 4a64 lose the wearer's own too ("others' layers only": 63 /
+1 / 4), so not a member leaving the aura. Not built; test 106 (e) asks
+about the phase change.
 
-**Next check:** in-game test 106 (b) and (d); in the engine, N2 in the
-replay (each press under Artful Intent as the stroke the slot holds) and
-Laevatain's press made once.
+**Left (S + N1: 2 of 68; the engine: 5):** c779 43.7 fits 2 where every
+reading gives 3 (64.9 fits now); 0c14 166.7 (the unlogged battle skill
+above); 3f78 46.9 and 4a64 53.8 (the phase pause); db87 41.2
+(Laevatain's battle skill made twice, above).
+
+**Still possible:** what Si's later presses are; why Artful Intent
+without Initial Stroke outlives its clock until a press; whether Final
+Stroke counts (test 106 (d)); what the boss Si's phase pause does to the
+layers (test 106 (e)); c779's layer.
+
+**Next check:** in-game test 106 (e) and (d); Laevatain's press made once
+(db87); a battle skill re-made where a burst's value says its record
+restarted (0c14 157.4 s).
 ## Estella's Razorhorn ATK: on the Shattering hit; Lifts get about half
 
 **Fixed 2026-11-14 (sonnet diagnosis):** wpn_lance_0013's atk_up (+0.336)
@@ -1803,7 +1874,11 @@ diagnosis's "abfd ×0.84" and "0c14 P1" misfits were the skill level).
 
 - 0c14 181424 ms ×0.288: the window from the battle-skill hit at
   108670 ms is 73 s long; Si's battle skill is cast every ~3 s from
-  116 s with no logged hit.
+  116 s with no logged hit. **Explained (2026-11-23):** the record ran
+  from a battle skill whose hit the log lacks: 0.17 × every hit after
+  155.79 s (from 158.76 s) to the burst is 90,026, the logged value; her
+  press at 157.42 s, after the boss's 74% pause (open-problems "Type 50
+  Yinglung's Edge", Pauses).
 - 458b 85571 ms ×1.065: the log has no hit at all in the 3.2 s before the
   burst (a gap in the log?).
 - 458b 131439 ms ×0.98 and a7a7 34593 ms ×0.986: a cut 1.2–1.7 s before
