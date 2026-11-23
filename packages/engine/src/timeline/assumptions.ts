@@ -49,6 +49,25 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "combo-reset",
+    question: "Does a global dilation back to scale 1 (TimeDilationAction, curve RESETto1: Arcane's combo at its frame 9) end the running slow-downs of its priority, its own and a teammate's combo slow-down (timeline/clock.ts cutAtResets, resetSlowdowns)? The game keeps one dilation per priority tag (the reset would do nothing under the lowest-scale rule).",
+    default: "resets",
+    readings: {
+      resets: "it ends them: Arcane's combo holds the world 9 frames, and a combo slow-down running at her frame 9 ends there (Corrosion's ramp in 3f78ceb15bc3's and 4a64e58e75ad's openers, Gilberta's, Si's and Arcane's combos: the lowest-scale rule holds 0.93 s and 0.91 s where the steps allow 0.73 s and 0.75 s; with the reset 0.72 s and 0.74 s) (2026-11-23)",
+      none: "it does nothing: every slow-down runs its length, the lowest scale counting where they overlap (the engine until 2026-11-23)",
+    },
+  },
+  {
+    id: "freeze-ramp",
+    test: "104",
+    question: "Does a freeze (a control status that stops the enemy's clock: Si's Immobilization, Tangtang's stare) hold Corrosion's ramp, as it holds the enemy's other timers (timeline/actions.ts runTriggers)?",
+    default: "runs",
+    readings: {
+      runs: "the ramp runs on through it (its end is still held): the log's ramp steps across Si's Immobilization in f978430a083a at 57.6 s allow at most 0.51 s of hold in its 1.5 s, a7a7a40c97ed at 18.1 s 0.68 s, Tangtang's in 791020039384 at 47.8 s about 0.7 s of 4 s (2026-11-23)",
+      held: "held with the enemy's clock (the engine until 2026-11-23)",
+    },
+  },
+  {
     id: "battle-sub-skills",
     test: "29",
     question: "Does a battle-type sub-skill's cast (SkillData normalSkillSubType 1: Si's Initial and Final Stroke, Liino's End Stance, Camille's, Mi Fu's and Purrchena's follow-ups) count as a battle-skill cast for triggers that listen by skill type (CheckSkillType [2]: Type 50 Yinglung's Edge, talents on a battle-skill cast)? Link isn't part of it.",

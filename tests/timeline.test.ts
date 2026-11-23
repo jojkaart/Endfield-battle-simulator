@@ -876,7 +876,7 @@ describe("timeline: an ultimate's time stop", () => {
     const { s } = runTo([gil, { operator: op, skill: L + "ultimate_skill", at: 10 }], 10);
     expect(s.readyAt["chr_0013_aglina_normal_skill"]).toBe(before.readyAt["chr_0013_aglina_normal_skill"]);
     expect(s.spPausedUntil).toBe(Math.max(before.spPausedUntil, 10));
-    expect(s.slowdowns).toEqual([{ start: 10, scales: Array.from({ length: 61 }, () => 0), exempt: op, ultimate: true }]);
+    expect(s.slowdowns).toEqual([{ start: 10, scales: Array.from({ length: 61 }, () => 0), exempt: op, ultimate: true, priority: -1742631616 }]);
   });
 
   it("SP regenerates through time stops (the logs: web review row 2), also one that starts later than its cast, or is cast inside an advance", () => {
