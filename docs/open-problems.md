@@ -1543,7 +1543,7 @@ keeps a listed buff to its listing's end.
   s of hold before 134.2 s and the Stagger after, where her Vulnerable spell run asks 1.76 s (dropped): the Vulnerable
   stacks outliving 20 s there are **not** the world's hidden holds (10 hits ×0.975 at 138.5–139.6 s turned mismatch).
 - **The other direction is the replay's stops:** across the 28 development logs with Corrosion (3,553 readings:
-  scratch/rampprobe.ts in .claude/worktrees/agent-a282e2913f0921fbe), the replay's ramp runs behind the log's (needs a
+  scripts/probes/corrosion/rampprobe.ts), the replay's ramp runs behind the log's (needs a
   hold below zero) on 146 readings, 139 of them with a combo slow-down in the window (f978 33, 3f78 26, 9c6e 25, a7a7
   22, 4d60 20, 9a80 8, 4a64 4), against 669 that need a hidden hold:
   the replay holds the ramp longer than the game across some combos (a combo pressed inside another's slow-down: 3f78,

@@ -17,10 +17,10 @@ the worktree's own (agent-a282e…), on main at 235d717.
   from events included); the views and the bound builders recompute stops from the placement (logcasts.ts
   castTimeStops), which misses casts placed from events only. The open-problems db87 entry already named this as a
   "tool gap"; nothing enforces one source.
-- **Suggestion:** export the replay's own stops from replayKitBuffs (`BuffReplay.stops`: each slow-down the timeline
-  made, from `TimelineState.slowdowns` as they are added) and use them in runBounds, statusBounds, tickBounds,
-  `zmdlogs worldtime` / `lanes --world` / `holds`; keep castTimeStops for the placement itself. A test: every placed
-  ultimate's stop appears in both.
+- **Suggestion:** round 6 (merged while this ran) gave the views the replay's casts' stops (query.ts
+  `replayTimeStops`); the bound builders still use castTimeStops: holds.ts `tickBounds` / `statusBounds` and
+  buffreplay.ts `runBounds` should take the same stops (from the first replay, which has them), and placement-only
+  code keep castTimeStops. A test: every placed ultimate's stop appears in the bounds' stops.
 - **Why it helps:** every clock bound and every world-time view would measure against what the replay actually holds;
   the double-counting class of bug goes away. Cost: the views need a replay (they mostly run one anyway).
 
@@ -51,15 +51,6 @@ the worktree's own (agent-a282e…), on main at 235d717.
   --trace-buff status:corrosion` shows each step that moved it; (b) grep the engine for other `frame - x.appliedAt`
   readings (buff layers' ramps, ticking buffs' counters) and route them through one helper like `rampElapsed`.
 - **Why it helps:** the jump would have shown in one command; the next anchor-based value won't repeat the bug.
-
-## 4. A cited probe script lives only in a worktree's scratch/
-
-- **What happened:** the corrosion-lag reading the smaller-leads round cited ("scratch/corrosion-lag.ts in the
-  session's worktree") was found by listing all 30 worktrees' scratch folders. I turned it into a view (`zmdlogs ramp`),
-  but my own cross-log probe (scratch/rampprobe.ts) is again only cited by worktree path.
-- **Cause / suggestion:** as the hidden-holds report said: a `scripts/probes/` folder (not linted, not tested) with a
-  one-line index, for scripts whose numbers docs/open-problems.md cites.
-- **Why it helps:** the next round reproduces a number in a minute instead of hunting for it.
 
 ## What worked well
 
