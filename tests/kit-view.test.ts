@@ -4,6 +4,7 @@ import { loadGameData } from "@efsim/data";
 import { landingFrames } from "@efsim/logs";
 import { kitView } from "../packages/cli/src/commands/kit.ts";
 import { assumptionsList } from "../packages/cli/src/commands/assumptions.ts";
+import { heldFrames } from "../packages/cli/src/gamedata.ts";
 
 const data = loadGameData();
 
@@ -35,6 +36,13 @@ describe("efsim kit: what the compiler made of each time dilation", () => {
     const text = kitView(data, "Arcane", /_combo_skill$/);
     expect(text).toMatch(/time dilations: .*frame 9 dilation layer 0 \(RESETto1\) priority -?\d+: reset/);
     expect(text).toMatch(/layer 1 \(own curve\) priority -?\d+: dropped: layer 1/);
+  });
+
+  it("gives the world frames each slow-down holds, and a skill's several together at the lowest scale", () => {
+    // Rossi's combo_3: 12 and 19 frames from frame 0 hold 11.9 and 12.5 (the combo curve ramps), not 7 apart.
+    const text = kitView(data, "Rossi", /_combo_3_skill$/);
+    expect(text).toMatch(/slow-downs from frame 0 \(12 frames, lowest 0\.01, holds 11\.9\), 0 \(19 frames, lowest 0\.01, holds 12\.5\), 212 \(19 frames, lowest 0\.01, holds 12\.5\) \(together 26\.0 frames held at the lowest scale\)/);
+    expect(heldFrames([{ from: 0, scales: [0, 0, 0.5] }, { from: 1, scales: [0.5, 0, 1] }])).toEqual({ each: [2.5, 1.5], together: 3 });
   });
 });
 

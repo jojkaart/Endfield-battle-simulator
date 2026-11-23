@@ -10,6 +10,18 @@ import { parseJsonExact, sourceDir } from "@efsim/data";
 
 export type DataFolder = "BuffData" | "SkillData";
 
+/**
+ * The world frames a slow-down holds (Σ(1 − scale) over its frames), and what several of one skill hold together at the
+ * lowest scale where they overlap (timeline/clock.ts slowDown counts them so): sizes a hypothesis about slow-downs
+ * before anyone builds it (round 8: Rossi's combo_3 dilations, 19 and 12 frames long, hold 1.5–2.2 frames apart, not 7).
+ */
+export function heldFrames(slowdowns: readonly { readonly from: number; readonly scales: readonly number[] }[]): { readonly each: number[]; readonly together: number } {
+  const each = slowdowns.map((d) => d.scales.reduce((a, v) => a + (1 - v), 0));
+  const lowest = new Map<number, number>();
+  for (const d of slowdowns) d.scales.forEach((v, k) => lowest.set(d.from + k, Math.min(lowest.get(d.from + k) ?? 1, v)));
+  return { each, together: [...lowest.values()].reduce((a, v) => a + (1 - v), 0) };
+}
+
 function folder(f: DataFolder): string {
   return join(sourceDir("rmxlinux"), "Json", f);
 }
