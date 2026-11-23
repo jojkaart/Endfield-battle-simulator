@@ -149,6 +149,39 @@ function castStart(t: number, frame: number, stops: readonly TimeStop[], events:
   return Math.abs(e - held) < Math.abs(e - plain) ? Math.max(held, e) : plain;
 }
 
+/** How close (ms) a landing logged at a frozen stop's end is to that end (the log's ms are batched). */
+const STOP_END_MS = 150;
+/** How long before a frozen stop's start (ms) a landing may come and still be logged at its end. */
+const BEFORE_STOP_MS = 200;
+
+/**
+ * The start of a cast whose first landing the log gives at the end of another cast's frozen stop (scale ≤
+ * OWN_STOP_SCALE) when its cast event puts that landing just before the stop (within BEFORE_STOP_MS, no stop between):
+ * the event, or null. The log batches what lands as the world stops with the stop's end. a7a7a40c97ed: Arcane's battle
+ * skill, its event at 2.31 s, its frame-20 hit at 2.98 s, before Liino's combo stop (3.00–3.93 s), logged at 3.86 s;
+ * placed through the stop (from 2.56 s), the replay landed it and its Corrosion 0.9 s late.
+ */
+function beforeStopStart(t: number, frame: number, stops: readonly TimeStop[], events: readonly number[]): number | null {
+  if (frame <= 0) return null;
+  for (const s of stops) {
+    if (!s.scales.some((x) => x <= OWN_STOP_SCALE)) continue;
+    const [from, to] = [msOf(s.start), msOf(s.start + s.scales.findLastIndex((x) => x < 1) + 1)];
+    if (Math.abs(t - to) > STOP_END_MS) continue;
+    const fits = events.filter((e) => {
+      const lands = e + msOf(frame);
+      return lands <= from && lands >= from - BEFORE_STOP_MS && !stops.some((o) => o !== s && msOf(o.start) < from && msOf(o.start + o.scales.length) > e);
+    });
+    if (fits.length) return fits.reduce((a, e) => (Math.abs(e + msOf(frame) - from) < Math.abs(a + msOf(frame) - from) ? e : a));
+  }
+  return null;
+}
+
+/** A new cast's start (castStart), or its event's with the landings the stop's end batched (beforeStopStart, LoggedCast.beforeStop). */
+function newCastStart(t: number, frame: number, stops: readonly TimeStop[], events: readonly number[]): Pick<LoggedCast, "start" | "beforeStop"> {
+  const early = beforeStopStart(t, frame, stops, events);
+  return early === null ? { start: castStart(t, frame, stops, events) } : { start: early, beforeStop: t };
+}
+
 /**
  * Whether the log's cast event of `eventSkill` (LogFixture.casts) is one of the kit skill `skillId`: the same skill, or,
  * for an event of a skill the operator's kit doesn't have, the kit's skill in its slot (the log names the slot:
@@ -196,6 +229,11 @@ export interface LoggedCast {
   readonly start: number;
   /** A trigger's hits on casts of some skills: those skills and its delay in frames (Group.anchor). */
   readonly anchor?: { readonly skills: readonly string[]; readonly delay: number };
+  /**
+   * The ms of the landings the log gave at the end of another cast's frozen stop although they landed before it
+   * (beforeStopStart: the cast starts at its event): they land at their kit frames from the start, not at this ms.
+   */
+  readonly beforeStop?: number;
 }
 
 export interface PlacedHit {
@@ -493,7 +531,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: castStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
+        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;

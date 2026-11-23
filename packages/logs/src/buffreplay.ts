@@ -1226,6 +1226,19 @@ function withCastBeforeLog(ctx: TimelineContext, st: TimelineState, c: ReplayedC
   };
 }
 
+/** How close (ms) to a cast's batched landings' ms (LoggedCast.beforeStop) a logged hit of it is one of them. */
+const BATCHED_MS = 50;
+
+/**
+ * Where a logged hit landed when the log batched it with an operator's cast's landings at another cast's stop's end
+ * (LoggedCast.beforeStop): at that cast's first landing (what the hit set off, its reaction or a trigger's hit, landed
+ * with it), else null.
+ */
+function batchedFrame(casts: readonly ReplayedCast[], h: Pick<LogHit, "t" | "operator">): number | null {
+  const c = casts.find((x) => x.operator === h.operator && x.beforeStop !== undefined && Math.abs(h.t - x.beforeStop) <= BATCHED_MS && x.landings.length > 0);
+  return c ? Math.min(...c.landings.map((l) => l.frame)) : null;
+}
+
 export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits">): ReplayedCast[] {
   const casts = distinctCasts(placement);
   // A landing's reference: its logged hit's index in the fixture (replayCast `ref`: its LandedHit carries it).
@@ -1250,7 +1263,9 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
       if (nth < 0) continue;
       taken.add(nth);
       used.set(key, taken);
-      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: frameOf(h.t), ref: String(hitIndex.get(h)), ms: h.t }]);
+      // Batched at another cast's stop's end, it landed at its kit frame before the stop (LoggedCast.beforeStop).
+      const at = d.beforeStop !== undefined && Math.abs(h.t - d.beforeStop) <= BATCHED_MS ? frameOf(d.start) + p.frame : frameOf(h.t);
+      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: at, ref: String(hitIndex.get(h)), ms: h.t }]);
     }
   }
   const out: ReplayedCast[] = [];
@@ -2347,7 +2362,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const taken = new Set<LandedHit>();
     for (const [i, h] of [...fx.hits.entries()].sort((a, b) => a[1].t - b[1].t)) {
       if (landed.has(String(i))) continue;
-      const f = frameOf(h.t);
+      const f = batchedFrame(casts, h) ?? frameOf(h.t);
       let best: LandedHit | null = null;
       for (const x of free) {
         if (taken.has(x) || x.operator !== h.operator || Math.abs(x.frame - f) > NEAR_FRAMES || !eventsOf.get(`${x.operator}|${x.skillId}|${x.hitId}`)?.includes(h.event)) continue;
@@ -2427,7 +2442,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     for (const h of [...fx.hits].sort((a, b) => a.t - b.t)) {
       const r = parseReactionEvent(h.event);
       if (!r) continue;
-      const f = frameOf(h.t);
+      const f = batchedFrame(casts, h) ?? frameOf(h.t);
       let best: LandedHit | null = null;
       for (const x of free) {
         if (taken.has(x) || x.operator !== h.operator || x.skillId !== `reaction:${r.kind}` || x.element !== r.element || Math.abs(x.frame - f) > NEAR_FRAMES) continue;
