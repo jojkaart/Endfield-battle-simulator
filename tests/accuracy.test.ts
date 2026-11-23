@@ -70,14 +70,14 @@ describe("the fit measure (direction)", () => {
     expect(directionSummary(at(1, 1), moved)).toEqual(["No log's verdicts moved."]);
   });
 
-  it("says what kind of field moved in an 'other' entry, a hold-out's as counts and its operators without the log", () => {
+  it("says what kind of field moved in an 'other' entry, a hold-out's as counts, without the log or its operators", () => {
     const split = { development: new Set(["zmdlogs-d"]), holdout: new Set(["zmdlogs-h"]) };
     const e = (assumed: number, fallback: number, kindBasic: number, opTotal: number): Entry => ({ chr_a: { plain: 5, assumed, fallback }, totals: { damage: 1, "kind basic": kindBasic, "operator chr_a": opTotal } });
     const at = (d: Entry, h: Entry): Snapshots => ({ verified: {}, pending: { "pending/zmdlogs-d.json": d, "pending/zmdlogs-h.json": h }, split });
     const lines = directionSummary(at(e(3, 0, 1, 1), e(3, 0, 1, 1)), at(e(1, 2, 1.1, 1), e(1, 2, 1, 1.2)));
     expect(lines).toContain("  other: pending/zmdlogs-d.json (verdict classes assumed −2, fallback +2; totals kind basic)");
     expect(lines).toContain("  other (1, summed, counts only): verdict classes assumed −2, fallback +2; totals operator keys 1");
-    expect(lines).toContain("  moved hold-outs by operator (how many have each; never which log): chr_a 1 (1 other)");
+    expect(lines.join("\n")).not.toMatch(/by operator/);
     expect(lines.join("\n")).not.toMatch(/zmdlogs-h/);
   });
 });

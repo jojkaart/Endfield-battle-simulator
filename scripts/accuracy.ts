@@ -435,9 +435,9 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
   for (const g of GROUPS) {
     const counts: Record<Direction | "new" | "gone", number> = { better: 0, worse: 0, mixed: 0, other: 0, same: 0, new: 0, gone: 0 };
     const named: string[] = [];
-    // Hold-outs: what kind of field moved, per direction, and which operators the moved ones have (counts, no log).
+    // Hold-outs: what kind of field moved, per direction, summed (counts only). Not which operators the moved ones
+    // have: that tells what the hold-outs contain (the lead, 2026-11-23).
     const blind = new Map<Direction, FieldChange[]>();
-    const byOperator = new Map<string, Map<Direction, number>>();
     for (const [k, l] of b) {
       if (l.group !== g) continue;
       const was = a.get(k);
@@ -449,14 +449,7 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
       counts[d]++;
       if (d === "same") continue;
       if (g !== "holdout") named.push(`  ${d}: ${k} (${(d === "other" ? formatFieldChange(fieldChange(was.entry, l.entry)) : fitChange(was.entry, l.entry)) || "other counts"})`);
-      else {
-        blind.set(d, [...(blind.get(d) ?? []), fieldChange(was.entry, l.entry)]);
-        for (const [op] of operators(l.entry)) {
-          const m = byOperator.get(op) ?? new Map<Direction, number>();
-          m.set(d, (m.get(d) ?? 0) + 1);
-          byOperator.set(op, m);
-        }
-      }
+      else blind.set(d, [...(blind.get(d) ?? []), fieldChange(was.entry, l.entry)]);
     }
     for (const [k, l] of a) if (!b.has(k) && l.group === g) counts.gone++;
     const moved = counts.better + counts.worse + counts.mixed + counts.other + counts.new + counts.gone;
@@ -464,16 +457,10 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
     out.push(`${GROUP_LABEL[g]}: ${counts.better} better, ${counts.worse} worse, ${counts.mixed} mixed, ${counts.other} other, ${counts.same} unchanged${counts.new ? `, ${counts.new} new` : ""}${counts.gone ? `, ${counts.gone} gone` : ""}`);
     out.push(...named);
     for (const [d, cs] of blind) out.push(`  ${d} (${cs.length}, summed, counts only): ${formatFieldChange(sumFieldChanges(cs), true) || "other counts"}`);
-    if (byOperator.size) {
-      const sorted = [...byOperator].sort((x, y) => sumOf(y[1]) - sumOf(x[1]) || x[0].localeCompare(y[0]));
-      out.push(`  moved hold-outs by operator (how many have each; never which log): ${sorted.map(([op, m]) => `${op} ${sumOf(m)} (${[...m].map(([d, n]) => `${n} ${d}`).join(", ")})`).join("; ")}`);
-    }
   }
   if (!out.length) out.push("No log's verdicts moved.");
   return out;
 }
-
-const sumOf = (m: ReadonlyMap<string, number>) => [...m.values()].reduce((s, n) => s + n, 0);
 
 /** The snapshots as committed at a git ref. */
 export function snapshotsAt(ref: string): Snapshots {
