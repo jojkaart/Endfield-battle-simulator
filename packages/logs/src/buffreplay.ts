@@ -181,14 +181,14 @@ const VALUE_CRIT_NEAR_MS = 1000;
  * Crits the log leaves out (LogHit.crit null) that the hits' own values show: hits of one key, skill and scale differ
  * only by the buffs that change between them and the crit zone (×1.5 or more), so a hit CRIT_APART above the lowest of
  * its group within VALUE_CRIT_NEAR_MS (a logged non-crit or another crit-less hit) is a crit. Not a group whose logged
- * non-crits stand that far apart by themselves, nor a slot that can be kit hits of two scales. Cross-validated on the
- * development logs (half the logged flags hidden, two folds; scratch probe, 2026-11-23): 1132 of 1260 inferred crits
- * right over every operator (0.90; base rate 0.10), 470 of 474 for Rossi, Chen and Yvonne, whose kits have crit
- * triggers; with each hit's value from another hit of its key (negative control) 0.24.
- * 5082ceaffad1 leaves the crit out of all 85 hits of Yvonne's ultimate; their values are two levels ×3.0 apart (34553
- * and 11518 at 46.64 s), and MI Security's layers, which each of her crits refreshes, are listed on her to the fight's
- * end: without the crits the replay let them run out 0.05 s before her finisher (49.78 s, ×1.17). Only for an operator
- * whose kit has a trigger on its own crits; added after the logged crits and those shownCrits and layerCrits give.
+ * non-crits stand that far apart by themselves, nor a slot that can be kit hits of two scales. 5082ceaffad1 leaves the
+ * crit out of all 85 hits of Yvonne's ultimate; their values are two levels ×3.0 apart (34125 and 11375 at 45.6–46.0 s),
+ * and MI Security's layers, which each of her crits refreshes, are listed on her to the fight's end: without the crits
+ * the replay let them run out 0.05 s before her finisher (49.78 s, ×1.17). Cross-validated on the development logs
+ * (half the logged flags hidden, two folds; scripts/probes/crits/value-xval.ts, 2026-11-23): 1132 of 1260 inferred
+ * crits right over every operator (0.90; base rate 0.10), 442 of 445 for Rossi, Chen and Yvonne, whose kits have crit
+ * triggers; with each hit's value from another hit of its key (negative control) 0.24. Only for an operator whose kit
+ * has a trigger on its own crits; added after the logged crits and those shownCrits and layerCrits give.
  */
 export function valueCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement, known: ReadonlyMap<number, boolean> = new Map()): Map<number, boolean> {
   const out = new Map<number, boolean>();
