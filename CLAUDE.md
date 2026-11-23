@@ -143,13 +143,17 @@ complex to verify"):
   A sequence mixing `git` with other commands goes into `scratch/x.sh`,
   run with `bash scratch/x.sh`. Commit messages: write `scratch/msg.txt`
   with the Write tool, then `git commit -F scratch/msg.txt -- <paths>`
-  (by pathspec; `git mv` / `git rm` stage on their own).
+  (by pathspec; `git mv` / `git rm` stage on their own). The words
+  `source`, `eval` and `exec` are refused anywhere in a command, as an
+  argument too (`node scratch/x.ts source` was): name things otherwise.
 - Never a heredoc or a multi-line `python3 -c`, even where one has worked
   before: the guard judges the whole text, so the same form passes once
   and is refused the next time. Write the file with the Write tool, then
   run it with one plain command. File edits with the Write/Edit tools; a
-  batch of replacements: `scratch/patch.py` (plain Python strings, `assert
-  old in s` before each replace) run with `python3 -I scratch/patch.py`,
+  batch of replacements: a new `scratch/patch-<n>.py` per batch (plain
+  Python strings, `assert old in s` before each replace; never rewrite one
+  a shell command touched: the Write tool then refuses it) run with
+  `python3 -I scratch/patch-<n>.py`,
   never TypeScript inlined in `python3 -c`. No code formatter
   (`.prettierignore` keeps `npx prettier` off): format by hand.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
@@ -157,6 +161,11 @@ complex to verify"):
   `scripts/scratch-template.ts`, run `node scratch/x.ts`. Times go through
   `FPS` (30 frames a second): `withSeconds(scenario, s)` for a fight's
   length, `framesOf(s)` / `secondsOf(f)` otherwise, never a literal `* 60`.
+  Operator ids from names: `operatorId(data, "Arcane")` (@efsim/data),
+  `efsim find --operators`. A scratch script a doc cites for a number the
+  next step builds on moves to `scripts/probes/<topic>/` in that commit,
+  with its line in [scripts/probes/README.md](scripts/probes/README.md)
+  (scratch/ is per worktree and goes with it).
 - Long runs: start them with the Bash tool's background mode (never `&` or
   `nohup`: such a job can't be stopped, and `pkill` is off limits), with
   progress to a new file per run, then wait with Monitor on
