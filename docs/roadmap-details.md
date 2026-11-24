@@ -132,6 +132,18 @@ without Initial Stroke lasts to a press, a battle skill re-made where a burst's 
 Laevatain's Twilight battle skill the replay makes twice across a stop (db87; decided by the replay's state at the
 press, not statically).
 
+## Misprediction statistics (2026-11-24)
+
+[analysis/2026-11-24-misprediction-stats.md](analysis/2026-11-24-misprediction-stats.md): the ranked candidates with
+their shares and next checks (open-problems "Misprediction statistics"); the tables are rebuilt in a minute
+(`node scripts/probes/stats/build.ts`) and every table comes from `python3 -I scripts/probes/stats/analyze.py`, so a
+later round can measure what its fixes moved by class. In order: the ×1.5 band's rest (Alesh's ultimate by
+`poise.origin`, the Liino ultimate windows in 1cd1 / 1d91 / 9c6e), the one-buff list (20.4% of the error, the
+hold-outs' 34.0%: Si's ultimate Amp in 9c0b, Gilberta's weapon Arts DMG, Arcane's Susceptibility layers and Will burst
+buff), the Endministrator's and Chen Qianyu's "ready" weapon buffs on ultimates (2.8%), `zmdlogs fit-build` for Liino
+in 7910 and af7b, the drift against the placed holds' running total. A view promoting the explanation classes
+(`zmdlogs explain --all`?) if a second round asks the same question.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

@@ -20,7 +20,8 @@ belongs in a view (`efsim zmdlogs …`), not here.
 
 Never write player names, account IDs or hold-out logs' numbers into a probe
 or its output paths; probes read development logs only (`devFixtures`,
-fixtures/ and fixtures/pending/).
+fixtures/ and fixtures/pending/), but for stats/holdout-aggregates.ts, which prints group aggregates only (as
+measure's summary does) and writes nothing.
 
 | Probe | Question | Run | Last run |
 |---|---|---|---|
@@ -42,4 +43,9 @@ fixtures/ and fixtures/pending/).
 | physical/shatter-credit.ts | Each replay Shatter's credit under "the Vulnerable instance's starter" against the log's | `node scripts/probes/physical/shatter-credit.ts [ids…]` | 2026-11-24, fight totals 4 |
 | edge/edge-export.ts | Per Type 50 Yinglung's Edge wearer combo: the engine's layers and both readings' damage | `node scripts/probes/edge/edge-export.ts > scratch/edge-all.json` | 2026-11-23, round 6 |
 | edge/edge-score.py | The Edge stack-count hypotheses (H1–H13) scored against the implied layers (edge_implied.py) | `python3 -I scripts/probes/edge/edge-score.py [-v]` | 2026-11-23, round 6 |
+| stats/build.ts | The misprediction statistics' tables: every development log's hits (verdict, readings, zones, differences, one-difference / crit / boundary counterfactuals, cast, stop, hold, cut, time features), one-sided landings and fights | `node scripts/probes/stats/build.ts [--workers 4] [ids…]` (writes scratch/stats/hits.jsonl, onesided.jsonl, fights.jsonl) | 2026-11-24, misprediction statistics (at e5f22ef's code) |
+| stats/names.ts, stats/buffprops.ts | Operator names; every team kit buff's properties (target, consumed, instances, origin, trigger events) for the tables | `node scripts/probes/stats/names.ts`, `node scripts/probes/stats/buffprops.ts` (scratch/stats/names.json, buffs.json) | 2026-11-24 |
+| stats/analyze.py (with load.py) | Where the error concentrates: first explanations, buffs by mechanism, ratio clusters, drift, boundary effects, features with fight bootstrap and within-fight shuffles, interactions, a tree / lasso held out by fight group, one-sided kinds, fight-level features | `python3 -I scripts/probes/stats/analyze.py [section…] > scratch/stats/report.txt` (about 6 min) | 2026-11-24 |
+| stats/bands.py | The ×1.5 band of off hits by group (Empyrean combos by Stagger origin, Liino's ultimate windows, Alesh, Ardelia) | `python3 -I scripts/probes/stats/bands.py` | 2026-11-24 |
+| stats/holdout-aggregates.ts | The analysis's top candidates as group aggregates: the hold-outs' only view (reads them in memory, prints no log, operator or per-log value; the one probe that reads hold-outs) | `node scripts/probes/stats/holdout-aggregates.ts --holdout` or `--dev` | 2026-11-24 (after c9cf9a3) |
 | stagger/pause-bars.py | Around each hitless pause: the Stagger bar before and after, the enemy debuffs carried across | `python3 -I scripts/probes/stagger/pause-bars.py [min s] [ids…]` | 2026-11-23, round 6 |

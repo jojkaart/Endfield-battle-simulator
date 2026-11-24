@@ -38,6 +38,46 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Misprediction statistics: candidates across the logs (2026-11-24)
+
+**Shows:** one statistical pass over every development log's hits and one-sided landings
+([analysis/2026-11-24-misprediction-stats.md](analysis/2026-11-24-misprediction-stats.md); tables from
+scripts/probes/stats/build.ts, every number from analyze.py). Stage logs aside, the off hits' error (|logged − primary
+reading|, 5.0% of the logged damage) is: one kit buff the replay has wrong at the hit, the log's listing right, 20.4%;
+matched only through an alternative or the listing with alternatives 30.2%; Corrosion unquantified 8.5%; fight-wide
+factors 2.3%; unexplained 35.1%, nearly all in fight-operators already open below. The top 20 of 216 fight-operators
+carry 61%.
+
+**Found and fixed:** Zhuang Fangyi's Empyrean combo logged under the base combo's key (4.3% of the error, 21 hits in
+four logs, all ×1.500 = atk_scale 5.4 / 3.6, `poise.origin` combo_skill_ult on every one): the kit's Empyrean combo hit
+now carries the base key (c9cf9a3; 4d60, 3aa6, 4bfc and a hold-out better, d774's total +3.8 → +7.2%: the strikes it
+hid).
+
+**Ruled out (as broad causes):** the log's crit flags (flipping one fits 32 of 7,565 off hits; hold-outs 6 of 624); any
+generic hit feature predicting the error across fights (a tree fitted on the development logs explains R² 0.007 of the
+earlier ones', 0.039 the other way; slow-downs, placed holds, the landing's dt, parser version, import date, fight
+length, enemy and team members don't concentrate beyond the fights themselves); the one-sided twin window (pairs 1.5–3
+s apart 0.35% of a fight).
+
+**Still possible / next checks (largest first):**
+- **One buff's state at the hit** (20.4%; the hold-outs' largest class, 34.0%): ~140 kit buffs, none above 2.0%: Si's
+  ultimate Amp listed past the replay's end (2.0%, 7 fights, ×1.43, 9c0b), Gilberta's weapon Arts DMG (1.1%, 7
+  fights), Arcane's Susceptibility layers (1.2%, 9 fights), Arcane's weapon Arts DMG Taken and Will burst buff, Yvonne's
+  ultimate state, Typhoeus's Hovering ATK; buffs a cast starts are 6.5% of the error. `zmdlogs differences --all --what
+  <buff>` per buff.
+- **Weapon "ready" buffs consumed by an ultimate** (2.8%, 25 hits, 6 fights): the Endministrator's
+  `wpn_sword_0021.ready` (×0.81) and Chen Qianyu's `wpn_sword_0017.ready` (×0.86) on ultimates the engine reads with
+  them and the log without; their BuffData consumption and trigger first (part of "Chen's readings", d4fb).
+- **The rest of the ×1.5 band** (1.6% of the error, 6.9% of the hold-outs' after the fix): teammates' hits at ×1.5 in
+  windows with Liino's ultimate projectiles (1cd1, 1d91, 9c6e: Cosmovoice's Amp ending early, "Liino's Cosmovoice
+  beats"), Alesh's ultimate ×1.500 in 5 of 15 hits (a9d7, ad7f; `poise.origin` and the data's branches next), Ardelia's
+  basic attacks (4 fights).
+- **Moments of change:** hits with a boundary effect are off at 42.8% against 24.2% (hold-outs 29.9 / 9.0%) in every
+  skill kind, yet a boundary kit buff taken the other way fits only 1.8%: a marker of a state change, not its own cause.
+- **Drift with time:** off rate 12.5% in the first 10 s, 38% at 120–200 s; per fight higher in the second half in 34 of
+  57 (p = 0.18; hold-outs 8 of 11): against the placed holds' running total in long fights next.
+- **Fight-wide factors below the screen:** 7910 Liino ×1.143, af7b Liino ×1.161 (54% tight): `zmdlogs fit-build`.
+
 ## Fight totals: what moves them (2026-11-23)
 
 **Shows:** the mean |damage error| of the fight totals had stalled (development 8.7%, hold-out 10.2%, earlier pending

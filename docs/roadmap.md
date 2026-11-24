@@ -45,6 +45,10 @@ below ([review-2026-10.md](review-2026-10.md)).
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't
   overvalue held pieces, skeletons that aren't greedy; the owner's opener
   and loop with Arcane in WILL; Ink Melt next to the owner's team.
+- **Misprediction statistics** ([analysis/2026-11-24-misprediction-stats.md](analysis/2026-11-24-misprediction-stats.md),
+  2026-11-24; Zhuang Fangyi's Empyrean combo key fixed, 4.3% of the error): next the ×1.5 band's rest (Alesh's
+  ultimate, Liino's ultimate windows), the one-buff list by size (Si's Amp, Gilberta's and Arcane's weapon buffs), the
+  "ready" weapon buffs' consumption, fit-build for Liino in 7910 / af7b.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

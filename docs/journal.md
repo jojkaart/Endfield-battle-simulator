@@ -4,9 +4,42 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 136 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 137 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-24: Misprediction statistics across the logs; Zhuang Fangyi's Empyrean combo key
+
+**Goal:** the owner's ask: one statistical pass over every log's mispredictions (not one log or operator at a time),
+ranking candidate causes that could each explain a large share; analysis, not fixes, but for a certain one.
+
+**Done:** scripts/probes/stats/: build.ts (every development log's hits with the check's verdicts, readings, zones,
+differences, features, and counterfactual readings: each listing difference taken the log's way, the crit flipped,
+boundary kit buffs on and off; one-sided landings; fights), analyze.py (first explanations, ratio clusters, buffs by
+mechanism, features with fight bootstraps and within-fight shuffles, a tree and lasso held out by fight group,
+one-sided kinds, fight-level features), bands.py, holdout-aggregates.ts (aggregates only). The write-up:
+docs/analysis/2026-11-24-misprediction-stats.md; open-problems "Misprediction statistics".
+- Stage logs aside, the off hits' error is one kit buff the replay has wrong at the hit (the listing right) 20.4%,
+  alternatives or the listing with alternatives 30.2%, Corrosion 8.5%, unexplained 35.1% (in known fight-operators).
+- **Fixed:** Zhuang Fangyi's Empyrean combo is logged under the base combo's key (Stagger origin combo_skill_ult):
+  21 hits ×1.500 = 5.4 / 3.6, 4.3% of the error, the largest single cause. The kit's Empyrean combo hit carries the
+  base key now.
+- Leads: two weapons' "ready" buffs on ultimates (2.8%, 6 fights), the rest of the ×1.5 band (Liino's ultimate
+  windows, Alesh's ultimate; 6.9% of the hold-outs' error), boundary effects as a marker of state changes (off 42.8%
+  against 24.2%, explaining 1.8% themselves), a weak drift with time (34 of 57 fights), Liino's factors in 7910, af7b.
+
+**Scoreboard** (`npm run snapshots:update`, the kit fix): development plain 67.1%, mismatch 11.7 → 11.6%, mean
+|damage error| 7.3 → 7.2%; hold-out 77.6%, 6.2%, 8.2 → 8.0% (1 better); earlier pending plain 63.6 → 63.7%, mismatch
+14.5 → 14.3%, 4.3 → 4.5%, within 5% 19 → 18 (3aa6, 4bfc better; d774 +3.8 → +7.2% and c6d8 mixed, per hit closer:
+the combos' ×1.5 hid d774's replay-only Empyrean strikes); all but the hold-outs 5.6 → 5.7%. Teams (team-ab against
+e5f22ef): every team's fight the same.
+
+**Decisions:** the analysis at e5f22ef's code (the tables built in an at-commit tree), the hold-out confirmation after
+the fix; grading a crit-less hit on the nearer of its two crits, a capped hit on its uncapped value; the off rate
+beside the error share, since the error favours big hits; the stage logs left out of the attribution.
+
+**Dead ends:** the error-weighted feature shares alone (Stagger, ultimates, the fight's last tenth) looked like
+causes and were mostly hit size; the tree screen finds nothing that generalizes across fight groups.
 
 ## 2026-11-23: Fight totals 4: whose Shatter, Snowshine's counter, Rossi's borrowed crits
 
@@ -349,54 +382,3 @@ the development logs' margin (none → placed: development 57.8 → 65.4%, hold-
 
 Left: the one hold-out worse after the refresh can't be traced (a hold-out); `layerCrits` has no assumption reading,
 so its share of the 74.0 → 77.6% isn't separated; a detail takes ~45 s to download.
-
-## 2026-11-23: Crits from values, Combustion ticks from the tick before, landings batched at a stop's end
-
-**Goal:** four leads after the hold-clocks round (docs/journal/2026-11-23-03-corrosion-s-ramp-under-slow-downs-arcane-s-reset-freezes.md):
-5082's regression (−2.1 → −8.2%), 458b's Wulfgard Combustion ticks, a battle skill's hit logged at another cast's stop's
-end (a7a7 3.87 s), Rossi's combo_3 dilations.
-
-**Found and done:**
-- **5082** (open-problems "Smaller"): not Arcane's Arts DMG Taken (the replay has both layers) nor the moved 0.77 s
-  hold unit. Arcane's combo reset shortened the replay's own clock 0.1–0.2 s for every instance, which tipped two buffs
-  over hits: Yvonne's MI Security layers ran out 0.05 s before her finisher (×1.166), because the log gives none of her
-  85 ultimate hits a crit flag, though their values are two levels ×3.0 apart and the log lists the layers to the end;
-  and Xaihi's weapon team ATK on Arcane from 50.51 s (×1.18), an instance 1.67 s late, past INSTANCE_LATE_MS (left).
-  buffreplay.ts `valueCrits`: a crit-less hit CRIT_APART above the lowest of its key, skill and scale within 1 s is a
-  crit (not where logged non-crits split by themselves, nor a slot of two scales). Cross-validated with half the flags
-  hidden (scripts/probes/crits/value-xval.ts): 442 of 445 right for the operators with crit triggers (Rossi, Chen,
-  Yvonne), 0.90 over every operator against a base rate of 0.10; values shuffled within a key 0.24. 5082 −8.2 → +0.7%.
-- **458b** (open-problems "Ink Melt logs"): each Combustion tick deals with the owner's attacker side as it was at the
-  tick before (85.70 s without Akekuri's ATK from 84.37 s, 86.69 s with it, 230.62 s with her potential's +0.10 that
-  only the tick before lists). Engine assumption `combustion-snapshot` (`last-tick`, default; `application`):
-  situation.ts `retakeTickSnapshots`. Over the 21 Combustion logs 52 ticks plain that weren't, 1 the other way. 458b's
-  6.1 → 7.5% is Laevatain's total at 74bc686 (Si's strokes onto the placed holds), not the ticks.
-- **a7a7 3.87 s** (open-problems "Smaller"): a landing logged at another cast's frozen stop's end whose cast event puts
-  it just before the stop landed there: the cast starts at the event, the batched landings (and what they set off)
-  land at their kit frames (logcasts.ts `beforeStopStart`, LoggedCast.beforeStop; buffreplay.ts `batchedFrame`). a7a7's
-  Corrosion ramp readings off the replay's step 15 → 4. 489c 49.31 s is another case (the hit inside Rossi's combo
-  slow-down, logged 0.31 s after it), left.
-
-**Scoreboard** (`npm run snapshots:update`, after merging main at aa29bac): development plain 65.2 → 65.4%, mismatch
-14.8%, mean |damage error| 8.9 → 8.6%, within 5% 16 → 19; hold-outs 73.7 → 74.0%, 6.4%, 10.8% (5 better, 1 worse,
-1 mixed: aggregates only); earlier pending 57.9 → 58.5%, 18.2 → 17.8%, 8.3 → 8.4%; all but the hold-outs 62.6 → 63.0%,
-15.8 → 15.6%, 8.0 → 7.9%; verified unchanged. Development 10 better, 0 worse, 4 mixed (489c, db87, f978: per-hit
-closer, totals ±0.2 pt; 9a80 −1 plain: Si's combo at 35.05 s reads the Stagger's ×1.3, a knock-on of a cast placed
-from its event); earlier pending a7a7 376 → 405 (mismatch 45 → 14), 458b 1048 → 1064 (mismatch 22 → 12), abfd plain
-313 → 333 but total −1.3 → +3.9% (Yvonne's crit-refreshed buffs now on: the old −1.3% hid them), 4e36 mixed.
-Teams (team-ab against 8daa9e9, seeds 1001–1032): Estella's sustained DPS −0.01% full / −0.00% zero, 60 s timelines
-+0.00%; Typhoeus's fight the same. Examples snapshot moved with the ticks.
-
-**Decisions:** crits inferred only upwards and only for operators whose kits have crit triggers (the replay's buffs);
-the check's own verdicts try both crits anyway. INSTANCE_LATE_MS kept at 1 s: 5082 fits 2 s (2.17 s of holds, no bound
-dropped) but 4d60's refreshed Arcane runs are why the cap exists, and one log doesn't move it. The tick rule as an
-engine reading with the old one kept: its mechanism (the snapshot taken after each tick) is the logs', not the data's.
-
-**Dead ends:** valueCrits keyed by hit id within one placed cast (Yvonne's ultimate is eight-shot casts, one landing per
-id: nothing inferred); by the key and scale names alone (0.72: Purrchena's attack1 slot holds hits of 367 and 551, both
-logged non-crits; scale names repeat across skills); a crit-zone check from the stat panel (Yvonne's ultimate adds Crit
-DMG the panel lacks).
-
-**Left:** Xaihi's weapon instance in 5082; 458b's 86.69 s and 227.60 s ticks (the replay's tick before is elsewhere);
-4e36's Wulfgard ticks between the two readings; Rossi's combo_3 dilations (two at frame 0, 12 and 19 frames, different
-priorities: one replacing the other would hold 7 frames less, about the 0.15–0.2 s 3f78 and 4a64 ask; not built).
