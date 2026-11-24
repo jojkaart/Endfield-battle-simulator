@@ -180,7 +180,8 @@ Fu's P3), then `trigger-cooldowns` per trigger, smoke and team-ab;
 (4) 0c14's −4.9%: Rossi's ultimate stabs (−2.5%, crits unlogged), Si's log-only inkmove (−1.5%), the
 Endministrator's Crush ×2.2.
 
-**The cooldown-clock round, 2026-11-24** (journal 2026-11-24-05; open-problems "Misprediction statistics"): (1)–(3)
+**The cooldown-clock round, 2026-11-24** (journal
+[2026-11-24-06](journal/2026-11-24-06-cooldown-clocks-from-the-data-arcane-s-burst-held-by-her-own.md); open-problems "Misprediction statistics"): (1)–(3)
 above done. (1) KitHit.travels (the compiler, from LaunchProjectile) reproduces the event rule for every projectile
 ultimate but not for the ability entities it takes (Tangtang's stare in b7b3), so the rule keeps its check for them;
 (2) every finisher hit deals as on a Staggered enemy (`finisher-stagger` `cast`: 7e19 −4.9 → −1.1%); (3)
