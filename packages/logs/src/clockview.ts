@@ -96,11 +96,13 @@ export function kitBuffClock(data: GameData, fx: LogFixture, kitBuff: string, as
   const owner = kitBuff.split(":")[0] as string;
   const names = teamBuffNames(data, fx);
   if (!names.defs.has(kitBuff)) throw new Error(`${fx.id}: no kit buff ${kitBuff} in this team (efsim kit ${owner} lists its buffs)`);
-  const own = instancesOf(logBuffReplay(data, fx, undefined, { assume: { ...assume, "hidden-holds": "none" }, trace: [kitBuff] }).replay.traces, kitBuff);
+  const ownRun = logBuffReplay(data, fx, undefined, { assume: { ...assume, "hidden-holds": "none" }, trace: [kitBuff] }).replay;
+  const own = instancesOf(ownRun.traces, kitBuff);
   const check = instancesOf(logBuffReplay(data, fx, undefined, { ...(Object.keys(assume).length ? { assume } : {}), trace: [kitBuff] }).replay.traces, kitBuff);
   const logged = new Set(names.ofKitBuff.get(kitBuff) ?? []);
   const lanes = buffLanes(fx).filter((l) => logged.has(l.buff) && (l.source === null || l.source === owner));
-  const stops = replayTimeStops(data, fx);
+  // The stops the replay applied (a hitless event it read as a buff's tick holds nothing: replayTimeStops).
+  const stops = replayTimeStops(data, fx, undefined, ownRun);
   return own.map((i, n) => {
     const next = own[n + 1]?.start ?? Infinity;
     // The lane this instance stands for: listed from its start (less the log's batching) before the next instance's.

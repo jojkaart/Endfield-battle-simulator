@@ -561,8 +561,13 @@ export function splitLines(parts: readonly { readonly label: string; readonly fr
   const wholeMoved = movedBy(before, whole);
   const anyPart = new Set<string>();
   for (const [i, p] of parts.entries()) {
-    out.push(`Part ${i + 1}: ${p.label}`, ...compare(p.from, p.to).map((l) => `  ${l}`));
-    for (const k of movedBy(p.from, p.to)) anyPart.add(k);
+    const moved = movedBy(p.from, p.to);
+    if (!moved.size) {
+      out.push(`Part ${i + 1}: ${p.label}: no log's verdicts moved`);
+      continue;
+    }
+    out.push(`Part ${i + 1}: ${p.label}`, ...compare(p.from, p.to).filter((l) => !/: unchanged$/.test(l)).map((l) => `  ${l}`));
+    for (const k of moved) anyPart.add(k);
   }
   const name = (ks: readonly string[]) => {
     const hold = ks.filter(isHoldout).length;

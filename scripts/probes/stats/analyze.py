@@ -2,8 +2,14 @@
 # analysis from the tables scripts/probes/stats/build.ts, names.ts and buffprops.ts write (scratch/stats/).
 #
 #   python3 -I scripts/probes/stats/analyze.py [section…] > scratch/stats/report.txt
+#   python3 -I scripts/probes/stats/analyze.py buff <kit buff regex> [fx…]   (one buff's hits, per fight: onebuff.py's)
 #
 # Sections: summary, explain, buffs, clusters, features, interactions, tree, onesided, fights (default: all).
+# Round 11: the bootstrap and the within-fight shuffles are numpy over per-fight sums (features: 6 min → seconds; the
+# shuffles' draws differ, and with them the bootstrap's after the first row (one random stream), so an interval or a
+# shuffled share can differ from the 2026-11-24 report's by about a point); the buffs section gives each row's largest
+# fight's and largest hit's share of it, the kit buff ids with the equipment's name (names.ts writes
+# equipment.json), and sets apart the fights with a known non-kit cause (NOT_KIT, as the stage logs are).
 # Development logs only (the builder never reads a hold-out). The stage logs (7b54, 6339, 8915, c6d8: shields and
 # phase factors, OFFSETS_EXPLAINED) are reported apart and left out of the attribution.
 
@@ -23,6 +29,9 @@ pd.set_option("display.width", 250)
 pd.set_option("display.max_rows", 200)
 pd.set_option("display.max_colwidth", 70)
 STAGE = {"7b54", "6339", "8915", "c6d8"}
+# Fights whose off error has a known cause outside the kits (kit-buff leads report point 1: a lead whose error is one
+# such fight sent an agent after a kit buff): set apart in the buffs section, with the reason.
+NOT_KIT = {"9c6e": "two targets in a single-target fixture"}
 RNG = np.random.default_rng(20261124)
 B = 300  # bootstrap resamples (fights)
 SHUFFLES = 20
@@ -109,25 +118,39 @@ def explain(df):
 
 
 def boot_share(df, mask_col, value, weight="err", B=B):
+    """The share's 95% interval over B resamples of whole fights: per-fight sums once, then the resamples' sums (the
+    same draws as the loop it replaced: RNG.choice with replacement is RNG.integers over the fights)."""
     fights = df.fx.unique()
-    by = {f: g for f, g in df.groupby("fx")}
-    shares = []
-    for _ in range(B):
-        pick = RNG.choice(fights, size=len(fights), replace=True)
-        num = den = 0.0
-        for f in pick:
-            g = by[f]
-            num += g.loc[g[mask_col] == value, weight].sum()
-            den += g[weight].sum()
-        shares.append(num / den if den else 0)
+    w = df[weight].fillna(0.0).to_numpy(dtype=float)
+    codes = pd.Categorical(df.fx, categories=fights).codes
+    hit = (df[mask_col] == value).to_numpy()
+    num = np.bincount(codes, weights=np.where(hit, w, 0.0), minlength=len(fights))
+    den = np.bincount(codes, weights=w, minlength=len(fights))
+    pick = np.stack([RNG.integers(0, len(fights), size=len(fights)) for _ in range(B)])
+    n, d = num[pick].sum(axis=1), den[pick].sum(axis=1)
+    shares = np.where(d > 0, n / np.where(d > 0, d, 1), 0.0)
     return np.percentile(shares, [2.5, 97.5])
 
 
+def _within_fight_order(df):
+    """The rows' fight codes and the rows sorted by fight (stable): the frame a within-fight shuffle permutes in."""
+    codes = pd.Categorical(df.fx).codes
+    return codes, np.argsort(codes, kind="stable")
+
+
 def shuffled_share(df, col, value, weight="err", n=SHUFFLES):
+    """The share when `col`'s values are shuffled inside each fight (n shuffles): one lexsort per shuffle (random keys
+    within the fight's block) in place of a pandas transform per fight."""
+    codes, by_fight = _within_fight_order(df)
+    values = df[col].to_numpy()
+    w = df[weight].fillna(0.0).to_numpy(dtype=float)
+    total = w.sum()
     vals = []
     for _ in range(n):
-        s = df.groupby("fx")[col].transform(lambda x: x.sample(frac=1, random_state=int(RNG.integers(1 << 30))).values)
-        vals.append(df.loc[s == value, weight].sum() / df[weight].sum())
+        perm = np.lexsort((RNG.random(len(codes)), codes))
+        s = np.empty_like(values)
+        s[by_fight] = values[perm]
+        vals.append(w[s == value].sum() / total)
     return float(np.mean(vals)), float(np.percentile(vals, 97.5)), float(np.percentile(vals, 2.5))
 
 
@@ -200,10 +223,29 @@ def buffs_section(df):
         return pd.Series({"m_origin": origin, "m_target": target, "m_consumed": consumed, "m_instances": inst, "m_on": on})
 
     w = pd.concat([w, w.apply(mech, axis=1)], axis=1)
-    w["buff"] = w.buff.map(lambda b: " + ".join(sorted({x.split(":")[1] for x in b.split(" + ")}))[:60] + f" ({name(b.split(' + ')[0].split(':')[0])})")
-    g = w.groupby(["buff", "explKind"]).agg(hits=("err", "size"), err=("err", "sum"), fights=("fx", "nunique"), median_ratio=("r", "median")).sort_values("err", ascending=False)
+    w["buff"] = w.buff.map(buff_label)
+    # The fights with a known non-kit cause apart (NOT_KIT), as the stage logs are.
+    apart = w[w.fx.isin(NOT_KIT)]
+    if len(apart):
+        print("Set apart, a known non-kit cause: " + "; ".join(f"{fx} ({why}): {len(g)} hits, {pct(g.err.sum() / tot)} of the off |err|" for fx, g in apart.groupby("fx") for why in [NOT_KIT[fx]]) + "\n")
+    w = w[~w.fx.isin(NOT_KIT)]
+
+    def concentration(g):
+        # How much of the row is one fight or one hit (kit-buff leads report point 1: 88% of a lead was one hit read two
+        # ways, 96% of another one known fight): the largest fight's and the largest hit's share of the row's |err|.
+        e = g.err.sum()
+        by_fx = g.groupby("fx").err.sum()
+        top = g.loc[g.err.idxmax()]
+        return pd.Series({
+            "top fight": f"{by_fx.idxmax()} {pct(by_fx.max() / e) if e else '-'}",
+            "top hit": f"{top.fx} {top.t / 1000:.2f}s {pct(top.err / e) if e else '-'}",
+        })
+
+    g = w.groupby(["buff", "explKind"]).agg(hits=("err", "size"), err=("err", "sum"), fights=("fx", "nunique"), median_ratio=("r", "median"))
+    g = g.join(w.groupby(["buff", "explKind"])[["fx", "t", "err"]].apply(concentration)).sort_values("err", ascending=False)
     g["share"] = (g.err / tot).map(pct)
     g["median_ratio"] = g.median_ratio.round(3)
+    print("top fight / top hit: the row's largest fight's and largest hit's share of its |err| (one hit or one fight: not yet a kit lead)")
     print(g.head(30).to_string())
     for col in ["explKind", "m_origin", "m_target", "m_consumed", "m_instances", "m_on"]:
         t = w.groupby(col).agg(hits=("err", "size"), err=("err", "sum"), fights=("fx", "nunique"), buffs=("buff", "nunique"))
@@ -214,6 +256,49 @@ def buffs_section(df):
     t["share"] = (t.err / tot).map(pct)
     print("\nby kind × consumed × origin:")
     print(t.sort_values("err", ascending=False).head(15).to_string())
+
+
+_EQUIPMENT = None
+
+
+def equipment_name(buff_id):
+    """The weapon's or gear set's display name of a kit buff id's prefix (`wpn_funnel_0008.arts_taken` → Detonation
+    Unit), from names.ts's equipment.json; None for an operator's own buff or without the file."""
+    global _EQUIPMENT
+    if _EQUIPMENT is None:
+        path = os.path.join(D, "equipment.json")
+        _EQUIPMENT = json.load(open(path)) if os.path.exists(path) else {}
+    return _EQUIPMENT.get(buff_id.split(".")[0])
+
+
+def buff_label(b):
+    """A one-buff row's kit buffs as ids (owner prefix dropped) with the equipment's name, and the first owner's name:
+    `wpn_funnel_0008.arts_taken [Detonation Unit] (Arcane)` (the label's short form lost the weapon in a brief)."""
+    keys = b.split(" + ")
+    ids = sorted({x.split(":")[1] for x in keys})
+    shown = " + ".join(f"{i} [{equipment_name(i)}]" if equipment_name(i) else i for i in ids)
+    return shown[:90] + f" ({name(keys[0].split(':')[0])})"
+
+
+def buff_hits(pattern, fxs=()):
+    """`analyze.py buff <regex> [fx…]` (onebuff.py's): one kit buff's "one buff the log's way" hits per fight: time,
+    operator, event, logged ÷ primary, the counterfactual's kind (engine: the engine has it, the log doesn't; log: the
+    other way; values: both, other values) and the hit's differences about it."""
+    import re
+
+    pat = re.compile(pattern)
+    df = load_hits()
+    df = df[~df.fx.isin(STAGE)].copy()
+    explain(df)
+    w = df[df.off & df.expl.str.startswith("one buff") & df.explWhat.fillna("").str.contains(pat)]
+    if fxs:
+        w = w[w.fx.isin(set(fxs))]
+    for fx, g in w.groupby("fx"):
+        note = f" [set apart in the buffs section: {NOT_KIT[fx]}]" if fx in NOT_KIT else ""
+        print(f"\n== {fx} ({len(g)} hits, err {g.err.sum():.0f}) team {g.team.iloc[0]}{note}")
+        for _, r in g.sort_values("t").iterrows():
+            diffs = "; ".join(f"{d.get('what')}:{d.get('kind', '')}" for d in (r.differences or []) if pat.search(str(d.get("what", ""))))
+            print(f"  {r.t / 1000:8.2f}s {r.opname:14s} {r.event[-40:]:40s} r={r.r:.3f} {r.explKind:7s} {r.explWhat} | {diffs}")
 
 
 def clusters(df):
@@ -558,6 +643,11 @@ def fights_section(fights, df):
 
 
 def main():
+    if sys.argv[1:2] == ["buff"]:
+        if len(sys.argv) < 3:
+            sys.exit("analyze.py buff <kit buff regex> [fx…]")
+        buff_hits(sys.argv[2], sys.argv[3:])
+        return
     want = set(sys.argv[1:]) or {"summary", "explain", "buffs", "clusters", "drift", "boundary", "features", "interactions", "tree", "onesided", "fights"}
     all_df = load_hits()
     fights = load_fights()

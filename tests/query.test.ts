@@ -25,6 +25,9 @@ import {
   castTimeStops,
   replayTimeStops,
   worldTimeView,
+  castEventPlace,
+  logBuffReplay,
+  replayView,
 } from "@efsim/logs";
 
 const data = loadGameData();
@@ -153,5 +156,60 @@ describe("world time in a log (zmdlogs worldtime, lanes --world)", () => {
     const text = lanesView(data, a.fx, /liino_atkup$/, { world: true });
     expect(text).toMatch(/world time from since: to the last listed \d+\.\d\d s \(real \d+\.\d\d\)/);
     expect(lanesView(data, a.fx, /liino_atkup$/)).not.toContain("world time");
+  });
+});
+
+describe("a cast event's place in its stop (round 11, placement leads report point 1)", () => {
+  // A skill whose timing stops the world (a slow-down down to scale 0), and its stop's length in ms.
+  const [skill, stopMs] = (() => {
+    for (const [id, sk] of Object.entries(data.skills)) {
+      const d = sk.timing?.slowdowns.find((x) => Math.min(...x.scales) === 0);
+      if (d && d.scales.length >= 30) return [id, (d.scales.length * 1000) / 30] as const;
+    }
+    throw new Error("no skill with a full time stop");
+  })();
+
+  it("says press, the stop's end, inside or unclear by the logged hits around the event", () => {
+    const t = 10000;
+    expect(castEventPlace(data, [t - 100, t + stopMs + 200], { t, skill })?.place).toBe("press");
+    expect(castEventPlace(data, [t - stopMs - 200, t + 100], { t, skill })?.place).toBe("end");
+    expect(castEventPlace(data, [t - stopMs - 200, t + stopMs + 200], { t, skill })?.place).toBe("inside");
+    expect(castEventPlace(data, [t - 100, t + 100], { t, skill })?.place).toBe("unclear");
+    // A hit at the event's own ms (the log batches) is neither before nor after it.
+    const p = castEventPlace(data, [t - 100, t, t + stopMs + 200], { t, skill });
+    expect(p?.place).toBe("press");
+    expect(p?.before).toBe(100);
+    expect(p?.after).toBeCloseTo(stopMs + 200, 6);
+    expect(castEventPlace(data, [], { t, skill: "no_such_skill" })).toBeNull();
+  });
+
+  it("is in `zmdlogs instances` for a skill that stops the world, with the event's log time from the placed start", () => {
+    const [si] = devFixtures({ ids: ["4a64"] });
+    expect(instancesView(data, (si as (typeof logs)[number]).fx, { kind: "ultimate" })).toMatch(/cast event\(s\) at .* \([+-]\d+\.\d\d s of log time from the placed start\); (the first )?logged (at its press|at its stop's end|inside a hitless stretch|at no clear edge) \(hits /);
+  });
+});
+
+describe("the views' stops and the replay's ticks (round 11, kit-buff leads report point 2)", () => {
+  it("leaves out, with the replay, a hitless event the replay read as a buff's tick; marks it without one", () => {
+    const [d] = devFixtures({ ids: ["4d60"] });
+    const fx = (d as (typeof logs)[number]).fx;
+    const placement = placeHits(data, fx);
+    const { replay } = logBuffReplay(data, fx, placement);
+    const all = replayTimeStops(data, fx, placement);
+    const kept = replayTimeStops(data, fx, placement, replay);
+    const gone = all.filter((st) => !kept.includes(st) && !kept.some((k) => k.start === st.start && k.operator === st.operator && k.skillId === st.skillId));
+    // 4d60's Empyrean end at 106.47 s, logged as Zhuang Fangyi's ultimate: a tick, no stop.
+    expect(gone.some((st) => st.operator === "chr_0030_zhuangfy" && Math.abs((st.start * 1000) / 30 - 106470) < 100)).toBe(true);
+    for (const st of gone) {
+      expect(st.tickRead).toBe(true);
+      expect(replay.appliedStops.some((x) => x.operator === st.operator && x.start === st.start)).toBe(false);
+    }
+    expect(kept.length).toBe(all.length - gone.length);
+  });
+
+  it("says on the EVENT line when the replay made a cast whose key a buff ticks as (3aa6: Zhuang Fangyi's real ultimates)", () => {
+    const [d] = devFixtures({ ids: ["3aa6"] });
+    const fx = (d as (typeof logs)[number]).fx;
+    expect(replayView(data, fx, { from: 5000, to: 9000, operators: ["chr_0030_zhuangfy"] })).toMatch(/EVENT {2}Zhuang Fangyi ultimate_skill \(the log's cast event\): its key is a tick of empyrean .*, but the replay made the cast: its stop at 5\.\d\d–8\.\d\d s/);
   });
 });
