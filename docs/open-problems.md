@@ -100,8 +100,8 @@ shares of the off error at that code):**
   696, −1.8 → −4.1%): the fake stop held Arcane's Solemn Phalanx runs (98.5→131.7 s), Perlica's weapon (115.8→143 s)
   and a Sunderblade's timer 2.6 s, which the game holds 3.6–6.1 s by something unlogged (`zmdlogs holds 4d60`: those
   bounds dropped; the replay's Stagger window 114.30–133.37 s takes no holds; the enemy away 117.22–124.45 s): open.
-  Left: the hold placement's stop list (buffreplay.ts replayedCastStops of the assembled casts) still counts the
-  78 frames of an event the replay reads as a tick.
+  The hold placement's stop list (buffreplay.ts, before replayedCastStops) leaves out an event the replay read as a
+  tick since 2026-11-24 (placement leads); query.ts replayTimeStops (the views' world time) still counts it.
 - **Ruled out: Arcane's Susceptibility layers** (1.5%): 170k of the 194k is one hit, e82d 9.12 s (Si's combo, crit
   unlogged, a fallback) that fits two ways (the crit with Arcane's Susceptibility the log's way, or the verdict's reading: the crit with
   suit_atk02.edge ×2 and wpn_claym_0018.combo_ready unlogged); the rest is 24 hits over 16 fights at start / end boundaries.
@@ -137,19 +137,49 @@ shares of the off error at that code):**
 - **Zhuang Fangyi's Sunderblades, left:** d774 104.18 s, the Empyrean's free battle skill: 3 logged hits, no final,
   where the replay plays 8 and the final (300k replay-only); 4d60 125.40 s: the replay's 8 against the log's 9 since
   the fix above (a Sunderblade's 36 s ran out without the fake stop: the same unlogged holds).
-- **The rest of the ×1.5 band, Liino's ultimate windows** (1cd1, 1d91, af7b; 9c6e is two targets): not Cosmovoice
-  ending early but starting late. In 1cd1 the log has Typhoeus's burst at 37.97 s and Liino's first projectile pair
-  (frame 76) at 38.73 s under the Amp; the replay casts her ultimate at 36.19 s from its projectiles with its 77-frame
-  stop to 38.77 s, so the Amp (frame 77) starts after them. In af7b (59.6–60.8 s) Typhoeus's, Ardelia's and Arcane's
-  hits during the replay's stop of Liino's ultimate (57.40–59.97 s) land, and the log's cast event is at 59.94 s with
-  the first projectiles: the replay's placement of her ultimate and its stop against the log's world time, not a kit
-  value. **Next:** `zmdlogs casts 1cd1` at 36–39.7 s and `zmdlogs stops 1cd1`: where the log's ultimate event sits in
-  her stop.
-- **7e19's Chen ×1.15** on every hit, above and below half HP (×1.152 basic, ×1.106–1.119 ultimate): not P1 (below
-  half the reading has it and is still ×1.106) and not the weapon (fixed above). `fit-build 7e19 --operator Chen`: 17
-  of 19 with Ginseng Meat Stew (ATK +180), but 0 clean hits and her three teammates fit as exported: a food on one
-  operator only is unlikely. Still possible: a build element of hers the export lacks; Pogranichnik's team ATK layers
-  (`values` on most of her hits).
+- **Liino's ultimate windows: fixed 2026-11-24 (placement).** Her Pyrotechnics (frame 76, `detached`) fly 0.1–0.8 s
+  of the world's time before they land (dbae: the first song beat, frame 77, at 8.26 s with the cast event, the
+  projectiles at 8.61 s), so a cast placed from them came late, its stop over teammates' logged hits and its Amp
+  (frame 77) after hits the log has under it. The log's ultimate event sits at an edge of the stop: at its end for
+  most operators (no hit by anyone for the stop's length before it: Si 26 of 35, Liino 13 of 21, Laevatain 11 of 16;
+  scripts/probes/placement/ult-events.ts), at the press for others (Liino's 1d91, 8915, 9847; Ardelia's af7b, 7910;
+  Cosmovoice ATK's listed `since` equals the event where the log has one: scripts/probes/placement/liino-amp.ts).
+  logcasts.ts eventStopStart: an ultimate whose first landing is on its way (`detached` or a random landed count) and
+  whose landing's frame puts its stop over a teammate's logged hit starts from such an event. 1cd1 −7.5 → −3.5%,
+  af7b plain 588 → 599, 1d91, 9c6e (Ardelia's ×1.5 attack 3s under the Amp), 5082 (Ardelia's sheep). Left: 9c6e's
+  total (−13.1%, two targets) and 9090's Electrification at 64.40 s (Perlica's run 0.1 s short after the stop moved,
+  a knife edge). **Still possible:** a kit field for a travelling landing (the compiler from LaunchProjectile)
+  instead of the event-and-contradiction rule; Si's ability-entity slashes don't need it (b6aa stays).
+- **7e19's Chen ×1.15: her food, fixed 2026-11-24** (fixture buildOverrides: Ginseng Meat Stew, fit-build 17 of 19,
+  the ultimate's lower ratio included). Ruled out first: P1 (the fight starts at the data's Max HP, her hits ×1.15
+  from 5.4 s at 99.9% HP; a27b, the same enemy, fits P1 off above half, d4fb switches it on at 0.499 of the HP; P1's
+  +0.2 DMG would be ×1.185 on her basic attacks, not ×1.152; the log lists P1 on every hit of hers in every log, the
+  buff and not its condition), a listing difference (only Pogranichnik's team ATK `values`, plain elsewhere). The
+  Endministrator has the same stew by hand in this fight, d9e5's whole team against the same enemy. Ember and
+  Pogranichnik fit as exported.
+- **7e19's Ember −21.5%:** her finisher's second hit at 33.15 s ×1.564, 117k of her 128k: ×1.43 is the Staggered
+  parts (multiplicative 0.3 and DamageToBrokenUnitIncrease 0.27) the first hit at 30.86 s has, times the ×1.096 her
+  hits from 25.8 s share (Pogranichnik's team ATK as `values`?). The log's Stagger ends at 30.86 s (no
+  poise_break buff on the 33.15 s hit) and the replay's at 33.13 s. **Still possible:** a finisher's hits all deal
+  with the Stagger its first hit had (04d4's pairs, 0.6 s apart and both Staggered, can't tell); the ×1.096 a team
+  ATK layer count. **Next:** the other logs' Finisher second hits after a Stagger's end (`zmdlogs hits --all --event
+  power_attack`).
+- **Swordmancer's cooldown on the world's clock (2026-11-24; engine assumption `trigger-cooldowns`, default still
+  `raw`):** the largest "no cast" one-sided kind is Swordmancer's proc (191k replay-only over 10 landings; de6a 51.80,
+  137.83 s). Every wearer's Physical status with no logged proc came under 15 s of the world's time since the last proc
+  (de6a 15.01 and 14.98 s, at 18.8 and 20.5 s of log time; d4fb 11.85, 14.16 s; fc63 14.28 s), every proc past it
+  (17.8 s and more); one exception, d4fb 97.05 s at 16.67 s (scripts/probes/cooldowns/physuit.ts, `zmdlogs
+  worldtime`). Mi Fu's P3 ATK in 2fd9 fits the same. Skill cooldowns stay on raw time (test 18). `world` for every
+  trigger: earlier pending 4 better, development 1, two hold-outs' totals worse, and four kit tests' fights change
+  (Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel's layers, chen-solo): not every trigger cooldown
+  is a CD timer, so not the default. **Next:** a kit trigger field for the clock (`cooldownClock: "world"` where the
+  data's AddGlobalCDTimer gives it: Swordmancer, Mi Fu's P3), the compiler setting it; the d4fb exception an unlogged
+  hold the placement doesn't place?
+- **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
+  unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6%. 4e36:
+  small replay-only basic-attack tails (Si's attack4, Ardelia's attack3 projectiles) and +1.6% matched. de6a: the
+  Swordmancer procs (above, fixed) and Pogranichnik's combo hit_3 / ultimate harass replay-only against his log-only
+  combo hits at 132–134 s (a placement of his combo: open).
 - **Moments of change:** hits with a boundary effect are off at 42.8% against 24.2% (hold-outs 29.9 / 9.0%) in every
   skill kind, yet a boundary kit buff taken the other way fits only 1.8%: a marker of a state change, not its own cause.
 - **Drift with time:** off rate 12.5% in the first 10 s, 38% at 120–200 s; per fight higher in the second half in 34 of
