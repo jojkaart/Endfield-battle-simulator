@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, readLogFixture } from "@efsim/cli";
-import { replayView } from "@efsim/logs";
+import { loggedCastFates, replayView } from "@efsim/logs";
 
 const data = loadGameData();
 const fixtureFile = (path: string) => readLogFixture(new URL(`../../fixtures/${path}`, import.meta.url).pathname);
@@ -42,8 +42,13 @@ describe("Zhuang Fangyi: the Empyrean's end logged as an ultimate_skill cast eve
   it("4bfc: the events at 92.68 and 179.51 s are the Empyrean's end, not casts; her hits after 92.68 s match without Lone Barge's ultimate buff", () => {
     const Z = "chr_0030_zhuangfy";
     const fx = fixtureFile("pending/zmdlogs-4bfc6f3e84b8.json");
+    // Both events are the Empyrean's tick by their key (loggedCastFates); the replay's own decision differs at 179.51 s,
+    // where it still makes the ultimate (its stop applied): the EVENT line says so since round 11, an open replay
+    // question, not this test's.
+    const fates = loggedCastFates(data, fx).filter((e) => e.operator === Z && e.fate === "tick").map((e) => (e.t / 1000).toFixed(2));
+    for (const t of ["92.68", "179.51"]) expect(fates).toContain(t);
     const view = replayView(data, fx, { operators: [Z] });
-    for (const t of ["92.68", "179.51"]) expect(view).toContain(`${t}  EVENT  Zhuang Fangyi ultimate_skill (the log's cast event): a tick of empyrean`);
+    expect(view).toContain("92.68  EVENT  Zhuang Fangyi ultimate_skill (the log's cast event): a tick of empyrean");
     // Her first ultimate's Lone Barge buff is listed to 91.62 s; the next hits list none (the log has no second run until 144.37 s).
     const after = checkLog(data, fx).filter((v) => v.hit.operator === Z && v.hit.t >= 92900 && v.hit.t <= 119300 && /normal_skill_ult|sword_triggerd/.test(v.hit.event));
     // 27 hits, plain but one (110.37 s, a Sunderblade strike off for another reason); with the buff they read ×0.849.

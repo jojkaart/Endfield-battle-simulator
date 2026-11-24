@@ -117,7 +117,10 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   replay, leaves out those the timeline never applied (`zmdlogs stops --all --differ`: list only 2 → 0, nothing else
   moved); `casts` and `worldtime` mark them. Doing so showed the EVENT fate wrong the other way: 3aa6's seven real
   Zhuang Fangyi ultimates (hits not placed) read "a tick of empyrean" because loggedCastFates decides by the key; the
-  EVENT line now says "but the replay made the cast" from the applied stop.
+  EVENT line now says "but the replay made the cast" from the applied stop. So does 4bfc's 179.51 s event, which the
+  kit-buff leads judged the Empyrean's end from the log: the replay still makes an ultimate there (its 78-frame stop
+  applied, "as listed"), an open replay question for the accuracy agent (tests/slow/log-cases.test.ts now checks the
+  key's fate there, and the EVENT text at 92.68 s only).
 - **Cause:** the views re-derive from the applied stops what the replay decided (made or not) instead of reading it.
 - **Suggestion:** BuffReplay exposes the stop list its hold placement used (`heldStops`, or the made casts' keys) and
   loggedCastFates' "tick" comes from the replay's decision (buffreplay.ts); replayTimeStops then takes that list,
