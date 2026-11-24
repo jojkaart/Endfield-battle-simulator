@@ -405,6 +405,31 @@ export function reachedFiles(skillId: string, isHelper: (id: string) => boolean,
   return out;
 }
 
+const projectileCache = new Map<string, ReadonlySet<string>>();
+
+/**
+ * The skills a skill's file, or a file it reaches (reachedFiles), launches as projectiles (LaunchProjectile's routed
+ * skills: PROJECTILE_ROUTES): a hit logged under one of them flies to the enemy after its launch (KitHit.travels).
+ * Ability entities (SpawnAbilityEntity) aren't among them.
+ */
+export function projectileSkills(skillId: string): ReadonlySet<string> {
+  const cached = projectileCache.get(skillId);
+  if (cached) return cached;
+  const out = new Set<string>();
+  const own = isSkillFileListed(skillId) && existsSync(skillFilePath(skillId)) ? parseJsonExact(readFileSync(skillFilePath(skillId), "utf8")) : null;
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (o["isEnable"] !== false && type.includes("LaunchProjectile")) for (const [flag, field] of PROJECTILE_ROUTES) if (o[flag] === true && typeof o[field] === "string") out.add(o[field]);
+    for (const v of Object.values(o)) walk(v);
+  };
+  if (own !== null) [own, ...reachedFiles(skillId, () => false).map((f) => f.json)].forEach(walk);
+  projectileCache.set(skillId, out);
+  return out;
+}
+
 /** One of the game's cooldown mechanisms in a source's files, with the blackboard key that sets its length or its literal seconds. */
 export interface CooldownTimer {
   /**

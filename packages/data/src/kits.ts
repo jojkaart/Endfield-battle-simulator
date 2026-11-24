@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, spPlaced, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
 import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
-import { cooldownTimers, isSkillFileListed, skillFilePath } from "./skillData.ts";
+import { cooldownTimers, isSkillFileListed, projectileSkills, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
 import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type KitAssumption, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type LandedCount, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine/core";
@@ -674,6 +674,8 @@ function kitChecker(scope: KitScope) {
         ...(h.heals ? { heals: h.heals } : {}),
         // A hit dealt from another SkillData file (a projectile or ability entity) is on its way and survives an interrupt.
         ...((h.detached ?? (h.launch !== undefined || (src.defaultEvent !== undefined && events.length > 0 && !events.includes(src.defaultEvent)))) ? { detached: true } : {}),
+        // Logged under a skill its skill launches as a projectile: it flies to the enemy after its frame.
+        ...(events.length > 0 && events.every((e) => projectileSkills(src.skillId).has(e)) ? { travels: true as const } : {}),
         ...(h.launch !== undefined ? { launch: h.launch } : {}),
         ...(h.world ? { world: true as const } : {}),
         ...(h.enemyDelay !== undefined ? { enemyDelay: h.enemyDelay } : {}),
