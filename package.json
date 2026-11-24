@@ -20,7 +20,7 @@
     "journal:check": "node scripts/journal.ts --check",
     "journal:new": "node scripts/journal.ts new",
     "journal:adopt": "node scripts/journal.ts adopt",
-    "snapshots:update": "scripts/snapshots.sh",
+    "snapshots:update": "node scripts/snapshots.ts",
     "accuracy": "node scripts/accuracy.ts --write",
     "measure": "node scripts/measure.ts",
     "smoke": "node scripts/smoke.ts",

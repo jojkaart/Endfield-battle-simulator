@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GATES, slowest, STEPS, table, timeoutOnlyFiles, type VitestReport } from "../scripts/premerge.ts";
+import { GATES, locked, missingJournal, slowest, STEPS, table, timeoutOnlyFiles, type VitestReport } from "../scripts/premerge.ts";
+import { testsNaming } from "../scripts/snapshots.ts";
 
 const file = (name: string, results: { status: string; failureMessages?: string[] }[], status = results.some((r) => r.status === "failed") ? "failed" : "passed", message = ""): VitestReport["testResults"][number] => ({
   name,
@@ -67,5 +68,31 @@ describe("premerge's steps", () => {
     expect(t).toContain("test  pass    400 s  timeouts under load");
     expect(t).toContain("logs  FAIL    600 s");
     expect(t.split("\n").at(-1)).toMatch(/all\s+FAIL\s+1020 s/);
+  });
+});
+
+describe("premerge's preconditions (round 10: from premerge.sh)", () => {
+  it("asks for a journal entry when code, kits, examples or schemas change", () => {
+    expect(missingJournal(["packages/cli/src/main.ts"])).toBe(true);
+    expect(missingJournal(["examples/x.scenario.json", "docs/journal/2026-11-24-01-x.md"])).toBe(false);
+    expect(missingJournal(["scripts/premerge.ts", "docs/design/tests.md"])).toBe(false);
+    expect(missingJournal(["schemas/x.json", "docs/journal.md"])).toBe(true);
+  });
+
+  it("runs the vitest steps under the shared lock as a child (a signal to premerge stops it and frees its ticket)", () => {
+    expect(locked(["npx", "vitest", "run"])).toEqual(["node", "scripts/testlock.ts", "--kind", "premerge", "--who", "premerge", "--", "npx", "vitest", "run"]);
+  });
+});
+
+describe("snapshots' knock-on tests (misprediction-stats report point 6)", () => {
+  it("are the test files naming a changed log's fixture by its id", () => {
+    const files = [
+      { path: "tests/logcasts.test.ts", text: 'readLogFixture("../fixtures/pending/zmdlogs-d774d0ce7bd3.json")' },
+      { path: "tests/kit-si.test.ts", text: "d774 102 s, in a comment only" },
+      { path: "tests/other.test.ts", text: "zmdlogs-0eef2474a26f.json" },
+    ];
+    expect(testsNaming(["pending/zmdlogs-d774d0ce7bd3.json"], files)).toEqual(["tests/logcasts.test.ts"]);
+    expect(testsNaming(["zmdlogs-0eef2474a26f.json", "pending/zmdlogs-d774d0ce7bd3.json"], files)).toEqual(["tests/logcasts.test.ts", "tests/other.test.ts"]);
+    expect(testsNaming([], files)).toEqual([]);
   });
 });

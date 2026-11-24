@@ -33,7 +33,7 @@ async function main(argv: string[]): Promise<number> {
   const start = performance.now();
   let status = await runLockedAsync(["npx", "vitest", "run", ...reporters, ...SMOKE_FILES], { kind: "short", who: "smoke", done: "smoke" });
   if (full && status === 0) status = await runLockedAsync(["npx", "vitest", "run", "--config", "vitest.logs.config.ts", ...reporters, ...SMOKE_SLOW], { kind: "short", who: "smoke", done: "smoke" });
-  process.stdout.write(`smoke: ${status === 0 ? "passed" : "FAILED"} in ${((performance.now() - start) / 1000).toFixed(0)} s${status === 0 ? "; premerge (scripts/premerge.sh) before merging" : ": a timing change? see each failure (kit tests pin expiries; examples: efsim repair)"}\n`);
+  process.stdout.write(`smoke: ${status === 0 ? "passed" : "FAILED"} in ${((performance.now() - start) / 1000).toFixed(0)} s${status === 0 ? "; premerge (node scripts/premerge.ts) before merging" : ": a timing change? see each failure (kit tests pin expiries; examples: efsim repair)"}\n`);
   process.stdout.write(`EFSIM-DONE smoke ${status === 0 ? "pass" : "fail"}\n`);
   return status;
 }

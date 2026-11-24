@@ -2,7 +2,7 @@
 // `npm run snapshots:update`, read from that run's vitest JSON report. tests/logverdicts.ts `shard()` balances the
 // test:logs shards by these times (a log's cost doesn't follow its hit count: 340 hits took 59 s, 1,134 took 21 s);
 // a log without a time falls back to its hits. Only times are written, never a verdict: hold-out logs appear by file
-// name, as in the verdict snapshot. scripts/snapshots.sh runs it.
+// name, as in the verdict snapshot. scripts/snapshots.ts runs it.
 //
 // Usage: node scripts/pending-costs.ts <vitest-json-report>
 
