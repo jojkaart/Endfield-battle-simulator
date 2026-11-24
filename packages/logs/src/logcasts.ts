@@ -880,6 +880,11 @@ function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<str
     const listed = new Set(timing.windows.flatMap((w) => w.skills));
     const next = candidates.find((g) => g.kind !== null && listed.has(g.skillId) && start(g) >= prev.cast.start && worldMs(prev.cast.start, start(g), held) <= msOf(timing.durationFrames) + CAST_SLACK_MS);
     if (next) return next;
+    // Basic-attack steps sharing a key: only the latest cast that doesn't keep the chain says the step; one whose
+    // windows list none of them restarted the chain (Ardelia's attacks 1 and 2, both keyed attack1_projhit, attack 1's
+    // value ×1.5 attack 2's per projectile: af7b7f865906's 7785 ms, after her attack 3 and combo, was placed as attack 2
+    // from attack 1's window 5 s before; f879, 79cc, c3c7, f978 alike).
+    if (candidates.every((g) => g.kind === "basic") && !timing.keepsChain) return candidates[0] as Group;
   }
   return candidates[0] as Group;
 }
