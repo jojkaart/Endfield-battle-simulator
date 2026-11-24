@@ -50,7 +50,7 @@ describe("a cast's start across another operator's time stop, from the log's cas
   });
 });
 
-describe("an ultimate whose first landing is on its way, from its cast event at an edge of its stop (eventStopStart, 2026-11-24)", () => {
+describe("an ultimate whose first landing travels (KitHit.travels), from its cast event at an edge of its stop (eventStopStart, 2026-11-24)", () => {
   const L = "chr_0035_liino";
   it("1cd1: Liino's event at 37.95 s ends her stop (3.6 s without a hit before it), not her projectiles at 38.73 s less frame 76", () => {
     expect(startOf("pending/zmdlogs-1cd1657bc305.json", L, `${L}_ultimate_skill`, 36000)).toBeCloseTo(37948 - (77 * 1000) / 30, -1);
@@ -62,7 +62,9 @@ describe("an ultimate whose first landing is on its way, from its cast event at 
   it("1d91: an event at the press (no hit for the stop's length after it) starts the stop there", () => {
     expect(startOf("pending/zmdlogs-1d9198480e75.json", L, `${L}_ultimate_skill`, 65000)).toBeCloseTo(64219, -1);
   });
-  it("only where the landing's frame puts the stop over a teammate's hit: Si's ultimate in b6aa stays where her slashes place it", () => {
+  it("only a projectile's landing travels: Si's ultimate in b6aa (an ability entity's slashes) stays where her slashes place it", () => {
+    expect(data.kits.operators["chr_0036_jsspsi"]?.skills.find((s) => s.skillId === "chr_0036_jsspsi_ultimate_skill")?.hits.some((h) => h.travels)).toBe(false);
+    expect(data.kits.operators[L]?.skills.find((s) => s.skillId === `${L}_ultimate_skill`)?.hits.find((h) => h.id === "projectiles_first")?.travels).toBe(true);
     expect(startOf("pending/zmdlogs-b6aa15281db4.json", "chr_0036_jsspsi", "chr_0036_jsspsi_ultimate_skill", 35000)).toBeGreaterThan(35300);
   });
   it("the first song beat's start when within MIN_MOVE_MS after the event's: d9e5 stays at 6.94 s", () => {
