@@ -200,6 +200,26 @@ export function layerCrits(kits: readonly OperatorKit[], fx: LogFixture, placeme
 /** How far either side of a crit-less hit (ms) valueCrits looks for the lowest hit of its group. */
 const VALUE_CRIT_NEAR_MS = 1000;
 
+/** The zones a hit's listed effects scale it by, each summed (1 + Σ), the multiplicative zone's entries one by one. */
+const LISTED_SUM_ZONES: ReadonlySet<string> = new Set(["atk", "damageBonus", "amp", "susceptibility", "damageTaken"]);
+
+/**
+ * The factor a logged hit's listed effects (its element's, or every element's) put on its value, crit aside: per zone
+ * 1 + the sum of its entries, the multiplicative zone's (Stagger ×1.3) each its own. An approximation of the damage
+ * formula's zones (no DEF, no resistance), good enough to tell a change of buffs from the crit zone (valueCrits).
+ */
+function listedFactor(h: LogHit): number {
+  const sums = new Map<string, number>();
+  let f = 1;
+  for (const e of h.effects) {
+    if (e.element !== null && e.element !== h.element) continue;
+    if (e.zone === "multiplicative") f *= 1 + e.value;
+    else if (LISTED_SUM_ZONES.has(e.zone)) sums.set(e.zone, (sums.get(e.zone) ?? 0) + e.value);
+  }
+  for (const s of sums.values()) f *= 1 + s;
+  return f;
+}
+
 /**
  * Crits the log leaves out (LogHit.crit null) that the hits' own values show: hits of one key, skill and scale differ
  * only by the buffs that change between them and the crit zone (×1.5 or more), so a hit CRIT_APART above the lowest of
@@ -210,7 +230,8 @@ const VALUE_CRIT_NEAR_MS = 1000;
  * the replay let them run out 0.05 s before her finisher (49.78 s, ×1.17). Cross-validated on the development logs
  * (half the logged flags hidden, two folds; scripts/probes/crits/value-xval.ts, 2026-11-23): 1132 of 1260 inferred
  * crits right over every operator (0.90; base rate 0.10), 442 of 445 for Rossi, Chen and Yvonne, whose kits have crit
- * triggers; with each hit's value from another hit of its key (negative control) 0.24. Only for an operator whose kit
+ * triggers; with each hit's value from another hit of its key (negative control) 0.24; with the values over their
+ * listed effects (listedFactor, 2026-11-24) 1110 of 1222 (0.908). Only for an operator whose kit
  * has a trigger on its own crits; added after the logged crits and those shownCrits and layerCrits give.
  */
 export function valueCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement, known: ReadonlyMap<number, boolean> = new Map()): Map<number, boolean> {
@@ -229,18 +250,22 @@ export function valueCrits(kits: readonly OperatorKit[], fx: LogFixture, placeme
     const key = `${h.operator}|${h.event}|${p.cast.skillId}|${[...scales][0]}`;
     groups.set(key, [...(groups.get(key) ?? []), { h, i, crit }]);
   }
+  // Each value over its listed effects (listedFactor): a Stagger or a Susceptibility starting between two hits isn't a
+  // crit (207fff414d82 41.03–41.47 s: Rossi's stabs of 13,441 after 6,714 at 40.39 s, ×1.3 Stagger and Arts
+  // Susceptibility +0.54 listed from 41.03 s, taken for crits: their Seething Blood extras were the replay's only).
+  const norm = new Map([...groups.values()].flat().map((x) => [x.h, x.h.value / listedFactor(x.h)]));
   const lowest = (g: readonly { h: LogHit; crit: boolean | null }[], h: LogHit, only: (c: boolean | null) => boolean) => {
     const near = g.filter((x) => x.h !== h && only(x.crit) && Math.abs(x.h.t - h.t) <= VALUE_CRIT_NEAR_MS);
-    return near.length ? Math.min(...near.map((x) => x.h.value)) : null;
+    return near.length ? Math.min(...near.map((x) => norm.get(x.h) as number)) : null;
   };
   for (const g of groups.values()) {
     // A group whose logged non-crits stand apart by themselves splits for another reason (a kit hit the slot doesn't
     // tell apart: Purrchena's attack1, 367 and 551 both logged without a crit in 04d401ad257e).
-    if (g.some((x) => x.crit === false && x.h.value >= CRIT_APART * (lowest(g, x.h, (c) => c === false) ?? Infinity))) continue;
+    if (g.some((x) => x.crit === false && (norm.get(x.h) as number) >= CRIT_APART * (lowest(g, x.h, (c) => c === false) ?? Infinity))) continue;
     for (const { h, i, crit } of g) {
       if (crit !== null) continue;
       const low = lowest(g, h, () => true);
-      if (low !== null && h.value >= CRIT_APART * low) out.set(i, true);
+      if (low !== null && (norm.get(h) as number) >= CRIT_APART * low) out.set(i, true);
     }
   }
   return out;

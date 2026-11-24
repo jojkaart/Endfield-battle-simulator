@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-23: Fight totals 4: whose Shatter, Snowshine's counter, Rossi's borrowed crits](2026-11-23-13-fight-totals-4-whose-shatter-snowshine-s-counter-rossi-s.md)
 - [2026-11-23: Improvement round 9: the offsets screen, text-edit guards, measure's kinds](2026-11-23-12-improvement-round-9-the-offsets-screen-text-edit-guards.md)
 - [2026-11-23: Fight totals 3: the one-sided landings by kind, Sunderblade variants, Si's burst paths, the Barrage Array's pace](2026-11-23-12-fight-totals-3-the-one-sided-landings-by-kind-sunderblade.md)
 - [2026-11-23: Fight totals 2: an all-fights view, kills from capped hits, missing foods, Typhoeus's shots](2026-11-23-11-fight-totals-2-an-all-fights-view-kills-from-capped-hits.md)

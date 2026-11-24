@@ -494,6 +494,8 @@ export interface TimelineContext {
   readonly committedMemo?: WeakMap<TimelineState, number>;
   /** TimelineScenario.loggedCrits by `operator|event`: the logged landings' frames and crits. */
   readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean; readonly ref?: string }[]>;
+  /** TimelineScenario.loggedCrits by `ref`: a pinned landing's own logged hit's crit, whatever its event. */
+  readonly loggedCritRefs?: ReadonlyMap<string, boolean>;
   /** TimelineScenario.loggedModifiers by `operator|event`. */
   readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
   /** Landings keep their inputs (TimelineScenario.keepInputs, or a replayed fight's loggedCrits). */

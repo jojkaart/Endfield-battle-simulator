@@ -201,7 +201,7 @@ describe("physical state (Vulnerable, Lift, Knock Down, Crush, Breach, Shatter)"
   it("without Vulnerable, a status only adds a stack, unless it's a forced Lift", () => {
     const r = phys(NO_STATUS, "crush", 0);
     expect(r.events).toMatchObject([{ kind: "vulnerable", frame: 0, operator: "a", stacks: 1, before: 0 }]);
-    expect(r.state.vulnerable).toEqual({ stacks: 1, expiresAt: 600 });
+    expect(r.state.vulnerable).toEqual({ stacks: 1, expiresAt: 600, by: "a" });
     const f = phys(NO_STATUS, "lift", 0, true);
     expect(f.events.map((e) => e.kind)).toEqual(["vulnerable", "physical"]);
     expect(f.state.physical.map((x) => x.status)).toEqual(["lift"]);
@@ -225,7 +225,7 @@ describe("physical state (Vulnerable, Lift, Knock Down, Crush, Breach, Shatter)"
   it("Vulnerable caps at 4 and refreshes to 20 s", () => {
     let s = NO_STATUS;
     for (let i = 0; i < 6; i++) s = applyToEnemy(s, { kind: "vulnerable" }, i * 30, "a", 0).state;
-    expect(s.vulnerable).toEqual({ stacks: 4, expiresAt: 5 * 30 + 600 });
+    expect(s.vulnerable).toEqual({ stacks: 4, expiresAt: 5 * 30 + 600, by: "a" });
   });
 
   it("a physical status or a new Vulnerable stack shatters a Solidified enemy, after the status's own hit", () => {

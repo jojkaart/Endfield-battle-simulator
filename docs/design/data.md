@@ -167,7 +167,13 @@ jump of the cast that would skip a pinned landing of a hit only the
 skipped part has isn't taken, nor the path it jumps to (2026-11-22:
 Rossi's sequence 2 and attack 4, whose late and uncontrolled variants had
 landed beside the logged perfect and controlled ones; not Pogranichnik's
-combo, whose slashes land on both paths; drivers.ts `replayCast`).
+combo, whose slashes land on both paths; drivers.ts `replayCast`); and an
+end of the cast that would drop a pinned landing wasn't reached: a kit
+trigger's jump on the skill past that end, on an event the replay doesn't
+see, was taken, at the frame that puts the landing at its kit frame
+(2026-11-24, drivers.ts `eventJumps`: Snowshine's counter bash, attacked
+in frames 0–51, which ends at 106 otherwise; 04d401ad257e's six bashes and
+the Solidification and Shatters after them).
 Pinned landings due in one frame land in the log's order (`loggedMs`). The
 kits' triggers, the enemy's statuses and SP then run as in a simulation,
 and the kit buffs that stand for a game buff the log lists

@@ -1,0 +1,37 @@
+Same-ms logged hits of two operators in their casts' order (2026-11-24, physical statuses round).
+
+What it does: in schedule.ts dueBefore, two operators' pinned landings at the same logged ms land in the order of
+their casts (the earlier cast's first) instead of by operator ID.
+
+Why: a9d7fcb089c5 178.98 s, c4f307cd039a 7.05 and 157.01 s: Estella's combo and Chen Qianyu's land at one ms; the
+log shows Estella's first (her Solidified-target hit at ×2.0 the other's, her Shatter, then Chen's full Lift), the
+replay ordered Chen (chr_0005) first. Her combo starts 2 frames earlier (hit at frame 19 to his 17).
+
+Measure (npm run measure, against a71da03 with the other changes of the round; the broad version, every same-frame
+hit of two casts, measured the same): c4f3 plain 214 → 240, damage −5.0 → −3.9%; 3f78 plain 66 → 81, −3.4 → −0.8%;
+a9d7 −5.0 → −3.6%; but 4bfc plain 787 → 773, mismatch 37 → 48, −1.7 → −2.8% (Electrification hits of batched
+landings at a stop's end the other way), 1cd1 182 → 179, 00ae 606 → 603, 8915 148 → 145, 5082, de6a, e82d; hold-out
+4 worse. Development mean |damage error| unchanged, the hold-outs' unchanged.
+
+Why dropped: the logs' simultaneous hits are mostly a stop's end's batch (the log's ms says nothing of the order
+there), where cast order is no better than operator order. What would make it work: tell a batched ms from a real
+simultaneous landing (both landings due at the same frame in the kit timeline, not held by a stop), and apply the
+cast order only to the latter.
+
+diff --git a/packages/engine/src/timeline/schedule.ts b/packages/engine/src/timeline/schedule.ts
+index 95cd96a..47852cb 100644
+--- a/packages/engine/src/timeline/schedule.ts
++++ b/packages/engine/src/timeline/schedule.ts
+@@ -45,6 +45,12 @@ export function dueBefore(a: Scheduled, b: Scheduled): boolean {
+   // Pinned landings in the log's order (9a8097fcf351: Rossi's perfect hit at 32489 ms consumes the infliction before
+   // Gilberta's ultimate at 32511 ms, both in frame 975).
+   if (a.loggedMs !== undefined && b.loggedMs !== undefined && a.loggedMs !== b.loggedMs) return a.loggedMs < b.loggedMs;
++  // Two operators' pinned cast hits at one logged ms: the earlier cast's first. The logs show it where it matters:
++  // Estella's combo (cast 2 frames before Chen Qianyu's, its hit at frame 19 to his 17) lands on the Solidified enemy,
++  // shatters and Lifts first, his Lift a full one after it (a9d7fcb089c5 178.98 s, c4f307cd039a 7.05 and 157.01 s:
++  // her `solidified` hit 94,026, ×2.0 the other's). Only the log's own simultaneous hits (the game's order elsewhere
++  // isn't known: a simulation's hits of one frame keep the operator order below).
++  if (a.kind === "hit" && b.kind === "hit" && a.loggedMs !== undefined && a.loggedMs === b.loggedMs && a.operator !== b.operator && a.cast && b.cast && a.cast.index !== b.cast.index) return a.cast.index < b.cast.index;
+   // Hits, and teammates' attacks, by their operator's ID (not the team's order).
+   return ((a.kind === "hit" && b.kind === "hit") || (a.kind === "auto" && b.kind === "auto")) && a.operator < b.operator;
+ }

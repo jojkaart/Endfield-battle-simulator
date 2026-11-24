@@ -8,7 +8,7 @@ import { evaluate } from "../expr.ts";
 import { NO_STATUS } from "../status.ts";
 import { type DamageMoments, hitsMoments } from "../moments.ts";
 import { FPS } from "../units.ts";
-import type { Cast, LandedHit, PendingEnemyAction, PendingHit, ReactionRecord, RotationAction, TimelineContext, TimelineScenario, TimelineState } from "./state.ts";
+import type { Cast, LandedHit, PendingEnemyAction, PendingHit, PendingJump, ReactionRecord, RotationAction, TimelineContext, TimelineScenario, TimelineState } from "./state.ts";
 import { SP, TIMELINE_ASSUMPTIONS } from "./rules.ts";
 import { createContext, enemyActionsOf, kitSkill, maxPoise, panelAt, skillCosts } from "./context.ts";
 import { maxEnergy, spAt, spCostAt } from "./resources.ts";
@@ -172,9 +172,36 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
       return skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
     });
     const jumpedTo = new Set(contradicted.flatMap((j) => [...own.values()].flat().filter((h) => !moved.has(h) && h.frame >= j.frame + (j.to - j.from))));
-    st = { ...st, scheduled: st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
+    const taken = eventJumps(ctx, st, operator, skillId, index, frame, moved);
+    st = { ...st, scheduled: [...st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }), ...taken] };
   }
   return runTriggers(ctx, st, r.events, r.origin);
+}
+
+/**
+ * The jumps a replayed cast's logged landings show its triggers took (replayCast): an end of the cast that would drop a
+ * landing the log shows wasn't reached, because a kit trigger's `jump` on the skill to past that end was taken on an
+ * event the replay doesn't see (Snowshine's battle skill: attacked in frames 0–51, the counter jumps to 107; not
+ * attacked, it ends at 106, before its bash at 125: 04d401ad257e's six bashes with the Solidification they cause, and
+ * the Shatters after, dropped wherever no later cast of hers kept them). Each is taken at the frame that puts the first
+ * such landing at its kit frame after the jump, within the trigger's frames; the landings stay at their logged frames.
+ */
+function eventJumps(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, index: number, frame: number, moved: ReadonlyMap<PendingHit, { readonly frame: number }>): PendingJump[] {
+  const jumps = (ctx.kits.get(operator)?.triggers ?? []).flatMap((t) => t.do.flatMap((a) => (a.kind === "jump" && a.skill === skillId ? [a] : [])));
+  if (jumps.length === 0) return [];
+  const out: PendingJump[] = [];
+  for (const end of ofKind(st.scheduled, "jump").filter((j) => j.end && ofCast(j, operator, index))) {
+    const cut = [...moved].filter(([, m]) => m.frame > end.frame).sort((a, b) => a[1].frame - b[1].frame);
+    const first = cut[0];
+    if (!first) continue;
+    const kitFrame = first[0].frame - frame;
+    const a = jumps.find((x) => x.to > end.from && cut.every(([h]) => h.frame - frame >= x.to));
+    if (!a) continue;
+    const at = Math.min(frame + a.until - 1, Math.max(frame + a.from, first[1].frame - (kitFrame - a.to)));
+    out.push({ kind: "jump", frame: at, clock: { operator }, cast: { operator, index }, operator, from: at - frame, to: a.to });
+    break;
+  }
+  return out;
 }
 
 /** How a logged cast is replayed (replayCast). */

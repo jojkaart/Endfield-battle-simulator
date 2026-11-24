@@ -70,9 +70,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   capped last hit, an ultimate's slots by time, Typhoeus's 4th shot: development 8.1 → 7.3%, earlier 5.3 → 4.9%,
   hold-out 9.1%, one-sided; round 3 2026-11-23: the one-sided landings by kind (`zmdlogs totals --kinds`, measure's
   hold-out means by kind), Zhuang Fangyi's Sunderblade variants in turn, Si's burst paths one landing, Typhoeus's
-  Barrage Array at its pace: hold-out 9.1 → 8.2%, development 7.3 → 7.2%, earlier 4.9 → 4.8%; next slots by value
-  within a cast, Zhuang Fangyi's Sunderblade gains, the hold-outs' physical misses, an offsets screen, 2fd9's Crush
-  stacks); Arcane's misses grouped (2026-11-18: 908 → 866;
+  Barrage Array at its pace: hold-out 9.1 → 8.2%, development 7.3 → 7.2%, earlier 4.9 → 4.8%; round 4 2026-11-24:
+  a Shatter at a later Vulnerable stack is its starter's, Snowshine's counter jump from its logged bash, Rossi's crits
+  from her own hits only: earlier 4.8 → 4.3%, 2fd9 −15.6 → −3.6%, hold-out one-sided 10.5 → 9.8%; next the hold-outs'
+  physical misses by status kind, Zhuang Fangyi's Empyrean free blades, Rossi's bleed end, slots by value); Arcane's misses grouped (2026-11-18: 908 → 866;
   Imprisonment's end and her INT lasers from the data and the log 2026-11-22); the replay follows the log's Stagger
   windows, and the engine adds a 2 s recovery (2026-11-18, test 110 from
   the logs; with tests 8, 10, 12, 107, 108's tap: the owner's queue holds

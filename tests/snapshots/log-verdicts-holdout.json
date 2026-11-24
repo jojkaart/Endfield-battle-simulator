@@ -24,15 +24,15 @@
   "chr_0021_whiten": {"plain":38,"assumed":0,"fallback":20,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0024_deepfin": {"plain":18,"assumed":6,"fallback":16,"mismatch":2,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0003_endminf": {"plain":82,"assumed":5,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0005_chen": {"plain":7,"assumed":0,"fallback":47,"mismatch":19,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":0.4,"operator chr_0021_whiten":9.6,"operator chr_0005_chen":3.2,"operator chr_0003_endminf":-1.8,"operator chr_0024_deepfin":-9.8,"kind basic":3.2,"kind battle":2.7,"kind combo":63.9,"kind none":-2.2,"kind status":-9.1,"kind ultimate":-8.7,"hits":9.5,"status hits":-5.3,"staggered hits":4.3,"last hit":-0.7,"time to kill":-1.2,"crit share (points)":-0.9,"share matched":1.1,"share replay-only":3.4,"share log-only":-4.1}
+  "chr_0005_chen": {"plain":8,"assumed":0,"fallback":46,"mismatch":19,"unvalued":0,"unquantified":0,"uncovered":0},
+  "totals": {"damage":0.9,"operator chr_0021_whiten":-2.4,"operator chr_0005_chen":8.8,"operator chr_0003_endminf":-1.8,"operator chr_0024_deepfin":-9.8,"kind basic":3.2,"kind battle":2.7,"kind combo":63.9,"kind none":-2.2,"kind status":-6.2,"kind ultimate":-8.7,"hits":9.5,"status hits":-5.3,"staggered hits":4.3,"last hit":-0.7,"time to kill":-1.2,"crit share (points)":-0.3,"share matched":0.9,"share replay-only":2.1,"share log-only":-2.1}
  },
  "holdout/zmdlogs-13b9974a0450.json": {
   "chr_0021_whiten": {"plain":14,"assumed":1,"fallback":0,"mismatch":5,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0024_deepfin": {"plain":5,"assumed":5,"fallback":0,"mismatch":5,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0003_endminf": {"plain":23,"assumed":3,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0005_chen": {"plain":0,"assumed":0,"fallback":4,"mismatch":12,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-31.6,"operator chr_0021_whiten":-3.4,"operator chr_0024_deepfin":-4.4,"operator chr_0003_endminf":-39.3,"operator chr_0005_chen":-36.3,"kind basic":1.3,"kind battle":9.5,"kind combo":41.7,"kind none":-14.2,"kind status":-49.8,"kind ultimate":-70.7,"hits":5.1,"status hits":-22.2,"staggered hits":-25,"last hit":-1.5,"time to kill":null,"crit share (points)":-1.2,"share matched":3.2,"share replay-only":3.4,"share log-only":-38.1}
+  "totals": {"damage":-30.6,"operator chr_0021_whiten":-14.4,"operator chr_0024_deepfin":-4.4,"operator chr_0003_endminf":-39.3,"operator chr_0005_chen":-6.4,"kind basic":1.3,"kind battle":9.5,"kind combo":41.7,"kind none":-14.2,"kind status":-48,"kind ultimate":-70.7,"hits":5.1,"status hits":-22.2,"staggered hits":-25,"last hit":-1.5,"time to kill":null,"crit share (points)":-1.2,"share matched":2.9,"share replay-only":1.8,"share log-only":-35.3}
  },
  "holdout/zmdlogs-14a91e99b8d7.json": {
   "chr_0016_laevat": {"plain":155,"assumed":8,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
@@ -67,7 +67,7 @@
   "chr_0028_wulfa": {"plain":91,"assumed":91,"fallback":2,"mismatch":3,"unvalued":0,"unquantified":17,"uncovered":0},
   "chr_0013_aglina": {"plain":51,"assumed":2,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":162,"assumed":6,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":20,"uncovered":0},
-  "totals": {"damage":0.5,"operator chr_0036_jsspsi":-1.1,"operator chr_0028_wulfa":-0.8,"operator chr_0032_lizhiyan":16.9,"operator chr_0013_aglina":-1.6,"kind basic":-8.4,"kind battle":0.7,"kind combo":-1.8,"kind none":2.7,"kind status":16.7,"kind ultimate":0.3,"hits":0.4,"status hits":5,"staggered hits":1,"last hit":0,"time to kill":-0.2,"crit share (points)":-0.1,"share matched":-1.1,"share replay-only":1.8,"share log-only":-0.2}
+  "totals": {"damage":0.1,"operator chr_0036_jsspsi":-1.1,"operator chr_0028_wulfa":-1.4,"operator chr_0032_lizhiyan":16.9,"operator chr_0013_aglina":-1.6,"kind basic":-8.4,"kind battle":0.2,"kind combo":-1.8,"kind none":0.6,"kind status":16.7,"kind ultimate":0.3,"hits":0.2,"status hits":5,"staggered hits":0.5,"last hit":0,"time to kill":0,"crit share (points)":-0.1,"share matched":-1.2,"share replay-only":1.5,"share log-only":-0.2}
  },
  "holdout/zmdlogs-890bcadb4933.json": {
   "chr_0030_zhuangfy": {"plain":142,"assumed":12,"fallback":30,"mismatch":25,"unvalued":0,"unquantified":0,"uncovered":0},

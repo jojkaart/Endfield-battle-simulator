@@ -192,9 +192,77 @@ end comes on her own clock, later than the data's frame 15 by a varying 0.03–0
 - **Rossi's Seething Blood extras** (no cast, 7 fights, 207f 1.9%, 4a64 2.0%): one per crit stab in the replay, fewer in
   the log (207f 41.0–41.5 s): the crits the replay infers for her ultimate (`values`) or the extra's own condition.
 
-**Next check:** slots by value within a cast (9a80, 7910, a27b), Zhuang Fangyi's Sunderblade gains (4d60), the
-hold-outs' physical misses by the new split, an offsets screen as a command and a test (friction 2026-11-24 point 1),
-Mi Fu's Crush stacks (2fd9).
+**Next check (round 3):** slots by value within a cast (9a80, 7910, a27b), Zhuang Fangyi's Sunderblade gains (4d60),
+the hold-outs' physical misses by the new split, an offsets screen as a command and a test (friction 2026-11-24 point
+1), Mi Fu's Crush stacks (2fd9).
+
+**Round 4 (2026-11-24, physical statuses, Rossi's extras).** Every development log's log-only physical status hit
+(scripts/probes/physical/physmiss.ts: the logged hits at its ms, the replay's status landings within 1.5 s and the enemy there) and every
+logged Shatter with whom the log credits (scripts/probes/physical/shatters.ts; 42 Shatters in 6 logs). The development logs' share was
+small (none within 5 s 0.08%, by another operator 0.03%): 04d4's Ember Shatters (3.7%), Rossi's Lifts, three
+Estella / Chen Qianyu pairs.
+
+**Found and fixed (round 4):**
+13. **A Shatter at a later Vulnerable stack is the Vulnerable's.** The log credits Ember with the Shatter at Catcher's
+    Knock Down (04d4 52.78, 143.12, 300.02 s: her value, 25,993, about ×6 Catcher's); the BuffData agrees:
+    `buff_physical_no_guard` is one instance whose on-stack event creates `buff_physical_handle_cryst_break` from the
+    buff's own source, before the Knock Down's own handler. status.ts: the Vulnerable keeps who started it (`by`), a
+    stack joining it (a Lift's, a Knock Down's or a direct one) shatters as theirs; a first stack, Crush, Breach as
+    the applier's. Checked against the other 39 logged Shatters: none changes (scripts/probes/physical/shatter-credit.ts).
+14. **Snowshine's counter bash.** Her battle skill ends at frame 106 unless she is attacked in frames 0–51 (a kit
+    trigger's jump to 107, its bash at 125); the replay sees no enemy attack, so six of 04d4's 14 logged bashes were
+    dropped by the end (those not kept by a later cast of hers), with the Cryo they inflict, the Solidification they
+    cause and four Ember Shatters ("none within 5 s"), and in 2fd9 the infliction Rossi's perfect hit consumes for
+    its Lift (14.56 s). drivers.ts `eventJumps`: an end that would drop a pinned landing wasn't reached; the trigger's
+    jump past it was taken, at the frame that puts the landing at its kit frame. 04d4 plain 180 → 185 (−1.8 → +2.4%:
+    the Shatters were hiding Catcher's ×0.47 build offset, "Catcher's weapon (04d4)"), 2fd9 −15.6 → −3.6% (plain
+    188 → 246).
+15. **Rossi's extras on borrowed crits.** A pinned landing whose own logged hit has no crit took the crit of another
+    logged hit of its event within a frame (207f 41.03 s: a stab of 13,441 took the 38,980 one's crit, fired a
+    Seething Blood extra the log hasn't). landing.ts `loggedCritAt`: a pinned landing takes its own hit's crit or
+    none. And valueCrits compared raw values across a Stagger's start (207f 41.24 s: 13,441 after 6,714, ×1.3 Stagger
+    and Susceptibility +0.54 listed from 41.03 s): now values over their listed effects (buffreplay.ts
+    `listedFactor`; scripts/probes/crits/value-xval.ts: 1110 of 1222 inferred crits right, 0.908, before 1132 of 1260,
+    0.898; Rossi 327 of 327). Rossi's replay-only extras in 3f78 1.36 → 0.24% of the fight. Totals worse where they hid
+    Rossi's matched under-prediction: 3f78 −3.4 → −4.8% (her matched −6.6% over 140 landings), 207f −1.2 → −2.9%,
+    489c −1.2 → −1.9%, 99fb −2.5 → −2.9%; better 4a64 +1.4 → +0.1%, 9a80 +1.3 → 0.0%.
+
+**Scoreboard (round 4, `npm run snapshots:update`):** development mean |damage error| 7.2 → 7.3% (the Rossi logs
+above), plain 67.1%; hold-out plain 77.5 → 77.6%, 8.2% (2 better, 1 mixed, none worse), replay-only 5.2 → 4.9%,
+log-only 5.3 → 4.9%; earlier pending plain 63.0 → 63.6%, 4.8 → 4.3%, within 5% 18 → 19; all but the hold-outs 5.8 →
+5.6%.
+
+**Tried and dropped (round 4):** two operators' landings at one logged ms in their casts' order (Estella's combo
+before Chen Qianyu's: a9d7 178.98 s, c4f3 7.05 and 157.01 s, her Solidified-target hit ×2.0, her Shatter, his full
+Lift): c4f3 plain +26, 3f78 +15, but 4bfc −14 (batched landings at a stop's end the other way), hold-out 4 worse
+(tried: docs/tried/2026-11-24-same-ms-cast-order.diff).
+
+**Ruled out (round 4):** the hold-outs' 2.08% (log-only physical, none within 5 s) as a Shatter credit or Snowshine's
+counter: the hold-out mean didn't move with either fix (2.08% before and after), so it isn't the development logs'
+mechanisms; Rossi's slash2 extras as an extras count limit (19–28 extras before it with or without one) or the
+reaction at its ms (logged in fights with and without the extra).
+
+**Still possible / left (round 4):**
+- **The hold-outs' log-only physical status hits** (2.08% of a fight, unchanged): a physical status the replay never
+  makes, of a kind the development logs barely have; measure can split them by status kind (Lift, Knock Down,
+  Crush, Breach, Shatter) as a next step, the kinds the hold-outs' operators apply.
+- **Rossi's slash2 extras** (4a64 29.15, 71.46 s, 207f 42.85 s replay-only): a crit (slash2 ÷ slash1 ×3.0, as where
+  both crit) on an enemy listing her bleed, yet no extra in the log, where the other nine slash2 crits have one; in
+  all three the bleed's last logged tick is at or before it (4a64 28.61 s and 71.458 s at the hit's ms, 207f 42.83 s)
+  and later ticks follow in the nine: the bleed ending as the slash lands (its listing lags), the replay's bleed
+  running on (4a64 a replay-only tick at 29.60 s): Rossi's bleed clock, open above.
+- **Zhuang Fangyi's Sunderblades in 4d60** (−10.8% log-only before the round): the replay's count is 2 + 1 + 3 = 6 at
+  77.0 s (the 48.9 s cast's two from an L1 Electrification, 53.0 s's one, the Empyrean's free three) where the log has
+  8; the counts before (12.6, 43.0, 48.7, 52.8 s: 3, 3, 5, 3) all match, so two blades come from something the kit
+  lacks between 53 and 77 s with no battle skill of hers logged: the free path's data (`normal_skill_ult` frames
+  0–15, a branch the tree printer cuts) is the next read; the 83.8 s cast is 9 in the log (the cap), 8 in the replay.
+- **Same-ms order** (above), and a9d7 275.51 s (Estella's Lift and Chen Qianyu's Shatter with no logged cast: the
+  fight's end).
+- Rossi's Lifts on infliction consumed by her perfect hit where the replay has no infliction (0c14 165.49 s: Si's
+  presses at 160.48 and 164.71 s show no hit, their infliction the replay lacks).
+
+**Next check:** measure's physical misses by status kind for the hold-outs; Zhuang Fangyi's Empyrean free path in the
+data; Rossi's bleed end against the listing; slots by value within a cast (9a80, 7910, a27b).
 
 ## Arts Intensity: what the logs settle and what they leave (2026-11-16)
 

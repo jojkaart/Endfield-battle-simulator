@@ -18,4 +18,5 @@ worked, found by reading 80 lines of prose).
 
 ## Files
 
-None yet.
+- [2026-11-24-same-ms-cast-order.diff](2026-11-24-same-ms-cast-order.diff): two operators' landings at one logged ms
+  in their casts' order (Estella before Chen Qianyu); mixed: batched landings at a stop's end moved the other way.

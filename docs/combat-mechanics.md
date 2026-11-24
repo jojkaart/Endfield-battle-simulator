@@ -380,6 +380,22 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   coefficient; Vulnerable is unaffected. [DATA] (BuffData
   `buff_common_cryst_triggered_physical_break`; data-sources "Physical
   state")
+- **Whose Shatter:** a Vulnerable stack joining a running Vulnerable (a
+  Lift's or Knock Down's, or one applied directly) shatters as that
+  Vulnerable's: the Shatter is credited to the operator who started it,
+  at their ATK and AI, not to the stack's applier; a first stack, a Crush
+  or a Breach shatter as their applier's. [DATA + LOGS] (BuffData
+  `buff_physical_no_guard`'s on-stack event creates
+  `buff_physical_handle_cryst_break` from the buff's own source before
+  the status's own handler; 04d401ad257e: Catcher's Knock Down at 52.78,
+  143.12 and 300.02 s on Ember's Vulnerable, each Shatter logged as
+  Ember's at her value, about ×6 Catcher's; status.ts addVulnerable,
+  2026-11-24.)
+- Two operators' hits at one ms: Estella's combo lands before Chen
+  Qianyu's in a9d7fcb089c5 178.98 s and c4f307cd039a 7.05, 157.01 s (her
+  Solidified-target hit, her Shatter, his full Lift after hers), where the
+  engine's operator-ID order puts his first. [OPEN] (design/timeline.md;
+  the casts' order as a rule: docs/tried/2026-11-24-same-ms-cast-order.diff)
 - Whether a Shatter counts as consuming a reaction, for combo triggers:
   [OPEN] (test 63).
 
