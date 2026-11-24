@@ -309,10 +309,11 @@ describe("the log's Stagger state (loggedStaggerSteps): the replay follows its l
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9090afbacec9.json", import.meta.url).pathname);
     const r = logBuffReplay(data, fx).replay;
     // The damage confirms the listing: the replay used to end the first at 64.3 s and break the bar again at 67.7 s
-    // (the engine's own now ends 2 s later, at 66.7 s: the recovery, engine assumption stagger-recovery, test 110).
+    // (the engine's own now ends 2 s later, at 66.7 s: the recovery, engine assumption stagger-recovery, test 110; at
+    // 68.1 s since 2026-11-25, Arcane's ultimate stop placed in turn at 59.03 s inside the window, not over Liino's).
     expect(r.staggerSpans.length).toBe(2);
     const own = r.staggerHolds.filter((h) => h.engineUntil !== null).map((h) => Math.round(((h.engineUntil as number) * 1000) / FPS / 100) / 10);
-    expect(own[0]).toBeLessThan(67);
+    expect(own[0]).toBeLessThan(69.2);
     expect(own[1]).toBeLessThan(143);
     let differ = 0;
     for (const h of fx.hits) {

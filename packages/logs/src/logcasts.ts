@@ -247,9 +247,9 @@ const MIN_MOVE_MS = 150;
  * entities need it (only travelling landings from events: b7b3's Tangtang stare from its frame, plain 47 → 45).
  */
 function eventStopStart(timing: SkillTiming | null | undefined, operator: string, t: number, frame: number, stops: readonly TimeStop[], events: readonly number[], hits: readonly LogHit[], checked: boolean): number | null {
-  const stop = timing?.slowdowns.find((d) => d.from === 0 && Math.min(...d.scales) === 0);
-  if (!stop) return null;
-  const length = msOf(stop.scales.length);
+  const frames = fullStopFrames(timing);
+  if (frames === null) return null;
+  const length = msOf(frames);
   const plain = t - msOf(frame);
   const quiet = (from: number, to: number) => !hits.some((h) => h.t > from + STOP_EDGE_MS && h.t < to - STOP_EDGE_MS);
   // Checked: only where the landing's frame puts the stop over a teammate's logged hit (not one batched at another
@@ -268,6 +268,90 @@ function eventStopStart(timing: SkillTiming | null | undefined, operator: string
     }
   }
   return best?.start ?? null;
+}
+
+/** The length (frames) of a skill's full time stop from its frame 0 (an ultimate's UltimateTimeAction), or null without one. */
+function fullStopFrames(timing: SkillTiming | null | undefined): number | null {
+  const stop = timing?.slowdowns.find((d) => d.from === 0 && Math.min(...d.scales) === 0);
+  return stop ? stop.scales.length : null;
+}
+
+/** How many frames two ultimates' time stops may overlap and still have played in turn (the log's batching, a frame's rounding). */
+const IN_TURN_SLACK_FRAMES = 1;
+
+/**
+ * The start of an ultimate whose landing's frame puts its time stop over another operator's ultimate stop, where the
+ * game played them in turn: the landing held by the other's stop (heldStart), when that start's own stop ends before
+ * any other ultimate's stop begins (IN_TURN_SLACK_FRAMES); null otherwise. Ultimates pressed together play their stops
+ * one after the other, the later one's hits after its own: fc63a2001251 39.92 s, Gilberta's ultimate (hit at frame 60,
+ * logged 43.58 s) before Perlica's (41.77 s, from her hit's frame 58): no logged hit by anyone in 39.94–41.73 s,
+ * Typhoeus's Barrage Array ticking once in the gap (frame 75 at 41.73 s, frame 65 at 38.17 s), her shot's burst and
+ * Arcane's after the second stop (43.58, 44.63 s). Placed from its frame overlapping Perlica's, the world ran 1.7 s
+ * there and both bursts came early. 1d9198480e75: Arcane's ultimate_skill2 (frame 58 at 66.90 s) at 62.40 s, before
+ * Liino's (her event at 64.22 s): the log has no hit in 62.23–64.01 s. scripts/probes/placement/ult-overlap.ts lists
+ * the logs' overlapping pairs and the quiet stretch where the first one's stop was.
+ */
+function inTurnStart(timing: SkillTiming | null | undefined, t: number, frame: number, stops: readonly TimeStop[], hits: readonly LogHit[]): number | null {
+  const n = fullStopFrames(timing);
+  if (n === null || frame <= 0) return null;
+  const ults = stops.filter((s) => s.kind === "ultimate" && s.scales.some((x) => x <= OWN_STOP_SCALE));
+  const overlaps = (start: number) => ults.some((s) => start < s.start + s.scales.length - IN_TURN_SLACK_FRAMES && s.start < start + n - IN_TURN_SLACK_FRAMES);
+  const plain = Math.round(((t - msOf(frame)) * FPS) / 1000);
+  const overlapped = ults.filter((s) => plain < s.start + s.scales.length - IN_TURN_SLACK_FRAMES && s.start < plain + n - IN_TURN_SLACK_FRAMES);
+  if (overlapped.length === 0) return null;
+  // The log says the world stood still there: no logged hit inside the moved stop.
+  const quiet = (start: number) => !hits.some((h) => h.t > start + STOP_EDGE_MS && h.t < start + msOf(n) - STOP_EDGE_MS);
+  // In turn, it moves by no more than the stops it overlapped (9c6e97486a9d: Arcane's ultimate_skill2 held 4.3 s
+  // through Liino's stop and Ardelia's combo, which moved Liino's in turn: two targets' landings).
+  const reach = overlapped.reduce((a, s) => a + s.scales.length, 0) + IN_TURN_SLACK_FRAMES;
+  const fits = (start: number) => start <= t - msOf(frame) - MIN_MOVE_MS && t - msOf(frame) - start <= msOf(reach) && !overlaps(Math.round((start * FPS) / 1000)) && quiet(start);
+  const held = heldStart(t, frame, stops);
+  // A landing logged at the end of the stop it overlapped is batched there (it came due anywhere in that stop): its
+  // stop ended between where the landing's world frames put it (heldStart) and where that stop begins, the latest
+  // start the log leaves quiet (40d9a3c1da37: Gilberta's ultimate, frame 60, at Si's stop end 12.95 s, the log quiet
+  // 9.33–11.00 s; 00ae0a364ad4: hers at Perlica's stop end 60.10 s, hits at 58.20 s between the two stops).
+  const batched = overlapped.find((s) => Math.abs(t - msOf(s.start + s.scales.length)) <= STOP_EDGE_MS);
+  if (batched) {
+    for (let f = batched.start - n; f >= Math.round((held * FPS) / 1000); f--) if (fits(msOf(f))) return msOf(f);
+    return null;
+  }
+  return fits(held) ? held : null;
+}
+
+/**
+ * The placement with each ultimate placed from its landing's frame (not from a cast event or a held start) whose time
+ * stop overlaps another operator's ultimate stop moved to where the game played them in turn (inTurnStart): in time
+ * order, against the stops of the placement as moved so far (a pair moves one of its two: fc63a2001251's Gilberta, not
+ * Perlica, whose own start then stands).
+ */
+function inTurn(data: GameData, fx: LogFixture, placement: Placement): Placement {
+  const sorted = [...fx.hits].sort((a, b) => a.t - b.t);
+  const opening = new Map<LoggedCast, { readonly h: LogHit; readonly p: PlacedHit }>();
+  for (const [h, p] of placement.hits) {
+    if (p.index !== 0 || p.frame === undefined || p.sameAs !== undefined || h.event !== p.cast.key) continue;
+    const cur = opening.get(p.cast);
+    if (!cur || h.t < cur.h.t) opening.set(p.cast, { h, p });
+  }
+  const frames = castFrames(placement);
+  let casts = [...placement.casts];
+  const moved = new Map<LoggedCast, LoggedCast>();
+  for (const c of casts.filter((x) => x.kind === "ultimate" && !x.fromEvent && x.beforeStop === undefined).sort((a, b) => a.start - b.start)) {
+    const o = opening.get(c);
+    if (!o || o.p.frame === undefined) continue;
+    const timing = data.skills[c.skillId]?.timing;
+    const frame = ownStopLoggedFrame(timing, o.p.hits, o.p.frame);
+    // Only a cast its landing's frame placed (not one held to its event: castStart).
+    if (Math.abs(c.start - (o.h.t - msOf(frame))) > msOf(1)) continue;
+    const stops = castTimeStops(data, casts, frames).filter((s) => s.operator !== c.operator);
+    const held = inTurnStart(timing, o.h.t, frame, stops, sorted);
+    if (held === null) continue;
+    const next: LoggedCast = { ...c, start: Math.round(held) };
+    casts = casts.map((x) => (x === c ? next : x));
+    frames.set(next, frames.get(c) ?? []);
+    moved.set(c, next);
+  }
+  if (moved.size === 0) return placement;
+  return { ...placement, casts, hits: new Map([...placement.hits].map(([h, p]) => [h, moved.has(p.cast) ? { ...p, cast: moved.get(p.cast) as LoggedCast } : p])) };
 }
 
 /** A new cast's start (castStart), or its event's with the landings the stop's end batched (beforeStopStart, LoggedCast.beforeStop). */
@@ -519,7 +603,7 @@ export function placeHits(data: GameData, fx: LogFixture): Placement {
   // The placed casts' stops cut at their resets, and the unplaced cast events' stops as they are: an event's time is the
   // press, not the cast, so its reset is no time to cut at (1cd1657bc305: Arcane's combo event at 34.70 s, cast at
   // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
-  const placed = placeWith(data, fx, [...castTimeStops(data, first, castFrames(firstPlacement)), ...unplacedCastStops(data, fx, first).flatMap((p) => p.stops)]);
+  const placed = inTurn(data, fx, placeWith(data, fx, [...castTimeStops(data, first, castFrames(firstPlacement)), ...unplacedCastStops(data, fx, first).flatMap((p) => p.stops)]));
   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
   const merge = new Map<string, number>();

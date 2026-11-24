@@ -237,10 +237,12 @@ describe("L3: what the log never lists", () => {
     // The fallback's readings (the log's listing with the replay's facts) try Link 1-4 there, labelled with why.
     const v = checkLog(data, fx, { engine: false }).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
     expect(v.map(assumed)).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)"]]);
-    // The engine's own reading fits it as it stands (since 2026-10-26, the controlled operator from the log's Stagger:
-    // before, no engine reading fit, and the hit fell back on the log's listing).
+    // The engine's own reading fits it with Link 1 (since 2026-10-26, the controlled operator from the log's Stagger:
+    // before, no engine reading fit, and the hit fell back on the log's listing). Since 2026-11-25 her ultimate is placed
+    // in turn before Si's (9.30 s, logcasts.ts inTurn), 60 ms after Camille's combo hit at 9.24 s: still undecided.
     const e = checkLog(data, fx).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
-    expect(e.map(assumed)).toEqual([[]]);
+    expect(e.map((x) => x.kind)).toEqual(["match"]);
+    expect(e.map(assumed)).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)"]]);
     // One hit out of the log: no casts to replay, the log's listing alone.
     const one = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.t === 12951 && h.operator === "chr_0013_aglina") }, { buffs: "log" });
     expect(one.map(assumed)).toEqual([["Link 1 (the replay can't say: no replay)"]]);

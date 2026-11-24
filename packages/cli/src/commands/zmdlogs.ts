@@ -143,7 +143,8 @@ export default command({
                 [--trace-buff owner:id]   Each change of a kit buff's expiry and the step that made it (a cast, a
                                           pause or stop, the log's Stagger steps; repeatable)
                 [--trace-buff status:<s>] The same for an enemy status (corrosion, electrification, vulnerable, a
-                                          physical status; status:* every one), keyed by status and applier (a moved
+                                          physical status, infliction: its element and stacks by appliers;
+                                          status:* every one), keyed by status and applier (a moved
                                           application is a hold), with the log's runs of it (LANE)
                 [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
                                           the log tools build for its casts: where they differ, the list isn't the

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { activeAt, advance, createContext, FPS, init, replayCast, type Build, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { type LogHit } from "@efsim/logs";
-import { checkLog, formatBuffReplay, logBuffReplay, readLogFixture, type HitVerdict } from "@efsim/cli";
+import { checkLog, logBuffReplay, readLogFixture, type HitVerdict } from "@efsim/cli";
 
 const data = loadGameData();
 const target = { enemy: "eny_0051_rodin", level: 90 };
@@ -36,19 +36,19 @@ describe("Typhoeus's shots that hit nothing (2026-11-15)", () => {
     expect(hovering(advance(ctx, st, 98))).toBe(false);
   });
 
-  it("9090afbacec9: adds the one shot that keeps her hover to her logged shot at 60630 ms, so the combo is the hovering one", () => {
+  it("9090afbacec9: her hover lasts from her shot at 57615 ms to her logged shot at 60630 ms across Arcane's ultimate stop, so the combo is the hovering one", () => {
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9090afbacec9.json", import.meta.url).pathname);
     const r = logBuffReplay(data, fx).replay;
-    // Her shot at 57615 ms, then no hit by anyone until 60630 ms: one shot that hit nothing in between (the 2nd), at the
-    // earliest frame from which her idle hover (1.9 s after a shot) still reaches the logged one.
-    expect(r.missed.map((m) => ({ ...m, start: Math.round(m.start) }))).toEqual([{ operator: T, skillId: `${T}_floating_attack2`, start: 58733, need: { skillId: `${T}_floating_attack1`, start: expect.closeTo(60597, 0) } }]);
+    // Her shot at 57615 ms, then no hit by anyone until 60630 ms: Arcane's ultimate stop (59.03–60.70 s), played before
+    // Liino's in turn (logcasts.ts inTurn, 2026-11-25), holds her idle hover (1.9 s after a shot). Before, with Arcane's
+    // stop over Liino's, the replay added a shot that hit nothing at 58733 ms to keep the hover.
+    expect(r.missed).toEqual([]);
     const at = (t: number, event: string) => fx.hits.find((h) => h.operator === T && h.t === t && h.event === `${T}_${event}`) as LogHit;
     const combo = at(63748, "combo_01_projhit");
     const l = r.landing(combo);
     expect("unknown" in l ? l.unknown : l.skillId).toBe(`${T}_combo_skillfloating`);
     // Hovering ATK (P1) on her hits after the combo, as the log lists it.
     for (const h of [combo, at(64503, "floating_attack1_01_projhit"), at(65785, "floating_attack1_01_projhit")]) expect(r.instances(h, "buff_chr_0034_typhoea_potential_atkup")).toBe(1);
-    expect(formatBuffReplay(data, logBuffReplay(data, fx)).join("\n")).toContain(`assumed: 1 cast(s) that hit nothing (no log shows one), added where a logged cast needs them:\n    Typhoeus ${T}_floating_attack2 at 58733 ms`);
   });
 
   it("dbaee23b801d: her battle skill from its event (0.85 s, before Li Zhiyan's ultimate stop); the first shot that hit nothing is looked for past the stop", () => {
