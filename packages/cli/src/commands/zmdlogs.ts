@@ -165,6 +165,10 @@ export default command({
                 [--kinds]                 Instead: the one-sided landings ranked by kind (where they sit, nature,
                                           skill kind) per group, then by operator and key (hold-outs: measure's
                                           summary, by kind only)
+                [--json]                  Instead: every one-sided landing, a JSON line each (fight, group, side,
+                                          operator, t, damage, key, skill, nature, context, flags, twin), cached
+                                          with the shares: a new ranking question is a jq line, not a replay of
+                                          every log
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
                                           windows and where the engine's own would have ended; with several logs
                                           (default: every development log) a summary of the shortfalls
@@ -391,7 +395,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
-      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), kinds: values.kinds, progress });
+      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), kinds: values.kinds, json: values.json, progress });
       if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
       if (values.by !== undefined && values.by !== "event") throw new Error("--by takes event");
       return totalsView(data(), readDevFixture(arg), { operators, ...top, assume: parseAssume(data(), values.assume), byEvent: values.by === "event", kinds: values.kinds });
