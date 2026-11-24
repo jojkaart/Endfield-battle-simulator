@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, readLogFixture } from "@efsim/cli";
+import { replayView } from "@efsim/logs";
 
 const data = loadGameData();
 const fixtureFile = (path: string) => readLogFixture(new URL(`../../fixtures/${path}`, import.meta.url).pathname);
@@ -33,6 +34,21 @@ describe("unquantified buffs valued from the kit buff that stands for them", () 
     const v = checkLog(data, annotated, { buffs: "log" }).filter((x) => x.hit.operator === "chr_0033_camille");
     expect(v.filter((x) => x.kind === "match")).toHaveLength(85);
     expect(v.some((x) => x.kind === "match" && x.assumed.includes("unquantified buff_wpn_lance_0015_atkup from kit wpn_lance_0015.atk"))).toBe(true);
+  });
+});
+
+// Kit buff leads (2026-11-24): the Empyrean's end is logged under her ultimate's key.
+describe("Zhuang Fangyi: the Empyrean's end logged as an ultimate_skill cast event", () => {
+  it("4bfc: the events at 92.68 and 179.51 s are the Empyrean's end, not casts; her hits after 92.68 s match without Lone Barge's ultimate buff", () => {
+    const Z = "chr_0030_zhuangfy";
+    const fx = fixtureFile("pending/zmdlogs-4bfc6f3e84b8.json");
+    const view = replayView(data, fx, { operators: [Z] });
+    for (const t of ["92.68", "179.51"]) expect(view).toContain(`${t}  EVENT  Zhuang Fangyi ultimate_skill (the log's cast event): a tick of empyrean`);
+    // Her first ultimate's Lone Barge buff is listed to 91.62 s; the next hits list none (the log has no second run until 144.37 s).
+    const after = checkLog(data, fx).filter((v) => v.hit.operator === Z && v.hit.t >= 92900 && v.hit.t <= 119300 && /normal_skill_ult|sword_triggerd/.test(v.hit.event));
+    // 27 hits, plain but one (110.37 s, a Sunderblade strike off for another reason); with the buff they read ×0.849.
+    expect(after.length).toBe(27);
+    expect(after.filter((v) => v.kind === "match" && v.class === "plain").length).toBeGreaterThanOrEqual(26);
   });
 });
 
