@@ -82,11 +82,61 @@ length, enemy and team members don't concentrate beyond the fights themselves); 
 s apart 0.35% of a fight).
 
 **Still possible / next checks (largest first):**
-- **One buff's state at the hit** (20.4%; the hold-outs' largest class, 34.0%): ~140 kit buffs, none above 2.0%: Si's
-  ultimate Amp listed past the replay's end (2.0%, 7 fights, ×1.43, 9c0b), Gilberta's weapon Arts DMG (1.1%, 7
-  fights), Arcane's Susceptibility layers (1.2%, 9 fights), Arcane's weapon Arts DMG Taken and Will burst buff, Yvonne's
-  ultimate state, Typhoeus's Hovering ATK; buffs a cast starts are 6.5% of the error. `zmdlogs differences --all --what
-  <buff>` per buff.
+- **One buff's state at the hit** (20.4%; the hold-outs' largest class, 34.0%): ~140 kit buffs, none above 2.0%; the
+  largest worked 2026-11-24 (below, "The kit buff leads"): one fixed (Zhuang Fangyi's Lone Barge, the Empyrean's end),
+  the rest not kit values but the replay's bursts, clocks, placements and an unsimulated HP. `zmdlogs differences
+  --all --what <buff>` and `python3 -I scripts/probes/stats/onebuff.py <buff>` per buff.
+
+**The kit buff leads (2026-11-24; tables rebuilt at c6f1874 with build.ts, per buff scripts/probes/stats/onebuff.py;
+shares of the off error at that code):**
+- **Fixed: Zhuang Fangyi's Lone Barge ultimate buff** (1.0%, 4bfc 27 hits and 4d60 9, ×0.849): the log's
+  `ultimate_skill` cast events 30–35 s after an ultimate's (4bfc 92.68 and 179.51 s, 4d60 106.47 s, d774 135.57 s)
+  are the Empyrean's end (ult_end casts ultimate_skill_end), not casts: no time stop follows (her hits go on through
+  the 78 frames), her next hits are her plain forms, and Lone Barge's ultimate buff isn't listed after them (4 of 4;
+  the 9 real casts all list it; scripts/probes/kits/zhuangfy-empyrean-end.ts). The replay made each a press: a
+  78-frame stop, Lone Barge's buff for 25 s more, the Empyrean's end on its own clock (4d60's 6 s after the log's).
+  The empyrean buff ticks once at its end, logged as the ultimate (`every`, `ticksLoggedAs`, `endFollowsTick`).
+  4bfc plain 795 → 819, mismatch 29 → 15 (per hit closer, total 0.3 → −0.8%); a hold-out better; **4d60 worse** (707 →
+  696, −1.8 → −4.1%): the fake stop held Arcane's Solemn Phalanx runs (98.5→131.7 s), Perlica's weapon (115.8→143 s)
+  and a Sunderblade's timer 2.6 s, which the game holds 3.6–6.1 s by something unlogged (`zmdlogs holds 4d60`: those
+  bounds dropped; the replay's Stagger window 114.30–133.37 s takes no holds; the enemy away 117.22–124.45 s): open.
+  Left: the hold placement's stop list (buffreplay.ts replayedCastStops of the assembled casts) still counts the
+  78 frames of an event the replay reads as a tick.
+- **Ruled out: Arcane's Susceptibility layers** (1.5%): 170k of the 194k is one hit, e82d 9.12 s (Si's combo, crit
+  unlogged, a fallback) that fits two ways (the crit with Arcane's Susceptibility the log's way, or the verdict's reading: the crit with
+  suit_atk02.edge ×2 and wpn_claym_0018.combo_ready unlogged); the rest is 24 hits over 16 fights at start / end boundaries.
+- **Ruled out: "Arcane's weapon Arts DMG Taken ×0.80"** (1.2%): it is Detonation Unit's (wpn_funnel_0008, Arcane's weapon in 9c6e,
+  7910, 1cd1, 5082, d774), not Solemn Phalanx's, and 147k of the 153k is 9c6e at 27–28 and 90–95 s: two targets in a single-target fixture (the
+  second target lacks the debuff). A multi-target import.
+- **Arcane's Will burst buff (Solemn Phalanx, 0.9%): not the weapon, her bursts.** Every listed run of
+  buff_wpn_funnel_0016_will_atk starts at a logged Arcane burst's ms (90 of 91 at +0 ms;
+  scripts/probes/kits/arcane-will-burst.ts), as the kit has it. Of her 130 logged bursts, 87 land within 150 ms in the
+  replay, 19 at 0.15–0.55 s, 24 with no landing near. The buff's error is where the replay bursts and the game
+  doesn't: after her WILL touch (b7b3 5.97 s, c83c 65.10 s: fire onto fire, the log credits Wulfgard alone; 9a80
+  30.50 s) and her ultimate's infliction (fc63 40.80 and 85.13 s), or the game's burst seconds later (b7b3 10.34, 9a80
+  35.05, c779 9.68 s): the enemy's infliction at her touch / ultimate (in-game test 33's element; Typhoeus's Nature
+  consumption in fc63, whose own bursts there are replay-only too) and the burst's 1 s on the operator's clock across
+  stops (b7b3: the touch at 4.95 s, the logged burst at 10.34 s, after Arcane's and Tangtang's ultimate stops; due
+  7.52 s on every stop). Next: `zmdlogs reactions` per touch, the burst clock under one's own ultimate stop.
+- **Gilberta's weapon Arts DMG (1.2%): a clock, not the kit's 15 s.** 150k of 159k is 4a64's first instance: listed
+  to 29.15 s (16.5 s of world time), the replay's ends at 28.23 s; an instance buff, so not one of the hidden holds'
+  clocks (`zmdlogs holds 4a64 --why wpn_funnel_0011`: runApart). Rossi's (24.53 s, 57 frames) and Gilberta's (24.90 s,
+  52 frames) ultimate stops overlap 1.53 s in the placement; held one after the other they give the 1.5 s. Elsewhere
+  the 15 s fits (4360 4 of 4 within 0.35 s, 00ae, 207f); fc63 12.37 s runs 18.6 s with no stop, which the placed holds
+  take (check 30.70 s against the logged 30.99 s). Still possible: ultimates pressed together play their stops in turn.
+- **Typhoeus's Hovering ATK (0.7%): two placements.** The 5th shot's burst (9090 ×4, bdf2, fc63 16.00 and 47.16 s,
+  00ae 30.02 s; the open item under "Typhoeus, Arcane, Liino, Perlica") and her combo's last arrows at a floating start
+  (fc63 37.61, 58.99, 81.81 s, 9c6e 27.75 s): the log's battle-skill press comes 0.14–0.18 s before the replay's
+  start, made inside her combo's uncuttable frames (the kit allows it 0.2–0.7 s later); press → first arrow over 36
+  presses 85–334 ms (one across a stop), about 105 or 215 ms (scripts/probes/kits/typhoeus-press.ts): a buffered press, at the log's batched ms.
+- **Next on the list, not kit values:** Xaihi's Auxiliary Crystal Amp (c3c7 56.13 s, 59 hits: no listed run; it needs
+  the treated operator at Max HP, which the engine doesn't simulate: the N2 interim); Laevatain's Scorching Heart
+  (f879 112.55 s, c83c 70.06 s: a refresh on reaching 4 Melting Flame that the replay lacks; f879's battle skill at
+  93–97 s is placed off its logged hits); Si's ultimate Amp (1–6 hits a fight at its start or end); Liino's stance
+  (its own sections below).
+- **Zhuang Fangyi's Sunderblades, left:** d774 104.18 s, the Empyrean's free battle skill: 3 logged hits, no final,
+  where the replay plays 8 and the final (300k replay-only); 4d60 125.40 s: the replay's 8 against the log's 9 since
+  the fix above (a Sunderblade's 36 s ran out without the fake stop: the same unlogged holds).
 - **The rest of the ×1.5 band, Liino's ultimate windows** (1cd1, 1d91, af7b; 9c6e is two targets): not Cosmovoice
   ending early but starting late. In 1cd1 the log has Typhoeus's burst at 37.97 s and Liino's first projectile pair
   (frame 76) at 38.73 s under the Amp; the replay casts her ultimate at 36.19 s from its projectiles with its 77-frame

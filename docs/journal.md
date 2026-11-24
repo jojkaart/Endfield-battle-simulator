@@ -4,9 +4,47 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 139 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 140 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-24: Kit buff leads: Zhuang Fangyi's Empyrean end, the rest not kit values
+
+**Goal:** the misprediction analysis's largest one-buff leads (its "one kit buff the replay has wrong, the listing
+right" class, ~20% of the off error): Arcane's weapon, Will burst and Susceptibility buffs, Gilberta's weapon, Zhuang
+Fangyi's weapon and Sunderblades, Typhoeus's Hovering ATK, then the list; fix or rule out each, double counts first.
+
+**Done** (open-problems "Misprediction statistics", "The kit buff leads"; tables rebuilt with build.ts at c6f1874,
+per buff the new scripts/probes/stats/onebuff.py; no double count among them, doublecount.py's pairs unchanged):
+- **Fixed: Zhuang Fangyi's Lone Barge ultimate buff (1.0%).** The log's `ultimate_skill` events 30–35 s after an
+  ultimate's are the Empyrean's end (ult_end casts ultimate_skill_end): no time stop follows, her next hits are her
+  plain forms, Lone Barge's buff isn't listed after them (4 of 4; the 9 real casts list it;
+  scripts/probes/kits/zhuangfy-empyrean-end.ts). The replay made each a press (a 78-frame stop, the buff 25 s more).
+  The empyrean buff now ticks once at its end, logged as the ultimate (`every`, `ticksLoggedAs`, `endFollowsTick`: no
+  code change). Test: tests/slow/log-cases.test.ts (4bfc).
+- **Ruled out as kit leads:** Arcane's Susceptibility layers (one e82d hit read two ways is 88% of it); "Arcane's weapon
+  Arts DMG Taken" (Detonation Unit, 96% of it 9c6e's second target); Arcane's Will burst buff (it starts at her logged
+  burst in 90 of 91 runs, scripts/probes/kits/arcane-will-burst.ts: its error is her bursts', replay-only after her
+  touch or ultimate or seconds early across stops); Gilberta's weapon (4a64's instance lasts 16.5 s of world time where
+  two ultimates' stops overlap 1.5 s in the placement); Typhoeus's Hovering ATK (the 5th shot's burst, and a floating
+  start pressed inside her combo's frames 0.14–0.18 s before the replay's, scripts/probes/kits/typhoeus-press.ts);
+  Xaihi's Crystal Amp (Max HP, not simulated); Laevatain's Scorching Heart (a Melting Flame refresh the replay lacks).
+
+**Scoreboard** (`npm run snapshots:update`): development plain 67.8 → 67.7%, mismatch 11.5 → 11.6%, mean |damage
+error| 7.0%; hold-out plain 78.3 → 78.4%, 5.9%, 8.5% (1 better); earlier pending plain 64.2 → 64.4%, mismatch 14.2 →
+14.1%, 4.4%; all but the hold-outs 5.5%. 4bfc mixed, per hit closer (plain 795 → 819, mismatch 29 → 15, total 0.3 →
+−0.8%); **4d60 worse** (plain 707 → 696, −1.8 → −4.1%): the phantom stop held Arcane's Solemn Phalanx runs, Perlica's
+weapon and a Sunderblade 2.6 s that the game holds 3.6–6.1 s by something unlogged around 98–143 s (those hold bounds
+dropped). Teams (team-ab against c6f1874): every team's fight the same (no team has Zhuang Fangyi).
+
+**Decisions:** kept the Empyrean fix with 4d60 worse: the mechanism is decided by the log (no stop, plain forms, no
+buff after the event, 4 of 4), and 4d60's loss is an unexplained hold the phantom stop happened to cover. The hold
+placement still counts the phantom stop (buffreplay.ts replayedCastStops, the other agent's file): in the friction
+report, not changed.
+
+**Left:** 4d60's 3.6–6.1 s of unlogged holds (its Stagger window takes none); Arcane's bursts (test 33's element, the
+burst's clock across her own ultimate's stop); Zhuang Fangyi's d774 104.18 s Empyrean battle skill (3 logged hits, no
+final, the replay 8 and the final).
 
 ## 2026-11-24: Misprediction candidates: logged-as buffs, the enemy's HP, Ardelia's chain
 
@@ -344,40 +382,3 @@ bot, −0.32% at 0.6 s), full energy −0.05%, both 60 s timelines unchanged: wi
 
 **Problems:** finding every case took a scratch loop over 80 fixtures (no multi-log `--stops`); a kit number written as
 "the data's length minus the engine's hold" had to follow the engine fix by hand (friction report).
-
-## 2026-11-23: Improvement round 8: the replay split, views on its record
-
-**Goal:** the eighth friction round over the five open reports (round 7's backlog and its own report, ticks and layers,
-the hold-out refresh, the remaining leads), behaviour-preserving, with no other agent in the code: so the replay's
-run() refactor and the engine-clock points earlier rounds had left could be taken. Summary:
-docs/friction-done/2026-11-23-round-8.md; what's left: docs/friction/2026-11-23-backlog-after-round-8.md.
-
-**Done:**
-- The replay's run() is `replayOnce(input, pass)` (buffreplay.ts), its steps in replaysteps.ts, what it records in
-  replayrecord.ts (replayRecorder). Measured byte for byte. Every new view output below was then an edit to the record.
-- Views: a kit window's chain (`replaces`: "refreshes the one from"), enemy-status traces (`replay --trace-buff
-  status:<s>`, a moved application named a hold, the log's runs as LANE), `replay --stops` (the timeline's applied
-  slow-downs against the log tools' lists), the crit each landing took and its source (`hits --json`, `--zones`, LAND
-  lines), INSIDE judged by the gates alone with CUTS for a legal interrupt (78 of 169 former INSIDE flags), `zmdlogs
-  totals` (matched, replay-only and log-only parts), `holds --why`'s log-end side, "same totals (cosmetic)" values.
-- Tools: `measure --patch <diff>`, held frames per slow-down (`gamedata dilations`, `efsim kit`), `runstate
-  --touching`, RefreshMismatch.values (printed by `zmdlogs refresh` for development fixtures), merge.ts and
-  premerge.sh printing hold-out paths as counts, CLAUDE.md's commit and hold-out lines.
-
-**Decisions:** pinned expiries (round 7's backlog 4) were built as a scratch diff and measured with `measure --patch`:
-development and verified unchanged, one hold-out entry "other"; not adopted in a behaviour-preserving round, moved to
-the accuracy list. No ClockShift type: the grep it was meant to serve found no anchor reading besides Corrosion's, and
-clock.ts `moved` already is the one mapping (documented). `measure --patch` in place of a registered `stop-path`
-reading: it measures any half of a change.
-
-**Found:** the engine applies Arcane's combo reset only to the slow-downs running when her combo starts, so a
-teammate's combo slow-down starting before her frame 9 runs whole (1d91 50.30 s, 7910 4.90 s, 9555 31.73 s) where the
-log tools' lists cut it (docs/open-problems.md, Arcane's combo reset); Purrchena's combo has 30 list-only stops (04d4,
-99fb). Both are accuracy tasks.
-
-**Scoreboard** (`npm run snapshots:update`: "No log's verdicts moved", no snapshot changed): verified 77.9 / 99.1 /
-0.0 / 1.8%, development 65.7 / 80.4 / 14.8 / 8.6%, hold-out 77.4 / 91.9 / 6.3 / 10.2%, earlier pending 58.5 / 79.2 /
-17.8 / 8.1% (plain, matched, mismatch, mean |damage error|), as before.
-
-**Problems:** `--logs 9c0b` matched 489c0be3e162 too (an id part inside another id): full ids for a selection. One
-multi-line `python3 -c` slipped through (the round's friction report).
