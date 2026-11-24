@@ -13,9 +13,11 @@
       "label": "Grand Vision: Physical DMG during the next battle skill or ultimate",
       "target": "self",
       "gameBuff": "buff_wpn_sword_0021_exist",
+      "loggedAs": ["buff_wpn_sword_0021_valid"],
       "duration": "duration",
       "consumedBy": ["battle", "ultimate"],
-      "modifiers": [{ "attr": 50, "value": "phy_dmg_up" }]
+      "modifiers": [{ "attr": 50, "value": "phy_dmg_up" }],
+      "note": "The consuming cast's hits list buff_wpn_sword_0021_valid (the attached buff with the modifier), never _exist: loggedAs, so the check reads the listing as this buff instead of adding both (0c14, 7e19, d4fb: 22 hits read ×0.75–0.84 with the bonus twice, and match with it once; misprediction statistics, candidate 3)."
     }
   ],
   "triggers": [

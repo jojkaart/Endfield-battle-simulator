@@ -71,6 +71,7 @@
       "label": "Cryoblasting Pistolier (ultimate state: enhanced basic attacks)",
       "target": "self",
       "gameBuff": "buff_chr_0017_yvonne_ultimate_skill",
+      "loggedAs": ["buff_chr_0017_yvonne_potential_5_new"],
       "duration": {
         "key": "duration",
         "skill": "chr_0017_yvonne_ultimate_skill"
@@ -105,6 +106,7 @@
       "label": "Ultimate end state (the next basic attack is the enhanced Final Strike)",
       "target": "self",
       "gameBuff": "buff_chr_0017_yvonne_ultimate_skill_end",
+      "loggedAs": ["buff_chr_0017_yvonne_potential_5_new"],
       "duration": 3,
       "blocksEnergy": true,
       "modifiers": [

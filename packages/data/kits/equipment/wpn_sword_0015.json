@@ -12,11 +12,12 @@
       "label": "Aspirant: Physical DMG during the next ultimate, per Lift",
       "target": "self",
       "gameBuff": "buff_wpn_sword_0015_exist",
+      "loggedAs": ["buff_wpn_sword_0015_pdi_up"],
       "duration": "duration",
       "maxStacks": "max_stack",
       "consumedBy": ["ultimate"],
       "modifiers": [{ "attr": 50, "value": "phy_dmg_up" }],
-      "note": "Each layer carries phy_dmg_up, so the consuming ultimate gets phy_dmg_up × layers (buff_wpn_sword_0015_pdi_up), on its own hits; it uses up every layer."
+      "note": "Each layer carries phy_dmg_up, so the consuming ultimate gets phy_dmg_up × layers (buff_wpn_sword_0015_pdi_up), on its own hits; it uses up every layer. loggedAs: a log would list _pdi_up on those hits, as Glorious Memory's and Grand Vision's logs list their _valid (not yet in a log)."
     }
   ],
   "triggers": [
