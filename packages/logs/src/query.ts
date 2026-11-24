@@ -16,7 +16,7 @@
 // - cadence: one event key's hit groups across logs with the world-time gaps between them (time stops taken out).
 
 import { effectiveKit, FPS, type GameData, type SkillType } from "@efsim/engine";
-import { assembleCasts, controlSwaps, replayedCastStops } from "./buffreplay.ts";
+import { assembleCasts, controlSwaps, replayedCastStops, type BuffReplay } from "./buffreplay.ts";
 import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
 import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
@@ -34,6 +34,8 @@ const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 export interface ReplayTimeStop extends TimeStop {
   /** False for a cast the replay makes without placed hits: from a cast event (an ultimate at its stop: withLoggedCasts), or inferred. */
   readonly placed: boolean;
+  /** A hitless cast event of a skill a kit buff of its operator ticks as (KitBuff.ticksLoggedAs): the buff's tick unless the replay made the cast (replayTimeStops). */
+  readonly tickRead?: true;
 }
 
 /**
@@ -42,16 +44,60 @@ export interface ReplayTimeStop extends TimeStop {
  * Round 6: they took castTimeStops of the placed casts only, which misses an ultimate placed from its cast event
  * (db8711232de9: Laevatain's at 16.60 s, logged at its stop's end, so `worldtime 16 21` counted Camille's combo alone).
  * A slot press counts only when the replay makes it as a variant (`as`).
+ *
+ * Round 11 (kit-buff leads report point 2): a hitless cast event of a skill a kit buff of its operator ticks as
+ * (KitBuff.ticksLoggedAs) is the buff's tick where the replay didn't make the cast (its buff was on: 4d60e7fe92c2's
+ * late ultimate_skill events, Zhuang Fangyi's Empyrean ending), and a real cast where it did (3aa6ab93bad4's seven
+ * ultimates, whose hits the placement doesn't place). Such a stop is `tickRead`. With `replay`, those the timeline
+ * never applied are left out, as the hold placement leaves them out (buffreplay.ts, "Not a logged event the replay
+ * read as a buff's tick"); without one they stay, marked (`casts`, `worldtime` say so).
  */
-export function replayTimeStops(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): ReplayTimeStop[] {
+export function replayTimeStops(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), replay?: Pick<BuffReplay, "appliedStops">): ReplayTimeStop[] {
   const kits = fx.team.flatMap((b) => {
     const k = effectiveKit(data, b);
     return k ? [k] : [];
   });
-  return replayedCastStops(data, assembleCasts(data, fx, placement, kits));
+  const tickSkills = new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
+  const stops: ReplayTimeStop[] = replayedCastStops(data, assembleCasts(data, fx, placement, kits)).map((st) => (!st.placed && tickSkills.has(`${st.operator}|${st.skillId}`) ? { ...st, tickRead: true as const } : st));
+  if (!replay) return stops;
+  return stops.filter((st) => !st.tickRead || replay.appliedStops.some((x) => x.operator === st.operator && x.start === st.start));
 }
 
+/** A tickRead stop's mark in a view without the replay (`casts`, `worldtime`). */
+export const tickReadNote = (st: ReplayTimeStop) => (st.tickRead ? " [a hitless event of a skill a kit buff ticks as: the replay's tick unless it made the cast; replay --stops says which]" : "");
+
 const notPlaced = (st: ReplayTimeStop) => (st.placed ? "" : " [no placed hits: from its cast event or inferred]");
+
+/** A logged hit this close to a cast event (ms) is at it, not before or after it (the log batches its ms). */
+const EVENT_EDGE_MS = 30;
+/** A logged hit within this of a cast event (ms) puts the event at an edge of the hitless stretch around it. */
+const EVENT_NEAR_MS = 400;
+
+/**
+ * Where one of the log's cast events sits in the hitless stretch around it, for a skill whose timing stops the world
+ * (a slow-down down to scale 0: no hit can land inside it), else null (placement leads report point 1: whether an
+ * ultimate's event is logged at its press or at its stop's end took a probe, scripts/probes/placement/ult-events.ts:
+ * the end for most operators, Si 26 of 35, Liino 13 of 21, Laevatain 11 of 16; docs/design/data.md "What the log
+ * records"). `before` / `after`: the log time to the nearest logged hit on each side (more than EVENT_EDGE_MS away);
+ * "press": a hit just before, none for most of the stop after; "end": the reverse; "inside": no hit near either side;
+ * "unclear": hits near both (no stop there in the log), or a stretch shorter than the stop on the far side.
+ */
+export function castEventPlace(data: GameData, hitTimes: readonly number[], event: { readonly t: number; readonly skill: string }): { readonly place: "press" | "end" | "inside" | "unclear"; readonly before: number; readonly after: number; readonly stopMs: number } | null {
+  const stop = data.skills[event.skill]?.timing?.slowdowns.find((d) => Math.min(...d.scales) === 0);
+  if (!stop) return null;
+  const stopMs = msOf(stop.scales.length);
+  const before = event.t - ([...hitTimes].reverse().find((t) => t < event.t - EVENT_EDGE_MS) ?? -Infinity);
+  const after = (hitTimes.find((t) => t > event.t + EVENT_EDGE_MS) ?? Infinity) - event.t;
+  const place = before < EVENT_NEAR_MS && after > stopMs * 0.8 ? "press" : after < EVENT_NEAR_MS && before > stopMs * 0.8 ? "end" : before >= EVENT_NEAR_MS && after >= EVENT_NEAR_MS ? "inside" : "unclear";
+  return { place, before, after, stopMs };
+}
+
+/** castEventPlace as words: "logged at its stop's end (hits 1.76 s before, 0.02 s after; a 1.80 s stop)". */
+export function eventPlaceText(p: NonNullable<ReturnType<typeof castEventPlace>>): string {
+  const what = p.place === "press" ? "at its press" : p.place === "end" ? "at its stop's end" : p.place === "inside" ? "inside a hitless stretch" : "at no clear edge";
+  const gap = (ms: number) => (Number.isFinite(ms) ? `${s(ms)} s` : "none");
+  return `logged ${what} (hits ${gap(p.before)} before, ${gap(p.after)} after; a ${s(p.stopMs)} s stop)`;
+}
 
 /** One real cast of a skill as the log means it (loggedSkillInstances). Times in ms. */
 export interface SkillInstance {
@@ -141,13 +187,19 @@ export function loggedSkillInstances(data: GameData, fx: LogFixture, opts: { rea
 /** `zmdlogs instances`: a fight's skill instances, one line each. */
 export function instancesView(data: GameData, fx: LogFixture, opts: { readonly operators?: readonly string[]; readonly kind?: string } = {}): string {
   const all = loggedSkillInstances(data, fx).filter((i) => (!opts.operators?.length || opts.operators.includes(i.operator)) && (!opts.kind || i.kind === opts.kind));
+  const hitTimes = fx.hits.map((h) => h.t).sort((a, b) => a - b);
   const lines = all.map((i) => {
     const after = i.from === "event" && i.kind === "combo" ? all.filter((x) => x.operator === i.operator && x.kind === "combo" && x.from === "hits" && i.start - x.start > 0 && i.start - x.start < 9000).at(-1) : undefined;
     const hits = i.from === "event" ? `no hit of it (an event only: a press that may have done nothing${after ? `; ${s(i.start - after.start)} s after a real combo: an entity's end logged as a cast, as Arcane's Imprisonment` : ""})` : `${i.hits} hit(s) ${s(i.firstHit as number)}–${s(i.lastHit as number)}`;
     const ev = i.events.length > 3 ? `, cast event at ${s(i.events[0] as number)} and ${i.events.length - 1} more while it lasts (to ${s(i.events.at(-1) as number)})` : i.events.length ? `, cast event(s) at ${i.events.map(s).join(", ")}` : i.from === "hits" ? ", no cast event" : "";
-    return `${s(i.start).padStart(7)}  ${operatorLabel(data, i.operator)} ${shortSkill(i.skillId)}${i.kind ? ` (${i.kind})` : ""}: ${hits}${ev}`;
+    // The first event against the placed start in log time (the world time across the cast's own stop is about 0), and
+    // where it sits in its stop (placement leads report point 1).
+    const first = i.events[0];
+    const lead = first !== undefined && i.from === "hits" ? ` (${first - i.start >= 0 ? "+" : ""}${s(first - i.start)} s of log time from the placed start)` : "";
+    const place = first !== undefined ? castEventPlace(data, hitTimes, { t: first, skill: i.skillId }) : null;
+    return `${s(i.start).padStart(7)}  ${operatorLabel(data, i.operator)} ${shortSkill(i.skillId)}${i.kind ? ` (${i.kind})` : ""}: ${hits}${ev}${lead}${place ? `; ${i.events.length > 1 ? "the first " : ""}${eventPlaceText(place)}` : ""}`;
   });
-  return [`${fx.id}: ${all.length} skill instance(s), as the log means them (query.ts loggedSkillInstances: placed from hits, else a cast event alone); times in s`, ...lines].join("\n");
+  return [`${fx.id}: ${all.length} skill instance(s), as the log means them (query.ts loggedSkillInstances: placed from hits, else a cast event alone); times in s; for a skill that stops the world, where its (first) cast event sits in the hitless stretch (castEventPlace: at its press, at its stop's end, inside, unclear)`, ...lines].join("\n");
 }
 
 /** One run of a listed game buff (buffLanes): one `source` and `since`, with the hits that list it. Times in ms. */
@@ -229,7 +281,7 @@ export function worldTimeView(data: GameData, fx: LogFixture, from: number, to: 
     `${fx.id}: ${s(from)}–${s(to)} s: real ${s(to - from)} s, world ${s(world)} s (held ${s(to - from - world)} s by ${between.length} time stop(s) of the replay's casts; times in s, a stop's frames at 30 a second)`,
     ...between.map((st) => {
       const inside = Math.min(b, st.start + st.scales.length) - Math.max(a, st.start);
-      return `  ${s(msOf(st.start)).padStart(7)}  ${operatorLabel(data, st.operator)} ${shortSkill(st.skillId)}${st.kind ? ` (${st.kind})` : ""}: ${st.scales.length} frame(s), lowest scale ${Math.min(...st.scales)}, ${inside} frame(s) inside the window${notPlaced(st)}`;
+      return `  ${s(msOf(st.start)).padStart(7)}  ${operatorLabel(data, st.operator)} ${shortSkill(st.skillId)}${st.kind ? ` (${st.kind})` : ""}: ${st.scales.length} frame(s), lowest scale ${Math.min(...st.scales)}, ${inside} frame(s) inside the window${notPlaced(st)}${tickReadNote(st)}`;
     }),
     "Overlapping stops count once per frame, at the lowest scale then; the log's ms are batched (docs/design/data.md \"What the log records\"), so a difference under ~0.2 s isn't timing evidence.",
   ].join("\n");

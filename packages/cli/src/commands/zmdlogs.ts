@@ -6,6 +6,7 @@
 import {
   battleIdOf,
   buffsView,
+  burstsView,
   cacheRawDetail,
   cadenceView,
   census,
@@ -105,6 +106,12 @@ export default command({
                 [--singles]               No pairs of toggles
                 [--top n] [--verbose]     Patterns shown (default 20); every run, and each hit's best fit
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
+  efsim zmdlogs bursts <fixture…|--all>   Each Arts Burst, logged against the check's replay (paired as the check
+                                          pairs them, the offset; log only with the reason; replay only), each
+                                          side's likely cause (the operator's latest inflicting hit at least the
+                                          burst delay of world time before) and the time stops between; counts per
+                                          operator (--all: every verified and pending development log)
+                [--operator <op>] [--from s] [--to s]  Only these operators' bursts; this window
   efsim zmdlogs refresh <fixture.json>    Add what the battle's detail records that an older import lacks
                                           (casts without damage, each hit's Stagger and its credited skill,
                                           buff effects' giver and start): from the raw cache, else fetched
@@ -407,6 +414,14 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (named.length && values.all) throw new Error("zmdlogs stops: fixtures or --all, not both");
       const logs = devFixtures(named.length ? { ids: named } : {});
       return stopsView(data(), logs, { differ: values.differ, operators, progress });
+    }
+    if (sub === "bursts") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs bursts takes fixtures (ids such as 0c14) or --all (every verified and pending development log; --operator op, --from s, --to s)");
+      if (named.length && values.all) throw new Error("zmdlogs bursts: fixtures or --all, not both");
+      // With --operator, only the logs whose team has one of them.
+      const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
+      return burstsView(data(), logs, { operators, ...seconds(values.from, "from"), ...seconds(values.to, "to"), progress });
     }
     if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, cache: !values["no-cache"], progress });
     if (sub === "groups") {

@@ -18,6 +18,7 @@ const ALLOWED: Readonly<Record<string, { readonly n: number; readonly why: strin
     why: "skillStops (the builder: its resets; its slow-downs come from the engine's pathSlowdowns), withResets (its parts' resets), ownStopLoggedFrame (where a cast's own stop ends, for its logged frame), unplacedCastStops (whether a skill has any), placeWith (whether a teammate's cast stops the world) and eventStopStart (the length of an ultimate's full stop from its frame 0)",
   },
   "buffreplay.ts": { n: 1, why: "loggedCastStart: the length of an ultimate's full stop from its frame 0" },
+  "query.ts": { n: 1, why: "castEventPlace: the length of a skill's full stop, to say where its cast event sits (round 11)" },
   "replayrecord.ts": { n: 1, why: "replayRecorder: TimelineState.slowdowns, the slow-downs the timeline applied (BuffReplay.appliedStops), not SkillTiming's" },
 };
 

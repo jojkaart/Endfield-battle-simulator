@@ -1,6 +1,6 @@
 // scripts/friction.ts: an improvement round's outcome skeletons and carried backlog points.
 import { describe, expect, it } from "vitest";
-import { carry, outcomeSkeleton, points } from "../scripts/friction.ts";
+import { carriedFrom, carry, outcomeSkeleton, points } from "../scripts/friction.ts";
 
 const report = ["# A report (2026-11-23)", "", "Task: x.", "", "## 1. First thing.", "", "- **What happened:** a.", "- **From:** round 4.", "", "## 2. Second", "- **What happened:** b.", "", "## What worked well", "", "Fine."].join("\n");
 
@@ -26,5 +26,24 @@ describe("friction.ts", () => {
   it("extends a wrapped From paragraph at its end", () => {
     const wrapped = ["## 1. One", "- **From:** round 4's backlog, point 2; docs/friction-done/", "  x.md point 1.", "- **Why it helps:** y."].join("\n");
     expect(carry(wrapped, [1], 1, "round 6's backlog,")).toContain("- **From:** round 4's backlog, point 2; docs/friction-done/\n  x.md point 1; round 6's backlog, point 1.\n- **Why it helps:** y.");
+  });
+});
+
+describe("friction.ts outcomes --backlog (round 10's own report point 2)", () => {
+  it("fills in the points a new backlog's From lines carry", () => {
+    const backlog = [
+      "# Backlog",
+      "## 1. A",
+      "- **From:** docs/friction-done/2026-11-23-x.md point 4; docs/friction-done/",
+      "  2026-11-24-the-report.md points 1 (the parts export, round 2) and 3.",
+      "## 2. B",
+      "- **From:** docs/friction-done/2026-11-24-the-report.md point 2.",
+      "## 3. C",
+      "- **From:** docs/friction-done/2026-11-24-other.md point 1.",
+    ].join("\n");
+    const carried = carriedFrom(backlog, "docs/friction/2026-11-24-the-report.md");
+    expect([...carried].sort((a, b) => a[0] - b[0])).toEqual([[1, [1]], [2, [2]], [3, [1]]]);
+    const r = ["## 1. One", "## 2. Two", "## 3. Three", "## 4. Four"].join("\n");
+    expect(outcomeSkeleton(r, 11, { name: "backlog.md", carried })).toBe("## Outcome (round 11)\n\n- 1 (One): carried (backlog.md point 1)\n- 2 (Two): carried (backlog.md point 2)\n- 3 (Three): carried (backlog.md point 1)\n- 4 (Four): ");
   });
 });

@@ -550,6 +550,22 @@ in the logs):
   ~3.5 s of Cosmovoice, Ardelia's ~3 s after hers, Typhoeus's at later
   shots of her window): "N s after the ultimate" is measured from the
   first event of the group (`zmdlogs instances` folds the repeats in).
+- **An ultimate's (first) cast event sits at an edge of its time stop,
+  mostly the end** (placement leads, 2026-11-24): Si 26 of 35, Liino 13 of
+  21, Laevatain 11 of 16 at the stop's end, a few at the press, the rest
+  where several stops overlap (scripts/probes/placement/ult-events.ts).
+  A world-time distance across the cast's own stop is about 0, so "0.02 s
+  of world time apart" can be 1.8 s of log time: `zmdlogs instances` and
+  `replay`'s EVENT lines print both and the event's place (query.ts
+  `castEventPlace`: at its press, at its stop's end, inside a hitless
+  stretch, at no clear edge).
+- **A cast event under a key a kit buff ticks as may still be a cast**
+  (round 11): Zhuang Fangyi's Empyrean ends under her ultimate's key
+  (`ticksLoggedAs`), and 3aa6's seven real ultimates, whose hits aren't
+  placed, are logged the same way. Whether the replay made the cast is its
+  decision (the buff on or not), so a view decides from the replay's
+  applied stops (query.ts `replayTimeStops` with the replay), not from the
+  key.
 - **Si's battle-button events are mostly hitless**: every 3.2–3.6 s, often
   while she does basic attacks; a real battle skill has its hit 400–650 ms
   after its event. Whether the rest are presses is open (the replay makes
@@ -610,7 +626,8 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 
 | Question | Command |
 |---|---|
-| The casts of an operator, as the log means them | `efsim zmdlogs instances <fixture> [--operator]` |
+| The casts of an operator, as the log means them | `efsim zmdlogs instances <fixture> [--operator]` (for a skill that stops the world, where its first cast event sits: at its press, at its stop's end, …; its log-time distance to the placed start) |
+| An operator's Arts Bursts, logged against replayed, each side's likely cause and the stops between | `efsim zmdlogs bursts <fixture…\|--all> [--operator <op>] [--from s --to s]` (`burstRows` in a script) |
 | How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window=a,b] [--list]` (the window in ms; `=` for a negative start, as the `rerun:` line prints it) |
 | What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
@@ -628,6 +645,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | One subtree of a data file, by its JSON path | `efsim gamedata tree <id> --path <path>` (paths as `who` prints them; a branch of only presentation says so) |
 | The logged hits in a window of time, their verdicts, the replay's crit and its source | `efsim zmdlogs hits <fixture> --from s --to s [--operator] [--event <re>] [--zones]` |
 | The pair the check judges a hit by (for statistics across logs) | `zmdlogs hits --json`: `graded` (the uncapped logged value against the verdict's reading) |
+| Which single disagreement, taken the log's way, makes an off hit fit | `zmdlogs hits --json`: `counterfactuals` (each difference, the crit flipped, a boundary kit buff on / off, Stagger), against `graded` |
 | Every one-sided landing across fights, for a question of your own | `efsim zmdlogs totals --all --json` (a JSON line each, cached; then `jq`) |
 | Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
 | Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
@@ -644,9 +662,12 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | Which zone or modifier moved at each hit between two commits | `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
+| A kit buff counted twice beside the game buff it is logged as (an unmapped listed buff of its owner or equipment with the same zone and value) | `efsim zmdlogs differences --all` (its last section, "Likely loggedAs"; packages/logs/src/loggedas.ts); the pending suite fails on a new pair |
 | Which operators are off by one factor all fight, over every log (a missing food, a node, a weapon level) | `efsim zmdlogs offsets --all --workers 3` (a tight median of logged ÷ primary off by 3% or more: `*`, with the fit-build command; the log suites fail on one no buildOverride or OFFSETS_EXPLAINED entry accounts for) |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
-| Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]` |
+| Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]`; the summary's first line says when the snapshots compared against aren't that commit's code (`--base HEAD` then measures the tree's change alone) |
+| Which part of a batch moved which log | `npm run measure -- --split files [--group a,b]` (each changed file's diff alone on HEAD, or `--base <ref>`) or `--split commits --base <ref>` (each commit against the one before), measured on the logs the whole change moved |
+| An idea on top of the tree, as a reading | `npm run measure -- --variant <id>=<r>`: each variant against the snapshots and against the same code without it (the plain run; `--no-plain` skips it) |
 | Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
 | Which casts a placement change moved | `npm run measure -- --changed placement` |
 
@@ -657,7 +678,12 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 the verdict's where it fell back or the log gives no crit),
 `logReading` / `logError` (every kit buff as the log lists it), `listed`,
 `differences` (`kind` engine / log / values; `sameTotals` where the values'
-sums agree: cosmetic), `replayCrit` and `critSource` (the crit the replay's
+sums agree: cosmetic), `counterfactuals` (round 11: the primary with one
+difference taken the log's way, the crit flipped where logged, a boundary
+kit buff on or off, Stagger toggled at its boundary; `what`, `kind`,
+`reading`: which single disagreement makes the hit fit, hitexport.ts
+`hitCounterfactuals`, which scripts/probes/stats/build.ts reads too),
+`replayCrit` and `critSource` (the crit the replay's
 landing took: `log`, or inferred `shown` / `layers` / `values`, or `none`),
 and under `landing`:
 `modifiers` (with `kitBuff`), `zones`, `scaleParts`, `enemy` (statuses with

@@ -102,6 +102,17 @@ describe("per-hit records of the log check", () => {
     expect(records.filter((r) => r.verdict === "uncovered").every((r) => r.graded === null)).toBe(true);
   });
 
+  it("gives each disagreement taken the log's way, the crit flipped where logged (counterfactuals, round 11)", () => {
+    const withDiffs = records.filter((r) => r.differences?.length);
+    expect(withDiffs.length).toBeGreaterThan(0);
+    for (const r of withDiffs) for (const d of r.differences ?? []) expect(r.counterfactuals?.some((c) => c.what === d.what && c.kind === d.kind)).toBe(true);
+    const crits = records.filter((r) => r.landing && r.crit !== null);
+    expect(crits.length).toBeGreaterThan(0);
+    for (const r of crits) expect(r.counterfactuals?.filter((c) => c.kind === "crit").length).toBe(1);
+    // A crit flipped moves a hit that can crit; none of the readings is the primary's own number by construction.
+    expect(crits.some((r) => r.counterfactuals?.some((c) => c.kind === "crit" && c.reading !== null && c.reading !== r.predicted))).toBe(true);
+  });
+
   it("filters by a window of log time (ms, both ends included)", () => {
     const t = records[Math.floor(records.length / 2)]?.t as number;
     const kept = filterRecords(records, { from: t, to: t + 1000 });

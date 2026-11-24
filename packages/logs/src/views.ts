@@ -21,7 +21,7 @@ import type { HitRecord } from "./hitexport.ts";
 import { statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus } from "./replayrecord.ts";
 import { distinctCasts, placeHits } from "./logcasts.ts";
-import { replayTimeStops } from "./query.ts";
+import { castEventPlace, eventPlaceText, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import type { TotalsComparison, TotalsShares } from "./enginecheck.ts";
@@ -81,7 +81,7 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): s
     const [a, z] = [msOf(st.start), msOf(st.start + st.scales.length)];
     if (z < (f.from ?? -Infinity) || a > (f.to ?? Infinity)) continue;
     const zero = st.scales.filter((x) => x === 0).length;
-    lines.push({ t: a, order: 2, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})${st.placed ? "" : " [no placed hits: the replay's cast from its event or inferred]"}` });
+    lines.push({ t: a, order: 2, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})${st.placed ? "" : " [no placed hits: the replay's cast from its event or inferred]"}${tickReadNote(st)}` });
   }
   for (const h of fx.hits) {
     if (!inWindow(f, h.t)) continue;
@@ -130,7 +130,8 @@ export type StopKind = "as listed" | "length" | "timeline only" | "covered" | "l
  */
 export function stopLines(data: GameData, fx: LogFixture, replay: BuffReplay, f: ViewFilter = {}): { t: number; kind: StopKind; text: string }[] {
   const out: { t: number; kind: StopKind; text: string }[] = [];
-  const { pairs, unapplied } = stopsAgainstList(replay.appliedStops, replayTimeStops(data, fx));
+  // Without the replay's ticks (replayTimeStops with the replay: a hitless event it read as a buff's tick, not made).
+  const { pairs, unapplied } = stopsAgainstList(replay.appliedStops, replayTimeStops(data, fx, undefined, replay));
   for (const { applied: x, listed: l } of pairs) {
     const t = msOf(x.start);
     if (!inWindow(f, t) || (x.operator !== null && !mine(f, x.operator))) continue;
@@ -210,14 +211,33 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
   for (const x of replay.failed) if (inWindow(f, x.cast.start) && mine(f, x.cast.operator)) lines.push({ t: x.cast.start, order: 1, text: `FAILED ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) if (inWindow(f, m.start) && mine(f, m.operator)) lines.push({ t: m.start, order: 1, text: `MISSED ${label(data, m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
-  // The log's cast events and what the cast assembly made of each (loggedCastFates).
+  // The log's cast events and what the cast assembly made of each (loggedCastFates), with where the event sits in its
+  // skill's stop (castEventPlace; placement leads report point 1: "0.02 s of world time apart" hid 1.76 s of log time).
+  const hitTimes = fx.hits.map((h) => h.t).sort((a, b) => a - b);
+  // A "tick" fate is the event's key (loggedCastFates: a kit buff ticks as its skill); the replay still makes the cast
+  // where the buff isn't on (3aa6ab93bad4: Zhuang Fangyi's real ultimates, read as Empyrean ticks by their key): its
+  // stop the timeline applied says so (round 11): the event's own tickRead stop (replayTimeStops: the hitless cast the
+  // assembly made of it, starting at most its length before the event) is one the timeline applied.
+  const tickStops = replayTimeStops(data, fx).filter((st) => st.tickRead);
+  const tickOrCast = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly buff?: string }) => {
+    const own = tickStops.find((st) => st.operator === e.operator && st.skillId === e.skill && msOf(st.start) <= e.t + 100 && msOf(st.start + st.scales.length) >= e.t - 100);
+    const made = own && replay.appliedStops.find((x) => x.operator === own.operator && x.start === own.start);
+    return made ? `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the cast: its stop at ${s(msOf(made.start))}–${s(msOf(made.start + made.scales.length))} s (the buff wasn't on)` : `a tick of ${e.buff} (KitBuff.ticksLoggedAs)`;
+  };
+  // Only the first of an ultimate's repeated events (each ~3.5 s while it lasts) has a stop around it.
+  const lastEvent = new Map<string, number>();
   for (const e of loggedCastFates(data, fx)) {
+    const key = `${e.operator}|${e.skill}`;
+    const prev = lastEvent.get(key);
+    lastEvent.set(key, e.t);
+    const repeat = prev !== undefined && e.t - prev < msOf(data.skills[e.skill]?.timing?.durationFrames ?? 0);
     if (!inWindow(f, e.t) || !mine(f, e.operator)) continue;
+    const place = repeat ? null : castEventPlace(data, hitTimes, e);
     const what =
       e.fate === "placed" && e.cast
-        ? `the placed cast's at ${s(e.cast.start)} s (${s(e.cast.world)} s of world time apart)`
+        ? `the placed cast's at ${s(e.cast.start)} s (${s(e.cast.world)} s of world time apart, ${s(Math.abs(e.t - e.cast.start))} s of log time)`
         : e.fate === "tick"
-          ? `a tick of ${e.buff} (KitBuff.ticksLoggedAs)`
+          ? tickOrCast(e)
           : e.fate === "press"
             ? "a press of its own (the skill's hits show elsewhere: a slot press)"
             : e.fate === "cast"
@@ -225,7 +245,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
               : e.fate === "follow-up"
                 ? "a follow-up-only skill: left to the engine"
                 : "no kit skill of that id: ignored";
-    lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}` });
+    lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}${place ? `; ${eventPlaceText(place)}` : ""}` });
   }
   for (const x of replay.castFlags) {
     const t = msOf(x.frame);
@@ -625,7 +645,7 @@ export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbos
   const h = replay.hiddenHolds;
   if (steps.length === 0) return `${fx.id}: no hit under the log's Corrosion reads a step (none listed, no landing with the replay's Corrosion, or no step fits)`;
   const lines = [`${fx.id}: ${steps.length} hits read Corrosion's ramp (steps: whole seconds of its world time; hold: P(hit) − P(since) in s, as the steps allow and as placed)${opts.why ? "; held: what held the replay's ramp from its application to the landing (time stops of the replay's casts, at their lowest scale; placed hidden holds; the rest: statuses created in a stop, the stop a reset cut, the frame grid; freezes run the ramp on)" : ""}`];
-  const stops = opts.why ? replayTimeStops(data, fx, placement) : [];
+  const stops = opts.why ? replayTimeStops(data, fx, placement, replay) : [];
   const heldText = (x: (typeof steps)[number]): string => {
     if (!x.replay) return "";
     const { applied, landing, elapsed } = x.replay;

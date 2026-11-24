@@ -5,3 +5,5 @@ node_modules/
 # Scratch scripts (scratch/README.md): yours for the session, never committed, ignored by lint and typecheck.
 scratch/*
 !scratch/README.md
+# Python's byte-code caches (a probe importing analyze.py writes one beside it; round 11).
+__pycache__/
