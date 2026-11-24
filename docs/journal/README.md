@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-24: Kit buff leads: Zhuang Fangyi's Empyrean end, the rest not kit values](2026-11-24-03-kit-buff-leads-zhuang-fangyi-s-empyrean-end-the-rest-not-kit.md)
 - [2026-11-24: Misprediction candidates: logged-as buffs, the enemy's HP, Ardelia's chain](2026-11-24-02-misprediction-candidates-logged-as-buffs-the-enemy-s-hp.md)
 - [2026-11-24: Improvement round 10: no shell programming, printers that say what they leave out, rows cached](2026-11-24-02-improvement-round-10-no-shell-programming-printers-that-say.md)
 - [2026-11-24: Misprediction statistics across the logs; Zhuang Fangyi's Empyrean combo key](2026-11-24-01-misprediction-statistics-across-the-logs-zhuang-fangyi-s.md)

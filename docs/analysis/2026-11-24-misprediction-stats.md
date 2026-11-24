@@ -294,3 +294,14 @@ build.ts after each fix; new probes doublecount.py, hpside.ts / hpside.py, lives
 
 Scoreboard (snapshots:update at the final commit): in the journal entry
 docs/journal/2026-11-24-02-misprediction-candidates-logged-as-buffs-the-enemy-s-hp.md.
+
+## Follow-up: the kit buff leads (2026-11-24)
+
+Candidate 2's next largest, one buff at a time (scripts/probes/stats/onebuff.py; open-problems "The kit buff leads";
+journal docs/journal/2026-11-24-03-kit-buff-leads-zhuang-fangyi-s-empyrean-end-the-rest-not-kit.md). One was a kit
+error: Zhuang Fangyi's Lone Barge ultimate buff, made at the Empyrean's end, which the log records under the
+ultimate's key (fixed). Two were single cases the table hid: Arcane's Susceptibility layers (one e82d hit is 88%) and
+"Arcane's weapon Arts DMG Taken" (Detonation Unit; 96% of it 9c6e's second target). The rest are the replay's, not the
+kits': Arcane's Will burst buff follows her bursts exactly (90 of 91 runs), Gilberta's weapon and Typhoeus's Hovering
+ATK are clocks and placements, Xaihi's Crystal Amp an unsimulated HP. The table needs a top-fight and top-hit share per
+row to tell such rows apart (friction report 2026-11-24-kit-buff-leads).

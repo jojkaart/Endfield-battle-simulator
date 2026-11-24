@@ -92,6 +92,9 @@
    "target": "self",
    "gameBuff": "buff_chr_0030_zhuangfy_ult_base",
    "duration": "duration",
+   "every": "duration",
+   "ticksLoggedAs": "chr_0030_zhuangfy_ultimate_skill",
+   "endFollowsTick": true,
    "blocksEnergy": true,
    "modifiers": [
     {
@@ -99,7 +102,7 @@
      "value": "combo_cd_rate"
     }
    ],
-   "note": "ult_base, from the ultimate's frame 78 for `duration` (25 s). RefrainObtainUsp: no ultimate energy meanwhile. Attribute 93 (ComboSkillCooldownRecoveryScalar) formulaItem 6 combo_cd_rate (4): the loader marks it a percentage, so the combo cooldown runs at 1 + 4 = 5 times (description: 4 times; U4, logs only). The Empyrean skills check it (`available`)."
+   "note": "ult_base, from the ultimate's frame 78 for `duration` (25 s). RefrainObtainUsp: no ultimate energy meanwhile. Attribute 93 (ComboSkillCooldownRecoveryScalar) formulaItem 6 combo_cd_rate (4): the loader marks it a percentage, so the combo cooldown runs at 1 + 4 = 5 times (description: 4 times; U4, logs only). The Empyrean skills check it (`available`). Its end (buffEvent 2: ult_end casts ultimate_skill_end) is logged as a cast event under the ultimate's key (`every` its duration: one tick, on its end frame; `ticksLoggedAs`, `endFollowsTick`): 4bfc6f3e84b8's events at 92.68 and 179.51 s, 4d60e7fe92c2's at 106.47 s and d774d0ce7bd3's at 135.57 s come 30.2–35.1 s after an ultimate's, where the Empyrean (25 s, held by the stops) ends, the energy blocked all the while; no time stop follows (her hits go on through the 78 frames an ultimate would stop), her next hits are her plain forms (attack1_projhit, not attack1_ult), and Lone Barge's ultimate buff isn't listed after them (scripts/probes/kits/zhuangfy-empyrean-end.ts). Without it the replay made each a press: a 78-frame stop, Lone Barge's buff for 25 s more, the Empyrean's end where its own clock put it (4d60: 6 s after the log's)."
   },
   {
    "id": "ult_free",
