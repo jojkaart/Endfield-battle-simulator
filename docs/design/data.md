@@ -654,6 +654,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | Which zone or modifier moved at each hit between two commits | `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
+| A kit buff counted twice beside the game buff it is logged as (an unmapped listed buff of its owner or equipment with the same zone and value) | `efsim zmdlogs differences --all` (its last section, "Likely loggedAs"; packages/logs/src/loggedas.ts); the pending suite fails on a new pair |
 | Which operators are off by one factor all fight, over every log (a missing food, a node, a weapon level) | `efsim zmdlogs offsets --all --workers 3` (a tight median of logged ÷ primary off by 3% or more: `*`, with the fit-build command; the log suites fail on one no buildOverride or OFFSETS_EXPLAINED entry accounts for) |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
 | Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]`; the summary's first line says when the snapshots compared against aren't that commit's code (`--base HEAD` then measures the tree's change alone) |

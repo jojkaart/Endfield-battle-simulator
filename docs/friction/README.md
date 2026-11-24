@@ -25,11 +25,14 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    through two rounds without a new report hitting it moves to the
    backlog's "Parked" list (one line: title, where its full text is); a
    new report that hits it again brings it back, its text from there.
-5. **The paperwork:** `node scripts/friction.ts outcomes <report.md…>
-   --round <n>` prints each report's "Outcome (round n)" skeleton (a line
-   per numbered point), `node scripts/friction.ts carry <backlog.md> <n,…>
-   --start <k> --label "<name>,"` the points carried into the next backlog,
-   renumbered, their **From:** lines extended.
+5. **The paperwork, in this order** (round 11): the new backlog first,
+   `node scripts/friction.ts carry <backlog.md> <n,…> --start <k> --label
+   "<name>,"` (the points carried into it, renumbered, their **From:**
+   lines extended), then the new points with their **From:** lines; then
+   `node scripts/friction.ts outcomes <report.md…> --round <n> --backlog
+   <new backlog.md>`, each report's "Outcome (round n)" skeleton (a line
+   per numbered point) with the carried ones filled in ("carried (<file>
+   point k)"), so no outcome names a backlog number that later shifts.
 
 ## What a report contains
 

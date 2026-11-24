@@ -1,8 +1,11 @@
 // The paperwork of an improvement round (docs/friction/README.md), which round 5 did with scratch Python:
 //
-//   node scripts/friction.ts outcomes <report.md…> [--round <n>]
+//   node scripts/friction.ts outcomes <report.md…> [--round <n>] [--backlog <new backlog.md>]
 //     an "Outcome (round n)" skeleton per report: a line per `## N. title` heading ("- N (title): "), to fill in
-//     and append to the report before it moves to docs/friction-done/
+//     and append to the report before it moves to docs/friction-done/; with --backlog, each point a **From:** line of
+//     that backlog names ("<report's file> point(s) n") comes filled in: "carried (<backlog> point k)" (round 10's
+//     own report point 2: outcomes written before the backlog was numbered needed a second pass). Write the new
+//     backlog first, then the outcomes.
 //   node scripts/friction.ts carry <backlog.md> <n,…> [--start <k>] [--label "<this backlog's name>"]
 //     the backlog's points n,… renumbered from k (default 1), each `**From:**` line extended with where it was
 //     carried from ("<label> point n"; default the backlog's file name), printed for the next backlog
@@ -40,9 +43,36 @@ export function points(text: string): Point[] {
   });
 }
 
-export function outcomeSkeleton(text: string, round: number): string {
+/**
+ * Which of a backlog's points carry which points of a report: per report point number, the backlog points whose
+ * **From:** paragraph names the report's file with that number ("2026-11-24-stats-candidates.md point 5", "…md
+ * points 1 (the parts export) and 3"; parentheses skipped).
+ */
+export function carriedFrom(backlog: string, report: string): Map<number, number[]> {
+  const out = new Map<number, number[]>();
+  const file = basename(report);
+  for (const p of points(backlog)) {
+    const from = p.body.findIndex((l) => /^- \*\*From:\*\* /.test(l));
+    if (from < 0) continue;
+    let text = p.body[from] as string;
+    for (let i = from + 1; i < p.body.length && /^ {2}\S/.test(p.body[i] as string); i++) text += ` ${(p.body[i] as string).trim()}`;
+    for (const part of text.split(";")) {
+      const at = part.indexOf(file);
+      if (at < 0) continue;
+      const m = /^\s+points?\s+(.*)$/.exec(part.slice(at + file.length).replace(/\([^)]*\)/g, ""));
+      if (!m) continue;
+      for (const n of (m[1] as string).match(/\d+/g) ?? []) out.set(Number(n), [...(out.get(Number(n)) ?? []), p.n]);
+    }
+  }
+  return out;
+}
+
+export function outcomeSkeleton(text: string, round: number, backlog?: { readonly name: string; readonly carried: ReadonlyMap<number, readonly number[]> }): string {
   const ps = points(text);
-  const lines = ps.map((p) => `- ${p.n} (${p.title.replace(/\.$/, "")}): `);
+  const lines = ps.map((p) => {
+    const ks = backlog?.carried.get(p.n);
+    return `- ${p.n} (${p.title.replace(/\.$/, "")}): ${ks?.length ? `carried (${backlog?.name} point${ks.length > 1 ? "s" : ""} ${ks.join(", ")})` : ""}`;
+  });
   return [`## Outcome (round ${round})`, "", ...(lines.length ? lines : ["- (no numbered points)"])].join("\n");
 }
 
@@ -68,11 +98,15 @@ export function carry(text: string, wanted: readonly number[], start: number, la
 }
 
 function main(argv: readonly string[]): number {
-  const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, options: { round: { type: "string" }, start: { type: "string" }, label: { type: "string" } } });
+  const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, options: { round: { type: "string" }, start: { type: "string" }, label: { type: "string" }, backlog: { type: "string" } } });
   const [cmd, ...rest] = positionals;
   if (cmd === "outcomes" && rest.length) {
     const round = Number(values.round ?? NaN);
-    for (const f of rest) process.stdout.write(`${f}:\n\n${outcomeSkeleton(readFileSync(f, "utf8"), Number.isFinite(round) ? round : 0)}\n\n`);
+    const backlog = values.backlog !== undefined ? readFileSync(values.backlog, "utf8") : undefined;
+    for (const f of rest) {
+      const carried = backlog !== undefined ? { name: basename(values.backlog as string), carried: carriedFrom(backlog, f) } : undefined;
+      process.stdout.write(`${f}:\n\n${outcomeSkeleton(readFileSync(f, "utf8"), Number.isFinite(round) ? round : 0, carried)}\n\n`);
+    }
     return 0;
   }
   if (cmd === "carry" && rest.length === 2) {
@@ -82,7 +116,7 @@ function main(argv: readonly string[]): number {
     process.stdout.write(carry(readFileSync(file, "utf8"), wanted, Number(values.start ?? 1), values.label ?? basename(file)));
     return 0;
   }
-  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] | carry <backlog.md> <n,…> [--start k] [--label text]\n");
+  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] [--backlog <new backlog.md>] | carry <backlog.md> <n,…> [--start k] [--label text]\n");
   return 2;
 }
 

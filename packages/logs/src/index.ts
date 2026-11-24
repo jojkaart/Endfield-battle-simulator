@@ -30,4 +30,5 @@ export * from "./views.ts";
 export * from "./query.ts";
 export * from "./clockview.ts";
 export * from "./burstsview.ts";
+export * from "./loggedas.ts";
 export * from "./snapshotentry.ts";

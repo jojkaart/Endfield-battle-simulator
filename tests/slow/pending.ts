@@ -15,7 +15,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { offsetHits, readLogFixture, screenOffsets, snapshotEntry, unexplainedOffsets, type OperatorOffset } from "@efsim/logs";
+import { loggedAsPairs, offsetHits, readLogFixture, screenOffsets, snapshotEntry, unexplainedLoggedAs, unexplainedOffsets, type LoggedAsPair, type OperatorOffset } from "@efsim/logs";
 import { changes, entry, logFixtures, ROOT, shard, totalsChanges, totalsOf, type FixtureCounts } from "../logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "../snapshot.ts";
 import { direction, fitChange, GROUPS, groupOf, readSplit, type Direction, type Entry, type Group } from "../../scripts/accuracy.ts";
@@ -40,6 +40,8 @@ export function pendingSuite(index: number): void {
   const moved = new Map<Group, Direction[]>();
   // The build-offset screen's candidates per development log, from the snapshot check's own computation (no second run).
   const offsets = new Map<string, OperatorOffset[]>();
+  // The likely-loggedAs screen's pairs per development log (loggedas.ts), from the same landings (round 11).
+  const loggedAs = new Map<string, LoggedAsPair[]>();
   afterAll(() => {
     pendingSnapshot.write((key) => !key.startsWith("holdout/") && existsSync(join(ROOT, "fixtures", key)));
     holdoutSnapshot.write((key) => key.startsWith("holdout/") && existsSync(join(ROOT, "fixtures", key)));
@@ -68,7 +70,13 @@ export function pendingSuite(index: number): void {
       const fx = readLogFixture(join(ROOT, "fixtures", file));
       // Its verdict counts and its totals' errors (the simulation of the logged casts against the log), as measure computes them.
       const { counts: now, totals, byHit, verdicts } = snapshotEntry(data, fx);
-      if (!file.startsWith("holdout/")) offsets.set(file, unexplainedOffsets(fx, screenOffsets(offsetHits(fx, byHit, verdicts))));
+      if (!file.startsWith("holdout/")) {
+        offsets.set(file, unexplainedOffsets(fx, screenOffsets(offsetHits(fx, byHit, verdicts))));
+        loggedAs.set(file, unexplainedLoggedAs(loggedAsPairs(data, fx, (h) => {
+          const l = byHit.get(h)?.landing;
+          return l && !("unknown" in l) ? l : null;
+        })));
+      }
       const current = entry(now, totals);
       const stored = snapshotOf(file).record(file, current);
       if (stored === undefined) return;
@@ -85,6 +93,12 @@ export function pendingSuite(index: number): void {
       const open = offsets.get(file);
       if (!open) return; // the check above failed before the screen ran: its failure says why
       expect(open.map((o) => `${o.operator} ×${o.median.toFixed(4)} over ${o.n} hits, ${(100 * o.tight).toFixed(0)}% within 1%`), "a build offset (efsim zmdlogs offsets): zmdlogs fit-build, then a buildOverrides entry, or an OFFSETS_EXPLAINED one (packages/logs/src/buildoffsets.ts)").toEqual([]);
+    });
+
+    it.skipIf(file.startsWith("holdout/"))("has no kit buff counted twice beside an unmapped listed buff of the same effect (the likely-loggedAs screen)", () => {
+      const open = loggedAs.get(file);
+      if (!open) return; // the check above failed before the screen ran
+      expect(open.map((p) => `${p.kitBuff} ~ ${p.gameBuff}: ${p.hits} hit(s) from ${(p.first / 1000).toFixed(2)} s`), "a double count (efsim zmdlogs differences lists them): the kit buff's loggedAs, or a LOGGED_AS_EXPLAINED entry (packages/logs/src/loggedas.ts)").toEqual([]);
     });
   });
 }

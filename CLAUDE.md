@@ -62,7 +62,10 @@ pending logs, negative control, single tests of tens of seconds) and
 `npm run check` (both, plus types and lint) run before a merge. While
 working, run only what a change touches: `npx vitest run tests/<file>.test.ts`
 (one file; `-t "<name>"` for one test) or `npx vitest related --run
-<changed source files>` (every test file that imports them), and `npm run
+<changed source files>` (every test file that imports them; a change to a
+view or report of packages/logs touches most of the suite that way, so
+there first the test files naming the changed function, `rg -l '<name>'
+tests`, and `related` once before premerge), and `npm run
 lint:changed` (ESLint on the files changed since `main`, seconds). After a
 change to the engine's timing rules (packages/engine/src/timeline/, kit
 timing): `npm run smoke` (under 2 min: kit tests, loop searches, the
@@ -90,12 +93,16 @@ To try an idea, measure instead: `npm run measure [-- --with <op>]`
 (about a minute for every log, writes only `scratch/measure/`; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
 an open reading, `--variant <id>=<r>` (repeatable) for several in one run
-instead of chained measures, `--patch <diff>` for a change that is none:
+instead of chained measures (each also against the same code without it),
+`--split files|commits` for which part of a batch moved which log (its
+first line says when the snapshots compared against aren't the code's
+own: `--base HEAD` is then this tree's change alone),
+`--patch <diff>` for a change that is none:
 [docs/design/tests.md](docs/design/tests.md#measuring-a-change); a change
 measured and dropped keeps its diff in [docs/tried/](docs/tried/README.md)),
 and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards). Diagnosis views: `efsim zmdlogs
-groups|differences|casts|replay|stagger|holds --why`; one command at two
+groups|differences|casts|replay|stagger|bursts|holds --why`; one command at two
 commits' code, the lines that differ: `node scripts/cli-ab.ts <ref> --
 <efsim args>` (`--holds <fixture>`: which bounds a change moved). A new
 test that should fail before the change: `node scripts/verify-at.ts <base>
