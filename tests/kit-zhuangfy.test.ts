@@ -367,10 +367,12 @@ describe("Suffering's End (wpn_funnel_0020) on Arcane", () => {
   const sc = { ...arcaneSolo, team: arcaneSolo.team.map((m) => (m.operator === ARCANE ? { ...m, weapon: weapon("wpn_funnel_0020") } : m)) };
   const s = run(sc, sc.rotation, 10 * 30);
 
-  it("each Arts Burst she applies: Nature DMG + nature_dmg_up for duration, a layer each; the extra only at 4", () => {
+  it("each Arts Burst she applies: Nature DMG + nature_dmg_up for duration, a layer each but one per 0.1 s (its timed marker); the extra only at 4", () => {
     const bursts = s.reactions.filter((r) => r.operator === ARCANE && r.kind === "burst").map((r) => r.frame);
     expect(bursts.length).toBe(3);
-    expect(active(s, "wpn_funnel_0020.layer", ARCANE).map((b) => b.appliedAt)).toEqual(bursts);
+    // Two bursts held by her own ultimate's stop (engine assumption burst-stops `all`) land at its end together: one layer.
+    expect(bursts[0]).toBe(bursts[1]);
+    expect(active(s, "wpn_funnel_0020.layer", ARCANE).map((b) => b.appliedAt)).toEqual([...new Set(bursts)]);
     expect(active(s, "wpn_funnel_0020.max", ARCANE)).toEqual([]);
   });
 });
