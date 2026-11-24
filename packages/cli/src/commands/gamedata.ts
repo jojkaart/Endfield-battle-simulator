@@ -39,6 +39,8 @@ export default command({
                                           presentation and defaults left out, value fields as "key k (default v)",
                                           known enums named (docs/game-data-format.md)
                 [--grep <regex>] [--depth n]  Only matching lines (with their ancestors and subtrees); levels shown
+                [--path <json path>]      Only the subtree there (a path as \`who\` prints it: .a.b[3].c); a list of
+                                          nothing but presentation says "(presentation only, left out: …)"
   efsim gamedata who <id>                 Every BuffData / SkillData file that names a buff or skill id: the action
                                           around it (who creates, finishes or checks it), its buff event or frame
   efsim gamedata find <type>              Every action of a type (regex on the short $type: HitStop, TimeDilation,
@@ -54,7 +56,7 @@ export default command({
                                           switched off); the dropped ones counted by why
                 [--dropped]               Only the dropped ones
 `,
-  options: { grep: { type: "string" }, depth: { type: "string" }, file: { type: "string" }, folder: { type: "string" }, enabled: { type: "boolean", default: false }, fields: { type: "string" }, count: { type: "string" }, dropped: { type: "boolean", default: false } },
+  options: { grep: { type: "string" }, depth: { type: "string" }, path: { type: "string" }, file: { type: "string" }, folder: { type: "string" }, enabled: { type: "boolean", default: false }, fields: { type: "string" }, count: { type: "string" }, dropped: { type: "boolean", default: false } },
   run: (ctx) => {
     const { values, args } = ctx;
     const [sub, id] = args;
@@ -68,6 +70,6 @@ export default command({
     if (sub === "who") return formatMentions(id, whoMentions(id));
     const depth = values.depth === undefined ? undefined : Number(values.depth);
     if (depth !== undefined && !(Number.isInteger(depth) && depth >= 0)) throw new Error("--depth must be a whole number ≥ 0");
-    return gamedataTree(id, { ...(values.grep !== undefined ? { grep: values.grep } : {}), ...(depth !== undefined ? { depth } : {}) });
+    return gamedataTree(id, { ...(values.grep !== undefined ? { grep: values.grep } : {}), ...(depth !== undefined ? { depth } : {}), ...(values.path !== undefined ? { path: values.path } : {}) });
   },
 });
