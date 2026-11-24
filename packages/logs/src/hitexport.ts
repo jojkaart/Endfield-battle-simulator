@@ -5,6 +5,8 @@
 // engine's side, the log's own listing at the hit (`listed`) and where the two disagree (`differences`: logDifferences,
 // what the check's "where it and the log disagree" counts).
 // The same computations as `zmdlogs check` (logBuffReplay, engineHits, checkLog, readingBasis), not a copy of them.
+// The engine's error on a hit, as the check judges it: `graded` (the uncapped logged value against the verdict's
+// reading); `predicted` / `error` are the primary reading's, `logReading` the log's.
 
 import { basename } from "node:path";
 import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
@@ -46,6 +48,8 @@ export interface HitRecord {
   readonly verdictReading?: number | null;
   /** logged / verdictReading − 1 (a mismatch: its ratio − 1; null without one). */
   readonly verdictError?: number | null;
+  /** The pair the check judges (Graded): use it for the engine's error on a hit. */
+  readonly graded?: Graded | null;
   /**
    * The log's reading (ReadingBasis.logReading): the hit with every team kit buff as the log lists it, in place of the
    * replay's, rounded; and logged / it − 1. Off under both readings: the build or a kit value; off only under the
@@ -177,10 +181,29 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
 }
 
 /** The reading a verdict rests on and the logged value's error against it (HitRecord.verdictReading, verdictError). */
-export function verdictReadingOf(v: HitVerdict): { verdictReading: number | null; verdictError: number | null } {
-  if (v.kind === "uncovered") return { verdictReading: null, verdictError: null };
-  if (v.kind === "mismatch") return { verdictReading: v.predicted[0] ?? null, verdictError: v.ratio - 1 };
-  return { verdictReading: v.predicted, verdictError: v.predicted ? v.hit.value / v.predicted - 1 : null };
+export function verdictReadingOf(v: HitVerdict): { verdictReading: number | null; verdictError: number | null; graded: Graded | null } {
+  if (v.kind === "uncovered") return { verdictReading: null, verdictError: null, graded: null };
+  // What the check compares: a killing blow's uncapped value (its value is the HP that was left), against the reading
+  // it matched or the nearest tried (a crit-less hit's: the crit or not that fits).
+  const logged = v.hit.uncapped ?? v.hit.value;
+  if (v.kind === "mismatch") {
+    const p = v.predicted[0] ?? null;
+    return { verdictReading: p, verdictError: v.ratio - 1, graded: p ? { logged, predicted: p, error: v.ratio - 1 } : null };
+  }
+  return { verdictReading: v.predicted, verdictError: v.predicted ? v.hit.value / v.predicted - 1 : null, graded: v.predicted ? { logged, predicted: v.predicted, error: logged / v.predicted - 1 } : null };
+}
+
+/**
+ * The pair the log check judges a hit by: the logged value it compares (`uncapped` for a killing blow) and the reading
+ * the verdict rests on (verdictReading: a match's, a mismatch's nearest; for a hit without a logged crit, the crit or
+ * not that the check found nearer), with logged / predicted − 1. The engine's error on the hit for any statistic
+ * across logs (misprediction-stats report point 2: plain `value` against `predicted` put 10.7% of the error on plain
+ * matches, the killing blows'). Null for an uncovered hit or one without a reading.
+ */
+export interface Graded {
+  readonly logged: number;
+  readonly predicted: number;
+  readonly error: number;
 }
 
 /** The game buffs a hit's effects list, each once with its instance count when above 1 ("id ×2"), in listing order. */
@@ -190,7 +213,6 @@ export function listedBuffs(effects: readonly { readonly buff: string }[]): stri
   return [...n].map(([b, k]) => (k > 1 ? `${b} ×${k}` : b));
 }
 
-/** The records a filter keeps: by reaction kind ("skill" for kit hits), by operator id and by the logged event key. */
 /** The records of a reaction kind, of some operators, whose event key matches, logged from `from` to `to` (ms, both included). */
 export function filterRecords(records: readonly HitRecord[], opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly event?: RegExp; readonly from?: number; readonly to?: number }): HitRecord[] {
   return records.filter(
