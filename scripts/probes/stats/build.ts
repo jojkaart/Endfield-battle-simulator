@@ -116,6 +116,10 @@ function fixtureRows(file: string): { hits: Row[]; onesided: Row[]; fight: Row }
       ...verdictReadingOf(v),
       listed: listedBuffs(hit.effects),
       boundary: hit.boundaryEffects.length,
+      // The buffs starting or ending at the hit (the log can't say whether they applied), and those a team kit models.
+      boundaryBuffs: [...new Set(hit.boundaryEffects.map((e) => e.buff))],
+      boundaryKit: [...new Set(hit.boundaryEffects.flatMap((e) => c.names.byGameBuff.get(e.buff) ?? []))],
+      poiseOrigin: hit.poise?.origin ?? null,
       unquantified: hit.unquantified.map((u) => u.buff),
       minAge: ages.length ? Math.min(...ages) : null,
       loggedStagger: hit.effects.some((e) => /poise_break/.test(e.buff)),
