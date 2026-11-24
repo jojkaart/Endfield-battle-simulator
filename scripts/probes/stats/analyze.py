@@ -38,10 +38,12 @@ def head(t):
 
 # ---------------------------------------------------------------- the per-hit frame with explanations
 
-def best_cf(r):
+def best_cf(r, boundary=False):
+    """The counterfactual reading nearest the logged value: one difference the log's way (default), or one boundary
+    kit buff on / off or Stagger toggled at a boundary (`boundary`)."""
     best = None
     for c in r.cf if isinstance(r.cf, list) else []:
-        if c["reading"] is None or c["kind"] == "crit":
+        if c["reading"] is None or c["kind"] == "crit" or c["kind"].startswith("boundary") != boundary:
             continue
         rd = c["reading"] * (r.Pc / r.predicted if r.predicted else 1)
         e2 = abs(r.V - rd)
@@ -84,6 +86,9 @@ def explain(df):
             w, k = b[1]["what"], b[1]["kind"]
         elif r.logFits:
             e = "the listing (several buffs)"
+        elif (bb := best_cf(r, True)) and bb[0] <= tol:
+            e = f"a boundary buff ({bb[1]['kind']})"
+            w, k = bb[1]["what"], bb[1]["kind"]
         elif off is not None and abs(r.lr - off) < 0.003:
             e = "fight-operator factor"
         elif r.cls == "assumed":
@@ -253,11 +258,13 @@ def clusters(df):
 
 
 FEATURES = ["opname", "skillKind", "nature", "hitElement", "critLog", "critSource", "staggerPair", "staggerNear", "inStop", "hold", "cut", "nearEnd", "nearAway",
-            "sinceCastBin", "tBin", "ageBin", "dtBin", "corrosion", "enemySt", "layered", "selfControlled", "spTopUp", "beforeStop", "diffKinds", "parser", "stage", "group", "hasBoundary"]
+            "sinceCastBin", "tBin", "tS", "ageBin", "dtBin", "corrosion", "enemySt", "layered", "selfControlled", "spTopUp", "beforeStop", "diffKinds", "parser", "stage", "group", "hasBoundary", "boundaryKitBuff"]
 
 
 def prep_features(df):
     df["hasBoundary"] = df.boundary > 0
+    df["boundaryKitBuff"] = df.boundaryKit.map(lambda b: "kit" if isinstance(b, list) and b else "none") if "boundaryKit" in df else "?"
+    df["tS"] = pd.cut(df.t / 1000, [0, 10, 20, 40, 60, 90, 120, 200, 600]).astype(str)
     for c in FEATURES:
         df[c] = df[c].astype(str)
 
@@ -266,26 +273,86 @@ def features(df):
     head("Where the error concentrates: by feature value (non-stage; every hit)")
     print("err share: of all |err|; hits share: of all hits; lift = err share ÷ hits share; CI: 95% over 300 resamples of whole fights;")
     print("within-fight shuffle: the err share when the feature's values are shuffled inside each fight (mean of 20): a share")
-    print("near it is the fights' doing, not the hits'. Rows: lift ≥ 1.5 or ≤ 0.5 with ≥ 1% err share, by err share.\n")
+    print("near it is the fights' doing, not the hits'. off rate: the share of its hits off (size-independent: |err| favours big")
+    print("hits), against the overall rate; shuffled off rate likewise. Rows: err lift ≥ 1.5 or ≤ 0.5 with ≥ 1% err share, or")
+    print("an off rate ×1.4 / ×0.6 the overall with ≥ 200 hits; by err share.\n")
     tot = df.err.sum()
+    base = df.off.mean()
     rows = []
     for col in FEATURES:
         for v, g in df.groupby(col):
             es = g.err.sum() / tot
             hs = len(g) / len(df)
-            if es < 0.01 or hs == 0:
+            if hs == 0:
                 continue
             lift = es / hs
-            if 0.5 < lift < 1.5:
+            ol = g.off.mean() / base
+            if not ((es >= 0.01 and not 0.5 < lift < 1.5) or (len(g) >= 200 and not 0.6 < ol < 1.4)):
                 continue
-            rows.append((col, v, len(g), int(g.off.sum()), g.fx.nunique(), es, hs, lift))
+            rows.append((col, v, len(g), int(g.off.sum()), g.fx.nunique(), es, hs, lift, g.off.mean()))
     rows.sort(key=lambda x: -x[5])
     out = []
-    for col, v, n, off, nf, es, hs, lift in rows[:45]:
+    df["_off"] = df.off.astype(float)
+    for col, v, n, off, nf, es, hs, lift, orate in rows[:50]:
         lo, hi = boot_share(df, col, v)
         sh, _, _ = shuffled_share(df, col, v)
-        out.append({"feature": col, "value": v[:40], "hits": n, "off": off, "fights": nf, "err share": pct(es), "CI": f"{pct(lo)}–{pct(hi)}", "hits share": pct(hs), "lift": round(lift, 2), "shuffled share": pct(sh), "survives": "yes" if abs(es - sh) > 0.25 * max(es, sh) else "no"})
+        so, _, _ = shuffled_share(df, col, v, weight="_off")
+        so_rate = so * df.off.sum() / n
+        out.append({"feature": col, "value": v[:34], "hits": n, "fights": nf, "err share": pct(es), "CI": f"{pct(lo)}–{pct(hi)}", "hits share": pct(hs), "err lift": round(lift, 2), "shuffled": pct(sh), "off rate": pct(orate), "shuffled off rate": pct(so_rate), "survives": ("err " if abs(es - sh) > 0.25 * max(es, sh) else "") + ("off" if abs(orate - so_rate) > 0.25 * max(orate, so_rate) else "") or "no"})
+    print(f"overall off rate {pct(base)}")
     print(pd.DataFrame(out).to_string(index=False))
+
+
+def drift(df):
+    head("Time in fight: the off rate's drift (non-stage)")
+    d = df[df.has]
+    t = d.groupby("tS", observed=True).agg(hits=("off", "size"), off_rate=("off", "mean"), fights=("fx", "nunique"))
+    t["off_rate"] = t.off_rate.map(pct)
+    print(t.to_string())
+    up = down = 0
+    for _, g in d.groupby("fx"):
+        a, b = g[g.tFrac < 0.5].off.mean(), g[g.tFrac >= 0.5].off.mean()
+        up += b > a
+        down += b < a
+    n = up + down
+    p = sum(math.comb(n, k) for k in range(max(up, down), n + 1)) / 2 ** n * 2
+    print(f"\nPer fight, the second half's off rate above the first's in {up} fights, below in {down} (sign test, two-sided p = {p:.2f})")
+    for label, m in [("first 10 s", d.t < 10000), ("10 s on", d.t >= 10000)]:
+        w = d[m & d.off]
+        print(f"{label}: off rate {pct(d[m].off.mean())}; of its off hits, one buff the log's way {pct(w.expl.str.startswith('one buff').mean())}, a fight-operator factor {pct((w.expl == 'fight-operator factor').mean())}, unexplained {pct(w.expl.str.startswith('unexplained').mean())}")
+
+
+def boundary(df):
+    head("Buffs starting or ending at the hit (the log's boundary effects; non-stage)")
+    d = df[df.has]
+    tot = d.err.sum()
+    print(f"hits with a boundary effect: {pct(d.hasBoundary.eq('True').mean())}; their off rate {pct(d[d.hasBoundary == 'True'].off.mean())} against {pct(d[d.hasBoundary == 'False'].off.mean())}")
+    print(f"with a team kit buff among them: {pct(d.boundaryKitBuff.eq('kit').mean())} of hits, off rate {pct(d[d.boundaryKitBuff == 'kit'].off.mean())}; boundary only log-only buffs: off rate {pct(d[(d.hasBoundary == 'True') & (d.boundaryKitBuff != 'kit')].off.mean())}")
+    rows = []
+    cnt = Counter(b for bs in d.boundaryBuffs for b in bs)
+    for b, n in cnt.most_common(60):
+        m = d.boundaryBuffs.map(lambda bs: b in bs)
+        g = d[m]
+        rows.append({"buff": b[:58], "hits": n, "fights": g.fx.nunique(), "off rate": pct(g.off.mean()), "err share": pct(g.err.sum() / tot), "kit": "kit" if g.boundaryKit.map(lambda k: bool(k)).any() else "-"})
+    rows.sort(key=lambda r: -float(r["err share"][:-1]))
+    print(pd.DataFrame(rows[:20]).to_string(index=False))
+    o = d[d.off]
+    w = o[o.expl.str.startswith("a boundary buff")]
+    print(f"\nOff hits a boundary kit buff taken the other way fits (after one difference and the listing): {len(w)} hits, {pct(w.err.sum() / o.err.sum())} of off |err|, {w.fx.nunique()} fights")
+    t = w.groupby(["explWhat", "explKind"]).agg(hits=("err", "size"), err=("err", "sum"), fights=("fx", "nunique"), median_ratio=("r", "median")).sort_values("err", ascending=False).head(15)
+    t["share"] = (t.err / o.err.sum()).map(pct)
+    t["median_ratio"] = t.median_ratio.round(3)
+    print(t.drop(columns="err").to_string())
+    ob = o[o.hasBoundary == "True"]
+    print("Off hits with a boundary effect, by first explanation: " + "; ".join(f"{k} {pct(v)}" for k, v in (ob.groupby("expl").err.sum() / ob.err.sum()).sort_values(ascending=False).head(8).items()))
+    # The same hit kinds with and without a boundary effect: is it the hit or the boundary?
+    print("\nOff rate with / without a boundary effect within each skill kind and Stagger pair:")
+    for k, g in d.groupby(["skillKind", "staggerPair"]):
+        if len(g) < 300:
+            continue
+        a, b = g[g.hasBoundary == "True"], g[g.hasBoundary == "False"]
+        if len(a) >= 50 and len(b) >= 50:
+            print(f"  {k[0]:9s} {k[1]:11s} with {pct(a.off.mean()):>6s} ({len(a)}), without {pct(b.off.mean()):>6s} ({len(b)})")
 
 
 def interactions(df):
@@ -491,7 +558,7 @@ def fights_section(fights, df):
 
 
 def main():
-    want = set(sys.argv[1:]) or {"summary", "explain", "buffs", "clusters", "features", "interactions", "tree", "onesided", "fights"}
+    want = set(sys.argv[1:]) or {"summary", "explain", "buffs", "clusters", "drift", "boundary", "features", "interactions", "tree", "onesided", "fights"}
     all_df = load_hits()
     fights = load_fights()
     df = all_df[~all_df.fx.isin(STAGE)].copy()
@@ -505,6 +572,10 @@ def main():
         buffs_section(df)
     if "clusters" in want:
         clusters(df)
+    if "drift" in want:
+        drift(df)
+    if "boundary" in want:
+        boundary(df)
     if "features" in want:
         features(df)
     if "interactions" in want:

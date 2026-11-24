@@ -13,7 +13,8 @@
 // with `EFSIM-DONE stats-build pass` on stdout. About 4 minutes on 4 threads.
 
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { isMainThread, parentPort, Worker } from "node:worker_threads";
 import { loadGameData } from "@efsim/data";
 import { effectiveKit, FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage } from "@efsim/engine";
@@ -46,7 +47,8 @@ type Row = Record<string, unknown>;
 
 let gameData: ReturnType<typeof loadGameData> | undefined;
 
-function fixtureRows(file: string): { hits: Row[]; onesided: Row[]; fight: Row } {
+/** One fixture's rows (exported for holdout-aggregates.ts, which prints aggregates only). */
+export function fixtureRows(file: string): { hits: Row[]; onesided: Row[]; fight: Row } {
   const data = (gameData ??= loadGameData());
   const fx = readLogFixture(file);
   const split = readLogSplit();
@@ -186,6 +188,22 @@ function fixtureRows(file: string): { hits: Row[]; onesided: Row[]; fight: Row }
     };
     const cf: Row[] = [];
     if (hit.crit !== null) cf.push({ what: "crit flipped", kind: "crit", reading: readAt({ ...primary, options: { ...primary.options, crit: hit.crit ? "never" : "always" } }) });
+    // The log's boundary effects (a buff starting or ending at the hit) of team kit buffs, one kit buff at a time: as
+    // the log lists them there (added) and off (the engine's modifiers of it removed); and Stagger the other way when
+    // the Stagger's own entry is at the boundary.
+    const mods0 = primary.options.modifiers ?? [];
+    for (const k of new Set(hit.boundaryEffects.flatMap((e) => c.names.byGameBuff.get(e.buff) ?? []))) {
+      const ofIt = (m: { kitBuff?: { owner: string; id: string } }) => m.kitBuff !== undefined && `${m.kitBuff.owner}:${m.kitBuff.id}` === k;
+      const names = new Set(c.names.ofKitBuff.get(k) ?? []);
+      const at = hit.boundaryEffects.filter((x) => names.has(x.buff));
+      const kept = ok.judged.filter((m) => !ofIt(m));
+      const on = mods0.some(ofIt);
+      cf.push({ what: k, kind: "boundary on", engineHas: on, reading: readAt({ ...primary, options: { ...primary.options, modifiers: [...mods0, ...loggedEntries(c, at, names, kept, ok.category)] } }) });
+      if (on) cf.push({ what: k, kind: "boundary off", engineHas: on, reading: readAt({ ...primary, options: { ...primary.options, modifiers: mods0.filter((m) => !ofIt(m)) } }) });
+    }
+    if (hit.boundaryEffects.some((e) => /poise_break/.test(e.buff)) && !differences.some((x) => x.what === "Stagger")) {
+      cf.push({ what: "Stagger", kind: "boundary", reading: readAt({ ...primary, options: { ...primary.options, staggered: !primary.options.staggered } }) });
+    }
     for (const diff of differences) {
       if (diff.what === "Stagger") {
         cf.push({ what: "Stagger", kind: diff.kind, reading: readAt({ ...primary, options: { ...primary.options, staggered: !primary.options.staggered } }) });
@@ -243,7 +261,7 @@ if (!isMainThread) {
       parentPort?.postMessage({ file, error: e instanceof Error ? `${e.message}\n${e.stack ?? ""}` : String(e) });
     }
   });
-} else {
+} else if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const wi = args.indexOf("--workers");
   const workers = wi >= 0 ? Number(args[wi + 1]) : 4;
