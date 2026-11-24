@@ -1,8 +1,9 @@
 // Arcane's bursts, 2026-11-24 (the cooldown-clock round; docs/open-problems.md "Misprediction statistics", Arcane's
 // Will burst buff): each logged Arts Burst credited to an operator (buff_common_<e>_<e>_triggered) against the replay's
-// bursts of that operator (BuffReplay.reactions, kind burst): the nearest unused one of the same element within 550 ms
-// of the world's time... simply ms here: within 150 ms, 150–550 ms, or none; then the replay's bursts no logged one took
-// (replay-only). Prints per log the off and missing ones, then the counts.
+// bursts of that operator (BuffReplay.reactions, kind burst): the nearest unused one of the same element, within 150 ms,
+// 150–550 ms (log ms), or none; then the replay's bursts no logged one took (replay-only). Prints per log the off and
+// missing ones, then the counts. 2026-11-24: Arcane 89 / 18 / 23, replay-only 24 under burst-stops `others`; 94 / 16 /
+// 20, 21 under `all`.
 //
 //   node scripts/probes/bursts/arcane-bursts.ts [operator name or id, default Arcane] [--assume id=reading]… [--ids a,b]
 //
