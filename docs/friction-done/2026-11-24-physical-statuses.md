@@ -68,3 +68,27 @@ Sunderblade count in 4d60; worktree branch on main at a71da03.
   commands.
 - `zmdlogs replay --trace-buff` gave the Sunderblades' instances and expiries directly.
 - docs/tried/ made dropping the order change cheap: diff and header in one file, findable from open-problems.
+
+## Outcome (round 10)
+
+- 1 (Separating one change's effect from a batch cost four measures and a wrong doc claim): done in part (c534a11): a
+  `--patch` without `--at` that the working tree already has (it applies in reverse) is refused before queueing, naming
+  `--at <the commit before it>`; a diff that doesn't apply at all likewise. `measure --split` (one run per file group)
+  is carried (docs/friction/2026-11-24-backlog-after-round-10.md point 3).
+- 2 (The kit and tree views don't show a skill's ends and trigger jumps together): the kit half done (d4856a1): `efsim
+  kit` prints each skill's paths (the data's jumps, ends, recasts and interruptible frames, the kit's conditional
+  jumps, the triggers' jumps on it: Snowshine's battle skill "ends at frame 106; … trigger counter … jumps it from
+  frame 0 until 51 to 107"). The replay's DROPPED line is carried (backlog point 4): the cancellation happens in the
+  engine's timeline, outside this round's files.
+- 3 (`gamedata tree` cuts branches, so a skill's data can't be read to the end): done (d4856a1): `gamedata tree <id>
+  --path <json path>` prints one subtree, and a list of nothing but presentation says "(presentation only, left out:
+  EffectAction)" instead of vanishing. For the question itself: Empyrean's blocks [9] and [14] (the free path, the
+  Electrification branch) have succeed branches that only play an effect, so they don't explain 4d60's two extra
+  Sunderblades.
+- 4 (Habits again: one multi-line `python3 -c`, one empty heredoc): done by the owner (the hook is wired); for the
+  one-liners, jq is installed (CLAUDE.md now says so: a fixture's field is a jq line), so no scripts/fx.ts.
+- 5 (Every probe re-derived "the logged hits at this ms" and "who credits this status"): done (7e521dd): `zmdlogs hits
+  <fixture> --from s --to s` (with `--operator`, `--event`; `--zones` already gives the replay's crit and its source).
+  The cause behind "silently ignored": the CLI's one shared parse accepts another command's option anywhere; efsim now
+  names, on stderr, every option given but never read (command.ts trackReads). `--landing` and `--effects` columns:
+  not done (the JSON line has both; jq).

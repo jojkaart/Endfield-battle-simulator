@@ -167,7 +167,9 @@ complex to verify"):
   and is refused the next time, and in double quotes the shell runs a
   doc's backticks as commands (round 8 wrote `the  assumption ()` into
   open-problems.md). Write the file with the Write tool, then run it with
-  one plain command. File edits with the Write/Edit tools; a batch of
+  one plain command. A field of a fixture or of a `--json` line: `jq`
+  (installed; `jq '.hits[0]' fixtures/pending/zmdlogs-0c14*.json`), not
+  inline Python. File edits with the Write/Edit tools; a batch of
   replacements (backticks and all): write `scratch/edits-<n>.txt` with the
   Write tool, then `node scripts/edit.ts scratch/edits-<n>.txt` (exact,
   all or nothing, the format in its header: `@@@ <path>`, then

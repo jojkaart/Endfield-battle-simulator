@@ -65,3 +65,17 @@ Points already in docs/friction/2026-11-23-backlog-after-round-9.md aren't repea
   after their refactors in one command each.
 - measure-worker.ts loading any commit's code loosely meant the hidden holds' units came for both sides (the per-hit
   reference runs ece5983's code) without touching the replay.
+
+## Outcome (round 10)
+
+- 1 (The forbidden commit form, typed by the agent that had just built its guard): done by the owner: the hook is wired
+  (.claude/settings.json PreToolUse, `node scripts/bash-guard.ts`).
+- 2 (Two build-offset detectors, one of them invisible): done in part (45055ce): the explanation is one function
+  (logcheck.ts offsetExplanations), used by the check's buildOffsets and by the offsets screen, which prints "its ATK
+  fits the weapon at level 80" beside a candidate's fit-build hint. The two screens' statistics (the check's 0.3%
+  spread, the screen's median and tightness) stay two: the check's verdict report reads its own.
+- 3 (A cross-cutting identity change spans three modules, two of them busy): carried with backlog point 1 (the stops.ts
+  move is that point's first step).
+- 4 (A fresh worktree recomputes every log's hit records): done (7e521dd): the hit records' and totals' caches are read
+  from the main checkout's and every other worktree's scratch/hits-cache/<key>/ when this checkout has no entry
+  (reports.ts cacheReadPaths; equal keys are equal code); written only here.
