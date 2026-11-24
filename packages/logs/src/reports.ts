@@ -9,7 +9,7 @@ import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { exportHits, exportHitsParallel, filterRecords, formatRecord, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
-import { gameDataCacheKey, REPO_ROOT } from "@efsim/data";
+import { gameDataCacheKey, mainCheckoutOf, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
 import type { TotalsShares } from "./enginecheck.ts";
@@ -70,11 +70,13 @@ export function selectedFiles(sel: LogSelection, command: string): string[] {
   return logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
 }
 
-/** The records' filter of the records commands: reaction kind, operators, the logged event key. */
+/** The records' filter of the records commands: reaction kind, operators, the logged event key, a window of log time (ms). */
 export interface RecordFilter {
   readonly kind?: string;
   readonly operators?: readonly string[];
   readonly event?: RegExp;
+  readonly from?: number;
+  readonly to?: number;
 }
 
 /**
@@ -109,19 +111,40 @@ const HITS_CACHE = "scratch/hits-cache";
 /** Code versions whose cached records are kept (the newest by use). */
 const HITS_CACHE_KEEP = 3;
 
-function hitsCacheFile(file: string): string {
+function hitsCacheFile(file: string, root: string = REPO_ROOT): string {
   const fixtureHash = createHash("sha256").update(readFileSync(file)).digest("hex").slice(0, 12);
-  return join(REPO_ROOT, HITS_CACHE, hitsCodeKey(), `${basename(file, ".json")}-${fixtureHash}.json`);
+  return join(root, HITS_CACHE, hitsCodeKey(), `${basename(file, ".json")}-${fixtureHash}.json`);
+}
+
+/**
+ * Where a cache entry may be read: this checkout's, then the main checkout's and its other agents' worktrees'
+ * (.claude/worktrees/*), whose entries are as good when the code key is the same (it hashes the game data's key and
+ * every engine and log source file, so equal keys mean equal code): a new worktree's first `--all` view reads what
+ * another checkout at the same code computed instead of recomputing every log (round 9 friction point 4: 171 s).
+ * Written only to this checkout's.
+ */
+export function cacheReadPaths(own: string, root: string = REPO_ROOT): string[] {
+  const main = mainCheckoutOf(root) ?? root;
+  const rel = own.slice(root.length);
+  const trees = join(main, ".claude", "worktrees");
+  const others = [main, ...(existsSync(trees) ? readdirSync(trees).map((d) => join(trees, d)) : [])].filter((r) => resolve(r) !== resolve(root));
+  return [own, ...others.map((r) => join(r, rel))];
+}
+
+function readCached<T>(own: string): T | undefined {
+  for (const c of cacheReadPaths(own)) {
+    if (!existsSync(c)) continue;
+    try {
+      return JSON.parse(readFileSync(c, "utf8")) as T;
+    } catch {
+      // being written, or damaged: the next place, else recompute
+    }
+  }
+  return undefined;
 }
 
 function readHitsCache(file: string): HitRecord[] | undefined {
-  const c = hitsCacheFile(file);
-  if (!existsSync(c)) return undefined;
-  try {
-    return (JSON.parse(readFileSync(c, "utf8")) as HitRecord[]).map((r) => ({ ...r, fixture: file }));
-  } catch {
-    return undefined;
-  }
+  return readCached<HitRecord[]>(hitsCacheFile(file))?.map((r) => ({ ...r, fixture: file }));
 }
 
 function writeHitsCache(file: string, records: readonly HitRecord[]): void {
@@ -264,13 +287,7 @@ function sharesCacheFile(file: string): string {
 }
 
 function readSharesCache(file: string): TotalsShares | undefined {
-  const c = sharesCacheFile(file);
-  if (!existsSync(c)) return undefined;
-  try {
-    return JSON.parse(readFileSync(c, "utf8")) as TotalsShares;
-  } catch {
-    return undefined;
-  }
+  return readCached<TotalsShares>(sharesCacheFile(file));
 }
 
 function writeSharesCache(file: string, s: TotalsShares): void {

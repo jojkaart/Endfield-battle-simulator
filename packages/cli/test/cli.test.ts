@@ -11,7 +11,7 @@ import { checkReactions } from "../../logs/src/reactioncheck.ts";
 import { computeStats, type StatPanel } from "@efsim/engine";
 import { formatCensus, kitCensus } from "../src/census.ts";
 import { readScenario, searchCommand, searchWidths } from "../src/simulate.ts";
-import { command, mergedOptions, usageText } from "../src/command.ts";
+import { command, mergedOptions, trackReads, unreadOptions, usageText } from "../src/command.ts";
 import { COMMANDS } from "../src/commands/index.ts";
 import { GLOBAL_NOTES, GLOBAL_OPTIONS } from "../src/commands/shared.ts";
 
@@ -91,6 +91,21 @@ describe("cli command registry (one module per command)", () => {
     const a = command({ name: "a", usage: "  efsim a\n", options: { top: { type: "string" } }, run: () => "" });
     const b = command({ name: "b", usage: "  efsim b\n", options: { top: { type: "boolean", default: false } }, run: () => "" });
     expect(() => mergedOptions([a, b], {})).toThrow(/option --top: b declares it unlike a/);
+  });
+
+  it("names an option given but never read (another command's: it did nothing), never a global one or a spread", () => {
+    const tokens = [
+      { kind: "option", name: "from" },
+      { kind: "option", name: "operator" },
+      { kind: "option", name: "kit" },
+      { kind: "positional" },
+    ];
+    const t = trackReads<Record<string, unknown>>({ from: "3", operator: ["x"], kit: [] });
+    void t.values["operator"];
+    expect(unreadOptions(tokens, t.read, { kit: { type: "string", multiple: true } })).toEqual(["from"]);
+    const s = trackReads<Record<string, unknown>>({ from: "3" });
+    void { ...s.values };
+    expect(unreadOptions(tokens.slice(0, 1), s.read, {})).toEqual([]);
   });
 });
 

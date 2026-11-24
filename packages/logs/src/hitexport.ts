@@ -191,8 +191,16 @@ export function listedBuffs(effects: readonly { readonly buff: string }[]): stri
 }
 
 /** The records a filter keeps: by reaction kind ("skill" for kit hits), by operator id and by the logged event key. */
-export function filterRecords(records: readonly HitRecord[], opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly event?: RegExp }): HitRecord[] {
-  return records.filter((r) => (opts.kind === undefined || r.kind === opts.kind) && (!opts.operators?.length || opts.operators.includes(r.operator)) && (!opts.event || opts.event.test(r.event)));
+/** The records of a reaction kind, of some operators, whose event key matches, logged from `from` to `to` (ms, both included). */
+export function filterRecords(records: readonly HitRecord[], opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly event?: RegExp; readonly from?: number; readonly to?: number }): HitRecord[] {
+  return records.filter(
+    (r) =>
+      (opts.kind === undefined || r.kind === opts.kind) &&
+      (!opts.operators?.length || opts.operators.includes(r.operator)) &&
+      (!opts.event || opts.event.test(r.event)) &&
+      (opts.from === undefined || r.t >= opts.from) &&
+      (opts.to === undefined || r.t <= opts.to),
+  );
 }
 
 /**

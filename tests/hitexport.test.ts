@@ -90,6 +90,14 @@ describe("per-hit records of the log check", () => {
     expect(formatRecord(r, false, "log")).toContain(`log reading ${r.logReading}`);
   });
 
+  it("filters by a window of log time (ms, both ends included)", () => {
+    const t = records[Math.floor(records.length / 2)]?.t as number;
+    const kept = filterRecords(records, { from: t, to: t + 1000 });
+    expect(kept.length).toBeGreaterThan(0);
+    expect(kept.every((x) => x.t >= t && x.t <= t + 1000)).toBe(true);
+    expect(kept.length).toBe(records.filter((x) => x.t >= t && x.t <= t + 1000).length);
+  });
+
   it("filters by the logged event key", () => {
     const ev = records[0]?.event as string;
     const kept = filterRecords(records, { event: new RegExp(`^${ev}$`) });
