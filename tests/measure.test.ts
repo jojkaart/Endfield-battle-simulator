@@ -1,9 +1,13 @@
 // scripts/measure.ts: the log checks measured into scratch/ and compared, nothing tracked written. The full run is
 // checked by hand (it takes a minute: "The log verdict snapshots would stay as they are (byte for byte)" on a clean
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, holdChanges, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, selectLogs, sharesLines } from "../scripts/measure.ts";
+import { hitChanges, holdChanges, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, selectLogs, sharesLines } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -143,5 +147,29 @@ describe("measure --changed placement", () => {
   it("names the casts placed only before and only now", () => {
     const lines = movedCasts(["a.json", "b.json"], new Map([["a.json", ["1.00 s op skill", "2.00 s op combo"]], ["b.json", ["1.00 s op skill"]]]), new Map([["a.json", ["1.00 s op skill", "2.10 s op combo"]], ["b.json", ["1.00 s op skill"]]]));
     expect(lines).toEqual(["  a.json: 1 cast(s) only before, 1 only now", "    - 2.00 s op combo", "    + 2.10 s op combo", "  b.json: the same casts; some hits moved between them"]);
+  });
+});
+
+describe("measure --patch without --at (physical-statuses report point 1)", () => {
+  it("refuses, before queueing, a diff the working tree already has, naming --at; passes one that applies", () => {
+    const dir = mkdtempSync(join(tmpdir(), "efsim-measure-patch-"));
+    try {
+      const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, encoding: "utf8" });
+      git("init", "-q");
+      writeFileSync(join(dir, "a.txt"), "one\n");
+      git("add", "a.txt");
+      git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "a");
+      writeFileSync(join(dir, "a.txt"), "two\n");
+      writeFileSync(join(dir, "in-tree.diff"), git("diff"));
+      expect(patchProblem(["--patch", join(dir, "in-tree.diff")], dir)).toMatch(/already in the working tree .*--at <the commit before it>/);
+      expect(patchProblem(["--at", "HEAD", "--patch", join(dir, "in-tree.diff")], dir)).toBeNull();
+      git("checkout", "-q", "a.txt");
+      expect(patchProblem(["--patch", join(dir, "in-tree.diff")], dir)).toBeNull();
+      writeFileSync(join(dir, "a.txt"), "three\n");
+      expect(patchProblem(["--patch", join(dir, "in-tree.diff")], dir)).toMatch(/doesn't apply/);
+      expect(patchProblem(["--logs", "0c14"], dir)).toBeNull();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

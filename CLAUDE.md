@@ -213,9 +213,11 @@ complex to verify"):
   commit's code beside this one: `node scripts/at-commit.ts <ref>
   [--patch f]` (a worktree under scratch/at/ with its own packages linked;
   `--remove <dir>` after), then bench both CLIs or both test runs
-  (`"cd scratch/at/<hash> && npx vitest run <file>"`). Never copy older
-  source files over the tree for an A/B. Game-data questions: `efsim
-  gamedata tree <id>`, `who <id>`, `find <type>`.
+  (`"cd scratch/at/<hash> && npx vitest run <file>"`); a probe or scratch
+  script of this checkout against that commit's code: `--run <script> [--
+  args]`. Never copy older source files over the tree for an A/B.
+  Game-data questions: `efsim gamedata tree <id>` (`--path` for one
+  subtree), `who <id>`, `find <type>`.
 
 Hold-out logs live in `fixtures/holdout/`: never open, list or grep it
 (`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout

@@ -154,7 +154,11 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   worktree (scripts/at-commit.ts), so the working tree stays editable;
   `--base <ref>` measures two commits' code on the same logs (an A/B that
   doesn't trust either side's committed snapshots). Never copy older source
-  files over the tree while a job runs on it. A log new since that commit
+  files over the tree while a job runs on it. A `--patch` without `--at`
+  goes on top of the tree as queued: one the working tree already has is
+  refused before queueing, naming `--at <the commit before it>` (round 10).
+  A probe being edited, at another commit's code: `node
+  scripts/at-commit.ts <ref> --run <script> [-- args]`. A log new since that commit
   (an import on this branch) is measured there on this tree's copy of its
   fixture (round 6).
 - **Two code variants, neither an open reading:** commit variant A (a WIP

@@ -61,7 +61,7 @@
 // (or `fail`; `killed` when a signal stopped it, waiting included). A full run takes the pending suite's check time over the workers
 // (about 1.5–2 min on 3 workers when the machine is quiet); `--with` or `--changed` a fraction of it.
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -630,6 +630,22 @@ function git(args: readonly string[]): string {
   return execFileSync("git", args, { cwd: ROOT, encoding: "utf8" }).trim();
 }
 
+/**
+ * A `--patch` without `--at` goes on top of the tree as queued, which holds the working tree's changes: a diff that is
+ * one of those changes doesn't apply there (physical-statuses report point 1: a split of one batch's effect failed so
+ * after waiting in the queue). Refused before queueing, with the form that measures it alone; null when fine.
+ */
+export function patchProblem(argv: readonly string[], root = ROOT): string | null {
+  const pi = argv.indexOf("--patch");
+  const file = pi >= 0 ? argv[pi + 1] : undefined;
+  if (file === undefined || argv.some((a) => a === "--at" || a.startsWith("--at="))) return null;
+  const check = (reverse: boolean) => spawnSync("git", ["apply", "--check", ...(reverse ? ["--reverse"] : []), resolve(file)], { cwd: root, encoding: "utf8" }).status === 0;
+  if (check(false)) return null;
+  if (check(true))
+    return `measure: --patch ${file} is already in the working tree (it applies in reverse): without --at the patch goes on top of the tree as queued, which has it. To measure it alone: --at <the commit before it> --patch ${file} (that code plus only this diff)`;
+  return `measure: --patch ${file} doesn't apply to the working tree (git apply --check): without --at it goes on top of the tree as queued; name the commit it was made against with --at <ref>`;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
   if (testLockFile()) {
@@ -639,6 +655,12 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     // the tree when its turn came): a commit of the working tree (at-commit.ts snapshotCommit), measured in its own
     // worktree under scratch/at/ and removed after. --at names a commit itself; --live reads the tree at the start.
     const own = argv.some((a) => a === "--at" || a.startsWith("--at=") || a === "--live" || a === "--snapshot" || a.startsWith("--snapshot="));
+    const problem = own ? null : patchProblem(argv);
+    if (problem) {
+      process.stderr.write(problem + "\n");
+      process.stdout.write("EFSIM-DONE measure fail\n");
+      process.exit(2);
+    }
     const args = [...argv];
     // A --patch file as it is now (edits during the wait don't reach the run), under scratch/measure/patches/.
     const pi = args.findIndex((a) => a === "--patch");

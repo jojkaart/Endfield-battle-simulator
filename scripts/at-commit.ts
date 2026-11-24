@@ -6,6 +6,13 @@
 // Usage:
 //   node scripts/at-commit.ts <ref> [--dir <dir>] [--patch <file>]   make (or reuse) it; prints the directory and how
 //                                                                    to run its CLI
+//   node scripts/at-commit.ts <ref> --run <script> [-- args…]        run a script of this checkout (a probe being
+//                                                                    edited, a scratch script) against that commit's
+//                                                                    code: copied to the same path in the tree, run
+//                                                                    there (cwd the tree), then put back; only that
+//                                                                    file is copied, its imports are the tree's
+//                                                                    (misprediction-stats report point 3). Its exit
+//                                                                    code is the script's
 //   node scripts/at-commit.ts --remove <dir>                         remove it again (git worktree remove)
 //
 // The default directory is scratch/at/<the commit's short hash>. Then, e.g.:
@@ -15,7 +22,7 @@
 // (2026-11-16) may need EFSIM_DATA_DIR=<main checkout>/data, printed here.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -72,6 +79,25 @@ export function snapshotCommit(root = ROOT): { readonly commit: string; readonly
   }
 }
 
+/**
+ * Runs a script of this checkout in an atCommit tree: copied to the same relative path there (so its relative imports
+ * reach the tree's packages), run with the tree as cwd, then the tree's own file put back (or removed). The exit code.
+ */
+export function runInTree(dir: string, script: string, args: readonly string[], root = ROOT): number {
+  const rel = relative(root, resolve(script));
+  if (rel.startsWith("..")) throw new Error(`--run ${script}: not a file of this checkout`);
+  const target = join(dir, rel);
+  const before = existsSync(target) ? readFileSync(target) : undefined;
+  mkdirSync(dirname(target), { recursive: true });
+  copyFileSync(resolve(script), target);
+  try {
+    return spawnSync(process.execPath, [target, ...args], { cwd: dir, stdio: "inherit" }).status ?? 1;
+  } finally {
+    if (before !== undefined) writeFileSync(target, before);
+    else rmSync(target, { force: true });
+  }
+}
+
 /** Removes a worktree made by atCommit (git worktree remove --force). */
 export function removeAtCommit(dir: string): void {
   git(["worktree", "remove", "--force", resolve(dir)]);
@@ -87,7 +113,7 @@ function main(argv: string[]): number {
   }
   const ref = argv[0];
   if (!ref || ref.startsWith("--")) {
-    process.stderr.write("usage: node scripts/at-commit.ts <ref> [--dir <dir>] [--patch <file>] | --remove <dir>\n");
+    process.stderr.write("usage: node scripts/at-commit.ts <ref> [--dir <dir>] [--patch <file>] [--run <script> [-- args…]] | --remove <dir>\n");
     return 2;
   }
   const opt = (name: string) => {
@@ -97,6 +123,12 @@ function main(argv: string[]): number {
   const short = git(["rev-parse", "--short=9", "--verify", `${ref}^{commit}`]);
   const dir = resolve(opt("--dir") ?? join(ROOT, "scratch", "at", short));
   const commit = atCommit(ref, dir, opt("--patch"));
+  const script = opt("--run");
+  if (script !== undefined) {
+    const sep = argv.indexOf("--");
+    process.stderr.write(`at-commit: ${script} at ${ref} (${commit.slice(0, 9)}), in ${dir}\n`);
+    return runInTree(dir, script, sep >= 0 ? argv.slice(sep + 1) : []);
+  }
   const main = mainCheckoutOf(ROOT) ?? ROOT;
   const rel = relative(process.cwd(), dir) || ".";
   process.stdout.write(
