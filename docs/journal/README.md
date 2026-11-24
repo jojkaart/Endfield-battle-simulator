@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-24: Misprediction candidates: logged-as buffs, the enemy's HP, Ardelia's chain](2026-11-24-02-misprediction-candidates-logged-as-buffs-the-enemy-s-hp.md)
 - [2026-11-24: Improvement round 10: no shell programming, printers that say what they leave out, rows cached](2026-11-24-02-improvement-round-10-no-shell-programming-printers-that-say.md)
 - [2026-11-24: Misprediction statistics across the logs; Zhuang Fangyi's Empyrean combo key](2026-11-24-01-misprediction-statistics-across-the-logs-zhuang-fangyi-s.md)
 - [2026-11-23: Fight totals 4: whose Shatter, Snowshine's counter, Rossi's borrowed crits](2026-11-23-13-fight-totals-4-whose-shatter-snowshine-s-counter-rossi-s.md)

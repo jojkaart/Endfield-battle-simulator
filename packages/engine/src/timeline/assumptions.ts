@@ -139,6 +139,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "enemy-hp",
+    question: "What is the enemy's HP over a logged fight, for the hits whose damage depends on it (enemyHpBelow: Chen Qianyu's P1 Shadowless, Alesh's P5 ultimate)? Read only by the log check's replay (packages/logs buffreplay.ts loggedEnemyHp), not by simulations: a simulation's scenario says the HP (TimelineScenario.enemyHp).",
+    default: "kill",
+    readings: {
+      kill: "a fight that ends in a kill (its last logged hit capped) has the logged total as its HP, the stage's scaling of Max HP included, in lives of about Max HP split where the enemy went away as the damage reached a multiple of it (Si, eny_0134_jsspsi: two lives); a fight whose total is the data's Max HP as under max-hp. Development logs 2026-11-24: Chen's hits in d4fb below half the logged total ×1.16 the reading without Shadowless (89 hits), above it ×1.00 (79); Alesh's ultimate ×1.5 exactly where a life's HP was below half in a9d7 (6 of 6), ad7f, 4e36 (2 of 2 each), 0c14 (2 of 3); a27b (the data's Max HP) fits Shadowless on below half and off above, both sides (in-game test 69)",
+      "max-hp": "only a fight whose logged total is the data's Max HP (one enemy, one life) has an HP; any other none, and a condition on it never holds (the replay until 2026-11-24)",
+    },
+  },
+  {
     id: "finisher-ultimate",
     question: "Does a finisher's disable-cast buff (buff_common_power_attack_disable_cast_skill, the finisher's frames 0 to its last hit or past it) hold the operator's ultimate, as it holds her battle skill and combo (timeline/timing.ts afterCantCast)? The buff's tags include battle-skill (-1486085048, buff_common_disable_normal_skill's) and dash (-1601691447, buff_common_disable_dash's) and one no other buff has (-496376350); Typhoeus's hover, which allows her combo and ultimate, carries the other two.",
     default: "cuts",

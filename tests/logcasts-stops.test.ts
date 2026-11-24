@@ -63,3 +63,15 @@ describe("two hits of one landing at one time, its cast's landings all logged (a
     expect(near).toHaveLength(1);
   });
 });
+
+describe("basic-attack steps sharing a key: the latest cast says the step (logcasts.ts choose)", () => {
+  const A = "chr_0025_ardelia";
+  it("af7b: Ardelia's attack 1 after her attack 3 and combo is attack 1, not attack 2 from an older attack 1's window", () => {
+    const fx = fixture("pending/zmdlogs-af7b7f865906.json");
+    const p = placeHits(data, fx);
+    const skillAt = (t: number) => fx.hits.filter((h) => h.operator === A && h.event === `${A}_attack1_projhit` && h.t === t).map((h) => p.hits.get(h)?.cast.skillId);
+    // 1178 at 7785 ms is attack 1's projectile (×1.5 attack 2's 808 each, both at 9190 ms).
+    expect(skillAt(7785)).toEqual([`${A}_attack1`]);
+    expect(skillAt(9190)).toEqual([`${A}_attack2`, `${A}_attack2`]);
+  });
+});

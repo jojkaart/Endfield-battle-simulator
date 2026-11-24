@@ -53,6 +53,28 @@ four logs, all ×1.500 = atk_scale 5.4 / 3.6, `poise.origin` combo_skill_ult on 
 now carries the base key (c9cf9a3; 4d60, 3aa6, 4bfc and a hold-out better, d774's total +3.8 → +7.2%: the strikes it
 hid).
 
+**Found and fixed (2026-11-24, the candidates worked; [analysis](analysis/2026-11-24-misprediction-stats.md#follow-up-the-candidates-worked-2026-11-24)):**
+- **Candidate 3, the weapon "ready" buffs: a double count, not a consumption.** The consuming cast's hits list the
+  attached buff that carries the modifier (`buff_wpn_sword_0021_valid`, `buff_wpn_sword_0017_valid`), never the kit
+  buff's gameBuff (`_exist`, no modifier), so the check added the log's entry beside the kit buff: 59 hits in 0c14,
+  7e19, d4fb, a27b read with the bonus twice (×0.75–0.92), and fit with it once (`cf` readings equal to the unit). The
+  kit buffs name their attached buff in `loggedAs` (also Aspirant's `_pdi_up`, Cohesive Traction's `skill_pulse01`, no
+  log yet, and Yvonne's P5 child `potential_5_new` on her ultimate states: 5082's 72 hits, the "Yvonne's ultimate
+  state" item). The screen (scripts/probes/stats/doublecount.py: a kit buff and an unmapped log buff with one zone and
+  value at one hit) found no other pair.
+- **Chen's d4fb readings: her P1 (Shadowless) below half HP, which the replay never had.** The replay knew the enemy's
+  HP only when the logged total was the data's Max HP; the stages scale it (tower015 ×7.6). Now a kill's logged total
+  is the HP, in lives split at away stretches (Si: two lives; engine assumption `enemy-hp`, `kill`; `max-hp` the old
+  reading). d4fb Chen below half ×1.16 (89 hits), above ×1.00 (79); a27b (Max HP) fits P1 off above and on below:
+  in-game test 69 decided from the logs. d4fb +9.6 → +0.5%, c4f3 plain 214 → 242.
+- **The ×1.5 band: Alesh's ultimate is his P5 below half HP** (atk_up 1.5, the kit's `enemyHpBelow`), the same HP:
+  a9d7 6 of 6, ad7f and 4e36 2 of 2, 0c14 2 of 3 (its 18.39 s hit ×1.34 at 92% HP, open). **Ardelia's basic attacks**
+  were placements: attacks 1 and 2 share one key, and after her attack 3 and combo the placement took an older attack
+  1's window to attack 2 (logcasts.ts `choose`: among basic steps the latest cast says the step).
+- **Si's ultimate Amp in 9c0b** (the analysis's largest one-buff item): her ultimate at 7.02 s, before the log's
+  first hit, wasn't made for want of energy the log can't show; made now (ReplayedCast.beforeHits). Every unseen
+  ultimate made regardless was worse (tried: docs/tried/2026-11-24-unseen-ultimates-without-energy.diff).
+
 **Ruled out (as broad causes):** the log's crit flags (flipping one fits 32 of 7,565 off hits; hold-outs 6 of 624); any
 generic hit feature predicting the error across fights (a tree fitted on the development logs explains R² 0.007 of the
 earlier ones', 0.039 the other way; slow-downs, placed holds, the landing's dt, parser version, import date, fight
@@ -65,18 +87,29 @@ s apart 0.35% of a fight).
   fights), Arcane's Susceptibility layers (1.2%, 9 fights), Arcane's weapon Arts DMG Taken and Will burst buff, Yvonne's
   ultimate state, Typhoeus's Hovering ATK; buffs a cast starts are 6.5% of the error. `zmdlogs differences --all --what
   <buff>` per buff.
-- **Weapon "ready" buffs consumed by an ultimate** (2.8%, 25 hits, 6 fights): the Endministrator's
-  `wpn_sword_0021.ready` (×0.81) and Chen Qianyu's `wpn_sword_0017.ready` (×0.86) on ultimates the engine reads with
-  them and the log without; their BuffData consumption and trigger first (part of "Chen's readings", d4fb).
-- **The rest of the ×1.5 band** (1.6% of the error, 6.9% of the hold-outs' after the fix): teammates' hits at ×1.5 in
-  windows with Liino's ultimate projectiles (1cd1, 1d91, 9c6e: Cosmovoice's Amp ending early, "Liino's Cosmovoice
-  beats"), Alesh's ultimate ×1.500 in 5 of 15 hits (a9d7, ad7f; `poise.origin` and the data's branches next), Ardelia's
-  basic attacks (4 fights).
+- **The rest of the ×1.5 band, Liino's ultimate windows** (1cd1, 1d91, af7b; 9c6e is two targets): not Cosmovoice
+  ending early but starting late. In 1cd1 the log has Typhoeus's burst at 37.97 s and Liino's first projectile pair
+  (frame 76) at 38.73 s under the Amp; the replay casts her ultimate at 36.19 s from its projectiles with its 77-frame
+  stop to 38.77 s, so the Amp (frame 77) starts after them. In af7b (59.6–60.8 s) Typhoeus's, Ardelia's and Arcane's
+  hits during the replay's stop of Liino's ultimate (57.40–59.97 s) land, and the log's cast event is at 59.94 s with
+  the first projectiles: the replay's placement of her ultimate and its stop against the log's world time, not a kit
+  value. **Next:** `zmdlogs casts 1cd1` at 36–39.7 s and `zmdlogs stops 1cd1`: where the log's ultimate event sits in
+  her stop.
+- **7e19's Chen ×1.15** on every hit, above and below half HP (×1.152 basic, ×1.106–1.119 ultimate): not P1 (below
+  half the reading has it and is still ×1.106) and not the weapon (fixed above). `fit-build 7e19 --operator Chen`: 17
+  of 19 with Ginseng Meat Stew (ATK +180), but 0 clean hits and her three teammates fit as exported: a food on one
+  operator only is unlikely. Still possible: a build element of hers the export lacks; Pogranichnik's team ATK layers
+  (`values` on most of her hits).
 - **Moments of change:** hits with a boundary effect are off at 42.8% against 24.2% (hold-outs 29.9 / 9.0%) in every
   skill kind, yet a boundary kit buff taken the other way fits only 1.8%: a marker of a state change, not its own cause.
 - **Drift with time:** off rate 12.5% in the first 10 s, 38% at 120–200 s; per fight higher in the second half in 34 of
   57 (p = 0.18; hold-outs 8 of 11): against the placed holds' running total in long fights next.
-- **Fight-wide factors below the screen:** 7910 Liino ×1.143, af7b Liino ×1.161 (54% tight): `zmdlogs fit-build`.
+- **Fight-wide factors below the screen (checked 2026-11-24): not builds.** `fit-build` fits Liino's clean hits as
+  exported in both (7910 14 of 19, af7b 20 of 21), so the screen is right not to flag them: 7910's ×1.143 is on the
+  hits where Tangtang's weapon Arts DMG Taken is listed with other values (the open 7910 Tangtang ×1.10, `zmdlogs
+  differences 7910 --what wpn_pistol_0011`: 311 hits, median 1.000, upper quartile 1.099); af7b's ×1.161 is her
+  ultimate at 59.9–60.6 s, where the log lists Eternal Xiranite's team DMG (+0.16, 19 hits fit with it) and the
+  Amp's start (above, Liino's windows).
 
 ## Fight totals: what moves them (2026-11-23)
 

@@ -11,11 +11,12 @@
       "label": "Suppression: Concentric Circles (Electric DMG, next battle skill)",
       "target": "self",
       "gameBuff": "buff_wpn_lance_0006_exist",
+      "loggedAs": ["buff_wpn_lance_0006_skill_pulse01"],
       "duration": "duration",
       "maxStacks": "max_stack",
       "consumedBy": ["battle"],
       "modifiers": [{ "attr": 52, "value": "pulse_dmg_up" }],
-      "note": "A layer per combo cast (each its own 30 s); the next battle skill uses every layer: pulse_dmg_up × layers Electric DMG on that cast's hits (the returning Thunderlances included), then they end."
+      "note": "A layer per combo cast (each its own 30 s); the next battle skill uses every layer: pulse_dmg_up × layers Electric DMG on that cast's hits (the returning Thunderlances included), then they end. loggedAs: a log would list skill_pulse01 on those hits, as Glorious Memory's and Grand Vision's logs list their _valid (not yet in a log)."
     }
   ],
   "triggers": [

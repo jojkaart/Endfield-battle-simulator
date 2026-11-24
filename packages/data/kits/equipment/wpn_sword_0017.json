@@ -13,11 +13,12 @@
       "label": "Glorious Memory: DMG Dealt during the next ultimate, per Vulnerability applied",
       "target": "self",
       "gameBuff": "buff_wpn_sword_0017_exist",
+      "loggedAs": ["buff_wpn_sword_0017_valid"],
       "duration": "duration",
       "maxStacks": "max_stack",
       "consumedBy": ["ultimate"],
       "modifiers": [{ "attr": 50, "value": "dmg_up" }, { "attr": 51, "value": "dmg_up" }, { "attr": 52, "value": "dmg_up" }, { "attr": 53, "value": "dmg_up" }, { "attr": 54, "value": "dmg_up" }],
-      "note": "Each layer carries dmg_up, so the consuming ultimate gets dmg_up × layers (buff_wpn_sword_0017_valid); it uses up every layer."
+      "note": "Each layer carries dmg_up, so the consuming ultimate gets dmg_up × layers (buff_wpn_sword_0017_valid); it uses up every layer. The ultimate's hits list buff_wpn_sword_0017_valid (dmg_up × layers on five elements), never _exist: loggedAs, so the check reads the listing as this buff instead of adding both (7e19, a27b, d4fb: 37 ultimate hits read ×0.78–0.92 with the bonus twice; misprediction statistics, candidate 3)."
     }
   ],
   "triggers": [

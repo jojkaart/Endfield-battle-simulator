@@ -1,0 +1,27 @@
+Every unseen ultimate press made whatever the replay's energy (2026-11-24, misprediction candidates).
+
+What: replayedSkill makes a logged ultimate press whose hits had no one to land on (`unseen`) even when the replay's
+energy is short, not only one before the log's first hit (ReplayedCast.beforeHits, adopted in f3a6ecc for 9c0b's Si).
+
+Measure (against e9e89ce's snapshots, beside the adopted beforeHits rule's): development 11 better, 1 worse, 2 mixed
+(9c0b plain 367 → 410, 9c6e −12.6 → +4.7%, d774 plain 374 → 382 but damage 7.2 → 8.7%; worse 1cd1 plain 182 → 181,
+damage −7.2 → −19.5%: Typhoeus's power shot and burst at 41.3 s unlanded, 309k); hold-out mean |damage error|
+8.5 → 9.2% (the beforeHits rule alone: 8.5%).
+
+Dropped: a later unseen ultimate press is often one the game didn't make (or made elsewhere); the energy check is
+right more often than not there. Would need: which unseen presses the log shows nothing of because the enemy was away
+(d774's) against ones that weren't casts at all (1cd1's).
+
+diff --git a/packages/logs/src/buffreplay.ts b/packages/logs/src/buffreplay.ts
+index 692e7c2..7684213 100644
+--- a/packages/logs/src/buffreplay.ts
++++ b/packages/logs/src/buffreplay.ts
+@@ -1814,7 +1814,7 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
+     // team starts with isn't in the log (9c0bb09daff2's Si at 7.02 s, the first hit at 13.27 s, needed 68 with 0 in the
+     // replay; the log lists her ultimate's Amp on the team from 13.27 to 21.4 s). Later presses keep the energy check
+     // (every unseen ultimate made: 1cd1657bc305 −7.2 → −19.5%, Typhoeus's shots at 41.3 s lost).
+-    if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && ((c.beforeHits === true && c.kind === "ultimate") || startsBy(c.skillId)) ? c.skillId : null;
++    if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && (c.kind === "ultimate" || startsBy(c.skillId)) ? c.skillId : null;
+     // A step before the inferred cast, never that cast again (the inferred one is timed by the log's buff end:
+     // e9896c8d02be's press at 67244 ms, under the Inksoul, isn't the Final Stroke whose burst comes at 69192 ms).
+     if (available(c.skillId)) return null;

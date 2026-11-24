@@ -267,3 +267,30 @@ is relatively larger in the hold-outs: the next hunt for a variant key should go
 3. The two "ready" weapon buffs' consumption in the data (candidate 3), then Chen's d4fb ultimate.
 4. `zmdlogs fit-build` for Liino in 7910 and af7b.
 5. Drift: off rate against the placed holds' running total in long fights.
+
+## Follow-up: the candidates worked (2026-11-24)
+
+A second pass over candidates 3, 8, 9 and the largest of 2, in that order (base a4f6ddb; the tables rebuilt with
+build.ts after each fix; new probes doublecount.py, hpside.ts / hpside.py, lives.ts in scripts/probes/stats/).
+
+- **Candidate 3 was a double count, not a consumption.** Every one of the 59 hits lists the weapon's attached buff
+  (`buff_wpn_sword_0021_valid`, `buff_wpn_sword_0017_valid ×5`), which carries the modifier; the kit buff's gameBuff is
+  the modifier-less `_exist`, so the check took the listed `_valid` as an unmapped log buff and added it beside the kit
+  buff. Taking the kit buff out (the `engine` counterfactual) fits most to the unit. Fix: `loggedAs` on both, on
+  Aspirant's and Cohesive Traction's like buffs, and on Yvonne's ultimate states (`potential_5_new`, 72 hits in 5082:
+  doublecount.py's only other pair). Chen's d4fb part was this and her P1 (below).
+- **Candidate 8, Alesh: his P5 below half HP, which the replay never had.** lives.ts: his ×1.500 ultimates fall where a
+  life's HP was below half (a9d7 6 of 6 against Si's two lives, ad7f and 4e36 2 of 2 against a stage's scaled HP). The
+  replay knew the enemy's HP only when the logged total was the data's Max HP (Rodin); a kill's total is the HP now, in
+  lives split at the away stretches (engine assumption `enemy-hp`). The same HP gives Chen Qianyu's P1: d4fb ×1.16
+  below half (89 hits), ×1.00 above (79) (hpside.ts); a27b fits it the data's way on both sides, deciding in-game test
+  69. **Ardelia:** attacks 1 and 2 share the key attack1_projhit; the placement took an older attack 1's window to
+  attack 2 after her attack 3 and combo (af7b, f879, 79cc, c3c7, f978). **Liino's windows:** the Amp starts later in
+  the replay than in the game (1cd1, af7b), the replay's stop of her ultimate against the log's world time; open.
+- **Candidate 9: not builds.** fit-build fits Liino's clean hits as exported in 7910 and af7b; the screen is right.
+  Her 7910 factor sits on Tangtang's weapon listing (the open 7910 problem), af7b's on her ultimate window (above).
+- **Candidate 2's largest, Si's Amp in 9c0b:** her ultimate at 7.02 s, before the log's first hit, wasn't made for
+  want of energy the log can't show. Made now; every unseen ultimate made regardless was worse (docs/tried/).
+
+Scoreboard (snapshots:update at the final commit): in the journal entry
+docs/journal/2026-11-24-02-misprediction-candidates-logged-as-buffs-the-enemy-s-hp.md.

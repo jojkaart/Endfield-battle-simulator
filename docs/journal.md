@@ -4,9 +4,44 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 138 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 139 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-24: Misprediction candidates: logged-as buffs, the enemy's HP, Ardelia's chain
+
+**Goal:** work through the misprediction analysis's candidates (docs/analysis/2026-11-24-misprediction-stats.md): the
+weapon "ready" buffs, the rest of the ×1.5 band, the fight-wide factors below the offsets screen, then the one-buff
+list's largest; root cause and fix, or ruled out with why.
+
+**Done** (the analysis's follow-up section; open-problems "Misprediction statistics"):
+- **The "ready" buffs were a double count.** The consuming cast's hits list the attached buff with the modifier
+  (`_valid`), not the kit buff's modifier-less gameBuff (`_exist`): the check added both (59 hits in 0c14, 7e19, d4fb,
+  a27b). `loggedAs` on Grand Vision's and Glorious Memory's buffs, Aspirant's, Cohesive Traction's, and Yvonne's ultimate
+  states (P5 child, 5082's 72 hits; found by scripts/probes/stats/doublecount.py).
+- **The enemy's HP from a kill's total, in lives** (engine assumption `enemy-hp`, buffreplay.ts loggedEnemyHp): the
+  replay had an HP only when the total was the data's Max HP. Chen Qianyu's P1 below half (d4fb ×1.16 below, ×1.00
+  above; in-game test 69 decided from a27b) and Alesh's P5 ultimate (×1.5 below half: a9d7 6 of 6 over Si's two lives).
+- **Ardelia's ×1.5 basic attacks were placements:** attacks 1 and 2 share a key; after attack 3 and a combo the
+  placement took an older attack 1's window (logcasts.ts choose: the latest basic cast says the step).
+- **Si's Amp in 9c0b:** her ultimate pressed before the log's first hit, skipped for energy the log can't show; made now.
+- **Ruled out:** Liino's 7910 / af7b factors as builds (fit-build fits her clean hits as exported; the screen is right).
+
+**Scoreboard** (`npm run snapshots:update`): development plain 67.1 → 67.8%, matched 83.5 → 83.9%, mismatch 11.6 →
+11.5%, mean |damage error| 7.2 → 7.0%; hold-out plain 77.6 → 78.3%, mismatch 6.2 → 5.9%, mean |damage error| 8.0 →
+8.5% (2 better, 4 mixed, per hit closer; the total that moved most came with the "ready" fix, which exposed an
+under-prediction the double count hid, as in 7e19); earlier pending plain 63.7 → 64.2%, 4.5 → 4.4%; all but the
+hold-outs 5.7 → 5.5%. Better: d4fb +9.6 → +0.5% (plain 465 → 516), 9c0b −4.9 → +3.0% (367 → 410), a9d7 −5.0 →
+−1.8%, c4f3 −5.0 → −3.1% (214 → 242), 5082, a27b. Totals worse with per-hit closer: 7e19 +2.0 → −6.6% (the
+Endministrator +21.9 → +2.3% exposed Ember's −21.5% and Chen's ×1.15), 0c14 −3.5 → −4.9%, 4e36 and de6a (matched
+closer, replay-only landings left). Teams (team-ab against a4f6ddb): every team's fight the same (the log check's changes only).
+
+**Decisions:** the HP rule behind an assumption (the stage pools are a kill's total, not seen in any data file); lives
+only where an away stretch starts at a multiple of Max HP (Si's eight fights all show it). The pre-log ultimate rule
+only before the first hit: every unseen ultimate made regardless made 1cd1 −19.5% (docs/tried/).
+
+**Left:** Liino's ultimate Amp starts later in the replay than in the game (1cd1, af7b: the replay's stop of her
+ultimate covers teammates' logged hits); 7e19's Chen ×1.15; the one-buff list's rest.
 
 ## 2026-11-24: Improvement round 10: no shell programming, printers that say what they leave out, rows cached
 
@@ -346,41 +381,3 @@ log tools' lists cut it (docs/open-problems.md, Arcane's combo reset); Purrchena
 
 **Problems:** `--logs 9c0b` matched 489c0be3e162 too (an id part inside another id): full ids for a selection. One
 multi-line `python3 -c` slipped through (the round's friction report).
-
-## 2026-11-23: A finisher cut by an ultimate, late instance runs, cut casts' later stops
-
-**Goal:** the remaining leads after the hold-out refresh: 458b's Laevatain total (9.0 → 11.3% at 74bc686), Rossi's
-combo_3 dilations, Xaihi's weapon instance in 5082 (1.67 s late), 489c 49.31 s.
-
-**Found and done:**
-- **458b:** a compensating error going away. 74bc686 made her enhanced battle skills at 92.9–94.3 s right; what was left
-  over were two replay-only finisher hit_2 landings (225,802 and 281,334), kept because her ultimate came inside the
-  finisher's disable-cast buff (frames 0–42), which the engine let hold every cast. Every logged ultimate inside a
-  finisher's frames cut it (458b ×2; d572, Rossi's placed from its own hits, 17 frames in). Engine assumption
-  `finisher-ultimate` (`cuts`; `held` the old rule): SkillTiming channels' `finisher`, timing.ts afterCantCast. 458b
-  damage 8.0 → 0.8%, d572 4.2 → 2.1%.
-- **5082:** INSTANCE_LATE_MS now skips an instance buff's late run only where the replay reapplies it on the holder
-  inside the run (a refresh in place needs one); otherwise the run is a clock (buffreplay.ts runBounds). Xaihi's 27.37 s
-  instance is her last: Arcane's 50.51 s hits plain, 5082 plain 224 → 247; 4d60 +6 net (15 hits at 102.98 s now read a
-  Corrosion the log has ended: a Corrosion end from the hits isn't a bound yet).
-- **489c 49.31 s:** right as placed (held start + the slow-down = 49.29 s). The "ahead" ramp readings at 49.77–50.00 s
-  are Rossi's own ×1.013 (her weapon's layers, from 47.0 s, before the Corrosion). Found on the way: the log tools' stop
-  lists put every SkillTiming slow-down at its own frame, so Rossi's combo_3 on its perfect path (ends at 211) held the
-  world again at frame 212, 7 s later, and Pogranichnik's and Purrchena's combos had their paths' stops at 6–20 s; the
-  engine never had them. skillStops now follows the path the cast's landings show (logcasts.ts pathOf, the engine's
-  pathSlowdowns shared with casting.ts). 489c plain 579 → 589, mismatch 31 → 23; 9a80 +5.
-- **Rossi's combo_3 dilations:** worth 1.5–2.2 frames, not 7 (the combo one ramps from its frame 8); 3f78's excess
-  167 → 114–135 ms either way; the "combo priority outranks" reading measured mixed (489c −8). Not built.
-
-**Scoreboard** (`npm run snapshots:update` against aa938ce's snapshots): development plain 65.4 → 65.7%, mismatch 14.8%,
-mean |damage error| 8.6%; hold-outs plain 77.6 → 77.4%, mismatch 6.3%, mean |damage error| 10.6 → 10.2% (1 better,
-0 worse, 2 mixed); earlier pending 58.5%, 17.8%, 8.4 → 8.1% (3 better, 1 worse: 99fb −1 plain, a knock-on of the stop
-lists; 2 mixed); verified unchanged. Teams (team-ab against aa938ce): every team's fight the same.
-
-**Decisions:** the finisher rule as an engine assumption (three cases, two operators, all one way). The hold-outs' plain
-−0.2 pt is the stop lists' part (measured apart: the placement's part moves nothing); kept, since the lists now match the
-engine's own timeline and one hold-out can't be traced.
-
-**Left:** Rossi's bleed tick series across a reapplication (489c 52–60 s, which drops the ramp's bounds); a Corrosion end
-read from the hits as a hold bound (4d60); 6339's Laevatain hit_2 with no own cast before it; the castFlag view's INSIDE
-wording (it counts the wait for own hits, not only uncuttable frames).
