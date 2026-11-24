@@ -240,17 +240,22 @@ const MIN_MOVE_MS = 150;
  * places it). 1cd1657bc305: Liino's event at 37.95 s after 3.6 s without a hit, her first projectiles at 38.73 s;
  * placed from them at 36.19 s, her Cosmovoice Amp (frame 77) began after Typhoeus's burst and Arcane's seal at 37.97 s,
  * both ×1.5 in the log. af7b7f865906: her event at 56.50 s, the projectiles at 59.94 s across Ardelia's ultimate stop;
- * placed at 57.41 s, her stop covered teammates' logged hits. Until 2026-11-24 the rule took any detached first landing
- * whose frame-placed stop covered a teammate's logged hit; the field gives the same placements for every projectile
- * ultimate in the logs (measured with and without that check), and leaves out ability entities' landings, which don't
- * fly (Si's slashes; Arclight's dash, 3aa6 a plain hit better placed from its frame).
+ * placed at 57.41 s, her stop covered teammates' logged hits. A landing that travels always looks for its event; any
+ * other detached one (an ability entity's: Tangtang's stare, Arclight's dash) only where its frame puts the stop over a
+ * teammate's logged hit (`checked`), which keeps Si's slashes at their frames (b6aa). 2026-11-24: the event for every
+ * travelling landing, with or without that check, placed each projectile ultimate in the logs the same; the ability
+ * entities need it (only travelling landings from events: b7b3's Tangtang stare from its frame, plain 47 → 45).
  */
-function eventStopStart(timing: SkillTiming | null | undefined, t: number, frame: number, stops: readonly TimeStop[], events: readonly number[], hits: readonly LogHit[]): number | null {
+function eventStopStart(timing: SkillTiming | null | undefined, operator: string, t: number, frame: number, stops: readonly TimeStop[], events: readonly number[], hits: readonly LogHit[], checked: boolean): number | null {
   const stop = timing?.slowdowns.find((d) => d.from === 0 && Math.min(...d.scales) === 0);
   if (!stop) return null;
   const length = msOf(stop.scales.length);
   const plain = t - msOf(frame);
   const quiet = (from: number, to: number) => !hits.some((h) => h.t > from + STOP_EDGE_MS && h.t < to - STOP_EDGE_MS);
+  // Checked: only where the landing's frame puts the stop over a teammate's logged hit (not one batched at another
+  // stop's end): the log then says the world ran there.
+  const batched = (ms: number) => stops.some((s) => Math.abs(msOf(s.start + s.scales.length) - ms) <= STOP_EDGE_MS);
+  if (checked && !hits.some((h) => h.operator !== operator && h.t > plain + STOP_EDGE_MS && h.t < plain + length - STOP_EDGE_MS && !batched(h.t))) return null;
   let best: { start: number; travel: number } | null = null;
   for (const e of events) {
     for (const start of [e - length, e]) {
@@ -680,9 +685,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
-        // An ultimate whose first landing travels places it from its cast event at an edge of its stop (eventStopStart).
+        // An ultimate whose first landing is on its way places it from its cast event at an edge of its stop
+        // (eventStopStart): a travelling one always, another detached one where its frame's stop contradicts the log.
         const startOf = (): Pick<LoggedCast, "start" | "beforeStop" | "fromEvent"> => {
-          const fromEvent = g.kind === "ultimate" && first && first.hits.every((x) => x.travels) ? eventStopStart(data.skills[g.skillId]?.timing, h.t, first.frame, others, eventsOf(g), sorted) : null;
+          const fromEvent = g.kind === "ultimate" && first && first.hits.every((x) => x.travels || x.detached || x.landedCount !== undefined) ? eventStopStart(data.skills[g.skillId]?.timing, build.operator, h.t, first.frame, others, eventsOf(g), sorted, !first.hits.every((x) => x.travels)) : null;
           return fromEvent !== null ? { start: fromEvent, fromEvent: true } : newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g));
         };
         const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...startOf(), ...(g.anchor ? { anchor: g.anchor } : {}) };

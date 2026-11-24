@@ -114,10 +114,21 @@ shares of the off error at that code):**
   replay, 19 at 0.15–0.55 s, 24 with no landing near. The buff's error is where the replay bursts and the game
   doesn't: after her WILL touch (b7b3 5.97 s, c83c 65.10 s: fire onto fire, the log credits Wulfgard alone; 9a80
   30.50 s) and her ultimate's infliction (fc63 40.80 and 85.13 s), or the game's burst seconds later (b7b3 10.34, 9a80
-  35.05, c779 9.68 s): the enemy's infliction at her touch / ultimate (in-game test 33's element; Typhoeus's Nature
-  consumption in fc63, whose own bursts there are replay-only too) and the burst's 1 s on the operator's clock across
-  stops (b7b3: the touch at 4.95 s, the logged burst at 10.34 s, after Arcane's and Tangtang's ultimate stops; due
-  7.52 s on every stop). Next: `zmdlogs reactions` per touch, the burst clock under one's own ultimate stop.
+  35.05, c779 9.68 s).
+  **Fixed 2026-11-24 (the cooldown-clock round): her own ultimate's stop holds her burst** (engine assumption
+  `burst-stops`, reading `all`; `others` the old). b7b3: the touch at 4.95 s, her ultimate's stop 5.60–7.17 s; the
+  replay burst at 5.97 s inside it, the game at 10.34 s after hers and Tangtang's. Her own combo slow-down still
+  doesn't hold it (0eef: the touch comes after its reset at frame 9). Over her 130 logged bursts (the new
+  scripts/probes/bursts/arcane-bursts.ts): within 150 ms 89 → 94, none near 23 → 20, replay-only 24 → 21; Perlica's and
+  Xaihi's one each better, no operator's worse; b7b3 plain 44 → 47, 489c, 984748, 9c0b, c779 better, hold-outs 2
+  better. **Ruled out:** the ultimates' stops alone (no combo slow-down holds a burst): 79cc's 24.23 s burst fits it,
+  but e82d, c6d8, d774, dbae and four hold-outs worse. **Left:** 79cc 24.23 s (Ardelia's combo placed 0.8 s late from
+  its travelling projectile holds the replay's; her combo's own event at 23.03 s would end the slow-down before the
+  touch); 9a80 35.05 s (`zmdlogs bursts`: 1.44 s of world time after her array at 29.09 s, 0.44 s more than the
+  delay with every stop held: what starts it later is open); fc63 40.80 / 85.13 s (her ultimate's WILL stack on an
+  element the replay's enemy has and the game's doesn't: Typhoeus's Nature consumption before it, not her clock);
+  c83c 65.10 s (fire onto fire after her touch, the log credits Wulfgard alone). In-game test 33 isn't needed for these:
+  the element question decides none of them.
 - **Gilberta's weapon Arts DMG (1.2%): a clock, not the kit's 15 s.** 150k of 159k is 4a64's first instance: listed
   to 29.15 s (16.5 s of world time), the replay's ends at 28.23 s; an instance buff, so not one of the hidden holds'
   clocks (`zmdlogs holds 4a64 --why wpn_funnel_0011`: runApart). Rossi's (24.53 s, 57 frames) and Gilberta's (24.90 s,
@@ -148,8 +159,14 @@ shares of the off error at that code):**
   whose landing's frame puts its stop over a teammate's logged hit starts from such an event. 1cd1 −7.5 → −3.5%,
   af7b plain 588 → 599, 1d91, 9c6e (Ardelia's ×1.5 attack 3s under the Amp), 5082 (Ardelia's sheep). Left: 9c6e's
   total (−13.1%, two targets) and 9090's Electrification at 64.40 s (Perlica's run 0.1 s short after the stop moved,
-  a knife edge). **Still possible:** a kit field for a travelling landing (the compiler from LaunchProjectile)
-  instead of the event-and-contradiction rule; Si's ability-entity slashes don't need it (b6aa stays).
+  a knife edge). **2026-11-24: a kit field for a travelling landing** (KitHit.travels, the compiler from the data's
+  LaunchProjectile: packages/data skillData.ts projectileSkills). It reproduces the event rule for every projectile
+  ultimate (Liino, Ardelia, Fluorite), with or without the contradiction check, but not for the ability entities the
+  rule also takes: Tangtang's stare (b7b3 plain 47 → 45 from its frame, its 10.34 s burst off) and Arclight's dash
+  (3aa6 +1 plain from its frame). So the rule stays, with the field: a travelling first landing always from its event,
+  another detached one only under the check (the same placements as before; tried:
+  docs/tried/2026-11-24-travelling-landings-only.diff). **Still possible:** a field for ability entities that fly to the
+  target (Tangtang's, Arclight's) against those that don't (Si's slashes), from the entity's movement data.
 - **7e19's Chen ×1.15: her food, fixed 2026-11-24** (fixture buildOverrides: Ginseng Meat Stew, fit-build 17 of 19,
   the ultimate's lower ratio included). Ruled out first: P1 (the fight starts at the data's Max HP, her hits ×1.15
   from 5.4 s at 99.9% HP; a27b, the same enemy, fits P1 off above half, d4fb switches it on at 0.499 of the HP; P1's
@@ -157,24 +174,44 @@ shares of the off error at that code):**
   buff and not its condition), a listing difference (only Pogranichnik's team ATK `values`, plain elsewhere). The
   Endministrator has the same stew by hand in this fight, d9e5's whole team against the same enemy. Ember and
   Pogranichnik fit as exported.
-- **7e19's Ember −21.5%:** her finisher's second hit at 33.15 s ×1.564, 117k of her 128k: ×1.43 is the Staggered
+- **7e19's Ember −21.5%: fixed 2026-11-24, every finisher hit deals as on a Staggered enemy** (engine assumption
+  `finisher-stagger`, reading `cast`), as the Stagger a finisher needs to be cast: 7e19 −4.9 → −1.1%, both hits ×1.096
+  now (tests/slow/log-cases.test.ts). The only development finisher with a hit after its Stagger's end (the other 38
+  multi-hit finishers list the Stagger on every hit: `zmdlogs hits --all --json`, power_attack events); Chen's ultimate
+  hit at the same ms is plain unstaggered, so it is the finisher's, not a longer Stagger. 6339 37.5 → 40.8%: its
+  finisher's hit_2 at 21.60 s is replay-only (the log has none; Hard 33's slug, below). Left: the ×1.096 (Pogranichnik's
+  team ATK layers listed as `values`?). Before: her finisher's second hit at 33.15 s ×1.564, 117k of her 128k: ×1.43 is the Staggered
   parts (multiplicative 0.3 and DamageToBrokenUnitIncrease 0.27) the first hit at 30.86 s has, times the ×1.096 her
   hits from 25.8 s share (Pogranichnik's team ATK as `values`?). The log's Stagger ends at 30.86 s (no
   poise_break buff on the 33.15 s hit) and the replay's at 33.13 s. **Still possible:** a finisher's hits all deal
   with the Stagger its first hit had (04d4's pairs, 0.6 s apart and both Staggered, can't tell); the ×1.096 a team
   ATK layer count. **Next:** the other logs' Finisher second hits after a Stagger's end (`zmdlogs hits --all --event
   power_attack`).
-- **Swordmancer's cooldown on the world's clock (2026-11-24; engine assumption `trigger-cooldowns`, default still
-  `raw`):** the largest "no cast" one-sided kind is Swordmancer's proc (191k replay-only over 10 landings; de6a 51.80,
+- **Trigger cooldowns: the clock from the data (2026-11-24, the cooldown-clock round; KitTrigger.cooldownClock, engine
+  assumption `trigger-cooldowns` `kit`).** The game has two mechanisms (cooldownTimers in packages/data skillData.ts):
+  a CD timer (AddGlobalCDTimer / CheckGlobalCDTimerAction, named by a buff ID; or a `…_cd` buff whose duration the key
+  sets) and a timed marker (CreateTimedMarker / CheckTimedMarkerCondition). The compiler matches a trigger's cooldown
+  key (or literal seconds) to them: CD timers and cooldown buffs on the world's clock (Swordmancer, Mi Fu's P3 shield
+  ATK, Antal's talent heal, wpn_claym_0004 / 0006 / 0007, suit_spellburst; Laevatain's Final Strike absorb by hand: its
+  passive_teammate_cd buff isn't reachable from the trigger), timed markers on raw time (Glorious Memory's 0.5 s
+  layers, Sundering Steel's, Xaihi's crystal and 19 more; 8 whose mechanism the trigger's sources don't reach stay raw
+  too: the Endministrators' P5, Xaihi's crystal count, Estella's and Fluorite's P5, Typhoeus's two, wpn_lance_0006,
+  wpn_sword_0010; tests/cooldown-clock.test.ts). Measured: the same as `world` for every trigger (earlier
+  pending 04d4, 2fd9, d4fb, de6a better). **The two hold-outs' worse totals are Swordmancer's** (a measure with only
+  its trigger on the world's clock moves both; Laevatain's alone moves no log): their verdicts don't move, replay-only
+  4.9 → 4.8% and log-only 4.9% unchanged, so the procs it drops are ones the game didn't deal and the totals are low
+  for other reasons. The four kit tests that failed under `world` are timed markers (stay raw) but for chen-solo,
+  whose second combo's Swordmancer proc the ultimate's stop between now holds (tests/kit-chen.test.ts). **Not decided
+  by a log:** a timed marker's clock (no development log moves with `world` for them) and a BuffData addingCooldown's
+  (Typhoeus's arrow buffers 0.2 s, wpn_lance_0006 30 s; raw). Before: the largest "no cast" one-sided kind is Swordmancer's proc (191k replay-only over 10 landings; de6a 51.80,
   137.83 s). Every wearer's Physical status with no logged proc came under 15 s of the world's time since the last proc
   (de6a 15.01 and 14.98 s, at 18.8 and 20.5 s of log time; d4fb 11.85, 14.16 s; fc63 14.28 s), every proc past it
   (17.8 s and more); one exception, d4fb 97.05 s at 16.67 s (scripts/probes/cooldowns/physuit.ts, `zmdlogs
   worldtime`). Mi Fu's P3 ATK in 2fd9 fits the same. Skill cooldowns stay on raw time (test 18). `world` for every
   trigger: earlier pending 4 better, development 1, two hold-outs' totals worse, and four kit tests' fights change
   (Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel's layers, chen-solo): not every trigger cooldown
-  is a CD timer, so not the default. **Next:** a kit trigger field for the clock (`cooldownClock: "world"` where the
-  data's AddGlobalCDTimer gives it: Swordmancer, Mi Fu's P3), the compiler setting it; the d4fb exception an unlogged
-  hold the placement doesn't place?
+  is a CD timer, so not the default (done above). **Left:** the d4fb exception (97.05 s at 16.67 s of world time) an
+  unlogged hold the placement doesn't place?
 - **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
   unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6%. 4e36:
   small replay-only basic-attack tails (Si's attack4, Ardelia's attack3 projectiles) and +1.6% matched. de6a: the

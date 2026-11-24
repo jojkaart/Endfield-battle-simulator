@@ -20,6 +20,9 @@ worked, found by reading 80 lines of prose).
 
 - [2026-11-24-same-ms-cast-order.diff](2026-11-24-same-ms-cast-order.diff): two operators' landings at one logged ms
   in their casts' order (Estella before Chen Qianyu); mixed: batched landings at a stop's end moved the other way.
+- [2026-11-24-travelling-landings-only.diff](2026-11-24-travelling-landings-only.diff): the placement's event rule
+  for travelling first landings only (KitHit.travels), without its contradiction check; the same for every projectile
+  ultimate, 3aa6 +1 plain, but b7b3 47 → 45 plain (Tangtang's stare, an ability entity, needs the event).
 - [2026-11-24-unseen-ultimates-without-energy.diff](2026-11-24-unseen-ultimates-without-energy.diff): every unseen
   ultimate press made whatever the replay's energy (not only before the log's first hit); 1cd1 −7.2 → −19.5%,
   hold-out mean |damage error| 8.5 → 9.2%.

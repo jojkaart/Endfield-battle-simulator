@@ -62,7 +62,7 @@ describe("an ultimate whose first landing travels (KitHit.travels), from its cas
   it("1d91: an event at the press (no hit for the stop's length after it) starts the stop there", () => {
     expect(startOf("pending/zmdlogs-1d9198480e75.json", L, `${L}_ultimate_skill`, 65000)).toBeCloseTo(64219, -1);
   });
-  it("only a projectile's landing travels: Si's ultimate in b6aa (an ability entity's slashes) stays where her slashes place it", () => {
+  it("only a projectile's landing travels; another detached one only where its frame's stop covers a teammate's hit: Si's ultimate in b6aa (an ability entity's slashes) stays where her slashes place it", () => {
     expect(data.kits.operators["chr_0036_jsspsi"]?.skills.find((s) => s.skillId === "chr_0036_jsspsi_ultimate_skill")?.hits.some((h) => h.travels)).toBe(false);
     expect(data.kits.operators[L]?.skills.find((s) => s.skillId === `${L}_ultimate_skill`)?.hits.find((h) => h.id === "projectiles_first")?.travels).toBe(true);
     expect(startOf("pending/zmdlogs-b6aa15281db4.json", "chr_0036_jsspsi", "chr_0036_jsspsi_ultimate_skill", 35000)).toBeGreaterThan(35300);
