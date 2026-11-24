@@ -166,6 +166,20 @@ ultimate (the enemy's infliction then, in-game test 33) and the 1 s burst delay 
 4.95 → 10.34 s); (4) Gilberta's weapon in 4a64 (two ultimates' overlapping stops: in turn?); (5) Zhuang Fangyi's d774
 104.18 s Empyrean battle skill (3 hits, no final).
 
+**The placement leads, 2026-11-24** (journal
+[2026-11-24-04](journal/2026-11-24-04-placement-leads-ultimates-from-their-cast-events-chen-s-stew.md); open-problems
+"Misprediction statistics"): Liino's ultimate windows were her travelling projectiles placing the cast late (logcasts.ts
+eventStopStart: from the cast event at an edge of the stop, where the frame's stop covers a teammate's hit); 7e19's
+Chen her food; Swordmancer's and Mi Fu's P3 cooldowns on the world's clock (engine assumption `trigger-cooldowns`,
+`world` not the default: it takes every trigger, and four kit tests' fights and two hold-outs move);
+(2) above done (the hold placement; query.ts replayTimeStops, the views', still counts the tick). Next: (1) a kit field
+for a travelling landing (the compiler from LaunchProjectile / projectile entities) to replace the
+event-and-contradiction rule; (2) 7e19's Ember finisher, its second hit with the Staggered parts after the log's
+Stagger ended; (3) a kit trigger field for the cooldown's clock (`cooldownClock`, from the data's AddGlobalCDTimer; Swordmancer, Mi
+Fu's P3), then `trigger-cooldowns` per trigger, smoke and team-ab;
+(4) 0c14's −4.9%: Rossi's ultimate stabs (−2.5%, crits unlogged), Si's log-only inkmove (−1.5%), the
+Endministrator's Crush ×2.2.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

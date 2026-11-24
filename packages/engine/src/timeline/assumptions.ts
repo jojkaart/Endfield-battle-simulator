@@ -149,11 +149,11 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   },
   {
     id: "trigger-cooldowns",
-    question: "Does a trigger's cooldown (a kit trigger's `cooldown`: the game's CD timers, AddGlobalCDTimer on a buff's or a gear set's action) run on the world's clock, held by time stops and slow-downs as buffs are, or on raw time as a skill's cooldown does (timeline/clock.ts slowDown)? The hidden holds (a perfect dodge's) don't hold it either way.",
-    default: "world",
+    question: "Does a trigger's cooldown (a kit trigger's `cooldown`: the game's CD timers, AddGlobalCDTimer on a buff's or a gear set's action, and others) run on the world's clock, held by time stops and slow-downs as buffs are, or on raw time as a skill's cooldown does (timeline/clock.ts slowDown, holdWorld)? One reading for every trigger: which are CD timers isn't in the kits.",
+    default: "raw",
     readings: {
-      world: "the world's clock: every slow-down after the trigger fired, and the log replay's placed hidden holds, push its ready frame back by the frames they hold the world. Swordmancer's 15 s (suit_phy01, AddGlobalCDTimer): in the development logs every wearer's Physical status with no proc came under 15 s of the world's time after the last proc (de6a 51.79 and 137.84 s at 15.01 and 14.98 s, 18.8 and 20.5 s of log time; d4fb 53.98, 126.13 s; fc63 59.11 s; d4fb 97.05 s at 16.67 s the one exception), every proc past it (17.8 s and more): scripts/probes/cooldowns/physuit.ts; Mi Fu's P3 ATK in 2fd9 (69.1–70.1 s, 3 mismatches plain). Measured 2026-11-24 against raw: development unchanged but fc63's totals, earlier pending 4 better (04d4, 2fd9 plain 246 → 250, d4fb, de6a +1.0 → −0.4%), hold-outs 2 worse by their totals (aggregates unchanged: plain 78.4%, mean |damage error| 8.5%)",
-      raw: "raw time, as skill cooldowns (the engine until 2026-11-24)",
+      raw: "raw time, as skill cooldowns (the engine until 2026-11-24; kept as the default: `world` for every trigger changes four kit tests' fights, Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel's layers, the chen-solo example, and two hold-outs' totals for the worse)",
+      world: "the world's clock: every slow-down after the trigger fired, and the log replay's placed hidden holds, push its ready frame back by the frames they hold the world. Swordmancer's 15 s (suit_phy01, AddGlobalCDTimer): every wearer's Physical status with no logged proc came under 15 s of the world's time after the last proc (de6a 51.79 and 137.84 s at 15.01 and 14.98 s, 18.8 and 20.5 s of log time; d4fb 53.98, 126.13 s; fc63 59.11 s; d4fb 97.05 s at 16.67 s the one exception), every proc past it (17.8 s and more): scripts/probes/cooldowns/physuit.ts; Mi Fu's P3 ATK in 2fd9 (69.1–70.1 s, 3 mismatches plain). Measured 2026-11-24 against raw: development unchanged but fc63's totals, earlier pending 4 better (04d4, 2fd9 plain 246 → 250, d4fb, de6a +1.0 → −0.4%), hold-outs 2 worse by their totals (aggregates unchanged)",
     },
   },
   {

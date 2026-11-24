@@ -164,6 +164,22 @@ shares of the off error at that code):**
   with the Stagger its first hit had (04d4's pairs, 0.6 s apart and both Staggered, can't tell); the ×1.096 a team
   ATK layer count. **Next:** the other logs' Finisher second hits after a Stagger's end (`zmdlogs hits --all --event
   power_attack`).
+- **Swordmancer's cooldown on the world's clock (2026-11-24; engine assumption `trigger-cooldowns`, default still
+  `raw`):** the largest "no cast" one-sided kind is Swordmancer's proc (191k replay-only over 10 landings; de6a 51.80,
+  137.83 s). Every wearer's Physical status with no logged proc came under 15 s of the world's time since the last proc
+  (de6a 15.01 and 14.98 s, at 18.8 and 20.5 s of log time; d4fb 11.85, 14.16 s; fc63 14.28 s), every proc past it
+  (17.8 s and more); one exception, d4fb 97.05 s at 16.67 s (scripts/probes/cooldowns/physuit.ts, `zmdlogs
+  worldtime`). Mi Fu's P3 ATK in 2fd9 fits the same. Skill cooldowns stay on raw time (test 18). `world` for every
+  trigger: earlier pending 4 better, development 1, two hold-outs' totals worse, and four kit tests' fights change
+  (Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel's layers, chen-solo): not every trigger cooldown
+  is a CD timer, so not the default. **Next:** a kit trigger field for the clock (`cooldownClock: "world"` where the
+  data's AddGlobalCDTimer gives it: Swordmancer, Mi Fu's P3), the compiler setting it; the d4fb exception an unlogged
+  hold the placement doesn't place?
+- **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
+  unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6%. 4e36:
+  small replay-only basic-attack tails (Si's attack4, Ardelia's attack3 projectiles) and +1.6% matched. de6a: the
+  Swordmancer procs (above, fixed) and Pogranichnik's combo hit_3 / ultimate harass replay-only against his log-only
+  combo hits at 132–134 s (a placement of his combo: open).
 - **Moments of change:** hits with a boundary effect are off at 42.8% against 24.2% (hold-outs 29.9 / 9.0%) in every
   skill kind, yet a boundary kit buff taken the other way fits only 1.8%: a marker of a state change, not its own cause.
 - **Drift with time:** off rate 12.5% in the first 10 s, 38% at 120–200 s; per fight higher in the second half in 34 of
