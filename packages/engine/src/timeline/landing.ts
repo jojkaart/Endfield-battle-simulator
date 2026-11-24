@@ -18,6 +18,7 @@ import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } fro
 import { ofKind, schedule } from "./schedule.ts";
 import { holdNewStatuses, operatorClockDue } from "./clock.ts";
 import { windowKey } from "./timing.ts";
+import { engineReading } from "./assumptions.ts";
 
 /** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
 function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {
@@ -441,7 +442,12 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // The first tick of a ticking buff lands before the buff's own modifiers act (PendingHit.firstTickOf).
   const first = hit.firstTickOf;
   const seen = first ? { ...st, buffs: st.buffs.filter((b) => !(b.owner === first.owner && b.id === first.id && b.appliedAt === first.appliedAt)) } : st;
-  const options = hit.fixed !== undefined || !withDamage ? null : damageOptions(ctx, seen, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot, ATK_SNAPSHOT_ZONES);
+  const landingOptions = hit.fixed !== undefined || !withDamage ? null : damageOptions(ctx, seen, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot, ATK_SNAPSHOT_ZONES);
+  // A finisher, castable only on a Staggered enemy, deals every hit with the Stagger's parts, a hit after the Stagger's
+  // end too (engine assumption finisher-stagger): pending/zmdlogs-7e19489ae503, Ember's hit_2 at 33.15 s after Chen's
+  // ultimate stop ×1.564 the replay's unstaggered reading (×1.43 its Staggered parts, × the ×1.096 her first hit has),
+  // Chen's ultimate hit at the same ms plain unstaggered, the log's Stagger ended at 30.86 s.
+  const options = landingOptions && finisher && !landingOptions.staggered && engineReading(ctx.scenario, "finisher-stagger") === "cast" ? { ...landingOptions, staggered: true } : landingOptions;
   const inputs: LandingInputs | null = !options ? null : { kind: "hit", operator: hit.operator, build, panel, skill, hit: kitHit, options: {
     ...options,
     decorations,

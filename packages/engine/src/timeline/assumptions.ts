@@ -158,6 +158,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "finisher-stagger",
+    question: "Does a finisher's hit that lands after the Stagger's end still deal with the Stagger's parts (its multiplier, DamageToBrokenUnitIncrease and the modifiers of Staggered enemies; timeline/landing.ts), as the Stagger a finisher needs to be cast?",
+    default: "cast",
+    readings: {
+      cast: "every finisher hit deals as on a Staggered enemy (2026-11-24): pending/zmdlogs-7e19489ae503, Ember's finisher hit_2 at 33.15 s, after Chen's ultimate stop, ×1.564 the unstaggered reading, which is ×1.43 (her first hit's Staggered parts: the multiplier 0.3 and DamageToBrokenUnitIncrease 0.27) × the ×1.096 her first hit at 30.86 s has; the log lists no poise_break buff on it (its Stagger ended at 30.86 s) and Chen's ultimate hit at the same ms is plain unstaggered. The one finisher in the development logs with a hit after its Stagger's end: the other 38 multi-hit finishers' hits all list the Stagger",
+      hit: "each hit as the enemy is at its landing (the engine until 2026-11-24)",
+    },
+  },
+  {
     id: "finisher-ultimate",
     question: "Does a finisher's disable-cast buff (buff_common_power_attack_disable_cast_skill, the finisher's frames 0 to its last hit or past it) hold the operator's ultimate, as it holds her battle skill and combo (timeline/timing.ts afterCantCast)? The buff's tags include battle-skill (-1486085048, buff_common_disable_normal_skill's) and dash (-1601691447, buff_common_disable_dash's) and one no other buff has (-496376350); Typhoeus's hover, which allows her combo and ultimate, carries the other two.",
     default: "cuts",
