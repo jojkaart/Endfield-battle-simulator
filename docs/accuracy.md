@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 77.9% | 99.3% | 0.0% | 2.0% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 67.1% | 83.4% | 11.7% | 7.3% | 25 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 77.6% | 91.9% | 6.2% | 8.2% | 9 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 63.6% | 85.3% | 14.5% | 4.3% | 19 |
-| All but the hold-outs | 61 | 29035 | 66.0% | 84.6% | 12.5% | 5.6% | 50 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 67.1% | 83.5% | 11.6% | 7.2% | 25 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 77.6% | 91.9% | 6.2% | 8.0% | 9 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 63.7% | 85.4% | 14.3% | 4.5% | 18 |
+| All but the hold-outs | 61 | 29035 | 66.0% | 84.7% | 12.4% | 5.7% | 49 |
 
 ## Where the total's error lives
 
@@ -39,9 +39,9 @@ over |matched|, so the error is in what lands, not in its scale.
 | Logs | Fights | \|Matched\| | Replay-only | Log-only | One-sided |
 |---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 2.2% | 0.7% | 0.3% | 2 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 5.4% | 5.8% | 3.7% | 23 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.7% | 4.9% | 4.9% | 11 |
-| Earlier pending (imported before the hold-out split) | 23 | 4.0% | 2.2% | 1.2% | 14 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 5.5% | 5.8% | 3.7% | 23 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.6% | 4.9% | 4.9% | 12 |
+| Earlier pending (imported before the hold-out split) | 23 | 4.0% | 2.2% | 1.2% | 15 |
 
 ## By operator (every log but the hold-outs)
 
@@ -71,7 +71,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | chr_0027_tangtang | 2 | 265 | 55.5% | 22.6% | 5.3% |
 | chr_0028_wulfa | 10 | 2305 | 44.9% | 5.7% | 3.3% |
 | chr_0029_pograni | 5 | 649 | 44.1% | 0.6% | 4.5% |
-| chr_0030_zhuangfy | 5 | 1392 | 56.8% | 20.4% | 9.3% |
+| chr_0030_zhuangfy | 5 | 1392 | 58.0% | 18.9% | 9.2% |
 | chr_0031_mifu | 5 | 471 | 77.7% | 1.5% | 1.3% |
 | chr_0032_lizhiyan | 40 | 5688 | 74.9% | 12.8% | 13.2% |
 | chr_0033_camille | 10 | 1004 | 88.0% | 4.1% | 15.8% |

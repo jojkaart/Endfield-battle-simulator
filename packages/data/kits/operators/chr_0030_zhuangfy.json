@@ -2591,13 +2591,20 @@
     "buffActive": "empyrean"
    },
    "cooldownGroup": "combo",
-   "note": "As combo_skill at 24 with atk_scale 5.4 and no energy. Its ring (combo_skill_ring_projhit -> ring_hit) hits only enemies without the main target's 0.5 s marker zhuangfy_combo_ult_tar: other enemies, none here (kit-draft lands it on the main target).",
+   "note": "As combo_skill at 24 with atk_scale 5.4 and no energy. Its ring (combo_skill_ring_projhit -> ring_hit) hits only enemies without the main target's 0.5 s marker zhuangfy_combo_ult_tar: other enemies, none here (kit-draft lands it on the main target). The log keys its damage as the base combo's (chr_0030_zhuangfy_combo_skill) and credits its Stagger to combo_skill_ult (poise.origin): every such hit in 3aa6, 4bfc, 4d60, c6d8 and d774 is the base combo's reading x1.5 = 5.4 / 3.6 (docs/analysis/2026-11-24-misprediction-stats.md).",
    "hits": [
     {
      "id": "hit",
      "scale": [
       "atk_scale"
      ],
+     "frames": [
+      24
+     ],
+     "events": [
+      "chr_0030_zhuangfy_combo_skill"
+     ],
+     "dataOverride": { "events": "Logs right (2026-11-24): the log keys the Empyrean combo's damage as the base combo's, chr_0030_zhuangfy_combo_skill, with its Stagger credited to combo_skill_ult (poise.origin); 22 such hits in five logs, each the base reading x1.5 (5.4 / 3.6). The data's keys (combo_skill_ult, the ring's ring_hit) are never logged." },
      "applies": [
       {
        "kind": "consumeInfliction",
