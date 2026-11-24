@@ -213,8 +213,10 @@ export function holdNewStatuses(ctx: TimelineContext, st: TimelineState, before:
  * that hold it (TimelineState.slowdowns, all but its own; slowDown shifted what was scheduled when each began, not what
  * comes later). An Arts Burst runs on its operator's clock: it waits out the rest of another's time stop or slow-down
  * (dbaee23b801d: Arcane's touch at 8501 ms inside Xaihi's ultimate stop, then Typhoeus's combo; her Nature burst logged
- * at 10341 ms, at 9.9 s 1 s after the touch), not its own operator's (0eef2474a26f: her Cryo burst 1 s after her touch
- * inside her own combo's slow-down).
+ * at 10341 ms, at 9.9 s 1 s after the touch); its own operator's combo slow-down doesn't (0eef2474a26f: her Cryo
+ * burst 1 s after her touch, which comes after her combo's reset at its frame 9), but her own ultimate's stop does
+ * (engine assumption burst-stops, reading `all`: b7b3762d5da8, her touch at 4.95 s, her ultimate's stop 5.60–7.17 s,
+ * the burst logged at 10.34 s after Tangtang's stop too).
  */
 export function operatorClockDue(st: TimelineState, operator: string, from: number, delay: number, holds: (x: TimelineState["slowdowns"][number]) => boolean = (x) => x.exempt !== operator): number {
   // `holds`: which slow-downs hold it (default: every one but the operator's own; burstHolds for an Arts Burst).

@@ -160,11 +160,11 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "burst-stops",
     question: "Which time stops and slow-downs hold an Arts Burst's delay (the 1 s after its infliction: timeline/clock.ts operatorClockDue, slowDown)?",
-    default: "others",
+    default: "all",
     readings: {
-      others: "every one but its own operator's, as her clock (the engine until 2026-11-24)",
-      all: "every one, her own ultimate's stop too",
-      ultimates: "the ultimates' time stops only, her own too; no combo slow-down",
+      others: "every one but its own operator's, as her clock (the engine until 2026-11-24): Arcane's WILL touch at 4.95 s in zmdlogs-b7b3762d5da8 bursts in the replay at 5.97 s inside her own ultimate's stop (5.60–7.17 s); the game's burst is at 10.34 s",
+      all: "every one, her own ultimate's stop too (2026-11-24): a burst on its way when her ultimate's stop begins, or due inside it, comes that much later. b7b3's burst then comes after Arcane's and Tangtang's stops, at 10.34 s as logged; over Arcane's 130 logged bursts in the development logs, within 150 ms of the replay's 89 → 94, with none near 23 → 20, replay-only 24 → 21 (scripts/probes/bursts/arcane-bursts.ts); Perlica's and Xaihi's one each better, no operator's worse. Measured against `others`: verified b7b3 plain 44 → 47; development 489c, 984748, 9c0b, c779 better, 79cc one plain fewer (its 24.23 s burst: Ardelia's combo, placed from its travelling projectile 0.8 s late, holds it); hold-outs 2 better (plain +2), 1 other (a status kind's share), none worse; earlier pending b6aa better, 012a 0.6 → 0.7%, c3c7 closer per hit",
+      ultimates: "the ultimates' time stops only, her own too; no combo slow-down. Measured 2026-11-24 against `others`: hold-outs 4 worse, 1 better; development 6 better, 4 worse (e82d plain 21 → 11, c6d8 112 → 104, dbae): combo slow-downs do hold bursts",
     },
   },
   {
