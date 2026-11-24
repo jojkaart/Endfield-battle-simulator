@@ -125,7 +125,9 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     const away = report({});
     expect(away.away.windows.map((w) => [w.from, w.to])).toEqual([[30626, 54588], [124499, 137779]]);
     expect(away.away.leftOut).toBeGreaterThan(20);
-    expect(Math.abs(away.simulated.damage / away.logged.damage - 1)).toBeLessThan(0.06);
+    // +7.2% since the Empyrean combo's key (2026-11-24): its hits read ×1.5 low before, which hid Zhuang Fangyi's
+    // replay-only Empyrean strikes (the open Sunderblade count); under `counted` it's over +20%.
+    expect(Math.abs(away.simulated.damage / away.logged.damage - 1)).toBeLessThan(0.08);
     const counted = report({ "enemy-away": "counted" });
     expect(counted.away).toEqual({ windows: [], leftOut: 0 });
     expect(counted.simulated.damage / counted.logged.damage - 1).toBeGreaterThan(0.2);
