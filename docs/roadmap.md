@@ -48,8 +48,10 @@ below ([review-2026-10.md](review-2026-10.md)).
 - **Misprediction statistics** ([analysis/2026-11-24-misprediction-stats.md](analysis/2026-11-24-misprediction-stats.md),
   2026-11-24; Zhuang Fangyi's Empyrean combo key fixed, 4.3% of the error; the candidates worked 2026-11-24: weapon
   buffs logged as their attached buff, the enemy's HP from a kill's total in lives, Ardelia's chain, Si's pre-log
-  ultimate): next Liino's ultimate Amp starting late against her stop (1cd1, af7b), 7e19's Chen ×1.15, the one-buff
-  list's rest (Arcane's weapon and Will burst buffs, Zhuang Fangyi's weapon ultimate buff, Gilberta's weapon Arts DMG).
+  ultimate; the kit buff leads 2026-11-24: Zhuang Fangyi's Empyrean end logged as an ultimate event, fixed; Arcane's,
+  Gilberta's, Typhoeus's leads are bursts, clocks and placements, not kit values): next Liino's ultimate Amp starting
+  late against her stop (1cd1, af7b), 7e19's Chen ×1.15, 4d60's unlogged holds around 98–143 s, Arcane's bursts (her
+  touch's element, the burst's clock across stops), the hold placement's stops for tick-read events.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

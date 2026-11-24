@@ -154,6 +154,18 @@ replay's stop of her ultimate covers teammates' logged hits), 7e19's Chen ×1.15
 the one-buff list (Arcane's weapon Arts DMG Taken and Will burst buff, Zhuang Fangyi's weapon ultimate buff, Gilberta's
 weapon Arts DMG, Typhoeus's Hovering ATK), the drift.
 
+**The kit buff leads, 2026-11-24** (journal
+[2026-11-24-03](journal/2026-11-24-03-kit-buff-leads-zhuang-fangyi-s-empyrean-end-the-rest-not-kit.md); open-problems
+"The kit buff leads"; per buff `python3 -I scripts/probes/stats/onebuff.py <regex>`): Zhuang Fangyi's Lone Barge buff
+was the Empyrean's end logged as an ultimate event (fixed in the kit); the others aren't kit values. Next, in order:
+(1) 4d60's unlogged holds, 3.6–6.1 s around 98–143 s (`zmdlogs holds 4d60`: the bounds dropped; the replay's Stagger
+window 114.30–133.37 s takes no holds, the enemy is away 117.22–124.45 s); (2) the hold placement's stop list for a
+cast event the replay reads as a buff's tick (buffreplay.ts replayedCastStops: the Empyrean end's phantom 78 frames;
+friction report 2026-11-24-kit-buff-leads point 2); (3) Arcane's bursts: replay-only after her WILL touch and
+ultimate (the enemy's infliction then, in-game test 33) and the 1 s burst delay across her own ultimate's stop (b7b3
+4.95 → 10.34 s); (4) Gilberta's weapon in 4a64 (two ultimates' overlapping stops: in turn?); (5) Zhuang Fangyi's d774
+104.18 s Empyrean battle skill (3 hits, no final).
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**
