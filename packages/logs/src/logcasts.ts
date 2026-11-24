@@ -218,6 +218,53 @@ function beforeStopStart(t: number, frame: number, stops: readonly TimeStop[], e
   return null;
 }
 
+/** How long (ms of the world's time) a detached landing may come after its ultimate's stop ends and the stop still be its event's (eventStopStart). */
+const TRAVEL_MS = 1200;
+/** How close to a stop's edges a logged hit may be and not count as inside it (ms; the log batches at a stop's end). */
+const STOP_EDGE_MS = 100;
+/**
+ * How much earlier than its landing's frame says an event's start must be to move the cast (ms; eventStopStart): within
+ * it the log's batching (its ms are a frame or two off) says nothing, and a frame's move shifts the holds and ramps
+ * (d9e59d0fb737: Liino's ultimate 20 ms earlier, three Corrosion readings worse).
+ */
+const MIN_MOVE_MS = 150;
+
+/**
+ * The start of an ultimate placed from a landing on its way (`detached`: Liino's Pyrotechnics, kit frame 76, which fly
+ * to the enemy and land 0.1–0.8 s of the world's time after the frame) from its cast event, which the log has at an
+ * edge of the ultimate's time stop: at its end (no hit by anyone in the stop's length before the event: the press
+ * waited for the stop to be logged, as Laevatain's, Si's and most ultimates' events are) or at its start (none in the
+ * stop's length after it). Of such events between where the stop would start and the landing, the one whose stop
+ * ends nearest before the landing, within TRAVEL_MS of the world's time; null without one (the landing's frame then
+ * places it). 1cd1657bc305: Liino's event at 37.95 s after 3.6 s without a hit, her first projectiles at 38.73 s;
+ * placed from them at 36.19 s, her Cosmovoice Amp (frame 77) began after Typhoeus's burst and Arcane's seal at 37.97 s,
+ * both ×1.5 in the log. af7b7f865906: her event at 56.50 s, the projectiles at 59.94 s across Ardelia's ultimate stop;
+ * placed at 57.41 s, her stop covered teammates' logged hits.
+ */
+function eventStopStart(timing: SkillTiming | null | undefined, operator: string, t: number, frame: number, stops: readonly TimeStop[], events: readonly number[], hits: readonly LogHit[]): number | null {
+  const stop = timing?.slowdowns.find((d) => d.from === 0 && Math.min(...d.scales) === 0);
+  if (!stop) return null;
+  const length = msOf(stop.scales.length);
+  const plain = t - msOf(frame);
+  const quiet = (from: number, to: number) => !hits.some((h) => h.t > from + STOP_EDGE_MS && h.t < to - STOP_EDGE_MS);
+  // Only where the landing's frame puts the stop over a teammate's logged hit (not one batched at another stop's end):
+  // the log then says the world ran there.
+  const batched = (ms: number) => stops.some((s) => Math.abs(msOf(s.start + s.scales.length) - ms) <= STOP_EDGE_MS);
+  if (!hits.some((h) => h.operator !== operator && h.t > plain + STOP_EDGE_MS && h.t < plain + length - STOP_EDGE_MS && !batched(h.t))) return null;
+  let best: { start: number; travel: number } | null = null;
+  for (const e of events) {
+    for (const start of [e - length, e]) {
+      const end = start + length;
+      if (start > plain - MIN_MOVE_MS || end > t + msOf(1)) continue;
+      if (!(start === e ? quiet(e, e + length) : quiet(e - length, e))) continue;
+      const travel = worldMs(end, t, stops);
+      if (travel > TRAVEL_MS || (best && travel >= best.travel)) continue;
+      best = { start: Math.round(start), travel };
+    }
+  }
+  return best?.start ?? null;
+}
+
 /** A new cast's start (castStart), or its event's with the landings the stop's end batched (beforeStopStart, LoggedCast.beforeStop). */
 function newCastStart(t: number, frame: number, stops: readonly TimeStop[], events: readonly number[]): Pick<LoggedCast, "start" | "beforeStop"> {
   const early = beforeStopStart(t, frame, stops, events);
@@ -278,6 +325,8 @@ export interface LoggedCast {
    * (beforeStopStart: the cast starts at its event): they land at their kit frames from the start, not at this ms.
    */
   readonly beforeStop?: number;
+  /** Placed from its cast event at an edge of its stop (eventStopStart), not from its landing's frame. */
+  readonly fromEvent?: true;
 }
 
 export interface PlacedHit {
@@ -631,7 +680,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g)), ...(g.anchor ? { anchor: g.anchor } : {}) };
+        // An ultimate's landing on its way places it from its cast event at an edge of its stop (eventStopStart).
+        const startOf = (): Pick<LoggedCast, "start" | "beforeStop" | "fromEvent"> => {
+          const fromEvent = g.kind === "ultimate" && first && first.hits.every((x) => x.detached || x.landedCount !== undefined) ? eventStopStart(data.skills[g.skillId]?.timing, build.operator, h.t, first.frame, others, eventsOf(g), sorted) : null;
+          return fromEvent !== null ? { start: fromEvent, fromEvent: true } : newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g));
+        };
+        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...startOf(), ...(g.anchor ? { anchor: g.anchor } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
@@ -801,10 +855,13 @@ export function distinctCasts(placement: Placement): LoggedCast[] {
   // A trigger's landing on a skill's cast that puts the cast earlier than its own keys do moves it there (dbaee23b801d:
   // Liino's ultimate, its first song beat at 8258 ms at frame 77, its projectiles' start 0.4 s later, its Cosmovoice
   // buffs then after Arcane's hits that the log has them on).
+  // One placed from its event (eventStopStart) takes the trigger's start when that is within MIN_MOVE_MS after it: the
+  // event and the trigger's landing then say the same moment (d9e59d0fb737: Liino's event at 9.48 s, her first song
+  // beat at 9.50 s; a frame's move shifted Corrosion's ramp).
   for (const t of placement.casts) {
     if (t.kind !== null || !t.anchor) continue;
     const at = t.start - msOf(t.anchor.delay);
-    const i = out.findIndex((x) => x.operator === t.operator && t.anchor?.skills.includes(x.skillId) && at < x.start && x.start - at <= mergeMs(placement, x.skillId));
+    const i = out.findIndex((x) => x.operator === t.operator && t.anchor?.skills.includes(x.skillId) && (at < x.start ? x.start - at <= mergeMs(placement, x.skillId) : x.fromEvent === true && at - x.start < MIN_MOVE_MS));
     if (i >= 0) out[i] = { ...(out[i] as LoggedCast), start: at };
   }
   return out;

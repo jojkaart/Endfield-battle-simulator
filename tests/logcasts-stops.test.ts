@@ -50,6 +50,26 @@ describe("a cast's start across another operator's time stop, from the log's cas
   });
 });
 
+describe("an ultimate whose first landing is on its way, from its cast event at an edge of its stop (eventStopStart, 2026-11-24)", () => {
+  const L = "chr_0035_liino";
+  it("1cd1: Liino's event at 37.95 s ends her stop (3.6 s without a hit before it), not her projectiles at 38.73 s less frame 76", () => {
+    expect(startOf("pending/zmdlogs-1cd1657bc305.json", L, `${L}_ultimate_skill`, 36000)).toBeCloseTo(37948 - (77 * 1000) / 30, -1);
+  });
+  it("af7b: her event at 56.50 s ends her stop, the projectiles at 59.94 s across Ardelia's, whose press at 56.84 s starts hers", () => {
+    expect(startOf("pending/zmdlogs-af7b7f865906.json", L, `${L}_ultimate_skill`, 57000)).toBeCloseTo(56502 - (77 * 1000) / 30, -1);
+    expect(startOf("pending/zmdlogs-af7b7f865906.json", "chr_0025_ardelia", "chr_0025_ardelia_ultimate_skill", 57000)).toBeCloseTo(56836, -1);
+  });
+  it("1d91: an event at the press (no hit for the stop's length after it) starts the stop there", () => {
+    expect(startOf("pending/zmdlogs-1d9198480e75.json", L, `${L}_ultimate_skill`, 65000)).toBeCloseTo(64219, -1);
+  });
+  it("only where the landing's frame puts the stop over a teammate's hit: Si's ultimate in b6aa stays where her slashes place it", () => {
+    expect(startOf("pending/zmdlogs-b6aa15281db4.json", "chr_0036_jsspsi", "chr_0036_jsspsi_ultimate_skill", 35000)).toBeGreaterThan(35300);
+  });
+  it("the first song beat's start when within MIN_MOVE_MS after the event's: d9e5 stays at 6.94 s", () => {
+    expect(startOf("pending/zmdlogs-d9e59d0fb737.json", L, `${L}_ultimate_skill`, 7000)).toBeCloseTo(6940, -1.5);
+  });
+});
+
 describe("two hits of one landing at one time, its cast's landings all logged (a second enemy)", () => {
   it("9c6e: the second shares the first's cast, slot and landing; no shot is made twice", () => {
     const fx = fixture("pending/zmdlogs-9c6e97486a9d.json");

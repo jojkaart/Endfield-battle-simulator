@@ -9196,5 +9196,14 @@
    "unquantified": []
   }
  ],
- "casts": []
+ "casts": [],
+ "buildOverrides": [
+  {
+   "operator": "chr_0005_chen",
+   "set": {
+    "food": "item_corp3_animal_1"
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-24): as exported 0 of 19 landed hits within ±1 (×1.1516); Ginseng Meat Stew alone fits 17 of 19 (no clean hit, median ×1.0000), the ultimate's lower ratio (×1.106–1.119) included, the food the Endministrator has by hand in this fight (as d9e59d0fb737's whole team, against the same enemy). Not her P1 (Shadowless, enemy HP below half): the fight starts at the data's Max HP and her hits are ×1.15 from 5.4 s at 99.9% HP (a27b, the same enemy, fits P1 off above half; d4fb switches on at 0.499), and P1's +0.2 DMG would be ×1.185 on her basic attacks, not ×1.152; the log lists P1 on every hit of hers in every log (the buff, not its condition). Ember and Pogranichnik fit as exported."
+  }
+ ]
 }
