@@ -628,7 +628,8 @@ async function splitParts(how: "files" | "commits", r: SplitRun): Promise<string
     }
     if (left) notes.push(`  (${left} doc or test file(s) left out: they change no measured code)`);
   } else {
-    const commits = git(["rev-list", "--reverse", `${r.base}..${r.code}`]).split("\n").filter(Boolean);
+    // First parents only: a merge is one step (the branch it brings in measured as a whole), each against the one before.
+    const commits = git(["rev-list", "--reverse", "--first-parent", `${r.base}..${r.code}`]).split("\n").filter(Boolean);
     if (!commits.length) return [head, `  nothing to split: no commit between ${r.base} and the measured code`];
     let from = r.before;
     for (const [i, c] of commits.entries()) {
