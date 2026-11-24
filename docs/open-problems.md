@@ -197,8 +197,8 @@ the hold-outs' physical misses by the new split, an offsets screen as a command 
 1), Mi Fu's Crush stacks (2fd9).
 
 **Round 4 (2026-11-24, physical statuses, Rossi's extras).** Every development log's log-only physical status hit
-(scratch/physmiss.ts: the logged hits at its ms, the replay's status landings within 1.5 s and the enemy there) and every
-logged Shatter with whom the log credits (scratch/shatters.ts; 42 Shatters in 6 logs). The development logs' share was
+(scripts/probes/physical/physmiss.ts: the logged hits at its ms, the replay's status landings within 1.5 s and the enemy there) and every
+logged Shatter with whom the log credits (scripts/probes/physical/shatters.ts; 42 Shatters in 6 logs). The development logs' share was
 small (none within 5 s 0.08%, by another operator 0.03%): 04d4's Ember Shatters (3.7%), Rossi's Lifts, three
 Estella / Chen Qianyu pairs.
 
@@ -208,7 +208,7 @@ Estella / Chen Qianyu pairs.
     `buff_physical_no_guard` is one instance whose on-stack event creates `buff_physical_handle_cryst_break` from the
     buff's own source, before the Knock Down's own handler. status.ts: the Vulnerable keeps who started it (`by`), a
     stack joining it (a Lift's, a Knock Down's or a direct one) shatters as theirs; a first stack, Crush, Breach as
-    the applier's. Checked against the other 39 logged Shatters: none changes (scratch/shatter-credit.ts).
+    the applier's. Checked against the other 39 logged Shatters: none changes (scripts/probes/physical/shatter-credit.ts).
 14. **Snowshine's counter bash.** Her battle skill ends at frame 106 unless she is attacked in frames 0–51 (a kit
     trigger's jump to 107, its bash at 125); the replay sees no enemy attack, so six of 04d4's 14 logged bashes were
     dropped by the end (those not kept by a later cast of hers), with the Cryo they inflict, the Solidification they
@@ -222,7 +222,8 @@ Estella / Chen Qianyu pairs.
     Seething Blood extra the log hasn't). landing.ts `loggedCritAt`: a pinned landing takes its own hit's crit or
     none. And valueCrits compared raw values across a Stagger's start (207f 41.24 s: 13,441 after 6,714, ×1.3 Stagger
     and Susceptibility +0.54 listed from 41.03 s): now values over their listed effects (buffreplay.ts
-    `listedFactor`). Rossi's replay-only extras in 3f78 1.36 → 0.24% of the fight. Totals worse where they hid
+    `listedFactor`; scripts/probes/crits/value-xval.ts: 1110 of 1222 inferred crits right, 0.908, before 1132 of 1260,
+    0.898; Rossi 327 of 327). Rossi's replay-only extras in 3f78 1.36 → 0.24% of the fight. Totals worse where they hid
     Rossi's matched under-prediction: 3f78 −3.4 → −4.8% (her matched −6.6% over 140 landings), 207f −1.2 → −2.9%,
     489c −1.2 → −1.9%, 99fb −2.5 → −2.9%; better 4a64 +1.4 → +0.1%, 9a80 +1.3 → 0.0%.
 

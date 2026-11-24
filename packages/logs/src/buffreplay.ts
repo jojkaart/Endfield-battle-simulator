@@ -230,7 +230,8 @@ function listedFactor(h: LogHit): number {
  * the replay let them run out 0.05 s before her finisher (49.78 s, ×1.17). Cross-validated on the development logs
  * (half the logged flags hidden, two folds; scripts/probes/crits/value-xval.ts, 2026-11-23): 1132 of 1260 inferred
  * crits right over every operator (0.90; base rate 0.10), 442 of 445 for Rossi, Chen and Yvonne, whose kits have crit
- * triggers; with each hit's value from another hit of its key (negative control) 0.24. Only for an operator whose kit
+ * triggers; with each hit's value from another hit of its key (negative control) 0.24; with the values over their
+ * listed effects (listedFactor, 2026-11-24) 1110 of 1222 (0.908). Only for an operator whose kit
  * has a trigger on its own crits; added after the logged crits and those shownCrits and layerCrits give.
  */
 export function valueCrits(kits: readonly OperatorKit[], fx: LogFixture, placement: Placement, known: ReadonlyMap<number, boolean> = new Map()): Map<number, boolean> {
