@@ -12,7 +12,9 @@
 // Usage: node scripts/measure.ts [options]                         (npm run measure -- [options])
 //   --at <ref>          measure that commit's code (a worktree under scratch/at/: scripts/at-commit.ts), not the
 //                       working tree; commit work in progress, then `--at HEAD` keeps the working tree editable
-//   --against <ref>     compare with the snapshots committed at <ref> (default: the --at ref, else HEAD)
+//   --against <ref>     compare with the snapshots committed at <ref> (default: the --at ref, else HEAD); when the code
+//                       changed since those snapshots were written, the summary's first line says so (it then mixes
+//                       those commits' changes in: --base HEAD measures the tree's change alone)
 //   --base <ref>        measure <ref>'s code too, on the same logs, and compare the two measurements (A/B of two
 //                       commits' code, whatever their committed snapshots say)
 //   --with <operator>   only logs whose team has it (operator id, or part of the id or name; repeatable: any of them)
@@ -25,7 +27,16 @@
 //   --variant <id>=<r>[,<id>=<r>…]  measure once per --variant (repeatable; each on top of --assume), all of the
 //                       same code and against the same reference, in one run and one snapshot: the summary per
 //                       variant, files under <out>/variant-<n>/ (separating two readings' effects without chaining
-//                       measures, each taking its own snapshot)
+//                       measures, each taking its own snapshot); the same code without any variant is measured too
+//                       (round 11), and each variant's summary also says what it moves against that plain tree, the
+//                       question an idea on top of the tree asks (--no-plain: skip that run)
+//   --split files|commits  after the whole change against --base (default HEAD: the working tree's change), the
+//                       share of each part (round 11: "which change moved this log" took three more measures): files,
+//                       each changed file's diff alone on --base (`--group a,b` puts the files under these path
+//                       prefixes into one part; repeatable); commits, each commit of --base..the code against its
+//                       parent (the working tree's own changes the last). Each part is measured only on the logs the
+//                       whole change moved, so a split costs about one measure of those per part. Not with --variant,
+//                       --patch or --live
 //   --patch <file>      measure the code with this diff applied on top (git apply; the code at --at, else the tree
 //                       as queued): one half of a change, or the old reading of a log tool's rule, without editing
 //                       and reverting the tree (round 8). The diff is copied at queue time; with --base HEAD the
@@ -68,7 +79,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { compare, direction, GROUPS, groupOf, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
@@ -186,10 +197,21 @@ async function main(argv: string[]): Promise<number> {
       snapshot: { type: "string" },
       "snapshot-head": { type: "string" },
       patch: { type: "string" },
+      plain: { type: "boolean", default: true },
+      split: { type: "string" },
+      group: { type: "string", multiple: true, default: [] },
     },
     allowNegative: true,
   });
   if (values.changed !== undefined && values.changed !== "placement") throw new Error("--changed takes placement");
+  if (values.split !== undefined) {
+    if (values.split !== "files" && values.split !== "commits") throw new Error("--split takes files or commits");
+    if (values.variant.length || values.patch !== undefined || values.live) throw new Error("--split measures the code's own parts: not with --variant, --patch or --live");
+    if (values.at !== undefined && values.base === undefined) throw new Error("--split with --at needs --base <ref> (the commit the parts are split against)");
+    // The working tree's change (the snapshot taken at queue time) against HEAD, unless --base names another commit.
+    values.base ??= "HEAD";
+  }
+  if (values.group.length && values.split !== "files") throw new Error("--group goes with --split files");
   const workers = Number(values.workers);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const say = (l: string) => process.stdout.write(l + "\n");
@@ -221,6 +243,9 @@ async function main(argv: string[]): Promise<number> {
       : "the working tree";
   const patched = values.patch !== undefined ? `${code} with ${values.patch} applied` : code;
   const what = `${patched}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
+  // The reference's own code (placement-leads report point 3): after a code commit the snapshots at HEAD aren't HEAD's
+  // code, so "against the snapshots" mixes those commits' changes into this tree's. Said first, in the summary too.
+  const referenceLine = values.base ? [] : referenceNote(against, snapshotWriter(against), short);
 
   // The selection.
   const split = readSplit(readFileSync(join(tree, "fixtures/holdout/holdout.json"), "utf8"));
@@ -258,6 +283,7 @@ async function main(argv: string[]): Promise<number> {
   mkdirSync(out, { recursive: true });
   const shown = keys.filter((k) => !isHoldout(k)).length;
   say(`measure: ${what}: ${keys.length} logs (${keys.length - shown} of them hold-outs, counted only), ${workers} workers; writing to ${out}`);
+  for (const l of referenceLine) say(`measure: ${l}`);
 
   const cost = costs(tree, keys);
   const order = [...keys].sort((a, b) => (cost.get(b) as number) - (cost.get(a) as number) || a.localeCompare(b));
@@ -329,13 +355,19 @@ async function main(argv: string[]): Promise<number> {
   let refTree = baseTree;
   let refLabel = values.base ?? against;
   const allLines: string[] = [];
+  // With --variant: the same code under --assume alone, each variant's summary also against it (placement-leads report
+  // point 3: a first --variant run compared against the snapshots mixed the tree's own change into each variant's).
+  let plain: Snapshots | undefined;
+  let whole: Snapshots | undefined;
   for (const [vi, v] of variants.entries()) {
-    const label = variants.length > 1 ? `variant ${vi + 1} (${v.text}): ` : "";
+    const label = variants.length > 1 || values.variant.length ? `variant ${vi + 1} (${v.text}): ` : "";
     const dir = variants.length > 1 ? join(out, `variant-${vi + 1}`) : out;
     mkdirSync(dir, { recursive: true });
     const measured = await measureTree(tree, label, order, v.readings, `${tree}#${vi}`);
     before ??= baseTree ? overlay(reference, await measureTree(baseTree, `base ${values.base}: `)) : reference;
+    if (values.variant.length && values.plain && !plain) plain = overlay(before, await measureTree(tree, "plain (no variant): ", order, assume, `${tree}#plain`), split);
     const after = overlay(before, measured, split);
+    whole ??= after;
     // The mixed logs' per-hit fit on both sides (the reference's code measured for them alone when it wasn't already).
     const mixed = keys.filter((k) => {
       const [a, b] = [entryOf(before as Snapshots, k), entryOf(after, k)];
@@ -371,8 +403,10 @@ async function main(argv: string[]): Promise<number> {
     writeFileSync(join(dir, HOLDOUT), formatSnapshot(files.holdout, true));
     writeFileSync(join(dir, "accuracy.md"), render(after));
     const lines = [
+      ...(vi === 0 ? referenceLine : []),
       `Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
       ...compare(before, after),
+      ...(plain ? [`Variant ${vi + 1} against the plain tree (the same code${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}, no variant): the variant's own effect`, ...compare(plain, after).map((l) => `  ${l}`)] : []),
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
       ...(holdLines?.summary ?? []),
@@ -387,6 +421,11 @@ async function main(argv: string[]): Promise<number> {
     }
     writeFileSync(join(dir, "summary.txt"), lines.join("\n") + "\n");
     allLines.push(...(allLines.length ? [""] : []), ...lines);
+  }
+  if (values.split !== undefined && baseTree && before && whole) {
+    const lines = await splitParts(values.split, { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
+    writeFileSync(join(out, "summary.txt"), [...allLines, "", ...lines].join("\n") + "\n");
+    allLines.push("", ...lines);
   }
   if (variants.length > 1) writeFileSync(join(out, "summary.txt"), allLines.join("\n") + "\n");
   say("");
@@ -474,6 +513,140 @@ function snapshotWriter(ref: string): { readonly commit: string; readonly change
   const commit = git(["log", "-1", "--format=%H", ref, "--", "tests/snapshots/"]) || git(["rev-parse", `${ref}^{commit}`]);
   const files = git(["diff", "--name-only", commit, ref]).split("\n").filter((f) => f && !f.startsWith("docs/") && !f.startsWith("tests/snapshots/") && !f.endsWith(".md"));
   return { commit, changed: files.length };
+}
+
+/**
+ * The summary's first line when the snapshots at `against` weren't written by its own code (snapshotWriter): the
+ * comparison then holds every code commit since the snapshots' too, which a reader takes for this tree's change alone.
+ */
+export function referenceNote(against: string, writer: { readonly commit: string; readonly changed: number }, short: (ref: string) => string = (r) => r.slice(0, 9)): string[] {
+  if (!writer.changed) return [];
+  return [`Reference: the snapshots at ${against} were written by ${short(writer.commit)}'s code, and ${writer.changed} code file(s) changed since: the comparison holds those changes too. \`--base ${against}\` measures this code against ${against}'s code alone.`];
+}
+
+/** Files a split leaves out: they change no measured code (docs, Markdown, the snapshots, tests). */
+const NOT_CODE = (f: string) => f.startsWith("docs/") || f.endsWith(".md") || f.startsWith("tests/");
+
+/**
+ * --split files: the changed files in parts: each `--group` value (comma-separated path prefixes) one part of the
+ * files under them, every other file a part of its own; files that change no measured code (NOT_CODE) left out.
+ * Hold-out fixtures are one part, named by their count only.
+ */
+export function splitGroups(files: readonly string[], groups: readonly string[]): { readonly label: string; readonly files: readonly string[] }[] {
+  const code = files.filter((f) => !NOT_CODE(f));
+  const prefixes = groups.map((g) => g.split(",").map((p) => p.trim()).filter(Boolean));
+  const out: { label: string; files: string[] }[] = prefixes.map((ps) => ({ label: ps.join(", "), files: [] }));
+  const hold: string[] = [];
+  const alone: { label: string; files: string[] }[] = [];
+  for (const f of code) {
+    const g = prefixes.findIndex((ps) => ps.some((p) => f === p || f.startsWith(p.endsWith("/") ? p : `${p}/`) || f.startsWith(p)));
+    if (g >= 0) (out[g] as { files: string[] }).files.push(f);
+    else if (f.startsWith("fixtures/holdout/")) hold.push(f);
+    else alone.push({ label: f, files: [f] });
+  }
+  return [...out.filter((g) => g.files.length), ...alone, ...(hold.length ? [{ label: `fixtures/holdout/ (${hold.length} file(s))`, files: hold }] : [])];
+}
+
+/**
+ * The lines of a split: per part its compare() against what it starts from, then the logs the whole change moved that
+ * no part moved alone, and those a part moved that the whole left as they were (parts that act together); hold-outs
+ * as counts only.
+ */
+export function splitLines(parts: readonly { readonly label: string; readonly from: Snapshots; readonly to: Snapshots }[], before: Snapshots, whole: Snapshots): string[] {
+  const out: string[] = [];
+  const movedBy = (a: Snapshots, b: Snapshots) => {
+    const [x, y] = [allLogs(a), allLogs(b)];
+    return new Set([...y].filter(([k, l]) => { const w = x.get(k); return !w || direction(w.entry, l.entry) !== "same"; }).map(([k]) => k));
+  };
+  const wholeMoved = movedBy(before, whole);
+  const anyPart = new Set<string>();
+  for (const [i, p] of parts.entries()) {
+    out.push(`Part ${i + 1}: ${p.label}`, ...compare(p.from, p.to).map((l) => `  ${l}`));
+    for (const k of movedBy(p.from, p.to)) anyPart.add(k);
+  }
+  const name = (ks: readonly string[]) => {
+    const hold = ks.filter(isHoldout).length;
+    return [...ks.filter((k) => !isHoldout(k)).sort(), ...(hold ? [`${hold} hold-out(s)`] : [])].join(", ");
+  };
+  const unexplained = [...wholeMoved].filter((k) => !anyPart.has(k));
+  const extra = [...anyPart].filter((k) => !wholeMoved.has(k));
+  out.push(unexplained.length ? `Moved by the whole change, by no part alone (parts acting together): ${name(unexplained)}` : "Every log the whole change moved, some part moved alone.");
+  if (extra.length) out.push(`Moved by a part, not by the whole change (parts cancelling): ${name(extra)}`);
+  return out;
+}
+
+/** What splitParts needs of the run: the trees, the logs, the whole change's snapshots, and a measure of some logs. */
+interface SplitRun {
+  readonly base: string;
+  readonly baseTree: string;
+  /** The measured code's commit (--at, or the snapshot of the working tree taken at queue time). */
+  readonly code: string;
+  readonly groups: readonly string[];
+  readonly keys: readonly string[];
+  readonly before: Snapshots;
+  readonly whole: Snapshots;
+  readonly split: Split;
+  readonly measure: (tree: string, label: string, which: readonly string[]) => Promise<Map<string, Entry>>;
+}
+
+/**
+ * --split: each part of the change measured on the logs the whole change moved (backlog after round 10 point 3; the
+ * stats-candidates report point 5): `files`, each part's diff alone on the base (a patched worktree of its own,
+ * removed after); `commits`, each commit against its parent (worktrees under scratch/at/<hash>, kept like --base's).
+ */
+async function splitParts(how: "files" | "commits", r: SplitRun): Promise<string[]> {
+  const moved = r.keys.filter((k) => {
+    const [a, b] = [allLogs(r.before).get(k), allLogs(r.whole).get(k)];
+    return !a || !b || direction(a.entry, b.entry) !== "same";
+  });
+  const head = `Split by ${how} against ${r.base} (each part measured on the ${moved.length} log(s) the whole change moved; the rest as the base has them):`;
+  if (!moved.length) return [head, "  nothing to split: the whole change moved no log's verdicts"];
+  const shortRef = (ref: string) => git(["rev-parse", "--short=9", ref]);
+  const parts: { label: string; from: Snapshots; to: Snapshots }[] = [];
+  const notes: string[] = [];
+  if (how === "files") {
+    const files = git(["diff", "--name-only", r.base, r.code]).split("\n").filter(Boolean);
+    const groups = splitGroups(files, r.groups);
+    const left = files.filter(NOT_CODE).length;
+    if (!groups.length) return [head, `  nothing to split: no code file changed (${left} doc or test file(s) left out)`];
+    const patches = join(ROOT, "scratch/measure/patches");
+    mkdirSync(patches, { recursive: true });
+    for (const [i, g] of groups.entries()) {
+      const diff = join(patches, `split-${process.pid}-${i + 1}.diff`);
+      writeFileSync(diff, execFileSync("git", ["diff", "--binary", r.base, r.code, "--", ...g.files], { cwd: ROOT, maxBuffer: 256 << 20 }));
+      const dir = resolve(ROOT, "scratch/at", `measure-${shortRef(r.base)}-split${i + 1}-${process.pid}`);
+      atCommit(r.base, dir, diff);
+      try {
+        const got = await r.measure(dir, `part ${i + 1} (${g.label}): `, moved);
+        parts.push({ label: `${g.label} alone on ${r.base}`, from: r.before, to: overlay(r.before, got, r.split) });
+      } catch (e) {
+        // A part that doesn't run alone (it needs another file's change: a new export, say) is named, not fatal.
+        notes.push(`  ${g.label}: not measured alone (${(e instanceof Error ? e.message : String(e)).split("\n")[0]}); put it in one part with the files it needs: --group ${[g.label, "<the other files>"].join(",")}`);
+      } finally {
+        removeAtCommit(dir);
+      }
+    }
+    if (left) notes.push(`  (${left} doc or test file(s) left out: they change no measured code)`);
+  } else {
+    const commits = git(["rev-list", "--reverse", `${r.base}..${r.code}`]).split("\n").filter(Boolean);
+    if (!commits.length) return [head, `  nothing to split: no commit between ${r.base} and the measured code`];
+    let from = r.before;
+    for (const [i, c] of commits.entries()) {
+      const last = i === commits.length - 1;
+      const subject = git(["log", "-1", "--format=%s", c]);
+      const label = `${shortRef(c)} ${subject.startsWith("a snapshot of the working tree") ? "(the working tree's own changes)" : subject}`;
+      let to: Snapshots;
+      if (last) to = r.whole;
+      else {
+        const dir = resolve(ROOT, "scratch/at", shortRef(c));
+        atCommit(c, dir);
+        to = overlay(r.before, await r.measure(dir, `commit ${i + 1} (${shortRef(c)}): `, moved), r.split);
+      }
+      parts.push({ label, from, to });
+      from = to;
+    }
+  }
+  return [head, ...notes, ...splitLines(parts, r.before, r.whole)];
 }
 
 /**
