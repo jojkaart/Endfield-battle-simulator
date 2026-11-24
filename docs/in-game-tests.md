@@ -2004,7 +2004,17 @@ her combo's forced one; the data's event might mean only one of them.
    combo (forced Electrification): does the icon appear again? Engine:
    both times.
 
-### 69. Chen's P1 at full HP (ready, if you have Chen at P1+)
+### 69. Chen's P1 at full HP (decided from the logs, 2026-11-24: the data's condition holds)
+
+**Decided:** pending/zmdlogs-a27bc3527682.json (Rodin, its total the data's
+Max HP) fits her hits without the bonus above half HP (7.6–25.2 s) and with
+it below (40.5 s on), every one; d4fb (a stage boss, the kill's total as its
+HP) ×1.16 without it below half (89 hits), ×1.00 above (79). The log lists
+the buff on every hit either way (an attached buff whose modifier has the
+condition). 7e19's ×1.15 on all her hits is something else (open problems,
+"Misprediction statistics"). The engine follows the data (enemyHpBelow);
+the log check takes the enemy's HP from the logged damage (engine
+assumption enemy-hp). The text below is kept for the record.
 
 **Why:** her P1 gives "DMG Dealt +20% to enemies below 50% HP". Her only
 log has the bonus on every hit from the start, at about full HP, and the

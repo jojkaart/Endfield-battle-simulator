@@ -4,9 +4,44 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 137 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 138 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-24: Misprediction candidates: logged-as buffs, the enemy's HP, Ardelia's chain
+
+**Goal:** work through the misprediction analysis's candidates (docs/analysis/2026-11-24-misprediction-stats.md): the
+weapon "ready" buffs, the rest of the ×1.5 band, the fight-wide factors below the offsets screen, then the one-buff
+list's largest; root cause and fix, or ruled out with why.
+
+**Done** (the analysis's follow-up section; open-problems "Misprediction statistics"):
+- **The "ready" buffs were a double count.** The consuming cast's hits list the attached buff with the modifier
+  (`_valid`), not the kit buff's modifier-less gameBuff (`_exist`): the check added both (59 hits in 0c14, 7e19, d4fb,
+  a27b). `loggedAs` on Grand Vision's and Glorious Memory's buffs, Aspirant's, Cohesive Traction's, and Yvonne's ultimate
+  states (P5 child, 5082's 72 hits; found by scripts/probes/stats/doublecount.py).
+- **The enemy's HP from a kill's total, in lives** (engine assumption `enemy-hp`, buffreplay.ts loggedEnemyHp): the
+  replay had an HP only when the total was the data's Max HP. Chen Qianyu's P1 below half (d4fb ×1.16 below, ×1.00
+  above; in-game test 69 decided from a27b) and Alesh's P5 ultimate (×1.5 below half: a9d7 6 of 6 over Si's two lives).
+- **Ardelia's ×1.5 basic attacks were placements:** attacks 1 and 2 share a key; after attack 3 and a combo the
+  placement took an older attack 1's window (logcasts.ts choose: the latest basic cast says the step).
+- **Si's Amp in 9c0b:** her ultimate pressed before the log's first hit, skipped for energy the log can't show; made now.
+- **Ruled out:** Liino's 7910 / af7b factors as builds (fit-build fits her clean hits as exported; the screen is right).
+
+**Scoreboard** (`npm run snapshots:update`): development plain 67.1 → 67.8%, matched 83.5 → 83.9%, mismatch 11.6 →
+11.5%, mean |damage error| 7.2 → 7.0%; hold-out plain 77.6 → 78.3%, mismatch 6.2 → 5.9%, mean |damage error| 8.0 →
+8.5% (2 better, 4 mixed, per hit closer; the total that moved most came with the "ready" fix, which exposed an
+under-prediction the double count hid, as in 7e19); earlier pending plain 63.7 → 64.2%, 4.5 → 4.4%; all but the
+hold-outs 5.7 → 5.5%. Better: d4fb +9.6 → +0.5% (plain 465 → 516), 9c0b −4.9 → +3.0% (367 → 410), a9d7 −5.0 →
+−1.8%, c4f3 −5.0 → −3.1% (214 → 242), 5082, a27b. Totals worse with per-hit closer: 7e19 +2.0 → −6.6% (the
+Endministrator +21.9 → +2.3% exposed Ember's −21.5% and Chen's ×1.15), 0c14 −3.5 → −4.9%, 4e36 and de6a (matched
+closer, replay-only landings left). Teams (team-ab against a4f6ddb): every team's fight the same (the log check's changes only).
+
+**Decisions:** the HP rule behind an assumption (the stage pools are a kill's total, not seen in any data file); lives
+only where an away stretch starts at a multiple of Max HP (Si's eight fights all show it). The pre-log ultimate rule
+only before the first hit: every unseen ultimate made regardless made 1cd1 −19.5% (docs/tried/).
+
+**Left:** Liino's ultimate Amp starts later in the replay than in the game (1cd1, af7b: the replay's stop of her
+ultimate covers teammates' logged hits); 7e19's Chen ×1.15; the one-buff list's rest.
 
 ## 2026-11-24: Misprediction statistics across the logs; Zhuang Fangyi's Empyrean combo key
 
@@ -354,31 +389,3 @@ engine's own timeline and one hold-out can't be traced.
 **Left:** Rossi's bleed tick series across a reapplication (489c 52–60 s, which drops the ramp's bounds); a Corrosion end
 read from the hits as a hold bound (4d60); 6339's Laevatain hit_2 with no own cast before it; the castFlag view's INSIDE
 wording (it counts the wait for own hits, not only uncuttable frames).
-
-## 2026-11-23: The hold-outs refreshed blind: the lane rules tested on them
-
-Goal: round 7 found every hold-out (and the verified 40d9, 4e5e) imported before effects carried `since` / `source`,
-so the replay's rules that read the log's buff runs (the hidden holds' run and status clocks, `heldToLoggedEnds`,
-`layerCrits`) were untested there. Refresh them without anyone seeing a hold-out, then measure.
-
-Done:
-- `zmdlogs refresh` refused 40d9 and 4e5e: one 0 ms trigger buff each was unquantified at import, and today's detail
-  has every `dynamicEffects` empty (40d9 under the same parser version). `refreshFixture` now lets a hit's
-  `unquantified` listing only have lost entries, keeps the fixture's then (`RefreshResult.keptUnquantified`, one
-  provenance note) and still refuses a new entry. Both refreshed: since / source / poise.origin added; verdicts
-  unchanged (4e5e: other counts only).
-- scripts/holdout-refresh.ts: the split's hold-out ids by code, each detail fetched once (3.5 s apart, the importer's
-  user agent, memory only, never the raw cache), refreshed in a temporary copy, written back only if its id, battle,
-  team and enemy are unchanged; prints an index, ok / failed (a category) and since yes/no per fixture, then counts.
-  Tested on a synthetic root (tests/holdout-refresh.test.ts). Run: 13 ok, since 0 → 13, no listing kept.
-- Scoreboard (same code, main at 636bbc0; the fixtures only): hold-out plain 74.0 → 77.6%, matched 91.7 → 92.1%,
-  mismatch 6.4 → 6.3%, mean |damage error| 10.8 → 10.6%, within 5% 7 → 8; 5 better, 1 worse, 6 mixed, 1 unchanged.
-  Verified, development, earlier pending unchanged.
-- `measure --variant hidden-holds=none|log|holds` on the refreshed hold-outs against the default `placed` (77.6%,
-  6.3%, 10.6%): none 70.3%, 6.5%, 10.9% (1 better, 7 worse); log 73.0%, 6.5%, 10.7%; holds 76.8%, 6.3%, 10.5%.
-
-Decision: the hidden holds (`placed`, `log` on top) are confirmed on the hold-outs: the best reading there, by about
-the development logs' margin (none → placed: development 57.8 → 65.4%, hold-out 70.3 → 77.6%).
-
-Left: the one hold-out worse after the refresh can't be traced (a hold-out); `layerCrits` has no assumption reading,
-so its share of the 74.0 → 77.6% isn't separated; a detail takes ~45 s to download.

@@ -144,6 +144,16 @@ buff), the Endministrator's and Chen Qianyu's "ready" weapon buffs on ultimates 
 in 7910 and af7b, the drift against the placed holds' running total. A view promoting the explanation classes
 (`zmdlogs explain --all`?) if a second round asks the same question.
 
+**Worked 2026-11-24** (the analysis's follow-up section; journal
+[2026-11-24-02](journal/2026-11-24-02-misprediction-candidates-logged-as-buffs-the-enemy-s-hp.md)): the "ready" buffs
+were a double count (`loggedAs` on the attached buffs; Yvonne's P5 too); Alesh's ×1.5 and Chen's d4fb factor were the
+enemy's HP the replay didn't have (engine assumption `enemy-hp`: a kill's total in lives; test 69 decided); Ardelia's
+were placements (basic steps sharing a key); Si's Amp in 9c0b a pre-log ultimate; Liino's 7910 / af7b factors aren't
+builds. Left, in order: Liino's ultimate Amp starting late against her stop (1cd1 36–39.7 s, af7b 57–60.8 s: the
+replay's stop of her ultimate covers teammates' logged hits), 7e19's Chen ×1.15 (a build element of hers?), the rest of
+the one-buff list (Arcane's weapon Arts DMG Taken and Will burst buff, Zhuang Fangyi's weapon ultimate buff, Gilberta's
+weapon Arts DMG, Typhoeus's Hovering ATK), the drift.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**
