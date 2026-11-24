@@ -113,6 +113,8 @@ export interface OffsetRow {
   readonly short: string;
   readonly fx: LogFixture;
   readonly offset: OperatorOffset;
+  /** For a candidate: the build inputs whose ATK gives its median (logcheck.ts offsetExplanations: a weapon level, nodes). */
+  readonly fits?: readonly string[];
 }
 
 /**
@@ -143,7 +145,8 @@ export function offsetsView(data: { readonly operators: Readonly<Record<string, 
     const cand = isOffsetCandidate(o);
     const overridden = (r.fx.buildOverrides ?? []).some((b) => b.operator === o.operator);
     const explained = OFFSETS_EXPLAINED[`${r.short} ${o.operator}`];
-    const note = cand ? (overridden ? "  buildOverrides set (fit-build again?)" : explained !== undefined ? `  explained: ${explained}` : `  → zmdlogs fit-build ${r.short} --operator ${o.operator}`) : overridden ? "  (buildOverrides set)" : "";
+    const fits = r.fits?.length ? ` (its ATK fits ${r.fits.join(" or ")})` : "";
+    const note = cand ? (overridden ? "  buildOverrides set (fit-build again?)" : explained !== undefined ? `  explained: ${explained}` : `  → zmdlogs fit-build ${r.short} --operator ${o.operator}${fits}`) : overridden ? "  (buildOverrides set)" : "";
     out.push(`${cand ? "*" : " "} ${r.short.padEnd(5)} ${name(o.operator).slice(0, 24).padEnd(24)} ${String(o.n).padStart(4)}  ${pct(o.median).padStart(7)}  ${`${(100 * o.tight).toFixed(0)}%`.padStart(5)}  ${o.logMedian !== undefined ? pct(o.logMedian).padStart(7) : "      -"}${note}${cand ? teamOff(r.short) : ""}`);
   }
   if (top > 0 && sorted.length > top) out.push(`  … ${sorted.length - top} more (--top 0 for every row)`);

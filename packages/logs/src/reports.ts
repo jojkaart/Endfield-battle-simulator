@@ -8,7 +8,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { exportHits, exportHitsParallel, filterRecords, formatRecord, type HitRecord } from "./hitexport.ts";
-import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
+import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
 import { gameDataCacheKey, mainCheckoutOf, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
@@ -17,7 +17,7 @@ import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fitBuild, type BuildCandidate } from "./buildfit.ts";
-import { offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
+import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -280,7 +280,12 @@ export async function offsetsReport(data: () => GameData, sel: LogSelection, opt
   for (const r of records) byFile.set(r.fixture, [...(byFile.get(r.fixture) ?? []), r]);
   const rows = files.flatMap((f) => {
     const fx = readLogFixture(f);
-    return screenOffsets(offsetHitsOfRecords(byFile.get(f) ?? [])).map((offset) => ({ short: shortId(fixtureLabel(f)), fx, offset }));
+    return screenOffsets(offsetHitsOfRecords(byFile.get(f) ?? [])).map((offset) => {
+      // A candidate's ATK explanation, as the check's report gives it (one place: logcheck.ts offsetExplanations).
+      const build = isOffsetCandidate(offset) ? fx.team.find((b) => b.operator === offset.operator) : undefined;
+      const fits = build ? offsetExplanations(data(), build, offset.median) : [];
+      return { short: shortId(fixtureLabel(f)), fx, offset, ...(fits.length ? { fits } : {}) };
+    });
   });
   return offsetsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
 }

@@ -1104,40 +1104,47 @@ export function buildOffsets(data: GameData, fx: LogFixture, byHit: EngineHits):
     const ratio = ratios[Math.floor(ratios.length / 2)] as number;
     const share = ratios.filter((x) => Math.abs(x / ratio - 1) <= OFFSET_SPREAD).length / ratios.length;
     if (share < OFFSET_SHARE || Math.abs(ratio - 1) < OFFSET_MIN) continue;
-    const explained: string[] = [];
-    if (ratio < 1) {
-      const full = computeStats(data, b).atk.total;
-      const fits = (x: Build) => Math.abs(computeStats(data, x).atk.total / full / ratio - 1) <= OFFSET_SPREAD / 3;
-      // Attribute nodes: the build's (every one the promotion allows by default), then fewer.
-      const nodeCounts: (number | undefined)[] = [b.attributeNodes];
-      for (let n = 0; n < (b.attributeNodes ?? Infinity); n++) {
-        try {
-          computeStats(data, { ...b, attributeNodes: n });
-        } catch {
-          break;
-        }
-        if (computeStats(data, { ...b, attributeNodes: n }).atk.total < full) nodeCounts.push(n);
-      }
-      const weapon = b.weapon;
-      const levels = weapon ? [weapon.level, ...Array.from({ length: weapon.level - 1 }, (_, i) => weapon.level - 1 - i).filter((l) => data.weapons[weapon.id]?.baseAtk[l - 1] !== undefined)] : [];
-      // One input first (a lower weapon level, or fewer nodes), both only when neither alone fits (4bfc6f3e84b8's
-      // Arclight ×0.8815: no node and the weapon at 80, Arclight at 80 too).
-      const single: string[] = [];
-      const pairs: string[] = [];
-      for (const n of nodeCounts) {
-        for (const level of weapon ? levels : [0]) {
-          if (n === b.attributeNodes && (!weapon || level === weapon.level)) continue;
-          const x: Build = { ...b, ...(n !== undefined ? { attributeNodes: n } : {}), ...(weapon ? { weapon: { ...weapon, level } } : {}) };
-          if (!fits(x)) continue;
-          const parts = [...(weapon && level !== weapon.level ? [`the weapon at level ${level}`] : []), ...(n !== b.attributeNodes ? [`${n} attribute node(s)`] : [])];
-          (parts.length === 1 ? single : pairs).push(parts.join(" and "));
-        }
-      }
-      explained.push(...(single.length ? single : pairs));
-    }
-    out.push({ operator: b.operator, ratio, share, hits: ratios.length, explained });
+    out.push({ operator: b.operator, ratio, share, hits: ratios.length, explained: offsetExplanations(data, b, ratio) });
   }
   return out;
+}
+
+/**
+ * The build inputs the export doesn't give whose ATK, against the build's, is `ratio` (within OFFSET_SPREAD / 3): a
+ * lower weapon level, fewer attribute nodes, both only when neither alone fits. Nothing for a ratio above 1. Used by
+ * the check's report (buildOffsets) and the offsets screen (`zmdlogs offsets`, buildoffsets.ts: round 9 friction
+ * point 2, the two detectors' explanation in one place).
+ */
+export function offsetExplanations(data: GameData, b: Build, ratio: number): string[] {
+  if (ratio >= 1) return [];
+  const full = computeStats(data, b).atk.total;
+  const fits = (x: Build) => Math.abs(computeStats(data, x).atk.total / full / ratio - 1) <= OFFSET_SPREAD / 3;
+  // Attribute nodes: the build's (every one the promotion allows by default), then fewer.
+  const nodeCounts: (number | undefined)[] = [b.attributeNodes];
+  for (let n = 0; n < (b.attributeNodes ?? Infinity); n++) {
+    try {
+      computeStats(data, { ...b, attributeNodes: n });
+    } catch {
+      break;
+    }
+    if (computeStats(data, { ...b, attributeNodes: n }).atk.total < full) nodeCounts.push(n);
+  }
+  const weapon = b.weapon;
+  const levels = weapon ? [weapon.level, ...Array.from({ length: weapon.level - 1 }, (_, i) => weapon.level - 1 - i).filter((l) => data.weapons[weapon.id]?.baseAtk[l - 1] !== undefined)] : [];
+  // One input first (a lower weapon level, or fewer nodes), both only when neither alone fits (4bfc6f3e84b8's
+  // Arclight ×0.8815: no node and the weapon at 80, Arclight at 80 too).
+  const single: string[] = [];
+  const pairs: string[] = [];
+  for (const n of nodeCounts) {
+    for (const level of weapon ? levels : [0]) {
+      if (n === b.attributeNodes && (!weapon || level === weapon.level)) continue;
+      const x: Build = { ...b, ...(n !== undefined ? { attributeNodes: n } : {}), ...(weapon ? { weapon: { ...weapon, level } } : {}) };
+      if (!fits(x)) continue;
+      const parts = [...(weapon && level !== weapon.level ? [`the weapon at level ${level}`] : []), ...(n !== b.attributeNodes ? [`${n} attribute node(s)`] : [])];
+      (parts.length === 1 ? single : pairs).push(parts.join(" and "));
+    }
+  }
+  return single.length ? single : pairs;
 }
 
 export function engineReport(data: GameData, fx: LogFixture, replay: LogBuffReplay, byHit: EngineHits, verdicts: readonly HitVerdict[] = []): EngineReport {

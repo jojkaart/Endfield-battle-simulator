@@ -34,5 +34,8 @@ describe("the build-offset screen", () => {
     const text = offsetsView({ operators: { chr_a: { name: "Alpha" } } }, screenOffsets(ohits).map((offset) => ({ short: "abcd", fx, offset })));
     expect(text).toMatch(/^\* abcd {2}Alpha\s+25\s+-10\.0%\s+100%\s+-10\.0% {2}→ zmdlogs fit-build abcd --operator chr_a$/m);
     expect(text).toMatch(/1 candidate\(s\) over 1 logs, 1 with nothing accounting for them/);
+    // The check's own explanation (logcheck.ts offsetExplanations) beside the fit-build hint (round 10).
+    const fitted = offsetsView({ operators: {} }, screenOffsets(ohits).map((offset) => ({ short: "abcd", fx, offset, fits: ["the weapon at level 80"] })));
+    expect(fitted).toMatch(/→ zmdlogs fit-build abcd --operator chr_a \(its ATK fits the weapon at level 80\)$/m);
   });
 });
