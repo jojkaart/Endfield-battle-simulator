@@ -39,7 +39,7 @@
   "digest": "f80f4d8f8b401529"
  },
  "equipment suit_phy01": {
-  "digest": "ae3828eec7891579"
+  "digest": "fd2232af9151bdbd"
  },
  "equipment suit_poise01": {
   "digest": "dbe666ad61be788b"
@@ -48,7 +48,7 @@
   "digest": "c05b87e39280a40d"
  },
  "equipment suit_spellburst": {
-  "digest": "f918d574c6d471e5"
+  "digest": "d457913c82ecac73"
  },
  "equipment suit_str01": {
   "digest": "51333f4c5e7ca6b1"
@@ -75,13 +75,13 @@
   "digest": "95d44fe1ccbf64d8"
  },
  "equipment wpn_claym_0004": {
-  "digest": "d70eb395da5f8fea"
+  "digest": "e44517a4285f3c72"
  },
  "equipment wpn_claym_0006": {
-  "digest": "ae8dd461b4b24c32"
+  "digest": "eb9f4aed3da6019a"
  },
  "equipment wpn_claym_0007": {
-  "digest": "62909ad7b7d3e72e"
+  "digest": "20a93d071209a3cb"
  },
  "equipment wpn_claym_0008": {
   "digest": "a2e1def9b020dbbf"
@@ -330,13 +330,13 @@
   "digest": "79e39fe9a6e78933"
  },
  "operator chr_0004_pelica": {
-  "digest": "1c207142e7190948"
+  "digest": "c7c4a861d7ebba96"
  },
  "operator chr_0005_chen": {
   "digest": "aca6102be6d2549a"
  },
  "operator chr_0006_wolfgd": {
-  "digest": "0eba72d7945ac81f"
+  "digest": "b37746a3b32a5fbc"
  },
  "operator chr_0007_ikut": {
   "digest": "f209706763fe246b"
@@ -345,13 +345,13 @@
   "digest": "5d01fe21cb1ecb79"
  },
  "operator chr_0011_seraph": {
-  "digest": "d95defbbb61f1fb8"
+  "digest": "01524c3dcc310fcc"
  },
  "operator chr_0012_avywen": {
-  "digest": "c808d8172d65639f"
+  "digest": "6a91673b9ddf0b43"
  },
  "operator chr_0013_aglina": {
-  "digest": "6576fc2a14f1303f"
+  "digest": "30565bc1aa46aaec"
  },
  "operator chr_0014_aurora": {
   "digest": "f18ea07646ec9373"
@@ -360,10 +360,10 @@
   "digest": "fe5b70963fb6ddf4"
  },
  "operator chr_0016_laevat": {
-  "digest": "0b0635acae54877e"
+  "digest": "2eb49b8de86043df"
  },
  "operator chr_0017_yvonne": {
-  "digest": "0da9c105158ae507"
+  "digest": "2f7ec0fff7e18fe9"
  },
  "operator chr_0018_dapan": {
   "digest": "773078de8863ef69"
@@ -375,54 +375,54 @@
   "digest": "1be24a596d067892"
  },
  "operator chr_0021_whiten": {
-  "digest": "881284806519c875"
+  "digest": "368efb28d0e227f4"
  },
  "operator chr_0022_bounda": {
-  "digest": "243ed17a08d2f2df"
+  "digest": "eba583399616c68d"
  },
  "operator chr_0023_antal": {
-  "digest": "46b5d7d948aa1792"
+  "digest": "1afd22cfcdac723f"
  },
  "operator chr_0024_deepfin": {
   "digest": "db31045bc4a9dc30"
  },
  "operator chr_0025_ardelia": {
-  "digest": "c1ac464fe90cb078"
+  "digest": "8396213951891adf"
  },
  "operator chr_0026_lastrite": {
   "digest": "ee923eaded945904"
  },
  "operator chr_0027_tangtang": {
-  "digest": "24ea98c01d95533f"
+  "digest": "6d9774c1e53b34f3"
  },
  "operator chr_0028_wulfa": {
-  "digest": "e960d1e07d1afc46"
+  "digest": "b06da56b28a463ea"
  },
  "operator chr_0029_pograni": {
   "digest": "9e949ca27f6d1904"
  },
  "operator chr_0030_zhuangfy": {
-  "digest": "6621271fe1ddb2bf"
+  "digest": "299a719f80f80152"
  },
  "operator chr_0031_mifu": {
-  "digest": "293ebcd32dcf1bdc"
+  "digest": "a6f270b3a184cefa"
  },
  "operator chr_0032_lizhiyan": {
   "digest": "ebf6228f12896603"
  },
  "operator chr_0033_camille": {
-  "digest": "c6f0cb1215d8909e"
+  "digest": "109cc46ee8d5c757"
  },
  "operator chr_0034_typhoea": {
-  "digest": "b76ed03426b59328"
+  "digest": "71fa8eb035af4622"
  },
  "operator chr_0035_liino": {
-  "digest": "38af64a59b7274e8"
+  "digest": "ff8230fc9b08e726"
  },
  "operator chr_0036_jsspsi": {
   "digest": "afe4fa46e49b18c1"
  },
  "operator chr_0038_purrche": {
-  "digest": "4244bd8658474419"
+  "digest": "3ab8013b60c9486e"
  }
 }

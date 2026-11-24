@@ -102,6 +102,10 @@ shares of the off error at that code):**
   bounds dropped; the replay's Stagger window 114.30–133.37 s takes no holds; the enemy away 117.22–124.45 s): open.
   The hold placement's stop list (buffreplay.ts, before replayedCastStops) leaves out an event the replay read as a
   tick since 2026-11-24 (placement leads); query.ts replayTimeStops (the views' world time) still counts it.
+  **4bfc 179.51 s (2026-11-24, the lead's question): Empyrean's end, not a cast**, but the replay makes a cast there
+  (stop 179.50–182.10 s) because its empyrean buff has already ended: Arclight's attack chain runs unbroken through
+  that stop (179.50, 179.93, 180.17, 180.57 s), Zhuang Fangyi's _ult forms are logged to 179.17 s and her plain
+  finisher after. Open: why the replay's Empyrean ends before 179.51 s (its clock: held less than the game's).
 - **Ruled out: Arcane's Susceptibility layers** (1.5%): 170k of the 194k is one hit, e82d 9.12 s (Si's combo, crit
   unlogged, a fallback) that fits two ways (the crit with Arcane's Susceptibility the log's way, or the verdict's reading: the crit with
   suit_atk02.edge ×2 and wpn_claym_0018.combo_ready unlogged); the rest is 24 hits over 16 fights at start / end boundaries.
