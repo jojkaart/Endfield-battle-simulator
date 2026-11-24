@@ -27,8 +27,8 @@ import {
   engineReport,
   hitPlace,
   listedBuffs,
+  hitCounterfactuals,
   logBuffReplay,
-  loggedEntries,
   logDifferences,
   placeHits,
   readingBasis,
@@ -176,47 +176,9 @@ export function fixtureRows(file: string): { hits: Row[]; onesided: Row[]; fight
     }
     const inputs = primary.inputs;
     const differences = logDifferences(c, hit, landing as Parameters<typeof logDifferences>[2]);
-    // One difference at a time as the log lists it (its kit buffs' entries replaced by the log's, as the check's edge
-    // toggles do), and Stagger the other way: which single disagreement, taken the log's way, moves the reading where.
-    const readAt = (r: typeof primary): number | null => {
-      try {
-        return roundDamage(landingDamage(data, c.target, r.inputs, r.options, r.other).exact);
-      } catch (err) {
-        if (!readingDoesNotApply(err)) throw err;
-        return null;
-      }
-    };
-    const cf: Row[] = [];
-    if (hit.crit !== null) cf.push({ what: "crit flipped", kind: "crit", reading: readAt({ ...primary, options: { ...primary.options, crit: hit.crit ? "never" : "always" } }) });
-    // The log's boundary effects (a buff starting or ending at the hit) of team kit buffs, one kit buff at a time: as
-    // the log lists them there (added) and off (the engine's modifiers of it removed); and Stagger the other way when
-    // the Stagger's own entry is at the boundary.
-    const mods0 = primary.options.modifiers ?? [];
-    for (const k of new Set(hit.boundaryEffects.flatMap((e) => c.names.byGameBuff.get(e.buff) ?? []))) {
-      const ofIt = (m: { kitBuff?: { owner: string; id: string } }) => m.kitBuff !== undefined && `${m.kitBuff.owner}:${m.kitBuff.id}` === k;
-      const names = new Set(c.names.ofKitBuff.get(k) ?? []);
-      const at = hit.boundaryEffects.filter((x) => names.has(x.buff));
-      const kept = ok.judged.filter((m) => !ofIt(m));
-      const on = mods0.some(ofIt);
-      cf.push({ what: k, kind: "boundary on", engineHas: on, reading: readAt({ ...primary, options: { ...primary.options, modifiers: [...mods0, ...loggedEntries(c, at, names, kept, ok.category)] } }) });
-      if (on) cf.push({ what: k, kind: "boundary off", engineHas: on, reading: readAt({ ...primary, options: { ...primary.options, modifiers: mods0.filter((m) => !ofIt(m)) } }) });
-    }
-    if (hit.boundaryEffects.some((e) => /poise_break/.test(e.buff)) && !differences.some((x) => x.what === "Stagger")) {
-      cf.push({ what: "Stagger", kind: "boundary", reading: readAt({ ...primary, options: { ...primary.options, staggered: !primary.options.staggered } }) });
-    }
-    for (const diff of differences) {
-      if (diff.what === "Stagger") {
-        cf.push({ what: "Stagger", kind: diff.kind, reading: readAt({ ...primary, options: { ...primary.options, staggered: !primary.options.staggered } }) });
-        continue;
-      }
-      const keys = new Set(diff.what.split(" + "));
-      const ofIt = (m: { kitBuff?: { owner: string; id: string } }) => m.kitBuff !== undefined && keys.has(`${m.kitBuff.owner}:${m.kitBuff.id}`);
-      const names = new Set([...keys].flatMap((k) => c.names.ofKitBuff.get(k) ?? []));
-      const listed = hit.effects.filter((x) => names.has(x.buff));
-      const mods = primary.options.modifiers ?? [];
-      const kept = ok.judged.filter((m) => !ofIt(m));
-      cf.push({ what: diff.what, kind: diff.kind, reading: readAt({ ...primary, options: { ...primary.options, modifiers: [...mods.filter((m) => !ofIt(m)), ...loggedEntries(c, listed, names, kept, ok.category)] } }) });
-    }
+    // One disagreement at a time taken the log's way (@efsim/logs hitCounterfactuals: HitRecord.counterfactuals since
+    // round 11; this probe derived them itself before).
+    const cf = hitCounterfactuals(c, hit, ok, differences);
     const kitSkill = kit?.skills.find((s) => s.skillId === d.skillId);
     const kitHit = inputs.kind === "hit" ? inputs.hit : undefined;
     const facts = landing.facts;

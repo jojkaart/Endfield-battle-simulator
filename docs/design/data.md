@@ -638,6 +638,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | One subtree of a data file, by its JSON path | `efsim gamedata tree <id> --path <path>` (paths as `who` prints them; a branch of only presentation says so) |
 | The logged hits in a window of time, their verdicts, the replay's crit and its source | `efsim zmdlogs hits <fixture> --from s --to s [--operator] [--event <re>] [--zones]` |
 | The pair the check judges a hit by (for statistics across logs) | `zmdlogs hits --json`: `graded` (the uncapped logged value against the verdict's reading) |
+| Which single disagreement, taken the log's way, makes an off hit fit | `zmdlogs hits --json`: `counterfactuals` (each difference, the crit flipped, a boundary kit buff on / off, Stagger), against `graded` |
 | Every one-sided landing across fights, for a question of your own | `efsim zmdlogs totals --all --json` (a JSON line each, cached; then `jq`) |
 | Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
 | Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
@@ -670,7 +671,12 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 the verdict's where it fell back or the log gives no crit),
 `logReading` / `logError` (every kit buff as the log lists it), `listed`,
 `differences` (`kind` engine / log / values; `sameTotals` where the values'
-sums agree: cosmetic), `replayCrit` and `critSource` (the crit the replay's
+sums agree: cosmetic), `counterfactuals` (round 11: the primary with one
+difference taken the log's way, the crit flipped where logged, a boundary
+kit buff on or off, Stagger toggled at its boundary; `what`, `kind`,
+`reading`: which single disagreement makes the hit fit, hitexport.ts
+`hitCounterfactuals`, which scripts/probes/stats/build.ts reads too),
+`replayCrit` and `critSource` (the crit the replay's
 landing took: `log`, or inferred `shown` / `layers` / `values`, or `none`),
 and under `landing`:
 `modifiers` (with `kitBuff`), `zones`, `scaleParts`, `enemy` (statuses with
