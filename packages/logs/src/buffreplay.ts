@@ -575,6 +575,8 @@ export interface ReplayedCast extends LoggedCast {
   readonly shows?: readonly string[];
   /** A slot cast whose first landing would come where the log has no hit by anyone within QUIET_MS (no enemy to hit). */
   readonly unseen?: true;
+  /** An unseen slot press before the log's first hit (no hit of anyone yet): an ultimate then skips the energy check. */
+  readonly beforeHits?: true;
   /**
    * No cast: the logged end of `whileBuff`'s buff is its expiry, which the replay's clock has later (castsFromBuffEnds:
    * the logged hit's trigger branch rules out the cast that ends it). Made by ending the buff then (it expires at the
@@ -709,8 +711,9 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
       : [];
     const landsAt = lc.t + (Math.min(...skill.hits.flatMap((h) => loggedFrames(h) ?? [])) * 1000) / FPS;
     const unseen = shownElsewhere && Number.isFinite(landsAt) && !fx.hits.some((h) => Math.abs(h.t - landsAt) <= QUIET_MS);
+    const beforeHits = unseen && fx.hits.every((h) => h.t > lc.t);
     const start = shownElsewhere ? lc.t : loggedCastStart(data, lc, skill.kind, fx.hits, stops);
-    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}) });
+    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}), ...(beforeHits ? { beforeHits: true as const } : {}) });
   }
   return added.length ? ordered([...casts, ...added]) : [...casts];
 }
@@ -1807,7 +1810,11 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
     // Else a press the log shows nothing of isn't made: the slot held a variant (her stance's presses every ~3 s, under
     // which the stance and its volleys go on), or the press did nothing (dbaee23b801d: Arcane's at 2706 ms, while
     // Typhoeus's hits land).
-    if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && startsBy(c.skillId) ? c.skillId : null;
+    // An ultimate pressed before the log's first hit is the ultimate whatever the replay's energy says: the energy the
+    // team starts with isn't in the log (9c0bb09daff2's Si at 7.02 s, the first hit at 13.27 s, needed 68 with 0 in the
+    // replay; the log lists her ultimate's Amp on the team from 13.27 to 21.4 s). Later presses keep the energy check
+    // (every unseen ultimate made: 1cd1657bc305 −7.2 → −19.5%, Typhoeus's shots at 41.3 s lost).
+    if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && ((c.beforeHits === true && c.kind === "ultimate") || startsBy(c.skillId)) ? c.skillId : null;
     // A step before the inferred cast, never that cast again (the inferred one is timed by the log's buff end:
     // e9896c8d02be's press at 67244 ms, under the Inksoul, isn't the Final Stroke whose burst comes at 69192 ms).
     if (available(c.skillId)) return null;
