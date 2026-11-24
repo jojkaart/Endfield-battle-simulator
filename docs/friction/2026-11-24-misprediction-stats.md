@@ -65,6 +65,17 @@ Empyrean combo key). Branch worktree-agent-a72af0fe24c692b31, base e5f22ef.
 - **Suggestion:** vectorize the bootstrap (fight-level sums once, resample the sums), and keep the section argument.
 - **Why it helps:** a next round re-running the analysis after fixes can do it in a minute.
 
+## 6. A test pins one log's total, which measure and snapshots:update don't run
+
+- **What happened:** the kit fix measured clean and snapshots:update passed, then premerge failed on
+  tests/logcasts.test.ts: the enemy-away test asserts d774's total within 6%, which the fix moved to +7.2% (explained:
+  the combos' ×1.5 had hidden replay-only strikes). A second 8-minute premerge after a one-line bound change.
+- **Cause:** totals bounds of particular logs live in feature tests, beside the snapshots that already pin every log's
+  total; snapshots:update runs only the log suites.
+- **Suggestion:** such tests assert the feature's effect (away against counted: the difference), not the log's total;
+  or snapshots:update also runs `npx vitest related` over the tests naming the logs whose totals moved.
+- **Why it helps:** a verdict-moving change finds its knock-ons in the step that is meant to show them.
+
 ## What worked well
 
 - The worker-thread builder: 61 fights in about a minute, so rebuilding after every idea was cheap.
