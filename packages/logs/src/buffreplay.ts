@@ -16,7 +16,7 @@ import {
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
-import { loggedNames } from "./enginecheck.ts";
+import { awayWindows, loggedNames } from "./enginecheck.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { loggedStagger, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
@@ -489,18 +489,52 @@ function listedWithValues(fx: LogFixture): Set<string> {
 }
 
 /**
- * The enemy's HP over the fight from the logged damage (TimelineScenario.enemyHp), in steps of 1% of its Max HP; only
- * when the logged damage is its Max HP (a fight against several phases or enemies of the type doesn't say whose HP).
+ * The enemy's HP over the fight from the logged damage (TimelineScenario.enemyHp), in steps of 1% of its HP, under the
+ * engine assumption enemy-hp. `max-hp`: only when the logged damage is the data's Max HP. `kill` (the default): also
+ * a fight that ends in a kill (its last logged hit capped at the enemy's remaining HP), whose logged total is the
+ * enemy's HP, the stage's scaling of Max HP included (tower015 ×7.6, tower016 ×5.5), split into lives of about Max HP
+ * where the enemy went away (ENEMY_AWAY_MS) as the damage reached a multiple of Max HP (Si, eny_0134_jsspsi: two
+ * lives, the 20–24 s away stretch starting at 1.000–1.074 × Max HP dealt in all eight development fights, the excess
+ * over 2 × Max HP all in the first life). Each life's HP is the damage dealt in it. Chen Qianyu's P1 and Alesh's P5
+ * read it (enemyHpBelow).
  */
-function loggedEnemyHp(data: GameData, fx: LogFixture): TimelineScenario["enemyHp"] {
+function loggedEnemyHp(data: GameData, fx: LogFixture, reading: string): TimelineScenario["enemyHp"] {
   const max = data.enemies[fx.enemy.id]?.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
-  if (!max || Math.abs(fx.hits.reduce((s, h) => s + h.value, 0) / max - 1) > 1e-3) return undefined;
+  if (!max || fx.hits.length === 0) return undefined;
+  const hits = [...fx.hits].sort((a, b) => a.t - b.t);
+  const total = hits.reduce((s, h) => s + h.value, 0);
+  const last = (hits.at(-1) as LogHit).t;
+  const capped = hits.some((h) => h.t === last && h.uncapped !== undefined && h.uncapped > h.value);
+  if (Math.abs(total / max - 1) > 1e-3 && (reading !== "kill" || !capped)) return undefined;
+  // Each life's first dealt damage (as a sum of the hits before it): an away stretch that starts once the damage has
+  // reached j × Max HP, within the fight's excess over its whole lives (under 10% of Max HP).
+  const lives = Math.floor(total / max + 1e-3);
+  const excess = total - lives * max;
+  const starts = [0];
+  if (reading === "kill" && lives >= 2 && excess < 0.1 * max) {
+    let dealt = 0;
+    let i = 0;
+    for (const w of awayWindows(fx)) {
+      while (i < hits.length && (hits[i] as LogHit).t <= w.from) dealt += (hits[i++] as LogHit).value;
+      const j = starts.length;
+      if (j < lives && dealt >= j * max - 1e-3 * max && dealt <= j * max + excess + 5e-3 * max) starts.push(dealt);
+    }
+  }
   const out: { from: number; fraction: number }[] = [];
   let dealt = 0;
+  let life = 0;
   let step = 100;
-  for (const h of [...fx.hits].sort((a, b) => a.t - b.t)) {
+  for (const h of hits) {
+    const next = starts[life + 1];
+    if (next !== undefined && dealt >= next) {
+      life++;
+      step = 100;
+      out.push({ from: Math.round((h.t * FPS) / 1000), fraction: 1 });
+    }
     dealt += h.value;
-    const fraction = Math.max(0, 1 - dealt / max);
+    const from = starts[life] as number;
+    const pool = (starts[life + 1] ?? total) - from;
+    const fraction = Math.max(0, 1 - (dealt - from) / pool);
     if (Math.floor(fraction * 100) < step) {
       step = Math.floor(fraction * 100);
       out.push({ from: Math.round((h.t * FPS) / 1000) + 1, fraction });
@@ -2130,7 +2164,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   let heldUntil: number | null = null;
   let brokenAt: number | null = null;
   const firstBasic = control ? { operator: control.first } : list.find((c) => c.kind === "basic");
-  const enemyHp = loggedEnemyHp(data, fx);
+  const enemyHp = loggedEnemyHp(data, fx, opts.assume?.["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
   const scenario: TimelineScenario = {
     team: fx.team,
     target: { enemy: fx.enemy.id, level: fx.enemy.level },
