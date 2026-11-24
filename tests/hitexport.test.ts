@@ -90,6 +90,26 @@ describe("per-hit records of the log check", () => {
     expect(formatRecord(r, false, "log")).toContain(`log reading ${r.logReading}`);
   });
 
+  it("gives the pair the check judges: the uncapped logged value against the verdict's reading (round 10)", () => {
+    const graded = records.filter((r) => r.graded);
+    expect(graded.length).toBeGreaterThan(records.length / 2);
+    for (const r of graded) {
+      const g = r.graded as NonNullable<typeof r.graded>;
+      expect(g.predicted).toBe(r.verdictReading);
+      expect(g.logged).toBeGreaterThanOrEqual(r.value);
+      if (r.verdict !== "mismatch") expect(g.error).toBeCloseTo(g.logged / g.predicted - 1, 9);
+    }
+    expect(records.filter((r) => r.verdict === "uncovered").every((r) => r.graded === null)).toBe(true);
+  });
+
+  it("filters by a window of log time (ms, both ends included)", () => {
+    const t = records[Math.floor(records.length / 2)]?.t as number;
+    const kept = filterRecords(records, { from: t, to: t + 1000 });
+    expect(kept.length).toBeGreaterThan(0);
+    expect(kept.every((x) => x.t >= t && x.t <= t + 1000)).toBe(true);
+    expect(kept.length).toBe(records.filter((x) => x.t >= t && x.t <= t + 1000).length);
+  });
+
   it("filters by the logged event key", () => {
     const ev = records[0]?.event as string;
     const kept = filterRecords(records, { event: new RegExp(`^${ev}$`) });

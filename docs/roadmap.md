@@ -16,17 +16,17 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–9
-  done (round 9, 2026-11-23: `zmdlogs offsets` and the log suites' offset
-  check, `scripts/edit.ts` with the doc damage check and
-  `scripts/bash-guard.ts` (a hook for the owner to wire), measure's field
-  kinds and hold units, shares in the scoreboard, `zmdlogs stops`, the
-  slow-downs' dilation index, docs/tried/); the backlog
-  ([2026-11-23-backlog-after-round-9.md](friction/2026-11-23-backlog-after-round-9.md),
-  3 live points: the dilation index through the stop lists, a kit form
-  naming the engine's hold, a twins test) joins the next round once about
-  five new reports have collected; next for the lead: the bash-guard hook
-  with the owner (round 9's summary in friction-done/).
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–10
+  done (round 10, 2026-11-24: no shell programming left (premerge,
+  snapshots, fetch-data, the session hook in TypeScript), `efsim kit`'s
+  paths and triggers' actions, `gamedata tree --path`, unread options
+  named, `zmdlogs totals --all --json`, caches shared across worktrees,
+  HitRecord.graded, `at-commit --run`); the backlog
+  ([2026-11-24-backlog-after-round-10.md](friction/2026-11-24-backlog-after-round-10.md),
+  7 live points: the stop lists' identity, a slot flag, measure --split,
+  the replay's DROPPED line, counterfactuals, the compiler's message,
+  analyze.py) joins the next round once about five new reports have
+  collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

@@ -83,3 +83,20 @@ Empyrean combo key). Branch worktree-agent-a72af0fe24c692b31, base e5f22ef.
 - `measure` and `snapshots:update` reporting mixed logs with the per-hit fit: d774's worse total was explained in one
   `zmdlogs totals` call.
 - `scripts/edit.ts` for every doc and code edit: no shell text damage this round.
+
+## Outcome (round 10)
+
+- 1 (No per-hit record with "why it's off": the analysis had to rebuild the check's internals): carried
+  (docs/friction/2026-11-24-backlog-after-round-10.md point 5): the counterfactuals are the check's readingBasis groups run once per difference, a change to the check's core
+  (logcheck.ts, enginecheck.ts readingBasis) larger than a tools round beside an accuracy agent.
+- 2 (Grading a hit: crit-less hits and capped hits aren't graded the way the check grades them): done (0ed25e8):
+  HitRecord.graded `{ logged, predicted, error }`, the uncapped logged value against the verdict's reading (a crit-less
+  hit's nearer crit), documented in hitexport.ts's header as the engine's error on a hit.
+- 3 (Analysis at one commit while fixing at the next): done (c534a11): `node scripts/at-commit.ts <ref> --run <script>
+  [-- args]` copies the script to its path in the tree, runs it there and puts the tree's file back; CLAUDE.md names it.
+- 4 (A kit field override took four tries): carried (backlog point 6): the compiler's messages are packages/data/src,
+  not this round's files.
+- 5 (analyze.py's feature tables are slow (6 minutes)): carried (backlog point 7).
+- 6 (A test pins one log's total, which measure and snapshots:update don't run): done (8400467): snapshots.ts, at its
+  end, runs the other test files that read a changed log's fixture (by its 12-hex id; hold-outs never), and a failure
+  there makes the run "fail" with the snapshots kept.

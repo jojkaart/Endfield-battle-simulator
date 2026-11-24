@@ -28,7 +28,7 @@ import { LOCK_KINDS, queueStatus, runLockedAsync, type LockKind } from "./testlo
 const load = () => loadavg().map((x) => x.toFixed(1)).join(" ");
 
 /** Scripts that take the lock themselves (wrapping them adds nothing), and the batch-script warning for the rest. */
-const SELF_LOCKING = new Set(["snapshots.sh", "premerge.sh", "measure.ts"]);
+const SELF_LOCKING = new Set(["snapshots.ts", "premerge.ts", "premerge.sh", "measure.ts"]);
 
 /** A warning when the command is a shell script (a batch of jobs holding the lock throughout), else "". */
 export function batchWarning(argv: readonly string[]): string {

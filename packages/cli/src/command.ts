@@ -67,6 +67,34 @@ export function mergedOptions(commands: readonly Command[], global: ParseArgsOpt
   return out;
 }
 
+/**
+ * The parsed values with a record of which options the command read. The parse is shared by every command, so an
+ * option another command (or another zmdlogs view) declares is accepted anywhere and, where nothing reads it, did
+ * nothing without a word (physical-statuses report point 5: `zmdlogs hits --from/--to` silently ignored); cli.ts warns
+ * of each option given but never read (unreadOptions).
+ */
+export function trackReads<V extends object>(values: V): { readonly values: V; readonly read: ReadonlySet<string> } {
+  const read = new Set<string>();
+  const proxy = new Proxy(values, {
+    get(target, key, receiver) {
+      if (typeof key === "string") read.add(key);
+      return Reflect.get(target, key, receiver) as unknown;
+    },
+    ownKeys(target) {
+      // A spread or Object.entries reads every option: count them all as read (no warning rather than a wrong one).
+      for (const k of Reflect.ownKeys(target)) if (typeof k === "string") read.add(k);
+      return Reflect.ownKeys(target);
+    },
+  });
+  return { values: proxy, read };
+}
+
+/** The options given on the command line (parseArgs tokens) that the command never read, global ones left out. */
+export function unreadOptions(tokens: readonly { readonly kind: string; readonly name?: string }[], read: ReadonlySet<string>, global: ParseArgsOptionsConfig): string[] {
+  const given = new Set(tokens.flatMap((t) => (t.kind === "option" && t.name !== undefined ? [t.name] : [])));
+  return [...given].filter((n) => !read.has(n) && !(n in global));
+}
+
 /** The usage text: the commands' lines in registry order, the global notes, then each command's notes once. */
 export function usageText(commands: readonly Command[], globalNotes: readonly string[]): string {
   const notes = [...new Set([...globalNotes, ...commands.flatMap((c) => c.notes ?? [])])];

@@ -132,7 +132,8 @@ In a git worktree (sub-agents' `.claude/worktrees/…`), run
 `node scripts/setup-worktree.ts` once (no `source`, no `EFSIM_DATA_DIR`): it
 links the worktree's own packages, which the CLI refuses to run without.
 Vitest does it itself; the game data is found in the main checkout. Before
-merging a branch into `main`, run `scripts/premerge.sh`: about 15–20 min
+merging a branch into `main`, run `node scripts/premerge.ts`
+(`scripts/premerge.sh` is the same: one exec of it): about 15–20 min
 (more under load and the lock's queue), so run it in the background with a
 limit of 2 h. It
 runs every step (but skips the test suites when typecheck or lint
@@ -148,8 +149,11 @@ complex to verify"):
 - One plain command per Bash call, run from the worktree, absolute paths.
   No `source`, no `cd … && git …` chains, no loops or pipes around `git`,
   no `git -C`. `git show <ref>:<path> > scratch/x`, then process the file.
-  A sequence mixing `git` with other commands goes into `scratch/x.sh`,
-  run with `bash scratch/x.sh`. Commit messages: write `scratch/msg.txt`
+  A sequence mixing `git` with other commands goes into `scratch/x.ts`
+  (spawnSync per command), run with `node scratch/x.ts`: no shell
+  programming anywhere, the repository's scripts included (round 10: a
+  tracked `.sh` is one `exec node <script>.ts` line, where the harness
+  needs a file; tests/done-line.test.ts checks). Commit messages: write `scratch/msg.txt`
   with the Write tool, then `git commit -F scratch/msg.txt -- <paths>`
   (by pathspec; `git mv` / `git rm` stage on their own, but only the
   index's text: move first, edit after, and commit by the pathspecs of
@@ -163,7 +167,9 @@ complex to verify"):
   and is refused the next time, and in double quotes the shell runs a
   doc's backticks as commands (round 8 wrote `the  assumption ()` into
   open-problems.md). Write the file with the Write tool, then run it with
-  one plain command. File edits with the Write/Edit tools; a batch of
+  one plain command. A field of a fixture or of a `--json` line: `jq`
+  (installed; `jq '.hits[0]' fixtures/pending/zmdlogs-0c14*.json`), not
+  inline Python. File edits with the Write/Edit tools; a batch of
   replacements (backticks and all): write `scratch/edits-<n>.txt` with the
   Write tool, then `node scripts/edit.ts scratch/edits-<n>.txt` (exact,
   all or nothing, the format in its header: `@@@ <path>`, then
@@ -209,9 +215,11 @@ complex to verify"):
   commit's code beside this one: `node scripts/at-commit.ts <ref>
   [--patch f]` (a worktree under scratch/at/ with its own packages linked;
   `--remove <dir>` after), then bench both CLIs or both test runs
-  (`"cd scratch/at/<hash> && npx vitest run <file>"`). Never copy older
-  source files over the tree for an A/B. Game-data questions: `efsim
-  gamedata tree <id>`, `who <id>`, `find <type>`.
+  (`"cd scratch/at/<hash> && npx vitest run <file>"`); a probe or scratch
+  script of this checkout against that commit's code: `--run <script> [--
+  args]`. Never copy older source files over the tree for an A/B.
+  Game-data questions: `efsim gamedata tree <id>` (`--path` for one
+  subtree), `who <id>`, `find <type>`.
 
 Hold-out logs live in `fixtures/holdout/`: never open, list or grep it
 (`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout

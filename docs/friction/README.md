@@ -18,7 +18,7 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    and writes its own journal entry. This folder only holds what still needs
    doing.
 3. Accuracy rules still apply to improvement rounds: tests stay green,
-   snapshots only move with a reason, `scripts/premerge.sh` before merging.
+   snapshots only move with a reason, `node scripts/premerge.ts` before merging.
 4. **The backlog stays short** (round 6): a branch that closes a backlog
    point (any task, not only an improvement round) adds one line under it
    in the same branch: "Closed by <branch>, <commit>: how". A point carried

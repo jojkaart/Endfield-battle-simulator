@@ -144,3 +144,16 @@ The reports named the episode each tool would have shortened (a9d7's food, 9c0b 
 unit, the JSONL with a done line in it), so each was built and checked on that episode in minutes; and measure's
 worker, which loads any commit's code loosely, took the hidden holds' units for both sides without a change to the
 replay.
+
+## Outcome (round 10)
+
+- 1 (A slow-down's identity through the stop lists and the replay's record): carried
+  (docs/friction/2026-11-24-backlog-after-round-10.md point 1; round 9's own report hit it again). Its engine half (TimelineState.slowdowns in
+  timeline/clock.ts) was outside this round's files (another agent's accuracy work; engine timing code), and the
+  stops.ts move it needs touches logcasts.ts and replayrecord.ts, the placement's modules.
+- 2 (A kit value written as "the data's length minus what the engine holds"): parked after its second carry (no new
+  report hit it): an engine timing feature and a kit edit, both outside this round's files.
+- 3 (No test that a hit's replay-only and log-only twins don't come back): parked after its second carry, now
+  cheaper: snapshotEntry gives the one-sided landings (`oneSided`, 6cfe05c), whose contexts already pair twins (`twin
+  like`, `twin other`), so the test is a count over the pending suite's entries; it pins an accuracy quantity, so the
+  next agent on the totals sets its bound.

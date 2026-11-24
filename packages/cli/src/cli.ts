@@ -6,7 +6,7 @@
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { loadGameData, withKitFiles } from "@efsim/data";
-import { mergedOptions, usageText, type CommandContext } from "./command.ts";
+import { mergedOptions, trackReads, unreadOptions, usageText, type CommandContext } from "./command.ts";
 import { COMMANDS } from "./commands/index.ts";
 import { GLOBAL_NOTES, GLOBAL_OPTIONS } from "./commands/shared.ts";
 import { setWorkerKitFiles } from "./rulespool.ts";
@@ -15,7 +15,7 @@ const OPTIONS = mergedOptions(COMMANDS, GLOBAL_OPTIONS);
 const USAGE = usageText(COMMANDS, GLOBAL_NOTES);
 
 async function main(argv: string[]): Promise<number> {
-  const { values, positionals } = parseArgs({ args: argv, allowPositionals: true, allowNegative: true, options: OPTIONS });
+  const { values, positionals, tokens } = parseArgs({ args: argv, allowPositionals: true, allowNegative: true, options: OPTIONS, tokens: true });
   const [command, ...args] = positionals;
   if (values["help"] || !command) {
     process.stdout.write(USAGE);
@@ -28,10 +28,11 @@ async function main(argv: string[]): Promise<number> {
   const kits = values["kit"] as string[];
   setWorkerKitFiles(kits.map((f) => resolve(f)));
   let loaded: ReturnType<typeof loadGameData> | undefined;
+  const tracked = trackReads(values);
   const ctx: CommandContext<Record<string, unknown>> = {
     command,
     args,
-    values,
+    values: tracked.values,
     data: () => (loaded ??= withKitFiles(loadGameData(), kits)),
     usage: USAGE,
     need: (n) => {
@@ -42,6 +43,9 @@ async function main(argv: string[]): Promise<number> {
   if (!cmd) throw new Error(`unknown command ${command}\n\n${USAGE}`);
   const text = await cmd.run(ctx);
   process.stdout.write(text + "\n");
+  // On stderr, after the output: stdout stays the command's own (JSON a pipe reads).
+  const unread = unreadOptions(tokens, tracked.read, GLOBAL_OPTIONS);
+  if (unread.length) process.stderr.write(`efsim: ${[command, ...args.slice(0, 1)].join(" ")} never read ${unread.map((n) => `--${n}`).join(", ")}: not an option of this command (another one's), so it did nothing; efsim --help lists each command's\n`);
   return 0;
 }
 

@@ -90,7 +90,8 @@ describe("with-lock's batch warning", () => {
   it("warns about shell scripts and self-locking scripts, not about plain commands", () => {
     expect(batchWarning(["bash", "scratch/runs.sh"])).toMatch(/shell script/);
     expect(batchWarning(["scratch/runs.sh"])).toMatch(/shell script/);
-    expect(batchWarning(["scripts/snapshots.sh"])).toMatch(/takes the test lock itself/);
+    expect(batchWarning(["node", "scripts/snapshots.ts"])).toMatch(/takes the test lock itself/);
+    expect(batchWarning(["node", "scripts/premerge.ts"])).toMatch(/takes the test lock itself/);
     expect(batchWarning(["node", "packages/cli/src/main.ts", "rules", "x.json"])).toBe("");
     expect(batchWarning(["bash", "-c", "sleep 1"])).toBe("");
     expect(batchWarning(["bash", "-c", "a; b"])).toMatch(/inline batch/);

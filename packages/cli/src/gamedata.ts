@@ -130,7 +130,12 @@ function scalar(key: string, v: unknown): string {
 /** The compact tree of a parsed data file (or any part of one). */
 export function dataTree(v: unknown, label = ""): TreeNode {
   if (Array.isArray(v)) {
-    const kids = v.flatMap((x, i) => (isDefault(x) ? [] : [dataTree(x, `[${i}]`)])).filter((n) => !(n.label.endsWith("(presentation)") && n.children.length === 0));
+    const all = v.flatMap((x, i) => (isDefault(x) ? [] : [dataTree(x, `[${i}]`)]));
+    const presentation = all.filter((n) => n.label.endsWith("(presentation)") && n.children.length === 0);
+    const kids = all.filter((n) => !presentation.includes(n));
+    // A list of nothing but presentation (an IfElse branch that only plays an effect) is said to be one, not left out
+    // as if the branch weren't there (physical-statuses report point 3: Empyrean's free-path branches looked cut).
+    if (!kids.length && presentation.length) return { label: `${label ? `${label} › ` : ""}(presentation only, left out: ${countTypes(presentation)})`, children: [] };
     return collapse({ label, children: kids }, true);
   }
   if (!isObj(v)) return { label: label ? scalar(label, v) : String(v), children: [] };
@@ -163,6 +168,44 @@ export function dataTree(v: unknown, label = ""): TreeNode {
   return collapse({ label: head, children: children.filter((c) => !c.label.endsWith("(presentation)")) }, !type && !inline.length);
 }
 
+/** The types of presentation nodes ("[0] EffectAction (presentation)"), counted: "EffectAction ×2, PlaySound". */
+function countTypes(nodes: readonly TreeNode[]): string {
+  const n = new Map<string, number>();
+  for (const x of nodes) {
+    const t = x.label.split(" ").at(-2) ?? "?";
+    n.set(t, (n.get(t) ?? 0) + 1);
+  }
+  return [...n].map(([t, k]) => (k > 1 ? `${t} ×${k}` : t)).join(", ");
+}
+
+/** A JSON path as `who` prints it (`.a.b[3].c`) as its steps; throws on anything else. */
+export function parseJsonPath(path: string): (string | number)[] {
+  const steps: (string | number)[] = [];
+  const re = /\.([^.[\]]+)|\[(\d+)\]/y;
+  let at = 0;
+  while (at < path.length) {
+    re.lastIndex = at;
+    const m = re.exec(path);
+    if (!m) throw new Error(`--path ${path}: not a JSON path like .actionGroupData.timelineActions[9] (as \`gamedata who\` prints them), at "${path.slice(at)}"`);
+    steps.push(m[1] !== undefined ? m[1] : Number(m[2]));
+    at = re.lastIndex;
+  }
+  return steps;
+}
+
+/** The part of a parsed file at a path; throws naming the first step that isn't there. */
+export function atJsonPath(v: unknown, path: string): unknown {
+  let cur = v;
+  let done = "";
+  for (const s of parseJsonPath(path)) {
+    const next = typeof s === "number" ? (Array.isArray(cur) ? cur[s] : undefined) : isObj(cur) ? cur[s] : undefined;
+    if (next === undefined) throw new Error(`--path ${path}: nothing at ${typeof s === "number" ? `[${s}]` : `.${s}`} after "${done || "(the file)"}"`);
+    cur = next;
+    done += typeof s === "number" ? `[${s}]` : `.${s}`;
+  }
+  return cur;
+}
+
 /** A bare key or index with one child joins it on one line (`actions › [0] › actionData`). */
 function collapse(n: TreeNode, bare: boolean): TreeNode {
   const only = n.children[0];
@@ -190,9 +233,10 @@ export function renderTree(node: TreeNode, opts: { readonly grep?: RegExp; reado
 }
 
 /** `efsim gamedata tree <id>`. */
-export function gamedataTree(id: string, opts: { readonly grep?: string; readonly depth?: number } = {}): string {
+export function gamedataTree(id: string, opts: { readonly grep?: string; readonly depth?: number; readonly path?: string } = {}): string {
   const { folder: f, file } = dataFile(id);
-  const tree = dataTree(parseJsonExact(readFileSync(file, "utf8")), `${id} (${f})`);
+  const parsed = parseJsonExact(readFileSync(file, "utf8"));
+  const tree = opts.path !== undefined ? dataTree(atJsonPath(parsed, opts.path), `${id} (${f}) ${opts.path}`) : dataTree(parsed, `${id} (${f})`);
   return renderTree(tree, { ...(opts.grep !== undefined ? { grep: new RegExp(opts.grep) } : {}), ...(opts.depth !== undefined ? { depth: opts.depth } : {}) });
 }
 

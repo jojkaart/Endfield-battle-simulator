@@ -36,9 +36,13 @@ Part of the [design](../design.md): Fixtures, tests, snapshots and the accuracy 
   `log-verdicts-holdout.json` (since round 4), so a diff of the pending file
   names no hold-out: never diff or open the hold-out file, read its effect
   in `node scripts/accuracy.ts --compare <ref>` (aggregates only). A deliberate change: `npm run
-  snapshots:update` (scripts/snapshots.sh: every snapshot emptied and
+  snapshots:update` (scripts/snapshots.ts: every snapshot emptied and
   written again with `EFSIM_UPDATE_SNAPSHOTS=1`, so the result depends only
   on the code), and the file's diff goes in the commit with the reason.
+  At its end it runs the other test files that read a changed log's
+  fixture (round 10: a feature test pinning one log's total failed only
+  at premerge); a failure there makes the run "fail" with the snapshots
+  kept.
 - **The accuracy scoreboard** (docs/accuracy.md, scripts/accuracy.ts) is
   computed from the verdict snapshots and the hold-out split: per group
   (verified, development, hold-out, earlier pending) the shares of plain
@@ -75,7 +79,7 @@ Part of the [design](../design.md): Fixtures, tests, snapshots and the accuracy 
 - **The pending shards** (tests/slow/logs-pending-*.test.ts) are balanced
   by each log's check time in the last snapshot update
   (tests/slow/pending-costs.json, written by scripts/pending-costs.ts from
-  snapshots.sh's vitest report with `snapshots:update -- --costs`, on a
+  snapshots.ts's vitest report with `snapshots:update -- --costs`, on a
   quiet machine when rebalancing; a new log falls back to its hit count).
 
 ## Measuring a change
@@ -150,7 +154,11 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   worktree (scripts/at-commit.ts), so the working tree stays editable;
   `--base <ref>` measures two commits' code on the same logs (an A/B that
   doesn't trust either side's committed snapshots). Never copy older source
-  files over the tree while a job runs on it. A log new since that commit
+  files over the tree while a job runs on it. A `--patch` without `--at`
+  goes on top of the tree as queued: one the working tree already has is
+  refused before queueing, naming `--at <the commit before it>` (round 10).
+  A probe being edited, at another commit's code: `node
+  scripts/at-commit.ts <ref> --run <script> [-- args]`. A log new since that commit
   (an import on this branch) is measured there on this tree's copy of its
   fixture (round 6).
 - **Two code variants, neither an open reading:** commit variant A (a WIP
@@ -215,8 +223,16 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   9, so a redirected stdout is the command's own output) and `EFSIM-DONE <job>
   killed` when a signal stops measure, snapshots, premerge, team-ab or
   with-lock (waiting included). premerge's "pass" comes only from its own
-  end with every step passed (scripts/done-line.sh; round 5, after a
-  premerge killed by its limit printed "pass" over a failed test step). They
+  end with every step passed (scripts/done-line.ts; round 5, after a
+  premerge killed by its limit printed "pass" over a failed test step).
+  Since round 10 premerge and snapshots are TypeScript throughout
+  (scripts/premerge.ts with its preconditions, scripts/snapshots.ts;
+  `doneJob` runs every step as a child it can stop): on a signal the running
+  step gets TERM and up to 5 s to end, then the job's cleanups run
+  (snapshots puts its files back) and the `killed` line follows. No shell
+  script holds logic: a tracked `.sh` is one `exec node <script>.ts` line
+  (scripts/premerge.sh for habits, .claude/hooks/session-start.sh for the
+  harness), which tests/done-line.test.ts checks. They
   keep a state file (`node scripts/runstate.ts` lists them: started, at
   which code, finished or interrupted by a restart). Wait for your job's
   own name, since a script around several jobs prints several lines:

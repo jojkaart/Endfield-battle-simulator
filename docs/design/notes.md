@@ -14,7 +14,7 @@ packages/cli
 packages/web      (later)
 fixtures/         language-neutral fixtures
 schemas/          JSON Schemas for DataBundle, Scenario, Result
-scripts/          fetch-data.sh: sparse fetch of the tables in packages/data/tables.json
+scripts/          fetch-data.ts: sparse fetch of the tables in packages/data/tables.json
 ```
 
 Tooling (set up 2026-10-18): TypeScript 5.9 (strict, `noUncheckedIndexedAccess`,

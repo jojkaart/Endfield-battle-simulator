@@ -1,4 +1,4 @@
-// State files of long runs (scripts/snapshots.sh, premerge, scripts/measure.ts), so that after a container restart
+// State files of long runs (scripts/snapshots.ts, premerge, scripts/measure.ts), so that after a container restart
 // (which kills background jobs and their monitors without a word) an agent sees at once which run was in flight, for
 // which code, and whether it finished: scratch/runs/<job>.json, one per job, rewritten by each run.
 //

@@ -66,6 +66,7 @@ export default command({
                 [--kind <k>] [--operator <op>]  Only this reaction kind ("skill": kit hits) / operator (id or name;
                                           repeatable)
                 [--event <regex>]         Only hits whose logged event key matches
+                [--from s] [--to s]       Only hits logged in this window (seconds, both ends included)
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's (not cached)
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
                 [--reading log]           Text lines also give the log's reading and its error: off under both is the
@@ -164,6 +165,10 @@ export default command({
                 [--kinds]                 Instead: the one-sided landings ranked by kind (where they sit, nature,
                                           skill kind) per group, then by operator and key (hold-outs: measure's
                                           summary, by kind only)
+                [--json]                  Instead: every one-sided landing, a JSON line each (fight, group, side,
+                                          operator, t, damage, key, skill, nature, context, flags, twin), cached
+                                          with the shares: a new ranking question is a jq line, not a replay of
+                                          every log
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
                                           windows and where the engine's own would have ended; with several logs
                                           (default: every development log) a summary of the shortfalls
@@ -367,29 +372,30 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
         logs: which,
       });
     }
+    const seconds = (v: string | undefined, name: "from" | "to") => {
+      if (v === undefined) return {};
+      const x = Number(v);
+      if (!Number.isFinite(x)) throw new Error(`--${name} takes seconds`);
+      return { [name]: x * 1000 };
+    };
     if (sub === "hits") {
       if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
       const reading = values.reading === "log" ? "log" : "primary";
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
+      const window = { ...seconds(values.from, "from"), ...seconds(values.to, "to") };
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
     }
     if (sub === "casts" || sub === "replay") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
-      const seconds = (v: string | undefined, name: string) => {
-        if (v === undefined) return {};
-        const x = Number(v);
-        if (!Number.isFinite(x)) throw new Error(`--${name} takes seconds`);
-        return { [name]: x * 1000 };
-      };
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
       return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: values["trace-buff"], assume: parseAssume(data(), values.assume), stops: values.stops });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
-      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), kinds: values.kinds, progress });
+      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), kinds: values.kinds, json: values.json, progress });
       if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
       if (values.by !== undefined && values.by !== "event") throw new Error("--by takes event");
       return totalsView(data(), readDevFixture(arg), { operators, ...top, assume: parseAssume(data(), values.assume), byEvent: values.by === "event", kinds: values.kinds });

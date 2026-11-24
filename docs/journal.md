@@ -4,9 +4,39 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 137 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 138 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-24: Improvement round 10: no shell programming, printers that say what they leave out, rows cached
+
+**Goal:** the five open friction reports (round 9's backlog and own report, the one-sided landings, the physical
+statuses, the misprediction statistics), tools only, beside an accuracy agent in the kits, fixtures, snapshots and
+engine kit code; and the lead's item from the owner: no real shell programming left in the repository. Summary:
+docs/friction-done/2026-11-24-round-10.md; backlog: docs/friction/2026-11-24-backlog-after-round-10.md.
+
+**Done:**
+- **The shell scripts in TypeScript.** scripts/done-line.ts (`doneJob`), scripts/premerge.ts (preconditions, steps,
+  accuracy compare, done line), scripts/snapshots.ts, scripts/fetch-data.ts (CI's cache key too),
+  scripts/session-start.ts; premerge.sh and the session hook are one `exec node` line each, and a test holds every
+  tracked .sh to that. snapshots:update now also runs the tests that read a changed log's fixture.
+- **Printers that say what they leave out.** `efsim kit`: each skill's paths (ends, jumps, the triggers' jumps on it)
+  and every trigger's actions; `gamedata tree --path` and "presentation only" for a branch that only plays an effect
+  (Empyrean's free-path branches: so not 4d60's Sunderblades); efsim names every option given but never read; `zmdlogs
+  hits --from/--to`.
+- **Rows cached and shared.** `zmdlogs totals --all --json` (every one-sided landing, cached); the hit and totals caches
+  read from the main checkout's and other worktrees' at the same code key. HitRecord.graded. The offsets screen shows
+  the check's ATK explanation. measure refuses a `--patch` the tree already has; `at-commit --run`.
+
+**Scoreboard:** unchanged (snapshots:update, itself the new script: "No log's verdicts moved"; every file
+byte-identical): development plain 67.1%, mismatch 11.6%, mean |damage error| 7.2%; hold-out 77.6%, 6.2%, 8.0%.
+
+**Decisions:** premerge's vitest steps run under the lock as `testlock.ts` children, so a signal to premerge stops
+them and frees the ticket (a spawnSync couldn't be interrupted; the synchronous runLocked is gone). A signal waits up
+to 5 s for the running step before the cleanups, so snapshots puts its files back after vitest stopped writing. The
+.sh wrappers use `exec` so a signal reaches node. The unread-option check warns (stderr, after the output) rather
+than refuses: a spread of the values counts as reading all, so it can miss one but never names a wrong one. Round 9's
+backlog points 2 and 3 parked after their second carry; the rest is the backlog's seven points.
 
 ## 2026-11-24: Misprediction statistics across the logs; Zhuang Fangyi's Empyrean combo key
 
@@ -354,31 +384,3 @@ engine's own timeline and one hold-out can't be traced.
 **Left:** Rossi's bleed tick series across a reapplication (489c 52–60 s, which drops the ramp's bounds); a Corrosion end
 read from the hits as a hold bound (4d60); 6339's Laevatain hit_2 with no own cast before it; the castFlag view's INSIDE
 wording (it counts the wait for own hits, not only uncuttable frames).
-
-## 2026-11-23: The hold-outs refreshed blind: the lane rules tested on them
-
-Goal: round 7 found every hold-out (and the verified 40d9, 4e5e) imported before effects carried `since` / `source`,
-so the replay's rules that read the log's buff runs (the hidden holds' run and status clocks, `heldToLoggedEnds`,
-`layerCrits`) were untested there. Refresh them without anyone seeing a hold-out, then measure.
-
-Done:
-- `zmdlogs refresh` refused 40d9 and 4e5e: one 0 ms trigger buff each was unquantified at import, and today's detail
-  has every `dynamicEffects` empty (40d9 under the same parser version). `refreshFixture` now lets a hit's
-  `unquantified` listing only have lost entries, keeps the fixture's then (`RefreshResult.keptUnquantified`, one
-  provenance note) and still refuses a new entry. Both refreshed: since / source / poise.origin added; verdicts
-  unchanged (4e5e: other counts only).
-- scripts/holdout-refresh.ts: the split's hold-out ids by code, each detail fetched once (3.5 s apart, the importer's
-  user agent, memory only, never the raw cache), refreshed in a temporary copy, written back only if its id, battle,
-  team and enemy are unchanged; prints an index, ok / failed (a category) and since yes/no per fixture, then counts.
-  Tested on a synthetic root (tests/holdout-refresh.test.ts). Run: 13 ok, since 0 → 13, no listing kept.
-- Scoreboard (same code, main at 636bbc0; the fixtures only): hold-out plain 74.0 → 77.6%, matched 91.7 → 92.1%,
-  mismatch 6.4 → 6.3%, mean |damage error| 10.8 → 10.6%, within 5% 7 → 8; 5 better, 1 worse, 6 mixed, 1 unchanged.
-  Verified, development, earlier pending unchanged.
-- `measure --variant hidden-holds=none|log|holds` on the refreshed hold-outs against the default `placed` (77.6%,
-  6.3%, 10.6%): none 70.3%, 6.5%, 10.9% (1 better, 7 worse); log 73.0%, 6.5%, 10.7%; holds 76.8%, 6.3%, 10.5%.
-
-Decision: the hidden holds (`placed`, `log` on top) are confirmed on the hold-outs: the best reading there, by about
-the development logs' margin (none → placed: development 57.8 → 65.4%, hold-out 70.3 → 77.6%).
-
-Left: the one hold-out worse after the refresh can't be traced (a hold-out); `layerCrits` has no assumption reading,
-so its share of the 74.0 → 77.6% isn't separated; a detail takes ~45 s to download.

@@ -8,15 +8,16 @@ import { basename, dirname, join, resolve } from "node:path";
 import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { exportHits, exportHitsParallel, filterRecords, formatRecord, type HitRecord } from "./hitexport.ts";
-import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
-import { gameDataCacheKey, REPO_ROOT } from "@efsim/data";
+import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
+import { gameDataCacheKey, mainCheckoutOf, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
 import type { TotalsShares } from "./enginecheck.ts";
+import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fitBuild, type BuildCandidate } from "./buildfit.ts";
-import { offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
+import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -70,11 +71,13 @@ export function selectedFiles(sel: LogSelection, command: string): string[] {
   return logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
 }
 
-/** The records' filter of the records commands: reaction kind, operators, the logged event key. */
+/** The records' filter of the records commands: reaction kind, operators, the logged event key, a window of log time (ms). */
 export interface RecordFilter {
   readonly kind?: string;
   readonly operators?: readonly string[];
   readonly event?: RegExp;
+  readonly from?: number;
+  readonly to?: number;
 }
 
 /**
@@ -109,19 +112,40 @@ const HITS_CACHE = "scratch/hits-cache";
 /** Code versions whose cached records are kept (the newest by use). */
 const HITS_CACHE_KEEP = 3;
 
-function hitsCacheFile(file: string): string {
+function hitsCacheFile(file: string, root: string = REPO_ROOT): string {
   const fixtureHash = createHash("sha256").update(readFileSync(file)).digest("hex").slice(0, 12);
-  return join(REPO_ROOT, HITS_CACHE, hitsCodeKey(), `${basename(file, ".json")}-${fixtureHash}.json`);
+  return join(root, HITS_CACHE, hitsCodeKey(), `${basename(file, ".json")}-${fixtureHash}.json`);
+}
+
+/**
+ * Where a cache entry may be read: this checkout's, then the main checkout's and its other agents' worktrees'
+ * (.claude/worktrees/*), whose entries are as good when the code key is the same (it hashes the game data's key and
+ * every engine and log source file, so equal keys mean equal code): a new worktree's first `--all` view reads what
+ * another checkout at the same code computed instead of recomputing every log (round 9 friction point 4: 171 s).
+ * Written only to this checkout's.
+ */
+export function cacheReadPaths(own: string, root: string = REPO_ROOT): string[] {
+  const main = mainCheckoutOf(root) ?? root;
+  const rel = own.slice(root.length);
+  const trees = join(main, ".claude", "worktrees");
+  const others = [main, ...(existsSync(trees) ? readdirSync(trees).map((d) => join(trees, d)) : [])].filter((r) => resolve(r) !== resolve(root));
+  return [own, ...others.map((r) => join(r, rel))];
+}
+
+function readCached<T>(own: string): T | undefined {
+  for (const c of cacheReadPaths(own)) {
+    if (!existsSync(c)) continue;
+    try {
+      return JSON.parse(readFileSync(c, "utf8")) as T;
+    } catch {
+      // being written, or damaged: the next place, else recompute
+    }
+  }
+  return undefined;
 }
 
 function readHitsCache(file: string): HitRecord[] | undefined {
-  const c = hitsCacheFile(file);
-  if (!existsSync(c)) return undefined;
-  try {
-    return (JSON.parse(readFileSync(c, "utf8")) as HitRecord[]).map((r) => ({ ...r, fixture: file }));
-  } catch {
-    return undefined;
-  }
+  return readCached<HitRecord[]>(hitsCacheFile(file))?.map((r) => ({ ...r, fixture: file }));
 }
 
 function writeHitsCache(file: string, records: readonly HitRecord[]): void {
@@ -210,13 +234,13 @@ export async function groupsCliReport(data: () => GameData, operator: string, se
  * the fixture are unchanged (as the hit records; not under another reading). Never a hold-out: their aggregates come
  * from measure.
  */
-export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly kinds?: boolean; readonly progress?: (line: string) => void }): Promise<string> {
+export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly kinds?: boolean; readonly json?: boolean; readonly progress?: (line: string) => void }): Promise<string> {
   const files = selectedFiles(sel, "totals");
   const workers = opts.workers === undefined ? 1 : Number(opts.workers);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const assume = opts.assume ?? {};
   const cache = (opts.cache ?? true) && !Object.keys(assume).length;
-  const shares = new Map<string, TotalsShares>();
+  const shares = new Map<string, FightTotals>();
   const todo: string[] = [];
   for (const f of files) {
     const c = cache ? readSharesCache(f) : undefined;
@@ -224,7 +248,7 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
     else todo.push(f);
   }
   if (files.length > 1) opts.progress?.(`totals: ${files.length - todo.length} of ${files.length} logs from the cache (${HITS_CACHE}), ${todo.length} to check`);
-  const got = (f: string, s: TotalsShares) => {
+  const got = (f: string, s: FightTotals) => {
     shares.set(f, s);
     if (cache) writeSharesCache(f, s);
   };
@@ -232,12 +256,14 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
   else
     for (const f of todo) {
       opts.progress?.(`totals ${fixtureLabel(f)}`);
-      got(f, snapshotEntry(data(), readLogFixture(f), Object.keys(assume).length ? { assume } : {}).shares);
+      const e = snapshotEntry(data(), readLogFixture(f), Object.keys(assume).length ? { assume } : {});
+      got(f, { shares: e.shares, oneSided: e.oneSided });
     }
   const split = readLogSplit(REPO_ROOT);
   const dev = new Set(split.development.map((d) => d.replace(/^zmdlogs-/, "")));
   const groupOf = (f: string): TotalsGroup => (isMultiTarget(f) ? "multi" : !resolve(f).startsWith(resolve(REPO_ROOT, LOG_DIRS.pending) + "/") ? "verified" : dev.has(fixtureLabel(f).replace(/^zmdlogs-/, "")) ? "development" : "earlier");
-  const rows = files.map((f) => ({ short: shortId(fixtureLabel(f)), group: groupOf(f), shares: shares.get(f) as TotalsShares }));
+  if (opts.json) return oneSidedJson(files.map((f) => ({ fight: shortId(fixtureLabel(f)), group: groupOf(f), oneSided: (shares.get(f) as FightTotals).oneSided })), opts.operators);
+  const rows = files.map((f) => ({ short: shortId(fixtureLabel(f)), group: groupOf(f), shares: (shares.get(f) as FightTotals).shares }));
   if (opts.kinds) return totalsKindsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
   return totalsAllView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
 }
@@ -254,32 +280,48 @@ export async function offsetsReport(data: () => GameData, sel: LogSelection, opt
   for (const r of records) byFile.set(r.fixture, [...(byFile.get(r.fixture) ?? []), r]);
   const rows = files.flatMap((f) => {
     const fx = readLogFixture(f);
-    return screenOffsets(offsetHitsOfRecords(byFile.get(f) ?? [])).map((offset) => ({ short: shortId(fixtureLabel(f)), fx, offset }));
+    return screenOffsets(offsetHitsOfRecords(byFile.get(f) ?? [])).map((offset) => {
+      // A candidate's ATK explanation, as the check's report gives it (one place: logcheck.ts offsetExplanations).
+      const build = isOffsetCandidate(offset) ? fx.team.find((b) => b.operator === offset.operator) : undefined;
+      const fits = build ? offsetExplanations(data(), build, offset.median) : [];
+      return { short: shortId(fixtureLabel(f)), fx, offset, ...(fits.length ? { fits } : {}) };
+    });
   });
   return offsetsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
 }
 
+/** A fight's totals as `zmdlogs totals --all` caches them: the shares and the one-sided landings. */
+interface FightTotals {
+  readonly shares: TotalsShares;
+  readonly oneSided: readonly OneSided[];
+}
+
+/**
+ * `zmdlogs totals --all --json`: every one-sided landing of the selected fights, a JSON line each with its fight
+ * (short id) and group, from the cache like the shares (one-sided report point 1: each new ranking question re-ran
+ * every replay in a scratch script; now `jq` over this), largest |damage| first within a fight.
+ */
+export function oneSidedJson(fights: readonly { readonly fight: string; readonly group: TotalsGroup; readonly oneSided: readonly OneSided[] }[], operators?: readonly string[]): string {
+  return fights
+    .flatMap((f) => [...f.oneSided].filter((o) => !operators?.length || operators.includes(o.operator)).sort((a, b) => Math.abs(b.damage) - Math.abs(a.damage)).map((o) => JSON.stringify({ fight: f.fight, group: f.group, ...o })))
+    .join("\n");
+}
+
 function sharesCacheFile(file: string): string {
-  return hitsCacheFile(file).replace(/\.json$/, ".shares.json");
+  return hitsCacheFile(file).replace(/\.json$/, ".totals.json");
 }
 
-function readSharesCache(file: string): TotalsShares | undefined {
-  const c = sharesCacheFile(file);
-  if (!existsSync(c)) return undefined;
-  try {
-    return JSON.parse(readFileSync(c, "utf8")) as TotalsShares;
-  } catch {
-    return undefined;
-  }
+function readSharesCache(file: string): FightTotals | undefined {
+  return readCached<FightTotals>(sharesCacheFile(file));
 }
 
-function writeSharesCache(file: string, s: TotalsShares): void {
+function writeSharesCache(file: string, s: FightTotals): void {
   mkdirSync(dirname(sharesCacheFile(file)), { recursive: true });
   writeFileSync(sharesCacheFile(file), JSON.stringify(s));
 }
 
 /** The shares of `files` on `workers` threads of hitsworker.ts, each answer to `got`. */
-async function sharesParallel(files: readonly string[], workers: number, got: (file: string, s: TotalsShares) => void, assume: Readonly<Record<string, string>>, progress?: (line: string) => void): Promise<void> {
+async function sharesParallel(files: readonly string[], workers: number, got: (file: string, s: FightTotals) => void, assume: Readonly<Record<string, string>>, progress?: (line: string) => void): Promise<void> {
   const { Worker } = await import("node:worker_threads");
   const queue = [...files];
   const one = () =>
@@ -294,13 +336,13 @@ async function sharesParallel(files: readonly string[], workers: number, got: (f
         progress?.(`totals ${fixtureLabel(file)}`);
         w.postMessage({ file, shares: true, ...(Object.keys(assume).length ? { assume: { ...assume } } : {}) });
       };
-      w.on("message", (m: { file: string; shares?: TotalsShares; error?: string }) => {
-        if (m.error !== undefined || !m.shares) {
+      w.on("message", (m: { file: string; shares?: TotalsShares; oneSided?: OneSided[]; error?: string }) => {
+        if (m.error !== undefined || !m.shares || !m.oneSided) {
           void w.terminate();
           reject(new Error(`${m.file}: ${m.error ?? "no shares"}`));
           return;
         }
-        got(m.file, m.shares);
+        got(m.file, { shares: m.shares, oneSided: m.oneSided });
         next();
       });
       w.on("error", reject);

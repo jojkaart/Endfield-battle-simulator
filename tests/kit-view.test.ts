@@ -23,6 +23,24 @@ describe("efsim kit", () => {
   });
 });
 
+describe("efsim kit: paths and triggers' actions (round 10)", () => {
+  it("prints a skill's ends and the triggers' jumps on it (Snowshine's battle skill: the counter's jump, the end at 106)", () => {
+    const text = kitView(data, "Snowshine");
+    expect(text).toMatch(/chr_0014_aurora_normal_skill \(battle\)[^\n]*\n(?: {6}[^\n]*\n)*? {6}paths: ends at frame 106;[^\n]*trigger counter \(on \{"event":"attacked"\}\) jumps it from frame 0 until 51 to 107/);
+    expect(text).toMatch(/^ {2}counter: on \{"event":"attacked"\}; by self\n {6}jump chr_0014_aurora_normal_skill: from frame 0 until 51 to 107$/m);
+  });
+
+  it("prints a trigger's hits as a skill's, with their conditions (Si's Artful Intent bursts)", () => {
+    const text = kitView(data, "Si");
+    expect(text).toMatch(/^ {6}hits if \{"buffActive":"inksoul"\}:\n {8}burst_inksoul "[^"]+"; frames \d+; battle cryst; keys /m);
+    expect(text).toMatch(/^ {6}endBuff: buff inksoul$/m);
+  });
+
+  it("prints a choice's options with their weights and actions (Purrchena's giftbox)", () => {
+    expect(kitView(data, "Purrchena")).toMatch(/^ +choose one:\n +option 1, weight [^\n]+:\n +\S/m);
+  });
+});
+
 describe("efsim kit: skill groups and applications", () => {
   it("marks an enhanced basic attack by its skill group and lists each hit's applications", () => {
     const text = kitView(data, "Laevatain", /ult_attack[13]$/);

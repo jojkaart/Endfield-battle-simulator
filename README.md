@@ -81,7 +81,7 @@ cross-checked. Existing simulators used as a starting point are linked under
 [`docs/data-sources.md`](docs/data-sources.md).
 
 ```sh
-./scripts/fetch-data.sh       # only the tables the code reads (~60 MB, seconds)
+node scripts/fetch-data.ts    # only the tables the code reads (~60 MB, seconds)
 git submodule update --init   # or everything: data and reference repos (~3.5 GB)
 ```
 
@@ -90,11 +90,11 @@ git submodule update --init   # or everything: data and reference repos (~3.5 GB
 Node 22 or newer.
 
 ```sh
-./scripts/fetch-data.sh
+node scripts/fetch-data.ts
 npm install
 npm run check                 # typecheck, lint, all tests
 npm run journal:new -- "Title" # a journal entry (docs/journal/), then: npm run journal
-scripts/premerge.sh           # before merging a branch: clean tree, journal entry, check
+node scripts/premerge.ts      # before merging a branch: clean tree, journal entry, check
 ```
 
 Packages: [`packages/data`](packages/data) (reads and cross-checks the game

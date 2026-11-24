@@ -624,6 +624,11 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Who is controlled when | `efsim zmdlogs control <fixture>` |
 | Is a key a timer, a cooldown or event-driven | `efsim zmdlogs cadence --operator <op> --event <re>` |
 | A skill's frames, windows, uncuttable frames, skill group, what each hit inflicts | `efsim kit <operator> [--skill <re>]` |
+| Where a skill's playhead jumps or ends (the data's, the kit's, the triggers' jumps on it); a trigger's hits, gains, buffs and jumps | `efsim kit <operator>` ("paths:", each trigger's actions below it) |
+| One subtree of a data file, by its JSON path | `efsim gamedata tree <id> --path <path>` (paths as `who` prints them; a branch of only presentation says so) |
+| The logged hits in a window of time, their verdicts, the replay's crit and its source | `efsim zmdlogs hits <fixture> --from s --to s [--operator] [--event <re>] [--zones]` |
+| The pair the check judges a hit by (for statistics across logs) | `zmdlogs hits --json`: `graded` (the uncapped logged value against the verdict's reading) |
+| Every one-sided landing across fights, for a question of your own | `efsim zmdlogs totals --all --json` (a JSON line each, cached; then `jq`) |
 | Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
 | Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
 | The open assumptions `--assume` takes, their readings | `efsim assumptions [<re>]` |

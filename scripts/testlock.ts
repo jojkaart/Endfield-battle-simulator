@@ -1,4 +1,4 @@
-// The lock every worktree's long CPU jobs share: premerge's vitest steps, scripts/snapshots.sh, scripts/measure.ts and
+// The lock every worktree's long CPU jobs share: premerge's vitest steps, scripts/snapshots.ts, scripts/measure.ts and
 // anything run through scripts/with-lock.ts (measurements, seed tables, long `gear --rules` runs). Jobs queue instead
 // of slowing each other past the tests' timeouts or making timings incomparable.
 //
@@ -7,7 +7,7 @@
 // lock file, and only the ticket at the head of the queue goes on to take the flock. The order:
 //   - the ticket that claimed the lock (the holder) first;
 //   - then by arrival time less a head start for merge-blocking and short kinds: "premerge", "tests" (test suites,
-//     snapshots.sh) and "short" go ahead of "job"s (long runs: with-lock) that arrived up to PRIORITY_MS before them,
+//     snapshots.ts) and "short" go ahead of "job"s (long runs: with-lock) that arrived up to PRIORITY_MS before them,
 //     but a job that has waited longer than that goes first, so a stream of premerges can't starve it;
 //   - a worktree's second, third, … waiting job (or short job) counts as arriving FAIR_MS later each (round 5), so one
 //     agent's batch of jobs doesn't hold everyone else's;
@@ -20,7 +20,7 @@
 // While waiting, a heartbeat line on stderr every HEARTBEAT_MS says who holds the lock and for how long, how many are
 // ahead and the estimated wait (from the durations of earlier runs of the same jobs: <lock>.history.jsonl).
 //
-// A command run under the lock gets EFSIM_TEST_LOCK_HELD=1, so a nested one (with-lock around snapshots.sh) doesn't
+// A command run under the lock gets EFSIM_TEST_LOCK_HELD=1, so a nested one (with-lock around snapshots.ts) doesn't
 // wait for itself. EFSIM_NO_TEST_LOCK=1 skips the lock; without flock there is none. The flock itself stays (taken by
 // the head only), so a worktree on older scripts still excludes and is excluded. With a `done` name, a run killed by a
 // signal (a `timeout`, Ctrl-C) prints `EFSIM-DONE <done> killed` before it exits, so a Monitor waiting on it ends.
@@ -33,7 +33,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * What a lock taker is: a premerge step, a test suite (snapshots.sh), a long job (with-lock: rule searches, seed
+ * What a lock taker is: a premerge step, a test suite (snapshots.ts), a long job (with-lock: rule searches, seed
  * tables) or a short one (measure: minutes; runs beside a long job, in the side lane).
  */
 export type LockKind = "premerge" | "tests" | "job" | "short";
@@ -265,7 +265,7 @@ export function queueStatus(now = Date.now()): string {
   ].join("\n");
 }
 
-const sleepSync = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
 const sleepAsync = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export interface LockOptions {
@@ -352,33 +352,13 @@ class Waiter {
   }
 }
 
-/**
- * Runs a command under the lock: waits for its turn in the queue (with heartbeat lines through `say`, stderr by
- * default), then runs it under its lane's flock(s) with EFSIM_TEST_LOCK_HELD=1; without a lock to take, just the
- * command. Returns the exit status (1 when killed by a signal). Synchronous (premerge's steps): a signal kills it at
- * once; runLockedAsync prints a killed marker instead.
- */
-export function runLocked(command: readonly string[], opts: LockOptions): number {
-  const lock = testLockFile();
-  const env = { ...(opts.env ?? process.env), EFSIM_TEST_LOCK_HELD: "1" };
-  if (!lock) return spawnSync(command[0] as string, command.slice(1), { cwd: opts.cwd ?? ROOT, stdio: "inherit", env }).status ?? 1;
-  const w = new Waiter(lock, command, opts);
-  let claimed: number | undefined;
-  try {
-    while (!w.poll()) sleepSync(POLL_MS);
-    claimed = Date.now();
-    const [cmd, ...args] = w.chain(command) as [string, ...string[]];
-    return spawnSync(cmd, args, { cwd: opts.cwd ?? ROOT, stdio: "inherit", env }).status ?? 1;
-  } finally {
-    w.finish(claimed);
-  }
-}
-
 const SIGNALS = { SIGINT: 2, SIGTERM: 15, SIGHUP: 1 } as const;
 
 /**
- * As runLocked, but asynchronous, so a signal (a `timeout`, Ctrl-C, the Bash tool stopping a background job) is
- * handled: the ticket is released, the command (if running) gets the same signal, `EFSIM-DONE <done> killed` is
+ * Runs a command under the lock: waits for its turn in the queue (with heartbeat lines through `say`, stderr by
+ * default), then runs it under its lane's flock(s) with EFSIM_TEST_LOCK_HELD=1; without a lock to take, just the
+ * command. Returns the exit status (1 when it failed to start). Asynchronous, so a signal (a `timeout`, Ctrl-C, the
+ * Bash tool stopping a background job) is handled: the ticket is released, the command (if running) gets the same signal, `EFSIM-DONE <done> killed` is
  * printed on stdout (`doneTo` "stderr": there) when `done` names the job, and the process exits with 128 + the
  * signal's number.
  */
@@ -420,7 +400,7 @@ export function heldEnv(): NodeJS.ProcessEnv {
 
 // Usage: node scripts/testlock.ts --kind <kind> --who <name> [--done <job>] -- <command> [args…]
 //   runs the command under the lock, printing nothing but the heartbeat (stderr) and, when killed with --done, the
-//   killed marker (scripts/snapshots.sh re-runs itself so); by hand, use scripts/with-lock.ts.
+//   killed marker (premerge runs its vitest steps so); by hand, use scripts/with-lock.ts.
 async function main(argv: string[]): Promise<number> {
   const sep = argv.indexOf("--");
   const opt = (name: string) => {

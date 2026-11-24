@@ -1,7 +1,7 @@
 // `efsim gamedata tree / who` (packages/cli/src/gamedata.ts): the compact tree of a raw data file and the reverse
 // index of who names a buff.
 import { describe, expect, it } from "vitest";
-import { dataTree, findActions, formatFound, gamedataTree, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
+import { atJsonPath, dataTree, findActions, formatFound, gamedataTree, parseJsonPath, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
 
 describe("the data-file tree", () => {
   const file = {
@@ -32,6 +32,21 @@ describe("the data-file tree", () => {
     // A disabled action is said to be one (it does nothing in the game), not left out as a default.
     expect(text).toContain("CompareFloat  DISABLED (isEnable false), compare 3 (>=), lhs 1");
     expect(text).not.toMatch(/PlaySound|iconConfig/);
+  });
+
+  it("says a branch holds nothing but presentation instead of dropping it (round 10)", () => {
+    const branch = { $type: "Beyond.Gameplay.Core.IfElseAction+Data, Gameplay.Beyond", succeedActions: { actionData: [{ $type: "Beyond.Gameplay.Core.EffectAction+Data, Gameplay.Beyond", x: 1 }, { $type: "Beyond.Gameplay.Core.EffectAction+Data, Gameplay.Beyond", x: 2 }] }, failActions: { actionData: [] } };
+    const text = renderTree(dataTree(branch, "[0]"));
+    expect(text).toContain("succeedActions › actionData › (presentation only, left out: EffectAction ×2)");
+    expect(text).not.toContain("failActions");
+  });
+
+  it("prints the subtree at a JSON path as `who` gives it, and names a step that isn't there", () => {
+    expect(parseJsonPath(".buffEventAction[0].actions")).toEqual(["buffEventAction", 0, "actions"]);
+    expect(() => parseJsonPath("buffEventAction")).toThrow(/not a JSON path/);
+    expect(atJsonPath(file, ".buffEventAction[0].buffEvent")).toBe(0);
+    expect(() => atJsonPath(file, ".buffEventAction[3]")).toThrow(/nothing at \[3\] after "\.buffEventAction"/);
+    expect(gamedataTree("chr_0030_zhuangfy_normal_skill_ult", { path: ".actionGroupData.timelineActions[14]._sequenceActionData.actionData[1]" })).toMatch(/^chr_0030_zhuangfy_normal_skill_ult \(SkillData\) \.actionGroupData\.timelineActions\[14\]\._sequenceActionData\.actionData\[1\] {2}IfElseAction/);
   });
 
   it("keeps only matching lines and their ancestors with --grep", () => {

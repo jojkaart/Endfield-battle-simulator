@@ -462,6 +462,15 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
   return out;
 }
 
+/**
+ * The logs, hold-outs left out, whose entry changed at all (shares included), or that are new: their keys (paths under
+ * fixtures/). snapshots.ts runs the tests that read their fixtures (a feature test pinning one log's total).
+ */
+export function changedLogs(before: Snapshots, after: Snapshots): string[] {
+  const a = allLogs(before);
+  return [...allLogs(after)].filter(([k, l]) => l.group !== "holdout" && JSON.stringify(a.get(k)?.entry) !== JSON.stringify(l.entry)).map(([k]) => k);
+}
+
 /** The snapshots as committed at a git ref. */
 export function snapshotsAt(ref: string): Snapshots {
   return readSnapshots((p) => {

@@ -1,11 +1,11 @@
 // A vitest reporter that prints one line per finished test file, at once: `[12/83] pass tests/x.test.ts 4.2 s (load
 // 2.1)`. When its output isn't a terminal, vitest's own reporters show little until the end, so a background run
-// (premerge, scripts/snapshots.sh, a long `npx vitest run > scratch/x.txt`) looked stalled for minutes; with this, a
+// (premerge, scripts/snapshots.ts, a long `npx vitest run > scratch/x.txt`) looked stalled for minutes; with this, a
 // file that waits shows as one. Use it beside the default reporter, which still prints the failures and the summary:
 //
 //   npx vitest run --reporter=default --reporter=./scripts/vitest-progress.ts > scratch/x.txt
 //
-// premerge and snapshots.sh add it themselves when their output isn't a terminal.
+// premerge and snapshots.ts add it themselves when their output isn't a terminal.
 
 import { loadavg } from "node:os";
 import type { Reporter, TestModule, TestSpecification } from "vitest/node";
