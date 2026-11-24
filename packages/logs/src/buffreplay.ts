@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, holdWorld, ownHitsLanded, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, engineReading, holdWorld, ownHitsLanded, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitHit, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type Predicate, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
@@ -2194,6 +2194,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
     ...(opts.reactionLevels?.length ? { loggedReactionLevels: opts.reactionLevels } : {}),
   };
   const ctx = createContext(data, scenario);
+  const triggerCooldownsHeld = engineReading(scenario, "trigger-cooldowns") === "world";
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });
@@ -2236,7 +2237,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         continue;
       }
       if (s.hold !== undefined) {
-        st = holdWorld(st, st.frame, s.hold);
+        st = holdWorld(st, st.frame, s.hold, triggerCooldownsHeld);
         continue;
       }
       if (s.bar !== undefined) {
@@ -2343,7 +2344,13 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops (replayedCastStops): the placed casts' miss an ultimate placed from its cast event.
-    const stops = replayedCastStops(data, assembled);
+    // Not a logged event the replay read as a buff's tick (KitBuff.ticksLoggedAs; no cast made): 4d60e7fe92c2's late
+    // ultimate_skill events, the end of Zhuang Fangyi's Empyrean 30–35 s after her ultimate, held the world 78 frames
+    // each in the hold placement.
+    const made = new Set(main.made.map((m) => `${m.c.operator}|${m.c.skillId}|${m.c.start}`));
+    const tickSkills = new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
+    const ticked = (c: ReplayedCast) => c.landings.length === 0 && tickSkills.has(`${c.operator}|${c.skillId}`) && !made.has(`${c.operator}|${c.skillId}|${c.start}`);
+    const stops = replayedCastStops(data, assembled.filter((c) => !ticked(c)));
     const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks);
     placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),

@@ -148,6 +148,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "trigger-cooldowns",
+    question: "Does a trigger's cooldown (a kit trigger's `cooldown`: the game's CD timers, AddGlobalCDTimer on a buff's or a gear set's action) run on the world's clock, held by time stops and slow-downs as buffs are, or on raw time as a skill's cooldown does (timeline/clock.ts slowDown)? The hidden holds (a perfect dodge's) don't hold it either way.",
+    default: "raw",
+    readings: {
+      raw: "raw time, as skill cooldowns (the engine until 2026-11-24)",
+      world: "the world's clock: every slow-down after the trigger fired pushes its ready frame back by the frames it holds the world",
+    },
+  },
+  {
     id: "finisher-ultimate",
     question: "Does a finisher's disable-cast buff (buff_common_power_attack_disable_cast_skill, the finisher's frames 0 to its last hit or past it) hold the operator's ultimate, as it holds her battle skill and combo (timeline/timing.ts afterCantCast)? The buff's tags include battle-skill (-1486085048, buff_common_disable_normal_skill's) and dash (-1601691447, buff_common_disable_dash's) and one no other buff has (-496376350); Typhoeus's hover, which allows her combo and ultimate, carries the other two.",
     default: "cuts",
