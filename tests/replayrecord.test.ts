@@ -79,6 +79,15 @@ describe("the replay's record", () => {
     expect(text).toMatch(/ {2}Arcane: [\d,]+ vs [\d,]+ \([+-]\d+\.\d%\): matched [\d,]+ vs [\d,]+ \([+-]\d+\.\d%, \d+ landing\(s\)\); simulated \+ replay only [\d,]+ \(\d+ landing\(s\)\)/);
   });
 
+  it("places the holds without the stop of a cast event read as a buff's tick (4d60: the Empyrean's end at 106.47 s)", () => {
+    // Zhuang Fangyi's ultimate_skill event 30–35 s after her ultimate is her Empyrean's end (ticksLoggedAs), no cast:
+    // with its 78 frames in the stop list, Arcane's Solemn Phalanx run 38.27 → 130.49 s allowed 2.6 s less hold.
+    const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-4d60e7fe92c2.json"));
+    const text = holdsView(data, fx, { verbose: true });
+    const bound = /bound: run buff_wpn_funnel_0016_will_dmg\|chr_0032_lizhiyan on enemy 38267→\S+ ms over \d+: P\(130\.49\) − P\(38\.27\) in \[−∞, ([\d.]+)\] s/.exec(text);
+    expect(Number(bound?.[1])).toBeGreaterThan(53);
+  });
+
   it("says why an instance wasn't kept to the log's end (holds --why, the log-end side)", () => {
     // 5082: Xaihi's weapon team ATK is an instance buff: never taken to the log's end (round 8: it fell out silently).
     const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-5082ceaffad1.json"));
