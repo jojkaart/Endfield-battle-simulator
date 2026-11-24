@@ -170,7 +170,9 @@ complex to verify"):
   `<<<<<<<` old `=======` new `>>>>>>>` blocks; `<<<<<<< end` appends).
   `npm test` flags a doc with that damage's shapes (scripts/check-links.ts
   damagedText); `node scripts/bash-guard.ts --check '<cmd>'` says whether
-  a command is one of the forbidden forms. No code formatter
+  a command is one of the forbidden forms, and the same script runs as a
+  PreToolUse hook on every Bash call (.claude/settings.json, the owner
+  2026-11-24): a refused command comes back with the reason and the safe form. No code formatter
   (`.prettierignore` keeps `npx prettier` off): format by hand.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
