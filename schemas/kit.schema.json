@@ -1149,6 +1149,10 @@
             "const": "eventSubject",
             "description": "The cooldown counts per event subject (the healed operator of a heal, else the event's operator)."
           },
+          "cooldownClock": {
+            "enum": ["world", "raw"],
+            "description": "The clock the cooldown runs on, only where the data doesn't show it (the compiler derives it from the cooldown's CD timer, cooldown buff or timed marker and refuses this field then): world (held by time stops and hidden holds, as buffs) or raw (as a skill's cooldown, the default). The evidence goes in the trigger's note."
+          },
           "maxCount": {
             "type": "integer",
             "minimum": 1,

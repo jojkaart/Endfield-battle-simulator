@@ -254,6 +254,7 @@
         ]
       },
       "cooldown": 1,
+      "cooldownClock": "world",
       "do": [
         {
           "kind": "apply",
@@ -294,7 +295,7 @@
           ]
         }
       ],
-      "note": "Talent 0 (buff_chr_0016_laevat_passive_teammate): the controlled operator's Final Strike or Finisher absorbs Heat Infliction, one Melting Flame per layer, only while MF < 4 and only as many layers as there's room for (the rest stays); passive_teammate_cd 1 s."
+      "note": "Talent 0 (buff_chr_0016_laevat_passive_teammate): the controlled operator's Final Strike or Finisher absorbs Heat Infliction, one Melting Flame per layer, only while MF < 4 and only as many layers as there's room for (the rest stays); passive_teammate_cd 1 s. cooldownClock world: the cooldown is that buff (buff_chr_0016_laevat_passive_teammate_cd, duration 1, created by the talent buff's handler), and buffs run on the world's time; the compiler can't reach it from the trigger, which has no value source for its literal 1 s."
     },
     {
       "id": "combo_window",

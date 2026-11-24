@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, spPlaced, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
 import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
-import { isSkillFileListed, skillFilePath } from "./skillData.ts";
+import { cooldownTimers, isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
 import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type KitAssumption, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type LandedCount, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine/core";
@@ -87,7 +87,33 @@ type RawAction =
  */
 export type RawOn = TriggerOn | { event: "buffApplied"; tags: number[]; fromKinds?: (SkillType | "none")[]; toOthers?: boolean; received?: boolean };
 
-type RawTrigger = Omit<KitTrigger, "do" | "on"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>> };
+/**
+ * A trigger as kits write it. `cooldownClock` is the compiler's from the data (cooldownClockOf); a kit writes it only
+ * for a cooldown the data doesn't show (no value source, or its timer in a file the trigger's sources don't reach), with
+ * its evidence in the trigger's note.
+ */
+type RawTrigger = Omit<KitTrigger, "do" | "on" | "cooldownClock"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>>; cooldownClock?: "world" | "raw" };
+
+/**
+ * The clock a trigger's cooldown runs on, from the game's mechanism behind it in its value sources' files
+ * (skillData.ts cooldownTimers): the sources of the cooldown's keys and the trigger's `skill`, matched by the key that
+ * sets the timer's length, or a literal cooldown by its seconds. A game CD timer (AddGlobalCDTimer) and a `…_cd` buff
+ * are `world` (the game keeps both as buffs, and buffs run on the world's time; Swordmancer's 15 s CD timer is held by
+ * stops and hidden holds in the logs, scripts/probes/cooldowns/physuit.ts); a timed marker (CreateTimedMarker) is
+ * `raw`; none found: undefined (the kit's own `cooldownClock`, else raw).
+ */
+function cooldownClockOf(cooldown: ValueExpr, skillId: string, skill: string | undefined, isSource: (id: string) => boolean, talentSources: KitScope["talentSources"], where: string): "world" | "raw" | undefined {
+  const keys = valueKeys(cooldown, skillId, talentSources);
+  const literal = typeof cooldown === "number" ? Math.round(cooldown * 1000) / 1000 : undefined;
+  const sources = [...new Set([...keys.map((k) => k.skill), ...(skill !== undefined ? [skill] : [])])].filter(isSource);
+  const kinds = new Set<string>();
+  for (const src of sources) {
+    for (const x of cooldownTimers(src)) if (x.length === literal || keys.some((k) => k.skill === src && k.key === x.length)) kinds.add(x.kind);
+  }
+  const world = kinds.has("globalCd") || kinds.has("cdBuff");
+  if (world && kinds.has("marker")) throw new Error(`${where}: the cooldown's length sets both a timed marker and a CD timer or cooldown buff in the data (${[...kinds].join(", ")}); write cooldownClock with the evidence`);
+  return world ? "world" : kinds.has("marker") ? "raw" : undefined;
+}
 
 /** A trigger's event with buff tags turned into their category filter. */
 export function triggerOn(on: RawOn, where: string): TriggerOn {
@@ -767,7 +793,14 @@ function kitChecker(scope: KitScope) {
         : a.kind === "choose" ? { ...a, options: a.options.map((o) => ({ weight: o.weight, do: normalize(o.do) })) }
         : a,
       );
-    return { ...t, do: normalize(t.do) };
+    const { cooldownClock: written, ...rest } = t;
+    let clock: "world" | "raw" | undefined;
+    if (t.cooldown !== undefined) {
+      const derived = cooldownClockOf(t.cooldown, skillId, t.skill, scope.isSource, scope.talentSources, where);
+      if (written !== undefined && derived !== undefined) throw new Error(`${where}: cooldownClock ${written} is the data's to say (${derived}: its CD timer, cooldown buff or timed marker); drop it`);
+      clock = derived ?? written;
+    } else if (written !== undefined) throw new Error(`${where}: cooldownClock without a cooldown`);
+    return { ...rest, ...(clock === "world" ? { cooldownClock: "world" as const } : {}), do: normalize(t.do) };
   };
   /** The kit's buffs with their game buffs' rules; after every hit and trigger is checked (which skills apply each buff). */
   const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>

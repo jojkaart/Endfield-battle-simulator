@@ -2194,7 +2194,6 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
     ...(opts.reactionLevels?.length ? { loggedReactionLevels: opts.reactionLevels } : {}),
   };
   const ctx = createContext(data, scenario);
-  const triggerCooldownsHeld = engineReading(scenario, "trigger-cooldowns") === "world";
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });
@@ -2237,7 +2236,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         continue;
       }
       if (s.hold !== undefined) {
-        st = holdWorld(st, st.frame, s.hold, triggerCooldownsHeld);
+        st = holdWorld(st, st.frame, s.hold);
         continue;
       }
       if (s.bar !== undefined) {

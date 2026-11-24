@@ -44,9 +44,6 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
       return { ...cut, ...(by !== undefined ? { spares: by } : {}) };
     })
     .filter((d) => d.scales.length > 0);
-  // A trigger's cooldown (a game CD timer: AddGlobalCDTimer) is on the world's clock (engine assumption
-  // trigger-cooldowns), unlike a skill's cooldown.
-  const triggerCooldownsHeld = engineReading(ctx.scenario, "trigger-cooldowns") === "world";
   for (const d of own) {
     const start = d.start;
     const scaleAt = (who: string | null, f: number) => {
@@ -74,7 +71,7 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     };
     const world = lost(null).n;
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
-    s = { ...shiftWorld(s, start, world), ...(triggerCooldownsHeld ? { triggerState: shiftTriggerCooldowns(s.triggerState, start, world) } : {}), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
+    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
     for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n);
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
@@ -159,17 +156,15 @@ function moved(start: number, n: number): (f: number) => number {
 
 /**
  * The world's clock held `frames` frames from `frame` by nothing a cast places (shiftWorld: the enemy's timers, every
- * buff, combo windows, energy blocks); the operators' clocks, cooldowns and SP run on. The log check's replay places
+ * buff, combo windows, energy blocks, the triggers' cooldowns on the world's clock); the operators' clocks, skill
+ * cooldowns and SP run on. The log check's replay places
  * the fight's hidden holds with it (engine assumption hidden-holds, reading `placed`: packages/logs holds.ts), where
  * the operators' timing is the log's own: holding their clocks too moved kit-timed landings off the log's (2026-11-23:
  * btl_upload_bdf223db8e49 lost Typhoeus's Nature burst at 13.14 s to one frame of hold at 12.27 s; the scoreboard's
  * verified mean |damage error| 1.9 → 3.2%, world only 1.9%). A simulation places its dodges itself (advance.ts enemyAct).
  */
-export function holdWorld(st: TimelineState, frame: number, frames: number, triggerCooldowns = false): TimelineState {
-  if (frames <= 0) return st;
-  const held = shiftWorld(st, frame, frames);
-  // Under trigger-cooldowns `world` the triggers' cooldowns are on the world's clock too (the caller reads it).
-  return triggerCooldowns ? { ...held, triggerState: shiftTriggerCooldowns(held.triggerState, frame, frames) } : held;
+export function holdWorld(st: TimelineState, frame: number, frames: number): TimelineState {
+  return frames <= 0 ? st : shiftWorld(st, frame, frames);
 }
 
 /**
@@ -328,11 +323,11 @@ function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {
   return b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: b.pinned ? b.expiresAt : later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b;
 }
 
-/** Triggers' cooldowns running past `start` end `n` frames later (slowDown, engine assumption trigger-cooldowns `world`). */
+/** The triggers' cooldowns on the world's clock (their `world` flag: KitTrigger.cooldownClock) running past `start` end `n` frames later. */
 function shiftTriggerCooldowns(ts: TimelineState["triggerState"], start: number, n: number): TimelineState["triggerState"] {
-  if (n <= 0 || !Object.values(ts).some((x) => x.readyAt > start)) return ts;
+  if (n === 0 || !Object.values(ts).some((x) => x.world && x.readyAt > start)) return ts;
   const later = moved(start, n);
-  return Object.fromEntries(Object.entries(ts).map(([k, x]) => [k, x.readyAt > start ? { ...x, readyAt: later(x.readyAt) } : x]));
+  return Object.fromEntries(Object.entries(ts).map(([k, x]) => [k, x.world && x.readyAt > start ? { ...x, readyAt: later(x.readyAt) } : x]));
 }
 
 /** Everything on the world's clock after `start` happens `n` frames later: the enemy's, every buff, combo windows, energy blocks. */
@@ -348,6 +343,7 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
     link: st.link.map(later),
+    triggerState: shiftTriggerCooldowns(st.triggerState, start, n),
     // SP isn't on it: regen and its pause after a spend run on raw time, as cooldowns do (rules.ts SP).
   };
 }

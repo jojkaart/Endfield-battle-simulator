@@ -176,7 +176,14 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
           if (roll.value >= evaluate(t.chance, ec)) continue;
         }
         const cooldown = t.cooldown === undefined ? 0 : Math.round(evaluate(t.cooldown, ec) * FPS);
-        st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown, count: (ts?.count ?? 0) + 1 } } };
+        // A cooldown on the world's clock (KitTrigger.cooldownClock; engine assumption trigger-cooldowns) is held by
+        // every later stop and hold (clock.ts shiftTriggerCooldowns) and, started inside a running one, by the rest of
+        // it, as a buff created then is (buff-in-stop).
+        const clocks = engineReading(ctx.scenario, "trigger-cooldowns");
+        const world = cooldown > 0 && (clocks === "world" || (clocks === "kit" && t.cooldownClock === "world"));
+        const inStop = world ? engineReading(ctx.scenario, "buff-in-stop") : "runs";
+        const heldNow = inStop !== "runs" ? heldFromNow(st, e.frame, inStop === "ultimates") : 0;
+        st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown + heldNow, count: (ts?.count ?? 0) + 1, ...(world ? { world: true as const } : {}) } } };
         if (castKey) st = { ...st, triggerState: { ...st.triggerState, [castKey]: { readyAt: 0, count: (st.triggerState[castKey]?.count ?? 0) + 1 } } };
         if (t.delay) {
           // A detached trigger's actions are the cast's own until their launch.

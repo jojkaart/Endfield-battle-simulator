@@ -58,12 +58,15 @@ describe("holdWorld", () => {
       stagger: { until: null },
       enemy: { vulnerable: null, physical: [], controls: [], infliction: null, statuses: [{ appliedAt: 50, expiresAt: 400, nextTickAt: 110 }] },
       buffs: [{ id: "b", owner: "x", appliedAt: 0, expiresAt: 300 }, { id: "c", owner: "x", appliedAt: 0, expiresAt: 90 }],
+      // A CD timer on the world's clock (KitTrigger.cooldownClock), one on raw time, one on the world's already ready.
+      triggerState: { "x:cd": { readyAt: 400, count: 1, world: true }, "x:marker": { readyAt: 110, count: 1 }, "x:done": { readyAt: 90, count: 2, world: true } },
     } as unknown as TimelineState;
     const held = holdWorld(st, 100, 15);
     expect(held.buffs.map((b) => b.expiresAt)).toEqual([315, 90]);
     expect(held.enemy.statuses[0]).toMatchObject({ expiresAt: 415, nextTickAt: 125, appliedAt: 65 });
     expect(held.comboWindow["a"]?.until).toBe(145);
     expect(held.sp).toBe(120);
+    expect(Object.fromEntries(Object.entries(held.triggerState).map(([k, v]) => [k, v.readyAt]))).toEqual({ "x:cd": 415, "x:marker": 110, "x:done": 90 });
   });
 });
 
@@ -130,7 +133,7 @@ describe("rampBounds", () => {
 describe("Corrosion's ramp inside a stop", () => {
   it("stands at what it had reached until the stop ends, then runs on from there", () => {
     const corrosion = { status: "corrosion", level: 1, appliedAt: 0, expiresAt: 900, operator: "a", artsIntensity: 0 };
-    const st = { frame: 60, link: [], scheduled: [], enemyFrozenUntil: 0, enemyFrozenBy: {}, energyBlockedUntil: {}, comboWindow: {}, stagger: { until: null }, buffs: [],
+    const st = { frame: 60, link: [], scheduled: [], enemyFrozenUntil: 0, enemyFrozenBy: {}, energyBlockedUntil: {}, comboWindow: {}, stagger: { until: null }, buffs: [], triggerState: {},
       enemy: { vulnerable: null, physical: [], controls: [], infliction: null, statuses: [corrosion] } } as unknown as TimelineState;
     const held = holdWorld(st, 60, 45).enemy.statuses[0] as typeof corrosion;
     // 2 s in when 1.5 s of stop begins: 2 s through the stop, 2.5 s half a second after it.
