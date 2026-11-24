@@ -161,7 +161,7 @@ describe("Chen's talents and potentials", () => {
     expect(data.kits.operators[C]?.triggers.map((t) => t.id)).toEqual(["combo_window", "slashing_edge", "shadowless"]);
   });
 
-  it("the example: below half HP from 15 s, the second battle skill has P1, two Sundering Steel layers and no talent layer", () => {
+  it("the example: below half HP from 15 s, the second battle skill has P1, two Sundering Steel layers and no talent layer; Swordmancer procs on the first combo only (its 15 s CD timer is on the world's clock: the ultimate's stop between holds it past the second combo, 15 s of raw time later)", () => {
     const ctx = createContext(data, example);
     let s = init(ctx);
     for (const a of example.rotation) s = apply(ctx, s, a);
@@ -171,7 +171,17 @@ describe("Chen's talents and potentials", () => {
     expect(from(second, "Shadowless")).toHaveLength(1);
     expect(from(second, "Sundering Steel")).toHaveLength(2);
     expect(from(second, "Slashing Edge")).toHaveLength(0);
-    expect(s.hits.filter((h) => h.skillId === "passive_equipsuit_physuit_01").map((h) => h.frame)).toEqual(hitsOf(s, "combo_skill").map((h) => h.frame));
+    const combos = hitsOf(s, "combo_skill").map((h) => h.frame);
+    expect(combos).toHaveLength(2);
+    expect((combos[1] as number) - (combos[0] as number)).toBeGreaterThanOrEqual(15 * 30);
+    expect(s.hits.filter((h) => h.skillId === "passive_equipsuit_physuit_01").map((h) => h.frame)).toEqual(combos.slice(0, 1));
+    // On raw time (engine assumption trigger-cooldowns) both procs.
+    const raw: TimelineScenario = { ...example, options: { ...example.options, assume: { ...example.options.assume, "trigger-cooldowns": "raw" } } };
+    const rctx = createContext(data, raw);
+    let r = init(rctx);
+    for (const a of raw.rotation) r = apply(rctx, r, a);
+    r = advance(rctx, r, raw.durationFrames);
+    expect(r.hits.filter((h) => h.skillId === "passive_equipsuit_physuit_01").map((h) => h.frame)).toEqual(combos);
   });
 });
 

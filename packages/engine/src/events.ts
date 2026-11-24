@@ -351,6 +351,15 @@ export interface KitTrigger {
   readonly cooldown?: ValueExpr;
   /** The cooldown counts per event subject (the healed operator of a heal, else the event's operator): Liino's weapon, per teammate. */
   readonly cooldownPer?: "eventSubject";
+  /**
+   * The cooldown runs on the world's clock: every time stop and slow-down after it started, and the log replay's
+   * placed hidden holds, push its ready frame back by the frames they hold the world (timeline/clock.ts). The data
+   * says it (the kit compiler, kits.ts cooldownClockOf): a game CD timer (AddGlobalCDTimer) or a `…_cd` buff, both
+   * timers the game keeps as buffs, which run on the world's time. Without it the cooldown is on raw time, as a
+   * skill's cooldown is (a timed marker, CreateTimedMarker, or a cooldown the data doesn't show). The engine
+   * assumption `trigger-cooldowns` can put every trigger on one clock instead.
+   */
+  readonly cooldownClock?: "world";
   /** At most this many times per fight. */
   readonly maxCount?: number;
   /** At most this many times per cast whose hits cause the events (the game's per-cast flags, e.g. is_power_attacked); events of no cast don't count. */

@@ -49,15 +49,15 @@
   ]
  },
  "arcane-will-solo.scenario.json": {
-  "total": 102481.363,
+  "total": 102794.958,
   "hits": 50,
   "casts": 14,
   "perOperator": {
-   "chr_0032_lizhiyan": 102481.363
+   "chr_0032_lizhiyan": 102794.958
   },
-  "digest": "cb909a742ae7",
+  "digest": "95f8d166ef2d",
   "windows": [
-   "807e1683abba",
+   "1dbe7d5990f7",
    "e3d045376b97"
   ]
  },
@@ -133,16 +133,16 @@
   ]
  },
  "chen-solo.scenario.json": {
-  "total": 227336.066,
-  "hits": 40,
+  "total": 214970.901,
+  "hits": 39,
   "casts": 20,
   "perOperator": {
-   "chr_0005_chen": 227336.066
+   "chr_0005_chen": 214970.901
   },
-  "digest": "75b29ad9537b",
+  "digest": "32eb9d59189c",
   "windows": [
    "5ff1cfeeb27c",
-   "5e915f4c9afe"
+   "21e2c5b2d9f8"
   ]
  },
  "ember-guard.scenario.json": {
@@ -197,23 +197,23 @@
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {
-  "total": 3646489.683,
+  "total": 3649503.096,
   "hits": 390,
   "casts": 199,
   "perOperator": {
    "chr_0019_karin": 266234.236,
-   "chr_0036_jsspsi": 1663802.623,
+   "chr_0036_jsspsi": 1664149.298,
    "chr_0021_whiten": 1442785.503,
-   "chr_0032_lizhiyan": 273667.321
+   "chr_0032_lizhiyan": 276334.058
   },
-  "digest": "fccef25b6951",
+  "digest": "c5e03e8fe200",
   "windows": [
    "642b67bcd049",
    "4ec080c55221",
    "abec5cdd0ace",
    "06b9ea1c1f7c",
-   "8792ea1a68cb",
-   "07652c0d8237"
+   "f55393a4031f",
+   "b817fa3eea05"
   ]
  },
  "estella-solidification.scenario.json": {
@@ -485,9 +485,9 @@
   "perOperator": {
    "chr_0027_tangtang": 712771.952
   },
-  "digest": "8654c99c9b79",
+  "digest": "8a70c1cdfe6c",
   "windows": [
-   "085fcf237df9",
+   "4cc46802d396",
    "f07dd3762b64",
    "447f9c3252a0"
   ]
@@ -514,18 +514,18 @@
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5690930.647,
+  "total": 5662066.901,
   "hits": 443,
   "casts": 166,
   "perOperator": {
-   "chr_0034_typhoea": 4251987.085,
+   "chr_0034_typhoea": 4223123.339,
    "chr_0032_lizhiyan": 387816.027,
    "chr_0035_liino": 319609.078,
    "chr_0004_pelica": 731518.457
   },
-  "digest": "621ba6c8e20f",
+  "digest": "7145e74c226f",
   "windows": [
-   "154d994e561b",
+   "8d6f9985b4a5",
    "e7bf682434b9",
    "6f97eaed1425",
    "cbeb1cdab91b",

@@ -1137,7 +1137,10 @@ burst delay plus time stops.
 **Why:** in WILL mode her combo's touch adds a stack of an Arts element.
 The data switches on `EntityBB_consumed_type`, which the game sets: the
 engine takes the latest event that opened (or would have opened) her
-window. No log has a touch where the enemy's infliction differs from that
+window. (2026-11-24: the replay's wrong bursts after her touch that the
+kit-buff round pointed here were her burst's clock, her own ultimate's
+stop holding it, fixed from the logs; none left depends on the element:
+docs/open-problems.md, "Arcane's Will burst buff". Lower priority now.) No log has a touch where the enemy's infliction differs from that
 event's element, so which one wins then is open: one burst (1.6 × her
 ATK) more or less.
 **How:** Will > Intellect. A teammate applies Cryo (opening the window),

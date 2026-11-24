@@ -1023,6 +1023,23 @@ describe("timeline: control statuses", () => {
     // and slow-downs hold it (tests/logcasts.test.ts, dbaee23b801d), as they hold its operator.
     expect(burstAt(true)).toEqual([30]);
   });
+
+  it("an Arts Burst on its way waits out its own operator's ultimate stop (engine assumption burst-stops, `all`; `others` the old)", () => {
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, { id: "two", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "infliction", element: "fire" }] }] }] } } } };
+    const rotation: RotationAction[] = [{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "ultimate_skill", at: 0.2 }];
+    const burstAt = (reading: string) => {
+      const sc = scenario(rotation);
+      const ctx = createContext(g, { ...sc, options: { ...sc.options, assume: { "burst-stops": reading } } });
+      let s = init(ctx);
+      for (const a of rotation) s = apply(ctx, s, a);
+      s = advance(ctx, s, 300);
+      return s.reactions.filter((r) => r.kind === "burst").map((r) => r.frame);
+    };
+    const stop = data.skills[L + "ultimate_skill"]?.timing?.slowdowns.find((d) => d.from === 0)?.scales.length ?? 0;
+    expect(stop).toBeGreaterThan(30);
+    expect(burstAt("others")).toEqual([30]);
+    expect(burstAt("all")).toEqual([30 + stop]);
+  });
 });
 
 describe("timeline: haste", () => {

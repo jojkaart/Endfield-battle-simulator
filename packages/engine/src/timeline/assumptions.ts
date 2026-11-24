@@ -149,11 +149,31 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   },
   {
     id: "trigger-cooldowns",
-    question: "Does a trigger's cooldown (a kit trigger's `cooldown`: the game's CD timers, AddGlobalCDTimer on a buff's or a gear set's action, and others) run on the world's clock, held by time stops and slow-downs as buffs are, or on raw time as a skill's cooldown does (timeline/clock.ts slowDown, holdWorld)? One reading for every trigger: which are CD timers isn't in the kits.",
-    default: "raw",
+    question: "Which clock does a kit trigger's cooldown run on: the world's, held by time stops, slow-downs and the replay's placed hidden holds as buffs are, or raw time as a skill's cooldown (timeline/clock.ts shiftTriggerCooldowns)? The kit compiler says per trigger from the game's mechanism (KitTrigger.cooldownClock; packages/data kits.ts cooldownClockOf): a CD timer (AddGlobalCDTimer) or a `…_cd` buff the world's, a timed marker (CreateTimedMarker) raw. A timed marker's clock isn't decided by a log: with `world` for every trigger no development log moves beyond what the CD timers move.",
+    default: "kit",
     readings: {
-      raw: "raw time, as skill cooldowns (the engine until 2026-11-24; kept as the default: `world` for every trigger changes four kit tests' fights, Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel's layers, the chen-solo example, and two hold-outs' totals for the worse)",
-      world: "the world's clock: every slow-down after the trigger fired, and the log replay's placed hidden holds, push its ready frame back by the frames they hold the world. Swordmancer's 15 s (suit_phy01, AddGlobalCDTimer): every wearer's Physical status with no logged proc came under 15 s of the world's time after the last proc (de6a 51.79 and 137.84 s at 15.01 and 14.98 s, 18.8 and 20.5 s of log time; d4fb 53.98, 126.13 s; fc63 59.11 s; d4fb 97.05 s at 16.67 s the one exception), every proc past it (17.8 s and more): scripts/probes/cooldowns/physuit.ts; Mi Fu's P3 ATK in 2fd9 (69.1–70.1 s, 3 mismatches plain). Measured 2026-11-24 against raw: development unchanged but fc63's totals, earlier pending 4 better (04d4, 2fd9 plain 246 → 250, d4fb, de6a +1.0 → −0.4%), hold-outs 2 worse by their totals (aggregates unchanged)",
+      kit: "each trigger's own clock (KitTrigger.cooldownClock; 2026-11-24): the world's for Swordmancer, Mi Fu's P3 shield ATK, Laevatain's Final Strike absorb, Antal's talent heal and the gear and weapons whose data has a CD timer or a cooldown buff (suit_spellburst, wpn_claym_0004, _0006, _0007); raw for the timed markers (Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel's marker and 19 more) and the 8 cooldowns the data doesn't show. Measured against `raw`: the same logs move as under `world` (earlier pending 04d4, 2fd9 plain 246 → 250, d4fb, de6a better; fc63's totals; two hold-outs' totals worse, both from Swordmancer: replay-only 4.9 → 4.8%, log-only unchanged, so the procs it drops are ones the game didn't deal)",
+      raw: "raw time for every trigger, as skill cooldowns (the engine until 2026-11-24)",
+      world: "the world's clock for every trigger: every slow-down after the trigger fired, and the log replay's placed hidden holds, push its ready frame back by the frames they hold the world. Swordmancer's 15 s (suit_phy01, AddGlobalCDTimer): every wearer's Physical status with no logged proc came under 15 s of the world's time after the last proc (de6a 51.79 and 137.84 s at 15.01 and 14.98 s, 18.8 and 20.5 s of log time; d4fb 53.98, 126.13 s; fc63 59.11 s; d4fb 97.05 s at 16.67 s the one exception), every proc past it (17.8 s and more): scripts/probes/cooldowns/physuit.ts; Mi Fu's P3 ATK in 2fd9 (69.1–70.1 s, 3 mismatches plain). Measured 2026-11-24 against raw: development unchanged but fc63's totals, earlier pending 4 better (04d4, 2fd9 plain 246 → 250, d4fb, de6a +1.0 → −0.4%), hold-outs 2 worse by their totals (aggregates unchanged)",
+    },
+  },
+  {
+    id: "burst-stops",
+    question: "Which time stops and slow-downs hold an Arts Burst's delay (the 1 s after its infliction: timeline/clock.ts operatorClockDue, slowDown)?",
+    default: "all",
+    readings: {
+      others: "every one but its own operator's, as her clock (the engine until 2026-11-24): Arcane's WILL touch at 4.95 s in zmdlogs-b7b3762d5da8 bursts in the replay at 5.97 s inside her own ultimate's stop (5.60–7.17 s); the game's burst is at 10.34 s",
+      all: "every one, her own ultimate's stop too (2026-11-24): a burst on its way when her ultimate's stop begins, or due inside it, comes that much later. b7b3's burst then comes after Arcane's and Tangtang's stops, at 10.34 s as logged; over Arcane's 130 logged bursts in the development logs, within 150 ms of the replay's 89 → 94, with none near 23 → 20, replay-only 24 → 21 (scripts/probes/bursts/arcane-bursts.ts); Perlica's and Xaihi's one each better, no operator's worse. Measured against `others`: verified b7b3 plain 44 → 47; development 489c, 984748, 9c0b, c779 better, 79cc one plain fewer (its 24.23 s burst: Ardelia's combo, placed from its travelling projectile 0.8 s late, holds it); hold-outs 2 better (plain +2), 1 other (a status kind's share), none worse; earlier pending b6aa better, 012a 0.6 → 0.7%, c3c7 closer per hit",
+      ultimates: "the ultimates' time stops only, her own too; no combo slow-down. Measured 2026-11-24 against `others`: hold-outs 4 worse, 1 better; development 6 better, 4 worse (e82d plain 21 → 11, c6d8 112 → 104, dbae): combo slow-downs do hold bursts",
+    },
+  },
+  {
+    id: "finisher-stagger",
+    question: "Does a finisher's hit that lands after the Stagger's end still deal with the Stagger's parts (its multiplier, DamageToBrokenUnitIncrease and the modifiers of Staggered enemies; timeline/landing.ts), as the Stagger a finisher needs to be cast?",
+    default: "cast",
+    readings: {
+      cast: "every finisher hit deals as on a Staggered enemy (2026-11-24): pending/zmdlogs-7e19489ae503, Ember's finisher hit_2 at 33.15 s, after Chen's ultimate stop, ×1.564 the unstaggered reading, which is ×1.43 (her first hit's Staggered parts: the multiplier 0.3 and DamageToBrokenUnitIncrease 0.27) × the ×1.096 her first hit at 30.86 s has; the log lists no poise_break buff on it (its Stagger ended at 30.86 s) and Chen's ultimate hit at the same ms is plain unstaggered. The one finisher in the development logs with a hit after its Stagger's end: the other 38 multi-hit finishers' hits all list the Stagger",
+      hit: "each hit as the enemy is at its landing (the engine until 2026-11-24)",
     },
   },
   {

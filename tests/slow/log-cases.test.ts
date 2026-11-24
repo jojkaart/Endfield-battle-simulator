@@ -57,6 +57,17 @@ describe("Zhuang Fangyi: the Empyrean's end logged as an ultimate_skill cast eve
   });
 });
 
+// The cooldown-clock round (2026-11-24): engine assumption finisher-stagger.
+describe("a finisher's hits after the Stagger's end", () => {
+  it("7e19: Ember's finisher hit_2 at 33.15 s, after the log's Stagger ended, deals with the Staggered parts: both hits read the same ×1.096", () => {
+    const E = "chr_0009_azrila";
+    const v = checkLog(data, fixtureFile("pending/zmdlogs-7e19489ae503.json")).filter((x) => x.hit.operator === E && x.hit.event === `${E}_power_attack`);
+    expect(v.map((x) => x.hit.t)).toEqual([30861, 33152]);
+    // ×1.096: Pogranichnik's team ATK layers the log lists as values (open); without the Staggered parts hit_2 read ×1.564.
+    for (const x of v) expect(x.kind === "mismatch" ? x.ratio : NaN).toBeCloseTo(1.096, 2);
+  });
+});
+
 // From tests/batch4-values.test.ts.
 describe("V2: periodic damage keeps its applier's attacker side (takeAtkSnapshot)", () => {
   it("zmdlogs check: 4e5e's three Combustion ticks match with Camille's DMG bonuses at the reaction (Lustrous Carmine's ATK applied)", () => {

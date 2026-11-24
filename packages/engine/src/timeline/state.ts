@@ -451,8 +451,11 @@ export interface TimelineState {
    * helper tests/helpers/buffs.ts buffHistory).
    */
   readonly buffs: readonly ActiveBuff[];
-  /** Per kit trigger (`operator:triggerId`): when it can fire again and how often it has. */
-  readonly triggerState: Readonly<Record<string, { readonly readyAt: number; readonly count: number }>>;
+  /**
+   * Per kit trigger (`operator:triggerId`): when it can fire again and how often it has; `world`: its cooldown is on
+   * the world's clock (KitTrigger.cooldownClock, engine assumption trigger-cooldowns), so stops and holds push readyAt.
+   */
+  readonly triggerState: Readonly<Record<string, { readonly readyAt: number; readonly count: number; readonly world?: true }>>;
   /** Per operator: its kit's stacks (e.g. Melting Flame). */
   readonly stacks: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly casts: readonly Cast[];

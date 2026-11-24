@@ -25,6 +25,7 @@ import { engineReading } from "./assumptions.ts";
 export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
+  const burstStops = engineReading(ctx.scenario, "burst-stops");
   // Its resets end the running slow-downs of their priority (others' and, below, its own) where they come.
   const reading = engineReading(ctx.scenario, "combo-reset");
   const resets = reading !== "none" ? (timing.resets ?? []).map((r) => ({ frame: frame + r.at, priority: r.priority })) : [];
@@ -44,9 +45,6 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
       return { ...cut, ...(by !== undefined ? { spares: by } : {}) };
     })
     .filter((d) => d.scales.length > 0);
-  // A trigger's cooldown (a game CD timer: AddGlobalCDTimer) is on the world's clock (engine assumption
-  // trigger-cooldowns), unlike a skill's cooldown.
-  const triggerCooldownsHeld = engineReading(ctx.scenario, "trigger-cooldowns") === "world";
   for (const d of own) {
     const start = d.start;
     const scaleAt = (who: string | null, f: number) => {
@@ -74,8 +72,12 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     };
     const world = lost(null).n;
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
-    s = { ...shiftWorld(s, start, world), ...(triggerCooldownsHeld ? { triggerState: shiftTriggerCooldowns(s.triggerState, start, world) } : {}), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
-    for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n);
+    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
+    // The Arts Bursts on their way: held as their operators' clocks are, or by ultimates' stops only (engine
+    // assumption burst-stops), their caster's own included under `all` and `ultimates`.
+    const bursts = burstStops !== "ultimates" || ultimate;
+    for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n, bursts);
+    if (ultimate && burstStops !== "others") s = { ...s, scheduled: shiftClock(s.scheduled, (c, x) => onOperator(c, caster) && x.kind === "burst", start, world) };
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);
@@ -141,7 +143,9 @@ function resetSlowdowns(ctx: TimelineContext, st: TimelineState, reset: { readon
   };
   const back = (who: string | null) => Math.round(lostAfter(st.slowdowns, who) - lostAfter(cut, who));
   let s: TimelineState = { ...shiftWorld(st, R, -back(null)), slowdowns: cut };
-  for (const b of ctx.scenario.team) s = shiftOperator(s, b.operator, R, -back(b.operator));
+  // A reset cuts combo slow-downs, which hold no Arts Burst under burst-stops `ultimates`.
+  const bursts = engineReading(ctx.scenario, "burst-stops") !== "ultimates" || cut.some((x, i) => x.ultimate && x.scales.length !== (st.slowdowns[i] as (typeof st.slowdowns)[number]).scales.length);
+  for (const b of ctx.scenario.team) s = shiftOperator(s, b.operator, R, -back(b.operator), bursts);
   return s;
 }
 
@@ -159,17 +163,15 @@ function moved(start: number, n: number): (f: number) => number {
 
 /**
  * The world's clock held `frames` frames from `frame` by nothing a cast places (shiftWorld: the enemy's timers, every
- * buff, combo windows, energy blocks); the operators' clocks, cooldowns and SP run on. The log check's replay places
+ * buff, combo windows, energy blocks, the triggers' cooldowns on the world's clock); the operators' clocks, skill
+ * cooldowns and SP run on. The log check's replay places
  * the fight's hidden holds with it (engine assumption hidden-holds, reading `placed`: packages/logs holds.ts), where
  * the operators' timing is the log's own: holding their clocks too moved kit-timed landings off the log's (2026-11-23:
  * btl_upload_bdf223db8e49 lost Typhoeus's Nature burst at 13.14 s to one frame of hold at 12.27 s; the scoreboard's
  * verified mean |damage error| 1.9 → 3.2%, world only 1.9%). A simulation places its dodges itself (advance.ts enemyAct).
  */
-export function holdWorld(st: TimelineState, frame: number, frames: number, triggerCooldowns = false): TimelineState {
-  if (frames <= 0) return st;
-  const held = shiftWorld(st, frame, frames);
-  // Under trigger-cooldowns `world` the triggers' cooldowns are on the world's clock too (the caller reads it).
-  return triggerCooldowns ? { ...held, triggerState: shiftTriggerCooldowns(held.triggerState, frame, frames) } : held;
+export function holdWorld(st: TimelineState, frame: number, frames: number): TimelineState {
+  return frames <= 0 ? st : shiftWorld(st, frame, frames);
 }
 
 /**
@@ -211,11 +213,14 @@ export function holdNewStatuses(ctx: TimelineContext, st: TimelineState, before:
  * that hold it (TimelineState.slowdowns, all but its own; slowDown shifted what was scheduled when each began, not what
  * comes later). An Arts Burst runs on its operator's clock: it waits out the rest of another's time stop or slow-down
  * (dbaee23b801d: Arcane's touch at 8501 ms inside Xaihi's ultimate stop, then Typhoeus's combo; her Nature burst logged
- * at 10341 ms, at 9.9 s 1 s after the touch), not its own operator's (0eef2474a26f: her Cryo burst 1 s after her touch
- * inside her own combo's slow-down).
+ * at 10341 ms, at 9.9 s 1 s after the touch); its own operator's combo slow-down doesn't (0eef2474a26f: her Cryo
+ * burst 1 s after her touch, which comes after her combo's reset at its frame 9), but her own ultimate's stop does
+ * (engine assumption burst-stops, reading `all`: b7b3762d5da8, her touch at 4.95 s, her ultimate's stop 5.60–7.17 s,
+ * the burst logged at 10.34 s after Tangtang's stop too).
  */
-export function operatorClockDue(st: TimelineState, operator: string, from: number, delay: number): number {
-  const holding = st.slowdowns.filter((x) => x.exempt !== operator);
+export function operatorClockDue(st: TimelineState, operator: string, from: number, delay: number, holds: (x: TimelineState["slowdowns"][number]) => boolean = (x) => x.exempt !== operator): number {
+  // `holds`: which slow-downs hold it (default: every one but the operator's own; burstHolds for an Arts Burst).
+  const holding = st.slowdowns.filter(holds);
   const last = holding.reduce((m, x) => Math.max(m, x.start + x.scales.length), from);
   if (last <= from) return from + delay;
   let f = from;
@@ -328,11 +333,11 @@ function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {
   return b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: b.pinned ? b.expiresAt : later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b;
 }
 
-/** Triggers' cooldowns running past `start` end `n` frames later (slowDown, engine assumption trigger-cooldowns `world`). */
+/** The triggers' cooldowns on the world's clock (their `world` flag: KitTrigger.cooldownClock) running past `start` end `n` frames later. */
 function shiftTriggerCooldowns(ts: TimelineState["triggerState"], start: number, n: number): TimelineState["triggerState"] {
-  if (n <= 0 || !Object.values(ts).some((x) => x.readyAt > start)) return ts;
+  if (n === 0 || !Object.values(ts).some((x) => x.world && x.readyAt > start)) return ts;
   const later = moved(start, n);
-  return Object.fromEntries(Object.entries(ts).map(([k, x]) => [k, x.readyAt > start ? { ...x, readyAt: later(x.readyAt) } : x]));
+  return Object.fromEntries(Object.entries(ts).map(([k, x]) => [k, x.world && x.readyAt > start ? { ...x, readyAt: later(x.readyAt) } : x]));
 }
 
 /** Everything on the world's clock after `start` happens `n` frames later: the enemy's, every buff, combo windows, energy blocks. */
@@ -348,6 +353,7 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
     link: st.link.map(later),
+    triggerState: shiftTriggerCooldowns(st.triggerState, start, n),
     // SP isn't on it: regen and its pause after a spend run on raw time, as cooldowns do (rules.ts SP).
   };
 }

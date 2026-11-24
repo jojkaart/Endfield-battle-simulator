@@ -180,6 +180,20 @@ Fu's P3), then `trigger-cooldowns` per trigger, smoke and team-ab;
 (4) 0c14's −4.9%: Rossi's ultimate stabs (−2.5%, crits unlogged), Si's log-only inkmove (−1.5%), the
 Endministrator's Crush ×2.2.
 
+**The cooldown-clock round, 2026-11-24** (journal
+[2026-11-24-06](journal/2026-11-24-06-cooldown-clocks-from-the-data-arcane-s-burst-held-by-her-own.md); open-problems "Misprediction statistics"): (1)–(3)
+above done. (1) KitHit.travels (the compiler, from LaunchProjectile) reproduces the event rule for every projectile
+ultimate but not for the ability entities it takes (Tangtang's stare in b7b3), so the rule keeps its check for them;
+(2) every finisher hit deals as on a Staggered enemy (`finisher-stagger` `cast`: 7e19 −4.9 → −1.1%); (3)
+KitTrigger.cooldownClock from the data's CD timers, cooldown buffs and timed markers (`trigger-cooldowns` `kit`; the two
+hold-outs' worse totals are Swordmancer's dropped replay-only procs); and Arcane's bursts: her own ultimate's stop holds
+her burst (`burst-stops` `all`: b7b3, 89 → 94 of her 130 within 150 ms). Next: (a) ability entities that fly to the
+target (Tangtang's, Arclight's) as a field of their own, then the event rule without its check; (b) 9a80's 35.05 s
+burst (0.44 s of world time later than every stop held allows); fc63's Nature state before her ultimate's stack
+(Typhoeus's consumption); (c) 4bfc 179.51 s: the log says Empyrean's end (Arclight's chain unbroken through the stop
+the replay makes, Zhuang Fangyi's _ult forms to 179.17 s, plain after), the replay's empyrean buff ended before it;
+(d) 7e19's ×1.096 (Pogranichnik's team ATK layers as `values`).
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

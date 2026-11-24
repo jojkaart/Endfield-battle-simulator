@@ -362,17 +362,17 @@ const PROJECTILE_ROUTES: readonly [string, string][] = [["castSkillOnHit", "proj
  * (`isHelper`: a CastSkill of another of the operator's own skills isn't
  * followed), the buffs it creates (not the shared buff_common_* ones) and,
  * through them, what their handlers reach. Files the data doesn't list or
- * have are left out.
+ * have are left out. `start` "buff": the same from a BuffData buff's file.
  */
-export function reachedFiles(skillId: string, isHelper: (id: string) => boolean): { kind: "skill" | "buff"; id: string; json: unknown }[] {
+export function reachedFiles(skillId: string, isHelper: (id: string) => boolean, start: "skill" | "buff" = "skill"): { kind: "skill" | "buff"; id: string; json: unknown }[] {
   const out: { kind: "skill" | "buff"; id: string; json: unknown }[] = [];
-  const seen = new Set([`skill:${skillId}`]);
+  const seen = new Set([`${start}:${skillId}`]);
   const buffPath = (id: string) => join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
   const read = (kind: "skill" | "buff", id: string): unknown => {
     const ok = kind === "skill" ? isSkillFileListed(id) && existsSync(skillFilePath(id)) : BUFF_ALLOWED.some((re) => re.test(id)) && existsSync(buffPath(id));
     return ok ? parseJsonExact(readFileSync(kind === "skill" ? skillFilePath(id) : buffPath(id), "utf8")) : null;
   };
-  const queue: unknown[] = [read("skill", skillId)];
+  const queue: unknown[] = [read(start, skillId)];
   const add = (kind: "skill" | "buff", id: unknown) => {
     if (typeof id !== "string" || !id || seen.has(`${kind}:${id}`)) return;
     seen.add(`${kind}:${id}`);
@@ -402,6 +402,91 @@ export function reachedFiles(skillId: string, isHelper: (id: string) => boolean)
     for (const v of Object.values(o)) walk(v);
   };
   while (queue.length) walk(queue.shift());
+  return out;
+}
+
+const projectileCache = new Map<string, ReadonlySet<string>>();
+
+/**
+ * The skills a skill's file, or a file it reaches (reachedFiles), launches as projectiles (LaunchProjectile's routed
+ * skills: PROJECTILE_ROUTES): a hit logged under one of them flies to the enemy after its launch (KitHit.travels).
+ * Ability entities (SpawnAbilityEntity) aren't among them.
+ */
+export function projectileSkills(skillId: string): ReadonlySet<string> {
+  const cached = projectileCache.get(skillId);
+  if (cached) return cached;
+  const out = new Set<string>();
+  const own = isSkillFileListed(skillId) && existsSync(skillFilePath(skillId)) ? parseJsonExact(readFileSync(skillFilePath(skillId), "utf8")) : null;
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (o["isEnable"] !== false && type.includes("LaunchProjectile")) for (const [flag, field] of PROJECTILE_ROUTES) if (o[flag] === true && typeof o[field] === "string") out.add(o[field]);
+    for (const v of Object.values(o)) walk(v);
+  };
+  if (own !== null) [own, ...reachedFiles(skillId, () => false).map((f) => f.json)].forEach(walk);
+  projectileCache.set(skillId, out);
+  return out;
+}
+
+/** One of the game's cooldown mechanisms in a source's files, with the blackboard key that sets its length or its literal seconds. */
+export interface CooldownTimer {
+  /**
+   * `globalCd`: AddGlobalCDTimer (checked by CheckGlobalCDTimerAction), a timer named by a buff ID; `cdBuff`: a
+   * CreateBuffAction of a `…_cd` buff whose duration the key sets (checked by its stack count); `marker`:
+   * CreateTimedMarker (checked by CheckTimedMarkerCondition).
+   */
+  readonly kind: "globalCd" | "cdBuff" | "marker";
+  readonly length: string | number;
+}
+
+/**
+ * The cooldown mechanisms in a value source's files (a SkillData skill, its `buffs` list's BuffData files and what
+ * reachedFiles reaches from it; or a BuffData buff): what says which clock a kit trigger's cooldown runs on (kits.ts
+ * cooldownClockOf). Files the data doesn't list or have are left out.
+ */
+export function cooldownTimers(sourceId: string): CooldownTimer[] {
+  const buffPath = (id: string) => join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+  const readBuff = (id: string): unknown => (BUFF_ALLOWED.some((re) => re.test(id)) && existsSync(buffPath(id)) ? parseJsonExact(readFileSync(buffPath(id), "utf8")) : null);
+  const files: unknown[] = [];
+  if (isSkillFileListed(sourceId) && existsSync(skillFilePath(sourceId))) {
+    const own = parseJsonExact(readFileSync(skillFilePath(sourceId), "utf8")) as Record<string, unknown>;
+    files.push(own);
+    for (const b of Array.isArray(own["buffs"]) ? (own["buffs"] as Record<string, unknown>[]) : []) if (typeof b?.["buffId"] === "string") files.push(readBuff(b["buffId"]));
+    files.push(...reachedFiles(sourceId, () => false).map((f) => f.json));
+  } else files.push(readBuff(sourceId), ...reachedFiles(sourceId, () => false, "buff").map((f) => f.json));
+  const length = (v: unknown): string | number | null => {
+    const o = v as { useBlackboardKey?: unknown; blackboardKey?: unknown; value?: unknown } | undefined;
+    if (o?.useBlackboardKey === true) return typeof o.blackboardKey === "string" ? o.blackboardKey : null;
+    return typeof o?.value === "number" ? Math.round(o.value * 1000) / 1000 : null;
+  };
+  const out: CooldownTimer[] = [];
+  const add = (kind: CooldownTimer["kind"], l: string | number | null) => {
+    if (l !== null && !out.some((x) => x.kind === kind && x.length === l)) out.push({ kind, length: l });
+  };
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (o["isEnable"] !== false) {
+      if (type.includes("AddGlobalCDTimer+Data")) add("globalCd", length(o["cdTime"]));
+      if (type.includes("CreateTimedMarker+Data")) add("marker", length(o["duration"]));
+      if (type.includes("CreateBuffAction+Data")) {
+        for (const b of (o["buffs"] ?? []) as Record<string, unknown>[]) {
+          const id = b?.["buffId"];
+          if (typeof id !== "string" || !id.endsWith("_cd")) continue;
+          const f = readBuff(id) as Record<string, unknown> | null;
+          const own = length(f?.["duration"]);
+          if (typeof own === "number") add("cdBuff", own);
+          else for (const a of (b["assignItems"] ?? []) as Record<string, unknown>[]) if (a?.["targetKey"] === own && a["useDirectValue"] !== true && typeof a["inputValueKey"] === "string") add("cdBuff", a["inputValueKey"]);
+        }
+      }
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  files.forEach(walk);
   return out;
 }
 

@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, engineReading, holdWorld, ownHitsLanded, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, holdWorld, ownHitsLanded, skillCosts, spAt, spCostAt, earliestStart, exclusiveUntil, applyBuff, Attr, setPoise, holdStagger, isStaggered, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitHit, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type Predicate, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
@@ -2194,7 +2194,6 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
     ...(opts.reactionLevels?.length ? { loggedReactionLevels: opts.reactionLevels } : {}),
   };
   const ctx = createContext(data, scenario);
-  const triggerCooldownsHeld = engineReading(scenario, "trigger-cooldowns") === "world";
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });
@@ -2237,7 +2236,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         continue;
       }
       if (s.hold !== undefined) {
-        st = holdWorld(st, st.frame, s.hold, triggerCooldownsHeld);
+        st = holdWorld(st, st.frame, s.hold);
         continue;
       }
       if (s.bar !== undefined) {

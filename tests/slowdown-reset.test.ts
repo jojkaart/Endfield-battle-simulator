@@ -16,7 +16,7 @@ const ctxWith = (assume: Record<string, string> = {}) => ({ scenario: { options:
 const corrosion = { status: "corrosion", level: 1, appliedAt: 0, expiresAt: 900, operator: "arc", artsIntensity: 0 };
 const state = (): TimelineState =>
   ({
-    frame: 0, link: [], scheduled: [], slowdowns: [], enemyFrozenUntil: 0, enemyFrozenBy: {}, energyBlockedUntil: {}, comboWindow: {}, stagger: { until: null }, acting: {}, chainNext: {}, readyAt: {},
+    frame: 0, link: [], scheduled: [], slowdowns: [], enemyFrozenUntil: 0, enemyFrozenBy: {}, energyBlockedUntil: {}, comboWindow: {}, stagger: { until: null }, acting: {}, chainNext: {}, readyAt: {}, triggerState: {},
     buffs: [{ id: "x", owner: "si", target: "team", appliedAt: 0, expiresAt: 300 }],
     enemy: { vulnerable: null, physical: [], controls: [], infliction: null, statuses: [corrosion] },
   }) as unknown as TimelineState;

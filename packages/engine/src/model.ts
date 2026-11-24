@@ -475,6 +475,13 @@ export interface KitHit {
   /** Lands even if the skill is interrupted before it: a projectile or ability entity already on its way. */
   readonly detached?: boolean;
   /**
+   * Its frame is its projectile's launch, not its landing: the kit compiler sets it for a hit logged under a skill its
+   * skill (or a file it reaches) launches with LaunchProjectile (packages/data skillData.ts projectileSkills), which
+   * flies to the enemy for a time the data doesn't give (Liino's Pyrotechnics 0.1–0.8 s of the world's time). An
+   * ability entity's hits (SpawnAbilityEntity) don't have it. The log placement reads it (logcasts.ts).
+   */
+  readonly travels?: true;
+  /**
    * A detached hit's launch (skill frame of its LaunchProjectile or
    * SpawnAbilityEntity): until then it's the cast's own, so cutting the cast
    * or a jump over the launch drops it and a jump before it moves it; after
