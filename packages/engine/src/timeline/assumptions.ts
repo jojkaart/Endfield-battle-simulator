@@ -158,6 +158,16 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "burst-stops",
+    question: "Which time stops and slow-downs hold an Arts Burst's delay (the 1 s after its infliction: timeline/clock.ts operatorClockDue, slowDown)?",
+    default: "others",
+    readings: {
+      others: "every one but its own operator's, as her clock (the engine until 2026-11-24)",
+      all: "every one, her own ultimate's stop too",
+      ultimates: "the ultimates' time stops only, her own too; no combo slow-down",
+    },
+  },
+  {
     id: "finisher-stagger",
     question: "Does a finisher's hit that lands after the Stagger's end still deal with the Stagger's parts (its multiplier, DamageToBrokenUnitIncrease and the modifiers of Staggered enemies; timeline/landing.ts), as the Stagger a finisher needs to be cast?",
     default: "cast",

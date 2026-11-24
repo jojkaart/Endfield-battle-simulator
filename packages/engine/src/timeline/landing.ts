@@ -246,10 +246,13 @@ export function delayBursts(ctx: TimelineContext, st: TimelineState, events: rea
   const delay = (e: StatusEvent) => (e.kind === "burst" ? ctx.burstDelayFrames[e.element] : 0);
   const now = events.filter((e) => delay(e) === 0);
   if (now.length === events.length) return { state: st, now };
+  // Which stops and slow-downs hold its delay (engine assumption burst-stops).
+  const reading = engineReading(ctx.scenario, "burst-stops");
+  const holds = (op: string) => (x: TimelineState["slowdowns"][number]) => (reading === "ultimates" ? x.ultimate === true : x.exempt !== op || (reading === "all" && x.ultimate === true));
   const later = events.flatMap((e): PendingBurst[] => {
     if (e.kind !== "burst" || delay(e) === 0) return [];
     const { frame: _at, ...event } = e;
-    return [{ kind: "burst", frame: operatorClockDue(st, e.operator, e.frame, delay(e)), clock: { operator: e.operator }, event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}) }];
+    return [{ kind: "burst", frame: operatorClockDue(st, e.operator, e.frame, delay(e), holds(e.operator)), clock: { operator: e.operator }, event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}) }];
   });
   return { state: schedule(st, later), now };
 }

@@ -32,7 +32,7 @@ let off = 0;
 let none = 0;
 let only = 0;
 for (const { short, fx } of devFixtures({ withOperators: [A], ...(ids ? { ids } : {}) })) {
-  const logged = fx.hits.filter((h) => h.operator === A && /^buff_common_(\w+)_\1_triggered$/.test(h.event)).map((h) => ({ t: h.t, element: (/^buff_common_(\w+)_/.exec(h.event) as RegExpExecArray)[1] as string }));
+  const logged = fx.hits.filter((h) => h.operator === A && /^buff_common_([a-z]+)_\1_triggered$/.test(h.event)).map((h) => ({ t: h.t, element: (/^buff_common_([a-z]+)_/.exec(h.event) as RegExpExecArray)[1] as string }));
   if (!logged.length) continue;
   const { replay } = logBuffReplay(data, fx, undefined, { assume });
   const bursts = replay.reactions.filter((r) => r.kind === "burst" && r.operator === A).map((r) => ({ t: ms(r.frame), element: r.element as string, used: false }));

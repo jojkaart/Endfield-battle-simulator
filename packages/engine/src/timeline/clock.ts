@@ -25,6 +25,7 @@ import { engineReading } from "./assumptions.ts";
 export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
+  const burstStops = engineReading(ctx.scenario, "burst-stops");
   // Its resets end the running slow-downs of their priority (others' and, below, its own) where they come.
   const reading = engineReading(ctx.scenario, "combo-reset");
   const resets = reading !== "none" ? (timing.resets ?? []).map((r) => ({ frame: frame + r.at, priority: r.priority })) : [];
@@ -72,7 +73,11 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     const world = lost(null).n;
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
     s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
-    for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n);
+    // The Arts Bursts on their way: held as their operators' clocks are, or by ultimates' stops only (engine
+    // assumption burst-stops), their caster's own included under `all` and `ultimates`.
+    const bursts = burstStops !== "ultimates" || ultimate;
+    for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n, bursts);
+    if (ultimate && burstStops !== "others") s = { ...s, scheduled: shiftClock(s.scheduled, (c, x) => onOperator(c, caster) && x.kind === "burst", start, world) };
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);
@@ -138,7 +143,9 @@ function resetSlowdowns(ctx: TimelineContext, st: TimelineState, reset: { readon
   };
   const back = (who: string | null) => Math.round(lostAfter(st.slowdowns, who) - lostAfter(cut, who));
   let s: TimelineState = { ...shiftWorld(st, R, -back(null)), slowdowns: cut };
-  for (const b of ctx.scenario.team) s = shiftOperator(s, b.operator, R, -back(b.operator));
+  // A reset cuts combo slow-downs, which hold no Arts Burst under burst-stops `ultimates`.
+  const bursts = engineReading(ctx.scenario, "burst-stops") !== "ultimates" || cut.some((x, i) => x.ultimate && x.scales.length !== (st.slowdowns[i] as (typeof st.slowdowns)[number]).scales.length);
+  for (const b of ctx.scenario.team) s = shiftOperator(s, b.operator, R, -back(b.operator), bursts);
   return s;
 }
 
@@ -209,8 +216,9 @@ export function holdNewStatuses(ctx: TimelineContext, st: TimelineState, before:
  * at 10341 ms, at 9.9 s 1 s after the touch), not its own operator's (0eef2474a26f: her Cryo burst 1 s after her touch
  * inside her own combo's slow-down).
  */
-export function operatorClockDue(st: TimelineState, operator: string, from: number, delay: number): number {
-  const holding = st.slowdowns.filter((x) => x.exempt !== operator);
+export function operatorClockDue(st: TimelineState, operator: string, from: number, delay: number, holds: (x: TimelineState["slowdowns"][number]) => boolean = (x) => x.exempt !== operator): number {
+  // `holds`: which slow-downs hold it (default: every one but the operator's own; burstHolds for an Arts Burst).
+  const holding = st.slowdowns.filter(holds);
   const last = holding.reduce((m, x) => Math.max(m, x.start + x.scales.length), from);
   if (last <= from) return from + delay;
   let f = from;
