@@ -105,7 +105,8 @@ global-layer `TimeDilationAction`s (a combo's slow-down) scale time for
 everyone but the caster. The world (enemy statuses, inflictions, DoT ticks,
 every buff including the caster's, combo windows, energy blocks)
 and the other operators (their hits on the way, delayed actions, current
-action) lose the frames the slow-down takes; skill cooldowns run on raw
+action) lose the frames the slow-down takes, and so do triggers' cooldowns (the game's CD timers: engine assumption
+`trigger-cooldowns`, Swordmancer's 15 s in the logs, 2026-11-24); skill cooldowns run on raw
 time (the logs, in-game test 18: 58 combo pairs come back within their
 cooldown plus less than the stops between), and so do team SP's regen and its pause after a spend (the logs:
 the replay's SP shortfalls drop from 20 to 13 of 38 logs). Overlapping slow-downs: the lowest scale counts; a reset (SkillTiming.resets: a dilation back to scale 1 in a

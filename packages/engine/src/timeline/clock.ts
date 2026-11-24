@@ -77,7 +77,7 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     s = { ...shiftWorld(s, start, world), ...(triggerCooldownsHeld ? { triggerState: shiftTriggerCooldowns(s.triggerState, start, world) } : {}), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
     for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n);
   }
-  // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
+  // Skill cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);
 }
 
