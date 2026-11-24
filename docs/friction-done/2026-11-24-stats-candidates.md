@@ -77,3 +77,21 @@ worktree-agent-a5ff74675a35a6740 from a4f6ddb.
 - `zmdlogs fit-build`'s "clean hits" count: it ruled out Liino's factors as builds in one command each.
 - `node scripts/cli-ab.ts HEAD -- <efsim args>`: the diff of `casts` and `totals` showed each fix's effect per fight.
 - `scripts/edit.ts` for multi-block edits and `verify-at.ts` for the new test failing at HEAD.
+
+## Outcome (round 11)
+
+- 1 (A log buff no kit buff stands for is silently added beside the kit buff that it is): the screen done (016d623):
+  packages/logs/src/loggedas.ts pairs a kit buff's modifier with a log-only listed buff (enginecheck.ts logOnly) of
+  the same zone, element and value, from the kit buff's owner or under its equipment's id: `zmdlogs differences`'
+  last section ("none" over the development logs now), and the pending suite fails on a pair LOGGED_AS_EXPLAINED
+  doesn't name. The kit loader's warning from the data carried (2026-11-24-backlog-after-round-11.md point 9).
+- 2 (The enemy's HP: a hidden "undefined" made two potentials silently off): the assumption label carried
+  (2026-11-24-backlog-after-round-11.md point 7: the check's core and the engine's landing); the periodic re-read of
+  "ready" in-game tests done as a CLAUDE.md line (a log imported for any task is checked against the ready tests a log
+  could answer).
+- 3 (The replay's views don't say why a logged cast event wasn't made): carried
+  (2026-11-24-backlog-after-round-11.md point 3): buffreplay.ts's replayedSkill, the accuracy agent's.
+- 4 (Placement choices between skills sharing a key are invisible): carried (2026-11-24-backlog-after-round-11.md
+  point 8): logcasts.ts's choose, the accuracy agent's.
+- 5 (Measure's summary can't say which change moved a hold-out): done (48f6676, b7f6e6f): `measure --split commits
+  --base <ref>` (and `--split files`), the hold-outs counted per part.

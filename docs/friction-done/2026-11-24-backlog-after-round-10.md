@@ -214,3 +214,28 @@ Done since round 8's list: the combo reset's reach and pinned expiries (worktree
 Each report named the episode its fix would have shortened (Snowshine's end at 106, the Empyrean branches, the
 ignored `--from`, d774's pinned total, a fresh worktree's 171 s), so each change was checked on that episode at once;
 and `jq` over the new JSON lines answers the follow-up questions without a script.
+
+## Outcome (round 11)
+
+- 1 (A slow-down's identity through the stop lists and the replay's record): carried
+  (2026-11-24-backlog-after-round-11.md point 1): logcasts.ts and replayrecord.ts were the accuracy agent's; the stop
+  lists' counts after round 11's tick filter are in it.
+- 2 (A logged hit placed in the wrong slot is invisible in the totals' parts): carried
+  (2026-11-24-backlog-after-round-11.md point 2): not reached this round (fightTotals is in enginecheck.ts beside the
+  check's readings).
+- 3 (One measure that splits a batch's effect by change): done (48f6676, b7f6e6f): `npm run measure -- --split
+  files [--group a,b]` (each changed file's diff alone on --base, default HEAD) or `--split commits --base <ref>`
+  (each first-parent commit against the one before), each part measured on the logs the whole change moved, the
+  logs no part moved alone named. Tried on the placement leads' range: 1cd1 and af7b by 00876b1, 4d60 by the merge
+  that brought the Empyrean's end in, three logs × six steps in 2 minutes.
+- 4 (A landing dropped by its own cast's end or a jump leaves no trace in the replay): carried
+  (2026-11-24-backlog-after-round-11.md point 3), with stats-candidates point 3 (a skipped press's reason): both the
+  replay's record.
+- 5 (Per-hit counterfactuals: which single disagreement, taken the log's way, makes a hit fit): partly done
+  (7d1497b): HitRecord.counterfactuals (hitexport.ts hitCounterfactuals), build.ts calls it; the `zmdlogs explain`
+  view and the hold-outs' shares carried (2026-11-24-backlog-after-round-11.md point 4).
+- 6 (A kit field override's errors come one rule at a time): carried (2026-11-24-backlog-after-round-11.md point 5):
+  packages/data/src was the accuracy agent's.
+- 7 (analyze.py's feature tables take 6 minutes): done (98c3683): the bootstrap over per-fight sums and the
+  within-fight shuffles as one lexsort each, in numpy: features 5 min 44 s → 17 s, the whole analysis 67 s (the
+  first row's interval identical; later rows' within a point, the shuffles' draws differ).

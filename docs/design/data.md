@@ -559,6 +559,13 @@ in the logs):
   `replay`'s EVENT lines print both and the event's place (query.ts
   `castEventPlace`: at its press, at its stop's end, inside a hitless
   stretch, at no clear edge).
+- **A cast event under a key a kit buff ticks as may still be a cast**
+  (round 11): Zhuang Fangyi's Empyrean ends under her ultimate's key
+  (`ticksLoggedAs`), and 3aa6's seven real ultimates, whose hits aren't
+  placed, are logged the same way. Whether the replay made the cast is its
+  decision (the buff on or not), so a view decides from the replay's
+  applied stops (query.ts `replayTimeStops` with the replay), not from the
+  key.
 - **Si's battle-button events are mostly hitless**: every 3.2–3.6 s, often
   while she does basic attacks; a real battle skill has its hit 400–650 ms
   after its event. Whether the rest are presses is open (the replay makes

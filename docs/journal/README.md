@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-24: Improvement round 11: measure --split, zmdlogs bursts, the views' stops without the replay's ticks](2026-11-24-05-improvement-round-11-measure-split-zmdlogs-bursts-the-views.md)
 - [2026-11-24: Placement leads: ultimates from their cast events, Chen's stew, trigger cooldowns on the world's clock](2026-11-24-04-placement-leads-ultimates-from-their-cast-events-chen-s-stew.md)
 - [2026-11-24: Kit buff leads: Zhuang Fangyi's Empyrean end, the rest not kit values](2026-11-24-03-kit-buff-leads-zhuang-fangyi-s-empyrean-end-the-rest-not-kit.md)
 - [2026-11-24: Misprediction candidates: logged-as buffs, the enemy's HP, Ardelia's chain](2026-11-24-02-misprediction-candidates-logged-as-buffs-the-enemy-s-hp.md)

@@ -117,7 +117,10 @@ The owner plays daily and may run simple in-game tests. Keep
 when a new test becomes ready. Logs first: never ask the owner for
 anything the logs can decide (timings, durations, paces, damage, listed
 buffs, Stagger bars); only what no log records (SP, energy, cooldowns,
-inputs, icons, the screen), after trying the logs.
+inputs, icons, the screen), after trying the logs. A log imported for any
+task is also checked against the "ready" tests whose question a log
+could answer (round 11: test 69 sat ready for a month on a question a
+later log, a27b, had decided).
 
 ## Operator kits
 

@@ -16,17 +16,19 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–10
-  done (round 10, 2026-11-24: no shell programming left (premerge,
-  snapshots, fetch-data, the session hook in TypeScript), `efsim kit`'s
-  paths and triggers' actions, `gamedata tree --path`, unread options
-  named, `zmdlogs totals --all --json`, caches shared across worktrees,
-  HitRecord.graded, `at-commit --run`); the backlog
-  ([2026-11-24-backlog-after-round-10.md](friction/2026-11-24-backlog-after-round-10.md),
-  7 live points: the stop lists' identity, a slot flag, measure --split,
-  the replay's DROPPED line, counterfactuals, the compiler's message,
-  analyze.py) joins the next round once about five new reports have
-  collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–11
+  done (round 11, 2026-11-24: `measure --split files|commits`, the
+  reference line, `--variant`'s plain run; `zmdlogs bursts`; a cast
+  event's place in its stop; the views' stops without the replay's ticks;
+  the likely-loggedAs screen; HitRecord.counterfactuals; analyze.py in a
+  minute); the backlog
+  ([2026-11-24-backlog-after-round-11.md](friction/2026-11-24-backlog-after-round-11.md),
+  13 live points, most in files an accuracy agent holds: the stop lists'
+  identity, a slot flag, the replay's dropped and skipped reasons,
+  `zmdlogs explain`, the compiler's messages, the replay's own stop list,
+  the enemy-HP label, `casts --why`, travel and cooldown-source kit fields,
+  `--trace-trigger`, the bursts' recorded cause) joins the next round once
+  about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

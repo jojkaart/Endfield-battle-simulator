@@ -70,3 +70,25 @@ or ruled out with why. Branch worktree-agent-afd9bbcd43ff4d2bb (base c6f1874).
   ending 2.6 s earlier without the phantom stop).
 - `ticksLoggedAs` / `endFollowsTick` (built for Arcane's Imprisonment and Liino's beats) fitted the Empyrean's end with
   no code change.
+
+## Outcome (round 11)
+
+- 1 (The one-buff list sized leads by single hits and known non-kit fights): done (98c3683): analyze.py's buffs
+  section gives each row's top fight and top hit with their shares of it (e82d 9.12 s is 87.7% of Arcane's
+  Susceptibility row), the kit buff ids with the equipment's name (`wpn_funnel_0016.will_burst [Type 42: Solemn
+  Phalanx]`; names.ts writes equipment.json), and sets apart NOT_KIT fights (9c6e, two targets: 78 hits, 1.3% of the
+  off error, the Detonation Unit row's bulk).
+- 2 (The views disagree about a cast event the replay reads as a buff's tick): the views done (98c3683): query.ts
+  replayTimeStops marks such a stop `tickRead` and with the replay leaves out those the timeline never applied
+  (`replay --stops`, `zmdlogs stops`, `holds --why`, `clock`; `casts` and `worldtime` mark them): `zmdlogs stops
+  --all --differ` list only 2 → 0, nothing else moved. A first try that dropped every hitless such event wrongly cut
+  3aa6's seven real ultimates, which also showed the EVENT line's fate wrong ("a tick of empyrean" for a cast the
+  replay made): it now says "but the replay made the cast". The replay's own list and fate carried
+  (2026-11-24-backlog-after-round-11.md point 6). The hold placement had already been fixed by the placement leads.
+- 3 (No view of one operator's Arts Bursts, logged against replayed): done (48f6676): `efsim zmdlogs bursts
+  <fixture…|--all> [--operator] [--from --to]` (packages/logs/src/burstsview.ts): each burst paired as the check pairs
+  it, the offset, log only with the reason, replay only, each side's likely cause and the stops between, counts per
+  operator. The causes are a search (the replay records no infliction or burst source): carried as
+  2026-11-24-backlog-after-round-11.md point 13.
+- 4 (A per-buff listing of the one-buff hits wasn't there): done (98c3683): `python3 -I
+  scripts/probes/stats/analyze.py buff <regex> [fx…]`; onebuff.py is a shim of it (the docs name it).
