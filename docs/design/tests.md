@@ -129,7 +129,27 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
 - **Several readings at once:** `--variant <id>=<r>[,<id>=<r>…]`
   (repeatable) measures each on the same snapshot in one run (summaries
   per variant, files under `variant-<n>/`); not chained measures, each
-  fixing its own snapshot (round 7).
+  fixing its own snapshot (round 7). Since round 11 the same code without
+  any variant is measured too, and each variant's summary also gives its
+  moves against that plain tree: the variant's own effect, apart from what
+  the tree changed since the snapshots (`--no-plain` skips that run).
+- **Which part of a batch moved which log** (round 11; a batch of four
+  changes took three more measures and a wrong claim to split):
+  `--split files [--group a,b]` measures the whole change against
+  `--base` (default HEAD: the working tree's change), then each changed
+  file's diff alone on the base (`--group` puts the files under those path
+  prefixes into one part, for parts that don't build alone; docs and
+  tests are left out), and `--split commits --base <ref>` each first-parent
+  commit of `<ref>..` the code against the one before (the working tree's
+  own changes last). Each part is measured only on the logs the whole
+  change moved; the summary ends with the logs no part moved alone (parts
+  acting together). Tried on the placement leads' range (`--split commits
+  --at 9c209b3 --base c6f1874`): 1cd1 and af7b by 00876b1, 4d60 by the
+  merge that brought the Empyrean's end in.
+- **The reference's own code:** the summary's first line says when the
+  snapshots compared against were written by an older commit's code (the
+  comparison then holds every code commit since): `--base HEAD` measures
+  this tree against HEAD's code alone (round 11).
 - **A change that is no registered reading:** `--patch <diff>` measures
   the code (at `--at`, else the tree as queued) with a diff applied in a
   worktree of its own, the diff copied at queue time; `--base HEAD` gives
@@ -237,3 +257,9 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   which code, finished or interrupted by a restart). Wait for your job's
   own name, since a script around several jobs prints several lines:
   `until grep -qE '^EFSIM-DONE measure ' <log>; do sleep 15; done`.
+- **A test that a child is gone** reads `/proc/<pid>/status`'s `State`
+  (`Z`, a zombie, counts as gone), not `process.kill(pid, 0)`, which a
+  zombie passes: this container's init reaps orphans about a second late,
+  so a job that exits right after signalling its children leaves them
+  "alive" to `kill(pid, 0)` (round 10: the ported done-line test failed
+  so; done-line.ts now waits for its children itself).

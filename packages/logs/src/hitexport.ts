@@ -6,12 +6,14 @@
 // what the check's "where it and the log disagree" counts).
 // The same computations as `zmdlogs check` (logBuffReplay, engineHits, checkLog, readingBasis), not a copy of them.
 // The engine's error on a hit, as the check judges it: `graded` (the uncapped logged value against the verdict's
-// reading); `predicted` / `error` are the primary reading's, `logReading` the log's.
+// reading); `predicted` / `error` are the primary reading's, `logReading` the log's; `counterfactuals` (round 11) the
+// primary with one disagreement taken the log's way (hitCounterfactuals).
 
 import { basename } from "node:path";
 import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
-import { engineCheck, logDifferences, readingBasis, type LogDifference } from "./enginecheck.ts";
+import { engineCheck, logDifferences, loggedEntries, readingBasis, type EngineCheck, type LogDifference, type ReadingBasis } from "./enginecheck.ts";
+import type { LogHit } from "./zmdlogs.ts";
 import { placeHits } from "./logcasts.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
 import type { CritSource } from "./buffreplay.ts";
@@ -72,6 +74,14 @@ export interface HitRecord {
    * values. Kit hits with a landing only.
    */
   readonly differences?: readonly LogDifference[];
+  /**
+   * The primary reading with one disagreement taken the log's way, each rounded (null: no reading applies): per
+   * difference its kit buffs' entries as the log lists them (Stagger: the other way); the crit flipped where the log
+   * gives one; a kit buff the log lists at the hit's boundary on and off; Stagger the other way at its boundary
+   * (hitCounterfactuals). Which single disagreement makes the hit fit (backlog after round 10 point 5: the
+   * misprediction analysis's largest class, which scripts/probes/stats/build.ts re-derived). Kit hits with a landing.
+   */
+  readonly counterfactuals?: readonly Counterfactual[];
   readonly landing?: {
     readonly frame: number;
     readonly operator: string;
@@ -142,11 +152,13 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       if (!readingDoesNotApply(err)) throw err;
     }
     const differences = landing.inputs ? logDifferences(c, hit, landing as typeof landing & { readonly inputs: NonNullable<typeof landing.inputs> }) : [];
+    const counterfactuals = hitCounterfactuals(c, hit, ok, differences);
     return {
       ...base,
       // A logged (or inferred) crit is the landing's; one the log doesn't give lands without one in the replay the check reads.
       replayCrit: typeof landing.loggedCrit === "boolean" ? landing.loggedCrit : (landing.crit ?? (landing.loggedCrit === null ? false : null)),
       ...(differences.length ? { differences } : {}),
+      ...(counterfactuals.length ? { counterfactuals } : {}),
       predicted: predicted ?? roundDamage(d.exact),
       error: hit.value / (predicted ?? roundDamage(d.exact)) - 1,
       logReading,
@@ -178,6 +190,67 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       },
     };
   });
+}
+
+/** One counterfactual reading of a hit (HitRecord.counterfactuals). */
+export interface Counterfactual {
+  /** Its kit buffs (`owner:id`, joined), "Stagger" or "crit flipped". */
+  readonly what: string;
+  /** A difference's kind (engine / log / values), "crit", or a boundary's: "boundary on" / "boundary off" (a kit buff), "boundary" (Stagger). */
+  readonly kind: LogDifference["kind"] | "crit" | "boundary on" | "boundary off" | "boundary";
+  /** For a boundary kit buff: whether the engine has it at the hit. */
+  readonly engineHas?: boolean;
+  readonly reading: number | null;
+}
+
+/**
+ * A hit's counterfactual readings (HitRecord.counterfactuals): the primary reading of `basis` with one change each, as
+ * the check's own edge toggles make it (its kit buffs' engine modifiers replaced by the log's entries: loggedEntries).
+ */
+export function hitCounterfactuals(c: EngineCheck, hit: LogHit, basis: Exclude<ReadingBasis, { readonly landing: { readonly unknown: string } }> | ReadingBasis, differences: readonly LogDifference[]): Counterfactual[] {
+  if ("unknown" in basis.landing) return [];
+  const ok = basis as ReadingBasis;
+  const { primary } = ok;
+  const readAt = (r: typeof primary): number | null => {
+    try {
+      return roundDamage(landingDamage(c.data, c.target, r.inputs, r.options, r.other).exact);
+    } catch (err) {
+      if (!readingDoesNotApply(err)) throw err;
+      return null;
+    }
+  };
+  type KitMod = { readonly kitBuff?: { readonly owner: string; readonly id: string } };
+  const of = (keys: ReadonlySet<string>) => (m: KitMod) => m.kitBuff !== undefined && keys.has(`${m.kitBuff.owner}:${m.kitBuff.id}`);
+  const out: Counterfactual[] = [];
+  if (hit.crit !== null) out.push({ what: "crit flipped", kind: "crit", reading: readAt({ ...primary, options: { ...primary.options, crit: hit.crit ? "never" : "always" } }) });
+  // The log's boundary effects (a buff starting or ending at the hit) of team kit buffs, one kit buff at a time: as the
+  // log lists them there (added) and off (the engine's modifiers of it removed); Stagger the other way at its boundary.
+  const mods = primary.options.modifiers ?? [];
+  for (const k of new Set(hit.boundaryEffects.flatMap((e) => c.names.byGameBuff.get(e.buff) ?? []))) {
+    const ofIt = of(new Set([k]));
+    const names = new Set(c.names.ofKitBuff.get(k) ?? []);
+    const at = hit.boundaryEffects.filter((x) => names.has(x.buff));
+    const kept = ok.judged.filter((m) => !ofIt(m));
+    const on = mods.some(ofIt);
+    out.push({ what: k, kind: "boundary on", engineHas: on, reading: readAt({ ...primary, options: { ...primary.options, modifiers: [...mods, ...loggedEntries(c, at, names, kept, ok.category)] } }) });
+    if (on) out.push({ what: k, kind: "boundary off", engineHas: on, reading: readAt({ ...primary, options: { ...primary.options, modifiers: mods.filter((m) => !ofIt(m)) } }) });
+  }
+  if (hit.boundaryEffects.some((e) => /poise_break/.test(e.buff)) && !differences.some((x) => x.what === "Stagger")) {
+    out.push({ what: "Stagger", kind: "boundary", reading: readAt({ ...primary, options: { ...primary.options, staggered: !primary.options.staggered } }) });
+  }
+  for (const diff of differences) {
+    if (diff.what === "Stagger") {
+      out.push({ what: "Stagger", kind: diff.kind, reading: readAt({ ...primary, options: { ...primary.options, staggered: !primary.options.staggered } }) });
+      continue;
+    }
+    const keys = new Set(diff.what.split(" + "));
+    const ofIt = of(keys);
+    const names = new Set([...keys].flatMap((k) => c.names.ofKitBuff.get(k) ?? []));
+    const listed = hit.effects.filter((x) => names.has(x.buff));
+    const kept = ok.judged.filter((m) => !ofIt(m));
+    out.push({ what: diff.what, kind: diff.kind, reading: readAt({ ...primary, options: { ...primary.options, modifiers: [...mods.filter((m) => !ofIt(m)), ...loggedEntries(c, listed, names, kept, ok.category)] } }) });
+  }
+  return out;
 }
 
 /** The reading a verdict rests on and the logged value's error against it (HitRecord.verdictReading, verdictError). */

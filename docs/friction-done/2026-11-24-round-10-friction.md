@@ -58,3 +58,18 @@ aren't repeated.
 - The reports named the episode each fix would have shortened (Snowshine's paths, Empyrean's block [14], 0c14 at
   30 s, d774's pinned total), so each change was tried on its episode at once.
 - The round's own `npm run snapshots:update` doubled as the ported script's real-world test.
+
+## Outcome (round 11)
+
+- 1 (A killed child reads as alive: zombies under the container's init): done (016d623): docs/design/tests.md, "A
+  test that a child is gone" reads /proc/<pid>/status's State (Z counts as gone).
+- 2 (Outcome lines name backlog numbers before the backlog exists): done (016d623): `node scripts/friction.ts
+  outcomes <reports…> --round <n> --backlog <new backlog>` fills in "carried (<backlog> point k)" from the new
+  backlog's From lines (this round's outcomes came from it), and docs/friction/README.md's step 5 orders the
+  paperwork: the backlog first.
+- 3 (A change to packages/logs re-runs most of the suite in `vitest related`): done (016d623): CLAUDE.md's "While
+  working" sentence: for a view or report, the test files naming the changed function first (`rg -l '<name>'
+  tests`), `related` once before premerge.
+- 4 (edit.ts's append marker mistyped, found only by the edit's absence): done (48f6676): a block whose old text is
+  `end` or `all` is refused with "did you mean `<<<<<<< end`"; an end block without `=======` says the form (this
+  round's first edits file hit exactly that).

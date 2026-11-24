@@ -54,6 +54,9 @@ describe("scripts/edit.ts", () => {
     expect(() => parseEdits("@@@ a.md\n<<<<<<<\nx\n>>>>>>>")).toThrow(/no "=======" line/);
     expect(() => parseEdits("@@@ a.md\n<<<<<<<\nx\n=======\ny")).toThrow(/isn't closed/);
     expect(() => parseEdits("@@@ a.md\n<<<<<<<\n=======\ny\n>>>>>>>")).toThrow(/no old text/);
+    // The markers' typos (round 10 friction point 4; round 11): the mode on its own line, an end block without "=======".
+    expect(() => parseEdits("@@@ a.md\n<<<<<<<\nend\n=======\ny\n>>>>>>>")).toThrow(/did you mean "<<<<<<< end"/);
+    expect(() => parseEdits("@@@ a.md\n<<<<<<< end\ny\n>>>>>>>")).toThrow(/an "end" block too: "<<<<<<< end", then "======="/);
   });
 });
 

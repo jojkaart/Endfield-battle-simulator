@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, holdChanges, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, selectLogs, sharesLines } from "../scripts/measure.ts";
+import { hitChanges, holdChanges, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -171,5 +171,43 @@ describe("measure --patch without --at (physical-statuses report point 1)", () =
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("measure --split (round 11: which part of a change moved a log)", () => {
+  const entry = (plain: number, mismatch: number) => ({ a: { plain, mismatch }, totals: { damage: 1 } });
+  const dev = "pending/zmdlogs-bbbb11112222.json";
+  const dev2 = "pending/zmdlogs-bbbc11112222.json";
+  const hold = "holdout/zmdlogs-cccc11112222.json";
+  const base: Snapshots = {
+    verified: {},
+    pending: { [dev]: entry(5, 5), [dev2]: entry(5, 5), [hold]: entry(3, 3) },
+    split: { development: new Set(["zmdlogs-bbbb11112222", "zmdlogs-bbbc11112222"]), holdout: holdouts },
+  };
+
+  it("parts the changed files by --group prefixes, the rest one each, docs and tests left out, hold-outs by count", () => {
+    const files = ["packages/logs/src/logcasts.ts", "packages/logs/src/buffreplay.ts", "packages/data/kits/x.json", "docs/journal.md", "tests/a.test.ts", "fixtures/holdout/zmdlogs-cccc11112222.json"];
+    const parts = splitGroups(files, ["packages/logs/src/logcasts.ts,packages/data/kits"]);
+    expect(parts.map((p) => p.label)).toEqual(["packages/logs/src/logcasts.ts, packages/data/kits", "packages/logs/src/buffreplay.ts", "fixtures/holdout/ (1 file(s))"]);
+    expect(parts[0]?.files).toEqual(["packages/logs/src/logcasts.ts", "packages/data/kits/x.json"]);
+    expect(parts.map((p) => p.label).join(" ")).not.toMatch(/cccc/);
+  });
+
+  it("gives each part's moves, then the logs no part moved alone, hold-outs only counted", () => {
+    const whole = overlay(base, new Map([[dev, entry(8, 2)], [dev2, entry(6, 4)], [hold, entry(4, 2)]]));
+    const partA = overlay(base, new Map([[dev, entry(8, 2)]]));
+    const partB = overlay(base, new Map([[hold, entry(4, 2)]]));
+    const text = splitLines([{ label: "a.ts alone", from: base, to: partA }, { label: "b.ts alone", from: base, to: partB }], base, whole).join("\n");
+    expect(text).toMatch(/Part 1: a\.ts alone\n(.*\n)*? {4}better: pending\/zmdlogs-bbbb11112222\.json/);
+    expect(text).toMatch(/Part 2: b\.ts alone/);
+    expect(text).toMatch(/by no part alone \(parts acting together\): pending\/zmdlogs-bbbc11112222\.json$/m);
+    expect(text).not.toMatch(/cccc/);
+    const both = splitLines([{ label: "all", from: base, to: whole }], base, whole).join("\n");
+    expect(both).toMatch(/Every log the whole change moved, some part moved alone\./);
+  });
+
+  it("says first when the snapshots compared against weren't written by that commit's code", () => {
+    expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 0 })).toEqual([]);
+    expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 3 })[0]).toMatch(/^Reference: the snapshots at HEAD were written by c6f1874aa's code, and 3 code file\(s\) changed since.*`--base HEAD`/);
   });
 });

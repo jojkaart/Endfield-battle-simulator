@@ -18,6 +18,7 @@ import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fitBuild, type BuildCandidate } from "./buildfit.ts";
 import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
+import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -216,7 +217,21 @@ export function staggerReport(data: GameData, named: readonly string[], progress
 /** `efsim zmdlogs differences`: where the log's listing and the replay disagree, grouped, with the damage's ratio per group. */
 export async function differencesCliReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly what?: string; readonly hits: boolean; readonly cache?: boolean; readonly progress: (line: string) => void }): Promise<string> {
   const records = await collectRecords(data, selectedFiles(sel, "differences"), opts.workers, opts, opts.progress, opts.cache ?? true);
-  return differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, fixtureLabel });
+  // The likely-loggedAs pairs from the same records (loggedas.ts: a kit buff and an unmapped listed buff with one effect).
+  const byFixture = new Map<string, HitRecord[]>();
+  for (const r of records) byFixture.set(r.fixture, [...(byFixture.get(r.fixture) ?? []), r]);
+  const pairs = [...byFixture].map(([file, rs]) => {
+    const fx = readLogFixture(file);
+    const mods = new Map(rs.map((r) => [`${r.t}|${r.operator}|${r.event}|${r.value}`, r.landing?.modifiers ?? []]));
+    return {
+      label: fixtureLabel(file),
+      pairs: loggedAsPairs(data(), fx, (h) => {
+        const ms = mods.get(`${h.t}|${h.operator}|${h.event}|${h.value}`);
+        return ms ? { modifiers: ms.map((m) => ({ zone: m.zone, ...(m.element !== undefined ? { element: m.element } : {}), value: m.value, ...(m.kitBuff ? { kitBuff: { owner: m.kitBuff.slice(0, m.kitBuff.indexOf(":")), id: m.kitBuff.slice(m.kitBuff.indexOf(":") + 1) } } : {}) })) } : null;
+      }),
+    };
+  });
+  return [differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, fixtureLabel }), "", ...loggedAsLines(pairs)].join("\n");
 }
 
 /** `efsim zmdlogs groups --operator <op>`: an operator's mismatches grouped (the named logs, or every development log with it). */

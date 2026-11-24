@@ -92,7 +92,9 @@ export function parseEdits(text: string): FileEdits[] {
       if (OPEN.test(x) || FILE.test(x)) throw new Error(`line ${i}: "${x}" inside the block opened at line ${start}`);
       part.push(x);
     }
-    if (!mid) throw new Error(`line ${start}: the block has no "=======" line`);
+    if (!mid) throw new Error(`line ${start}: the block has no "=======" line${mode === "end" ? ` (an "end" block too: "<<<<<<< end", then "=======", the new lines, ">>>>>>>")` : ""}`);
+    // The markers' one easy typo (round 10 friction point 4): the mode on a line of its own, read as the old text.
+    if (mode === "once" && (old.join("\n").trim() === "end" || old.join("\n").trim() === "all")) throw new Error(`line ${start}: the old text is "${old.join("").trim()}": did you mean "<<<<<<< ${old.join("").trim()}" (the mode on the marker's own line)?`);
     if (mode === "end" && old.length) throw new Error(`line ${start}: an "end" block takes no old text (it appends)`);
     if (mode !== "end" && !file.create && !old.length) throw new Error(`line ${start}: no old text (use "<<<<<<< end" to append)`);
     file.blocks.push({ mode, old: old.join("\n"), new: neu.join("\n"), line: start });

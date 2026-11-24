@@ -76,3 +76,21 @@ worktree-agent-a5e0a9f27359bf910, base c6f1874.
 - fit-build's output with the precedent in d9e5's buildOverrides (the same stew on the same enemy) settled Chen in
   minutes.
 - `verify-at --test` confirmed the new tests tell the change apart without leaving the tree.
+
+## Outcome (round 11)
+
+- 1 (Nothing says when a log's cast event is logged: at the press or at the stop's end): done (98c3683): query.ts
+  castEventPlace (ult-events.ts's rule; the probe calls it, its counts unchanged): `zmdlogs instances` gives the first
+  event's log time from the placed start and its place ("logged at its stop's end (hits 1.76 s before, 0.02 s after; a
+  1.80 s stop)"), `replay`'s EVENT lines the log time beside the world time and the place; docs/design/data.md "What
+  the log records" has the paragraph with the probe's counts.
+- 2 (A kit hit's frame is ambiguous for landings on their way): carried (2026-11-24-backlog-after-round-11.md point
+  10): the kit compiler and the placement, the accuracy agent's by the lead's brief.
+- 3 (measure answers "this tree against the snapshots", the question is usually "this switch against this tree"):
+  done (48f6676): the summary's first line says when the snapshots compared against weren't written by that commit's
+  code ("--base HEAD measures this code against HEAD's code alone"), and `--variant` measures the plain tree too, each
+  variant's summary also against it (`--no-plain` skips it).
+- 4 (A borderline cooldown was invisible until a debug print): carried (2026-11-24-backlog-after-round-11.md point
+  11): replayrecord.ts / buffreplay.ts, the accuracy agent's.
+- 5 (An engine reading can't be narrower than "every trigger"): carried (2026-11-24-backlog-after-round-11.md point
+  12): the kit compiler and the engine, the accuracy agent's by the lead's brief.
