@@ -230,7 +230,8 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         const own = ownWindowSkills(ctx, owner);
         const combos = (ctx.kits.get(owner)?.skills ?? []).filter((s) => s.kind === "combo" && (a.skills ? a.skills.includes(s.skillId) : s.comboWindow !== false && !own.has(s.skillId)));
         // What the trigger saw, and when, whether the window opens or the cooldown keeps it shut (element "window").
-        const seen = eventSourceOf(e);
+        // A reaction's element for the window: the infliction it consumed, or (engine assumption window-reaction) its own.
+        const seen = windowSourceOf(ctx, e);
         if (seen) for (const key of a.skills ? a.skills.map((id) => `${owner}>${id}`) : [owner]) st = { ...st, comboTrigger: { ...st.comboTrigger, [key]: { source: seen, frame } } };
         if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) break;
         const until = frame + (a.seconds === undefined ? (a.whileBuff ? Infinity : COMBO_WINDOW_FRAMES) : Math.round(evaluate(a.seconds, ec()) * FPS));
@@ -240,7 +241,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
           const open = st.comboWindow[key];
           const count = engineReading(ctx.scenario, "combo-window-count") === "latest" ? eventCountOf(e) : Math.max(eventCountOf(e), open && open.until >= frame ? open.count : 0);
           // …and what the latest event that opened or refreshed it was (Antal's combo repeats it: assumed, the data overwrites it).
-          const source = eventSourceOf(e) ?? (open && open.until >= frame ? open.source : undefined);
+          const source = seen ?? (open && open.until >= frame ? open.source : undefined);
           st = { ...st, comboWindow: { ...st.comboWindow, [key]: { from: frame, until, count, ...(source ? { source } : {}), ...(a.whileBuff ? { whileBuff: a.whileBuff } : {}) } } };
         }
         break;
@@ -436,4 +437,14 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
     }
   }
   return { state: st, events };
+}
+
+/**
+ * What an event that opens a combo window gives `element: "window"` (Arcane's touch) and the window's repeated source
+ * (Antal's combo): eventSourceOf, with a reaction's own element instead of the one it consumed under engine
+ * assumption `window-reaction` `applied` (fc63a2001251 81.47 s; in-game test 33).
+ */
+function windowSourceOf(ctx: TimelineContext, e: BattleEvent): ReturnType<typeof eventSourceOf> {
+  if (e.type === "status" && e.event.kind === "reaction" && e.event.consumed && engineReading(ctx.scenario, "window-reaction") === "applied") return { kind: "infliction", element: e.event.element };
+  return eventSourceOf(e);
 }

@@ -168,6 +168,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "window-reaction",
+    question: "Which element does an `element: \"window\"` application (Arcane's WILL combo touch, in-game test 33) take when the event that opened the window was an Arts reaction: the infliction the reaction consumed, or the element it applied?",
+    default: "consumed",
+    readings: {
+      consumed: "the consumed infliction (round 6, 2026-11-12; round 5 ruled the applied element out on b74c, a multi-target log: Nature onto Cryst, then a Cryst burst)",
+      applied: "the reaction's own element (2026-11-25): pending/zmdlogs-fc63a2001251, the touch at 81.47 s after Arcane's Nature onto Perlica's Pulse (Corrosion, 80.40 s): Typhoeus's power shot at 84.13 s consumed a Nature stack (its burst ×1.303 the replay's, enchence_burst_damage_rate 1.3) and Arcane's array burst on nothing. Measured: fc63 plain 511 → 549, mismatch 179 → 97, but 9a80 plain 227 → 217 and fc63's total 3.4 → 5.3%",
+    },
+  },
+  {
     id: "finisher-stagger",
     question: "Does a finisher's hit that lands after the Stagger's end still deal with the Stagger's parts (its multiplier, DamageToBrokenUnitIncrease and the modifiers of Staggered enemies; timeline/landing.ts), as the Stagger a finisher needs to be cast?",
     default: "cast",

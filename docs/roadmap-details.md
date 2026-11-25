@@ -194,6 +194,18 @@ burst (0.44 s of world time later than every stop held allows); fc63's Nature st
 the replay makes, Zhuang Fangyi's _ult forms to 179.17 s, plain after), the replay's empyrean buff ended before it;
 (d) 7e19's ×1.096 (Pogranichnik's team ATK layers as `values`).
 
+**The remaining leads, 2026-11-25** (journal
+[2026-11-25-01](journal/2026-11-25-01-the-remaining-leads-the-empyrean-s-end-on-its-frame.md); open-problems "Misprediction
+statistics"): (c) done: the Empyrean ended on its logged event's own frame (buffreplay.ts endedWithTick), not early;
+ExtendBuffAction as a pause ruled out. (b) fc63 40.80 s: Gilberta's and Perlica's ultimates played in turn
+(logcasts.ts inTurn, 12 of 27 overlapping pairs with a quiet stretch of the first's stop length); fc63 85.13 s: the
+touch's element after a Corrosion opener (Nature, the applied one: assumption `window-reaction`, default `consumed`);
+9a80 35.05 s and 79cc 24.23 s open (Imprisonment's enemy slow-down ruled out). (a) no field: the data has no movement
+for the two ability entities, and marking them `travels` moves no log. (d) not Pogranichnik's layers (teammates fit
+with two under the same listing); Ember's own. d4fb 97.05 s open. Next: 489c's hold placement after the in-turn move
+(plain 591 → 488, its Corrosion readings), the 15 pairs left (three-stop chains), d774's away window as the test of a
+boss-phase pause of the operators' timers (4d60), test 33's reaction case.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

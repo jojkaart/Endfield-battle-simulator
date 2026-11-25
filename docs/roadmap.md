@@ -57,9 +57,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   assumption `trigger-cooldowns`; the cooldown-clock round 2026-11-24: each trigger's clock from the data
   (KitTrigger.cooldownClock: CD timers and cooldown buffs world, timed markers raw), an Arts Burst held by its own
   operator's ultimate stop (`burst-stops`), every finisher hit Staggered (`finisher-stagger`), KitHit.travels from
-  LaunchProjectile in the placement's event rule): next 4d60's unlogged holds around 98–143 s, a field for ability
-  entities that fly (Tangtang's stare, Arclight's dash), Arcane's last bursts (9a80 35.05 s, fc63's Nature state),
-  4bfc's 179.51 s Empyrean end the replay makes a cast (its empyrean buff ends early).
+  LaunchProjectile in the placement's event rule; the remaining leads 2026-11-25: the Empyrean's end on its event's
+  frame, ultimates pressed together placed in turn, the touch's element after a reaction as assumption
+  `window-reaction`): next 489c's hidden holds after the in-turn move, the 15 overlapping ultimate pairs left,
+  4d60's unlogged holds (a boss-phase pause?), test 33's reaction case.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

@@ -100,12 +100,26 @@ shares of the off error at that code):**
   696, −1.8 → −4.1%): the fake stop held Arcane's Solemn Phalanx runs (98.5→131.7 s), Perlica's weapon (115.8→143 s)
   and a Sunderblade's timer 2.6 s, which the game holds 3.6–6.1 s by something unlogged (`zmdlogs holds 4d60`: those
   bounds dropped; the replay's Stagger window 114.30–133.37 s takes no holds; the enemy away 117.22–124.45 s): open.
+  **2026-11-25 (the remaining leads):** not the Empyrean's clock (below: its end is on time in every log); the runs
+  asking 3.6–6.1 s all span the enemy-away stretch 117.22–124.45 s, but Perlica's weapon asks 6.6–8.6 s in its
+  21.4 s run too (a refresh the replay misses: no clean clock) and no ultimate pair overlaps there (scratch
+  ult-overlap probe). Still possible: a boss-phase pause of the operators' timers while the enemy is away (no log
+  with an away stretch has been checked for it: d774's 24 s away window at 30.6–54.6 s is the test), Arcane's Will
+  burst runs refreshed by a burst the replay doesn't make.
   The hold placement's stop list (buffreplay.ts, before replayedCastStops) leaves out an event the replay read as a
   tick since 2026-11-24 (placement leads); query.ts replayTimeStops (the views' world time) still counts it.
   **4bfc 179.51 s (2026-11-24, the lead's question): Empyrean's end, not a cast**, but the replay makes a cast there
   (stop 179.50–182.10 s) because its empyrean buff has already ended: Arclight's attack chain runs unbroken through
   that stop (179.50, 179.93, 180.17, 180.57 s), Zhuang Fangyi's _ult forms are logged to 179.17 s and her plain
-  finisher after. Open: why the replay's Empyrean ends before 179.51 s (its clock: held less than the game's).
+  finisher after. **Fixed 2026-11-25: a frame boundary, not the clock.** The replay's Empyrean ended at 179.50 s
+  (frame 5385), the event's own frame; d774's at 135.20 s was held 0.37 s to its event at 135.57 s (heldTicks), which
+  ends it on the event's frame too. The advance to that frame ticks and ends the buff before loggedTick looks, so the
+  replay made a real ultimate (a 78-frame stop) at both. buffreplay.ts endedWithTick reads an event on its buff's end
+  frame as the last tick (4bfc plain 819 → 820, d774 374 → 379, nothing else moved; tests/slow/log-cases.test.ts).
+  **Ruled out: ExtendBuffAction as a pause.** Each Empyrean action holds ult_base over its first 17–35 frames; as a
+  pause of its timer, 4bfc's third Empyrean (about 685 frames of actions) would last 47 s of world time, the log's
+  26.65 s (`zmdlogs worldtime 4bfc… 144.37 179.51`, less 1.02 s of placed holds): it can only hold an end that falls
+  inside an action's window (the kit's G4 reading, at most 35 frames), which no log's end tells apart.
 - **Ruled out: Arcane's Susceptibility layers** (1.5%): 170k of the 194k is one hit, e82d 9.12 s (Si's combo, crit
   unlogged, a fallback) that fits two ways (the crit with Arcane's Susceptibility the log's way, or the verdict's reading: the crit with
   suit_atk02.edge ×2 and wpn_claym_0018.combo_ready unlogged); the rest is 24 hits over 16 fights at start / end boundaries.
@@ -133,6 +147,26 @@ shares of the off error at that code):**
   element the replay's enemy has and the game's doesn't: Typhoeus's Nature consumption before it, not her clock);
   c83c 65.10 s (fire onto fire after her touch, the log credits Wulfgard alone). In-game test 33 isn't needed for these:
   the element question decides none of them.
+  **2026-11-25 (the remaining leads):** **fc63 40.80 s fixed: ultimates in turn, not Typhoeus.** Gilberta's ultimate
+  (hit frame 60 at 43.58 s) was placed at 41.58 s over Perlica's (41.77 s); the log has no hit by anyone in
+  39.94–41.73 s, Typhoeus's Barrage Array ticks at its frame 65 (38.17 s) and next at frame 75 (41.73 s), and her shot's
+  burst (39.94 s, 10 enemy frames) and Arcane's array burst come after the second stop (43.58, 44.63 s): the two stops
+  played one after the other, Gilberta's from 39.92 s (logcasts.ts inTurn; Ultimates pressed together, below). The
+  44.63 s burst now pairs (−430 ms). **fc63 85.13 s: the touch's element, not Typhoeus.** The replay's enemy had Pulse
+  at 84.13 s because Arcane's touch at 81.47 s applied the Corrosion opener's consumed element (`--trace-buff
+  status:infliction`); the game's had Nature: Typhoeus's power shot at that ms consumed it (its burst at 87.81 s reads
+  ×1.169 the replay's and the shot itself ×0.897, so ×1.303 = enchence_burst_damage_rate 1.3 on the burst) and Arcane's
+  array found none left (no burst). So the touch applied Nature here, the opener's applied element (Arcane's own
+  battle skill onto Perlica's Pulse at 80.40 s): the reading round 5 ruled out on b74c, a multi-target log. Measured
+  as the touch's element for every reaction opener (scratch patch, eventSourceOf: the reaction's element instead of
+  the consumed one): see "Arcane's WILL combo touch" below. **Ruled out for the late bursts: Imprisonment's
+  slow-down of the enemy's clock** (SealAction, the curve 0.3 → 0.2 → 1 over its `duration`, default 1 s: about 0.42 s
+  of the enemy's time): 45 of the 50 bursts the bursts view gives a logged touch within 1.6 s as cause come 0.97–1.12 s of world
+  time after it, on time. 9a80 35.05 s: the replay's burst is due just as Gilberta's ultimate stop starts (30.50 s);
+  0.44 s more delay, from whatever source, puts it after Rossi's ultimate stop, the log's 35.05 s; open. 79cc 24.23 s:
+  the log's burst comes 1.01 s after the touch with no hold at all, so Ardelia's combo slow-down (its event at 23.03 s
+  with Arcane's) didn't hold it: a combo pressed before Arcane's frame-9 reset (23.02 s placed) would be cut by it;
+  a frame either way; open.
 - **Gilberta's weapon Arts DMG (1.2%): a clock, not the kit's 15 s.** 150k of 159k is 4a64's first instance: listed
   to 29.15 s (16.5 s of world time), the replay's ends at 28.23 s; an instance buff, so not one of the hidden holds'
   clocks (`zmdlogs holds 4a64 --why wpn_funnel_0011`: runApart). Rossi's (24.53 s, 57 frames) and Gilberta's (24.90 s,
@@ -151,7 +185,30 @@ shares of the off error at that code):**
   (its own sections below).
 - **Zhuang Fangyi's Sunderblades, left:** d774 104.18 s, the Empyrean's free battle skill: 3 logged hits, no final,
   where the replay plays 8 and the final (300k replay-only); 4d60 125.40 s: the replay's 8 against the log's 9 since
-  the fix above (a Sunderblade's 36 s ran out without the fake stop: the same unlogged holds).
+  the fix above (a Sunderblade's 36 s ran out without the fake stop: the same unlogged holds). **d774 104.18 s
+  (2026-11-25): not the Empyrean's clock; the team's hits thin out.** After the third strike (104.50 s) nobody but
+  her hits until Arcane's ultimate at 107.08 s (her attacks at 105.02, 107.18, 108.68 s, 1.5–2 s apart; Perlica and
+  Liino none from 103.9 to 109.8 s), as at 30.63 s, where her series stops at three as the enemy leaves for 24 s.
+  Truncated series elsewhere resume after a stop (4bfc 168.24 s: five, then the last three and the final after
+  Perlica's ultimate). Still possible: the enemy out of the Sunderblades' reach (a boss's move: positional, not
+  simulated), an end of the strike entity the data doesn't show.
+- **Ultimates pressed together play their stops in turn (2026-11-25, logcasts.ts inTurn).** Of the 27 pairs of
+  different operators' ultimates whose placed stops overlapped (scripts/probes/placement/ult-overlap.ts), 12 had a
+  stretch with no logged hit by anyone of about the first one's stop length right before it (fc63 1.66 s for 1.73 s,
+  00ae 1.74 / 1.73, 4a64 1.97 / 1.93, d774 1.61 / 1.67, …): the first stop was there, and its landing after its own
+  stop (Gilberta's frame 60, Arcane's ultimate_skill2 frame 58) was held by the second's. 489c: Arcane's attack 4
+  split by a 1.84 s gap at 25.94–27.78 s; fc63: Typhoeus's Barrage Array ticks once between the two stops. A pass
+  after the placement moves an ultimate placed from its landing's frame to where its landing's world frames put it
+  through the other's stop (heldStart), or, logged at that stop's end, to the latest start the log leaves quiet; only
+  where no logged hit falls inside the moved stop, by no more than the stops it overlapped, in time order against the
+  stops as moved (one of a pair moves). Development plain 67.9 → 68.1%, hold-out 78.5 → 78.7% (none worse); 00ae 607
+  → 687, 9090 995 → 1027 (a shot that hit nothing no longer needed: Arcane's stop holds Typhoeus's hover), 1d91,
+  7910, c4f3 better. **Worse:** 489c plain 591 → 488 (its total −1.9 → −0.3%): the hidden holds re-placed (units at
+  37.73 / 50.75 s gone, the Corrosion ramp's bounds dropped as conflicting; Si's, Arcane's and Gilberta's Corrosion
+  readings fail from 46 s on), not the moved stop itself; 40d9 two plain hits assumed (Link and Gilberta's weapon
+  within 500 ms of the moved cast); 3f78's total −4.8 → −5.6%. **Left:** 15 overlapping pairs, mostly chains of three
+  stops (d774 Liino, Arcane, Perlica at 118–123 s) or pairs whose first is anchored to its cast event (Liino's, Si's,
+  Tangtang's); 489c's hold placement.
 - **Liino's ultimate windows: fixed 2026-11-24 (placement).** Her Pyrotechnics (frame 76, `detached`) fly 0.1–0.8 s
   of the world's time before they land (dbae: the first song beat, frame 77, at 8.26 s with the cast event, the
   projectiles at 8.61 s), so a cast placed from them came late, its stop over teammates' logged hits and its Amp
@@ -169,8 +226,12 @@ shares of the off error at that code):**
   rule also takes: Tangtang's stare (b7b3 plain 47 → 45 from its frame, its 10.34 s burst off) and Arclight's dash
   (3aa6 +1 plain from its frame). So the rule stays, with the field: a travelling first landing always from its event,
   another detached one only under the check (the same placements as before; tried:
-  docs/tried/2026-11-24-travelling-landings-only.diff). **Still possible:** a field for ability entities that fly to the
-  target (Tangtang's, Arclight's) against those that don't (Si's slashes), from the entity's movement data.
+  docs/tried/2026-11-24-travelling-landings-only.diff). **2026-11-25: the data has no movement for them.** Neither
+  entity's SkillData (chr_0027_tangtang_ultimate_skill_1: ContinuousFindTargetAction in an 8 m cylinder,
+  ChannelingAction at 0.5 s per target; chr_0007_ikut_ultimate_skill_abentity: FindTarget, Damage, Interrupt) has a
+  LaunchProjectile or a move, and the AbilityEntity definitions aren't in the data sources; marking both `travels`
+  (measured, scratch patch to kits.ts) moves no log: the contradiction check already places them from their events.
+  So no field; the check stays for Si's slashes.
 - **7e19's Chen ×1.15: her food, fixed 2026-11-24** (fixture buildOverrides: Ginseng Meat Stew, fit-build 17 of 19,
   the ultimate's lower ratio included). Ruled out first: P1 (the fight starts at the data's Max HP, her hits ×1.15
   from 5.4 s at 99.9% HP; a27b, the same enemy, fits P1 off above half, d4fb switches it on at 0.499 of the HP; P1's
@@ -190,7 +251,13 @@ shares of the off error at that code):**
   poise_break buff on the 33.15 s hit) and the replay's at 33.13 s. **Still possible:** a finisher's hits all deal
   with the Stagger its first hit had (04d4's pairs, 0.6 s apart and both Staggered, can't tell); the ×1.096 a team
   ATK layer count. **Next:** the other logs' Finisher second hits after a Stagger's end (`zmdlogs hits --all --event
-  power_attack`).
+  power_attack`). **2026-11-25: not Pogranichnik's layers.** The log lists 7–9 instances of buff_wpn_sword_0012_atk_up
+  (stackingType 11, max_stack 2 at every level: SkillPatchTable) on everyone's hits from 25 s; the replay gives two,
+  and Chen's ultimate hits and the Endministrator's attacks under the same nine-instance listing match plain (`zmdlogs
+  hits 7e19… --json`): two act. The ×1.096 is Ember's own, on four hits of three kinds (knockdown, combo, both
+  finisher hits) from 28.60 s; her 25.81 s knockdown (×1.182) is her weapon's layers (another reading fits it).
+  Still possible: her gear set (suit_poise01: the replay's +0.08 ×4 and +0.16 the log never lists, its
+  poisedmg_01_attackbuff listed only on the finisher), Pogranichnik's talent 1 at two layers from 28.60 s.
 - **Trigger cooldowns: the clock from the data (2026-11-24, the cooldown-clock round; KitTrigger.cooldownClock, engine
   assumption `trigger-cooldowns` `kit`).** The game has two mechanisms (cooldownTimers in packages/data skillData.ts):
   a CD timer (AddGlobalCDTimer / CheckGlobalCDTimerAction, named by a buff ID; or a `…_cd` buff whose duration the key
@@ -215,7 +282,9 @@ shares of the off error at that code):**
   trigger: earlier pending 4 better, development 1, two hold-outs' totals worse, and four kit tests' fights change
   (Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel's layers, chen-solo): not every trigger cooldown
   is a CD timer, so not the default (done above). **Left:** the d4fb exception (97.05 s at 16.67 s of world time) an
-  unlogged hold the placement doesn't place?
+  unlogged hold the placement doesn't place? **2026-11-25:** the same kind of Lift (Chen's combo) as the procs at
+  78.34 and 106.13 s, no chance on the trigger, no gap over 1.2 s in the log between 78.3 and 97.1 s and no placed
+  hold there, no ultimate pair in turn; 1.67 s of hold would be needed. Open, the only exception of 30.
 - **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
   unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6%. 4e36:
   small replay-only basic-attack tails (Si's attack4, Ardelia's attack3 projectiles) and +1.6% matched. de6a: the
@@ -808,6 +877,14 @@ logged combo at 3896 ms is the one placed at 7033 ms, matched in the
 world's time across the time stops between, Arcane −2.5%); the multi-target logs
 move both ways (b74c +23 → +34%, c516 +131 → +159%, 4f7e −2.7 → +3.4%:
 their replay already over-predicts).
+
+**2026-11-25: the applied element in a single-target log.** fc63 81.47 s: after a Corrosion opener (Arcane's Nature
+onto Perlica's Pulse at 80.40 s) the game's enemy had Nature, not Pulse, at 84.13 s (Typhoeus's power shot consumed a
+Nature stack: its burst ×1.303 the replay's; Arcane's array, same ms, found none). That is the opener's applied
+element, the reading round 5 ruled out on b74c, a multi-target log. Registered as engine assumption
+`window-reaction` (`consumed` default, `applied`); measured `applied`: see the journal entry of 2026-11-25. Still
+possible: the applied element after a reaction (fc63), the consumed one (9a80's touches: worse under `applied`), or
+the order of same-ms events (Typhoeus's arrow and Arcane's array at 84.129 s).
 
 **Next check:** in-game test 33 (latest opener against first, and the
 consumed element).

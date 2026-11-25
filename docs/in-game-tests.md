@@ -1142,7 +1142,11 @@ kit-buff round pointed here were her burst's clock, her own ultimate's
 stop holding it, fixed from the logs; none left depends on the element:
 docs/open-problems.md, "Arcane's Will burst buff". Lower priority now.) No log has a touch where the enemy's infliction differs from that
 event's element, so which one wins then is open: one burst (1.6 × her
-ATK) more or less.
+ATK) more or less. (2026-11-25: one single-target log, fc63, says the
+other way for a reaction opener: after her Nature onto Perlica's
+Electric (Corrosion), the enemy had Nature after her touch, not
+Electric; 9a80's touches fit the consumed element better. Engine
+assumption `window-reaction`. The simpler test below now decides it.)
 **How:** Will > Intellect. A teammate applies Cryo (opening the window),
 then a Heat hit consumes it (Solidification: the enemy now has none),
 then a third teammate applies Electric (a new infliction, which opens the
