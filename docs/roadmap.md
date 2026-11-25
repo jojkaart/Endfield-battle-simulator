@@ -16,19 +16,18 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–11
-  done (round 11, 2026-11-24: `measure --split files|commits`, the
-  reference line, `--variant`'s plain run; `zmdlogs bursts`; a cast
-  event's place in its stop; the views' stops without the replay's ticks;
-  the likely-loggedAs screen; HitRecord.counterfactuals; analyze.py in a
-  minute); the backlog
-  ([2026-11-24-backlog-after-round-11.md](friction/2026-11-24-backlog-after-round-11.md),
-  13 live points, most in files an accuracy agent holds: the stop lists'
-  identity, a slot flag, the replay's dropped and skipped reasons,
-  `zmdlogs explain`, the compiler's messages, the replay's own stop list,
-  the enemy-HP label, `casts --why`, travel and cooldown-source kit fields,
-  `--trace-trigger`, the bursts' recorded cause) joins the next round once
-  about five new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–12
+  done (round 12, 2026-11-25: the holds' pins and conflicts, `cli-ab
+  --patch`; the replay's dropped-landing and skipped-press reasons,
+  `--trace-trigger`; the cooldowns' mechanism in `efsim kit`; the
+  placement's named passes and `zmdlogs placement`; the compiler's one
+  message and a likely-loggedAs screen from the data; the "enemy HP
+  unknown" label; measure's moved.json); the backlog
+  ([2026-11-25-backlog-after-round-12.md](friction/2026-11-25-backlog-after-round-12.md),
+  5 live points: `casts --why`, the bursts' recorded cause, one check
+  composition, the hold-outs' attribution (the lead's decision), holds
+  per stretch) joins the next round once about five new reports have
+  collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's
@@ -59,7 +58,8 @@ below ([review-2026-10.md](review-2026-10.md)).
   operator's ultimate stop (`burst-stops`), every finisher hit Staggered (`finisher-stagger`), KitHit.travels from
   LaunchProjectile in the placement's event rule; the remaining leads 2026-11-25: the Empyrean's end on its event's
   frame, ultimates pressed together placed in turn, the touch's element after a reaction as assumption
-  `window-reaction`): next 489c's hidden holds after the in-turn move, the 15 overlapping ultimate pairs left,
+  `window-reaction`): next 489c's hidden holds after the in-turn move (its Corrosion's 0.19 s cap: open-problems),
+  the 14 overlapping ultimate pairs left and the 21 unsettled casts (`zmdlogs placement --all`),
   4d60's unlogged holds (a boss-phase pause?), test 33's reaction case.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't

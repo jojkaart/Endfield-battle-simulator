@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-25: Improvement round 12: decisions kept with their reasons](2026-11-25-02-improvement-round-12-decisions-kept-with-their-reasons.md)
 - [2026-11-25: The remaining leads: the Empyrean's end on its frame, ultimates in turn, the touch after a reaction](2026-11-25-01-the-remaining-leads-the-empyrean-s-end-on-its-frame.md)
 - [2026-11-24: Cooldown clocks from the data, Arcane's burst held by her own ultimate, every finisher hit Staggered](2026-11-24-06-cooldown-clocks-from-the-data-arcane-s-burst-held-by-her-own.md)
 - [2026-11-24: Improvement round 11: measure --split, zmdlogs bursts, the views' stops without the replay's ticks](2026-11-24-05-improvement-round-11-measure-split-zmdlogs-bursts-the-views.md)

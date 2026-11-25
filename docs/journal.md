@@ -4,9 +4,43 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 144 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 145 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-25: Improvement round 12: decisions kept with their reasons
+
+**Goal:** the four open friction reports (round 11's backlog of 13 points, round 11's own report, the cooldown-clock
+and remaining-leads reports), with the replay, the kit compiler, the check's core and the engine free this round. No
+verdict may move.
+
+**Done** (docs/friction-done/2026-11-25-round-12.md; the backlog: docs/friction/2026-11-25-backlog-after-round-12.md):
+- **The holds say why a unit sits where it does** (holds.ts holdPins, PlacedHolds.conflicts; `zmdlogs holds
+  --verbose`; `cli-ab --patch <diff>` runs a new view on the old code). 489c across the in-turn commit in one run: the
+  in-turn stop holds Li Zhiyan's Corrosion 2.07 s more, its status bound caps the holds at 0.19 s over 13.1–49.2 s, the
+  ramp bounds there are dropped against it (open-problems).
+- **The replay says why** it didn't land a pinned landing (landingWatch: branch, `if`, next cast, cast end, never
+  pinned) and didn't make a logged cast (BuffReplay.skipped, earliestStart's own error); `--trace-trigger`; the EVENT
+  line from the replay's decision, with the buff's end in frames; views' stops by the same decision.
+- **The placement's passes named** (placementPasses; settleCheck: 21 casts a third pass would move; ultimateOverlaps:
+  14 pairs, pinned; `zmdlogs placement`).
+- **The data's facts kept**: KitTrigger.cooldownFrom (`efsim kit`, equipment kits by id, kit-census), one compiler
+  message for a hit under another key, the likely-loggedAs screen from the data (none open), "enemy HP unknown"
+  (unknownFacts).
+- measure's moved.json and "Moved by an earlier measure too"; build.ts's built.json and partial/, load.py's fallback;
+  `zmdlogs reactions`' inflictions; data/README's absent tables.
+
+**Scoreboard** (`npm run snapshots:update`): "No log's verdicts moved"; only tests/snapshots/kits.json (27 digests,
+cooldownFrom). No engine timing change (no smoke, no team-ab).
+
+**Decisions:** no per-kit split of the hold-outs' aggregates: which kit's run moves a hold-out says what the hold-outs
+contain, which round 9 keeps out; a split by mechanism class is put to the lead (backlog point 4). The drop reasons
+watch the schedule from the replay (no engine change), and the verdicts' reason text stays as it was (the one-sided
+kinds group by it). The loggedAs screen is a test and a kit-census section, not a loader warning (a load would print it
+on every run). Round 11's backlog points 1, 2 and 4 parked (carried twice, no new report).
+
+**Problems:** the first settleCheck paired a moved cast with its neighbour's start (9a80's Rossi battle skills): pair
+the casts that stay first, then the moved ones.
 
 ## 2026-11-25: The remaining leads: the Empyrean's end on its frame, ultimates in turn, the touch after a reaction
 
@@ -335,36 +369,3 @@ one slash fewer in the log).
 
 **Problems:** one multi-line `python3 -c` and one empty heredoc typed from habit (friction report);
 `measure --patch` applies to the queued tree, not HEAD, so an "all but one change" patch needs `--at <base>`.
-
-## 2026-11-23: Improvement round 9: the offsets screen, text-edit guards, measure's kinds
-
-**Goal:** the five open friction reports (round 8's backlog and own report, the stop lists, both fight-totals rounds),
-tools only, while another agent worked on one-sided landings in logcasts.ts, buffreplay.ts, replayrecord.ts and
-fightTotals. Summary: docs/friction-done/2026-11-23-round-9.md; backlog: docs/friction/2026-11-23-backlog-after-round-9.md.
-
-**Done:**
-- **Build offsets screened.** `efsim zmdlogs offsets --all` (buildoffsets.ts: per log and operator the median of
-  logged ÷ primary over non-crit kit hits, tight within 1%); the verified and pending suites fail on a candidate no
-  buildOverride or OFFSETS_EXPLAINED entry accounts for. Today 6: three stage logs, Purrchena's level 1 (99fb),
-  Catcher's weapon (04d4), and a new lead, Snowshine in 04d4 ×0.962 (fit-build undecided).
-- **The shell's text damage, mechanically.** scripts/edit.ts (exact replacements from an edits file written with the
-  Write tool); the damage's shapes in a doc fail `npm test`; scripts/bash-guard.ts refuses a heredoc, a multi-line or
-  backticked inline script, a multi-line `git commit -m` and a live backtick, as a PreToolUse hook for the owner to
-  wire (the summary has the settings line).
-- **Measure says what moved:** an "other" log's field kinds, the hold-outs' by kind and their operators as counts,
-  `--hits`' moved hidden-hold units, `--logs` by prefix. Shares (matched, replay-only, log-only) in every snapshot
-  entry and a scoreboard table, the hold-outs' included. `zmdlogs stops --all --differ`. SkillTiming.slowdowns `n`.
-  with-lock's done line on stderr. docs/tried/ for dropped diffs.
-
-**Scoreboard:** unchanged (snapshots:update "No log's verdicts moved"; the files changed by the share keys only):
-development plain 67.1%, mismatch 11.7%, mean |damage error| 7.3%; hold-out 77.5%, 6.2%, 9.1%; the new table: the
-hold-outs' |matched| 2.5% against replay-only 7.1% and log-only 6.2%, 11 of 13 one-sided.
-
-**Decisions:** the offsets screen is a second function beside logcheck.ts's buildOffsets (that one explains with
-0.3% spread in `check`; this one screens all fight). Share keys aren't verdicts: `direction` leaves them out, so
-their arrival moved no log. Moved hold-outs' operators printed as counts (the lead may drop that). Not done: the
-dilation index through the stop lists and the record (the other agent's files), a kit form naming the engine's hold
-(an engine timing change), the twins test (the other agent's subject).
-
-**Problems:** this round's own agent typed a multi-line `git commit -m` with escaped code spans after building the
-guard (intact by luck): the reason the hook, not prose, is the answer.
