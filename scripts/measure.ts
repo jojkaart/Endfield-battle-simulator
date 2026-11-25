@@ -60,7 +60,13 @@
 //   --live              read the working tree when the run starts (after the queue's wait), not as it was queued
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
-//                       summary.txt
+//                       summary.txt, moved.json (when it was queued, its code, the development logs it moved and
+//                       how many hold-outs)
+//
+// Each measure is against the committed snapshots, so two changes measured side by side don't see each other: the
+// summary's "Moved by an earlier measure too" line names the development logs this run moved that a measure queued in
+// the INTERACT_HOURS before it moved too (their moved.json; hold-outs as a count), where the two changes may interact
+// (cooldown-clock report point 1: b7b3 better under each alone, mixed under both). Measure one on top of the other.
 //
 // The working tree is measured as it was when the run was queued: a snapshot commit of it (tracked changes and new
 // files, scripts/at-commit.ts snapshotCommit; the branch and index untouched) in its own worktree under scratch/at/,
@@ -105,6 +111,43 @@ export function logKeys(tree: string): string[] {
 
 const isHoldout = (key: string) => key.startsWith("holdout/");
 const idOf = (key: string) => (key.split("/").pop() as string).replace(/\.json$/, "");
+
+/** How far back (hours) a measure looks for earlier measures that moved the same logs (interactLines). */
+const INTERACT_HOURS = 12;
+
+/** A measure's moved logs (moved.json; the hold-outs only as a count on disk). */
+export interface MovedRecord {
+  readonly queued: string;
+  readonly code: string;
+  readonly moved: readonly string[];
+  readonly holdouts: readonly string[];
+}
+
+/**
+ * The development logs this run moved that a measure queued in the INTERACT_HOURS before it moved too (scratch/measure/
+ * <dir>/moved.json), a line per such measure: the two changes, each measured against the snapshots alone, may interact
+ * there (cooldown-clock report point 1). Hold-outs as counts only.
+ */
+export function interactLines(out: string, mine: MovedRecord): string[] {
+  const root = dirname(out);
+  const at = Date.parse(mine.queued);
+  const lines: string[] = [];
+  for (const d of existsSync(root) ? readdirSync(root) : []) {
+    const dir = join(root, d);
+    if (dir === out || !existsSync(join(dir, "moved.json"))) continue;
+    let other: { queued?: string; code?: string; moved?: string[]; holdouts?: number };
+    try {
+      other = JSON.parse(readFileSync(join(dir, "moved.json"), "utf8")) as typeof other;
+    } catch {
+      continue;
+    }
+    const t = Date.parse(other.queued ?? "");
+    if (!Number.isFinite(t) || t > at || at - t > INTERACT_HOURS * 3600_000) continue;
+    const shared = (other.moved ?? []).filter((k) => mine.moved.includes(k));
+    if (shared.length) lines.push(`  ${d} (queued ${other.queued}, ${other.code ?? "?"}): ${shared.map(idOf).join(", ")}${mine.holdouts.length && other.holdouts ? `; hold-outs moved: ${mine.holdouts.length} here, ${other.holdouts} there` : ""}`);
+  }
+  return lines.length ? [`Moved by an earlier measure too (queued in the ${INTERACT_HOURS} h before this one; each is against the snapshots alone, so where both change a log they may interact: measure one on top of the other, --patch or --base):`, ...lines] : [];
+}
 
 /**
  * `--logs` values matched to keys: each must name exactly one log, and never a hold-out. A part matches the start of
@@ -196,6 +239,7 @@ async function main(argv: string[]): Promise<number> {
       live: { type: "boolean", default: false },
       snapshot: { type: "string" },
       "snapshot-head": { type: "string" },
+      queued: { type: "string" },
       patch: { type: "string" },
       plain: { type: "boolean", default: true },
       split: { type: "string" },
@@ -421,6 +465,19 @@ async function main(argv: string[]): Promise<number> {
     }
     writeFileSync(join(dir, "summary.txt"), lines.join("\n") + "\n");
     allLines.push(...(allLines.length ? [""] : []), ...lines);
+  }
+  // This run's moved logs on record, and the earlier measures' that moved the same ones (moved.json; never a hold-out's name).
+  if (before && whole) {
+    const queued = values.queued ?? new Date().toISOString();
+    const movedKeys = keys.filter((k) => JSON.stringify(entryOf(before as Snapshots, k)) !== JSON.stringify(entryOf(whole as Snapshots, k)));
+    const record: MovedRecord = { queued, code: what, moved: movedKeys.filter((k) => !isHoldout(k)), holdouts: movedKeys.filter(isHoldout) };
+    writeFileSync(join(out, "moved.json"), JSON.stringify({ ...record, holdouts: record.holdouts.length }, null, 1) + "\n");
+    // The hold-outs' keys stay in memory only: a count of the shared ones is printed.
+    const lines = interactLines(out, record);
+    if (lines.length) {
+      allLines.push("", ...lines);
+      writeFileSync(join(out, "summary.txt"), allLines.join("\n") + "\n");
+    }
   }
   if (values.split !== undefined && baseTree && before && whole) {
     const lines = await splitParts(values.split, { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
@@ -850,6 +907,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       writeFileSync(copy, readFileSync(resolve(args[pi + 1] as string)));
       args[pi + 1] = copy;
     }
+    args.push("--queued", new Date().toISOString());
     if (!own) {
       const snap = snapshotCommit(ROOT);
       args.push("--snapshot", snap.commit.slice(0, 12), "--snapshot-head", snap.head.slice(0, 12));

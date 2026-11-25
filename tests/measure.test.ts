@@ -2,12 +2,12 @@
 // checked by hand (it takes a minute: "The log verdict snapshots would stay as they are (byte for byte)" on a clean
 // tree); here, the selection and the overlay of measured entries on the reference snapshots.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, holdChanges, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { hitChanges, holdChanges, interactLines, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -209,5 +209,26 @@ describe("measure --split (round 11: which part of a change moved a log)", () =>
   it("says first when the snapshots compared against weren't written by that commit's code", () => {
     expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 0 })).toEqual([]);
     expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 3 })[0]).toMatch(/^Reference: the snapshots at HEAD were written by c6f1874aa's code, and 3 code file\(s\) changed since.*`--base HEAD`/);
+  });
+});
+
+describe("measures that moved the same logs (interactLines; cooldown-clock report point 1)", () => {
+  it("names the development logs an earlier measure moved too, the hold-outs as counts, and ignores later or old ones", () => {
+    const root = mkdtempSync(join(tmpdir(), "efsim-measure-"));
+    try {
+      const run = (name: string, queued: string, moved: string[], holdouts: number) => {
+        mkdirSync(join(root, name));
+        writeFileSync(join(root, name, "moved.json"), JSON.stringify({ queued, code: `code ${name}`, moved, holdouts }));
+      };
+      run("earlier", "2026-11-25T10:00:00.000Z", ["zmdlogs-b7b3762d5da8.json", "pending/zmdlogs-aaaa11112222.json"], 2);
+      run("later", "2026-11-25T12:00:00.000Z", ["zmdlogs-b7b3762d5da8.json"], 0);
+      run("old", "2026-11-24T08:00:00.000Z", ["zmdlogs-b7b3762d5da8.json"], 0);
+      mkdirSync(join(root, "mine"));
+      const lines = interactLines(join(root, "mine"), { queued: "2026-11-25T11:00:00.000Z", code: "mine", moved: ["zmdlogs-b7b3762d5da8.json"], holdouts: ["holdout/x"] });
+      expect(lines).toHaveLength(2);
+      expect(lines[1]).toBe("  earlier (queued 2026-11-25T10:00:00.000Z, code earlier): zmdlogs-b7b3762d5da8; hold-outs moved: 1 here, 2 there");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
