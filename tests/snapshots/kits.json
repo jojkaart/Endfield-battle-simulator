@@ -39,7 +39,7 @@
   "digest": "f80f4d8f8b401529"
  },
  "equipment suit_phy01": {
-  "digest": "fd2232af9151bdbd"
+  "digest": "52dccf22b2052f25"
  },
  "equipment suit_poise01": {
   "digest": "dbe666ad61be788b"
@@ -48,7 +48,7 @@
   "digest": "c05b87e39280a40d"
  },
  "equipment suit_spellburst": {
-  "digest": "d457913c82ecac73"
+  "digest": "bd97e723554b97e5"
  },
  "equipment suit_str01": {
   "digest": "51333f4c5e7ca6b1"
@@ -75,13 +75,13 @@
   "digest": "95d44fe1ccbf64d8"
  },
  "equipment wpn_claym_0004": {
-  "digest": "e44517a4285f3c72"
+  "digest": "6f6e14c8acca9a41"
  },
  "equipment wpn_claym_0006": {
-  "digest": "eb9f4aed3da6019a"
+  "digest": "cde0fc58c1bc1006"
  },
  "equipment wpn_claym_0007": {
-  "digest": "20a93d071209a3cb"
+  "digest": "52eb0e9fbbcf293a"
  },
  "equipment wpn_claym_0008": {
   "digest": "a2e1def9b020dbbf"
@@ -93,22 +93,22 @@
   "digest": "7c6917c11cfdbff5"
  },
  "equipment wpn_claym_0011": {
-  "digest": "9595558b37bbae7d"
+  "digest": "d9c63766d7706c10"
  },
  "equipment wpn_claym_0012": {
   "digest": "fad59949a814cfd0"
  },
  "equipment wpn_claym_0013": {
-  "digest": "e402a416d17990b7"
+  "digest": "1ac468993613807e"
  },
  "equipment wpn_claym_0014": {
   "digest": "5728e6eefdd65fc2"
  },
  "equipment wpn_claym_0015": {
-  "digest": "52459c97fed3d3f1"
+  "digest": "4c893363a4926611"
  },
  "equipment wpn_claym_0016": {
-  "digest": "f9480b54c30b3fe2"
+  "digest": "3bc6246f44856bd0"
  },
  "equipment wpn_claym_0017": {
   "digest": "398a162f1af624a0"
@@ -162,22 +162,22 @@
   "digest": "6e9b5b609140b292"
  },
  "equipment wpn_funnel_0015": {
-  "digest": "d6da80e445e3e46e"
+  "digest": "6c615a854fa73b37"
  },
  "equipment wpn_funnel_0016": {
   "digest": "3e111f617b4e2080"
  },
  "equipment wpn_funnel_0017": {
-  "digest": "5ecc9855a63561fe"
+  "digest": "ccadb9892d5ae5bc"
  },
  "equipment wpn_funnel_0018": {
   "digest": "7fe08b5342ff682c"
  },
  "equipment wpn_funnel_0019": {
-  "digest": "1c1c7f995438c2fa"
+  "digest": "90c773485eef0c0d"
  },
  "equipment wpn_funnel_0020": {
-  "digest": "ffa6043c88e7d296"
+  "digest": "178b237fcec490a0"
  },
  "equipment wpn_lance_0003": {
   "digest": "8d7c14118773a4ea"
@@ -204,13 +204,13 @@
   "digest": "41eef22692a79213"
  },
  "equipment wpn_lance_0012": {
-  "digest": "6198bbb3eadd504c"
+  "digest": "c99bd1986b23e0cc"
  },
  "equipment wpn_lance_0013": {
   "digest": "f9a48ebbddfa4b51"
  },
  "equipment wpn_lance_0014": {
-  "digest": "0a00ffb2dc0fb155"
+  "digest": "8f9e79ef0700f16b"
  },
  "equipment wpn_lance_0015": {
   "digest": "4ef208ac1f91bb54"
@@ -234,7 +234,7 @@
   "digest": "2065042b476860ea"
  },
  "equipment wpn_pistol_0006": {
-  "digest": "621c570d73dbbd45"
+  "digest": "0afb4b5d4c78cf49"
  },
  "equipment wpn_pistol_0007": {
   "digest": "35c91c8a4c905a1e"
@@ -246,7 +246,7 @@
   "digest": "fd2487d3b905f3e7"
  },
  "equipment wpn_pistol_0010": {
-  "digest": "170c08ae74cd46a7"
+  "digest": "69586c7705269da9"
  },
  "equipment wpn_pistol_0011": {
   "digest": "a5ca5e1c8ffecf75"
@@ -258,7 +258,7 @@
   "digest": "18a5b51cfddf4171"
  },
  "equipment wpn_sword_0005": {
-  "digest": "1b274483f5725b3f"
+  "digest": "9216f10ddcb2fc15"
  },
  "equipment wpn_sword_0006": {
   "digest": "45c9205f2b7df223"
@@ -288,13 +288,13 @@
   "digest": "8dfdcdb6a401467a"
  },
  "equipment wpn_sword_0015": {
-  "digest": "d1389f7c9f4bf90e"
+  "digest": "99444268a364f8e7"
  },
  "equipment wpn_sword_0016": {
-  "digest": "1ea90f9d32c8921f"
+  "digest": "1a32a9d2c4ece0eb"
  },
  "equipment wpn_sword_0017": {
-  "digest": "ef266072489137f2"
+  "digest": "a4f954274b9784d3"
  },
  "equipment wpn_sword_0018": {
   "digest": "5a6b4568dcf627eb"
@@ -345,7 +345,7 @@
   "digest": "5d01fe21cb1ecb79"
  },
  "operator chr_0011_seraph": {
-  "digest": "01524c3dcc310fcc"
+  "digest": "4f07a51afc8f4762"
  },
  "operator chr_0012_avywen": {
   "digest": "6a91673b9ddf0b43"
@@ -378,10 +378,10 @@
   "digest": "368efb28d0e227f4"
  },
  "operator chr_0022_bounda": {
-  "digest": "eba583399616c68d"
+  "digest": "8bda525112e2432d"
  },
  "operator chr_0023_antal": {
-  "digest": "1afd22cfcdac723f"
+  "digest": "5d7b3f4cec651c18"
  },
  "operator chr_0024_deepfin": {
   "digest": "db31045bc4a9dc30"
@@ -390,7 +390,7 @@
   "digest": "8396213951891adf"
  },
  "operator chr_0026_lastrite": {
-  "digest": "ee923eaded945904"
+  "digest": "3bccb0e8a21a5f74"
  },
  "operator chr_0027_tangtang": {
   "digest": "6d9774c1e53b34f3"
@@ -405,10 +405,10 @@
   "digest": "299a719f80f80152"
  },
  "operator chr_0031_mifu": {
-  "digest": "a6f270b3a184cefa"
+  "digest": "c7b39135ae5d3e61"
  },
  "operator chr_0032_lizhiyan": {
-  "digest": "ebf6228f12896603"
+  "digest": "2324ec9e4c6b9745"
  },
  "operator chr_0033_camille": {
   "digest": "109cc46ee8d5c757"
