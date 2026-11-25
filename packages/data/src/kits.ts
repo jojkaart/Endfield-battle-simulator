@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, spPlaced, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
 import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
-import { cooldownTimers, isSkillFileListed, projectileSkills, skillFilePath } from "./skillData.ts";
+import { attachedModifierBuffs, cooldownTimers, isSkillFileListed, projectileSkills, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
 import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type KitAssumption, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type LandedCount, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine/core";
@@ -887,7 +887,7 @@ function checkSkillData(compiled: CompiledSkill, s: RawSkill, hits: readonly Kit
   const hitOf = (id: string) => (id.includes("/") ? rawTriggerHit(id.slice(0, id.indexOf("/")), id.slice(id.indexOf("/") + 1)) : byId.get(id));
   const reason = (d: Disagreement) => (d.trigger !== undefined ? rawTriggers.get(d.trigger)?.dataOverride?.[d.field as "energy" | "sp" | "apply"] : d.hit !== undefined ? hitOf(d.hit)?.dataOverride?.[d.field as DataField] : s.dataOverride?.[d.field]);
   const found = new Set(m.disagreements.map((d) => `${d.trigger ?? ""}|${d.hit ?? ""}|${d.field}`));
-  const stale = (text: string) => `${text}: marked as differing from the data (dataOverride), but it agrees`;
+  const stale = (text: string) => `${text}: marked as differing from the data (dataOverride), but it agrees: drop the mark (the written value can stay)`;
   const problems = [
     ...m.disagreements.filter((d) => reason(d) === undefined).map((d) => ({ ...d, stale: false })),
     ...Object.keys(s.dataOverride ?? {}).filter((f) => !found.has(`||${f}`)).map((field) => ({ field, text: stale(`${s.skillId} ${field}`), stale: true })),
@@ -1081,9 +1081,13 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     let rawHits = s.hits;
     let teamEnergy = s.teamEnergy;
     let energyBlockSeconds = s.energyBlockSeconds;
+    // A hit whose written events the data's landings of its key don't log (kitMatch.ts: its `events` disagreement): the
+    // data can't place its landings, so its frames must be written (backlog after round 11 point 5: four tries).
+    const eventsOff = new Map<string, string>();
     if (compiled) {
       const first = c.normalizeHits(s.hits, hitSource, where);
       const m = matchSkill(compiled, { skillId: s.skillId, hits: first, ...(s.teamEnergy ? { teamEnergy: s.teamEnergy } : {}), ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}) }, kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []));
+      for (const d of m.disagreements) if (d.field === "events" && d.hit !== undefined) eventsOff.set(d.hit, d.text);
       // SP from the data only where it says all of the skill's (else, unless the kit names SP, the engine's first-hit atb stays).
       const spFromData = s.hits.some((h) => h.sp !== undefined) || spPlaced(m.folded, m.hits);
       rawHits = s.hits.map((h) => {
@@ -1110,7 +1114,13 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     }
     if (s.noDodge && !(s.noDodge[0] >= 0 && s.noDodge[0] < s.noDodge[1])) throw new Error(`${where}: noDodge is a range [from, until) of skill frames`);
     // A skill hit lands at frames: its own, or the data's when its landings are one branch path no other hit takes landings of.
-    for (const h of rawHits) if (!h.frames) throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
+    for (const h of rawHits) {
+      if (h.frames) continue;
+      const off = eventsOff.get(h.id);
+      // One message for the whole fix: frames written, `events` marked (a frames mark would then be stale).
+      if (off !== undefined && h.events !== undefined) throw new Error(`${where} hit ${h.id}: its events aren't the data's keys for its landings (${off}), so the data can't place them: write its \`frames\` and mark \`events\` in its dataOverride with the reason (a key another skill logs it under; frames need no mark when the data's agree)`);
+      throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
+    }
     const hits = c.normalizeHits(rawHits, hitSource, where);
     // What still differs from the data must be marked, with the reason (dataOverride): checked once the triggers are (a cast trigger's hits and actions are the skill's).
     if (compiled) dataChecks.push((triggers) => checkSkillData(compiled, s, hits, teamEnergy, energyBlockSeconds, triggers, kit, where, options));
@@ -1271,6 +1281,32 @@ export function loadOperatorKitFile(data: KitData, file: string, raw: unknown, o
   if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
   const kit = raw as RawKit;
   return [loadOperatorKit(data, file, kit, options), ...(kit.variants ?? []).map((variant) => loadOperatorKit(data, `${variant.operator}.json`, variantOf(kit, variant), options))];
+}
+
+/**
+ * Kit buffs that likely need a `loggedAs` (backlog after round 11 point 9): a kit buff whose game buff has no attribute
+ * modifier while a value source of its kit (a skill of the operator's, a trigger's `skill`) attaches a buff with one to
+ * a cast beside creating it (skillData.ts attachedModifierBuffs), and neither its loggedAs nor another kit buff of the
+ * kit stands for that one. The log lists the attached buff on the cast's hits; without loggedAs the check counts both
+ * (the Endministrator's and Chen Qianyu's weapon "ready" buffs, round 11). tests/kit-messages.test.ts keeps it empty;
+ * `efsim kit-census` prints it.
+ */
+export function unloggedAttachedBuffs(kits: Kits): { readonly kit: string; readonly buff: string; readonly gameBuff: string; readonly attached: readonly string[] }[] {
+  const out: { kit: string; buff: string; gameBuff: string; attached: string[] }[] = [];
+  const all: { id: string; buffs: readonly KitBuff[]; sources: string[] }[] = [
+    ...Object.values(kits.operators).map((k) => ({ id: k.operator, buffs: k.buffs, sources: [...k.skills.map((s) => s.skillId), ...k.triggers.flatMap((t) => (t.skill !== undefined ? [t.skill] : []))] })),
+    ...Object.values(kits.equipment).map((k) => ({ id: k.id, buffs: k.buffs, sources: k.triggers.flatMap((t) => (t.skill !== undefined ? [t.skill] : [])) })),
+  ];
+  for (const k of all) {
+    const standing = new Set(k.buffs.flatMap((b) => [...(b.gameBuff !== undefined ? [b.gameBuff] : []), ...(b.loggedAs ?? [])]));
+    const bySource = [...new Set(k.sources)].map((src) => attachedModifierBuffs(src));
+    for (const b of k.buffs) {
+      if (b.gameBuff === undefined) continue;
+      const attached = [...new Set(bySource.flatMap((m) => m.get(b.gameBuff as string) ?? []))].filter((x) => !standing.has(x));
+      if (attached.length) out.push({ kit: k.id, buff: b.id, gameBuff: b.gameBuff, attached });
+    }
+  }
+  return out;
 }
 
 /** Loads the kits under `dir` (default packages/data/kits: its operators/ and equipment/ folders). */
