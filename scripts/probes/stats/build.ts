@@ -9,9 +9,12 @@
 //   node scripts/probes/stats/build.ts [--workers 4] [ids…]
 //
 // Writes scratch/stats/hits.jsonl (one row per logged hit), scratch/stats/onesided.jsonl (one row per replay-only
-// landing and log-only hit of the totals, onesided.ts), scratch/stats/fights.jsonl (per fight: group, shares). Ends
-// with `EFSIM-DONE stats-build pass` on stdout. About 4 minutes on 4 threads.
+// landing and log-only hit of the totals, onesided.ts), scratch/stats/fights.jsonl (per fight: group, shares), and
+// scratch/stats/built.json (the commit, whether the tree had changes, the logs, the time: load.py prints it). With ids,
+// a partial build, into scratch/stats/partial/ (round 11's friction point 2: one log's check overwrote an hour's
+// tables). Ends with `EFSIM-DONE stats-build pass` on stdout. About 4 minutes on 4 threads.
 
+import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,7 +43,7 @@ import {
   verdictReadingOf,
 } from "@efsim/logs";
 
-const OUT = join(process.cwd(), "scratch", "stats");
+const STATS = join(process.cwd(), "scratch", "stats");
 const msOf = (f: number) => (f * 1000) / FPS;
 
 type Row = Record<string, unknown>;
@@ -229,6 +232,8 @@ if (!isMainThread) {
   const workers = wi >= 0 ? Number(args[wi + 1]) : 4;
   const ids = args.filter((a, i) => !a.startsWith("--") && (wi < 0 || i !== wi + 1));
   const files = devFixtures(ids.length ? { ids } : {}).filter((f) => f.dir !== "multi").map((f) => f.file);
+  const OUT = ids.length ? join(STATS, "partial") : STATS;
+  if (ids.length) process.stderr.write(`build.ts: a partial build (${ids.join(", ")}): into ${OUT}, the full tables stay\n`);
   mkdirSync(OUT, { recursive: true });
   const all: { hits: Row[]; onesided: Row[]; fights: Row[] } = { hits: [], onesided: [], fights: [] };
   const queue = [...files];
@@ -268,5 +273,7 @@ if (!isMainThread) {
   writeFileSync(join(OUT, "hits.jsonl"), jsonl(all.hits));
   writeFileSync(join(OUT, "onesided.jsonl"), jsonl(all.onesided));
   writeFileSync(join(OUT, "fights.jsonl"), jsonl(all.fights));
+  const git = (a: string[]) => spawnSync("git", a, { encoding: "utf8" }).stdout.trim();
+  writeFileSync(join(OUT, "built.json"), JSON.stringify({ commit: git(["rev-parse", "--short=9", "HEAD"]), dirty: git(["status", "--porcelain", "--", "packages"]) !== "", logs: files.length, partial: ids.length > 0, at: new Date().toISOString() }, null, 1) + "\n");
   process.stdout.write(`${all.fights.length} fights, ${all.hits.length} hits, ${all.onesided.length} one-sided rows\nEFSIM-DONE stats-build ${failed ? "fail" : "pass"}\n`);
 }

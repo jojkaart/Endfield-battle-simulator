@@ -10,6 +10,11 @@ against. Evaluation of these and other sources: [`docs/data-sources.md`](../docs
 | `rmxlinux-EndfieldData/` | [rmxlinux/EndfieldData](https://github.com/rmxlinux/EndfieldData) | Primary. All tables, plus skill timelines (`Json/SkillData`) and buff logic (`Json/BuffData`). |
 | `555me-beyondGameData/` | [555me/beyondGameData](https://github.com/555me/beyondGameData) | Cross-check and per-patch history. Each commit message is the game resource version ID. |
 
+**Not in either source** (checked 2026-11-25, remaining-leads report point 5): the AbilityEntity definitions (an
+entity's movement, speed, lifetime). A spawned entity's SkillData is there, but not whether it travels: Tangtang's stare
+and Arclight's dash have no movement action, so `KitHit.travels` (from LaunchProjectile) can't be decided from the data
+for them. Don't brief a lead that needs these tables.
+
 ## Fetching
 
 For development and tests, fetch only the tables the code reads (listed in

@@ -7,15 +7,39 @@
 # timing = the log's reading (every kit buff as the log lists it) fits where the primary doesn't (the replay's buff
 # windows), and the feature columns the attribution tables group by.
 
+import glob
 import json
 import math
 import os
+import sys
 
 import numpy as np
 import pandas as pd
 
 ROOT = os.getcwd()
-D = os.path.join(ROOT, "scratch", "stats")
+
+
+def tables_dir():
+    """The stats tables: $EFSIM_STATS, else this checkout's scratch/stats/, else the newest among the main checkout's and
+    every worktree's (round 11's friction point 1: three copies of unknown age, found by listing worktrees), said on
+    stderr with the commit build.ts recorded (built.json)."""
+    if os.environ.get("EFSIM_STATS"):
+        return os.environ["EFSIM_STATS"]
+    own = os.path.join(ROOT, "scratch", "stats")
+    if os.path.exists(os.path.join(own, "hits.jsonl")):
+        return own
+    main = ROOT.split(os.sep + ".claude" + os.sep + "worktrees" + os.sep)[0]
+    found = [os.path.dirname(p) for p in [os.path.join(main, "scratch", "stats", "hits.jsonl"), *glob.glob(os.path.join(main, ".claude", "worktrees", "*", "scratch", "stats", "hits.jsonl"))] if os.path.exists(p)]
+    if not found:
+        return own
+    best = max(found, key=lambda d: os.path.getmtime(os.path.join(d, "hits.jsonl")))
+    built = os.path.join(best, "built.json")
+    what = json.load(open(built)) if os.path.exists(built) else {}
+    sys.stderr.write(f"load.py: no scratch/stats/ here; reading {best} (built at {what.get('commit', 'an unrecorded commit')}{' with changes' if what.get('dirty') else ''}, {what.get('at', 'time unknown')})\n")
+    return best
+
+
+D = tables_dir()
 
 
 def jl(name):
