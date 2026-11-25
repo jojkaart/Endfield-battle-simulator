@@ -18,7 +18,7 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
-import { statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
+import { holdPins, statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus } from "./replayrecord.ts";
 import { distinctCasts, placeHits } from "./logcasts.ts";
 import { castEventPlace, eventPlaceText, replayTimeStops, tickReadNote } from "./query.ts";
@@ -562,6 +562,9 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
 /** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */
 const HOLD_UNIT_MS = 512;
 
+/** How many of the bounds pinning a unit `holds --verbose` names (nearest first; the rest counted). */
+const PIN_TAGS = 4;
+
 /** A clock's earliest or latest P at a time (ms, linear between nodes), and the time P first reaches a mass. */
 function clockAt(h: PlacedHolds, P: readonly number[], t: number): number {
   let i = 1;
@@ -588,12 +591,28 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why, r.logEnds);
   const series = (tag: string) => tag.replace(/ [0-9]+[→⇒][0-9]+ ms$/, "");
   const lines = [`${fx.id}: ${s(h.total)} s of hidden holds placed (the least total the clocks allow; ${Math.round(h.total / HOLD_UNIT_MS)} perfect dodges' worth at 0.512 s), ${new Set(h.kept.filter((b) => b.kind === "run").map((b) => b.tag)).size} buff runs and ${new Set(h.kept.filter((b) => b.kind === "tick").map((b) => series(b.tag))).size} tick series kept, ${h.dropped.length} bound(s) dropped; times in s`];
+  // What holds a unit where it is (holds.ts holdPins; remaining-leads report point 1): its earliest by the bounds capping
+  // the hold before it (the node before the one the earliest P reaches it at), its latest by those forcing it by then.
+  const pinText = (p: ReturnType<typeof holdPins>) => {
+    const tags = p.bounds.map((b) => b.tag);
+    const shown = tags.length > PIN_TAGS ? [...tags.slice(0, PIN_TAGS), `+${tags.length - PIN_TAGS} more`] : tags;
+    return [...(p.total ? ["the least total"] : []), ...shown].join("; ") || "P's own rules (nondecreasing, no faster than real time)";
+  };
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
     const [early, late, mid] = [clockReaches(h, h.early, m), clockReaches(h, h.late, m), clockReaches(h, h.mid, m)];
     const clocks = [...new Set(h.kept.filter((b) => b.a <= early && late <= b.b).map((b) => (b.kind === "run" ? b.tag : series(b.tag))))];
-    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}`);
+    let pins = "";
+    if (opts.verbose) {
+      const i = h.early.findIndex((x) => x >= m - 1e-6);
+      const j = h.late.findIndex((x) => x >= m - 1e-6);
+      pins = `; earliest held back by: ${i > 0 ? pinText(holdPins(h, i - 1, "early")) : "the fight's start"}; latest forced by: ${j >= 0 ? pinText(holdPins(h, j, "late")) : "none"}`;
+    }
+    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}${pins}`);
   }
-  for (const b of h.dropped) lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)`);
+  for (const [k, b] of h.dropped.entries()) {
+    const against = (h.conflicts[k] ?? []).map((x) => x.tag);
+    lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)${opts.verbose && against.length ? `, conflicting with: ${against.join("; ")}` : ""}`);
+  }
   if (opts.verbose) for (const b of h.kept) lines.push(`  bound: ${b.tag}: P(${s(b.b)}) − P(${s(b.a)}) in [${Number.isFinite(b.min) ? s(b.min) : "−∞"}, ${Number.isFinite(b.max) ? s(b.max) : "∞"}] s; placed ${s(clockAt(h, h.mid, b.b) - clockAt(h, h.mid, b.a))}`);
   return lines.join("\n");
 }

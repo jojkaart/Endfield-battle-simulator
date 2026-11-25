@@ -7,7 +7,14 @@
 //   node scripts/cli-ab.ts <ref> [--key <regex>] [--all] -- <efsim args…>
 //   node scripts/cli-ab.ts <ref> --holds <fixture>    zmdlogs holds <fixture> --verbose, keyed by unit, bound and
 //                                                     dropped bound: the bounds added and removed, each unit's and
-//                                                     each bound's placement before and after
+//                                                     each bound's placement before and after, the bounds that pin
+//                                                     each unit (holds.ts holdPins) and what each dropped bound
+//                                                     conflicted with
+//   … --patch <diff>                                  the patch applied on <ref>'s code first (git apply, in its own
+//                                                     worktree scratch/at/<hash>-patched, made afresh): a view this
+//                                                     tree added, run on the old code too (`git diff <base> --
+//                                                     packages/logs/src/views.ts packages/logs/src/holds.ts >
+//                                                     scratch/view.diff`), so both sides print what it prints
 //
 // Lines only at <ref> print as "- ", only here as "+ ". With --key, a line's key is its first match of the regex (its
 // first capture group when it has one): lines of the same key on both sides that differ print once as "~ " with the
@@ -17,7 +24,8 @@
 import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { atCommit } from "./at-commit.ts";
+import { existsSync } from "node:fs";
+import { atCommit, removeAtCommit } from "./at-commit.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -89,13 +97,16 @@ function main(argv: string[]): number {
     key ??= HOLDS_KEY;
   }
   if (!ref || ref.startsWith("--") || efsim.length === 0) {
-    process.stderr.write("usage: node scripts/cli-ab.ts <ref> [--key <regex>] [--all] -- <efsim args…> | <ref> --holds <fixture>\n");
+    process.stderr.write("usage: node scripts/cli-ab.ts <ref> [--key <regex>] [--all] [--patch <diff>] -- <efsim args…> | <ref> [--patch <diff>] --holds <fixture>\n");
     return 2;
   }
   const short = spawnSync("git", ["rev-parse", "--short=9", "--verify", `${ref}^{commit}`], { cwd: ROOT, encoding: "utf8" });
   if (short.status !== 0) throw new Error(`cli-ab: no commit ${ref}`);
-  const tree = join(ROOT, "scratch", "at", short.stdout.trim());
-  atCommit(ref, tree);
+  const patch = opt("--patch");
+  const tree = join(ROOT, "scratch", "at", `${short.stdout.trim()}${patch !== undefined ? "-patched" : ""}`);
+  // A patched tree is made afresh: the patch may have changed since the last run.
+  if (patch !== undefined && existsSync(join(tree, ".git"))) removeAtCommit(tree);
+  atCommit(ref, tree, patch);
   const run = (root: string) => {
     const r = spawnSync(process.execPath, [join(root, "packages/cli/src/main.ts"), ...efsim], { cwd: root, encoding: "utf8", maxBuffer: 256 << 20 });
     if (r.status !== 0) throw new Error(`cli-ab: efsim ${efsim.join(" ")} failed at ${root === ROOT ? "this tree" : ref}: ${(r.stderr || r.stdout).trim().split("\n").slice(-5).join("\n")}`);
@@ -103,7 +114,7 @@ function main(argv: string[]): number {
   };
   const [was, now] = [run(tree), run(ROOT)];
   const say = (l: string) => process.stdout.write(l + "\n");
-  say(`cli-ab: efsim ${efsim.join(" ")}: ${ref} (${short.stdout.trim()}, -) against this tree (+)${key ? `, lines paired by /${key}/ (~)` : ""}`);
+  say(`cli-ab: efsim ${efsim.join(" ")}: ${ref} (${short.stdout.trim()}${patch !== undefined ? ` with ${patch}` : ""}, -) against this tree (+)${key ? `, lines paired by /${key}/ (~)` : ""}`);
   if (was === now) {
     say("the outputs are identical");
     return 0;

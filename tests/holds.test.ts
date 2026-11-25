@@ -3,7 +3,7 @@
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
 import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
-import { notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
+import { holdPins, notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -37,6 +37,19 @@ describe("placeHolds", () => {
     const p = placeHolds([run(0, 10000, 3000, 3400, "big"), run(0, 12000, -Infinity, 200, "cap"), run(0, 12000, 100, 200, "small")], { end: 12000 });
     expect(p.dropped.map((b) => b.tag)).toEqual(["big"]);
     expect(p.total).toBeCloseTo(100, 6);
+    // What it conflicted with: the cap (remaining-leads report point 1).
+    expect(p.conflicts[0]?.map((b) => b.tag)).toEqual(["cap"]);
+  });
+
+  it("names the bounds that hold each node's earliest and latest placement (holdPins)", () => {
+    // One 0.5 s hold inside 5–10 s: none yet at 5 s (the least total, less what the second run needs after it), at
+    // least 0.5 s by 10 s (the first run's min).
+    const p = placeHolds([run(0, 10000, 500, 700, "first"), run(5000, 15000, 500, 700, "second")], { end: 20000 });
+    const at = (t: number) => p.times.indexOf(t);
+    expect(holdPins(p, at(10000), "late").bounds.map((b) => b.tag)).toContain("first");
+    const early = holdPins(p, at(5000), "early");
+    expect(early.total || early.bounds.some((b) => b.tag === "second")).toBe(true);
+    expect(holdPins(p, 0, "early")).toEqual({ bounds: [], total: false });
   });
 
   it("reads a tick series' chain: each pair, and each tick against the chain's first", () => {
