@@ -20,7 +20,7 @@ import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { holdPins, statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
-import { distinctCasts, placeHits } from "./logcasts.ts";
+import { distinctCasts, placeHits, settleCheck, ultimateOverlaps } from "./logcasts.ts";
 import { castEventPlace, eventPlaceText, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -149,6 +149,31 @@ export function stopLines(data: GameData, fx: LogFixture, replay: BuffReplay, f:
     out.push({ t, kind: "list only", text: `STOP   listed for ${label(data, l.operator)} ${shortSkill(l.skillId)} at ${s(t)} s (${l.scales.length} frames): the timeline never applied it` });
   }
   return out;
+}
+
+/**
+ * `efsim zmdlogs placement <fixture…|--all>`: what the placement's passes leave (logcasts.ts placeHits' comment;
+ * remaining-leads report point 2): the ultimates of different operators whose stops still overlap after the in-turn rule
+ * (ultimateOverlaps: `anchored` both from their cast events, `chain` one overlapping a third), and the casts a third pass
+ * of pass 2 would move (settleCheck: the placement isn't a fixed point there, so a rule reading other casts' stops
+ * cascades through them); then the counts.
+ */
+export function placementView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly progress?: (line: string) => void } = {}): string {
+  const out = ["The placement's passes (logcasts.ts placeHits): OVERLAP ultimates whose time stops still overlap after the in-turn rule; SETTLE casts a third pass would move (now → third; - none). Times in s."];
+  let [overlaps, unsettled] = [0, 0];
+  for (const { short, fx } of logs) {
+    opts.progress?.(`placement ${short}`);
+    const p = placeHits(data, fx);
+    const lines: string[] = [];
+    for (const o of ultimateOverlaps(data, p)) lines.push(`  OVERLAP ${label(data, o.a.operator)} ${shortSkill(o.a.skillId)}@${s(o.a.start)} / ${label(data, o.b.operator)} ${shortSkill(o.b.skillId)}@${s(o.b.start)}: ${o.frames} frames${o.anchored ? " (both from the log's events)" : ""}${o.chain ? " (a chain of three)" : ""}`);
+    const settle = settleCheck(data, fx, p);
+    for (const x of settle) lines.push(`  SETTLE  ${label(data, x.operator)} ${shortSkill(x.skillId)}: ${x.now === null ? "-" : s(x.now)} → ${x.third === null ? "-" : s(x.third)}`);
+    overlaps += lines.length - settle.length;
+    unsettled += settle.length;
+    if (lines.length) out.push(`${short}:`, ...lines);
+  }
+  out.push("", `Over ${logs.length} logs: ${overlaps} overlapping ultimate pair(s), ${unsettled} cast(s) a third pass would move`);
+  return out.join("\n");
 }
 
 /**

@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { type LogHit } from "@efsim/logs";
+import { devFixtures, settleCheck, ultimateOverlaps, type LogHit } from "@efsim/logs";
 import { readLogFixture } from "@efsim/cli";
 import { distinctCasts, heldStart, placeHits, type TimeStop } from "../packages/logs/src/logcasts.ts";
 
@@ -85,6 +85,37 @@ describe("ultimates pressed together play their time stops in turn (logcasts.ts 
   });
   it("40d9: a landing batched at the other's stop end (12.95 s): the latest start the log leaves quiet, its stop ending at Si's start", () => {
     expect(startOf("zmdlogs-40d9a3c1da37.json", G, `${G}_ultimate_skill`, 10000)).toBeCloseTo(9300, -2);
+  });
+
+  it("leaves these overlapping ultimate pairs in the development logs, and no other (ultimateOverlaps; `zmdlogs placement --all`)", () => {
+    // The overlap list as a measurable property (remaining-leads report point 2): a placement change that resolves a pair
+    // or makes one updates this list, with the reason in its commit. scripts/probes/placement/ult-overlap.ts prints the
+    // log's evidence per pair (the hits inside the earlier stop, the events).
+    const pairs = devFixtures().flatMap(({ short, fx }) => ultimateOverlaps(data, placeHits(data, fx)).map((o) => `${short} ${o.a.operator}@${(o.a.start / 1000).toFixed(1)} ${o.b.operator}@${(o.b.start / 1000).toFixed(1)}`));
+    expect(pairs, "the ultimates whose stops overlap after the in-turn rule changed (efsim zmdlogs placement --all): update the list with the reason").toEqual([
+      "04d4 chr_0009_azrila@135.9 chr_0014_aurora@137.4",
+      "04d4 chr_0014_aurora@46.9 chr_0009_azrila@47.9",
+      "3f78 chr_0036_jsspsi@15.0 chr_0028_wulfa@16.9",
+      "3f78 chr_0028_wulfa@16.9 chr_0013_aglina@17.2",
+      "4a64 chr_0036_jsspsi@23.1 chr_0013_aglina@24.9",
+      "4a64 chr_0036_jsspsi@67.1 chr_0028_wulfa@67.3",
+      "4a64 chr_0032_lizhiyan@62.0 chr_0013_aglina@63.5",
+      "7910 chr_0025_ardelia@55.1 chr_0035_liino@55.2",
+      "9c6e chr_0035_liino@71.2 chr_0032_lizhiyan@71.9",
+      "a7a7 chr_0036_jsspsi@45.9 chr_0035_liino@46.9",
+      "b6aa chr_0032_lizhiyan@35.4 chr_0036_jsspsi@35.5",
+      "d774 chr_0032_lizhiyan@120.7 chr_0004_pelica@121.1",
+      "d9e5 chr_0034_typhoea@2.3 chr_0013_aglina@4.3",
+      "d9e5 chr_0013_aglina@4.3 chr_0032_lizhiyan@4.5",
+    ]);
+  });
+});
+
+describe("the placement's passes (logcasts.ts placeHits: settleCheck)", () => {
+  it("names the casts a third pass would move: 4a64's Rossi and Si, the in-turn pair at 21–25 s", () => {
+    const [d] = devFixtures({ ids: ["4a64"] });
+    const moved = settleCheck(data, (d as NonNullable<typeof d>).fx).map((x) => `${x.operator} ${x.now === null ? "-" : (x.now / 1000).toFixed(2)}`);
+    expect(moved).toEqual(expect.arrayContaining(["chr_0028_wulfa 21.23", "chr_0036_jsspsi 23.09"]));
   });
 });
 
