@@ -19,7 +19,7 @@ import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } 
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { holdPins, statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
-import type { AppliedStop, TracedStatus } from "./replayrecord.ts";
+import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
 import { distinctCasts, placeHits } from "./logcasts.ts";
 import { castEventPlace, eventPlaceText, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
@@ -280,6 +280,30 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const moved = x.from?.appliedAt !== undefined && x.to?.appliedAt !== undefined && x.from.appliedAt !== x.to.appliedAt ? ` (application moved ${x.to.appliedAt - x.from.appliedAt > 0 ? "+" : ""}${x.to.appliedAt - x.from.appliedAt} frames: a hold, not a reapplication)` : "";
     lines.push({ t, order: 0, text: `TRACE  status:${x.status} by ${x.operator ? label(data, x.operator) : "-"}: ${st(x.from)} → ${st(x.to)}${moved} at ${x.step}` });
   }
+  // A kit trigger's firings and its ready frame's shifts (`--trace-trigger`: BuffReplay.triggerTraces); consecutive
+  // shifts by steps of one kind (a placed hold comes a frame at a time) on one line.
+  const shifts: { first: TriggerTrace; last: TriggerTrace; n: number }[] = [];
+  for (const x of replay.triggerTraces) {
+    const fired = !x.from || x.to.count > x.from.count;
+    const prev = shifts.findLast((y) => y.last.key === x.key);
+    if (!fired && prev && prev.last.from && prev.last.to.count === prev.last.from.count && prev.last.step === x.step) {
+      prev.last = x;
+      prev.n++;
+    } else shifts.push({ first: x, last: x, n: 1 });
+  }
+  for (const { first, last, n } of shifts) {
+    const t = msOf(first.frame);
+    if (!inWindow(f, t)) continue;
+    const [owner, ...rest] = first.key.split(":");
+    const name = `${label(data, owner ?? "")}:${rest.join(":")}`;
+    const ready = (v: number) => (v === Infinity ? "never" : `${s(msOf(v))} s`);
+    const clock = last.to.world ? "the world's clock" : "raw time";
+    const from = first.from;
+    const text = !from || last.to.count > from.count
+      ? `fired (firing ${last.to.count}), ready again at ${ready(last.to.readyAt)} (on ${clock})`
+      : `ready ${ready(from.readyAt)} → ${ready(last.to.readyAt)} (${last.to.readyAt - from.readyAt > 0 ? "+" : ""}${last.to.readyAt - from.readyAt} frames: held on ${clock})`;
+    lines.push({ t, order: 0, text: `TRACE  trigger ${name}: ${text} at ${first.step}${n > 1 ? ` (${n} steps, to ${s(msOf(last.frame))} s)` : ""}` });
+  }
   const tracedStatuses = (f.trace ?? []).filter((x) => x.startsWith("status:")).map((x) => x.slice("status:".length));
   if (tracedStatuses.length) {
     for (const [key, runs] of statusLanes(fx).runs) {
@@ -308,7 +332,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, or a kit trigger's firings and ready frame) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines)].join("\n");
 }
 

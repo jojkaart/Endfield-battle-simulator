@@ -95,4 +95,21 @@ describe("the replay's record", () => {
     expect(text).toMatch(/^the log's end \(heldToLoggedEnds, in the check's replay\)/m);
     expect(text).toMatch(/^ {2}Xaihi:wpn_funnel_0010\.atk from 27\.37: not taken: an instance buff/m);
   });
+
+  it("traces a kit trigger's firings and its ready frame's shifts, without changing the replay (--trace-trigger)", () => {
+    // de6a: Chen Qianyu's Swordmancer (a CD timer, on the world's clock) fires at 8.30 s, ready 15 s later, then held
+    // by the casts' stops and the placed hidden holds (backlog after round 11 point 11).
+    const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-de6a94e9cf6b.json"));
+    const plain = logBuffReplay(data, fx).replay;
+    const traced = logBuffReplay(data, fx, undefined, { trace: ["trigger:chr_0005_chen:suit_phy01.proc"] }).replay;
+    expect(traced.hits.map((h) => h.damage)).toEqual(plain.hits.map((h) => h.damage));
+    const mine = traced.triggerTraces.filter((x) => x.key === "chr_0005_chen:suit_phy01.proc");
+    const first = mine[0];
+    expect(first?.from).toBeNull();
+    expect(first && first.to.readyAt - first.frame).toBe(15 * 30);
+    expect(mine.some((x) => x.from !== null && x.from.count === x.to.count && x.to.readyAt > x.from.readyAt && x.step.startsWith("cast "))).toBe(true);
+    const text = replayView(data, fx, { trace: ["trigger:suit_phy01.proc"], from: 8000, to: 23000 });
+    expect(text).toMatch(/TRACE {2}trigger Chen Qianyu:suit_phy01\.proc: fired \(firing 1\), ready again at 23\.30 s \(on the world's clock\)/);
+    expect(text).toMatch(/TRACE {2}trigger Chen Qianyu:suit_phy01\.proc: ready \S+ s → \S+ s \(\+\d+ frames: held on the world's clock\) at a placed hidden hold of 1 frame\(s\) \(\d+ steps, to /);
+  });
 });

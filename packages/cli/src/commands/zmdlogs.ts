@@ -146,6 +146,9 @@ export default command({
                                           physical status, infliction: its element and stacks by appliers;
                                           status:* every one), keyed by status and applier (a moved
                                           application is a hold), with the log's runs of it (LANE)
+                [--trace-trigger owner:id] Each firing of a kit trigger (owner:id, or the id alone for any owner:
+                                          suit_phy01.proc), its ready frame, and each shift of it with the step
+                                          that made it (a stop, a hidden hold: a world clock's cooldown); repeatable
                 [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
                                           the log tools build for its casts: where they differ, the list isn't the
                                           engine's
@@ -269,6 +272,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     to: { type: "string" },
     "kit-buff": { type: "string", multiple: true, default: [] },
     "trace-buff": { type: "string", multiple: true, default: [] },
+    "trace-trigger": { type: "string", multiple: true, default: [] },
     what: { type: "string" },
     hits: { type: "boolean", default: false },
     assume: { type: "string", multiple: true, default: [] },
@@ -399,7 +403,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: values["trace-buff"], assume: parseAssume(data(), values.assume), stops: values.stops });
+      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume: parseAssume(data(), values.assume), stops: values.stops });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};

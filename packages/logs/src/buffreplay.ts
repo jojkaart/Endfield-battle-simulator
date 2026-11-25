@@ -20,7 +20,7 @@ import { awayWindows, loggedNames } from "./enginecheck.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { loggedStagger, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
-import { REPLAY_EDGE_MS, replayRecorder, type AppliedStop, type BuffTrace, type Change, type KitWindow, type ReplayRecord, type StatusTrace } from "./replayrecord.ts";
+import { REPLAY_EDGE_MS, replayRecorder, type AppliedStop, type BuffTrace, type Change, type KitWindow, type ReplayRecord, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
 import { HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
@@ -407,6 +407,8 @@ export interface BuffReplay {
   readonly traces: readonly BuffTrace[];
   /** With ReplayOptions.trace `status:<status>` (`status:*` every one): each change of an enemy status, step by step (keyed by status and applier: a hold moves appliedAt). */
   readonly statusTraces: readonly StatusTrace[];
+  /** With ReplayOptions.trace `trigger:<owner:id>`: each firing of a kit trigger and each shift of its ready frame, step by step. */
+  readonly triggerTraces: readonly TriggerTrace[];
   /**
    * The slow-downs the replay's timeline applied (frames; a reset's cut and a path's ends and jumps in them), beside the
    * stop lists the log tools build for its casts (replayedCastStops): where they differ, the lists aren't the engine's.
@@ -2653,6 +2655,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     },
     traces: main?.traces ?? [],
     statusTraces: main?.statusTraces ?? [],
+    triggerTraces: main?.triggerTraces ?? [],
     appliedStops: main?.appliedStops ?? [],
     hiddenHolds: placedHolds,
     holdClocks,
