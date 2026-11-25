@@ -7,6 +7,7 @@ import {
   battleIdOf,
   buffsView,
   burstsView,
+  placementView,
   cacheRawDetail,
   cadenceView,
   census,
@@ -106,6 +107,9 @@ export default command({
                 [--singles]               No pairs of toggles
                 [--top n] [--verbose]     Patterns shown (default 20); every run, and each hit's best fit
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
+  efsim zmdlogs placement <fixture…|--all> What the placement's passes leave: ultimates whose time stops still
+                                          overlap after the in-turn rule, and the casts a third pass would move
+                                          (the placement isn't a fixed point there: logcasts.ts placeHits)
   efsim zmdlogs bursts <fixture…|--all>   Each Arts Burst, logged against the check's replay (paired as the check
                                           pairs them, the offset; log only with the reason; replay only), each
                                           side's likely cause (the operator's latest inflicting hit at least the
@@ -146,6 +150,9 @@ export default command({
                                           physical status, infliction: its element and stacks by appliers;
                                           status:* every one), keyed by status and applier (a moved
                                           application is a hold), with the log's runs of it (LANE)
+                [--trace-trigger owner:id] Each firing of a kit trigger (owner:id, or the id alone for any owner:
+                                          suit_phy01.proc), its ready frame, and each shift of it with the step
+                                          that made it (a stop, a hidden hold: a world clock's cooldown); repeatable
                 [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
                                           the log tools build for its casts: where they differ, the list isn't the
                                           engine's
@@ -269,6 +276,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     to: { type: "string" },
     "kit-buff": { type: "string", multiple: true, default: [] },
     "trace-buff": { type: "string", multiple: true, default: [] },
+    "trace-trigger": { type: "string", multiple: true, default: [] },
     what: { type: "string" },
     hits: { type: "boolean", default: false },
     assume: { type: "string", multiple: true, default: [] },
@@ -399,7 +407,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: values["trace-buff"], assume: parseAssume(data(), values.assume), stops: values.stops });
+      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume: parseAssume(data(), values.assume), stops: values.stops });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
@@ -415,6 +423,12 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (named.length && values.all) throw new Error("zmdlogs stops: fixtures or --all, not both");
       const logs = devFixtures(named.length ? { ids: named } : {});
       return stopsView(data(), logs, { differ: values.differ, operators, progress });
+    }
+    if (sub === "placement") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs placement takes fixtures (ids such as 0c14) or --all (every verified and pending development log)");
+      if (named.length && values.all) throw new Error("zmdlogs placement: fixtures or --all, not both");
+      return placementView(data(), devFixtures(named.length ? { ids: named } : {}), { progress });
     }
     if (sub === "bursts") {
       const named = args.slice(1);

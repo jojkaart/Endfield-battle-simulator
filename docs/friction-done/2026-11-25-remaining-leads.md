@@ -81,3 +81,24 @@ clocks); root cause and fix or rule out each. Branch: the worktree agent-a148050
 - `zmdlogs worldtime`, `zmdlogs casts`, cli-ab on `casts` / `holds` / `check`: the in-turn evidence (quiet
   stretches the length of a stop) came straight out of them.
 - The runstate script after the container restart: what had finished and at which code, in one line.
+
+## Outcome (round 12)
+
+- 1 (The hidden-hold placement reshuffles a whole fight when one stop moves): the tool done (0ae0d4f): holds.ts keeps
+  each dropped bound's conflict cycle and each node's shortest-path edges (holdPins); `zmdlogs holds --verbose` prints
+  per unit "earliest held back by" / "latest forced by" and per dropped bound "conflicting with"; `cli-ab <ref> --patch
+  <view diff> --holds <fx>` runs the new view on the old code too. On 489c across 4188729 in one run: the in-turn move
+  made Li Zhiyan's Corrosion expire 2.07 s later, its status bound became a 0.19 s cap over 13.1–49.2 s, and the ramp
+  bounds there conflict with it. The placement per stretch: carried (2026-11-25-backlog-after-round-12.md point 5), and
+  489c's question is in its accuracy list.
+- 2 (Placement changes inside placeWith cascade through the second pass): done (1fbc1aa): placeHits as named passes
+  (placementPasses) with the rule of which pass a rule belongs in at placeHits and in docs/design/data.md;
+  settleCheck (the casts a third pass would move: 21) and ultimateOverlaps (14 pairs, pinned in
+  tests/logcasts-stops.test.ts) in `efsim zmdlogs placement <fixture…|--all>`. The placement is unchanged.
+- 3 (The enemy's infliction state isn't visible in the replay views): `zmdlogs reactions` lists the inflictions among
+  its other events (5e62bf0); the bursts' infliction stacks before each burst carried with the bursts' recorded cause
+  (2026-11-25-backlog-after-round-12.md point 2).
+- 4 (The boundary of "on at a frame" is easy to get wrong): done (3b79889): the EVENT line of a ticksLoggedAs key gives
+  the buff's last end and the event in frames (4bfc 179.51 s: "ended at frame 5385, the event's frame 5385").
+- 5 (Ability entities: the data that would decide "travels" isn't in the sources): done (549836e): data/README.md says
+  the AbilityEntity definitions are in neither source.

@@ -32,7 +32,10 @@ export interface ReactionCheck {
   readonly unlogged: readonly { readonly predicted: StatusEvent; readonly t: number; readonly due?: number }[];
   /** In the log, but not predicted. */
   readonly unpredicted: readonly { readonly t: number; readonly operator: string; readonly event: string }[];
-  /** Forced reactions and consumptions: nothing in the log to match them against. */
+  /**
+   * Forced reactions, consumptions and the inflictions (round 12, remaining-leads report point 3: "what did the enemy
+   * have" before a burst or reaction took a scratch script): nothing in the log to match them against.
+   */
   readonly other: readonly { readonly predicted: StatusEvent; readonly t: number }[];
   /** Team members whose kit declares no inflictions, so the replay can't be complete. */
   readonly withoutApplies: readonly string[];
@@ -142,7 +145,10 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
   const unlogged: ReactionCheck["unlogged"][number][] = [];
   const other: ReactionCheck["other"][number][] = [];
   for (const p of predicted) {
-    if (p.predicted.kind === "inflicted") continue;
+    if (p.predicted.kind === "inflicted") {
+      other.push(p);
+      continue;
+    }
     const key = statusEventKey(p.predicted);
     if (!key || p.predicted.kind === "combustionTick") {
       other.push(p);

@@ -16,7 +16,7 @@ import { engineCheck, logDifferences, loggedEntries, readingBasis, type EngineCh
 import type { LogHit } from "./zmdlogs.ts";
 import { placeHits } from "./logcasts.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
-import type { CritSource } from "./buffreplay.ts";
+import { unknownFacts, type CritSource } from "./buffreplay.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 
@@ -60,6 +60,11 @@ export interface HitRecord {
    */
   readonly logReading?: number | null;
   readonly logError?: number | null;
+  /**
+   * Facts the replay doesn't know that the hit's operator's kit reads (buffreplay.ts unknownFacts: "enemy HP unknown"
+   * where an enemyHpBelow condition is read as full HP). A label: the verdict doesn't take it.
+   */
+  readonly unknownFacts?: readonly string[];
   /** Why the replay has no landing for the hit. */
   readonly unknown?: string;
   /** The crit the replay's landing took (LandedHit.crit; null where the hit can't crit), with a landing. */
@@ -113,6 +118,7 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
   const byHit = engineHits(data, fx, replay, placement);
   const verdicts = new Map(checkLog(data, fx, { replay, engineHits: byHit }).map((v) => [v.hit, v]));
   const c = engineCheck(data, fx, replay.replay);
+  const facts = unknownFacts(data, fx, assume);
   return fx.hits.map((hit) => {
     const v = verdicts.get(hit) as HitVerdict;
     const base = {
@@ -128,6 +134,7 @@ export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.
       ...verdictReadingOf(v),
       listed: listedBuffs(hit.effects),
       critSource: replay.replay.critSource(hit),
+      ...(facts.get(hit.operator) ? { unknownFacts: facts.get(hit.operator) as readonly string[] } : {}),
     };
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;

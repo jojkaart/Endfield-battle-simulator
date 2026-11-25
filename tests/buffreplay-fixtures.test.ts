@@ -43,6 +43,28 @@ describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them"
     const listing = checkLog(data, fx, { replay: r, engine: false }).filter((v) => v.hit.operator === "chr_0028_wulfa");
     expect(listing.filter((v) => v.kind === "match" && v.hit.t > 65500 && v.assumed.some((a) => a.startsWith(LOG_LISTING)))).toEqual([]);
   });
+
+  it("says why each landing it didn't land and each cast it didn't make (backlog after round 11 point 3)", () => {
+    const dropped = fx.hits.filter((h) => {
+      const l = r.replay.landing(h);
+      return "unknown" in l && l.unknown === "a landing the replay didn't land";
+    });
+    expect(dropped.length).toBeGreaterThan(0);
+    for (const h of dropped) expect(r.replay.droppedLanding(h)).toMatch(/\S/);
+    // A landed hit has no drop reason.
+    const landedHit = fx.hits.find((h) => !("unknown" in r.replay.landing(h)));
+    expect(landedHit && r.replay.droppedLanding(landedHit)).toBeNull();
+    for (const x of r.replay.skipped) expect(x.why).not.toBe("not made");
+  });
+});
+
+describe("d774d0ce7bd3: a skipped press names its reason", () => {
+  it("skips Liino's ultimates pressed while no enemy is there for want of ultimate energy, by earliestStart's own words", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-d774d0ce7bd3.json", import.meta.url).pathname);
+    const skips = logBuffReplay(data, fx).replay.skipped.filter((x) => x.cast.skillId === "chr_0035_liino_ultimate_skill");
+    const energy = skips.filter((x) => /^a press whose hits had no one to land on: chr_0035_liino_ultimate_skill needs 160 ultimate energy/.test(x.why));
+    expect(energy.map((x) => Math.round(x.cast.start / 1000))).toEqual(expect.arrayContaining([31, 126]));
+  });
 });
 
 describe("simulateLog: the logged casts simulated, each hit against its landing (the end point, a diagnostic)", () => {

@@ -274,9 +274,47 @@ export interface PlacedHolds {
   readonly kept: readonly HoldBound[];
   /** Bounds that conflict with the rest (in a negative cycle; the largest ask first, a tick's counting half). */
   readonly dropped: readonly HoldBound[];
+  /**
+   * Per dropped bound (same order), the other bounds of the cycle it was dropped from: what it conflicted with
+   * (remaining-leads report point 1: a stop's move made 489c's ramp bounds conflict, and nothing said with which).
+   */
+  readonly conflicts: readonly (readonly HoldBound[])[];
+  /**
+   * What sets each node's earliest (`early`: the most P there can be) and latest (`late`: the least) placement: the
+   * edge into it on its shortest path (holdPins walks them), so a unit's move names the bounds that hold it.
+   */
+  readonly earlyFrom: readonly (HoldStep | null)[];
+  readonly lateFrom: readonly (HoldStep | null)[];
 }
 
-type Edge = { readonly u: number; readonly v: number; readonly w: number; readonly c?: HoldBound };
+/** One step of a node's shortest path (PlacedHolds.earlyFrom / lateFrom): the node before, and the bound or the least total on the edge. */
+export interface HoldStep {
+  readonly node: number;
+  readonly bound?: HoldBound;
+  readonly total?: true;
+}
+
+/**
+ * The bounds that set a node's earliest (`early`: the most hold P can have reached there) or latest (`late`: the least
+ * it must have) placement: the kept bounds on its shortest path, nearest first, and whether the least total is one of
+ * them (the rest of the path is P's own rules: nondecreasing, no faster than real time, flat where nothing holds).
+ */
+export function holdPins(h: Pick<PlacedHolds, "earlyFrom" | "lateFrom">, node: number, side: "early" | "late"): { readonly bounds: readonly HoldBound[]; readonly total: boolean } {
+  const from = side === "early" ? h.earlyFrom : h.lateFrom;
+  const bounds: HoldBound[] = [];
+  let total = false;
+  let v = node;
+  for (let i = 0; i <= from.length; i++) {
+    const step = from[v];
+    if (!step) break;
+    if (step.bound && !bounds.includes(step.bound)) bounds.push(step.bound);
+    if (step.total) total = true;
+    v = step.node;
+  }
+  return { bounds, total };
+}
+
+type Edge = { readonly u: number; readonly v: number; readonly w: number; readonly c?: HoldBound; readonly total?: true };
 
 /** A negative cycle's bounds (Bellman-Ford from a virtual source), or null when the bounds are feasible. */
 function negativeCycle(n: number, edges: readonly Edge[]): HoldBound[] | null {
@@ -308,19 +346,26 @@ function negativeCycle(n: number, edges: readonly Edge[]): HoldBound[] | null {
 
 /** Shortest distances from node `s` (no negative cycle). */
 function distances(n: number, edges: readonly Edge[], s: number): number[] {
+  return shortestPaths(n, edges, s).dist;
+}
+
+/** Shortest distances from node `s` (no negative cycle), and each node's last edge on its path (index into `edges`; -1: none). */
+function shortestPaths(n: number, edges: readonly Edge[], s: number): { dist: number[]; pred: number[] } {
   const dist = new Array<number>(n).fill(Infinity);
+  const pred = new Array<number>(n).fill(-1);
   dist[s] = 0;
   for (let it = 0; it < n; it++) {
     let changed = false;
-    for (const e of edges) {
+    for (const [k, e] of edges.entries()) {
       if ((dist[e.u] as number) + e.w < (dist[e.v] as number) - 1e-9) {
         dist[e.v] = (dist[e.u] as number) + e.w;
+        pred[e.v] = k;
         changed = true;
       }
     }
     if (!changed) break;
   }
-  return dist;
+  return { dist, pred };
 }
 
 /**
@@ -351,6 +396,7 @@ export function placeHolds(bounds: readonly HoldBound[], opts: { readonly end: n
   };
   let kept = bounds.filter((c) => c.b > c.a);
   const dropped: HoldBound[] = [];
+  const conflicts: HoldBound[][] = [];
   const rank = (c: HoldBound) => (c.kind === "tick" || c.kind === "ramp" ? 0.5 : 1) * Math.abs(c.ex);
   for (;;) {
     const { times, edges } = build(kept);
@@ -358,18 +404,27 @@ export function placeHolds(bounds: readonly HoldBound[], opts: { readonly end: n
     if (!cycle) break;
     const worst = [...cycle].sort((x, y) => rank(y) - rank(x))[0] as HoldBound;
     dropped.push(worst);
+    conflicts.push(cycle.filter((c) => c !== worst));
     kept = kept.filter((c) => c !== worst);
   }
   const { times, edges } = build(kept);
   const n = times.length;
   const last = n - 1;
-  const reversed = (es: readonly Edge[]) => es.map((e) => ({ u: e.v, v: e.u, w: e.w }));
+  const reversed = (es: readonly Edge[]): Edge[] => es.map((e) => ({ u: e.v, v: e.u, w: e.w, ...(e.c ? { c: e.c } : {}), ...(e.total ? { total: e.total } : {}) }));
   const total = Math.max(0, -(distances(n, reversed(edges), 0)[last] as number));
-  const fixed = [...edges, { u: 0, v: last, w: total }, { u: last, v: 0, w: -total }];
-  const early = distances(n, fixed, 0);
-  const late = distances(n, reversed(fixed), 0).map((d) => -d);
+  const fixed: Edge[] = [...edges, { u: 0, v: last, w: total, total: true }, { u: last, v: 0, w: -total, total: true }];
+  const e = shortestPaths(n, fixed, 0);
+  const rev = reversed(fixed);
+  const l = shortestPaths(n, rev, 0);
+  const early = e.dist;
+  const late = l.dist.map((d) => -d);
   const mid = early.map((x, i) => (x + (late[i] as number)) / 2);
-  return { total, times, early, late, mid, holds: holdFrames(times, mid), kept, dropped };
+  const steps = (pred: readonly number[], es: readonly Edge[]) =>
+    pred.map((k): HoldStep | null => {
+      const x = es[k];
+      return x ? { node: x.u, ...(x.c ? { bound: x.c } : {}), ...(x.total ? { total: true as const } : {}) } : null;
+    });
+  return { total, times, early, late, mid, holds: holdFrames(times, mid), kept, dropped, conflicts, earlyFrom: steps(e.pred, fixed), lateFrom: steps(l.pred, rev) };
 }
 
 /** The clock's rises as world holds a frame at a time: P (ms) at each frame's start, in whole frames. */

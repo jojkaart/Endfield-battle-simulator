@@ -63,3 +63,15 @@ the bursts' recorded cause, point 13) aren't repeated.
 - `measure --split commits` tried on a past range (the placement leads') checked itself against a known answer.
 - The bash guard's refusals (a heredoc, a multi-line inline script) each named the safe form; edit.ts's new end-block
   message fired on my own first edits file.
+
+## Outcome (round 12)
+
+- 1 (The stats tables live in one worktree's scratch/, found by listing other worktrees): done (549836e): build.ts
+  writes built.json (the commit, a dirty tree, the logs, the time); load.py reads $EFSIM_STATS, this checkout's
+  scratch/stats/, else the newest of the main checkout's and the worktrees', saying which and its commit on stderr.
+- 2 (build.ts with one log overwrites the whole table): done (549836e): with ids it writes into scratch/stats/partial/
+  and says so.
+- 3 (The first tick filter for the views was wrong, and only a full cli-ab showed it): done (3b79889): the views read
+  the replay's decision (BuffReplay.skipped) instead of guessing from the key or the applied stops; round 11's doc line
+  stays.
+- 4 (Two paths to a hit's modifiers: the snapshot check's and the hit records'): carried (2026-11-25-backlog-after-round-12.md point 3)

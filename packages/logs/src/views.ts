@@ -18,9 +18,9 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
-import { statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
-import type { AppliedStop, TracedStatus } from "./replayrecord.ts";
-import { distinctCasts, placeHits } from "./logcasts.ts";
+import { holdPins, statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
+import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
+import { distinctCasts, placeHits, settleCheck, ultimateOverlaps } from "./logcasts.ts";
 import { castEventPlace, eventPlaceText, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -152,6 +152,31 @@ export function stopLines(data: GameData, fx: LogFixture, replay: BuffReplay, f:
 }
 
 /**
+ * `efsim zmdlogs placement <fixture…|--all>`: what the placement's passes leave (logcasts.ts placeHits' comment;
+ * remaining-leads report point 2): the ultimates of different operators whose stops still overlap after the in-turn rule
+ * (ultimateOverlaps: `anchored` both from their cast events, `chain` one overlapping a third), and the casts a third pass
+ * of pass 2 would move (settleCheck: the placement isn't a fixed point there, so a rule reading other casts' stops
+ * cascades through them); then the counts.
+ */
+export function placementView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly progress?: (line: string) => void } = {}): string {
+  const out = ["The placement's passes (logcasts.ts placeHits): OVERLAP ultimates whose time stops still overlap after the in-turn rule; SETTLE casts a third pass would move (now → third; - none). Times in s."];
+  let [overlaps, unsettled] = [0, 0];
+  for (const { short, fx } of logs) {
+    opts.progress?.(`placement ${short}`);
+    const p = placeHits(data, fx);
+    const lines: string[] = [];
+    for (const o of ultimateOverlaps(data, p)) lines.push(`  OVERLAP ${label(data, o.a.operator)} ${shortSkill(o.a.skillId)}@${s(o.a.start)} / ${label(data, o.b.operator)} ${shortSkill(o.b.skillId)}@${s(o.b.start)}: ${o.frames} frames${o.anchored ? " (both from the log's events)" : ""}${o.chain ? " (a chain of three)" : ""}`);
+    const settle = settleCheck(data, fx, p);
+    for (const x of settle) lines.push(`  SETTLE  ${label(data, x.operator)} ${shortSkill(x.skillId)}: ${x.now === null ? "-" : s(x.now)} → ${x.third === null ? "-" : s(x.third)}`);
+    overlaps += lines.length - settle.length;
+    unsettled += settle.length;
+    if (lines.length) out.push(`${short}:`, ...lines);
+  }
+  out.push("", `Over ${logs.length} logs: ${overlaps} overlapping ultimate pair(s), ${unsettled} cast(s) a third pass would move`);
+  return out.join("\n");
+}
+
+/**
  * `efsim zmdlogs stops <fixture…|--all>`: the STOP lines of several logs (`replay --stops`'s), with `differ` only those
  * that aren't "as listed" or "covered", then a count per kind over the logs (stop-lists report point 1: a loop of
  * `replay --stops` over 80 fixtures took 6 minutes a run, mostly the CLI's start-up).
@@ -208,21 +233,38 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}${crit}` : "replay only";
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
   }
-  for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
+  // With the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding).
+  for (const [h, why] of missing) {
+    if (!inWindow(f, h.t) || !mine(f, h.operator)) continue;
+    const drop = replay.droppedLanding(h);
+    lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}${drop ? `: ${drop}` : ""}` });
+  }
+  // The logged casts the replay didn't make, and why (BuffReplay.skipped).
+  for (const x of replay.skipped) {
+    const t = msOf(x.frame);
+    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `SKIP   ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
+  }
   for (const x of replay.failed) if (inWindow(f, x.cast.start) && mine(f, x.cast.operator)) lines.push({ t: x.cast.start, order: 1, text: `FAILED ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) if (inWindow(f, m.start) && mine(f, m.operator)) lines.push({ t: m.start, order: 1, text: `MISSED ${label(data, m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
   // The log's cast events and what the cast assembly made of each (loggedCastFates), with where the event sits in its
   // skill's stop (castEventPlace; placement leads report point 1: "0.02 s of world time apart" hid 1.76 s of log time).
   const hitTimes = fx.hits.map((h) => h.t).sort((a, b) => a - b);
-  // A "tick" fate is the event's key (loggedCastFates: a kit buff ticks as its skill); the replay still makes the cast
-  // where the buff isn't on (3aa6ab93bad4: Zhuang Fangyi's real ultimates, read as Empyrean ticks by their key): its
-  // stop the timeline applied says so (round 11): the event's own tickRead stop (replayTimeStops: the hitless cast the
-  // assembly made of it, starting at most its length before the event) is one the timeline applied.
-  const tickStops = replayTimeStops(data, fx).filter((st) => st.tickRead);
+  // A "tick" fate is the event's key (loggedCastFates: a kit buff ticks as its skill); what the replay did with it is its
+  // own decision (BuffReplay.skipped, backlog after round 11 point 6): a tick it read (skipped, with why), or the cast
+  // it made where the buff isn't on (3aa6ab93bad4: Zhuang Fangyi's real ultimates, read as Empyrean ticks by their
+  // key), with the buff's last end and the event in frames: an end on the event's own frame is a whole lead's worth
+  // (remaining-leads report point 4: 4bfc 179.51 s took instrumenting loggedTick).
   const tickOrCast = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly buff?: string }) => {
-    const own = tickStops.find((st) => st.operator === e.operator && st.skillId === e.skill && msOf(st.start) <= e.t + 100 && msOf(st.start + st.scales.length) >= e.t - 100);
-    const made = own && replay.appliedStops.find((x) => x.operator === own.operator && x.start === own.start);
-    return made ? `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the cast: its stop at ${s(msOf(made.start))}–${s(msOf(made.start + made.scales.length))} s (the buff wasn't on)` : `a tick of ${e.buff} (KitBuff.ticksLoggedAs)`;
+    const length = msOf(data.skills[e.skill]?.timing?.durationFrames ?? 0);
+    const mine = (c: { readonly operator: string; readonly skillId: string; readonly start: number }) => c.operator === e.operator && c.skillId === e.skill && c.start <= e.t + 100 && c.start >= e.t - length - 100;
+    const ef = Math.round((e.t * FPS) / 1000);
+    // The buff's last instance that ended by the event (one the cast itself creates starts after it).
+    const last = replay.kitWindows(`${e.operator}:${e.buff}`, e.operator).filter((w) => Number.isFinite(w.end) && w.end <= e.t + 100).at(-1);
+    const lastText = last ? `its last instance ${s(last.start)}–${s(last.end)} ended at frame ${Math.round((last.end * FPS) / 1000)}, the event's frame ${ef}` : "no instance ended before it";
+    const skip = replay.skipped.find((x) => mine(x.cast));
+    if (skip) return `a tick of ${e.buff} (KitBuff.ticksLoggedAs): ${skip.why.replace(/^a tick of a kit buff \(KitBuff\.ticksLoggedAs\)(: | )?/, "") || "read as its tick"}${/this very frame/.test(skip.why) ? ` (${lastText})` : ""}`;
+    if (replay.failed.some((x) => mine(x.cast))) return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs); the replay couldn't make the cast (FAILED)`;
+    return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the cast: the buff wasn't on (${lastText})`;
   };
   // Only the first of an ultimate's repeated events (each ~3.5 s while it lasts) has a stop around it.
   const lastEvent = new Map<string, number>();
@@ -270,6 +312,30 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const moved = x.from?.appliedAt !== undefined && x.to?.appliedAt !== undefined && x.from.appliedAt !== x.to.appliedAt ? ` (application moved ${x.to.appliedAt - x.from.appliedAt > 0 ? "+" : ""}${x.to.appliedAt - x.from.appliedAt} frames: a hold, not a reapplication)` : "";
     lines.push({ t, order: 0, text: `TRACE  status:${x.status} by ${x.operator ? label(data, x.operator) : "-"}: ${st(x.from)} → ${st(x.to)}${moved} at ${x.step}` });
   }
+  // A kit trigger's firings and its ready frame's shifts (`--trace-trigger`: BuffReplay.triggerTraces); consecutive
+  // shifts by steps of one kind (a placed hold comes a frame at a time) on one line.
+  const shifts: { first: TriggerTrace; last: TriggerTrace; n: number }[] = [];
+  for (const x of replay.triggerTraces) {
+    const fired = !x.from || x.to.count > x.from.count;
+    const prev = shifts.findLast((y) => y.last.key === x.key);
+    if (!fired && prev && prev.last.from && prev.last.to.count === prev.last.from.count && prev.last.step === x.step) {
+      prev.last = x;
+      prev.n++;
+    } else shifts.push({ first: x, last: x, n: 1 });
+  }
+  for (const { first, last, n } of shifts) {
+    const t = msOf(first.frame);
+    if (!inWindow(f, t)) continue;
+    const [owner, ...rest] = first.key.split(":");
+    const name = `${label(data, owner ?? "")}:${rest.join(":")}`;
+    const ready = (v: number) => (v === Infinity ? "never" : `${s(msOf(v))} s`);
+    const clock = last.to.world ? "the world's clock" : "raw time";
+    const from = first.from;
+    const text = !from || last.to.count > from.count
+      ? `fired (firing ${last.to.count}), ready again at ${ready(last.to.readyAt)} (on ${clock})`
+      : `ready ${ready(from.readyAt)} → ${ready(last.to.readyAt)} (${last.to.readyAt - from.readyAt > 0 ? "+" : ""}${last.to.readyAt - from.readyAt} frames: held on ${clock})`;
+    lines.push({ t, order: 0, text: `TRACE  trigger ${name}: ${text} at ${first.step}${n > 1 ? ` (${n} steps, to ${s(msOf(last.frame))} s)` : ""}` });
+  }
   const tracedStatuses = (f.trace ?? []).filter((x) => x.startsWith("status:")).map((x) => x.slice("status:".length));
   if (tracedStatuses.length) {
     for (const [key, runs] of statusLanes(fx).runs) {
@@ -298,7 +364,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one, EVENT the log's cast events and what the replay made of each, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, or a kit trigger's firings and ready frame) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines)].join("\n");
 }
 
@@ -562,6 +628,9 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
 /** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */
 const HOLD_UNIT_MS = 512;
 
+/** How many of the bounds pinning a unit `holds --verbose` names (nearest first; the rest counted). */
+const PIN_TAGS = 4;
+
 /** A clock's earliest or latest P at a time (ms, linear between nodes), and the time P first reaches a mass. */
 function clockAt(h: PlacedHolds, P: readonly number[], t: number): number {
   let i = 1;
@@ -588,12 +657,28 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why, r.logEnds);
   const series = (tag: string) => tag.replace(/ [0-9]+[→⇒][0-9]+ ms$/, "");
   const lines = [`${fx.id}: ${s(h.total)} s of hidden holds placed (the least total the clocks allow; ${Math.round(h.total / HOLD_UNIT_MS)} perfect dodges' worth at 0.512 s), ${new Set(h.kept.filter((b) => b.kind === "run").map((b) => b.tag)).size} buff runs and ${new Set(h.kept.filter((b) => b.kind === "tick").map((b) => series(b.tag))).size} tick series kept, ${h.dropped.length} bound(s) dropped; times in s`];
+  // What holds a unit where it is (holds.ts holdPins; remaining-leads report point 1): its earliest by the bounds capping
+  // the hold before it (the node before the one the earliest P reaches it at), its latest by those forcing it by then.
+  const pinText = (p: ReturnType<typeof holdPins>) => {
+    const tags = p.bounds.map((b) => b.tag);
+    const shown = tags.length > PIN_TAGS ? [...tags.slice(0, PIN_TAGS), `+${tags.length - PIN_TAGS} more`] : tags;
+    return [...(p.total ? ["the least total"] : []), ...shown].join("; ") || "P's own rules (nondecreasing, no faster than real time)";
+  };
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
     const [early, late, mid] = [clockReaches(h, h.early, m), clockReaches(h, h.late, m), clockReaches(h, h.mid, m)];
     const clocks = [...new Set(h.kept.filter((b) => b.a <= early && late <= b.b).map((b) => (b.kind === "run" ? b.tag : series(b.tag))))];
-    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}`);
+    let pins = "";
+    if (opts.verbose) {
+      const i = h.early.findIndex((x) => x >= m - 1e-6);
+      const j = h.late.findIndex((x) => x >= m - 1e-6);
+      pins = `; earliest held back by: ${i > 0 ? pinText(holdPins(h, i - 1, "early")) : "the fight's start"}; latest forced by: ${j >= 0 ? pinText(holdPins(h, j, "late")) : "none"}`;
+    }
+    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}${pins}`);
   }
-  for (const b of h.dropped) lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)`);
+  for (const [k, b] of h.dropped.entries()) {
+    const against = (h.conflicts[k] ?? []).map((x) => x.tag);
+    lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)${opts.verbose && against.length ? `, conflicting with: ${against.join("; ")}` : ""}`);
+  }
   if (opts.verbose) for (const b of h.kept) lines.push(`  bound: ${b.tag}: P(${s(b.b)}) − P(${s(b.a)}) in [${Number.isFinite(b.min) ? s(b.min) : "−∞"}, ${Number.isFinite(b.max) ? s(b.max) : "∞"}] s; placed ${s(clockAt(h, h.mid, b.b) - clockAt(h, h.mid, b.a))}`);
   return lines.join("\n");
 }

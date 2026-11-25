@@ -303,5 +303,7 @@ describe("L5: pending bursts held through the logged casts' time stops", () => {
     // Nothing is unlogged: Tangtang's battle skill's last ticks (17055 ms) stay in their cast once others' time stops are
     // taken out of the time between its landings (tests/batch4-logs2.test.ts).
     expect(c.unlogged).toEqual([]);
+    // The inflictions are listed among the other events (round 12): what the enemy had before the burst.
+    expect(c.other.some((o) => o.predicted.kind === "inflicted" && o.t <= 4953)).toBe(true);
   });
 });

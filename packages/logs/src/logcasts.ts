@@ -592,23 +592,98 @@ function exactSlots(g: Group, key: string): boolean {
 }
 
 /**
- * Places every logged hit (see the file comment), twice: the second time,
- * other operators' time stops from the first placement are taken out of the
- * time between a cast's landings (b7b3762d5da8: Tangtang's battle skill from
- * 11.3 s runs on across Jsspsi's combo and Last Rite's ultimate).
+ * Places every logged hit (see the file comment), in passes (placementPasses), each reading only what the one before
+ * settled:
+ *
+ * 1. `first`: each operator's casts from its own landings and events, no other cast's stops (placeWith with none).
+ * 2. `second`: again, with the first pass's stops (and the unplaced cast events'): the rules that place one cast
+ *    against the stops it lies in read them (the world time between its landings, b7b3762d5da8: Tangtang's battle skill
+ *    from 11.3 s runs on across Jsspsi's combo and Last Rite's ultimate; heldStart / castStart, beforeStopStart,
+ *    eventStopStart, joinable). These stops are the first pass's, which this pass may move: not a fixed point
+ *    (settleCheck counts the casts a third pass would move).
+ * 3. After the placement settles: rules that compare one cast's stop with another cast's as placed (inTurn: ultimates
+ *    pressed together play their stops in turn). Inside pass 2 such a rule cascades: it reads a stop pass 2 is about to
+ *    move (remaining-leads report point 2: 4360's Gilberta moved against a Liino stop pass 2 then placed elsewhere;
+ *    9c6e's Arcane at 4.3 s moved Liino's). A new rule that reads another cast's placed stop goes here, not in placeWith.
+ *
+ * ultimateOverlaps lists the ultimate stops still overlapping after pass 3 (tests/logcasts-stops.test.ts pins them).
  */
 export function placeHits(data: GameData, fx: LogFixture): Placement {
+  return placementPasses(data, fx).placed;
+}
+
+/** placeHits' passes (its comment): the first placement, the second (from the first's stops), and the placement after the rules over the settled one. */
+export function placementPasses(data: GameData, fx: LogFixture): { readonly first: Placement; readonly second: Placement; readonly placed: Placement } {
   const firstPlacement = placeWith(data, fx, []);
-  const first = firstPlacement.casts;
   // The placed casts' stops cut at their resets, and the unplaced cast events' stops as they are: an event's time is the
   // press, not the cast, so its reset is no time to cut at (1cd1657bc305: Arcane's combo event at 34.70 s, cast at
   // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
-  const placed = inTurn(data, fx, placeWith(data, fx, [...castTimeStops(data, first, castFrames(firstPlacement)), ...unplacedCastStops(data, fx, first).flatMap((p) => p.stops)]));
+  const second = placeWith(data, fx, passStops(data, fx, firstPlacement));
+  const placed = inTurn(data, fx, second);
   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
   const merge = new Map<string, number>();
   for (const c of placed.casts) if (c.kind === "ultimate") merge.set(c.skillId, Math.max(CAST_MERGE_MS, msOf(data.skills[c.skillId]?.timing?.durationFrames ?? 0)));
-  return { ...placed, merge };
+  return { first: firstPlacement, second, placed: { ...placed, merge } };
+}
+
+/** The stops a placement pass reads from the one before: its placed casts' (cut at their resets) and the unplaced cast events'. */
+function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[] {
+  return [...castTimeStops(data, before.casts, castFrames(before)), ...unplacedCastStops(data, fx, before.casts).flatMap((p) => p.stops)];
+}
+
+/**
+ * Whether the placement is a fixed point of pass 2 (placeHits' comment): pass 2 run once more from the final placement's
+ * stops, and the casts whose start that moves by more than a frame (each with its start now and in the third pass; a
+ * cast gone or new counts too). Non-empty: the casts whose start rests on a stop that pass 2 itself moved, where a rule
+ * reading other casts' stops cascades. A diagnosis (`zmdlogs casts --settle`), never part of the placement.
+ */
+export function settleCheck(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): { readonly operator: string; readonly skillId: string; readonly now: number | null; readonly third: number | null }[] {
+  const third = inTurn(data, fx, placeWith(data, fx, passStops(data, fx, placement)));
+  const out: { operator: string; skillId: string; now: number | null; third: number | null }[] = [];
+  const key = (c: LoggedCast) => `${c.operator}|${c.skillId}|${c.key}`;
+  const near = (list: readonly LoggedCast[], c: LoggedCast) => list.filter((x) => key(x) === key(c)).sort((a, b) => Math.abs(a.start - c.start) - Math.abs(b.start - c.start))[0];
+  const used = new Set<LoggedCast>();
+  // The casts that stay first (a cast that moved doesn't take another's place), then the moved ones by nearest.
+  const moved = placement.casts.filter((c) => {
+    const d = near(third.casts.filter((x) => !used.has(x)), c);
+    if (!d || Math.abs(d.start - c.start) > SETTLE_MS) return true;
+    used.add(d);
+    return false;
+  });
+  for (const c of moved) {
+    const d = near(third.casts.filter((x) => !used.has(x)), c);
+    const paired = d && Math.abs(d.start - c.start) <= SETTLE_FAR_MS ? d : undefined;
+    if (paired) used.add(paired);
+    out.push({ operator: c.operator, skillId: c.skillId, now: c.start, third: paired ? paired.start : null });
+  }
+  for (const d of third.casts) if (!used.has(d)) out.push({ operator: d.operator, skillId: d.skillId, now: null, third: d.start });
+  return out.sort((a, b) => (a.now ?? a.third ?? 0) - (b.now ?? b.third ?? 0));
+}
+
+/** A cast's start moving by more than this between the placement and a third pass is unsettled (ms: a frame and its rounding). */
+const SETTLE_MS = 40;
+/** The farthest the same cast's start may move between the passes and still be paired (ms); farther, it's gone and new. */
+const SETTLE_FAR_MS = 5000;
+
+/**
+ * Ultimates of different operators whose placed time stops (down to OWN_STOP_SCALE) overlap by more than
+ * IN_TURN_SLACK_FRAMES after the placement's last pass: the pairs the in-turn rule left (remaining-leads report point 2:
+ * the overlap list as a measurable property; scripts/probes/placement/ult-overlap.ts prints the log's evidence for
+ * each). `anchored`: both placed from their cast events or at another stop's end (fromEvent / beforeStop), where
+ * the log's times set both; `chain`: one of them overlaps a third ultimate too.
+ */
+export function ultimateOverlaps(data: GameData, placement: Pick<Placement, "casts">): { readonly a: LoggedCast; readonly b: LoggedCast; readonly frames: number; readonly anchored: boolean; readonly chain: boolean }[] {
+  const ults = placement.casts.filter((c) => c.kind === "ultimate");
+  const stops = ults.flatMap((c) => castTimeStops(data, [c]).filter((s) => s.scales.some((x) => x <= OWN_STOP_SCALE)).slice(0, 1).map((s) => ({ c, s })));
+  const pairs: { a: LoggedCast; b: LoggedCast; frames: number }[] = [];
+  for (const x of stops) for (const y of stops) {
+    if (x === y || x.c.operator === y.c.operator || !(x.s.start <= y.s.start && y.s.start < x.s.start + x.s.scales.length) || (x.s.start === y.s.start && x.c.operator > y.c.operator)) continue;
+    const frames = Math.min(x.s.start + x.s.scales.length, y.s.start + y.s.scales.length) - y.s.start;
+    if (frames > IN_TURN_SLACK_FRAMES) pairs.push({ a: x.c, b: y.c, frames });
+  }
+  const anchoredCast = (c: LoggedCast) => c.fromEvent === true || c.beforeStop !== undefined;
+  return pairs.map((p) => ({ ...p, anchored: anchoredCast(p.a) && anchoredCast(p.b), chain: pairs.some((q) => q !== p && (q.a === p.a || q.b === p.a || q.a === p.b || q.b === p.b)) }));
 }
 
 /** How far from a placed cast of its skill a logged cast event may be and still be that cast (ms; unplacedCastStops). */

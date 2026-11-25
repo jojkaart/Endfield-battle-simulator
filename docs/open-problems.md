@@ -208,7 +208,16 @@ shares of the off error at that code):**
   readings fail from 46 s on), not the moved stop itself; 40d9 two plain hits assumed (Link and Gilberta's weapon
   within 500 ms of the moved cast); 3f78's total −4.8 → −5.6%. **Left:** 15 overlapping pairs, mostly chains of three
   stops (d774 Liino, Arcane, Perlica at 118–123 s) or pairs whose first is anchored to its cast event (Liino's, Si's,
-  Tangtang's); 489c's hold placement.
+  Tangtang's); 489c's hold placement. **489c's holds, the mechanism found (round 12, `cli-ab 4188729^ --patch <view
+  diff> --holds 489c`, holds --verbose's pins and conflicts):** the in-turn stop holds the replay's Corrosion by Li
+  Zhiyan 2.07 s more of world time (its expiry 47167 → 49233 ms), so its status bound turns from a hold of 1.19–1.84 s
+  over 13.1–48.8 s into at most 0.19 s over 13.1–49.2 s (the log's Corrosion ends at 48.81–49.22 s); the ramp readings
+  asking 0.3–0.4 s there now conflict with it and with the bleed ticks 41667⇒47127, and the placement drops them.
+  Ruled out: the units moving by themselves (each unit's pins name the bounds). Still possible: the in-turn stop
+  doesn't hold the enemy's status clock its full length (an ultimate's stop placed in turn over another's), or the
+  ramp readings there are off. Next: `--trace-buff status:corrosion` 13–50 s beside the log's run. Since round 12 the
+  pairs left are 14 (logcasts.ts ultimateOverlaps, pinned in tests/logcasts-stops.test.ts; `zmdlogs placement --all`),
+  and 21 casts would move in a third pass of the placement (settleCheck: 4a64's in-turn pair among them).
 - **Liino's ultimate windows: fixed 2026-11-24 (placement).** Her Pyrotechnics (frame 76, `detached`) fly 0.1–0.8 s
   of the world's time before they land (dbae: the first song beat, frame 77, at 8.26 s with the cast event, the
   projectiles at 8.61 s), so a cast placed from them came late, its stop over teammates' logged hits and its Amp

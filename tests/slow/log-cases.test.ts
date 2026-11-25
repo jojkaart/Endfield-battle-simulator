@@ -50,6 +50,8 @@ describe("Zhuang Fangyi: the Empyrean's end logged as an ultimate_skill cast eve
     const view = replayView(data, fx, { operators: [Z] });
     expect(view).toContain("92.68  EVENT  Zhuang Fangyi ultimate_skill (the log's cast event): a tick of empyrean");
     expect(view).toContain("179.51  EVENT  Zhuang Fangyi ultimate_skill (the log's cast event): a tick of empyrean");
+    // The frame boundary in frames (remaining-leads report point 4): the instance ended on the event's own frame.
+    expect(view).toMatch(/179\.51 {2}EVENT .*that ended on this very frame: its last tick \(its last instance 144\.37–179\.50 ended at frame 5385, the event's frame 5385\)/);
     // Her first ultimate's Lone Barge buff is listed to 91.62 s; the next hits list none (the log has no second run until 144.37 s).
     const after = checkLog(data, fx).filter((v) => v.hit.operator === Z && v.hit.t >= 92900 && v.hit.t <= 119300 && /normal_skill_ult|sword_triggerd/.test(v.hit.event));
     // 27 hits, plain but one (110.37 s, a Sunderblade strike off for another reason); with the buff they read ×0.849.

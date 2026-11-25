@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, spPlaced, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
 import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
-import { cooldownTimers, isSkillFileListed, projectileSkills, skillFilePath } from "./skillData.ts";
+import { attachedModifierBuffs, cooldownTimers, isSkillFileListed, projectileSkills, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
 import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type KitAssumption, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type LandedCount, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine/core";
@@ -92,7 +92,7 @@ export type RawOn = TriggerOn | { event: "buffApplied"; tags: number[]; fromKind
  * for a cooldown the data doesn't show (no value source, or its timer in a file the trigger's sources don't reach), with
  * its evidence in the trigger's note.
  */
-type RawTrigger = Omit<KitTrigger, "do" | "on" | "cooldownClock"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>>; cooldownClock?: "world" | "raw" };
+type RawTrigger = Omit<KitTrigger, "do" | "on" | "cooldownClock" | "cooldownFrom"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>>; cooldownClock?: "world" | "raw" };
 
 /**
  * The clock a trigger's cooldown runs on, from the game's mechanism behind it in its value sources' files
@@ -100,19 +100,21 @@ type RawTrigger = Omit<KitTrigger, "do" | "on" | "cooldownClock"> & { note?: str
  * sets the timer's length, or a literal cooldown by its seconds. A game CD timer (AddGlobalCDTimer) and a `…_cd` buff
  * are `world` (the game keeps both as buffs, and buffs run on the world's time; Swordmancer's 15 s CD timer is held by
  * stops and hidden holds in the logs, scripts/probes/cooldowns/physuit.ts); a timed marker (CreateTimedMarker) is
- * `raw`; none found: undefined (the kit's own `cooldownClock`, else raw).
+ * `raw`; none found: undefined (the kit's own `cooldownClock`, else raw). `from`: the mechanisms matched
+ * (KitTrigger.cooldownFrom).
  */
-function cooldownClockOf(cooldown: ValueExpr, skillId: string, skill: string | undefined, isSource: (id: string) => boolean, talentSources: KitScope["talentSources"], where: string): "world" | "raw" | undefined {
+function cooldownClockOf(cooldown: ValueExpr, skillId: string, skill: string | undefined, isSource: (id: string) => boolean, talentSources: KitScope["talentSources"], where: string): { readonly clock: "world" | "raw" | undefined; readonly from: NonNullable<KitTrigger["cooldownFrom"]> } {
   const keys = valueKeys(cooldown, skillId, talentSources);
   const literal = typeof cooldown === "number" ? Math.round(cooldown * 1000) / 1000 : undefined;
   const sources = [...new Set([...keys.map((k) => k.skill), ...(skill !== undefined ? [skill] : [])])].filter(isSource);
-  const kinds = new Set<string>();
+  const from: { kind: "globalCd" | "cdBuff" | "marker"; source: string; length: string | number }[] = [];
   for (const src of sources) {
-    for (const x of cooldownTimers(src)) if (x.length === literal || keys.some((k) => k.skill === src && k.key === x.length)) kinds.add(x.kind);
+    for (const x of cooldownTimers(src)) if (x.length === literal || keys.some((k) => k.skill === src && k.key === x.length)) from.push({ kind: x.kind, source: src, length: x.length });
   }
+  const kinds = new Set(from.map((x) => x.kind));
   const world = kinds.has("globalCd") || kinds.has("cdBuff");
   if (world && kinds.has("marker")) throw new Error(`${where}: the cooldown's length sets both a timed marker and a CD timer or cooldown buff in the data (${[...kinds].join(", ")}); write cooldownClock with the evidence`);
-  return world ? "world" : kinds.has("marker") ? "raw" : undefined;
+  return { clock: world ? "world" : kinds.has("marker") ? "raw" : undefined, from };
 }
 
 /** A trigger's event with buff tags turned into their category filter. */
@@ -797,12 +799,14 @@ function kitChecker(scope: KitScope) {
       );
     const { cooldownClock: written, ...rest } = t;
     let clock: "world" | "raw" | undefined;
+    let from: KitTrigger["cooldownFrom"] = [];
     if (t.cooldown !== undefined) {
       const derived = cooldownClockOf(t.cooldown, skillId, t.skill, scope.isSource, scope.talentSources, where);
-      if (written !== undefined && derived !== undefined) throw new Error(`${where}: cooldownClock ${written} is the data's to say (${derived}: its CD timer, cooldown buff or timed marker); drop it`);
-      clock = derived ?? written;
+      if (written !== undefined && derived.clock !== undefined) throw new Error(`${where}: cooldownClock ${written} is the data's to say (${derived.clock}: its CD timer, cooldown buff or timed marker); drop it`);
+      clock = derived.clock ?? written;
+      from = derived.from;
     } else if (written !== undefined) throw new Error(`${where}: cooldownClock without a cooldown`);
-    return { ...rest, ...(clock === "world" ? { cooldownClock: "world" as const } : {}), do: normalize(t.do) };
+    return { ...rest, ...(clock === "world" ? { cooldownClock: "world" as const } : {}), ...(from.length ? { cooldownFrom: from } : {}), do: normalize(t.do) };
   };
   /** The kit's buffs with their game buffs' rules; after every hit and trigger is checked (which skills apply each buff). */
   const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>
@@ -883,7 +887,7 @@ function checkSkillData(compiled: CompiledSkill, s: RawSkill, hits: readonly Kit
   const hitOf = (id: string) => (id.includes("/") ? rawTriggerHit(id.slice(0, id.indexOf("/")), id.slice(id.indexOf("/") + 1)) : byId.get(id));
   const reason = (d: Disagreement) => (d.trigger !== undefined ? rawTriggers.get(d.trigger)?.dataOverride?.[d.field as "energy" | "sp" | "apply"] : d.hit !== undefined ? hitOf(d.hit)?.dataOverride?.[d.field as DataField] : s.dataOverride?.[d.field]);
   const found = new Set(m.disagreements.map((d) => `${d.trigger ?? ""}|${d.hit ?? ""}|${d.field}`));
-  const stale = (text: string) => `${text}: marked as differing from the data (dataOverride), but it agrees`;
+  const stale = (text: string) => `${text}: marked as differing from the data (dataOverride), but it agrees: drop the mark (the written value can stay)`;
   const problems = [
     ...m.disagreements.filter((d) => reason(d) === undefined).map((d) => ({ ...d, stale: false })),
     ...Object.keys(s.dataOverride ?? {}).filter((f) => !found.has(`||${f}`)).map((field) => ({ field, text: stale(`${s.skillId} ${field}`), stale: true })),
@@ -1077,9 +1081,13 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     let rawHits = s.hits;
     let teamEnergy = s.teamEnergy;
     let energyBlockSeconds = s.energyBlockSeconds;
+    // A hit whose written events the data's landings of its key don't log (kitMatch.ts: its `events` disagreement): the
+    // data can't place its landings, so its frames must be written (backlog after round 11 point 5: four tries).
+    const eventsOff = new Map<string, string>();
     if (compiled) {
       const first = c.normalizeHits(s.hits, hitSource, where);
       const m = matchSkill(compiled, { skillId: s.skillId, hits: first, ...(s.teamEnergy ? { teamEnergy: s.teamEnergy } : {}), ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}) }, kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []));
+      for (const d of m.disagreements) if (d.field === "events" && d.hit !== undefined) eventsOff.set(d.hit, d.text);
       // SP from the data only where it says all of the skill's (else, unless the kit names SP, the engine's first-hit atb stays).
       const spFromData = s.hits.some((h) => h.sp !== undefined) || spPlaced(m.folded, m.hits);
       rawHits = s.hits.map((h) => {
@@ -1106,7 +1114,13 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     }
     if (s.noDodge && !(s.noDodge[0] >= 0 && s.noDodge[0] < s.noDodge[1])) throw new Error(`${where}: noDodge is a range [from, until) of skill frames`);
     // A skill hit lands at frames: its own, or the data's when its landings are one branch path no other hit takes landings of.
-    for (const h of rawHits) if (!h.frames) throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
+    for (const h of rawHits) {
+      if (h.frames) continue;
+      const off = eventsOff.get(h.id);
+      // One message for the whole fix: frames written, `events` marked (a frames mark would then be stale).
+      if (off !== undefined && h.events !== undefined) throw new Error(`${where} hit ${h.id}: its events aren't the data's keys for its landings (${off}), so the data can't place them: write its \`frames\` and mark \`events\` in its dataOverride with the reason (a key another skill logs it under; frames need no mark when the data's agree)`);
+      throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
+    }
     const hits = c.normalizeHits(rawHits, hitSource, where);
     // What still differs from the data must be marked, with the reason (dataOverride): checked once the triggers are (a cast trigger's hits and actions are the skill's).
     if (compiled) dataChecks.push((triggers) => checkSkillData(compiled, s, hits, teamEnergy, energyBlockSeconds, triggers, kit, where, options));
@@ -1267,6 +1281,32 @@ export function loadOperatorKitFile(data: KitData, file: string, raw: unknown, o
   if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
   const kit = raw as RawKit;
   return [loadOperatorKit(data, file, kit, options), ...(kit.variants ?? []).map((variant) => loadOperatorKit(data, `${variant.operator}.json`, variantOf(kit, variant), options))];
+}
+
+/**
+ * Kit buffs that likely need a `loggedAs` (backlog after round 11 point 9): a kit buff whose game buff has no attribute
+ * modifier while a value source of its kit (a skill of the operator's, a trigger's `skill`) attaches a buff with one to
+ * a cast beside creating it (skillData.ts attachedModifierBuffs), and neither its loggedAs nor another kit buff of the
+ * kit stands for that one. The log lists the attached buff on the cast's hits; without loggedAs the check counts both
+ * (the Endministrator's and Chen Qianyu's weapon "ready" buffs, round 11). tests/kit-messages.test.ts keeps it empty;
+ * `efsim kit-census` prints it.
+ */
+export function unloggedAttachedBuffs(kits: Kits): { readonly kit: string; readonly buff: string; readonly gameBuff: string; readonly attached: readonly string[] }[] {
+  const out: { kit: string; buff: string; gameBuff: string; attached: string[] }[] = [];
+  const all: { id: string; buffs: readonly KitBuff[]; sources: string[] }[] = [
+    ...Object.values(kits.operators).map((k) => ({ id: k.operator, buffs: k.buffs, sources: [...k.skills.map((s) => s.skillId), ...k.triggers.flatMap((t) => (t.skill !== undefined ? [t.skill] : []))] })),
+    ...Object.values(kits.equipment).map((k) => ({ id: k.id, buffs: k.buffs, sources: k.triggers.flatMap((t) => (t.skill !== undefined ? [t.skill] : [])) })),
+  ];
+  for (const k of all) {
+    const standing = new Set(k.buffs.flatMap((b) => [...(b.gameBuff !== undefined ? [b.gameBuff] : []), ...(b.loggedAs ?? [])]));
+    const bySource = [...new Set(k.sources)].map((src) => attachedModifierBuffs(src));
+    for (const b of k.buffs) {
+      if (b.gameBuff === undefined) continue;
+      const attached = [...new Set(bySource.flatMap((m) => m.get(b.gameBuff as string) ?? []))].filter((x) => !standing.has(x));
+      if (attached.length) out.push({ kit: k.id, buff: b.id, gameBuff: b.gameBuff, attached });
+    }
+  }
+  return out;
 }
 
 /** Loads the kits under `dir` (default packages/data/kits: its operators/ and equipment/ folders). */

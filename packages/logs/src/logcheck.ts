@@ -49,7 +49,7 @@ import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
 import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
 import { REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK } from "./replayrecord.ts";
-import { atLayers, disagreementRuns, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
+import { atLayers, disagreementRuns, replayedHits, replayKitBuffs, unknownFacts, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
 
 export type { Assumption, AssumptionKind } from "./assumptions.ts";
 import type { Assumption } from "./assumptions.ts";
@@ -1208,6 +1208,7 @@ export function formatEngineReport(data: GameData, r: EngineReport): string[] {
 
 export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonly HitVerdict[], replay?: LogBuffReplay, report?: EngineReport): string {
   const problems = verificationProblems(data, fx, verdicts);
+  const facts = replay ? unknownFacts(data, fx, replay.replay.assume) : new Map<string, readonly string[]>();
   const out: string[] = [
     `${fx.id}: ${fx.provenance.url}`,
     problems.length === 0
@@ -1229,6 +1230,8 @@ export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonl
     );
     const strength = matchStrength(mine);
     if (strength) out.push(`  ${strength}`);
+    // A fact the replay doesn't know that this operator's kit reads (buffreplay.ts unknownFacts): a label, not a reading.
+    for (const fact of facts.get(build.operator) ?? []) out.push(`  ${fact}: ${mine.filter((v) => !(v.kind === "match" && v.assumed.length === 0)).length} of its ${mine.length} hits not a plain match`);
     const assumptions = new Map<string, number>();
     for (const v of mine) if (v.kind === "match") for (const a of v.assumed) assumptions.set(a, (assumptions.get(a) ?? 0) + 1);
     if (assumptions.size) out.push(`  matched assuming: ${[...assumptions].map(([a, k]) => `${a} ×${k}`).join(", ")}`);

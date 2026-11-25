@@ -63,3 +63,18 @@ it out. Branch worktree-agent-a8e6bc8bf04904f0e, base e3272c6.
 - `zmdlogs casts` / `replay --from --to` made each Arcane burst case readable in a minute; round 11's new
   `zmdlogs bursts` gave 9a80's world time between cause and burst directly.
 - `scripts/edit.ts` for the doc batches: no shell quoting of backticks.
+
+## Outcome (round 12)
+
+- 1 (Measures in a queue are each relative to the committed snapshots, so interacting changes hide): done (3f249cf):
+  each measure writes moved.json (queued, code, the development logs it moved, the hold-outs as a count) and its
+  summary names the development logs an earlier measure (queued in the 12 h before) moved too; `--patch` / `--base`
+  already measure one change on top of the other.
+- 2 (No way to see which operators a moved hold-out has): carried (2026-11-25-backlog-after-round-12.md point 4), not
+  built: a per-kit split would say which kits the hold-outs' teams have, which the lead's round 9 decision keeps out;
+  the point puts a split by mechanism class to the lead.
+- 3 (A trigger's game-data mechanism isn't shown anywhere): done (9009c2b, 54a99db): KitTrigger.cooldownFrom, `efsim
+  kit <operator | wpn_… | suit_…>` prints each cooldown's clock and mechanism (equipment kits by id: suit_phy01's CD
+  timer), `efsim kit-census` the counts by clock and mechanism.
+- 4 (Bash-guard refusals for one-off inspections): nothing to do (it worked as designed); round 12 hit it four times
+  (a heredoc, a backtick in a sed argument, a multi-line python3 -c, a multi-line commit -m), each naming the safe form.

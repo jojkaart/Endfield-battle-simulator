@@ -317,3 +317,41 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
 Every report named the episode its fix would have shortened (4d60's 106.47 s, 3aa6, e82d 9.12 s, 9c6e, 1cd1, the
 placement leads' commit range), so each change was tried on that episode at once; `cli-ab` over `zmdlogs stops
 --all --differ` turned "the views now agree" into a two-line diff.
+
+## Outcome (round 12)
+
+- 1 (A slow-down's identity through the stop lists and the replay's record): parked (carried twice, no new report:
+  docs/friction/2026-11-25-backlog-after-round-12.md, "Parked", round 11's point 1).
+- 2 (A logged hit placed in the wrong slot is invisible in the totals' parts): parked (the same).
+- 3 (A landing or a press the replay drops leaves no reason in its views): done (9009c2b): BuffReplay.droppedLanding
+  (landingWatch follows every pinned landing through the steps: another alternative of its branch, its kit hit's `if`,
+  the operator's next cast, its cast's end, a jump; or why it was never pinned) on the NOLAND lines, BuffReplay.skipped
+  (replayedSkill's and makeCast's reasons, earliestStart's own error: "needs 160 ultimate energy, 0.0") as SKIP lines;
+  every "a landing the replay didn't land" in the development logs (232) has a reason. No engine change: watched from
+  the schedule before and after each step.
+- 4 (`zmdlogs explain`): parked (the same).
+- 5 (A kit field override's errors come one rule at a time): done (54a99db): a hit whose written events the data's
+  landings don't log gets one message with the whole fix (frames written, events marked); a stale mark says to drop it
+  (tests/kit-messages.test.ts).
+- 6 (The replay's own list of the stops it held, and the EVENT fate from its decision): done (3b79889): the EVENT line
+  reads BuffReplay.skipped (the replay's decision) and gives the buff's last end and the event in frames; query.ts
+  replayTimeStops leaves out the stops of casts the replay skipped as ticks (`zmdlogs stops --all --differ` identical
+  by cli-ab). The hold placement's own `made` set stays inside buffreplay.ts (it is the same decision).
+- 7 (A fact the replay doesn't know reads as a default, unmarked): the label done (3b79889: buffreplay.ts
+  unknownFacts, "enemy HP unknown" in `check`, `differences` and HitRecord.unknownFacts); the alternative reading moves
+  verdicts, so it is in the new backlog's accuracy list.
+- 8 (`zmdlogs casts --why`): carried (2026-11-25-backlog-after-round-12.md point 1)
+- 9 (The kit loader doesn't warn of a gameBuff without the modifier its sibling has): done (54a99db): kits.ts
+  unloggedAttachedBuffs over skillData.ts attachedModifierBuffs (a created buff without modifiers beside a
+  cast-attached one with them, CreateBuffAttachingSkill); none in the kits, and it finds Glorious Memory's _valid when
+  its loggedAs is dropped (a test); `efsim kit-census` prints it. A test, not a loader warning: a load that printed
+  would print on every run.
+- 10 (A kit hit's frame is ambiguous for landings on their way): closed by the cooldown-clock round (KitHit.travels from
+  LaunchProjectile, read by logcasts.ts eventStopStart); nothing left for a friction round.
+- 11 (A trigger's cooldown state has no trace): done (3131523): `zmdlogs replay --trace-trigger owner:id` (or the id
+  alone), each firing and each shift of the ready frame with its step, a run of placed holds on one line; de6a's
+  Swordmancer reads in one command.
+- 12 (An engine reading can't be narrower than "every trigger"): the field done (9009c2b: KitTrigger.cooldownFrom, the
+  mechanisms the compiler matched, printed by `efsim kit` and counted by kit-census); a reading that selects by it is
+  an accuracy task (the new backlog's accuracy list).
+- 13 (The burst view's causes are a heuristic): carried (2026-11-25-backlog-after-round-12.md point 2)

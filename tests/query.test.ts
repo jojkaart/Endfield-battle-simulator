@@ -210,6 +210,8 @@ describe("the views' stops and the replay's ticks (round 11, kit-buff leads repo
   it("says on the EVENT line when the replay made a cast whose key a buff ticks as (3aa6: Zhuang Fangyi's real ultimates)", () => {
     const [d] = devFixtures({ ids: ["3aa6"] });
     const fx = (d as (typeof logs)[number]).fx;
-    expect(replayView(data, fx, { from: 5000, to: 9000, operators: ["chr_0030_zhuangfy"] })).toMatch(/EVENT {2}Zhuang Fangyi ultimate_skill \(the log's cast event\): its key is a tick of empyrean .*, but the replay made the cast: its stop at 5\.\d\d–8\.\d\d s/);
+    // From the replay's own decision (BuffReplay.skipped: not skipped as a tick), with the buff's last end in frames.
+    expect(replayView(data, fx, { from: 5000, to: 9000, operators: ["chr_0030_zhuangfy"] })).toMatch(/EVENT {2}Zhuang Fangyi ultimate_skill \(the log's cast event\): its key is a tick of empyrean .*, but the replay made the cast: the buff wasn't on \(no instance ended before it\)/);
+    expect(replayView(data, fx, { from: 117000, to: 117500, operators: ["chr_0030_zhuangfy"] })).toMatch(/but the replay made the cast: the buff wasn't on \(its last instance \S+–\S+ ended at frame \d+, the event's frame 3517\)/);
   });
 });

@@ -2,7 +2,7 @@
 // runs it: what agents otherwise read through a scratch script over createContext (round-4 friction: Si's attack-5 and
 // battle-skill hit frames for a log's gaps took three attempts). Kit files have no frames; they come from SkillData.
 
-import { FPS, type GameData, type KitApplication, type KitHit, type KitSkill, type KitTrigger, type OperatorKit, type TriggerAction } from "@efsim/engine";
+import { FPS, type GameData, type KitApplication, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type OperatorKit, type TriggerAction } from "@efsim/engine";
 import { isSkillFileListed, readSkillFile } from "@efsim/data";
 import { landingFrames, operatorNamed } from "@efsim/logs";
 import { command } from "../command.ts";
@@ -72,10 +72,26 @@ function actionLines(actions: readonly TriggerAction[], indent: string): string[
   });
 }
 
-/** A trigger: its event and settings on one line, then its actions. */
+/** A trigger: its event and settings on one line, its cooldown's clock and the game's mechanism behind it, then its actions. */
 function triggerLines(t: KitTrigger): string[] {
-  const settings = fields(t, ["id", "on", "do", "label", "note", "notes"]);
-  return [`  ${t.id}: on ${JSON.stringify(t.on)}${settings ? `; ${settings}` : ""}${t.if !== undefined ? `; if ${pred(t.if)}` : ""}`, ...actionLines(t.do, "      ")];
+  const settings = fields(t, ["id", "on", "do", "label", "note", "notes", "cooldownFrom"]);
+  return [`  ${t.id}: on ${JSON.stringify(t.on)}${settings ? `; ${settings}` : ""}${t.if !== undefined ? `; if ${pred(t.if)}` : ""}`, ...cooldownLines(t), ...actionLines(t.do, "      ")];
+}
+
+/** The game's mechanisms (cooldown-clock report point 3, KitTrigger.cooldownFrom) a timer's kind names. */
+const COOLDOWN_KINDS: Readonly<Record<string, string>> = { globalCd: "a CD timer (AddGlobalCDTimer)", cdBuff: "a `_cd` buff", marker: "a timed marker (CreateTimedMarker)" };
+
+/**
+ * A trigger's cooldown: the clock it runs on (KitTrigger.cooldownClock: the world's, held by stops and holds, or raw
+ * time) and the game's mechanism the compiler found for it (KitTrigger.cooldownFrom, kits.ts cooldownClockOf), or that
+ * the data shows none (the kit's own cooldownClock, with its evidence in the trigger's note, or raw).
+ */
+export function cooldownLines(t: KitTrigger): string[] {
+  if (t.cooldown === undefined) return [];
+  const clock = t.cooldownClock === "world" ? "the world's clock (held by stops and holds)" : "raw time";
+  const from = (t.cooldownFrom ?? []).map((x) => `${COOLDOWN_KINDS[x.kind] ?? x.kind} in ${x.source}, length ${typeof x.length === "number" ? `${x.length} s` : `key ${x.length}`}`);
+  const why = from.length ? from.join("; ") : t.cooldownClock === "world" ? "none in the data: the kit's own cooldownClock (its note)" : "none in the data";
+  return [`      cooldown ${JSON.stringify(t.cooldown)} on ${clock}: ${why} (engine assumption trigger-cooldowns can put every trigger on one clock)`];
 }
 
 /** The triggers' jumps and end-actions on a skill (they move or end its playhead from outside its own timeline). */
@@ -123,16 +139,25 @@ function skillLines(data: GameData, operator: string, s: KitSkill, kit: Operator
 
 /** `efsim kit <operator>`: the compiled kit's skills (timing, hits and frames), buffs and triggers; `skill`: only skills matching. */
 export function kitView(data: GameData, operator: string, skill?: RegExp): string {
+  // A weapon's or gear set's kit by its id (wpn_…, suit_…): its buffs and triggers (cooldown-clock report point 3:
+  // Swordmancer's CD timer is a gear set's).
+  const equipment = data.kits.equipment[operator];
+  if (equipment) return [`${operator}: the compiled equipment kit`, "Buffs:", ...equipment.buffs.map(buffLine), "Triggers:", ...equipment.triggers.flatMap(triggerLines)].join("\n");
   const id = operatorNamed(data, operator);
   const kit: OperatorKit | undefined = data.kits.operators[id];
   if (!kit) throw new Error(`${id}: no kit`);
   const skills = kit.skills.filter((s) => !skill || skill.test(s.skillId));
   const out = [`${data.operators[id]?.name ?? id} (${id}): the compiled kit (frames at ${FPS} a second; a hit's frames are its landings' in its cast; timing from SkillData)`, "Skills:", ...skills.flatMap((s) => skillLines(data, id, s, kit))];
   if (!skill) {
-    out.push("Buffs:", ...kit.buffs.map((b) => `  ${b.id} "${b.label}": ${b.target}${b.duration !== undefined ? `, duration ${JSON.stringify(b.duration)}` : ""}${b.gameBuff ? `, logged as ${b.gameBuff}` : ""}${b.loggedAs?.length ? ` / ${b.loggedAs.join(", ")}` : ""}${b.every !== undefined ? `, ticks every ${JSON.stringify(b.every)}` : ""}${b.endsWithCast ? ", ends with its cast" : ""}`));
+    out.push("Buffs:", ...kit.buffs.map(buffLine));
     out.push("Triggers:", ...kit.triggers.flatMap(triggerLines));
   }
   return out.join("\n");
+}
+
+/** A kit buff on one line: its target, duration, the game buff it is logged as, its ticks, whether it ends with its cast. */
+function buffLine(b: KitBuff): string {
+  return `  ${b.id} "${b.label}": ${b.target}${b.duration !== undefined ? `, duration ${JSON.stringify(b.duration)}` : ""}${b.gameBuff ? `, logged as ${b.gameBuff}` : ""}${b.loggedAs?.length ? ` / ${b.loggedAs.join(", ")}` : ""}${b.every !== undefined ? `, ticks every ${JSON.stringify(b.every)}` : ""}${b.endsWithCast ? ", ends with its cast" : ""}`;
 }
 
 export default command({
@@ -143,7 +168,10 @@ export default command({
                                           isn't the kind (an enhanced basic attack), each hit's frames, keys,
                                           poise, conditions and applications (inflictions, statuses, reactions);
                                           buffs (logged as which game buff) and triggers with each action
-                                          (hits as a skill's, gains, buffs, jumps, a choice's options)
+                                          (hits as a skill's, gains, buffs, jumps, a choice's options), and each
+                                          cooldown's clock with the game's mechanism behind it (a CD timer, a _cd
+                                          buff, a timed marker: KitTrigger.cooldownFrom)
+  efsim kit <weapon or gear-set id>       Its buffs and triggers (wpn_…, suit_…; ids: efsim find <name>)
                 [--skill <regex>]         Only skills matching (no buffs or triggers)
 `,
   options: {

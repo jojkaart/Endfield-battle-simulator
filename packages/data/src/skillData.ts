@@ -491,6 +491,44 @@ export function cooldownTimers(sourceId: string): CooldownTimer[] {
 }
 
 /**
+ * A game buff a value source creates (CreateBuffAction) beside a buff it attaches to a cast (CreateBuffAttachingSkill)
+ * in the same SkillData file, where the created one has no attribute modifier and the attached one has: the log lists
+ * the attached one on the cast's hits (Glorious Memory's `_exist` layers and their `_valid`, the Endministrator's and
+ * Chen Qianyu's weapons: round 11's likely-loggedAs screen found them from the logs). Per created buff, the attached
+ * ones with modifiers (kits.ts unloggedAttachedBuffs: a kit buff standing for the created one lists them as loggedAs).
+ */
+export function attachedModifierBuffs(sourceId: string): ReadonlyMap<string, readonly string[]> {
+  if (!isSkillFileListed(sourceId) || !existsSync(skillFilePath(sourceId))) return new Map();
+  const own = parseJsonExact(readFileSync(skillFilePath(sourceId), "utf8"));
+  const created = new Set<string>();
+  const attached = new Set<string>();
+  const ids = (o: Record<string, unknown>) => ((o["buffs"] ?? []) as Record<string, unknown>[]).flatMap((b) => (typeof b?.["buffId"] === "string" ? [b["buffId"]] : []));
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (o["isEnable"] !== false) {
+      if (type.includes("CreateBuffAttachingSkill")) ids(o).forEach((id) => attached.add(id));
+      else if (type.includes("CreateBuffAction+Data")) ids(o).forEach((id) => created.add(id));
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  walk(own);
+  const buffPath = (id: string) => join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+  const modifiers = (id: string): boolean | null => {
+    if (!BUFF_ALLOWED.some((re) => re.test(id)) || !existsSync(buffPath(id))) return null;
+    const f = parseJsonExact(readFileSync(buffPath(id), "utf8")) as { attributeModifier?: { attributeModifiers?: unknown[] } };
+    return (f.attributeModifier?.attributeModifiers?.length ?? 0) > 0;
+  };
+  const withMods = [...attached].filter((id) => modifiers(id) === true);
+  const out = new Map<string, readonly string[]>();
+  if (!withMods.length) return out;
+  for (const id of created) if (!attached.has(id) && modifiers(id) === false) out.set(id, withMods);
+  return out;
+}
+
+/**
  * The permanent attribute modifiers a passive skill (castType 1, e.g. one a
  * talent attaches) gives through the buffs its `buffs` list creates: each
  * listed BuffData buff that lasts for good (lifeType 1) and does nothing

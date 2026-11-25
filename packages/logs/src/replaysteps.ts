@@ -159,5 +159,6 @@ export function stepWords(s: ReplayStep): string {
   if (s.endBar !== undefined) return "the log's calm hit";
   if (s.bar !== undefined) return "the log's Stagger bar";
   if (s.through !== undefined) return "the log's Stagger listing";
+  if (s.hold !== undefined) return `a placed hidden hold of ${s.hold} frame(s)`;
   return "time to the next sample (pauses, stops, holds)";
 }

@@ -146,6 +146,14 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   acting together). Tried on the placement leads' range (`--split commits
   --at 9c209b3 --base c6f1874`): 1cd1 and af7b by 00876b1, 4d60 by the
   merge that brought the Empyrean's end in.
+- **Two measures that change the same logs** (round 12, cooldown-clock
+  report point 1: b7b3 better under each of two changes alone, mixed
+  under both): each run writes `moved.json` (when it was queued, its code,
+  the development logs it moved, the hold-outs as a count), and the
+  summary's "Moved by an earlier measure too" line names the development
+  logs this run moved that a measure queued in the 12 hours before it
+  moved too. Where both moved a log, measure one on top of the other
+  (`--patch` the other's diff, or `--base`).
 - **The reference's own code:** the summary's first line says when the
   snapshots compared against were written by an older commit's code (the
   comparison then holds every code commit since): `--base HEAD` measures

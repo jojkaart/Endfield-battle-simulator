@@ -74,3 +74,16 @@ describe("efsim assumptions", () => {
     expect(one).toMatch(/^1 open assumption/);
   });
 });
+
+describe("efsim kit: a cooldown's clock and its mechanism (cooldown-clock report point 3)", () => {
+  it("prints an equipment kit by id, each cooldown with the game's mechanism the compiler found (KitTrigger.cooldownFrom)", () => {
+    const sword = kitView(data, "suit_phy01");
+    expect(sword).toMatch(/^suit_phy01: the compiled equipment kit/);
+    expect(sword).toMatch(/cooldown "duration" on the world's clock \(held by stops and holds\): a CD timer \(AddGlobalCDTimer\) in passive_equipsuit_physuit_01, length key duration/);
+    expect(data.kits.equipment["suit_phy01"]?.triggers[0]?.cooldownFrom).toEqual([{ kind: "globalCd", source: "passive_equipsuit_physuit_01", length: "duration" }]);
+    // A timed marker runs on raw time, and a cooldown the data doesn't show says so.
+    const xaihi = kitView(data, "Xaihi");
+    expect(xaihi).toMatch(/cooldown 0\.3 on raw time: a timed marker \(CreateTimedMarker\) in chr_0011_seraph_normal_skill, length 0\.3 s/);
+    expect(xaihi).toMatch(/cooldown 0\.3 on raw time: none in the data /);
+  });
+});

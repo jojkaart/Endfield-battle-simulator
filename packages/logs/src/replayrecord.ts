@@ -73,6 +73,28 @@ export interface BuffTrace {
   readonly to: number | null;
 }
 
+/**
+ * One change of a traced kit trigger's state (ReplayOptions.trace `trigger:<owner:id>`, `zmdlogs replay --trace-trigger`;
+ * backlog after round 11 point 11: de6a's Swordmancer ready frame took a stderr print in clock.ts): its ready frame and
+ * firing count before and after a step (null: it hadn't fired). A count that rises is a firing; a ready frame that
+ * moves without one is its cooldown held (a stop, a hidden hold, a world clock's shift). `key` is the engine's
+ * (TimelineState.triggerState: `owner:id`, `owner:id:subject` for a per-subject cooldown).
+ */
+export interface TriggerTrace {
+  readonly key: string;
+  readonly frame: number;
+  readonly step: string;
+  readonly from: { readonly readyAt: number; readonly count: number; readonly world: boolean } | null;
+  readonly to: { readonly readyAt: number; readonly count: number; readonly world: boolean };
+}
+
+/** Whether a triggerState key is one a `trigger:` trace asks for: `owner:id` (and its per-subject keys), or `id` for any owner. */
+export function tracesTrigger(spec: string, key: string): boolean {
+  if (key.includes("@")) return false;
+  if (spec.includes(":")) return key === spec || key.startsWith(`${spec}:`);
+  return key.split(":")[1] === spec;
+}
+
 /** An enemy status as a trace sees it (frames): its level or stacks, application and expiry, and a held ramp's end. */
 export interface TracedStatus {
   readonly level: number;
@@ -120,6 +142,7 @@ export interface ReplayRecord {
   readonly staggerWindows: readonly Instance[];
   readonly traces: readonly BuffTrace[];
   readonly statusTraces: readonly StatusTrace[];
+  readonly triggerTraces: readonly TriggerTrace[];
   readonly appliedStops: readonly AppliedStop[];
   readonly changes: ReadonlyMap<string, readonly Change[]>;
   readonly kitChanges: ReadonlyMap<string, readonly Change[]>;
@@ -129,7 +152,7 @@ export interface ReplayRecord {
 export interface RecorderInput {
   readonly kitIds: readonly { readonly g: string; readonly owner: string; readonly id: string }[];
   readonly team: readonly string[];
-  /** ReplayOptions.trace: kit buffs (`owner:id`) and enemy statuses (`status:<status>`). */
+  /** ReplayOptions.trace: kit buffs (`owner:id`), enemy statuses (`status:<status>`) and kit triggers (`trigger:<owner:id>`). */
   readonly trace: readonly string[];
   readonly staggerFrames: () => number;
   readonly edge: number;
@@ -159,10 +182,13 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
   const closeKit = (rec: OpenKit, end: number, expired: boolean) =>
     kitInstances.set(rec.key, [...(kitInstances.get(rec.key) ?? []), { start: rec.start, end, expired, ...(rec.replaces !== undefined ? { replaces: rec.replaces } : {}) }]);
   let staggerOpen: { start: number; until: number } | null = null;
-  const traced = new Set(o.trace.filter((x) => !x.startsWith("status:")));
+  const traced = new Set(o.trace.filter((x) => !x.startsWith("status:") && !x.startsWith("trigger:")));
   const tracedStatuses = new Set(o.trace.filter((x) => x.startsWith("status:")).map((x) => x.slice("status:".length)));
+  const tracedTriggers = o.trace.filter((x) => x.startsWith("trigger:")).map((x) => x.slice("trigger:".length));
   const traces: BuffTrace[] = [];
   const statusTraces: StatusTrace[] = [];
+  const triggerTraces: TriggerTrace[] = [];
+  let triggersNow: TimelineState["triggerState"] = {};
   let tracedNow = new Map<string, number>();
   let statusesNow = new Map<string, TracedStatus>();
   const stops = new Map<string, { readonly first: number; stop: AppliedStop }[]>();
@@ -271,6 +297,15 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         for (const [k, from] of statusesNow) if (!now.has(k)) statusTraces.push({ status: k.split("|")[0] as string, operator: k.split("|")[1] as string, frame: st.frame, step: words, from, to: null });
         statusesNow = now;
       }
+      if (tracedTriggers.length && st.triggerState !== triggersNow) {
+        for (const [k, to] of Object.entries(st.triggerState)) {
+          if (!tracedTriggers.some((spec) => tracesTrigger(spec, k))) continue;
+          const from = triggersNow[k];
+          if (from && from.readyAt === to.readyAt && from.count === to.count) continue;
+          triggerTraces.push({ key: k, frame: st.frame, step: words, from: from ? { readyAt: from.readyAt, count: from.count, world: from.world === true } : null, to: { readyAt: to.readyAt, count: to.count, world: to.world === true } });
+        }
+        triggersNow = st.triggerState;
+      }
     },
     finish(brokenAt) {
       for (const rec of open.values()) close(rec.key, rec.start, brokenAt ?? rec.expiresAt, brokenAt === null && Number.isFinite(rec.expiresAt));
@@ -283,6 +318,7 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         staggerWindows,
         traces,
         statusTraces,
+        triggerTraces,
         appliedStops: [...stops.values()].flatMap((recs) => recs.map((r) => r.stop)).sort((a, b) => a.start - b.start),
         changes: countChanges(instances, o.edge),
         kitChanges: countChanges(kitInstances, o.edge),

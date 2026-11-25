@@ -472,6 +472,18 @@ detail):
   (docs/friction-done/2026-11-18-cast-placement.md, point 5); redo the
   measurement with `efsim zmdlogs casts <fixture>` (EVENT against CAST
   lines) after a placement change.
+- **The placement's passes** (round 12, remaining-leads report point 2;
+  logcasts.ts `placeHits`' comment): pass 1 places each operator's casts
+  with no other cast's stops; pass 2 again, from pass 1's stops (the rules
+  that place one cast against the stops it lies in: `heldStart`,
+  `beforeStopStart`, `eventStopStart`, `joinable`), which pass 2 itself may
+  move, so it isn't a fixed point (`settleCheck`); pass 3, after the
+  placement settles, the rules that compare one cast's stop with another's
+  as placed (`inTurn`). A new rule that reads another cast's placed stop
+  goes in pass 3: inside pass 2 it cascades (4360, 9c6e). What the passes
+  leave: `efsim zmdlogs placement <fixture…|--all>` (OVERLAP: ultimate
+  stops still overlapping, pinned in tests/logcasts-stops.test.ts; SETTLE:
+  casts a third pass would move).
 - **One key, several groups** (round 5, Liino's beats): when a logged key
   is a hit of several groups (a skill, a trigger on a cast, a trigger on a
   buff's ticks), the placement (logcasts.ts `placeWith`) first drops a
@@ -670,6 +682,11 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | An idea on top of the tree, as a reading | `npm run measure -- --variant <id>=<r>`: each variant against the snapshots and against the same code without it (the plain run; `--no-plain` skips it) |
 | Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
 | Which casts a placement change moved | `npm run measure -- --changed placement` |
+| Ultimates whose stops still overlap after the placement; casts a third pass would move | `efsim zmdlogs placement <fixture…\|--all>` (OVERLAP, SETTLE: logcasts.ts `ultimateOverlaps`, `settleCheck`) |
+| Why a logged hit's landing didn't land, why a logged cast wasn't made | `efsim zmdlogs replay <fixture>`: NOLAND lines carry the step that dropped the pinned landing (another alternative of its branch, its `if`, the next cast, its cast's end) or why it was never pinned; SKIP lines each cast not made and why (a tick, the slot's variant, earliestStart's error: "needs 160 ultimate energy") (BuffReplay.droppedLanding, `skipped`) |
+| A kit trigger's firings and its cooldown's shifts | `efsim zmdlogs replay <fixture> --trace-trigger owner:id` (or the id alone); the game's mechanism behind each cooldown: `efsim kit <operator \| wpn_… \| suit_…>`, counts in `efsim kit-census` |
+| Why a hidden-hold unit sits where it does; which bounds a change made conflict | `efsim zmdlogs holds <fixture> --verbose` (each unit's "earliest held back by" / "latest forced by", each dropped bound's "conflicting with"); between two commits `node scripts/cli-ab.ts <ref> --patch <view diff> --holds <fixture>` |
+| A hit whose kit reads a fact the replay doesn't know | `zmdlogs check` (a line under the operator), `zmdlogs differences` (a section), `hits --json` `unknownFacts` ("enemy HP unknown": buffreplay.ts unknownFacts) |
 
 `zmdlogs hits --json` records (packages/logs/src/hitexport.ts `HitRecord`):
 `value`, `verdict` (`match` for every match class) and `class`,
