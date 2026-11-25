@@ -4,9 +4,47 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 145 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 146 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-25: Holds and placement: a freeze holds no Arts reaction status
+
+**Goal:** round 12's accuracy leads: 489c's lost plain hits after ultimates played in turn (591 → 488), the 20
+casts a third placement pass would move, the 14 overlapping ultimate pairs; if time, 9a80 / 79cc's bursts, 7e19's
+×1.096, d4fb 97.05 s, the "enemy HP unknown" reading.
+
+**Done** (open-problems "Ultimates pressed together", "Freezes on bosses", "Trigger cooldowns"):
+- **489c: the Corrosion's end, held by Si's freeze** (e9ffcac). Neither the in-turn stop (the ramp's steps lag the
+  replay's by a steady 0.31–0.41 s across both stops in turn) nor the ramp bounds: Si's Immobilization at 43.6 s held
+  the replay's Corrosion's end 1.5 s, so its status bound allowed no hold while four clocks (the Vulnerable run, the
+  ramp, the bleed and Combustion ticks) agree on about 1 s. Combustion's ticks run on through a freeze too (f978's at
+  57.80 and 58.80 s). Engine assumption `freeze-ramp`, new default `statuses` (clock.ts statusesRunOn: none of the
+  four reaction statuses held, the debuffs still are): 489c plain 488 → 632, mismatch 45 → 14.
+- **A third placement pass: dropped** (docs/tried/2026-11-25-third-placement-pass.diff): 2-cycles (4a64's Rossi,
+  7910's and 9090's Arcane swap back in a fourth pass), one more overlapping pair, development plain 68.1 → 67.8%.
+- **The 14 overlapping pairs: the log decides each** (inTurnStart's checks): six have logged hits in the in-turn
+  stop, five overlap 2–4 frames, three resolve with a 3-frame tolerance and a reach counting combo slow-downs, but
+  d9e5 plain 86 → 50 and b6aa mixed (docs/tried/2026-11-25-in-turn-chains.diff). The pinned list is unchanged.
+- d4fb 97.05 s: 2.18 s short, the Lift logged, a Stagger holding the cooldown ruled out (the 106.13 s proc). 9a80
+  35.05 s: a quiet 29.66–30.00 s where a dodge-sized hold would carry the burst past two stops; bursts aren't hold
+  clocks. Not reached: 79cc 24.23 s, 7e19's ×1.096, the "enemy HP unknown" reading (no development log has the label).
+- `zmdlogs holds --assume`.
+
+**Scoreboard** (`npm run snapshots:update`): verified 78.0% unchanged; development plain 68.1 → 69.0%, mismatch 11.6 →
+11.4%, mean |damage error| 7.0%; hold-out plain 78.7 → 79.0%, mismatch 5.9%, 8.6 → 8.5% (1 better, 0 worse);
+earlier pending plain 64.7%, 4.1% (b6aa better). Better: 489c, 9c0b, 8915, f978 (mixed: +4 plain, total 0.3 →
+0.7%); **worse:** db87 (plain 209 → 208, total −4.5 → −6.0%: its Corrosion still acts 0.58 s past the new end, in a
+Stagger whose Combustion ticks come every ~1.5 s). Teams (team-ab against 99806d9): estella-si-akekuri-arcane −0.15%
+sustained (sd 1.6k), the rest the same.
+
+**Decisions:** `statuses` over a Corrosion-only reading (the same on 489c and db87; f978's ticks need Combustion's
+too); default switched with db87 worse, since its window has an enemy-clock delay the placement can't place in a
+Stagger. The holds per stretch (backlog point 5) weren't needed: the conflict was one wrong bound, not the
+placement's handling. The third pass and the in-turn extensions kept as tried diffs.
+
+**Problems:** inTurnStart has no record of why it left a pair (a temporary stderr print answered it; friction
+report); a debug print in inTurn also ran under settleCheck's third pass, mixing two passes' lines.
 
 ## 2026-11-25: Improvement round 12: decisions kept with their reasons
 
@@ -330,42 +368,3 @@ beside the error share, since the error favours big hits; the stage logs left ou
 
 **Dead ends:** the error-weighted feature shares alone (Stagger, ultimates, the fight's last tenth) looked like
 causes and were mostly hit size; the tree screen finds nothing that generalizes across fight groups.
-
-## 2026-11-23: Fight totals 4: whose Shatter, Snowshine's counter, Rossi's borrowed crits
-
-**Goal:** the hold-outs' log-only physical status hits (2.08% of a fight none within 5 s, 0.45% by another operator),
-Rossi's replay-only Seething Blood extras, Zhuang Fangyi's Sunderblade count in 4d60 (docs/open-problems.md "Fight
-totals", round 4).
-
-**Done** (items 13–15 there):
-- **Whose Shatter.** A Vulnerable stack joining a running Vulnerable shatters as the operator's who started it
-  (BuffData: buff_physical_no_guard's on-stack handler takes the buff's source; 04d4: Catcher's Knock Downs on Ember's
-  Vulnerable logged as Ember's Shatters at her value). status.ts `vulnerable.by`.
-- **Snowshine's counter.** An end that would drop a pinned landing wasn't reached: the kit trigger's jump past it was
-  taken (drivers.ts `eventJumps`; her bash at frame 125 behind an `attacked` jump the replay can't see). 04d4's six
-  dropped bashes, their Solidification and four Shatters; 2fd9 −15.6 → −3.6% (plain 188 → 246).
-- **Rossi's crits.** A pinned landing took a same-ms sibling's logged crit (landing.ts `loggedCritAt`: its own hit's
-  or none); valueCrits read a Stagger's start as a crit (values over their listed effects now). Her replay-only extras
-  in 3f78 1.36 → 0.24% of the fight.
-- docs/tried/ gets its first file: the casts' order for same-ms hits of two operators (Estella before Chen Qianyu in
-  three fights), mixed (4bfc −14 plain).
-
-**Scoreboard** (`npm run snapshots:update`): development plain 67.1%, mismatch 11.7%, mean |damage error| 7.2 → 7.3%;
-hold-out plain 77.5 → 77.6%, 8.2% (2 better, 1 mixed, none worse; replay-only 5.2 → 4.9%, log-only 5.3 → 4.9%);
-earlier pending plain 63.0 → 63.6%, 4.8 → 4.3%, within 5% 18 → 19; all but the hold-outs 5.8 → 5.6%. Worse: 3f78
-−3.4 → −4.8%, 207f −1.2 → −2.9%, 489c −1.2 → −1.9%, 99fb −2.5 → −2.9%: the wrong extras and crits hid Rossi's matched
-under-prediction (3f78: −6.6% over 140 matched landings); 04d4 −1.8 → +2.4% (plain 180 → 185) shows Catcher's open
-×2.1 build offset the missing Shatters hid.
-
-**Decisions:** Shatter credit as a rule, not an assumption: the data says it and three log cases do, none against
-among 42 logged Shatters. The same-ms order dropped rather than limited further: the logs' simultaneous hits are mostly
-a stop's end's batch, where no order is shown.
-
-**Left:** the hold-outs' physical misses didn't move (2.08%): not the development logs' mechanisms; next a split by
-status kind in measure. Rossi's slash2 extras where her bleed's last tick falls at the slash (bleed clock). Zhuang
-Fangyi's 4d60 Empyrean cast: 6 blades where the log has 8, the four counts before all right (the free path's data
-next). Slots by value within a cast not started (9a80 checked: the logged final placed on slash #9 by turn order,
-one slash fewer in the log).
-
-**Problems:** one multi-line `python3 -c` and one empty heredoc typed from habit (friction report);
-`measure --patch` applies to the queued tree, not HEAD, so an "all but one change" patch needs `--at <base>`.

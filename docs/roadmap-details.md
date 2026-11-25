@@ -206,6 +206,16 @@ with two under the same listing); Ember's own. d4fb 97.05 s open. Next: 489c's h
 (plain 591 → 488, its Corrosion readings), the 15 pairs left (three-stop chains), d774's away window as the test of a
 boss-phase pause of the operators' timers (4d60), test 33's reaction case.
 
+**Holds and placement, 2026-11-25** (journal: the holds-and-placement entry of 2026-11-25; open-problems "Ultimates
+pressed together"): 489c's loss after the in-turn move was the Corrosion's end held by Si's freeze, not the in-turn
+stop (the ramp agrees with it) nor the ramp bounds: no Arts reaction status is held by a freeze (`freeze-ramp`
+`statuses`: development plain 68.1 → 69.0%, 489c 488 → 632; db87 one worse, its Stagger-time Combustion ticks). A third
+placement pass oscillates (2-cycles, plain −0.3 points: docs/tried/); the 14 overlapping pairs: six with logged hits in
+the in-turn stop, five of 2–4 frames, three the extensions resolve and the logs refuse (docs/tried/). Next: a burst's
+world-time delay from its infliction as a hold bound (9a80 35.05 s: a dodge-sized hold at 29.66–30.00 s, where the
+log is quiet), db87's slow Combustion ticks in a Stagger (50.7–53.8 s, ~0.6 s), d4fb 97.05 s (2.18 s short; not the
+Stagger), a placement pass that moves a cast only where the quiet stretches favour it.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

@@ -18,6 +18,12 @@ worked, found by reading 80 lines of prose).
 
 ## Files
 
+- [2026-11-25-third-placement-pass.diff](2026-11-25-third-placement-pass.diff): pass 2 and the in-turn rule run once
+  more (settleCheck's third pass as the placement); 2-cycles, not a fixed point: development plain 68.1 → 67.8%
+  (9090 −42, 4a64 −10, fc63 +10).
+- [2026-11-25-in-turn-chains.diff](2026-11-25-in-turn-chains.diff): the in-turn rule with a 3-frame tolerance against
+  a third ultimate's stop and a reach counting teammates' combo slow-downs (3 of the 14 overlapping pairs resolved);
+  d9e5 plain 86 → 50, b6aa mixed.
 - [2026-11-24-same-ms-cast-order.diff](2026-11-24-same-ms-cast-order.diff): two operators' landings at one logged ms
   in their casts' order (Estella before Chen Qianyu); mixed: batched landings at a stop's end moved the other way.
 - [2026-11-24-travelling-landings-only.diff](2026-11-24-travelling-landings-only.diff): the placement's event rule
