@@ -4,9 +4,47 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 143 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 144 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-25: The remaining leads: the Empyrean's end on its frame, ultimates in turn, the touch after a reaction
+
+**Goal:** the leads the 2026-11-24 rounds left: Zhuang Fangyi's Empyrean ending early (4bfc 179.51 s, d774 104.18 s,
+4d60's holds), Typhoeus's fc63 infliction state, Arcane's last bursts (9a80, 79cc, c83c), travelling ability
+entities, 7e19's ×1.096 and d4fb's Swordmancer exception, the marker clocks.
+
+**Done** (open-problems "Misprediction statistics"; roadmap-details "The remaining leads"):
+- **The Empyrean's end is a frame boundary** (669a62e): the replay's buff ended on the event's own frame (4bfc 179.50 s;
+  d774's held 0.37 s to its event by heldTicks), so the advance ticked and ended it before loggedTick looked and the
+  replay made a real ultimate. buffreplay.ts endedWithTick. ExtendBuffAction as a pause ruled out (4bfc's third
+  Empyrean would run 47 s, the log's 26.65 s of world time). d774 104.18 s: not the clock; the team's hits thin out
+  after the third strike, as where the enemy leaves at 30.63 s (positional).
+- **Ultimates pressed together play their stops in turn** (4188729, logcasts.ts inTurn, a pass after the placement):
+  of 27 overlapping pairs, 12 have a hitless stretch of the first stop's length before it (fc63, 00ae, 4a64, d774, …);
+  fc63's 40.80 s burst was this (Gilberta's ultimate from 39.92 s, before Perlica's), not Typhoeus.
+- **fc63 85.13 s: the touch's element after a reaction opener** (45da066): the game's enemy had Nature (Typhoeus's shot
+  consumed it: its burst ×1.303), the replay Pulse (the Corrosion's consumed element). Engine assumption
+  `window-reaction` (`consumed` default, `applied`): fc63 plain 511 → 549, mismatch 179 → 97, but 9a80 227 → 217 and
+  fc63's total 3.4 → 5.3%; not the default; in-game test 33 updated.
+- **Ruled out:** Imprisonment's enemy slow-down for the late bursts (45 of 50 touch-caused bursts on time); a `travels`
+  field for Tangtang's stare and Arclight's dash (no movement in the data; marked, no log moves); Pogranichnik's
+  layers for 7e19 (teammates fit with two under the same listing). Open: 9a80 35.05 s, 79cc 24.23 s (a frame around
+  Arcane's reset), d4fb 97.05 s, 4d60's holds, the marker clocks (no log decides them; not reached).
+- `--trace-buff status:infliction`; scripts/probes/placement/ult-overlap.ts.
+
+**Scoreboard** (`npm run snapshots:update`): verified plain 78.2 → 78.0% (40d9 51 → 49: two hits assumed near the
+moved stop); development plain 67.9 → 68.1%, mismatch 11.5 → 11.6%, mean |damage error| 7.0%; hold-out plain 78.5 →
+78.7%, mismatch 5.9%, 8.5 → 8.6% (1 mixed, none worse); earlier pending plain 64.6 → 64.7%, 4.2 → 4.1%. Better: 00ae
+607 → 687, 9090 995 → 1027, 1d91, 7910, c4f3, 4bfc, d774; **worse:** 489c plain 591 → 488 (its total −1.9 → −0.3%:
+the hidden holds re-placed after the in-turn move, its Corrosion readings), 3f78's total −4.8 → −5.6%. Teams
+(team-ab against eec0473): every team's fight the same.
+
+**Decisions:** in-turn kept with 489c worse: the stop is where the log is quiet (Arcane's attack 4 split by it), and
+the loss is the hold placement's response (friction report point 1); in-turn as a pass after the placement, not in
+placeWith (inside it, 4360 and 9c6e cascaded); `window-reaction` registered, not switched, on one log each way.
+
+**Problems:** the container restarted mid-round (nothing lost: committed before the long runs).
 
 ## 2026-11-24: Cooldown clocks from the data, Arcane's burst held by her own ultimate, every finisher hit Staggered
 
@@ -330,45 +368,3 @@ dilation index through the stop lists and the record (the other agent's files), 
 
 **Problems:** this round's own agent typed a multi-line `git commit -m` with escaped code spans after building the
 guard (intact by luck): the reason the hook, not prose, is the answer.
-
-## 2026-11-23: Fight totals 3: the one-sided landings by kind, Sunderblade variants, Si's burst paths, the Barrage Array's pace
-
-**Goal:** the totals' error is mostly one-sided (12 of 13 hold-outs: replay-only 7.3%, log-only 6.2%, |matched|
-2.5%): classify every one-sided landing by kind, rank the kinds, fix the largest shared ones.
-
-**Done** (docs/open-problems.md "Fight totals", round 3, items 10–12):
-- **The view.** packages/logs/src/onesided.ts: each replay-only landing and log-only hit by where it sits (twin like /
-  other: an opposite-side landing of its operator within 1.5 s; unread; twin uncounted; its cast's logged landings:
-  no cast, cast unlogged / tail / head / gap; the replay's reason for no landing, a status's split by dealt within 5 s,
-  by another operator, not at all), nature, skill kind and flags (stop, cut, next cast, end, away).
-  `efsim zmdlogs totals <fx> --kinds`, `totals --all --kinds` (per group, then by operator and key); measure's summary
-  "One-sided landings by kind" (each group's means, the hold-outs' only view, never a log, operator or key).
-- **Zhuang Fangyi's Sunderblade variants in turn.** Another variant's hits were slot alternatives only at a slot's
-  frame, which an 8-blade cast's never are: nothing pinned, strikes matched by time, a final for a strike (3aa6 87.5 s).
-  Now a variant's n-th landing is the slot's n-th turn at its own frame (logcasts.ts `Slot.at`).
-- **A trigger's alternative paths, one landing.** Si's Artful Intent burst through the Inksoul or as the mark (and
-  Typhoeus's arrow rain sub1 / sub2, Last Rite's phantom): a logged hit of one path takes the replay's landing of the
-  other (buffreplay.ts `alternativeEvents`), a recorded burst within 60 frames (c779, 4e36).
-- **A detached series at its own pace.** Typhoeus's Barrage Array's 18th tick, after her own ultimate's stop, was a
-  combo of its own whose hovering conversion gave three Hunting Arrows (fc63 95.1, 96.5 s power shots the log hasn't):
-  the next slot's landing within the slots' gap of the last one's is the same cast's (`paced`).
-
-**Scoreboard** (`npm run snapshots:update`): development plain 67.1%, matched 83.4%, mismatch 11.7%, mean |damage
-error| 7.3 → 7.2%, within 5% 24 → 25; hold-out 77.5%, 91.8 → 91.9%, 6.2%, 9.1 → 8.2% (1 better, 1 mixed, 2 other);
-earlier pending 62.7 → 63.0%, 84.9 → 85.2%, 14.8 → 14.5%, 4.9 → 4.8%; verified unchanged; all but the hold-outs 5.9 →
-5.8%, within 5% 48 → 49. Better: fc63 +6.8 → +3.3%, 3aa6 −2.1 → −1.6% (plain 380 → 394), 4d60, c6d8; mixed, closer per
-hit: 4bfc −1.6 → −1.7% (plain 773 → 787), d774 +3.7 → +3.8% (plain 365 → 372; the 0.1 pt not looked into);
-other: 04d4 (a Purrchena hit fallback → assumed), 4e36 (Si's per-operator total 1.9 → 1.6%). The one-sided gross
-(development, earlier, verified, the stage logs and 9c6e aside) 4.70 → 4.15% of a fight before the Barrage Array fix.
-
-**Decisions:** the classification lives in fightTotals' result (TotalsComparison.oneSided), so the totals and the kinds
-can't disagree; the hold-outs' kinds only as group means in measure. No engine or kit change (team-ab not needed).
-Value-aware slots within a cast (9a80's Si combo final placed on a slash: 6.6%) measured as a scratch count first
-(scratch/misslot.ts: mean 0.18% of a fight), not built: one fight carries most of it.
-
-**Left:** cast tails (development 1.9%, hold-outs 2.3%: basic attacks cut by inputs the log doesn't show, a few big
-ones), Zhuang Fangyi's Sunderblade count in 4d60, the hold-outs' log-only physical status hits (2.45%), Rossi's
-Seething Blood extras, Typhoeus's 5th-shot Hovering ATK (narrowed: no snapshot, the hover's end varies 0.52–0.71 s).
-
-**Problems:** two multi-line `python3 -c` and two heredocs typed from habit (friction report); `zmdlogs totals --all`
-can't show one fight's kinds, so the analysis needed a JSONL dump script (scratch/onesided-dump.ts).

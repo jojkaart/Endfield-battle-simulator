@@ -63,11 +63,11 @@
   "totals": {"damage":0,"operator chr_0036_jsspsi":-0.9,"operator chr_0032_lizhiyan":0.2,"operator chr_0035_liino":0.3,"operator chr_0013_aglina":-0.3,"kind basic":-0.3,"kind battle":0.2,"kind combo":-1.8,"kind none":0,"kind status":0,"kind ultimate":0.7,"hits":-0.8,"status hits":0,"staggered hits":3.7,"last hit":0,"time to kill":null,"crit share (points)":0.1,"share matched":0.2,"share replay-only":1.8,"share log-only":-2.1}
  },
  "holdout/zmdlogs-7be1ca9f455b.json": {
-  "chr_0036_jsspsi": {"plain":59,"assumed":15,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":8,"uncovered":0},
-  "chr_0028_wulfa": {"plain":91,"assumed":91,"fallback":2,"mismatch":3,"unvalued":0,"unquantified":17,"uncovered":0},
+  "chr_0036_jsspsi": {"plain":63,"assumed":13,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":6,"uncovered":0},
+  "chr_0028_wulfa": {"plain":92,"assumed":91,"fallback":2,"mismatch":3,"unvalued":0,"unquantified":16,"uncovered":0},
   "chr_0013_aglina": {"plain":51,"assumed":2,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":162,"assumed":6,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":20,"uncovered":0},
-  "totals": {"damage":0.1,"operator chr_0036_jsspsi":-1.1,"operator chr_0028_wulfa":-1.4,"operator chr_0032_lizhiyan":16.9,"operator chr_0013_aglina":-1.6,"kind basic":-8.4,"kind battle":0.2,"kind combo":-1.8,"kind none":0.6,"kind status":16.7,"kind ultimate":0.3,"hits":0.2,"status hits":5,"staggered hits":0.5,"last hit":0,"time to kill":0,"crit share (points)":-0.1,"share matched":-1.2,"share replay-only":1.5,"share log-only":-0.2}
+  "chr_0032_lizhiyan": {"plain":166,"assumed":7,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":15,"uncovered":0},
+  "totals": {"damage":0.6,"operator chr_0036_jsspsi":-1,"operator chr_0028_wulfa":-1.4,"operator chr_0032_lizhiyan":22.9,"operator chr_0013_aglina":-1.6,"kind basic":-4.6,"kind battle":0.7,"kind combo":-1.7,"kind none":0.3,"kind status":16.7,"kind ultimate":0.5,"hits":0,"status hits":5,"staggered hits":0.5,"last hit":0,"time to kill":-0.2,"crit share (points)":-0.1,"share matched":-0.6,"share replay-only":1.4,"share log-only":-0.2}
  },
  "holdout/zmdlogs-890bcadb4933.json": {
   "chr_0030_zhuangfy": {"plain":150,"assumed":10,"fallback":28,"mismatch":21,"unvalued":0,"unquantified":0,"uncovered":0},
