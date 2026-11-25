@@ -318,6 +318,20 @@ export function rampRunsOn(before: TimelineState, after: TimelineState): Timelin
 }
 
 /**
+ * The enemy after a freeze held its clock (shiftEnemy from `before`), with its Arts reaction statuses (Corrosion,
+ * Combustion, Electrification, Solidification: the game's SpellAbnormal buffs) as they were: the freeze holds neither
+ * their ends nor their timers (engine assumption freeze-ramp, reading `statuses`: actions.ts runTriggers). Corrosion's
+ * ramp runs on (rampRunsOn's logs), and so does its end: zmdlogs-489c0be3e162's Corrosion from 13.13 s, listed to
+ * 48.81 s, gone by 49.22 s, where Si's Immobilization at 43.6 s held the replay's to 49.47 s; the Vulnerable run, the
+ * ramp's steps, Rossi's bleed and the Combustion ticks there agree on about 1 s of hidden hold, which the held end left
+ * no room for. Combustion's ticks run on: f978430a083a's at 57.80 and 58.80 s, across Si's Immobilization at 57.6 s,
+ * land on their 1 s period. The operators' debuffs on the enemy stay held (shiftDebuffs).
+ */
+export function statusesRunOn(before: TimelineState, after: TimelineState): TimelineState {
+  return { ...after, enemy: { ...after.enemy, statuses: before.enemy.statuses } };
+}
+
+/**
  * The debuffs on the enemy (enemy-target buffs) after `start`, all or only `owner`'s, end `n` frames later (a freeze:
  * not those that run through one, KitBuff.runsThroughFreeze). Every buff has an owner (the operator whose kit, weapon
  * or gear set applied it: buffs.ts ActiveBuff.owner), so none is left undecided.

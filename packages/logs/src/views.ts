@@ -650,8 +650,8 @@ function clockReaches(h: PlacedHolds, P: readonly number[], m: number): number {
  * holds.ts placeHolds): the least total, each dodge-sized unit of it with its earliest and latest time and the clocks
  * spanning it (a buff's run, a tick series), the bounds dropped as conflicting, and (with `verbose`) every bound.
  */
-export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: RegExp } = {}): string {
-  const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { "hidden-holds": "placed" } }).replay;
+export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: RegExp; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+  const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
   const h = r.hiddenHolds;
   if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
   if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why, r.logEnds);

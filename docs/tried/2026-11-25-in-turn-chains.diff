@@ -1,0 +1,82 @@
+The in-turn rule (logcasts.ts inTurnStart) extended to two of the 14 overlapping ultimate pairs' obstacles, with its
+other limits (the log quiet inside the moved stop, a move no larger than what it overlapped) kept:
+
+1. A moved stop may overlap a third ultimate's by up to 3 frames (IN_TURN_FREE_FRAMES, the log's frame or two, as
+   STOP_EDGE_MS allows at a quiet stretch's edges), tried after a start clear of every other stop: the chains of
+   three, 3f78's Rossi (16.88 → 13.20 s, before Si's from 15.00 s) and d9e5's Gilberta (4.33 → 0.69 s, before
+   Typhoeus's from 2.33 s).
+2. The reach adds what the other stops (a teammate's combo slow-down) hold the landing's world frames by
+   (IN_TURN_REACH_OTHERS): b6aa's Arcane (35.42 → 33.38 s, before Si's combo slow-down and ultimate).
+
+Each pair it resolves leaves the overlap list (14 → 11, of which 5 are ≤ 4 frames).
+
+Measured (2026-11-25, holds-and-placement round, freeze-ramp=runs, against 99806d9): development plain 68.1%
+unchanged (3f78 damage −5.6 → −5.7%), hold-out unchanged, earlier pending plain 64.7 → 64.3%, mean |damage error|
+4.1 → 4.7%: d9e5 plain 86 → 50, mismatch 7 → 20, damage 0.2 → 15% (Typhoeus's hits ×1.04 and her bursts ×1.22–1.25
+from 10 s: Gilberta's ultimate 3.6 s earlier moves what it applies off the log's), b6aa mixed (plain 262 → 259,
+mismatch 3 → 2, damage −5.5 → −4.4%).
+
+Dropped: the logs say no. d9e5's opener (no logged hit before 2.33 s) reads as its three ultimates overlapping as
+placed, and b6aa's move gains nothing. What would have to change: evidence for the d9e5 order beyond a quiet
+stretch (the fight's start is quiet by itself).
+
+diff --git a/packages/logs/src/logcasts.ts b/packages/logs/src/logcasts.ts
+index 61816cc..611b79f 100644
+--- a/packages/logs/src/logcasts.ts
++++ b/packages/logs/src/logcasts.ts
+@@ -278,6 +278,13 @@ function fullStopFrames(timing: SkillTiming | null | undefined): number | null {
+ 
+ /** How many frames two ultimates' time stops may overlap and still have played in turn (the log's batching, a frame's rounding). */
+ const IN_TURN_SLACK_FRAMES = 1;
++/**
++ * How many frames a moved ultimate's stop may overlap a third one's and still be free (inTurnStart): the log's ms put a
++ * landing a frame or two off, as STOP_EDGE_MS allows a hit at a quiet stretch's edges (d9e5's opener: Gilberta's
++ * ultimate held to 0.69 s, 3 frames into Typhoeus's stop from 2.33 s, whose cast event at 4.42 s ends it).
++ */
++const IN_TURN_FREE_FRAMES = 3;
++const IN_TURN_REACH_OTHERS = true;
+ 
+ /**
+  * The start of an ultimate whose landing's frame puts its time stop over another operator's ultimate stop, where the
+@@ -295,7 +302,7 @@ function inTurnStart(timing: SkillTiming | null | undefined, t: number, frame: n
+   const n = fullStopFrames(timing);
+   if (n === null || frame <= 0) return null;
+   const ults = stops.filter((s) => s.kind === "ultimate" && s.scales.some((x) => x <= OWN_STOP_SCALE));
+-  const overlaps = (start: number) => ults.some((s) => start < s.start + s.scales.length - IN_TURN_SLACK_FRAMES && s.start < start + n - IN_TURN_SLACK_FRAMES);
++  const overlaps = (start: number, slack: number) => ults.some((s) => start < s.start + s.scales.length - slack && s.start < start + n - slack);
+   const plain = Math.round(((t - msOf(frame)) * FPS) / 1000);
+   const overlapped = ults.filter((s) => plain < s.start + s.scales.length - IN_TURN_SLACK_FRAMES && s.start < plain + n - IN_TURN_SLACK_FRAMES);
+   if (overlapped.length === 0) return null;
+@@ -304,18 +311,27 @@ function inTurnStart(timing: SkillTiming | null | undefined, t: number, frame: n
+   // In turn, it moves by no more than the stops it overlapped (9c6e97486a9d: Arcane's ultimate_skill2 held 4.3 s
+   // through Liino's stop and Ardelia's combo, which moved Liino's in turn: two targets' landings).
+   const reach = overlapped.reduce((a, s) => a + s.scales.length, 0) + IN_TURN_SLACK_FRAMES;
+-  const fits = (start: number) => start <= t - msOf(frame) - MIN_MOVE_MS && t - msOf(frame) - start <= msOf(reach) && !overlaps(Math.round((start * FPS) / 1000)) && quiet(start);
++  // The other stops the landing's world frames pass from `start` (a teammate's combo slow-down beside the ultimates) hold
++  // it too: what they hold adds to the reach (b6aa15281db4: Arcane's ultimate before Si's combo and ultimate, 33.38 s).
++  const others = IN_TURN_REACH_OTHERS ? stops.filter((s) => !ults.includes(s)) : [];
++  const otherHeld = (start: number) => (others.length ? t - start - worldMs(start, t, others) : 0);
++  const fits = (start: number, slack: number) => start <= t - msOf(frame) - MIN_MOVE_MS && t - msOf(frame) - start <= msOf(reach) + otherHeld(start) && !overlaps(Math.round((start * FPS) / 1000), slack) && quiet(start);
+   const held = heldStart(t, frame, stops);
+   // A landing logged at the end of the stop it overlapped is batched there (it came due anywhere in that stop): its
+   // stop ended between where the landing's world frames put it (heldStart) and where that stop begins, the latest
+   // start the log leaves quiet (40d9a3c1da37: Gilberta's ultimate, frame 60, at Si's stop end 12.95 s, the log quiet
+   // 9.33–11.00 s; 00ae0a364ad4: hers at Perlica's stop end 60.10 s, hits at 58.20 s between the two stops).
+   const batched = overlapped.find((s) => Math.abs(t - msOf(s.start + s.scales.length)) <= STOP_EDGE_MS);
+-  if (batched) {
+-    for (let f = batched.start - n; f >= Math.round((held * FPS) / 1000); f--) if (fits(msOf(f))) return msOf(f);
+-    return null;
++  // A start clear of every other ultimate's stop first, then one within the log's frame or two of a third's
++  // (IN_TURN_FREE_FRAMES).
++  for (const slack of [IN_TURN_SLACK_FRAMES, IN_TURN_FREE_FRAMES]) {
++    if (!batched) {
++      if (fits(held, slack)) return held;
++      continue;
++    }
++    for (let f = batched.start - n; f >= Math.round((held * FPS) / 1000); f--) if (fits(msOf(f), slack)) return msOf(f);
+   }
+-  return fits(held) ? held : null;
++  return null;
+ }
+ 
+ /**

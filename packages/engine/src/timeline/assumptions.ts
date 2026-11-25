@@ -61,10 +61,11 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "freeze-ramp",
     test: "104",
-    question: "Does a freeze (a control status that stops the enemy's clock: Si's Immobilization, Tangtang's stare) hold Corrosion's ramp, as it holds the enemy's other timers (timeline/actions.ts runTriggers)?",
-    default: "runs",
+    question: "Does a freeze (a control status that stops the enemy's clock: Si's Immobilization, Tangtang's stare) hold the enemy's Arts reaction statuses (Corrosion's ramp and end, Combustion's ticks and end, Electrification, Solidification), as it holds the operators' debuffs on it (timeline/actions.ts runTriggers)?",
+    default: "statuses",
     readings: {
-      runs: "the ramp runs on through it (its end is still held): the log's ramp steps across Si's Immobilization in f978430a083a at 57.6 s allow at most 0.51 s of hold in its 1.5 s, a7a7a40c97ed at 18.1 s 0.68 s, Tangtang's in 791020039384 at 47.8 s about 0.7 s of 4 s (2026-11-23)",
+      statuses: "none of them is held, ramp, ticks or end (clock.ts statusesRunOn): Corrosion's ramp runs on (reading `runs`' logs) and its end too, zmdlogs-489c0be3e162's from 13.13 s gone by 49.22 s where Si's Immobilization at 43.6 s held the replay's to 49.47 s, the Vulnerable run, the ramp, Rossi's bleed and the Combustion ticks there asking about 1 s of hidden hold the held end left no room for (plain 488 → 632); Combustion's ticks run on, f978430a083a's at 57.80 and 58.80 s across Si's Immobilization at 57.6 s (2026-11-25). Against, weakly: db8711232de9's Corrosion still acts at 55.31 s, 0.58 s past this reading's end, in a Stagger whose Combustion ticks come every ~1.5 s (an enemy-clock delay the placement can't place there). Electrification and Solidification: no log decides them",
+      runs: "Corrosion's ramp runs on through it, its end and the other statuses held (the engine until 2026-11-25): the log's ramp steps across Si's Immobilization in f978430a083a at 57.6 s allow at most 0.51 s of hold in its 1.5 s, a7a7a40c97ed at 18.1 s 0.68 s, Tangtang's in 791020039384 at 47.8 s about 0.7 s of 4 s (2026-11-23)",
       held: "held with the enemy's clock (the engine until 2026-11-23)",
     },
   },

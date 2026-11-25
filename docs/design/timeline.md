@@ -162,8 +162,9 @@ The log check places a delayed landing by its damage's time
 (logcasts.ts `loggedFrames`, `joinDelayed`: the latest shot without its
 burst, within its frame plus 1 s of the enemy's time).
 **Freezes**: a control status with `freezes` (Si's Immobilization,
-Tangtang's OLDEN STARE, Rossi's ultimate) stops the enemy's own clock (Corrosion's end, not its ramp: assumption
-`freeze-ramp`) and every operator's debuffs on it, unless the enemy is control-immune (the
+Tangtang's OLDEN STARE, Rossi's ultimate) stops the enemy's own clock (not its Arts reaction statuses: Corrosion's
+ramp and end, Combustion's ticks run on; assumption `freeze-ramp`, clock.ts `statusesRunOn`) and every operator's
+debuffs on it, unless the enemy is control-immune (the
 data's tag 188749032, skipping the freeze). On a control-immune enemy it
 still holds the freezing operator's own debuffs (each buff's `owner`:
 Si's Artful Intent, Jade Vessel and her weapon's; Tangtang's for her

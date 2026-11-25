@@ -1220,9 +1220,11 @@ That's about one earlier Arcane combo per second ultimate.
 operator's own debuffs, e.g. Si's Artful Intent. The parts below are
 about enemies that do freeze.)
 
-**Why:** the engine freezes every status on the enemy while Si's
+**Why:** the engine freezes every debuff on the enemy while Si's
 Immobilization freezes it (1 s, 1.5 s at P1), which fits one log for
-Artful Intent. The data skips the freeze on control-immune enemies
+Artful Intent; not the Arts reaction statuses (Corrosion's ramp and end,
+Combustion's ticks), which the logs show running on through it
+(2026-11-25, engine assumption `freeze-ramp`). The data skips the freeze on control-immune enemies
 (likely bosses); there the logs fit Si's own Artful Intent and Jade
 Vessel's debuff held by her freeze, teammates' debuffs (Arcane's) not. Arcane's WILL
 Imprisonment (6.6 s) slows the enemy's clock instead; if statuses follow
@@ -1241,9 +1243,11 @@ engine doesn't do that yet. This may also explain part of test 4.
   Artful Intent or Jade Vessel's debuff per battle skill, on bosses only.
 - Last Rite (optional; batch 4, her report D): her combo freezes the
   enemy for 2 s in the data; the engine doesn't model that freeze. Run A:
-  put a timed debuff of 10 s or more that isn't an Arts Infliction on a
-  dummy (e.g. Corrosion, 15 s: Gilberta's battle skill on a dummy with a
-  Cryo stack), then bring it to 3 Cryo stacks with teammates' hits, and
+  put a timed debuff of 10 s or more that isn't an Arts Infliction or an
+  Arts reaction status on a dummy (not Corrosion: since 2026-11-25 the
+  logs show freezes don't hold those; e.g. the Arts Susceptibility of
+  Tangtang's battle skill after a combo, 15 s, as in her part below),
+  then bring it to 3 Cryo stacks with teammates' hits, and
   time the debuff's icon from when it appears until it goes. Run B: the
   same, plus Last Rite's combo as soon as it lights (at 3 Cryo stacks).
   Keep everything else the same in both runs. B about 2 s longer than A:

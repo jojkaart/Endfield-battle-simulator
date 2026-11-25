@@ -240,6 +240,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                 [--why <regex>]           Instead: each replayed instance of the matching kit buffs (owner:id) and
                                           enemy statuses (status:<name>), the log's run paired with it, and why it
                                           is a clock or not (the rule that skipped it), kept or dropped
+                [--assume <id>=<reading>] Under another reading of an open assumption
                                           Between two commits' code: node scripts/cli-ab.ts <ref> --holds <fixture>
   efsim zmdlogs ramp <fixture>            Corrosion's ramp as the logged hits read it: per listed Corrosion, the
                                           hits whose fitting step differs from the replay's or whose placed hold
@@ -334,7 +335,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     }
     if (sub === "holds") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14)");
-      return holdsView(data(), readDevFixture(arg), { verbose: values.verbose, ...(values.why !== undefined ? { why: new RegExp(values.why) } : {}) });
+      return holdsView(data(), readDevFixture(arg), { verbose: values.verbose, ...(values.why !== undefined ? { why: new RegExp(values.why) } : {}), assume: parseAssume(data(), values.assume) });
     }
     if (sub === "instances" || sub === "control" || sub === "lanes") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture (a path or an id such as 0c14)`);

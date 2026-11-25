@@ -1,0 +1,29 @@
+A third placement pass (logcasts.ts placementPasses): pass 2 run once more from the in-turn placement's stops, then
+the in-turn rule again; what settleCheck computes, made the placement.
+
+Measured (2026-11-25, holds-and-placement round, against 99806d9): development plain 68.1 → 67.8%, mismatch 11.6%,
+mean |damage error| 7.0 → 6.9%; hold-out and earlier pending unchanged. fc63 better (plain 511 → 521: Typhoeus's
+floating_attack1 casts), 9090 worse (plain 1027 → 985: Arcane's ultimate_skill2 61.62 → 59.03 s, Typhoeus's combo
+62.58 → 60.63 s), 4a64 mixed (plain 166 → 156, damage 2.9 → 0.3%: Rossi's ultimate 21.23 → 24.55 s, now over
+Gilberta's stop, 46 frames).
+
+Dropped: not a fixed point either. Of the 20 casts settleCheck listed, 12 settle, but 4a64's, 7910's and 9090's
+oscillate (a fourth pass moves them back: Rossi 24.55 → 21.23 s, Arcane 46.06 → 43.33 s, 61.62 → 59.03 s), and the
+third pass's positions bring new overlapping ultimate pairs (4a64 Rossi / Gilberta, 7910 Tangtang / Arcane, 9090
+Liino / Arcane: 14 → 15 pairs). Pass 2's rules read stops that pass 2 itself moves; iterating them swaps two
+placements instead of converging. What would have to change: a pass that moves a cast only where the log's quiet
+stretches (inTurnStart's `quiet`) favour the new start over the old.
+
+diff --git a/packages/logs/src/logcasts.ts b/packages/logs/src/logcasts.ts
+--- a/packages/logs/src/logcasts.ts
++++ b/packages/logs/src/logcasts.ts
+@@ -619,7 +619,8 @@ export function placementPasses(data: GameData, fx: LogFixture): { readonly firs
+   // press, not the cast, so its reset is no time to cut at (1cd1657bc305: Arcane's combo event at 34.70 s, cast at
+   // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
+   const second = placeWith(data, fx, passStops(data, fx, firstPlacement));
+-  const placed = inTurn(data, fx, second);
++  let placed = inTurn(data, fx, second);
++  placed = inTurn(data, fx, placeWith(data, fx, passStops(data, fx, placed)));
+   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
+   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
+   const merge = new Map<string, number>();

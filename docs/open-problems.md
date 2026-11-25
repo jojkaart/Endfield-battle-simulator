@@ -163,7 +163,11 @@ shares of the off error at that code):**
   slow-down of the enemy's clock** (SealAction, the curve 0.3 → 0.2 → 1 over its `duration`, default 1 s: about 0.42 s
   of the enemy's time): 45 of the 50 bursts the bursts view gives a logged touch within 1.6 s as cause come 0.97–1.12 s of world
   time after it, on time. 9a80 35.05 s: the replay's burst is due just as Gilberta's ultimate stop starts (30.50 s);
-  0.44 s more delay, from whatever source, puts it after Rossi's ultimate stop, the log's 35.05 s; open. 79cc 24.23 s:
+  0.44 s more delay, from whatever source, puts it after Rossi's ultimate stop, the log's 35.05 s; open
+  (2026-11-25: the log has no hit by anyone in 29.66–30.00 s, before Gilberta's combo slow-down, where one hidden hold
+  of a dodge's 0.4–0.5 s would carry the burst into her ultimate's stop and past Rossi's; the placement puts none
+  there, and a burst isn't one of its clocks: a burst's world-time delay from its infliction's logged hit as a hold
+  bound would decide it). 79cc 24.23 s:
   the log's burst comes 1.01 s after the touch with no hold at all, so Ardelia's combo slow-down (its event at 23.03 s
   with Arcane's) didn't hold it: a combo pressed before Arcane's frame-9 reset (23.02 s placed) would be cut by it;
   a frame either way; open.
@@ -213,11 +217,44 @@ shares of the off error at that code):**
   Zhiyan 2.07 s more of world time (its expiry 47167 → 49233 ms), so its status bound turns from a hold of 1.19–1.84 s
   over 13.1–48.8 s into at most 0.19 s over 13.1–49.2 s (the log's Corrosion ends at 48.81–49.22 s); the ramp readings
   asking 0.3–0.4 s there now conflict with it and with the bleed ticks 41667⇒47127, and the placement drops them.
-  Ruled out: the units moving by themselves (each unit's pins name the bounds). Still possible: the in-turn stop
-  doesn't hold the enemy's status clock its full length (an ultimate's stop placed in turn over another's), or the
-  ramp readings there are off. Next: `--trace-buff status:corrosion` 13–50 s beside the log's run. Since round 12 the
-  pairs left are 14 (logcasts.ts ultimateOverlaps, pinned in tests/logcasts-stops.test.ts; `zmdlogs placement --all`),
-  and 21 casts would move in a third pass of the placement (settleCheck: 4a64's in-turn pair among them).
+  Ruled out: the units moving by themselves (each unit's pins name the bounds). **Found and fixed 2026-11-25 (holds and
+  placement round): the Corrosion's end, held by Si's freeze.** The in-turn stop is right by the ramp itself: the log's
+  steps lag the replay's by a steady 0.31–0.41 s from step 3 (17.7 s) to step 12 (33.0 s), across both stops in turn
+  (25.94–27.91 s: the log's ramp gained under 0.41 s in 1.97 s, Gilberta's stop there); overlapped, the replay's would
+  have run 1.6 s ahead. The odd clock out was the status bound: Si's Immobilization at 43.62 s held the replay's
+  Corrosion's end 1.5 s (`--trace-buff status:corrosion`: expiry 47.17 → 48.67 s with no application moved, the
+  ramp already capped), against four clocks that agree on about 1 s of hidden hold over 13–49 s (the Vulnerable run
+  from 12.03 s ≥ 0.35 s by 27.8 s, the ramp ≥ 0.35–0.40 s by 19 s, the bleed and Combustion ticks 36.5–38.0 s
+  0.42–0.55 s, the bleed 45.66–47.13 s ≥ 0.03 s). With a freeze holding neither Corrosion's ramp (since 2026-11-23)
+  nor its end, the status bound asks 1.06–1.71 s and every early ramp bound is kept (`zmdlogs holds 489c --assume
+  freeze-ramp=runs --verbose` for the old). Combustion's ticks run on through a freeze too (f978's at 57.80 and
+  58.80 s, across Si's Immobilization at 57.6 s, land plain): engine assumption `freeze-ramp`, new default
+  `statuses` (clock.ts statusesRunOn: none of the four Arts reaction statuses held; the operators' debuffs still
+  are). Measured: development plain 68.1 → 69.0%, hold-out 78.7 → 79.0% (1 better, 0 worse); 489c plain 488 → 632
+  (above the 591 before the in-turn move), mismatch 45 → 14. **Worse: db87** (plain 209 → 208, damage −4.5 →
+  −6.0%): its Corrosion (unlisted, read from the damage) still acts at 54.75 and 55.31 s, 0.58 s past this reading's
+  end; the same window's Combustion ticks come every ~1.5 s (50.67, 52.17, 53.75 s) inside a Stagger, where the
+  placement places no hold (holds.ts `still`), an enemy-clock delay of about 0.6 s nobody explains yet. A
+  Corrosion-only reading (its end and ramp, the other statuses held) measured the same on 489c and db87 but not on
+  f978's ticks. Still possible: Electrification and Solidification held after all (no log decides them); db87's
+  Stagger-time delay. The holds per stretch (round 12's backlog point 5) weren't needed for this.
+- **The placement's 20 unsettled casts (round 12's settleCheck; 2026-11-25): a third pass doesn't settle them.** One
+  more pass 2 from the in-turn placement's stops, then the in-turn rule again (docs/tried/2026-11-25-third-placement-pass.diff):
+  12 settle, but 4a64's, 7910's and 9090's oscillate (a fourth pass moves them back: Rossi 21.23 ↔ 24.55 s, Arcane
+  43.33 ↔ 46.06 s and 59.03 ↔ 61.62 s) and bring new overlapping ultimate pairs (14 → 15). Development plain 68.1 →
+  67.8% (9090 1027 → 985, 4a64 166 → 156, fc63 511 → 521). Pass 2's rules read stops pass 2 itself moves; iterating
+  swaps two placements instead of converging. Still possible: a pass that moves a cast only where the log's quiet
+  stretches favour the new start.
+- **The 14 overlapping ultimate pairs (2026-11-25): what the log says per pair** (inTurnStart's checks, per pair):
+  six have logged hits inside the stop the earlier one would take in turn (04d4 Snowshine / Ember at 46.9 s, 4a64
+  Si / Rossi at 67.1 s, 7910 Ardelia / Liino at 55.1 s, the earlier anchored to its event too, 9c6e Liino / Arcane,
+  a7a7 Si / Liino, d774 Arcane / Perlica): not in turn by the log, or landings batched there. Five are 2–4 frames
+  (04d4 135.9 s, 4a64 Arcane / Gilberta at 62.0 s and Si / Gilberta at 23.1 s, 3f78 Si / Rossi, d9e5 Typhoeus /
+  Gilberta): the log's ms. The other three (3f78's chain Rossi / Gilberta, b6aa Arcane / Si, d9e5's chain Gilberta /
+  Arcane) resolve with
+  two extensions of the rule (a moved stop allowed 3 frames into a third one's, and the reach counting a teammate's
+  combo slow-down: docs/tried/2026-11-25-in-turn-chains.diff), but the logs get worse: d9e5 plain 86 → 50 (Gilberta's
+  ultimate 3.6 s earlier, before the fight's first logged hit), b6aa mixed. The pinned list stays as it is.
 - **Liino's ultimate windows: fixed 2026-11-24 (placement).** Her Pyrotechnics (frame 76, `detached`) fly 0.1–0.8 s
   of the world's time before they land (dbae: the first song beat, frame 77, at 8.26 s with the cast event, the
   projectiles at 8.61 s), so a cast placed from them came late, its stop over teammates' logged hits and its Amp
@@ -294,6 +331,11 @@ shares of the off error at that code):**
   unlogged hold the placement doesn't place? **2026-11-25:** the same kind of Lift (Chen's combo) as the procs at
   78.34 and 106.13 s, no chance on the trigger, no gap over 1.2 s in the log between 78.3 and 97.1 s and no placed
   hold there, no ultimate pair in turn; 1.67 s of hold would be needed. Open, the only exception of 30.
+  **2026-11-25 (`--trace-trigger suit_phy01.proc`):** the replay's cooldown is ready at 94.87 s (78.33 s + 15 s + the
+  three combo slow-downs between, 46 frames), so 2.18 s more world time is needed by 97.05 s; the Lift is logged
+  there (buff_physical_airborne at 97.05 s), so the status was applied. **Ruled out:** a Stagger holding the cooldown
+  (86.50–109.93 s is Staggered: held, the 106.13 s proc couldn't come either); an unplaced cast's stop (the log has no
+  cast event there; Lifeng's only slow-down is at 96.93 s). Open.
 - **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
   unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6%. 4e36:
   small replay-only basic-attack tails (Si's attack4, Ardelia's attack3 projectiles) and +1.6% matched. de6a: the
@@ -1932,6 +1974,9 @@ freezes: f978 (Si, 57.6 s: at most 0.51 s of its 1.5 s held), a7a7 (Si,
 the ramp's steps (scripts/probes/corrosion/freezeramp.ts). The engine now
 holds Corrosion's end but not its ramp in a freeze (assumption
 `freeze-ramp`, default `runs`); its end isn't tested by any log yet.
+**2026-11-25:** its end runs on too (489c's Corrosion against Si's freeze at 43.6 s), and Combustion's ticks (f978 at
+57.80 and 58.80 s): no Arts reaction status is held by a freeze, the debuffs are (`freeze-ramp` default `statuses`;
+"Ultimates pressed together", above, has the evidence and db87's one worse log).
 
 ## The buff clock: unlogged world holds keep buffs past their end (2026-11-22; test 111)
 

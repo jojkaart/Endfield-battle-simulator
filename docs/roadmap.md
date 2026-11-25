@@ -58,8 +58,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   operator's ultimate stop (`burst-stops`), every finisher hit Staggered (`finisher-stagger`), KitHit.travels from
   LaunchProjectile in the placement's event rule; the remaining leads 2026-11-25: the Empyrean's end on its event's
   frame, ultimates pressed together placed in turn, the touch's element after a reaction as assumption
-  `window-reaction`): next 489c's hidden holds after the in-turn move (its Corrosion's 0.19 s cap: open-problems),
-  the 14 overlapping ultimate pairs left and the 21 unsettled casts (`zmdlogs placement --all`),
+  `window-reaction`; holds and placement 2026-11-25: a freeze holds no Arts reaction status, `freeze-ramp`
+  `statuses`, 489c 488 → 632 plain; a third placement pass and the in-turn chains tried and dropped): next a burst's
+  delay from its infliction as a hold bound (9a80 35.05 s), db87's slow Combustion ticks in a Stagger, d4fb 97.05 s,
   4d60's unlogged holds (a boss-phase pause?), test 33's reaction case.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't

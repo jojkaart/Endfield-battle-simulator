@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { loadGameData, readSkillFile } from "@efsim/data";
 import { rampElapsed, type SkillTiming, type TimelineContext, type TimelineState } from "@efsim/engine";
-import { cutAtResets, rampRunsOn, shiftEnemy, slowDown } from "../packages/engine/src/timeline/clock.ts";
+import { cutAtResets, rampRunsOn, shiftEnemy, slowDown, statusesRunOn } from "../packages/engine/src/timeline/clock.ts";
 
 const data = loadGameData();
 const COMBO = -593023102;
@@ -113,5 +113,15 @@ describe("a freeze and Corrosion's ramp", () => {
     expect(rampElapsed(kept, 90)).toBe(90);
     // The enemy's clock held: the ramp stands still for the freeze.
     expect(rampElapsed(frozen.enemy.statuses[0] as typeof corrosion, 90)).toBe(60);
+  });
+
+  it("statusesRunOn (the default, freeze-ramp `statuses`) holds neither the ramp nor the end; the enemy's other timers stay held", () => {
+    const st = state();
+    const frozen = shiftEnemy(st, 60, 45);
+    const kept = statusesRunOn(st, frozen);
+    const c = kept.enemy.statuses[0] as typeof corrosion;
+    expect(c.expiresAt).toBe(900);
+    expect(rampElapsed(c, 90)).toBe(90);
+    expect(kept.enemyFrozenUntil).toBe(frozen.enemyFrozenUntil);
   });
 });
