@@ -493,6 +493,28 @@ export interface ReplayCastFacts {
 /** The facts of a trigger's hits: of no cast (timeline/actions.ts: a trigger's `hits` action lands hits without one). */
 const TRIGGERED: ReplayCastFacts = { index: -1, link: { value: 0 }, windowCount: { unknown: "a trigger's hits, of no cast" }, consumed: { value: { buffs: [], modifiers: [] } } };
 
+/** The label of a hit whose reading may rest on an enemy HP the replay doesn't know (unknownFacts). */
+export const ENEMY_HP_UNKNOWN = "enemy HP unknown";
+
+/**
+ * Facts the replay doesn't know that a team member's kit reads, per operator (backlog after round 11 point 7: Chen
+ * Qianyu's P1 and Alesh's P5 were off in every stage fight, read as full HP, found only through a ratio cluster): the
+ * enemy's HP where loggedEnemyHp can't tell it (no kill's total, not the data's Max HP) while the operator's kit
+ * (weapon and gear included) has an `enemyHpBelow` condition, which the replay then reads as full HP (situation.ts
+ * enemyHpAt: 1 before the first entry). A label for the views and the hit records only: the verdicts don't take it (an
+ * alternative reading would move them; the backlog keeps that step).
+ */
+export function unknownFacts(data: GameData, fx: LogFixture, assume: Readonly<Record<string, string>> = {}): ReadonlyMap<string, readonly string[]> {
+  const out = new Map<string, string[]>();
+  const hp = loggedEnemyHp(data, fx, assume["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
+  if (hp?.length) return out;
+  for (const b of fx.team) {
+    const kit = effectiveKit(data, b);
+    if (kit && JSON.stringify(kit).includes('"enemyHpBelow"')) out.set(b.operator, [`${ENEMY_HP_UNKNOWN}: the replay reads full HP for its kit's enemyHpBelow conditions (no kill's total, not the data's Max HP: loggedEnemyHp)`]);
+  }
+  return out;
+}
+
 /** The game buffs the log lists with values somewhere (effects or boundary effects). */
 function listedWithValues(fx: LogFixture): Set<string> {
   return new Set(fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects].map((e) => e.buff)));

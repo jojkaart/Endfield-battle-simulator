@@ -224,15 +224,22 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   // The log's cast events and what the cast assembly made of each (loggedCastFates), with where the event sits in its
   // skill's stop (castEventPlace; placement leads report point 1: "0.02 s of world time apart" hid 1.76 s of log time).
   const hitTimes = fx.hits.map((h) => h.t).sort((a, b) => a - b);
-  // A "tick" fate is the event's key (loggedCastFates: a kit buff ticks as its skill); the replay still makes the cast
-  // where the buff isn't on (3aa6ab93bad4: Zhuang Fangyi's real ultimates, read as Empyrean ticks by their key): its
-  // stop the timeline applied says so (round 11): the event's own tickRead stop (replayTimeStops: the hitless cast the
-  // assembly made of it, starting at most its length before the event) is one the timeline applied.
-  const tickStops = replayTimeStops(data, fx).filter((st) => st.tickRead);
+  // A "tick" fate is the event's key (loggedCastFates: a kit buff ticks as its skill); what the replay did with it is its
+  // own decision (BuffReplay.skipped, backlog after round 11 point 6): a tick it read (skipped, with why), or the cast
+  // it made where the buff isn't on (3aa6ab93bad4: Zhuang Fangyi's real ultimates, read as Empyrean ticks by their
+  // key), with the buff's last end and the event in frames: an end on the event's own frame is a whole lead's worth
+  // (remaining-leads report point 4: 4bfc 179.51 s took instrumenting loggedTick).
   const tickOrCast = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly buff?: string }) => {
-    const own = tickStops.find((st) => st.operator === e.operator && st.skillId === e.skill && msOf(st.start) <= e.t + 100 && msOf(st.start + st.scales.length) >= e.t - 100);
-    const made = own && replay.appliedStops.find((x) => x.operator === own.operator && x.start === own.start);
-    return made ? `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the cast: its stop at ${s(msOf(made.start))}–${s(msOf(made.start + made.scales.length))} s (the buff wasn't on)` : `a tick of ${e.buff} (KitBuff.ticksLoggedAs)`;
+    const length = msOf(data.skills[e.skill]?.timing?.durationFrames ?? 0);
+    const mine = (c: { readonly operator: string; readonly skillId: string; readonly start: number }) => c.operator === e.operator && c.skillId === e.skill && c.start <= e.t + 100 && c.start >= e.t - length - 100;
+    const ef = Math.round((e.t * FPS) / 1000);
+    // The buff's last instance that ended by the event (one the cast itself creates starts after it).
+    const last = replay.kitWindows(`${e.operator}:${e.buff}`, e.operator).filter((w) => Number.isFinite(w.end) && w.end <= e.t + 100).at(-1);
+    const lastText = last ? `its last instance ${s(last.start)}–${s(last.end)} ended at frame ${Math.round((last.end * FPS) / 1000)}, the event's frame ${ef}` : "no instance ended before it";
+    const skip = replay.skipped.find((x) => mine(x.cast));
+    if (skip) return `a tick of ${e.buff} (KitBuff.ticksLoggedAs): ${skip.why.replace(/^a tick of a kit buff \(KitBuff\.ticksLoggedAs\)(: | )?/, "") || "read as its tick"}${/this very frame/.test(skip.why) ? ` (${lastText})` : ""}`;
+    if (replay.failed.some((x) => mine(x.cast))) return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs); the replay couldn't make the cast (FAILED)`;
+    return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the cast: the buff wasn't on (${lastText})`;
   };
   // Only the first of an ultimate's repeated events (each ~3.5 s while it lasts) has a stop around it.
   const lastEvent = new Map<string, number>();

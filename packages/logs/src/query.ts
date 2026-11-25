@@ -48,11 +48,12 @@ export interface ReplayTimeStop extends TimeStop {
  * Round 11 (kit-buff leads report point 2): a hitless cast event of a skill a kit buff of its operator ticks as
  * (KitBuff.ticksLoggedAs) is the buff's tick where the replay didn't make the cast (its buff was on: 4d60e7fe92c2's
  * late ultimate_skill events, Zhuang Fangyi's Empyrean ending), and a real cast where it did (3aa6ab93bad4's seven
- * ultimates, whose hits the placement doesn't place). Such a stop is `tickRead`. With `replay`, those the timeline
- * never applied are left out, as the hold placement leaves them out (buffreplay.ts, "Not a logged event the replay
- * read as a buff's tick"); without one they stay, marked (`casts`, `worldtime` say so).
+ * ultimates, whose hits the placement doesn't place). Such a stop is `tickRead`. With `replay`, those the replay read
+ * as the buff's tick are left out, by its own decision (BuffReplay.skipped, round 12: in place of "a stop the timeline
+ * never applied"), as the hold placement leaves them out (buffreplay.ts, "Not a logged event the replay read as a
+ * buff's tick"); without one they stay, marked (`casts`, `worldtime` say so).
  */
-export function replayTimeStops(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), replay?: Pick<BuffReplay, "appliedStops">): ReplayTimeStop[] {
+export function replayTimeStops(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), replay?: Pick<BuffReplay, "skipped">): ReplayTimeStop[] {
   const kits = fx.team.flatMap((b) => {
     const k = effectiveKit(data, b);
     return k ? [k] : [];
@@ -60,7 +61,10 @@ export function replayTimeStops(data: GameData, fx: LogFixture, placement: Place
   const tickSkills = new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
   const stops: ReplayTimeStop[] = replayedCastStops(data, assembleCasts(data, fx, placement, kits)).map((st) => (!st.placed && tickSkills.has(`${st.operator}|${st.skillId}`) ? { ...st, tickRead: true as const } : st));
   if (!replay) return stops;
-  return stops.filter((st) => !st.tickRead || replay.appliedStops.some((x) => x.operator === st.operator && x.start === st.start));
+  // A skipped cast's stops start at its frame or later (a slow-down's own frame in the skill).
+  const ticks = replay.skipped.filter((x) => x.why.startsWith("a tick of a kit buff")).map((x) => ({ operator: x.cast.operator, skillId: x.cast.skillId, frame: Math.round((x.cast.start * FPS) / 1000) }));
+  const ticked = (st: ReplayTimeStop) => ticks.some((x) => x.operator === st.operator && x.skillId === st.skillId && st.start >= x.frame && st.start <= x.frame + (data.skills[x.skillId]?.timing?.durationFrames ?? 0));
+  return stops.filter((st) => !st.tickRead || !ticked(st));
 }
 
 /** A tickRead stop's mark in a view without the replay (`casts`, `worldtime`). */

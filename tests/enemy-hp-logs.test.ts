@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, logBuffReplay, readLogFixture } from "@efsim/cli";
-import type { LogHit } from "@efsim/logs";
+import { ENEMY_HP_UNKNOWN, unknownFacts, type LogHit } from "@efsim/logs";
 
 const data = loadGameData();
 const ALESH = "chr_0024_deepfin";
@@ -28,6 +28,14 @@ describe("a9d7fcb089c5: Alesh's ultimate against Si's two lives", () => {
 
   it("misses the four ×1.5 ones with only the data's Max HP as an HP (max-hp, the replay until 2026-11-24)", () => {
     expect(unassumed("max-hp")).toEqual([8374, 35538, 145238, 173901]);
+  });
+
+  it("labels the hits of a kit reading enemyHpBelow where the replay knows no HP (unknownFacts; backlog after round 11 point 7)", () => {
+    // Under `kill` the HP is known: no label. Under `max-hp` it isn't (the total isn't Max HP): Alesh and Chen Qianyu.
+    expect([...unknownFacts(data, fx)]).toEqual([]);
+    const facts = unknownFacts(data, fx, { "enemy-hp": "max-hp" });
+    expect([...facts.keys()].sort()).toEqual(["chr_0005_chen", ALESH]);
+    expect(facts.get(ALESH)?.[0]).toMatch(new RegExp(`^${ENEMY_HP_UNKNOWN}: the replay reads full HP`));
   });
 });
 

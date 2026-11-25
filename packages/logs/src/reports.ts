@@ -231,7 +231,26 @@ export async function differencesCliReport(data: () => GameData, sel: LogSelecti
       }),
     };
   });
-  return [differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, fixtureLabel }), "", ...loggedAsLines(pairs)].join("\n");
+  return [differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, fixtureLabel }), "", ...loggedAsLines(pairs), ...unknownFactLines(records)].join("\n");
+}
+
+/**
+ * The records' facts the replay doesn't know (HitRecord.unknownFacts: "enemy HP unknown"), per fixture and operator:
+ * how many hits carry the label and how many of them aren't a plain match (backlog after round 11 point 7).
+ */
+function unknownFactLines(records: readonly HitRecord[]): string[] {
+  const by = new Map<string, { n: number; off: number }>();
+  for (const r of records) {
+    for (const f of r.unknownFacts ?? []) {
+      const k = `${fixtureLabel(r.fixture)} ${r.operator}: ${f.slice(0, f.indexOf(":") >= 0 ? f.indexOf(":") : f.length)}`;
+      const x = by.get(k) ?? { n: 0, off: 0 };
+      x.n++;
+      if (r.class !== "plain") x.off++;
+      by.set(k, x);
+    }
+  }
+  if (!by.size) return [];
+  return ["", "Facts the replay doesn't know that a kit reads (a label, not a reading: buffreplay.ts unknownFacts):", ...[...by].map(([k, x]) => `  ${k}: ${x.n} hits, ${x.off} not plain`)];
 }
 
 /** `efsim zmdlogs groups --operator <op>`: an operator's mismatches grouped (the named logs, or every development log with it). */
