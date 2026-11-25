@@ -66,6 +66,9 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   logs (whose per-kit split is no secret: `measure --patch` with the kit's half). Whatever is built must keep
   `scripts/accuracy.ts --compare`'s rule: counts and field kinds, no operator or equipment.
 - **Why it helps:** "two hold-outs worse: explain" in one command, if the lead accepts what a mechanism class says.
+- **The lead's decision (2026-11-25): not built, either way.** The classes are small (6, 2 and 23 triggers), so a
+  class that moves a hold-out still narrows which kits its team has. Attribution stays as now: patch-per-kit
+  measures on development logs, and the hold-outs' aggregates as a check. Closed; don't carry it.
 - **From:** docs/friction-done/2026-11-24-cooldown-clock.md point 2.
 
 ## 5. The hold placement's units move far from a change
