@@ -347,6 +347,14 @@ export interface BuffReplay {
   /** A logged hit's landing in the replay (its damage, modifiers and LandingFacts), or why there is none. */
   landing(hit: LogHit): LandedHit | { readonly unknown: string };
   /**
+   * Why a logged hit's pinned landing never landed (landingWatch: the step that dropped it and its likeliest cause, or
+   * why it was never pinned), or null: it landed, or it had no pinned landing. `landing`'s "a landing the replay didn't
+   * land" stays the verdicts' reason; this is the views' (NOLAND).
+   */
+  droppedLanding(hit: LogHit): string | null;
+  /** The logged casts the replay didn't make, and why (a tick, a slot's variant, its energy or state, …): SKIP lines. */
+  readonly skipped: readonly SkippedCast[];
+  /**
    * Where the crit the replay gave a logged hit's landing comes from (CritSource): the log's flag, or, where the log
    * gives none, which inference made it a logged crit (shownCrits, layerCrits, valueCrits), else none (the landing
    * doesn't crit in the replay the check reads).
@@ -1257,9 +1265,10 @@ function batchedFrame(casts: readonly ReplayedCast[], h: Pick<LogHit, "t" | "ope
  * The logged casts (distinctCasts) as the replay casts them, in time order,
  * each with its logged landings: the timeline lands the cast's hits the log
  * shows at their logged frames (the log's time has other casts' time stops
- * and hit-stop in it), the others at their kit frames.
+ * and hit-stop in it), the others at their kit frames. `unpinned`, when given, gets why a placed hit has no pinned
+ * landing (by its ref), for BuffReplay.droppedLanding.
  */
-export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits">): ReplayedCast[] {
+export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits">, unpinned?: Map<string, string>): ReplayedCast[] {
   const casts = distinctCasts(placement);
   // A landing's reference: its logged hit's index in the fixture (replayCast `ref`: its LandedHit carries it).
   const hitIndex = new Map((fx?.hits ?? [...placement.hits.keys()]).map((h, i) => [h, i]));
@@ -1270,7 +1279,10 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
   const used = new Map<string, Set<number>>();
   for (const [h, p] of [...placement.hits].sort((a, b) => a[0].t - b[0].t)) {
     const d = ofCast(p.cast);
-    if (!d) continue;
+    if (!d) {
+      unpinned?.set(String(hitIndex.get(h)), `no pinned landing: its placed cast (${p.cast.skillId} from ${(p.cast.start / 1000).toFixed(2)} s) isn't one the replay casts (distinctCasts)`);
+      continue;
+    }
     // A delayed hit's damage (KitHit.enemyDelay) lands whatever comes after its cast: it doesn't show the cast going on.
     if (!p.hits.every((k) => k.enemyDelay !== undefined)) last.set(d, Math.max(last.get(d) ?? -Infinity, h.t));
     if (p.frame === undefined || p.cast.skillId !== d.skillId) continue;
@@ -1282,7 +1294,10 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
       // Another variant's hit at its own frame for the slot's turn (Slot.at: Zhuang Fangyi's strike_8 against strike_9's slots).
       const frame = p.at?.get(k) ?? p.frame;
       const nth = frames.findIndex((f, i) => f === frame && !taken.has(i));
-      if (nth < 0) continue;
+      if (nth < 0) {
+        unpinned?.set(String(hitIndex.get(h)), `no pinned landing: its slot's frame ${frame} is no landing of ${k.id} left (its frames ${frames.join(",") || "none"}${taken.size ? `, ${taken.size} taken by earlier hits of the cast` : ""})`);
+        continue;
+      }
       taken.add(nth);
       used.set(key, taken);
       // Batched at another cast's stop's end, it landed at its kit frame before the stop (LoggedCast.beforeStop).
@@ -1799,26 +1814,44 @@ function expiredAt(st: TimelineState, c: ReplayedCast, f: number): TimelineState
  * attack of the operator, that has the cast's key and can (Typhoeus's hover attacks 1–4 log one key, and which comes
  * next is her kit's state: the placement takes the first, the engine knows the step). A slot cast (ReplayedCast.slot):
  * skipped when its skill can start, else the operator's skill of its kind that can (Si's Initial or Final Stroke for a
- * logged battle skill under Artful Intent; accuracy plan A2), else skipped.
+ * logged battle skill under Artful Intent; accuracy plan A2), else skipped. A skip says why (`why`: BuffReplay.skipped,
+ * the replay's SKIP lines; backlog after round 11 point 3: 9c0b's Si ultimate at 7.02 s took a debug print to read
+ * "needs 68 ultimate energy").
  */
-function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): string | null {
-  const startsBy = (skill: string) => {
+function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): { readonly skill: string | null; readonly why?: string } {
+  const at = (frame: number) => `${((frame * 1000) / FPS / 1000).toFixed(2)} s`;
+  /** Why `skill` doesn't start by the cast's frame (earliestStart's error, or its earliest frame), or null when it does. */
+  const lateBy = (skill: string): string | null => {
     const r = earliestStart(ctx, st, { operator: c.operator, skill });
-    return !("error" in r) && r.frame <= f + 1;
+    if ("error" in r) return r.error;
+    return r.frame <= f + 1 ? null : `${skill} can start only at ${at(r.frame)}, ${r.frame - f} frame(s) after the logged press`;
   };
+  const startsBy = (skill: string) => lateBy(skill) === null;
+  const skip = (why: string) => ({ skill: null, why });
+  const made = (skill: string | null) => ({ skill });
   const kit = ctx.kits.get(c.operator);
   const w = c.whileBuff;
-  if (w && !st.buffs.some((b) => (b.id === w.buff || (w.or ?? []).includes(b.id)) && b.owner === c.operator && activeAt(b, f) && b.expiresAt > Math.round((w.endsAt * FPS) / 1000) + EXPIRY_MARGIN_FRAMES)) return null;
+  if (w && !st.buffs.some((b) => (b.id === w.buff || (w.or ?? []).includes(b.id)) && b.owner === c.operator && activeAt(b, f) && b.expiresAt > Math.round((w.endsAt * FPS) / 1000) + EXPIRY_MARGIN_FRAMES)) return skip(`its buff ${[w.buff, ...(w.or ?? [])].join(" / ")} isn't on past the log's end of it then (ReplayedCast.whileBuff)`);
   if (c.slot) {
     // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all
     // by its kit's state then (earliestStart alone waits for that state: 3f78ceb15bc3's press at 19708 ms, in her
     // ultimate, read as her battle skill after Artful Intent's end, so Initial Stroke wasn't made and the Inksoul's burst
     // at 22689 ms took the mark's branch).
     const available = (skill: string) => skillAvailable(ctx, st, c.operator, skill, f) && !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));
+    /** Why `skill` isn't available (its kit's state, or earliestStart's error). */
+    const unavailable = (skill: string) => {
+      if (!skillAvailable(ctx, st, c.operator, skill, f)) return `${skill} isn't available by its kit's state then`;
+      const r = earliestStart(ctx, st, { operator: c.operator, skill });
+      return "error" in r ? r.error : `${skill} is available`;
+    };
     // The variant pulling a buff (pullingPresses): made as it while the slot holds it.
-    if (c.as) return available(c.as) ? c.as : null;
+    if (c.as) return available(c.as) ? made(c.as) : skip(`a press pulling a buff, as the variant ${c.as}: ${unavailable(c.as)}`);
     // A press the log shows as a variant by its own keys: the variant the kit says the slot holds then.
-    if (!c.leadsTo && c.shows?.length) return skillAvailable(ctx, st, c.operator, c.skillId, f) ? null : (c.shows.find((s) => skillAvailable(ctx, st, c.operator, s, f)) ?? null);
+    if (!c.leadsTo && c.shows?.length) {
+      if (skillAvailable(ctx, st, c.operator, c.skillId, f)) return skip(`the log shows it as ${c.shows.join(" / ")} by its keys, but the slot holds ${c.skillId} itself then`);
+      const v = c.shows.find((s) => skillAvailable(ctx, st, c.operator, s, f));
+      return v ? made(v) : skip(`the log shows it as ${c.shows.join(" / ")} by its keys; the slot holds none of them then (nor ${c.skillId})`);
+    }
     // A press whose hits had no one to land on (`unseen`) is its own skill while the slot holds it (d774d0ce7bd3: Liino's
     // battle skill at 49863 ms, with no enemy from 30.6 to 54.6 s; its stance's ATK is on the team from then to 115.9 s).
     // Else a press the log shows nothing of isn't made: the slot held a variant (her stance's presses every ~3 s, under
@@ -1828,33 +1861,40 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
     // team starts with isn't in the log (9c0bb09daff2's Si at 7.02 s, the first hit at 13.27 s, needed 68 with 0 in the
     // replay; the log lists her ultimate's Amp on the team from 13.27 to 21.4 s). Later presses keep the energy check
     // (every unseen ultimate made: 1cd1657bc305 −7.2 → −19.5%, Typhoeus's shots at 41.3 s lost).
-    if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && ((c.beforeHits === true && c.kind === "ultimate") || startsBy(c.skillId)) ? c.skillId : null;
+    if (!c.leadsTo) {
+      if (!c.unseen) return skip("a press the log shows nothing of (no hit of its own): the slot held a variant, or the press did nothing");
+      if (!skillAvailable(ctx, st, c.operator, c.skillId, f)) return skip(`a press whose hits had no one to land on: ${c.skillId} isn't available by its kit's state then`);
+      if (c.beforeHits === true && c.kind === "ultimate") return made(c.skillId);
+      const late = lateBy(c.skillId);
+      return late === null ? made(c.skillId) : skip(`a press whose hits had no one to land on: ${late}`);
+    }
     // A step before the inferred cast, never that cast again (the inferred one is timed by the log's buff end:
     // e9896c8d02be's press at 67244 ms, under the Inksoul, isn't the Final Stroke whose burst comes at 69192 ms).
-    if (available(c.skillId)) return null;
-    return kit?.skills.find((k) => k.skillId !== c.skillId && k.skillId !== c.leadsTo && k.kind === c.kind && !k.followUpOnly && available(k.skillId))?.skillId ?? null;
+    if (available(c.skillId)) return skip(`a step before the inferred ${c.leadsTo}: the slot holds ${c.skillId} itself then, made as the inferred cast`);
+    const other = kit?.skills.find((k) => k.skillId !== c.skillId && k.skillId !== c.leadsTo && k.kind === c.kind && !k.followUpOnly && available(k.skillId))?.skillId;
+    return other !== undefined ? made(other) : skip(`a step before the inferred ${c.leadsTo}: no other ${c.kind} skill of the operator is available then`);
   }
   // A skill of a slot that holds one of two variants with the same keys (Typhoeus's combo while hovering, her hovering
   // combo otherwise): the one its kit says is available then.
   if (c.kind !== "basic") {
-    if (skillAvailable(ctx, st, c.operator, c.skillId, f)) return c.skillId;
+    if (skillAvailable(ctx, st, c.operator, c.skillId, f)) return made(c.skillId);
     const keys = new Set((kit?.skills.find((k) => k.skillId === c.skillId)?.hits ?? []).flatMap((h) => h.events));
     const variant = kit?.skills.find((k) => k.skillId !== c.skillId && k.kind === c.kind && !k.followUpOnly && k.hits.some((h) => h.events.some((e) => keys.has(e))) && skillAvailable(ctx, st, c.operator, k.skillId, f));
-    return variant?.skillId ?? c.skillId;
+    return made(variant?.skillId ?? c.skillId);
   }
-  if (startsBy(c.skillId)) return c.skillId;
+  if (startsBy(c.skillId)) return made(c.skillId);
   const hasKey = (skill: string) => (kit?.skills.find((k) => k.skillId === skill)?.hits ?? []).some((h) => h.events.includes(c.key));
   // The chain's next steps first, then any basic attack of the operator with the key (steps gated by the kit's own
   // state, Typhoeus's ABATK attempts: her hover attacks aren't a chain of windows).
   const chain = st.chainNext[c.operator];
   const steps = [...(chain ? [chain, ...(chain.alternatives ?? [])].filter((x) => x.until >= f).map((x) => x.skill) : []), ...(kit?.skills.filter((k) => k.kind === "basic").map((k) => k.skillId) ?? [])];
-  for (const skill of steps) if (skill !== c.skillId && hasKey(skill) && startsBy(skill)) return skill;
+  for (const skill of steps) if (skill !== c.skillId && hasKey(skill) && startsBy(skill)) return made(skill);
   // None can start by the logged frame by the kit's timing (the log's casts come a few frames sooner than its windows:
   // 9090afbacec9's shots at 91455 and 92002 ms, 16 frames apart, where shot 2's window for shot 3 opens at 18): the one
   // the kit's state allows then (its `available`: the attempt index), not the placed one, whose index is the placement's
   // guess (the placed shot 1 there made the next logged shot the 5th, which ended her hover before the logged 5th).
-  if (!skillAvailable(ctx, st, c.operator, c.skillId, f)) for (const skill of steps) if (skill !== c.skillId && hasKey(skill) && skillAvailable(ctx, st, c.operator, skill, f)) return skill;
-  return c.skillId;
+  if (!skillAvailable(ctx, st, c.operator, c.skillId, f)) for (const skill of steps) if (skill !== c.skillId && hasKey(skill) && skillAvailable(ctx, st, c.operator, skill, f)) return made(skill);
+  return made(c.skillId);
 }
 
 /**
@@ -2107,11 +2147,12 @@ function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: 
   const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
   const pre = st;
   const tick = c.missed ? null : loggedTick(ctx, st, c, f);
-  if (tick) return { st: tick, skillId: null, pre, windowCount };
-  if (!c.missed && endedWithTick(ctx, st0, c, f)) return { st, skillId: null, pre, windowCount };
-  if (c.expires) return { st: expiredAt(st, c, f), skillId: null, pre, windowCount };
-  const skillId = c.missed ? missedStep(ctx, st, c.operator, f) : replayedSkill(ctx, st, c, f);
-  if (skillId === null) return { st, skillId, pre, windowCount };
+  if (tick) return { st: tick, skillId: null, pre, windowCount, why: "a tick of a kit buff (KitBuff.ticksLoggedAs): the buff's tick moved to the event" };
+  if (!c.missed && endedWithTick(ctx, st0, c, f)) return { st, skillId: null, pre, windowCount, why: "a tick of a kit buff (KitBuff.ticksLoggedAs) that ended on this very frame: its last tick" };
+  if (c.expires) return { st: expiredAt(st, c, f), skillId: null, pre, windowCount, why: "not a cast: the log's end of its buff (ReplayedCast.expires)" };
+  const chosen = c.missed ? { skill: missedStep(ctx, st, c.operator, f), why: "no basic-attack step the kit allows then (a cast that hits nothing)" } : replayedSkill(ctx, st, c, f);
+  const skillId = chosen.skill;
+  if (skillId === null) return { st, skillId, pre, windowCount, ...(chosen.why !== undefined ? { why: chosen.why } : {}) };
   const flag = castFlag(ctx, st, c, skillId, f);
   // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
   st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}) });
@@ -2166,6 +2207,10 @@ interface ReplayRun extends ReplayRecord {
    */
   readonly staggerHolds: readonly { readonly frame: number; readonly engineUntil: number | null }[];
   readonly staggerCuts: readonly { readonly frame: number; readonly engineUntil: number }[];
+  /** The logged casts it didn't make, and why (makeCast). */
+  readonly skipped: readonly SkippedCast[];
+  /** Why a logged hit's pinned landing never landed, by its ref (landingWatch). */
+  readonly dropped: ReadonlyMap<string, string>;
 }
 
 /**
@@ -2218,11 +2263,14 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   const needs: Need[] = [];
   const castErrors: { cast: ReplayedCast; error: string }[] = [];
   const flags: CastFlag[] = [];
+  const skipped: SkippedCast[] = [];
+  const landings = landingWatch(ctx);
   let prevStep: ReplayStep | null = null;
   for (const s of steps) {
     // The state after the step before this one: its changes are that step's.
     if (prevStep) rec.step(st, stepWords(prevStep));
     prevStep = s;
+    const before = st;
     st = held(st, Math.max(s.frame, st.frame));
     if (checkpoints.at(-1) !== st) checkpoints.push(st);
     if (s.cast) {
@@ -2233,7 +2281,11 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         if (crit === "never" && unmet(ctx, r.pre, c, f)) needs.push({ c, f });
         if ("flag" in r && r.flag) flags.push(r.flag);
         st = r.st;
-        if (r.skillId === null) continue;
+        landings.after(before, st, s, r.skillId, "why" in r ? r.why : undefined);
+        if (r.skillId === null) {
+          if (!c.missed) skipped.push({ cast: c, frame: f, why: ("why" in r ? r.why : undefined) ?? "not made" });
+          continue;
+        }
         const skillId = r.skillId;
         const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
         const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
@@ -2246,6 +2298,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
     }
     try {
       st = advance(ctx, withoutFollowUps(ctx, st, list, Math.max(s.frame, st.frame)), Math.max(s.frame, st.frame));
+      landings.after(before, st, s);
       if (s.recover) {
         st = refillPoise(ctx, st);
         continue;
@@ -2283,7 +2336,71 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   if (prevStep) rec.step(st, stepWords(prevStep));
   const record = rec.finish(brokenAt);
   if (checkpoints.at(-1) !== st) checkpoints.push(st);
-  return { ...record, ctx, st, brokenAt, made, needs, steps, checkpoints, castErrors, flags, staggerHolds, staggerCuts };
+  return { ...record, ctx, st, brokenAt, made, needs, steps, checkpoints, castErrors, flags, staggerHolds, staggerCuts, skipped, dropped: landings.dropped };
+}
+
+/** A logged cast the replay didn't make (BuffReplay.skipped): its frame and why (makeCast: a tick, the slot's variant, its energy, …). */
+export interface SkippedCast {
+  readonly cast: ReplayedCast;
+  readonly frame: number;
+  readonly why: string;
+}
+
+/**
+ * What became of each logged hit's pinned landing (replayCast `landings`, by its ref: the hit's index) that left the
+ * schedule without landing (backlog after round 11 point 3: Snowshine's bashes vanished, the cast's end at frame 106
+ * dropping the one pinned at 125, found by a scratch script): watched after every step from the schedule before and
+ * after it, so no engine change: the step that dropped it and the likeliest cause (another alternative of its branch,
+ * its kit hit's `if` at its frame, the operator's next cast, the end of its cast's action, a jump of its cast), or why
+ * it was never pinned (its cast skipped, made as another skill, or no such landing on the cast's path).
+ */
+function landingWatch(ctx: TimelineContext) {
+  type Sched = TimelineState["scheduled"][number];
+  const dropped = new Map<string, string>();
+  const landed = new Set<string>();
+  let seen = 0;
+  let live = new Map<string, Sched>();
+  const sec = (f: number) => `${((f * 1000) / FPS / 1000).toFixed(2)} s`;
+  const cause = (prev: TimelineState, x: Sched, s: ReplayStep, now: TimelineState, made: string | null | undefined): string => {
+    const op = x.cast?.operator;
+    const index = x.cast?.index;
+    const where = `${sec(x.frame)} (pinned)`;
+    if (x.kind === "hit" && x.branch !== undefined) return `another alternative of its landing (branch ${x.branch}) landed in its place by ${sec(now.frame)}: the first in kit order whose \`if\` holds lands (timeline/landing.ts)`;
+    if (x.kind === "hit" && x.frame <= now.frame) {
+      const def = (op !== undefined ? ctx.kits.get(op)?.skills.find((k) => k.skillId === x.skillId)?.hits.find((h) => h.id === x.hitId) : undefined);
+      if (def?.if !== undefined) return `its kit hit's \`if\` didn't hold at its frame ${sec(x.frame)} (KitHit.if ${JSON.stringify(def.if).slice(0, 120)}): it didn't land`;
+      if (def?.poiseOnly) return `a poise-only kit hit (KitHit.poiseOnly): its Stagger, no damage landing`;
+    }
+    if (s.cast && made && s.cast.operator === op) return `cut by ${op}'s next cast ${made} at ${sec(now.frame)}, before its landing at ${where} (casting.ts endCurrentSkill)`;
+    const ofCast = (y: Sched) => y.kind === "jump" && y.cast.operator === op && y.cast.index === index && y.frame <= now.frame;
+    const end = prev.scheduled.find((y) => ofCast(y) && y.kind === "jump" && y.end === true && y.frame < x.frame);
+    if (end) return `the end of its cast's action at ${sec(end.frame)} (SkillTiming.ends, a kit trigger's jump past it not taken), before its landing at ${where}`;
+    const jump = prev.scheduled.find((y) => ofCast(y) && y.kind === "jump" && y.end !== true);
+    if (jump && jump.kind === "jump") return `a jump of its cast at ${sec(jump.frame)} (frames ${jump.from}–${jump.to} skipped), before its landing at ${where}`;
+    return `dropped by ${stepWords(s)} (from ${sec(prev.frame)} to ${sec(now.frame)}), before its landing at ${where}`;
+  };
+  return {
+    dropped: dropped as ReadonlyMap<string, string>,
+    /** After a step (`made`/`why`: a cast step's skill, or null and why it wasn't made). */
+    after(prev: TimelineState, now: TimelineState, s: ReplayStep, made?: string | null, why?: string): void {
+      for (; seen < now.hits.length; seen++) {
+        const r = now.hits[seen]?.ref;
+        if (r !== undefined) landed.add(r);
+      }
+      if (seen > now.hits.length) seen = now.hits.length;
+      const next = new Map<string, Sched>();
+      for (const x of now.scheduled) if (x.kind === "hit" && x.ref !== undefined) next.set(x.ref, x);
+      for (const [ref, x] of live) if (!next.has(ref) && !landed.has(ref) && !dropped.has(ref)) dropped.set(ref, cause(prev, x, s, now, made));
+      // A cast's landings never pinned: its cast skipped, made as another skill, or no such landing on its path.
+      if (s.cast) {
+        for (const l of s.cast.landings) {
+          if (next.has(l.ref) || landed.has(l.ref) || live.has(l.ref) || dropped.has(l.ref)) continue;
+          dropped.set(l.ref, made === null ? `its cast wasn't made: ${why ?? "skipped"}` : made !== undefined && made !== s.cast.skillId ? `its cast was made as ${made}, which has no ${l.hitId} landing ${l.nth + 1}` : `never pinned: ${s.cast.skillId}'s ${l.hitId} has no landing ${l.nth + 1} on the path the cast took`);
+        }
+      }
+      live = next;
+    },
+  };
 }
 
 export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placement, opts: ReplayOptions = {}): BuffReplay {
@@ -2508,6 +2625,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     }
   }
   const nearIn = (changes: ReadonlyMap<string, readonly Change[]>, key: string, f: number) => (changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack);
+  // Why a placed hit has no pinned landing (replayedCasts), made on the first question (droppedLanding).
+  let unpinned: Map<string, string> | undefined;
   return {
     assume: opts.assume ?? {},
     decided,
@@ -2522,6 +2641,16 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerHolds: main?.staggerHolds ?? [],
     staggerCuts: main?.staggerCuts ?? [],
     castFlags: main?.flags ?? [],
+    skipped: main?.skipped ?? [],
+    droppedLanding(hit) {
+      const i = hitIndex.get(hit);
+      if (i === undefined || landed.has(String(i)) || !main) return null;
+      const own = main.dropped.get(String(i));
+      if (own !== undefined) return own;
+      if (!unpinned) replayedCasts(placement, fx, (unpinned = new Map()));
+      const why = unpinned.get(String(i));
+      return why === undefined ? null : `${why}, and none of the replay's unpinned landings of its event lies within ${NEAR_FRAMES} frames`;
+    },
     traces: main?.traces ?? [],
     statusTraces: main?.statusTraces ?? [],
     appliedStops: main?.appliedStops ?? [],

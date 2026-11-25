@@ -208,7 +208,17 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}${crit}` : "replay only";
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
   }
-  for (const [h, why] of missing) if (inWindow(f, h.t) && mine(f, h.operator)) lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}` });
+  // With the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding).
+  for (const [h, why] of missing) {
+    if (!inWindow(f, h.t) || !mine(f, h.operator)) continue;
+    const drop = replay.droppedLanding(h);
+    lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}${drop ? `: ${drop}` : ""}` });
+  }
+  // The logged casts the replay didn't make, and why (BuffReplay.skipped).
+  for (const x of replay.skipped) {
+    const t = msOf(x.frame);
+    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `SKIP   ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
+  }
   for (const x of replay.failed) if (inWindow(f, x.cast.start) && mine(f, x.cast.operator)) lines.push({ t: x.cast.start, order: 1, text: `FAILED ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) if (inWindow(f, m.start) && mine(f, m.operator)) lines.push({ t: m.start, order: 1, text: `MISSED ${label(data, m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
   // The log's cast events and what the cast assembly made of each (loggedCastFates), with where the event sits in its
@@ -298,7 +308,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one, EVENT the log's cast events and what the replay made of each, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines)].join("\n");
 }
 

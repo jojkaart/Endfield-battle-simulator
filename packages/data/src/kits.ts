@@ -92,7 +92,7 @@ export type RawOn = TriggerOn | { event: "buffApplied"; tags: number[]; fromKind
  * for a cooldown the data doesn't show (no value source, or its timer in a file the trigger's sources don't reach), with
  * its evidence in the trigger's note.
  */
-type RawTrigger = Omit<KitTrigger, "do" | "on" | "cooldownClock"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>>; cooldownClock?: "world" | "raw" };
+type RawTrigger = Omit<KitTrigger, "do" | "on" | "cooldownClock" | "cooldownFrom"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>>; cooldownClock?: "world" | "raw" };
 
 /**
  * The clock a trigger's cooldown runs on, from the game's mechanism behind it in its value sources' files
@@ -100,19 +100,21 @@ type RawTrigger = Omit<KitTrigger, "do" | "on" | "cooldownClock"> & { note?: str
  * sets the timer's length, or a literal cooldown by its seconds. A game CD timer (AddGlobalCDTimer) and a `…_cd` buff
  * are `world` (the game keeps both as buffs, and buffs run on the world's time; Swordmancer's 15 s CD timer is held by
  * stops and hidden holds in the logs, scripts/probes/cooldowns/physuit.ts); a timed marker (CreateTimedMarker) is
- * `raw`; none found: undefined (the kit's own `cooldownClock`, else raw).
+ * `raw`; none found: undefined (the kit's own `cooldownClock`, else raw). `from`: the mechanisms matched
+ * (KitTrigger.cooldownFrom).
  */
-function cooldownClockOf(cooldown: ValueExpr, skillId: string, skill: string | undefined, isSource: (id: string) => boolean, talentSources: KitScope["talentSources"], where: string): "world" | "raw" | undefined {
+function cooldownClockOf(cooldown: ValueExpr, skillId: string, skill: string | undefined, isSource: (id: string) => boolean, talentSources: KitScope["talentSources"], where: string): { readonly clock: "world" | "raw" | undefined; readonly from: NonNullable<KitTrigger["cooldownFrom"]> } {
   const keys = valueKeys(cooldown, skillId, talentSources);
   const literal = typeof cooldown === "number" ? Math.round(cooldown * 1000) / 1000 : undefined;
   const sources = [...new Set([...keys.map((k) => k.skill), ...(skill !== undefined ? [skill] : [])])].filter(isSource);
-  const kinds = new Set<string>();
+  const from: { kind: "globalCd" | "cdBuff" | "marker"; source: string; length: string | number }[] = [];
   for (const src of sources) {
-    for (const x of cooldownTimers(src)) if (x.length === literal || keys.some((k) => k.skill === src && k.key === x.length)) kinds.add(x.kind);
+    for (const x of cooldownTimers(src)) if (x.length === literal || keys.some((k) => k.skill === src && k.key === x.length)) from.push({ kind: x.kind, source: src, length: x.length });
   }
+  const kinds = new Set(from.map((x) => x.kind));
   const world = kinds.has("globalCd") || kinds.has("cdBuff");
   if (world && kinds.has("marker")) throw new Error(`${where}: the cooldown's length sets both a timed marker and a CD timer or cooldown buff in the data (${[...kinds].join(", ")}); write cooldownClock with the evidence`);
-  return world ? "world" : kinds.has("marker") ? "raw" : undefined;
+  return { clock: world ? "world" : kinds.has("marker") ? "raw" : undefined, from };
 }
 
 /** A trigger's event with buff tags turned into their category filter. */
@@ -797,12 +799,14 @@ function kitChecker(scope: KitScope) {
       );
     const { cooldownClock: written, ...rest } = t;
     let clock: "world" | "raw" | undefined;
+    let from: KitTrigger["cooldownFrom"] = [];
     if (t.cooldown !== undefined) {
       const derived = cooldownClockOf(t.cooldown, skillId, t.skill, scope.isSource, scope.talentSources, where);
-      if (written !== undefined && derived !== undefined) throw new Error(`${where}: cooldownClock ${written} is the data's to say (${derived}: its CD timer, cooldown buff or timed marker); drop it`);
-      clock = derived ?? written;
+      if (written !== undefined && derived.clock !== undefined) throw new Error(`${where}: cooldownClock ${written} is the data's to say (${derived.clock}: its CD timer, cooldown buff or timed marker); drop it`);
+      clock = derived.clock ?? written;
+      from = derived.from;
     } else if (written !== undefined) throw new Error(`${where}: cooldownClock without a cooldown`);
-    return { ...rest, ...(clock === "world" ? { cooldownClock: "world" as const } : {}), do: normalize(t.do) };
+    return { ...rest, ...(clock === "world" ? { cooldownClock: "world" as const } : {}), ...(from.length ? { cooldownFrom: from } : {}), do: normalize(t.do) };
   };
   /** The kit's buffs with their game buffs' rules; after every hit and trigger is checked (which skills apply each buff). */
   const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>

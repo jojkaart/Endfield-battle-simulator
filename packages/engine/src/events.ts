@@ -360,6 +360,14 @@ export interface KitTrigger {
    * assumption `trigger-cooldowns` can put every trigger on one clock instead.
    */
   readonly cooldownClock?: "world";
+  /**
+   * The game's mechanisms behind the cooldown, as the compiler found them (kits.ts cooldownClockOf): each value source
+   * whose CD timer (`globalCd`: AddGlobalCDTimer), `…_cd` buff (`cdBuff`) or timed marker (`marker`: CreateTimedMarker)
+   * has its length set by the cooldown's key (`length`) or its seconds. Absent: none found (raw time, or a
+   * `cooldownClock` the kit writes with its evidence). Read by views (`efsim kit`, kit-census) and by engine readings
+   * that select by mechanism (backlog after round 11 point 12); the clock itself is `cooldownClock`.
+   */
+  readonly cooldownFrom?: readonly { readonly kind: "globalCd" | "cdBuff" | "marker"; readonly source: string; readonly length: string | number }[];
   /** At most this many times per fight. */
   readonly maxCount?: number;
   /** At most this many times per cast whose hits cause the events (the game's per-cast flags, e.g. is_power_attacked); events of no cast don't count. */
