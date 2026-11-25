@@ -1345,6 +1345,20 @@ function loggedTick(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f:
   return due ? advance(ctx, next, f) : next;
 }
 
+/**
+ * Whether a logged cast event at `f` is the last tick of a buff of its operator's that ends at `f` with it (KitBuff
+ * ticksLoggedAs and endFollowsTick; `st0` the state not yet advanced to `f`): the advance to `f` has already ticked and
+ * ended it, so loggedTick no longer finds it on. A tick heldTicks brings to its logged event ends the buff at the
+ * event's frame: Zhuang Fangyi's Empyrean end in d774d0ce7bd3 at 135.57 s (held 0.37 s to it) and 4bfc6f3e84b8 at
+ * 179.51 s (due at that frame), which the replay made real ultimates for, a 78-frame stop each.
+ */
+function endedWithTick(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: number): boolean {
+  if (c.landings.length > 0) return false;
+  const defs = ctx.kits.get(c.operator)?.buffs ?? [];
+  const ids = new Set(defs.filter((d) => d.ticksLoggedAs === c.skillId && d.endFollowsTick).map((d) => d.id));
+  return ids.size > 0 && st0.buffs.some((x) => ids.has(x.id) && x.owner === c.operator && x.cast === undefined && x.expiresAt === f && x.nextTick === f && activeAt(x, f - 1));
+}
+
 /** The ids of a kit's buffs that are children of `parent` (KitBuff.childOf). */
 function childrenOf(defs: readonly KitBuff[], parent: string): Set<string> {
   return new Set(defs.filter((d) => d.childOf === parent).map((d) => d.id));
@@ -2094,6 +2108,7 @@ function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: 
   const pre = st;
   const tick = c.missed ? null : loggedTick(ctx, st, c, f);
   if (tick) return { st: tick, skillId: null, pre, windowCount };
+  if (!c.missed && endedWithTick(ctx, st0, c, f)) return { st, skillId: null, pre, windowCount };
   if (c.expires) return { st: expiredAt(st, c, f), skillId: null, pre, windowCount };
   const skillId = c.missed ? missedStep(ctx, st, c.operator, f) : replayedSkill(ctx, st, c, f);
   if (skillId === null) return { st, skillId, pre, windowCount };

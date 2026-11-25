@@ -42,13 +42,14 @@ describe("Zhuang Fangyi: the Empyrean's end logged as an ultimate_skill cast eve
   it("4bfc: the events at 92.68 and 179.51 s are the Empyrean's end, not casts; her hits after 92.68 s match without Lone Barge's ultimate buff", () => {
     const Z = "chr_0030_zhuangfy";
     const fx = fixtureFile("pending/zmdlogs-4bfc6f3e84b8.json");
-    // Both events are the Empyrean's tick by their key (loggedCastFates); the replay's own decision differs at 179.51 s,
-    // where it still makes the ultimate (its stop applied): the EVENT line says so since round 11, an open replay
-    // question, not this test's.
+    // Both events are the Empyrean's tick by their key (loggedCastFates), and the replay reads both so: at 179.51 s its
+    // Empyrean ends on the event's own frame (the advance to it has ticked and ended it: buffreplay.ts endedWithTick;
+    // before 2026-11-25 the replay made a real ultimate there, a 78-frame stop).
     const fates = loggedCastFates(data, fx).filter((e) => e.operator === Z && e.fate === "tick").map((e) => (e.t / 1000).toFixed(2));
     for (const t of ["92.68", "179.51"]) expect(fates).toContain(t);
     const view = replayView(data, fx, { operators: [Z] });
     expect(view).toContain("92.68  EVENT  Zhuang Fangyi ultimate_skill (the log's cast event): a tick of empyrean");
+    expect(view).toContain("179.51  EVENT  Zhuang Fangyi ultimate_skill (the log's cast event): a tick of empyrean");
     // Her first ultimate's Lone Barge buff is listed to 91.62 s; the next hits list none (the log has no second run until 144.37 s).
     const after = checkLog(data, fx).filter((v) => v.hit.operator === Z && v.hit.t >= 92900 && v.hit.t <= 119300 && /normal_skill_ult|sword_triggerd/.test(v.hit.event));
     // 27 hits, plain but one (110.37 s, a Sunderblade strike off for another reason); with the buff they read ×0.849.

@@ -15,7 +15,7 @@ const SRC = new URL("../packages/logs/src/", import.meta.url).pathname;
 const ALLOWED: Readonly<Record<string, { readonly n: number; readonly why: string }>> = {
   "logcasts.ts": {
     n: 6,
-    why: "skillStops (the builder: its resets; its slow-downs come from the engine's pathSlowdowns), withResets (its parts' resets), ownStopLoggedFrame (where a cast's own stop ends, for its logged frame), unplacedCastStops (whether a skill has any), placeWith (whether a teammate's cast stops the world) and eventStopStart (the length of an ultimate's full stop from its frame 0)",
+    why: "skillStops (the builder: its resets; its slow-downs come from the engine's pathSlowdowns), withResets (its parts' resets), ownStopLoggedFrame (where a cast's own stop ends, for its logged frame), unplacedCastStops (whether a skill has any), placeWith (whether a teammate's cast stops the world) and fullStopFrames (the length of an ultimate's full stop from its frame 0, for eventStopStart and inTurnStart)",
   },
   "buffreplay.ts": { n: 1, why: "loggedCastStart: the length of an ultimate's full stop from its frame 0" },
   "query.ts": { n: 1, why: "castEventPlace: the length of a skill's full stop, to say where its cast event sits (round 11)" },

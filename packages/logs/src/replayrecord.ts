@@ -300,6 +300,8 @@ function enemyStatuses(st: TimelineState, names: ReadonlySet<string>): Map<strin
   for (const x of e.physical) if (want(x.status)) out.set(`${x.status}|${x.operator}`, { level: x.level, appliedAt: x.appliedAt, expiresAt: x.expiresAt });
   for (const x of e.controls) if (want(x.status)) out.set(`${x.status}|${x.operator}`, { level: 1, appliedAt: x.appliedAt, expiresAt: x.expiresAt });
   if (e.vulnerable && want("vulnerable")) out.set("vulnerable|", { level: e.vulnerable.stacks, expiresAt: e.vulnerable.expiresAt });
+  // The Arts infliction: its element in the key, its stacks as the level (`status:infliction`).
+  if (e.infliction && want("infliction")) out.set(`infliction:${e.infliction.element}|${e.infliction.by?.join(",") ?? ""}`, { level: e.infliction.stacks, expiresAt: e.infliction.expiresAt });
   return out;
 }
 

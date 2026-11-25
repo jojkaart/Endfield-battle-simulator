@@ -72,6 +72,22 @@ describe("an ultimate whose first landing travels (KitHit.travels), from its cas
   });
 });
 
+describe("ultimates pressed together play their time stops in turn (logcasts.ts inTurn, 2026-11-25)", () => {
+  const G = "chr_0013_aglina";
+  const P = "chr_0004_pelica";
+  it("fc63: Gilberta's ultimate (frame 60 at 43.58 s) before Perlica's (41.77 s), not over it: the log quiet in 39.94–41.73 s", () => {
+    // Placed from its frame it was at 41.58 s, its stop over Perlica's; in turn, held by Perlica's stop: 39.92 s.
+    expect(startOf("pending/zmdlogs-fc63a2001251.json", G, `${G}_ultimate_skill`, 41000)).toBeCloseTo(39920, -2);
+    expect(startOf("pending/zmdlogs-fc63a2001251.json", P, `${P}_ultimate_skill`, 41000)).toBeCloseTo(41770, -2);
+  });
+  it("4360: an ultimate already after the other's stop stays (Gilberta's at 52.97 s, after Liino's from her event)", () => {
+    expect(startOf("pending/zmdlogs-4360447193ac.json", G, `${G}_ultimate_skill`, 52000)).toBeCloseTo(52970, -2);
+  });
+  it("40d9: a landing batched at the other's stop end (12.95 s): the latest start the log leaves quiet, its stop ending at Si's start", () => {
+    expect(startOf("zmdlogs-40d9a3c1da37.json", G, `${G}_ultimate_skill`, 10000)).toBeCloseTo(9300, -2);
+  });
+});
+
 describe("two hits of one landing at one time, its cast's landings all logged (a second enemy)", () => {
   it("9c6e: the second shares the first's cast, slot and landing; no shot is made twice", () => {
     const fx = fixture("pending/zmdlogs-9c6e97486a9d.json");
