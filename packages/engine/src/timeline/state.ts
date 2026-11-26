@@ -328,7 +328,7 @@ export interface LandedHit extends HitDamage {
   /**
    * A landing of a random landed count at its expected count (PendingHit.landedOf): its cast, the cast's planned
    * landings `of`, the observed counts and the factor E[N] / of its damage carries; the distribution counts the
-   * cast's landings of the hit as one random sum (moments.ts landedMoments).
+   * cast's landings of the hit as one random sum (moments.ts hitsMoments).
    */
   readonly landed?: { readonly cast: number; readonly of: number; readonly counts: readonly number[]; readonly scale: number };
 }

@@ -31,7 +31,7 @@ import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type Kit
 import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedTickFrames, loggedTickLandings, msOfFrame, runBounds, statusInstances } from "./holdinputs.ts";
-import { type CritSource, critTriggers, layerCrits, shownCrits, undecidedBuff, valueCrits } from "./replaycrits.ts";
+import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
 import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { awayWindows } from "./enginecheck.ts";
@@ -296,7 +296,7 @@ export interface ReplayOptions {
   readonly trace?: readonly string[];
   /**
    * More bounds on the hidden holds (hidden-holds `placed`/`holds`), beside the replay's own clocks: clocks only a reading
-   * of the hits' damage shows (logcheck.ts logBuffReplay: Corrosion's ramp steps, holds.ts rampBounds).
+   * of the hits' damage shows (logcheck.ts logBuffReplay: Corrosion's ramp steps, rampsteps.ts rampBounds).
    */
   readonly holdBounds?: readonly HoldBound[];
 }
@@ -307,28 +307,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const k = effectiveKit(data, b);
     return k ? [k] : [];
   });
-  const decided = new Map<string, string[]>();
-  const undecided = new Map<string, string>();
-  for (const kit of kits) {
-    for (const def of kit.buffs) {
-      if (!def.gameBuff || !listed.has(def.gameBuff) || def.consumedBy || def.link) continue;
-      const why = undecidedBuff(kit, def.id);
-      if (why) undecided.set(def.gameBuff, `${kit.operator} ${why}`);
-      else decided.set(def.gameBuff, [...(decided.get(def.gameBuff) ?? []), `${kit.operator}:${def.id}`]);
-    }
-  }
-  for (const g of undecided.keys()) decided.delete(g);
-  // Every kit buff the replay can't judge, listed or not (the log check takes those from the log: logcheck.ts). Not an
-  // operator's whose buffs the log never lists, its weapon's and gear's included: such a log doesn't record that
-  // operator's buffs, so their absence says nothing (1d91: Liino's lance ATK layers on her heals' targets, ×1.15 on
-  // Typhoeus's hits with 4 layers, and her stance ATK, all missing from the log).
-  const unjudgedKitBuffs = new Map<string, string>();
-  const allListed = new Set(fx.hits.flatMap((h) => h.effects.map((e) => e.buff)));
-  for (const kit of kits) for (const def of kit.buffs) {
-    if (!kit.buffs.some((d) => d.gameBuff !== undefined && allListed.has(d.gameBuff))) continue;
-    const why = undecidedBuff(kit, def.id);
-    if (why) unjudgedKitBuffs.set(`${kit.operator}:${def.id}`, why);
-  }
+  // Which kit buffs the replay decides, and why not the others (replaycrits.ts buffDecidability: one place for a reason).
+  const { decided, undecided, unjudgedKitBuffs } = buffDecidability(kits, fx, listed);
   const failed: { cast: ReplayedCast; error: string }[] = [];
   const edge = frameOf(REPLAY_EDGE_MS);
   const team = fx.team.map((b) => b.operator);

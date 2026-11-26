@@ -490,7 +490,7 @@ shares of the off error at that code):**
     hits are ×0.943 (−5.7%) and Si's ×0.964 below the log, which the tail had covered. **Next:** 0c14's Rossi and Si
     under-prediction (−5.7%, −3.6% on matched landings). **Found (2026-11-26, 0c14 and the operator curve; "0c14"
     below):** half of Rossi's was the totals counting crit-unknown hits at expected crits (`totals-crits` `read`), 18k
-    her attack 4 on the controlled path while a teammate (drivers.ts controlPathLandings), the rest Alesh's unlogged
+    her attack 4 on the controlled path while a teammate (paths.ts pathLandings), the rest Alesh's unlogged
     12.5 s combo (her weapon's second layer, her P3) and a Stagger at its breaking hit: the team −3.2 → −1.3%.
     **The tail rule's cuts across the logs (2026-11-26; scripts/probes/tails/cuts.ts):** 16 cuts in the development
     logs, 7 dropping a landing the `kept` replay has; none against the log. 0c14's Rossi (the rule's case) and Alesh's
@@ -3159,7 +3159,7 @@ crits, 18k her attack 4 on the wrong path; the rest is Alesh's unlogged combo an
   path (hit_ai, × 0.5 a hit against the controlled path's × 0.2) when she isn't controlled, and the log shows Si, then
   the Endministrator controlled there; the placement had matched the logged hits to the controlled path's frames
   (the same after the jump) and the replay dropped the jump the pinned landings contradicted. Built in general:
-  drivers.ts controlPathLandings (a jump on whether its operator is controlled follows who the log shows
+  paths.ts pathLandings (a jump on whether its operator is controlled follows who the log shows
   controlled; the landings go to its path's hit of the same keys). 2fd9 plain 250 → 275 and 99fb 161 → 173 (Rossi
   under Mi Fu), 0c14 +2.
 - **Alesh's 12.5 s combo** (×1.032 on everyone's hits at 20.7–43.3 s, Rossi's first ultimate and Si's 30 s combo among

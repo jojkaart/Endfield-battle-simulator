@@ -273,6 +273,45 @@ export function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0): stri
 }
 
 /**
+ * Which kit buffs the replay decides (BuffReplay.decided, undecided, unjudgedKitBuffs), from one reason per kit buff
+ * (undecidedBuff, asked once each): the one place a reason goes (alesh-rare-fin report point 3: a per-log reason, a
+ * chance path the listing decides, needed a parameter threaded through undecidedBuff's recursion and the two loops
+ * apart in buffreplay.ts that read it). `decided`: each listed game buff with a value whose kit buffs (not consumed,
+ * not Link) the replay judges, by game buff; `undecided`: those it can't, why; `unjudgedKitBuffs`: every kit buff it
+ * can't judge, listed or not (the log check takes those from the log: logcheck.ts), but not an operator's whose buffs
+ * the log never lists, its weapon's and gear's included: such a log doesn't record that operator's buffs, so their
+ * absence says nothing (1d91: Liino's lance ATK layers on her heals' targets, ×1.15 on Typhoeus's hits with 4 layers,
+ * and her stance ATK, all missing from the log).
+ */
+export function buffDecidability(kits: readonly OperatorKit[], fx: Pick<LogFixture, "hits">, listed: ReadonlySet<string>): { readonly decided: Map<string, string[]>; readonly undecided: Map<string, string>; readonly unjudgedKitBuffs: Map<string, string> } {
+  const why = new Map<string, string | null>();
+  const reason = (kit: OperatorKit, id: string) => {
+    const k = `${kit.operator}:${id}`;
+    if (!why.has(k)) why.set(k, undecidedBuff(kit, id));
+    return why.get(k) as string | null;
+  };
+  const decided = new Map<string, string[]>();
+  const undecided = new Map<string, string>();
+  for (const kit of kits) {
+    for (const def of kit.buffs) {
+      if (!def.gameBuff || !listed.has(def.gameBuff) || def.consumedBy || def.link) continue;
+      const w = reason(kit, def.id);
+      if (w) undecided.set(def.gameBuff, `${kit.operator} ${w}`);
+      else decided.set(def.gameBuff, [...(decided.get(def.gameBuff) ?? []), `${kit.operator}:${def.id}`]);
+    }
+  }
+  for (const g of undecided.keys()) decided.delete(g);
+  const unjudgedKitBuffs = new Map<string, string>();
+  const allListed = new Set(fx.hits.flatMap((h) => h.effects.map((e) => e.buff)));
+  for (const kit of kits) for (const def of kit.buffs) {
+    if (!kit.buffs.some((d) => d.gameBuff !== undefined && allListed.has(d.gameBuff))) continue;
+    const w = reason(kit, def.id);
+    if (w) unjudgedKitBuffs.set(`${kit.operator}:${def.id}`, w);
+  }
+  return { decided, undecided, unjudgedKitBuffs };
+}
+
+/**
  * Where a logged hit's crit in the replay comes from (BuffReplay.critSource): `log` its flag; `shown` a trigger on crits
  * its logged hits show (shownCrits); `layers` the layers such a trigger adds (layerCrits); `values` the hits' values
  * (valueCrits); `none` nothing: the replay the check reads lands it without a crit.
