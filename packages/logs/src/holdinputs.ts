@@ -194,13 +194,22 @@ export interface LoggedLaneEnds {
   readonly why: Map<string, string>;
 }
 
+/**
+ * Where a run whose lane ends at a hit's ms ends (engine assumption `boundary-ends`): `listed`, with that hit, its last
+ * listed hit; `before`, before it, that hit the first without it.
+ */
+export type BoundaryEnds = "listed" | "before";
+
 /** The log's runs of its listed buffs and what each hit lists (LoggedLaneEnds), nothing decided yet. */
-export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
+export function loggedLaneEnds(fx: Pick<LogFixture, "hits">, boundaryEnds: BoundaryEnds = "listed"): LoggedLaneEnds {
   const runs = new Map<string, { buff: string; source: string; since: number; holder: string; lastListed: number }>();
-  const hits = [...fx.hits].sort((a, b) => a.t - b.t).map((h) => ({ t: h.t, operator: h.operator, listed: new Set([...h.effects, ...h.boundaryEffects].flatMap((e) => (e.source === undefined ? [] : [`${e.buff}|${e.source}`]))) }));
+  // A boundary effect not at its own start is at its lane's end (zmdlogs.ts zmdlogsHits).
+  const ending = (h: LogFixture["hits"][number]) => (boundaryEnds === "listed" ? h.boundaryEffects : h.boundaryEffects.filter((e) => e.since === h.t));
+  const hits = [...fx.hits].sort((a, b) => a.t - b.t).map((h) => ({ t: h.t, operator: h.operator, listed: new Set([...h.effects, ...ending(h)].flatMap((e) => (e.source === undefined ? [] : [`${e.buff}|${e.source}`]))) }));
   for (const h of fx.hits) {
-    // A boundary effect at the lane's start says nothing of its end; one at its end is the end itself.
-    for (const e of [...h.effects, ...h.boundaryEffects.filter((x) => x.since !== h.t)]) {
+    // A boundary effect at the lane's start says nothing of its end; one at its end is the end itself (`listed`), or
+    // the first hit past it (`before`).
+    for (const e of [...h.effects, ...(boundaryEnds === "listed" ? h.boundaryEffects.filter((x) => x.since !== h.t) : [])]) {
       if (e.since === undefined || e.source === undefined) continue;
       const holder = TARGET_SIDE_ZONES.has(e.zone) ? "enemy" : h.operator;
       const key = `${e.buff}|${e.source}|${e.since}|${holder}`;
