@@ -79,12 +79,10 @@ export function recordedBurst(data: GameData, fx: LogFixture, member: { readonly
   const events = new Set(appliers.flatMap((e) => e.hit.events));
   const start = fx.hits.filter((h) => h.operator === burst.operator && events.has(h.event) && h.t <= burst.t).at(-1);
   if (!start) return { unknown: `no logged hit applying ${buff.id} before the burst` };
-  // This record's applier went unlogged when another record's burst lies between the latest logged applier and this
-  // burst, or the buff's life (twice its duration, for the stops and holds) doesn't reach from it to the burst
-  // (pending/zmdlogs-0c14fb3ce77d.json: Si's battle skill at 153.99 s, no hit of it logged, the latest logged one 108.67 s;
-  // read from there, the 181.42 s burst's record held 73 s of every hit).
-  const bursts = new Set(kitHitEntries(kit).filter((e) => isRecordedBurst(e.hit)).flatMap((e) => e.hit.events));
-  if (fx.hits.some((h) => h.operator === burst.operator && h !== burst && bursts.has(h.event) && h.t > start.t && h.t < burst.t)) return { unknown: `the record's applier isn't logged: a burst of ${buff.id} lies between the latest logged applier and this burst` };
+  // This record's applier went unlogged when the buff's life (twice its duration, for the stops and holds) doesn't reach
+  // from the latest logged applier to the burst (pending/zmdlogs-0c14fb3ce77d.json: Si's battle skill at 153.99 s, no hit
+  // of it logged, the latest logged one 108.67 s; read from there, the 181.42 s burst's record held 73 s of every hit).
+  // (Not "another burst between": one burst may log two events, the mark's inkmark_projhit and inboom_projhit.)
   const startSkill = (appliers.find((e) => e.hit.events.includes(start.event)) as { skillId: string }).skillId;
   const life = buff.duration !== undefined ? evaluate(buff.duration, evalContext(data, member.build, member.panel, startSkill, {})) : Infinity;
   if (burst.t - start.t > 2 * life * 1000) return { unknown: `the record's applier isn't logged: the latest logged applier is ${((burst.t - start.t) / 1000).toFixed(1)} s before the burst, past twice ${buff.id}'s ${life} s` };

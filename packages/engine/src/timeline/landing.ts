@@ -534,6 +534,8 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
 
 /** A burst lands: before-damage triggers on it, its damage (on the enemy as it is now), then its other triggers. */
 export function landBurst(ctx: TimelineContext, state: TimelineState, b: PendingBurst): TimelineState {
+  // The enemy out of reach (TimelineScenario.enemyAway): the burst finds no one, as a hit does.
+  if (enemyAwayAt(ctx.scenario, b.frame)) return state;
   const origin = { operator: b.event.operator, kind: b.fromKind };
   // As it was inflicted, at its own frame (kind and frame first, as status.ts makes it).
   const { kind: burstKind, ...rest } = b.event;

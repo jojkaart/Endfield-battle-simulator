@@ -483,9 +483,18 @@ same. db87 −6.0 → −5.9% only. Not the default with a verified log worse.
 combo's camera or cut-in holding the teammates' actions apart from the world's clock; the caster's layer-1
 TimeDilationAction (dropped by the compiler) on its targets (Arcane's has the enemy among them: 0.25 s, about
 0.17 s lost; most combos have none, and their stops show the same excess).
-**Next check:** the excess per combo against its slow-down's length and its operator over more logs (per-combo
-table: scripts/probes/combo-hold/casts.ts --rows), and whether it is a fixed delay per stop edge; then a reading of
-the stops that holds the operators' clocks (bursts, landings) and not the statuses.
+**2026-11-26 (away and presses): a fixed delay at each stop's edge doesn't explain both.** One constant per combo
+fits as well as a share of its hold, on both sides (scripts/probes/combo-hold/edge-casts.ts, edge-ticks.ts): the
+operators' casts across combos only (76 within 0.4 s) 140 ms a combo, rms 149 ms, against 0.333 × held, rms 147 ms
+(none: 223 ms), the residual not rising with the one combo's hold (169, 196, 84, 263 ms at about 300, 400, 500,
+600 ms held); the enemy's tick chains 57 ms a combo (rms 117) against 0.190 × held (rms 112; none 153), Arcane's
+9-frame combo (177, 12, 105 ms) as late as Si's 24-frame one (164). So the logs can't tell a per-edge delay from a
+share, but one delay on the world's clock is ruled out: it would hold the enemy's ticks and the operators' landings
+alike, and they differ by ×2.5 (about 1.7 frames a combo against 4.2). **Still possible:** two delays, the
+operators' own clock resuming later than the world's at a combo's end (their animation's cut-in); not built
+(`stagger-holds` stays off). **Next check:** whether the operators' excess sits at the combo's end (their first
+landing after it late, their last before it on time) against its start, from casts.ts --rows split by where the
+stop falls in the cast.
 
 ## Fight totals: what moves them (2026-11-23)
 

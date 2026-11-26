@@ -695,7 +695,11 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
   const away = awayLeftOutOfTotals(engineReadingOf(c.replay.assume, "enemy-away")) ? awayWindows(fx) : [];
-  const isAway = (frame: number) => away.some((w) => (frame * 1000) / 30 > w.from + AWAY_EDGE_MS && (frame * 1000) / 30 < w.to - AWAY_EDGE_MS);
+  // Under `absent` up to the stretch's ends, as the replay's enemy is away (enemyAwaySpans): a landing there no logged
+  // hit stands for is one the replay didn't hold back (an Arts Burst, a status's tick: 4a64's Nature burst at 29.30 s).
+  const awayEdge = engineReadingOf(c.replay.assume, "enemy-away") === "absent" ? 0 : AWAY_EDGE_MS;
+  const isAway = (frame: number) =>
+    away.some((w) => (awayEdge === 0 ? frame > Math.round((w.from * 30) / 1000) && frame < Math.round((w.to * 30) / 1000) : (frame * 1000) / 30 > w.from + awayEdge && (frame * 1000) / 30 < w.to - awayEdge));
   // With the replay's enemy away too (enemy-away `absent`), the frames the enemy leaves at: each stretch's first hit's.
   const leaving = new Set(engineReadingOf(c.replay.assume, "enemy-away") === "absent" ? away.map((w) => Math.round((w.from * 30) / 1000)) : []);
   let awayLeftOut = 0;

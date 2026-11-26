@@ -18,16 +18,15 @@ worked, found by reading 80 lines of prose).
 
 ## Files
 
-Two of 2026-11-26 (damage-factors round) are held back, not dropped: changes in files another agent held, measured,
-for the lead to apply or build in general (each header says which). A third, the check's loggedEntries matching an
-unjudged buff's entry only against its own game buff, was adopted by the lead on 2026-11-26 and its diff deleted.
+Three of 2026-11-26 (damage-factors round) were held back, not dropped: changes in files another agent held. All
+three are gone now: the check's loggedEntries matching an unjudged buff's entry only against its own game buff was
+adopted by the lead on 2026-11-26; the 0c14 away-press measurement (Si's away-stretch press making nothing, her next,
+hitless, her battle skill by Jade Vessel's listing; 0c14 plain 172 → 293) and the life-end landings (Rossi's slash2
+extras at a fight's or a life's last hit uncounted; mixed and too broad) were superseded on 2026-11-26 (away and
+presses round) by general rules: the replay's enemy away (engine assumption enemy-away `absent`), a hitless press
+inferred from the listing (`hitless-presses` `inferred`), the totals' leaving frame and a kill read from the last
+life's damage ([open-problems.md](../open-problems.md), "The damage factors"). Their diffs are deleted.
 
-- [2026-11-26-0c14-si-away-press.diff](2026-11-26-0c14-si-away-press.diff): a measurement hard-coded to two presses
-  (Si's away-stretch press makes nothing; her next, hitless, is her battle skill by Jade Vessel's listing); 0c14 plain
-  172 → 293, −4.9 → +1.2%, the Endministrator's Crush exact. The general rule is to build.
-- [2026-11-26-life-end-landings.diff](2026-11-26-life-end-landings.diff): mixed. Landings no logged hit stands for at
-  the fight's last frame or an away stretch's first are uncounted (Rossi's slash2 extras); 4a64 better, 207f worse,
-  and too broad (0c14's same-frame extra before another hit's kill is logged).
 - [2026-11-26-combo-curve-flat.diff](2026-11-26-combo-curve-flat.diff): the ComboSkill slow-down curve at 0.01 for
   its whole duration (the clocks run late across combos by more than the guessed curve holds); verified plain 78.0 →
   73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; a middle curve worse too.
