@@ -4,9 +4,48 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 162 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 163 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: What ends Arcane's Doubles Susceptibility: the slug's purges, e82d's second touch
+
+**Goal:** the lead from docs/journal/2026-11-26-12-arcane-s-will-lines-and-chen-s-late-wolven-blood-final.md: Arcane's
+combo Susceptibility (`doubles_susceptibility`) gone before Si's combo final in e82d (8.93–9.12 s) and 6339 (29.38 s),
+which the replay keeps; find what ends it in the data, check it on every Arcane log, implement, measure.
+
+**Done:**
+- **Every run of it, every Arcane log** (scripts/probes/kits/arcane-doubles-runs.ts): in WILL each run ends at its
+  seal's tick, 6.1–7.6 s of world time, but four. **6339's two and 7b54's at 47.48 s aren't Arcane's:** every team
+  debuff on Hard 33's slug ends at the same logged moment (Jade Vessel, Camille's Susceptibility, Arcane's weapon
+  lines), and in 6339 every hit after 11.27 s read exactly with the log's listing, the replay's 1.40 times the logged.
+- **Engine assumption `logged-purges`** (default `log`; packages/logs holdinputs.ts loggedPurges, purgedByLog, wired in
+  buffreplay.ts): a logged moment after which none of the team's runs on the enemy listed there is listed again, at
+  least 3 debuffs (a debuff's per-element affixes once) from two operators, the next moment within 1.5 s: the replay
+  ends every enemy-side kit buff, status, infliction, Vulnerable stack and control there, and drops an Arts Burst on
+  its way (6339's replay-only burst at 29.40 s had put Arcane's Solemn Phalanx line on every later hit). Only 6339's two
+  moments qualify among the development logs. Scoreboard: development plain 73.8 → 74.3%, mean |damage error| 6.1 →
+  5.1%; 6339 plain 28 → 112 of 140, +40.8 → −8.0%; verified, hold-out and earlier pending unchanged.
+  tests/logged-purges.test.ts.
+- **e82d is the only second touch inside a running seal in any log** (multi-target included;
+  arcane-second-touch.ts): only the Doubles Susceptibility goes, the first run's listing ending where the second's
+  begins. Ruled out: Si's Immobilization (seals applied while she holds the enemy run their full length:
+  arcane-doubles-immobilization.ts), Si's Initial Stroke (0eef inside a run), Rhodagn's Stagger node (bar 225), the
+  seal's early end by abilityEvent 8 / 1403 / 1601 (it casts abilityentity_end, logged as a combo cast; none),
+  its tick. Open: the second application refreshing the first instance, which ends with the first seal at the second
+  touch's InterruptAction (87 ms before the last inside listing: the log's batching), or Arcane's passive's
+  TagQueryListener. Not implemented: one hit in one log.
+
+**Decisions:** a log-read stage event, not a kit rule: no data names the slug's phases, and the purge's evidence is the
+log's own listing (as the logged Stagger steps are). Statuses and inflictions go too (the burst decided it: without
+them 6339 kept 35 mismatches). The affix pair counts once because 3aa6 at 25.42 s (Arcane's pair and Perlica's
+Electrification) read as a purge otherwise and lost 26 plain (earlier pending). The −8.0% isn't worse than +40.8%: the
+over-prediction had cancelled Si's low combo-final slots at 11.31 s (the slug's HP cap). No team-ab: no kit or
+engine rule simulations read changed.
+
+**Left:** e82d −8.9% (a log with a second touch inside an Imprisonment decides it); 7b54's partial ends (16.48,
+19.59, 47.48 s: other debuffs listed on); 6339's Laevatain hits 14.6–19.2 s (the replay ×1.28) and Si's combo final
+slots at 11.31 s.
 
 ## 2026-11-26: A stop's batched landings: the log's Stagger bars give their order; Pogranichnik's Morale before the damage
 
@@ -337,48 +376,3 @@ accuracy list); the log context's signature change carried, its failure mode mad
 
 **Problems:** the first guard run showed `zmdlogs decisions --assume combo-curve=…` had replayed the defaults on the
 reading's data, the bug class the guard is for; "Chen" matched Purrchena too until the name's word starts came first.
-
-## 2026-11-26: 0c14 and the operator curve: a teammate's attack on its own path, crits read from values in the totals
-
-**Goal:** 0c14's under-prediction (−3.2%: Rossi's matched landings ×0.943, Si's ×0.964), a combo curve for the
-operators' clocks alone, the unlogged tails' cuts across the logs, then Alesh's eventless combo, 207f, Snowshine's
-×0.9624 and the buffreplay.ts split.
-
-**Done** (open-problems "0c14", "The damage factors", "The enemy's clock", "The replay's Stagger windows"):
-- **The totals' expected crits** (scripts/probes/totals/parts.ts): of Rossi's −186k, about 87k was crit-unknown hits
-  counted at expected crits though their values show the crit (her first ultimate ×1.032 off on every stab, its two
-  crit finals at ×0.766). Engine assumption `totals-crits` `read`, the new default (enginecheck.ts critFromValue:
-  the reading the value is within ×1.08 of, the other not).
-- **A teammate's attack 4 on its own path** (drivers.ts controlPathLandings): Rossi's kit jumps to hit_ai (× 0.5)
-  when she isn't controlled; the placement matched the controlled path's frames and the replay dropped the jump.
-  A jump on control now follows who the log shows controlled: 2fd9 plain 250 → 275, 99fb 161 → 173, 0c14 +2.
-- **What's left of 0c14** is Alesh's: her 12.5 s Rare Fin combo the log shows only by its buffs (a second Thermite
-  Cutter layer on everyone at 20.7–43.3 s, her P3 from 13.25 s), her 59.56 s combo's Rare Fin path (also 4e36, a9d7),
-  and a Stagger at its breaking hit (80.48 s, −30k; scripts/probes/stagger/break-order.ts: the breaking hit without it
-  45 of 47, the hits after it at its ms with it 10 of 29, every combo hit after its own Lift's break 4 of 4).
-- **Operators-only combo curves** (`combo-operator-hold` `plateau-0.5`/`0.6`/`0.7`/`flat`, timeline/clock.ts
-  comboOperatorCurve): verified plain 78.0 → 77.9 / 77.7 / 77.6 / 76.0%; 9a80 (Arcane's team) +4 under `plateau-0.5`,
-  3aa6 −13. Recorded and stopped, as the brief said.
-- **The tail cuts** (scripts/probes/tails/cuts.ts): 16 cuts, 7 dropping a landing, none against the log. 9c6e's is
-  the placement's two-enemy split (Liino's hit 1 on both enemies at one ms); de6a's hit_3 falls in a 2.3 s stretch with
-  no hit by anyone.
-- Snowshine: her nodes 5 and 7 need favorability, so two nodes give ×0.977 of the ×0.9624; ×0.985 left.
-
-**Scoreboard** (`npm run snapshots:update`): verified plain 78.0%, mean |damage error| 2.0 → 1.5%; development plain
-69.0%, mismatch 11.4%, mean |damage error| 7.0 → 6.9%; hold-out plain 80.6 → 80.8%, mismatch 5.6%, mean |damage
-error| 8.3 → 8.4% (1 mixed: +15 plain, Rossi's attack 4, its total further; 2 other); earlier pending plain 67.7 →
-68.0%, mismatch 11.9%, mean |damage error| 4.0 → 3.6% (0c14 plain 336 → 338, −3.2 → −1.3%; 2fd9 250 → 275, −3.6 →
-−1.3%; 99fb 161 → 173, −2.9 → −0.3%; b6aa −5.5 → −2.3%).
-
-**Decisions:** `totals-crits` `read` is a totals rule (plain counts unchanged): it takes one fight's crit luck out of
-the totals; the six logs whose totals got slightly further (de6a −0.8 → −1.0%, 9847 +0.2 → −0.5%, fc63, 5082, 458b,
-9555, ≤0.7 points) had expected crits covering a model error. The curve readings stay registered as the measured
-record. A placement rule taking a landing at its cast's previous one's ms as a second enemy's fixed 9c6e's Liino combo
-and broke 40d9's Si (her combo slashes batched at one ms, Si −23%): dropped. Alesh's two combo leads not built: a
-combo has no cast event and the Rare Fin path is a chance jump the replay doesn't roll; both need a cast or path read
-from the listing or the values (next steps). The buffreplay.ts split (point 6) not done: no time left after the
-accuracy items. 207f not reached. team-ab: unchanged (no simulated fight moved). Smoke passed.
-
-**Problems:** the totals' per-hit numbers aren't in any view (a probe written for it); two paths sharing keys show
-only as odd ratios; `hits --all` after an engine edit recomputes every log (friction report
-docs/friction/2026-11-26-0c14-and-operator-curve.md).

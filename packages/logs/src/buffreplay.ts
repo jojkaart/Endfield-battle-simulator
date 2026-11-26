@@ -30,7 +30,7 @@ import { loggedStagger } from "./replaysteps.ts";
 import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
 import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
-import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedTickFrames, loggedTickLandings, msOfFrame, runBounds, statusInstances } from "./holdinputs.ts";
+import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
 import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
@@ -339,7 +339,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx) : noEnds();
   const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx) : laneEnds;
   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
-  const held = (st: TimelineState, frame: number) => heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs);
+  // Engine assumption logged-purges: with `log`, the enemy-side kit buffs end where the log shows the enemy shedding the team's debuffs (purgedByLog).
+  const purges = (opts.assume?.["logged-purges"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "logged-purges")?.default) === "log" ? loggedPurges(fx) : [];
+  const held = (st: TimelineState, frame: number) => purgedByLog(heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs), frame, purges);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
   const shownByHits = shownCrits(kits, fx, placement);
   const byLayers = new Map([...shownByHits, ...layerCrits(kits, fx, placement, shownByHits)]);

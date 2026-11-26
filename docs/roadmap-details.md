@@ -316,6 +316,13 @@ end-boundary hits as past the run measured mixed (docs/tried/2026-11-26-boundary
 chain's data for the doubles' end; a hold bound only where the end-boundary hit's value decides; the batch order at a
 stop's end.
 
+**Arcane's Doubles end (2026-11-26, [journal](journal/2026-11-26-13-what-ends-arcane-s-doubles-susceptibility-the-slug-s-purges.md)):**
+6339's two early ends (and 7b54's at 47.48 s) are Hard 33's slug shedding every team debuff at once; the log check's
+replay reads those purges from the log (`logged-purges`: development plain 73.8 → 74.3%, 6339 28 → 112 plain). e82d's
+is the only second touch inside a running seal in any log; ruled out Si's Immobilization and Initial Stroke, Rhodagn's
+Stagger node, the seal's early-end events. Next: a log with a second touch inside an Imprisonment; 7b54's partial
+ends (other debuffs listed on, not purges by the rule).
+
 **Slots and paths by value (2026-11-26, [journal](journal/2026-11-26-12-slots-and-paths-by-value-hunter-pursuit-pogranichnik-s-combo.md)):**
 a cast's landings fewer than its slots take the slots their values fit (logcasts.ts realignByValue: 9c0b's Hunter
 Pursuit hits 2–4, db87's Camille ultimate, a27b's Mi Fu, 00ae's Arcane lasers); neither of Pogranichnik's buffs reads
