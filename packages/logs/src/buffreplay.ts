@@ -354,6 +354,8 @@ export interface BuffReplay {
   droppedLanding(hit: LogHit): string | null;
   /** The logged casts the replay didn't make, and why (a tick, a slot's variant, its energy or state, …): SKIP lines. */
   readonly skipped: readonly SkippedCast[];
+  /** The casts ended after their last logged landing (engine assumption unlogged-tails `cut`: tailCuts), at that frame: TAILCUT lines. */
+  readonly tailCuts: readonly { readonly cast: ReplayedCast; readonly frame: number }[];
   /**
    * Presses the log shows no hit of that the replay made from the listing (engine assumption hitless-presses
    * `inferred`: inferredPress), by their index in the timeline's casts, and why: their own landings stand for no damage
@@ -644,6 +646,8 @@ export interface ReplayedCast extends LoggedCast {
    * (its stance, its ticking buffs). The replay starts with it already made (withCastBeforeLog), not as a step.
    */
   readonly beforeLog?: true;
+  /** The frame it ends at, its later landings none of them logged (tailCuts, engine assumption unlogged-tails `cut`). */
+  readonly cutAt?: number;
 }
 
 /** How far from a placed cast's start a logged cast event of its skill may be to be that cast (ms). */
@@ -1994,6 +1998,65 @@ function missedStep(ctx: TimelineContext, st: TimelineState, operator: string, f
   return null;
 }
 
+/** How far (ms) around a cast's unlogged tail a logged hit of its operator with one of its skill's events keeps it whole, and a logged hit of anyone after its first landing shows the enemy there (tailCuts). */
+const TAIL_NEAR_MS = 1500;
+/** The most casts tailCuts ends in one fight, one replay each. */
+const TAIL_CUT_ROUNDS = 8;
+
+/**
+ * The casts a replay played past what the log shows (engine assumption unlogged-tails `cut`, `cut-all`): a made cast
+ * whose own landings after its last logged one stand for no logged hit, with no logged hit of its operator carrying one
+ * of the skill's events within TAIL_NEAR_MS of them that no cast holds (the placement may have put the tail's hits
+ * elsewhere), the first of them outside the away stretches and a logged hit of anyone within TAIL_NEAR_MS after it (the
+ * enemy there, the log recording). The log records every landing that lands, so the cast ended between: at the frame
+ * after its last logged landing (ReplayCastOptions.endsAt). pending/zmdlogs-0c14fb3ce77d.json: Rossi's battle skill at
+ * 35.40 s, its two charge hits logged, then neither her Lift at frame 35 nor the wolves and their bleed.
+ */
+function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, reading: string): Map<ReplayedCast, number> {
+  const out = new Map<ReplayedCast, number>();
+  if (reading !== "cut" && reading !== "cut-all") return out;
+  const kinds: ReadonlySet<SkillType> = new Set<SkillType>(reading === "cut-all" ? ["basic", "battle", "combo", "ultimate"] : ["battle", "combo", "ultimate"]);
+  const heldBy = new Map(run.made.flatMap((m) => m.c.landings.map((l) => [l.ref, m.c] as const)));
+  const away = awayWindows(fx);
+  const ms = (f: number) => (f * 1000) / FPS;
+  const last = Math.max(0, ...fx.hits.map((h) => h.t));
+  for (const m of run.made) {
+    const c = m.c;
+    if (c.cutAt !== undefined || c.missed || c.slot || c.inferred || c.expires || c.beforeLog || c.kind === null || !kinds.has(c.kind) || c.landings.length === 0) continue;
+    // Every logged landing of the cast landed as its own (not a cast made as another variant, whose path the log's keys don't follow).
+    const refs = new Set(c.landings.map((l) => l.ref));
+    if (run.st.hits.filter((h) => h.ref !== undefined && refs.has(h.ref) && h.cast === m.index).length !== refs.size) continue;
+    const lastLogged = Math.max(...c.landings.map((l) => l.frame));
+    const tail = run.st.hits.filter((h) => h.cast === m.index && h.ref === undefined && h.frame > lastLogged).sort((a, b) => a.frame - b.frame);
+    const first = tail[0];
+    if (!first) continue;
+    const from = ms(first.frame);
+    // Not at the fight's end (the kill drops what comes after it), nor in an away stretch (nothing lands there).
+    if (from > last - TAIL_NEAR_MS || away.some((w) => from > w.from && from < w.to)) continue;
+    if (!fx.hits.some((h) => h.t >= from && h.t <= from + TAIL_NEAR_MS)) continue;
+    // A logged hit of the operator's casts (not a status's or a trigger's) that no other cast holds: this cast's, placed
+    // elsewhere or matched freely (a follow-up's, a tick's), so the log shows more of it.
+    const shown = fx.hits.some((h, i) => {
+      if (h.operator !== c.operator || h.t <= ms(lastLogged) || h.t > from + TAIL_NEAR_MS) return false;
+      const by = heldBy.get(String(i));
+      if (by && by !== c) return false;
+      return (placement.hits.get(h)?.cast.kind ?? null) !== null;
+    });
+    if (shown) continue;
+    // A new run of a decided game buff the replay starts from the cut to the tail's end that the log lists then and not
+    // before: the tail's effects came, so its landings did, unlogged (db87's Camille ultimate at 7.61 s: her gear set's
+    // DMG and her weapon's ATK and Heat DMG on Laevatain from 13.42 s, after hits the log doesn't have).
+    const end = (tail.at(-1) as LandedHit).frame + 1;
+    const listed = (g: string, a: number, b: number) => fx.hits.some((h) => h.t >= a && h.t <= b && h.effects.some((e) => e.buff === g));
+    const effects = [...run.instances].some(([key, list]) => {
+      const g = key.split("|", 1)[0] as string;
+      return list.some((x) => x.start > lastLogged && x.start <= end && listed(g, ms(x.start), ms(x.start) + TAIL_NEAR_MS) && !listed(g, ms(lastLogged) - TAIL_NEAR_MS, ms(lastLogged)));
+    });
+    if (!effects) out.set(c, lastLogged + 1);
+  }
+  return out;
+}
+
 /** An operator's basic attacks the attack input repeats: not a finisher (skillSpecification 8) or a dive (6), nor a follow-up. */
 function attackSteps(ctx: TimelineContext, operator: string): string[] {
   return (ctx.kits.get(operator)?.skills ?? []).filter((k) => k.kind === "basic" && !k.followUpOnly && ![6, 8].includes(ctx.data.skills[k.skillId]?.timing?.specification ?? 0)).map((k) => k.skillId);
@@ -2236,7 +2299,7 @@ function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: 
   if (skillId === null) return { st, skillId, pre, windowCount, ...(chosen.why !== undefined ? { why: chosen.why } : {}) };
   const flag = castFlag(ctx, st, c, skillId, f);
   // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
-  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}) });
+  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}) });
   return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(inferred ? { inferred: inferred.why } : {}) };
 }
 
@@ -2566,6 +2629,21 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     casts = pullingPresses(kits, placement, casts.map((c) => (inferredPresses.has(c) ? { ...c, inferred: true as const } : c)));
     main = run("never");
   }
+  // Engine assumption unlogged-tails: with `cut`, a cast whose later landings the log has none of ends after its last
+  // logged one (tailCuts), and the replay is made again.
+  // The earliest first, the replay made again after each (a cut changes what follows: 0c14's Rossi at 35.40 s takes the
+  // Vulnerable stack that her 52.04 s battle skill's follow-up needed), at most TAIL_CUT_ROUNDS.
+  const tailsReading = opts.assume?.["unlogged-tails"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "unlogged-tails")?.default ?? "kept";
+  const cuts = new Map<ReplayedCast, number>();
+  for (let round = 0; main && round < TAIL_CUT_ROUNDS; round++) {
+    const next = [...tailCuts(main, fx, placement, tailsReading)].sort((a, b) => a[1] - b[1])[0];
+    if (!next) break;
+    const [cast, frame] = next;
+    const cut = { ...cast, cutAt: frame };
+    cuts.set(cut, frame);
+    casts = casts.map((c) => (c === cast ? cut : c));
+    main = run("never");
+  }
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops (replayedCastStops): the placed casts' miss an ultimate placed from its cast event.
@@ -2740,6 +2818,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerCuts: main?.staggerCuts ?? [],
     castFlags: main?.flags ?? [],
     skipped: main?.skipped ?? [],
+    tailCuts: [...cuts].map(([cast, frame]) => ({ cast, frame })),
     inferred: new Map((main?.made ?? []).flatMap((m) => (m.inferred !== undefined ? [[m.index, m.inferred] as const] : []))),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);

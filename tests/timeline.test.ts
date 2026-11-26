@@ -2136,6 +2136,19 @@ describe("the enemy away (TimelineScenario.enemyAway)", () => {
   });
 });
 
+describe("a replayed cast's end the log shows (ReplayCastOptions.endsAt, engine assumption unlogged-tails)", () => {
+  it("ends at its frame: its own hits after it don't land, those before do; a frame past its action changes nothing", () => {
+    const ctx = createContext(data, scenario([]));
+    const full = advance(ctx, replayCast(ctx, init(ctx), op, L + "attack5", 0), 300).hits.filter((h) => h.skillId === L + "attack5");
+    const frames = [...new Set(full.map((h) => h.frame))].sort((a, b) => a - b);
+    expect(frames.length).toBeGreaterThan(1);
+    const cut = (frames[0] as number) + 1;
+    const ended = advance(ctx, replayCast(ctx, init(ctx), op, L + "attack5", 0, { endsAt: cut }), 300).hits.filter((h) => h.skillId === L + "attack5");
+    expect(ended.map((h) => h.frame)).toEqual(full.filter((h) => h.frame < cut).map((h) => h.frame));
+    expect(advance(ctx, replayCast(ctx, init(ctx), op, L + "attack5", 0, { endsAt: 10_000 }), 300).hits.length).toBe(advance(ctx, replayCast(ctx, init(ctx), op, L + "attack5", 0), 300).hits.length);
+  });
+});
+
 describe("timeline: failures are loud (design principle 7)", () => {
   it("an error that isn't the engine's (a bug, broken data) isn't turned into 'not legal'", () => {
     // SkillData without its level rows: reading them is a TypeError, not a reason the skill can't start.

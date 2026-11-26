@@ -1,6 +1,7 @@
 // Slow-downs and the clocks they stop (docs/design/timeline.md "Time"): the world's, the enemy's and each operator's.
 
 import type { SkillTiming } from "../model.ts";
+import type { SkillType } from "../attributes.ts";
 import type { ActiveBuff } from "../buffs.ts";
 import { rampElapsed, type EnemyStatus } from "../status.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
@@ -22,7 +23,9 @@ import { engineReading } from "./assumptions.ts";
  * everything after the slow-down's start by the lost frames: exact for a
  * stop, and for a partial slow-down after it ends.
  */
-export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
+export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number, kind?: SkillType): TimelineState {
+  // Engine assumption combo-operator-hold: a combo's slow-down holds each operator it holds this many frames more (their own clocks, not the world's).
+  const extra = kind === "combo" ? comboOperatorHold(ctx) : 0;
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
   const burstStops = engineReading(ctx.scenario, "burst-stops");
@@ -76,11 +79,18 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     // The Arts Bursts on their way: held as their operators' clocks are, or by ultimates' stops only (engine
     // assumption burst-stops), their caster's own included under `all` and `ultimates`.
     const bursts = burstStops !== "ultimates" || ultimate;
-    for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n, bursts);
+    for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n > 0 ? l.n + extra : 0, bursts);
     if (ultimate && burstStops !== "others") s = { ...s, scheduled: shiftClock(s.scheduled, (c, x) => onOperator(c, caster) && x.kind === "burst", start, world) };
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);
+}
+
+/** The frames a combo's slow-down holds each operator it holds beyond its own scales (engine assumption combo-operator-hold: "none" or "<n>f"). */
+function comboOperatorHold(ctx: TimelineContext): number {
+  const r = engineReading(ctx.scenario, "combo-operator-hold");
+  const m = /^(\d+)f$/.exec(r ?? "");
+  return m ? Number(m[1]) : 0;
 }
 
 /**

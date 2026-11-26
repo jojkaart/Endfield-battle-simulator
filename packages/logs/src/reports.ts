@@ -191,7 +191,7 @@ async function collectRecords(data: () => GameData, files: readonly string[], wo
 const fixtureLabel = (f: string) => basename(f).replace(/\.json$/, "");
 
 /** `efsim zmdlogs casts`: the placement view of one log. */
-export function castsReport(data: GameData, fx: LogFixture, filter: ViewFilter): string {
+export function castsReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly rules?: boolean }): string {
   return castsView(data, fx, filter);
 }
 

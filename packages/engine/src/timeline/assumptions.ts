@@ -161,6 +161,37 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "combo-curve",
+    question: "What is the ComboSkill time-dilation curve every combo's global slow-down follows (TimeDilationAction useCurveKey ComboSkill: an asset the game data names but doesn't hold)? The compiler samples the guess (packages/data skillData.ts slowdownOf) and keeps the curve's name on the timing; a reading resamples it for the timeline (createContext) and the log tools' stop lists (timeline/curves.ts withCurveReading). Simulations read it too.",
+    default: "guess",
+    readings: {
+      guess: "0.01 for 40% of its duration, then a linear ramp to 1 at 93% (since batch 1; the logs' Corrosion ramps, buff ends and landings fit it)",
+      flat: "0.01 for its whole duration (measured 2026-11-26 as a patch, docs/tried/2026-11-26-combo-curve-flat.diff: verified plain 78.0 → 73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%)",
+      middle: "0.01 to 70% of its duration, then a linear ramp to 1 (the same diff: verified 75.6%, development 68.6%, hold-out 77.8%)",
+    },
+  },
+  {
+    id: "combo-operator-hold",
+    question: "Does a combo's slow-down hold the operators (their casts' hits on the way, delayed actions, the Arts Bursts on their clocks) longer than its scales say, while the world's clock (buffs, the enemy's statuses) follows them? Across a combo's stop an operator's own cast runs late by about 140 ms (4.2 frames) a combo, the enemy's ticks by 57 ms (1.7 frames), bursts 181 ms (docs/open-problems.md \"The enemy's clock\"); the operators' excess sits in the stop's first half, not after its end nor before its start (scripts/probes/combo-hold/edges.ts). Simulations read it too (timeline/clock.ts slowDown).",
+    default: "none",
+    readings: {
+      none: "as its scales say (the engine until 2026-11-26)",
+      "3f": "3 frames more on every operator it holds at all (measured 2026-11-26 against `none`: verified plain 78.0 → 77.4%, development 69.0%, hold-out 80.6 → 80.5%, earlier pending 67.3 → 66.4%)",
+      "4f": "4 frames more (verified 77.1%, development 69.0%, hold-out 80.5%, earlier 66.4%: 9a80 +4, 9c0b +3 and c6d8 +13 plain against 4bfc −92 and 3aa6 −33)",
+      "6f": "6 frames more (verified 76.4%, development 68.9%, hold-out 80.4%, earlier 66.3%)",
+    },
+  },
+  {
+    id: "unlogged-tails",
+    question: "Did a cast whose landings after its last logged one are none of them in the log, the enemy there and the log recording, end there (a dodge, a swap, a hit on its operator: inputs no log records), or did those landings land unlogged? The logs record every landing that lands (enemy-away). Read only by the log check's replay (packages/logs buffreplay.ts tailCuts: ReplayCastOptions.endsAt).",
+    default: "cut",
+    readings: {
+      kept: "the cast plays its whole path (the replay until 2026-11-26)",
+      cut: "a battle skill, combo or ultimate ends the frame after its last logged landing (each of its logged landings its own, not a variant's) when the log has no hit of its operator's casts that another cast doesn't hold from there to 1.5 s after its first later landing, that landing is outside the away stretches and the fight's last 1.5 s with a logged hit of anyone within 1.5 s after it, and no decided game buff the replay starts in the tail is listed as a new run within 1.5 s (the earliest such cast first, the replay made again after each): pending/zmdlogs-0c14fb3ce77d.json, Rossi's battle skill at 35.40 s (its two charge hits logged, no Lift at frame 35, no wolves, no bleed: the Vulnerable stack the Lift would add isn't there at 53.57 s, where the log has her Lift's hit but neither its Lift status nor the follow-up; with it the Endministrator's combo the Lift set off and its Essence Disintegration ATK go, and 43.5–60.2 s read plain). Measured 2026-11-26 against `kept`: 0c14 plain 293 → 336 (its total +2.7 → −3.2%: its hits that now fit were over-predicted with what the tail gave, its Rossi and Si under-predicted elsewhere), development plain and verified unchanged (9c6e −13.2 → −13.5%, Liino's combo hit2 at 48.73 s out of an under-predicted total), earlier pending 67.3 → 67.7%, hold-out plain unchanged, mean |damage error| 8.4 → 8.3% (1 better, 2 worse, totals only). Without the listing check and the fight's-end rule the first cut lost db87 15 plain (Camille's ultimate, whose gear-set and weapon buffs the log lists after its unlogged hits) and 2fd9's killing Crush",
+      "cut-all": "as `cut`, basic attacks too (measured 2026-11-26 against `kept`: plain as `cut`; mean |damage error| development 7.0 → 6.9%, hold-out 8.4 → 8.3%, earlier 4.0 → 4.0%, 8 development logs' totals closer, 6 further)",
+    },
+  },
+  {
     id: "enemy-hp",
     question: "What is the enemy's HP over a logged fight, for the hits whose damage depends on it (enemyHpBelow: Chen Qianyu's P1 Shadowless, Alesh's P5 ultimate)? Read only by the log check's replay (packages/logs buffreplay.ts loggedEnemyHp), not by simulations: a simulation's scenario says the HP (TimelineScenario.enemyHp).",
     default: "kill",
