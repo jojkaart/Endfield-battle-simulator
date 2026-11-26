@@ -9,7 +9,7 @@ import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { exportHits, exportHitsParallel, filterRecords, formatRecord, recordChanges, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
-import { gameDataCacheKey, mainCheckoutOf, REPO_ROOT } from "@efsim/data";
+import { gameDataCacheKey, mainCheckoutOf, operatorId, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
 import type { TotalsShares } from "./enginecheck.ts";
@@ -435,11 +435,17 @@ export function findScalesReport(data: GameData, fx: LogFixture, operator: strin
   return lines.join("\n");
 }
 
-/** The operator id an --operator names: an id, its name or part of the id. */
+/**
+ * The operator id an --operator names: an id, its name, or a unique part of the name or the id, in any case (@efsim/data
+ * operatorId, as scripts and `zmdlogs list --with` take them; away-and-presses report point 4: "Chen" for Chen Qianyu
+ * failed, the name matched only whole). An ambiguous part is refused with the operators it names.
+ */
 export function operatorNamed(data: GameData, operator: string): string {
-  const id = data.operators[operator] ? operator : Object.keys(data.operators).find((op) => data.operators[op]?.name?.toLowerCase() === operator.toLowerCase() || op.includes(operator));
-  if (!id) throw new Error(`--operator ${operator}: no such operator (an id, its name or part of the id)`);
-  return id;
+  try {
+    return operatorId(data, operator);
+  } catch (e) {
+    throw new Error(`--operator ${operator}: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+  }
 }
 
 /** `efsim zmdlogs fit-build`: an operator's attribute nodes, weapon level and food fitted to its clean hits (buildfit.ts). */

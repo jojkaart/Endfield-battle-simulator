@@ -6,8 +6,10 @@
 import type { GameData } from "@efsim/engine/core";
 
 /**
- * The operator id for `nameOrId`: an id as is; else the operator whose display name is it (case-insensitive); else
- * the one operator whose name or id contains it. Throws for none or several (naming the candidates).
+ * The operator id for `nameOrId`: an id as is; else the operator whose display name is it (case-insensitive); else the
+ * one whose name has a word starting with it ("Chen" for Chen Qianyu, though Purrchena contains it: briefs name
+ * operators by their short names); else the one operator whose name or id contains it. Throws for none or several
+ * (naming the candidates).
  */
 export function operatorId(data: Pick<GameData, "operators">, nameOrId: string): string {
   const ops = Object.values(data.operators);
@@ -15,6 +17,8 @@ export function operatorId(data: Pick<GameData, "operators">, nameOrId: string):
   const q = nameOrId.toLowerCase();
   const exact = ops.filter((o) => o.name.toLowerCase() === q);
   if (exact.length === 1) return (exact[0] as (typeof ops)[number]).id;
+  const word = ops.filter((o) => o.name.toLowerCase().split(/[\s-]+/).some((w) => w.startsWith(q)));
+  if (!exact.length && word.length === 1) return (word[0] as (typeof ops)[number]).id;
   const part = (exact.length ? exact : ops).filter((o) => o.name.toLowerCase().includes(q) || o.id.toLowerCase().includes(q));
   if (part.length === 1) return (part[0] as (typeof ops)[number]).id;
   if (!part.length) throw new Error(`no operator is called or has an id with "${nameOrId}" (efsim find --operators lists them)`);

@@ -651,7 +651,16 @@ export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: 
   return out;
 }
 
-export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), opts: Pick<ReplayOptions, "assume" | "trace"> = {}): LogBuffReplay {
+export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: Placement | LogReplayOptions, opts: Pick<ReplayOptions, "assume" | "trace"> = {}): LogBuffReplay {
+  // Either form (away-and-presses report point 5: `logBuffReplay(data, fx, { assume })` passed the readings as the
+  // placement, and the replay ran on the defaults without a word): an options object as the third argument is taken
+  // as such; with a placement, the options come fourth, as before.
+  if (placementOrOpts !== undefined && !isPlacement(placementOrOpts)) {
+    if (Object.keys(opts).length) throw new Error("logBuffReplay: options given twice (as the third argument and the fourth)");
+    const { placement: given, ...rest } = placementOrOpts;
+    return logBuffReplay(data, fx, given ?? placeHits(data, fx), rest);
+  }
+  const placement = placementOrOpts ?? placeHits(data, fx);
   let replay = replayKitBuffs(data, fx, placement, opts);
   // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
   const levels = new Map<string, ReactionLevel>();
@@ -671,6 +680,13 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placeme
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed) };
 }
+
+/** logBuffReplay's options in one object (its third argument): the placement (default placeHits), the readings and the traces. */
+export interface LogReplayOptions extends Pick<ReplayOptions, "assume" | "trace"> {
+  readonly placement?: Placement;
+}
+
+const isPlacement = (x: Placement | LogReplayOptions): x is Placement => "hits" in x && "casts" in x && x.hits instanceof Map;
 
 /** Corrosion's ramp as the logged hits read it at the replay's landings (rampsteps.ts rampSteps; `zmdlogs ramp`). */
 export function corrosionRamp(data: GameData, fx: LogFixture, placement: Placement, replay: BuffReplay): RampStep[] {
