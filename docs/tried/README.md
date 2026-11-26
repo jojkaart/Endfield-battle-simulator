@@ -27,6 +27,9 @@ presses round) by general rules: the replay's enemy away (engine assumption enem
 inferred from the listing (`hitless-presses` `inferred`), the totals' leaving frame and a kill read from the last
 life's damage ([open-problems.md](../open-problems.md), "The damage factors"). Their diffs are deleted.
 
+- [2026-11-26-chance-path-buffs-decided.diff](2026-11-26-chance-path-buffs-decided.diff): Alesh's P3 (a buff only a
+  chance path gives) judged by the replay where the listing decided every cast's path; 0c14 mismatch 12 → 9, one
+  hold-out log −47 plain (hold-out 81.0 → 80.2%): P3 stays the log's.
 - [2026-11-26-combo-curve-flat.diff](2026-11-26-combo-curve-flat.diff): the ComboSkill slow-down curve at 0.01 for
   its whole duration (the clocks run late across combos by more than the guessed curve holds); verified plain 78.0 →
   73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; a middle curve worse too.

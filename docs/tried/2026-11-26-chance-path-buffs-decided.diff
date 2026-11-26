@@ -1,0 +1,139 @@
+Chance-path buffs decided by the replay where the listing decided every cast's path (2026-11-26, Alesh's Rare Fin round).
+
+What it does: replaycrits.ts chancePathBuff no longer leaves a buff on a chance jump's path (Alesh's P3 team ATK,
+only on the Rare Fin's slam) to the log when castassembly.ts listedPaths / castsFromHitBuffs decided the path of
+every cast of its skill (listedPathBuffs); the replay's own P3 instances are then judged against the listing.
+
+Measured (`measure --at HEAD --base HEAD --patch <the revert of this>` with --with Alesh, on the code with the
+listed paths and the listed cast): 0c14 plain 493 → 492, mismatch 12 → 9, damage −0.3 → −0.2%; a hold-out log
+plain −47, assumed +13, fallback +33, mismatch +1 (hold-out plain 81.0 → 80.2%); nothing else moved.
+
+Dropped: it gains nothing in development and costs one hold-out log 47 plain hits, which can't be diagnosed by hand.
+What would have to change: whatever makes that log's replayed P3 disagree with its listing (its path decisions, or
+the buff's clock: P3's 10 s under the hold placement); measure again after a round on the buff clock.
+
+diff --git b/packages/logs/src/buffreplay.ts a/packages/logs/src/buffreplay.ts
+index 332adc8..250cf4b 100644
+--- b/packages/logs/src/buffreplay.ts
++++ a/packages/logs/src/buffreplay.ts
+@@ -29,7 +29,7 @@ import type { LoggedCast, Placement } from "./logcasts.ts";
+ import { loggedStagger } from "./replaysteps.ts";
+ import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
+ import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
+-import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCastStops, replayedCasts } from "./castassembly.ts";
++import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedPathBuffs, listedWithValues, pullingPresses, replayedCastStops, replayedCasts } from "./castassembly.ts";
+ import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedTickFrames, loggedTickLandings, msOfFrame, runBounds, statusInstances } from "./holdinputs.ts";
+ import { type CritSource, critTriggers, layerCrits, shownCrits, undecidedBuff, valueCrits } from "./replaycrits.ts";
+ import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
+@@ -287,12 +287,15 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
+     const k = effectiveKit(data, b);
+     return k ? [k] : [];
+   });
++  const assembled = assembleCasts(data, fx, placement, kits, opts.assume);
++  // The chance paths the listing decided for every cast (castassembly.ts listedPaths): their buffs are the replay's to judge.
++  const pathsShown = listedPathBuffs(kits, assembled);
+   const decided = new Map<string, string[]>();
+   const undecided = new Map<string, string>();
+   for (const kit of kits) {
+     for (const def of kit.buffs) {
+       if (!def.gameBuff || !listed.has(def.gameBuff) || def.consumedBy || def.link) continue;
+-      const why = undecidedBuff(kit, def.id);
++      const why = undecidedBuff(kit, def.id, 0, pathsShown);
+       if (why) undecided.set(def.gameBuff, `${kit.operator} ${why}`);
+       else decided.set(def.gameBuff, [...(decided.get(def.gameBuff) ?? []), `${kit.operator}:${def.id}`]);
+     }
+@@ -306,7 +309,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
+   const allListed = new Set(fx.hits.flatMap((h) => h.effects.map((e) => e.buff)));
+   for (const kit of kits) for (const def of kit.buffs) {
+     if (!kit.buffs.some((d) => d.gameBuff !== undefined && allListed.has(d.gameBuff))) continue;
+-    const why = undecidedBuff(kit, def.id);
++    const why = undecidedBuff(kit, def.id, 0, pathsShown);
+     if (why) unjudgedKitBuffs.set(`${kit.operator}:${def.id}`, why);
+   }
+   const failed: { cast: ReplayedCast; error: string }[] = [];
+@@ -319,7 +322,6 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
+   const kitIds = [...decided].flatMap(([g, defs]) => defs.map((d) => ({ g, owner: d.split(":", 2)[0] as string, id: d.split(":", 2)[1] as string })));
+   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
+   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
+-  const assembled = assembleCasts(data, fx, placement, kits, opts.assume);
+   const control = controlledFromLog(placement, assembled);
+   const stagger = loggedStagger(fx);
+   const logged = control?.casts ?? assembled;
+diff --git b/packages/logs/src/castassembly.ts a/packages/logs/src/castassembly.ts
+index d70fb30..c97da5b 100644
+--- b/packages/logs/src/castassembly.ts
++++ a/packages/logs/src/castassembly.ts
+@@ -186,6 +186,22 @@ export function listedPaths(data: GameData, kits: readonly OperatorKit[], fx: Pi
+   });
+ }
+ 
++/**
++ * The game buffs on chance paths (chancePathHits) whose every cast the listing decided (ReplayedCast.chanceJumps from
++ * listedPaths or castsFromHitBuffs): the replay can judge those (replaycrits.ts chancePathBuff); one cast left to the
++ * roll leaves the buff to the log.
++ */
++export function listedPathBuffs(kits: readonly OperatorKit[], casts: readonly ReplayedCast[]): Set<string> {
++  const out = new Set<string>();
++  const left = new Set<string>();
++  for (const kit of kits) for (const skill of kit.skills) for (const p of chancePathHits(kit, skill.skillId)) {
++    const mine = casts.filter((c) => c.operator === kit.operator && c.skillId === skill.skillId && !c.beforeLog);
++    for (const g of p.buffs) (mine.every((c) => c.chanceJumps?.[p.trigger] !== undefined) ? out : left).add(g);
++  }
++  for (const g of left) out.delete(g);
++  return out;
++}
++
+ /** The shortest duration (ms) of a kit hit's own buffs with game buffs, or null (none, or one that needs a fight). */
+ function hitBuffMs(data: GameData, build: LogFixture["team"][number], kit: OperatorKit, hit: KitHit, skillId: string): number | null {
+   let out: number | null = null;
+diff --git b/packages/logs/src/replaycrits.ts a/packages/logs/src/replaycrits.ts
+index 7fedf65..821fba4 100644
+--- b/packages/logs/src/replaycrits.ts
++++ a/packages/logs/src/replaycrits.ts
+@@ -6,6 +6,7 @@
+ import { allActions, kitHitEntries, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
+ import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
+ import type { Placement } from "./logcasts.ts";
++import { loggedNames } from "./enginecheck.ts";
+ 
+ /** Trigger events a log doesn't let the replay judge: the enemy's own actions. */
+ const UNJUDGED_EVENTS: ReadonlySet<string> = new Set(["attacked", "perfectDodge", "enemyCharge"]);
+@@ -234,9 +235,13 @@ export function critTriggers(kit: OperatorKit, buffId: string, depth = 0): KitTr
+  * (every frame of it at or after the jump's target), which the replay rolls on its own stream and the log doesn't
+  * give. ad7f5ee2c91c: the replay rolled Alesh's Rare Fin at 13.8 s (his logged slam fits the normal one, ×0.85 as all
+  * his hits), so his P3 team ATK, which only the Rare Fin's slam applies, stood on 10 s of everyone's hits the log
+- * lists it on none of (Arcane's 30 basic attacks ×0.904, Si's ×0.929).
++ * lists it on none of (Arcane's 30 basic attacks ×0.904, Si's ×0.929). Not one of `shown` (game buffs whose chance
++ * path the listing decided in every cast, castassembly.ts listedPathBuffs): the replay takes the path its listing
++ * shows (listedPaths, 2026-11-26: her P3 is listed from exactly the Rare Fin slam's ms in every development log).
+  */
+-function chancePathBuff(kit: OperatorKit, buffId: string): string | null {
++function chancePathBuff(kit: OperatorKit, buffId: string, shown: ReadonlySet<string>): string | null {
++  const def = kit.buffs.find((d) => d.id === buffId);
++  if (def && loggedNames(def).some((g) => shown.has(g))) return null;
+   for (const t of kit.triggers) {
+     if (t.chance === undefined) continue;
+     for (const a of allActions(t.do)) {
+@@ -254,18 +259,18 @@ function chancePathBuff(kit: OperatorKit, buffId: string): string | null {
+ /**
+  * Why the replay can't decide one of a kit's buffs, or null: a trigger that
+  * applies it can't be judged, or listens to a buff that can't (to a depth of
+- * a few such links).
++ * a few such links). `shown`: the game buffs whose chance paths the listing decided (chancePathBuff).
+  */
+-export function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0): string | null {
++export function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0, shown: ReadonlySet<string> = new Set()): string | null {
+   if (depth > 4) return null;
+-  const byChance = chancePathBuff(kit, buffId);
++  const byChance = chancePathBuff(kit, buffId, shown);
+   if (byChance) return byChance;
+   for (const t of kit.triggers) {
+     if (!allActions(t.do).some((a) => a.kind === "buff" && a.buff === buffId)) continue;
+     const own = unjudged(t, kit);
+     if (own) return own;
+     if ("buff" in t.on && t.on.buff !== buffId) {
+-      const via = undecidedBuff(kit, t.on.buff, depth + 1);
++      const via = undecidedBuff(kit, t.on.buff, depth + 1, shown);
+       if (via) return `${t.id} via ${via}`;
+     }
+   }

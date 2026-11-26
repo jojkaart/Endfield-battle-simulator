@@ -2073,6 +2073,13 @@ pattern); the engine keeps it.
 
 ### 71. Alesh's combo on consumed Originium Crystals, and his Solidification level (ready, if you have Alesh and the Endministrator; part 2 optional)
 
+**Part 1 as good as decided by a log (2026-11-26): consumed, not run out, as the engine has.** 0c14 (the only
+development log with both): each of the seven consumptions (buff_common_originum_frozen hits at 11.2, 58.1, 80.5,
+118.1, 132.4, 165.5, 195.6 s) is followed by an Alesh combo 0.7–3.9 s later (the 11.2 s one shown only by its
+listed buffs, made by the replay since 2026-11-26: listed-casts); the Endministrator's combo at 32.1 s, whose
+crystals nothing consumed, by none in the 26 s after (his combo off cooldown by then). Only an unpressed button looks
+the same, so the control stays a test if you want it; part 2 is open.
+
 **Why:** Alesh's combo also opens "when Originium Crystals on a nearby
 target are consumed" (the Endministrator's crystals). Since 2026-10-20 the
 engine can tell a consumed buff from one that runs out (batch 3, T2); his

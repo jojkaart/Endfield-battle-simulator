@@ -319,7 +319,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const kitIds = [...decided].flatMap(([g, defs]) => defs.map((d) => ({ g, owner: d.split(":", 2)[0] as string, id: d.split(":", 2)[1] as string })));
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
-  const assembled = assembleCasts(data, fx, placement, kits);
+  const assembled = assembleCasts(data, fx, placement, kits, opts.assume);
   const control = controlledFromLog(placement, assembled);
   const stagger = loggedStagger(fx);
   const logged = control?.casts ?? assembled;

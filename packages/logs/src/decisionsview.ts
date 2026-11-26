@@ -19,13 +19,13 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "JUMPDROP" | "FORCED" | "INSIDE" | "CUTS";
+  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "FORCED" | "INSIDE" | "CUTS";
   readonly operator: string;
   readonly text: string;
 }
 
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "JUMPDROP", "FORCED", "INSIDE", "CUTS"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "FORCED", "INSIDE", "CUTS"];
 
 /** The replay's decisions (BuffReplay.skipped, tailCuts, failed, missed, made, castFlags), in time order. */
 export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLine[] {
@@ -37,7 +37,10 @@ export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLin
   for (const m of replay.missed) out.push({ t: m.start, kind: "MISSED", operator: m.operator, text: `${who(m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
   for (const m of replay.made) {
     if (m.cast.missed) continue;
-    if (m.inferred !== undefined) out.push({ t: msOf(m.frame), kind: "INFER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (logged at ${s(m.cast.start)}): a hitless press made from the listing (hitless-presses inferred): ${m.inferred}` });
+    // A chance jump the listing decided (castassembly.ts listedPaths, castsFromHitBuffs: ReplayedCast.chanceJumps).
+    for (const [trigger, taken] of Object.entries(m.cast.chanceJumps ?? {})) out.push({ t: msOf(m.frame), kind: "PATH", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): its chance jump ${trigger} ${taken ? "taken: a buff only that path gives starts a run at its hit's landing" : "not taken: a buff only that path gives starts no run at its hit's landing, nor runs on as its refresh would"} (listedPaths)` });
+    if (m.inferred !== undefined && m.cast.listed) out.push({ t: msOf(m.frame), kind: "INFER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (no logged hit or cast event): ${m.inferred}` });
+    else if (m.inferred !== undefined) out.push({ t: msOf(m.frame), kind: "INFER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (logged at ${s(m.cast.start)}): a hitless press made from the listing (hitless-presses inferred): ${m.inferred}` });
     else if (m.skillId !== m.cast.skillId) out.push({ t: msOf(m.frame), kind: "MADE", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.cast.skillId)} (placed at ${s(m.cast.start)}) made as ${shortSkill(m.skillId)}` });
     // A kit jump the logged landings contradicted (drivers.ts replayCast `dropped`): the path the cast took is the log's.
     for (const j of m.dropped ?? []) {
@@ -120,7 +123,7 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
   const reading = Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ");
   const head = under
     ? `The replay's decisions that differ under ${reading} (decisionsview.ts; - only under the defaults, + only under the reading), ${changed} of ${logs.length} log(s):`
-    : `The replay's decisions (decisionsview.ts: SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, JUMPDROP, FORCED, INSIDE, CUTS), ${logs.length} log(s):`;
+    : `The replay's decisions (decisionsview.ts: ${DECISION_KINDS.join(", ")}), ${logs.length} log(s):`;
   const summary = DECISION_KINDS.filter((k) => counts.has(k)).map((k) => {
     const c = counts.get(k) as { minus: number; plus: number; logs: Set<string> };
     return `  ${k.padEnd(7)} ${under ? `-${c.minus} +${c.plus}` : String(c.plus)} in ${c.logs.size} log(s)`;

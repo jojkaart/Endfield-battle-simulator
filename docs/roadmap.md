@@ -75,8 +75,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   own combo curve measured worse in every shape; the tail cuts reviewed, none against the log; bursts and cooldowns
   2026-11-26: 4d60's Perlica and Will runs a whole-game pause inside a Stagger, `pause-holds` `away`, 696 → 806 plain;
   the replay's Stagger windows start where they began; d4fb 97.05 s a Lift that breaks the bar, one case, not built;
-  Snowshine's ×0.9846 and test 33's reaction case undecidable by the logs): next Alesh's combo paths (the Rare Fin
-  chance jump read from the values; 0c14's 12.5 s combo from the listing), other whole-game pauses outside a Stagger.
+  Snowshine's ×0.9846 and test 33's reaction case undecidable by the logs; Alesh's Rare Fin 2026-11-26: chance paths
+  from the listing, a cast from a hit's listed buff, `listed-casts`, 0c14 338 → 493 plain): next other whole-game
+  pauses outside a Stagger, 0c14's Stagger at its breaking hit, a chance path from the values where no buff shows it.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

@@ -170,6 +170,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "listed-casts",
+    question: "Is a cast the log shows neither by a hit nor by a cast event, only by a buff one of its hits alone gives (a run of it starting where no replayed cast could have landed that hit), made? The game may have landed the cast's hits without the log recording them, or the buff came from something no kit models. Read only by the log check's replay (packages/logs castassembly.ts castsFromHitBuffs).",
+    default: "inferred",
+    readings: {
+      none: "never: a cast is made only from its logged hits or cast event (the replay until 2026-11-26)",
+      inferred: "made, timed so that hit lands at the run's `since` (on the path that has it: a chance jump's taken), when exactly one kit hit of the team applies the buff (no trigger or other hit), no cast of its skill starts from 2.5 s before to the run, and its operator has no logged hit from the cast's start to the hit; its own landings stand for no damage (the totals leave them out). pending/zmdlogs-0c14fb3ce77d.json: Alesh's combo at about 12.0 s, its Rare Fin slam's P3 team ATK listed from 13.25 s and its hook's natural SP the second Thermite Cutter layer from 12.71 s, with no hit or cast event of it",
+    },
+  },
+  {
     id: "combo-curve",
     question: "What is the ComboSkill time-dilation curve every combo's global slow-down follows (TimeDilationAction useCurveKey ComboSkill: an asset the game data names but doesn't hold)? The compiler samples the guess (packages/data skillData.ts slowdownOf) and keeps the curve's name on the timing; a reading resamples it for the timeline (createContext) and the log tools' stop lists (timeline/curves.ts withCurveReading). Simulations read it too.",
     default: "guess",

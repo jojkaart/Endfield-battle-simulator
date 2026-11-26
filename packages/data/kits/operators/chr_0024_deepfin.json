@@ -63,7 +63,7 @@
         ]
       },
       "do": [{ "kind": "jump", "skill": "chr_0024_deepfin_combo_skill", "from": 10, "until": 11, "to": 65 }],
-      "note": "Combo frame 10: SimpleCalcBB prob_max = prob + prob_max and prob_add = prob_add / rate; StoreAttributeValue prob = prob + Intellect (primaryAttributeType 2, attribute 41) × prob_add, useFloor false (continuous, not per full 10 Intellect as the text reads); Probablity(min of the two) → JumpToAction 65, the Rare Fin path (hits at 77 and 93). Otherwise the normal hits at 22 and 38 and the data's unconditional jump 64 → 120. prob 0.1; talent 2 sets prob_add 0.002 / 0.005, prob_max 0.3, rate 10. A chance jump isn't a skill `jumps` entry (Probablity branches: batch-3 D1 open), so it's this trigger, rolled on the battle's chance stream."
+      "note": "Combo frame 10: SimpleCalcBB prob_max = prob + prob_max and prob_add = prob_add / rate; StoreAttributeValue prob = prob + Intellect (primaryAttributeType 2, attribute 41) × prob_add, useFloor false (continuous, not per full 10 Intellect as the text reads); Probablity(min of the two) → JumpToAction 65, the Rare Fin path (hits at 77 and 93). Otherwise the normal hits at 22 and 38 and the data's unconditional jump 64 → 120. prob 0.1; talent 2 sets prob_add 0.002 / 0.005, prob_max 0.3, rate 10. A chance jump isn't a skill `jumps` entry (Probablity branches: batch-3 D1 open), so it's this trigger, rolled on the battle's chance stream. The log check's replay doesn't roll it where the listing shows the path (packages/logs castassembly.ts listedPaths, drivers.ts replayCast chanceJumps: P3's team ATK listed from exactly the Rare Fin slam's ms, 2026-11-26)."
     },
     {
       "id": "talent1_self",
