@@ -589,7 +589,7 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
  * REPLAY_EDGE_MS either side of it.
  */
 /** A logged cast as one replay made it (replayOnce): its frame, skill, the states either side, and what it found. */
-type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string; dropped?: readonly JumpDrop[] };
+type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string; dropped?: readonly JumpDrop[]; keptSkipped?: readonly JumpDrop[] };
 
 /**
  * A kit jump of a replayed cast that its logged landings contradicted, which the engine dropped (drivers.ts replayCast
@@ -626,10 +626,11 @@ export function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCa
   const flag = castFlag(ctx, st, c, skillId, f);
   // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
   const dropped: JumpDrop[] = [];
-  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}), ...(c.chanceJumps ? { chanceJumps: c.chanceJumps } : {}), ...(c.kitJumps ? { kitJumps: c.kitJumps } : {}), dropped: (j, landings) => dropped.push({ ...j, landings }) });
+  const keptSkipped: JumpDrop[] = [];
+  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}), ...(c.chanceJumps ? { chanceJumps: c.chanceJumps } : {}), ...(c.kitJumps ? { kitJumps: c.kitJumps } : {}), dropped: (j, landings) => dropped.push({ ...j, landings }), keptSkipped: (j, landings) => keptSkipped.push({ ...j, landings }) });
   // A cast made from the listing alone (castsFromHitBuffs): recorded as an inferred one, its landings dealt nothing.
   const why = inferred?.why ?? (c.listed ? `a cast the log shows only by a buff its hit alone gives, made (listed-casts inferred): ${c.listed.buff} listed from ${(c.listed.since / 1000).toFixed(2)} s` : undefined);
-  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(why !== undefined ? { inferred: why } : {}), ...(dropped.length ? { dropped } : {}) };
+  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(why !== undefined ? { inferred: why } : {}), ...(dropped.length ? { dropped } : {}), ...(keptSkipped.length ? { keptSkipped } : {}) };
 }
 
 /** What every replay of a fight (replayOnce) reads that its passes share: the fight, the options, the log's Stagger steps and crits. */
@@ -769,7 +770,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
         const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
         const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
-        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}), ...("dropped" in r && r.dropped ? { dropped: r.dropped } : {}) });
+        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}), ...("dropped" in r && r.dropped ? { dropped: r.dropped } : {}), ...("keptSkipped" in r && r.keptSkipped ? { keptSkipped: r.keptSkipped } : {}) });
       } catch (e) {
         castErrors.push({ cast: c, error: e instanceof Error ? e.message : String(e) });
       }

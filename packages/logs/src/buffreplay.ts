@@ -207,6 +207,8 @@ export interface MadeCast {
   readonly inferred?: string;
   /** The kit jumps its logged landings contradicted, which the engine dropped (JUMPDROP lines). */
   readonly dropped?: readonly JumpDrop[];
+  /** The kit jumps it kept with pinned landings in the part they skip, which land beside the jumped-to path (BOTHPATHS lines). */
+  readonly keptSkipped?: readonly JumpDrop[];
   /** The Link stacks it used (Cast.link; absent: none): LINK lines. */
   readonly link?: number;
   /**
@@ -554,7 +556,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       // Gained at the cast and in the advance to the next one (the last one's: to its post state).
       const next = all[k + 1];
       const gained = [...linkGains(m.pre, m.post), ...(next ? linkGains(m.post, next.pre) : [])];
-      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
+      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.keptSkipped ? { keptSkipped: m.keptSkipped } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
     }),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);

@@ -185,6 +185,9 @@ export default command({
                                           couldn't make or made without the log, its Stagger windows
                 [--kit-buff owner:id[@op]] Also a kit buff's windows at an operator (default its owner; repeatable),
                                           each saying which window it refreshes (the log keeps a refreshed run's since)
+                [--against-lanes]         With --kit-buff: at the end, each logged run's since beside the replay's
+                                          nearest window start (chains only) and the offset, unpaired ones on each
+                                          side, the median offset: a kit trigger fix's check
                 [--trace-buff owner:id]   Each change of a kit buff's expiry and the step that made it (a cast, a
                                           pause or stop, the log's Stagger steps; repeatable)
                 [--trace-buff status:<s>] The same for an enemy status (corrosion, electrification, vulnerable, a
@@ -200,7 +203,7 @@ export default command({
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
   efsim zmdlogs decisions <fixture…|--all> --assume <id>=<reading>  The replay's decisions (SKIP, TAILCUT, FAILED,
-                                          MISSED, INFER, MADE, PATH, JUMPDROP, FORCED, INSIDE, CUTS, as replay prints
+                                          MISSED, INFER, MADE, PATH, JUMPDROP, BOTHPATHS, FORCED, INSIDE, CUTS, as replay prints
                                           them) that differ between the default readings (-) and the given one (+), per log,
                                           then a count per kind: a replay rule's false positives before a measure
                                           (two replays per log, seconds each); without --assume every decision;
@@ -358,6 +361,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     against: { type: "string", multiple: true, default: [] },
     "no-foods": { type: "boolean", default: false },
     "same-listing": { type: "string" },
+    "against-lanes": { type: "boolean", default: false },
     listed: { type: "string" },
     all: { type: "boolean", default: false },
     event: { type: "string" },
@@ -534,7 +538,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume, stops: values.stops });
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};

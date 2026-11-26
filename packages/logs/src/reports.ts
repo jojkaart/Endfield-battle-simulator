@@ -254,7 +254,7 @@ export function castsReport(data: GameData, fx: LogFixture, filter: ViewFilter &
 }
 
 /** `efsim zmdlogs replay`: the replay view of one log, with the named kit buffs' windows. */
-export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean }): string {
+export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly againstLanes?: boolean }): string {
   return replayView(data, fx, filter);
 }
 
