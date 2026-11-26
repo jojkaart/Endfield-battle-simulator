@@ -109,6 +109,23 @@ const PHYSICAL_EVENT_KINDS: Readonly<Record<string, ReactionKind>> = {
   buff_common_cryst_triggered_physical_break: "shatter",
 };
 
+/** Every log event key parseReactionEvent reads, by `kind|element`: the keys a status's hit may be logged under. */
+const REACTION_KEYS: ReadonlyMap<string, readonly string[]> = (() => {
+  const arts = ["fire", "natural", "pulse", "cryst"];
+  const keys = ["buff_common_burning_status", "buff_common_natural_triggered", ...Object.keys(PHYSICAL_EVENT_KINDS), ...arts.flatMap((a) => arts.map((b) => `buff_common_${a}_${b}_triggered`))];
+  const out = new Map<string, string[]>();
+  for (const k of keys) {
+    const r = parseReactionEvent(k);
+    if (r) out.set(`${r.kind}|${r.element}`, [...(out.get(`${r.kind}|${r.element}`) ?? []), k]);
+  }
+  return out;
+})();
+
+/** The log event keys a status event's hit of this kind and element may be logged under (parseReactionEvent's inverse). */
+export function reactionEventKeys(kind: ReactionKind, element: Element): readonly string[] {
+  return REACTION_KEYS.get(`${kind}|${element}`) ?? [];
+}
+
 /**
  * Reaction damage element and kind from a log event key like
  * buff_common_fire_natural_triggered (burst when both are the same).

@@ -1,6 +1,7 @@
 // Hits and bursts landing: their applications, damage, SP, stagger and the events they start; the random streams.
 
-import type { SkillType } from "../attributes.ts";
+import type { Element, SkillType } from "../attributes.ts";
+import { reactionEventKeys } from "../reactions.ts";
 import type { Build } from "../build.ts";
 import { computeHit, computeReaction, decide, finisherModifier, type DamageOptions, type DamageTarget, evalContext, fixedHit, type HitDamage, hitDecorations, type Situation, skillValue } from "../damage.ts";
 import { ATK_SNAPSHOT_ZONES, type Modifier } from "../effects.ts";
@@ -146,14 +147,22 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, s
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : side;
   const scale = e.kind === "combustionTick" ? e.damageScale : e.kind === "physical" && e.multiplier !== undefined ? { key: "multiplier", value: e.multiplier } : undefined;
+  // A replayed fight's logged crit for its hit (TimelineScenario.loggedCrits, under any key its kind is logged as), which decides it.
+  const loggedCrit = loggedCritAt(ctx, e.operator, reactionEventKeys(reaction.kind, reaction.element), e.frame);
   const inputs: LandingInputs = {
     kind: "status", operator: e.operator, build, panel: panelAt(ctx, e.operator, e.frame), reaction,
-    options: { ...damageOptions(ctx, st, e.operator, enemy, e.frame, undefined, snapshot), ...(critRoll !== undefined ? { critRoll } : {}) },
+    options: {
+      ...damageOptions(ctx, st, e.operator, enemy, e.frame, undefined, snapshot),
+      ...(typeof loggedCrit === "boolean" ? { crit: loggedCrit ? ("always" as const) : ("never" as const) } : critRoll !== undefined ? { critRoll } : {}),
+    },
     ...(scale ? { scale } : {}),
   };
+  const d = landingDamage(ctx.data, ctx.scenario.target, inputs);
+  // Whether it crit, for the triggers on crits (statusCritMatches): its roll, or every hit that can under `always`.
+  const crit = d.crit ?? (inputs.options.crit === "always" && reaction.kind !== "combustionTick");
   // A replayed fight's landings keep their inputs (LandedHit.inputs: the log check computes them again), as do every
   // run's with TimelineScenario.keepInputs (recomputeHit).
-  return { ...landingDamage(ctx.data, ctx.scenario.target, inputs), frame: e.frame, operator: e.operator, ...(ctx.keepInputs ? { inputs } : {}) };
+  return { ...d, ...(crit ? { crit: true } : {}), frame: e.frame, operator: e.operator, ...(ctx.keepInputs ? { inputs } : {}) };
 }
 
 /** Landed hits, and what the recording buffs active at their frames record of them (KitBuff.records; not Fixed DMG). */
@@ -192,7 +201,7 @@ function windowSourceAt(ctx: TimelineContext, st: TimelineState, hit: PendingHit
  * Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. `enemy` is the state their
  * damage sees: after a hit's own applications, before a tick's change.
  */
-export function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus, prior?: EnemyStatus, beforeTriggers?: TimelineState): TimelineState {
+export function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus, prior?: EnemyStatus, beforeTriggers?: TimelineState, crits?: StatusCrits): TimelineState {
   const records: ReactionRecord[] = [];
   const landed: LandedHit[] = [];
   let next = st;
@@ -212,9 +221,13 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
     const side = beforeTriggers && e.kind === "reaction" && e.status !== "corrosion" && e.initialHit ? reactionHitSide(st, beforeTriggers, e.operator, e.frame) : undefined;
     const d = eventDamage(ctx, e, enemy, own, roll, prior, side);
     if (d) landed.push(d);
+    if (d?.crit && crits) crits.set(e, d.element);
   }
   return records.length ? addHits({ ...next, reactions: [...next.reactions, ...records] }, landed) : st;
 }
+
+/** The status events whose own damage crit (recordStatus fills it), with its element: their battle events say so (asEvents). */
+export type StatusCrits = Map<StatusEvent, Element>;
 
 /** The next draw of the battle's random stream (mulberry32): a uniform value in [0, 1) and the stream's new state. */
 export function nextRandom(seed: number): { readonly value: number; readonly seed: number } {
@@ -237,9 +250,12 @@ export function draw(ctx: TimelineContext, st: TimelineState, stream: string): {
   return { value: r.value, state: { ...st, rng: { ...st.rng, [stream]: r.seed } } };
 }
 
-/** Status events as battle events, with the kind of the hit that caused them (and its cast). */
-export const asEvents = (events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): BattleEvent[] =>
-  events.map((e) => ({ type: "status", frame: e.frame, operator: e.operator, event: e, fromKind, ...(cast !== undefined ? { cast } : {}) }));
+/** Status events as battle events, with the kind of the hit that caused them (and its cast), and whether their damage crit (`crits`, from recordStatus). */
+export const asEvents = (events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number, crits?: StatusCrits): BattleEvent[] =>
+  events.map((e) => {
+    const element = crits?.get(e);
+    return { type: "status", frame: e.frame, operator: e.operator, event: e, fromKind, ...(cast !== undefined ? { cast } : {}), ...(element !== undefined ? { crit: { element } } : {}) };
+  });
 
 /** An infliction's status events without its bursts, which are scheduled their element's delay later (BattleConstants.burstDelayFrames), on their operator's clock: others' time stops and slow-downs hold them, its own and freezes don't (clock.ts operatorClockDue). */
 export function delayBursts(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): { state: TimelineState; now: StatusEvent[] } {
@@ -502,8 +518,9 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame, { source: "hits" });
   }
-  st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy, beforeTriggers);
-  if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy, undefined, beforeLateTriggers);
+  const crits: StatusCrits = new Map();
+  st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy, beforeTriggers, crits);
+  if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy, undefined, beforeLateTriggers, crits);
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];
   if (withDamage && !away && kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {
@@ -527,7 +544,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     st = schedule(st, [{ ...rest, frame: at, clock: "enemy", detached: true, deferred: { consumed }, ...(damageFrame !== undefined ? { pinned: true as const } : {}) }]);
   }
   const all: BattleEvent[] = [
-    ...(withDamage && !away ? [hitEvent] : []), ...asEvents(statusEvents, kind, castIndex), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex), ...poiseEvents, ...events, ...spEvents,
+    ...(withDamage && !away ? [hitEvent] : []), ...asEvents(statusEvents, kind, castIndex, crits), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex, crits), ...poiseEvents, ...events, ...spEvents,
     ...(kitHit.heals && withDamage ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
     ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
@@ -547,6 +564,7 @@ export function landBurst(ctx: TimelineContext, state: TimelineState, b: Pending
   const events = asEvents([burst], b.fromKind, b.fromCast);
   let st = { ...state, enemy: expireStatus(state.enemy, b.frame) };
   if (ctx.beforeDamage) st = runTriggers(ctx, st, events, origin, (t) => t.beforeDamage === true, false);
-  st = recordStatus(ctx, st, [burst], st.enemy);
-  return runTriggers(ctx, st, events, origin, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
+  const crits: StatusCrits = new Map();
+  st = recordStatus(ctx, st, [burst], st.enemy, undefined, undefined, crits);
+  return runTriggers(ctx, st, asEvents([burst], b.fromKind, b.fromCast, crits), origin, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }

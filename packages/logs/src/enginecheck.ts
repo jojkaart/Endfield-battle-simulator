@@ -234,7 +234,9 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
     // Unless the logged value is one of the two exactly: then it says whether the hit crit (40d9a3c1da37: Si's killing
     // combo finish, 599,622 = ×1.5 the non-crit reading, counted at expected crits as 409,741).
     if (primaryDamage === hit.value) return { readings, primary: primaryDamage, expected: primaryDamage, totalsCrit: "exact", landing };
-    const critOnly = readings.find((r) => r.assumptions.length === 1 && r.assumptions[0]?.kind === "crit");
+    // The other crit reading (the primary's own is the replay's read crit under check-crits `replay`); critFromValue
+    // is symmetric in its two readings.
+    const critOnly = readings.find((r) => r.assumptions.length === 1 && (r.assumptions[0]?.kind === "crit" || r.assumptions[0]?.kind === "noCrit"));
     if (critOnly && critOnly.predicted === hit.value) return { readings, primary: primaryDamage, expected: critOnly.predicted, totalsCrit: "exact", landing };
     // Or near one of the two only (engine assumption totals-crits `read`): the crit the value shows, the reading's own error
     // kept (0c14fb3ce77d: Rossi's first ultimate at 25.2–27.7 s, ×1.032 below the log on every stab for Alesh's
@@ -300,14 +302,21 @@ export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): Read
   const judged = engine.filter((m) => !unjudged(m));
   const unjudgedNames = new Set([...c.replay.unjudgedKitBuffs.keys()].flatMap((k) => c.names.ofKitBuff.get(k) ?? []));
   const withLog = (mods: readonly Modifier[], cat: HitCategory) => [...mods, ...logMods(own.effects, cat), ...loggedEntries(c, withoutOwnFood(c.data, c.fx, hit).effects, unjudgedNames, judged, cat)];
-  const crit = hit.crit === null ? "never" : hit.crit ? "always" : "never";
+  // Where the log doesn't give the crit: the crit the replay read from the log (engine assumption check-crits `replay`:
+  // replaycrits.ts, BuffReplay.critSource), else none; the other reading is the assumption.
+  const readCrit = hit.crit === null && primaryCritRead(c, hit);
+  const crit = hit.crit === null ? (readCrit ? "always" : "never") : hit.crit ? "always" : "never";
   const primary: Reading = { inputs, options: { ...inputs.options, crit, modifiers: withLog(judged, category) } };
   delete (primary.options as { critRoll?: number }).critRoll;
 
   // The alternatives, by group.
   const groups: Alternative[][] = [];
   const replaceMods = (o: Reading, f: (mods: readonly Modifier[]) => Modifier[]): Reading => ({ ...o, options: { ...o.options, modifiers: f(o.options.modifiers ?? []) } });
-  if (hit.crit === null) groups.push([NONE, { assumption: { kind: "crit", label: "crit" }, apply: (o) => ({ ...o, options: { ...o.options, crit: "always" } }) }]);
+  if (hit.crit === null) {
+    groups.push([NONE, readCrit
+      ? { assumption: { kind: "noCrit", label: `no crit (the replay read a crit: ${c.replay.critSource(hit)})` }, apply: (o) => ({ ...o, options: { ...o.options, crit: "never" } }) }
+      : { assumption: { kind: "crit", label: "crit" }, apply: (o) => ({ ...o, options: { ...o.options, crit: "always" } }) }]);
+  }
   // Kit buffs the replay isn't sure of at the hit (its instances change within REPLAY_EDGE_MS, or depend on crits the log
   // doesn't give): as the log lists them there (inside the hit, else at its boundary), or off.
   const unsure = [...c.names.defs.keys()].filter((k) => !c.replay.unjudgedKitBuffs.has(k) && c.replay.kitBuffNearChange(hit, k));
@@ -867,6 +876,17 @@ function critFromValue(value: number, nonCrit: number, crit: number, reading: st
   const near = (x: number) => Math.abs(Math.log(value / x)) <= Math.log(CRIT_READ_NEAR);
   if (near(nonCrit) === near(crit)) return null;
   return near(crit) ? crit : nonCrit;
+}
+
+/**
+ * Whether the primary reading of a hit whose crit the log doesn't give takes a crit (engine assumption check-crits):
+ * under `replay`, where the replay read one from the log (BuffReplay.critSource shown, layers or values; those
+ * inferences only add crits), else not.
+ */
+export function primaryCritRead(c: EngineCheck, hit: LogHit): boolean {
+  if (hit.crit !== null || engineReadingOf(c.replay.assume, "check-crits") !== "replay") return false;
+  const source = c.replay.critSource(hit);
+  return source === "shown" || source === "layers" || source === "values";
 }
 
 /** An engine assumption's reading under a replay's `assume` (its default when not set). */

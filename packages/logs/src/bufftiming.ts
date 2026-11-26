@@ -314,7 +314,7 @@ function bases(b: ReadingBasis): Alternative[][] {
   const groups = b.groups.filter((g) => !b.edgeToggles.has(g));
   const n = groups.reduce((x, g) => x * g.length, 1);
   if (n <= MAX_BASES) return groups.reduce<Alternative[][]>((acc, g) => acc.flatMap((a) => g.map((x) => [...a, x])), [[]]);
-  const crit = groups.find((g) => g.some((a) => a.assumption?.kind === "crit"));
+  const crit = groups.find((g) => g.some((a) => a.assumption?.kind === "crit" || a.assumption?.kind === "noCrit"));
   return [[], ...(crit ? crit.filter((a) => a.assumption).map((a) => [a]) : [])];
 }
 
