@@ -347,8 +347,8 @@ export const TAIL_CUT_ROUNDS = 8;
  * whose own landings after its last logged one stand for no logged hit, with no logged hit of its operator carrying one
  * of the skill's events within TAIL_NEAR_MS of them that no cast holds (the placement may have put the tail's hits
  * elsewhere), the first of them outside the away stretches and a logged hit of anyone within TAIL_NEAR_MS after it (the
- * enemy there, the log recording). The log records every landing that lands, so the cast ended between: at the frame
- * after its last logged landing (ReplayCastOptions.endsAt). pending/zmdlogs-0c14fb3ce77d.json: Rossi's battle skill at
+ * enemy there, the log recording). The log records every landing that lands, so the cast ended between: right after its
+ * last logged landing, at that landing's frame (ReplayCastOptions.endsAt). pending/zmdlogs-0c14fb3ce77d.json: Rossi's battle skill at
  * 35.40 s, its two charge hits logged, then neither her Lift at frame 35 nor the wolves and their bleed.
  */
 export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, reading: string): Map<ReplayedCast, number> {
@@ -391,7 +391,10 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
       const g = key.split("|", 1)[0] as string;
       return list.some((x) => x.start > lastLogged && x.start <= end && listed(g, ms(x.start), ms(x.start) + TAIL_NEAR_MS) && !listed(g, ms(lastLogged) - TAIL_NEAR_MS, ms(lastLogged)));
     });
-    if (!effects) out.set(c, lastLogged + 1);
+    // At its last logged landing's own frame: an end runs after that frame's hits (schedule.ts IN_FRAME), so a tail landing
+    // the frame after is cut too (c83c75d02a85: Si's combo final at 56.73 s, a frame after her last logged slash, 5.0% of
+    // the fight, landed past a cut at lastLogged + 1).
+    if (!effects) out.set(c, lastLogged);
   }
   return out;
 }

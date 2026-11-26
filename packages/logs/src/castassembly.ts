@@ -8,7 +8,7 @@
 import { allActions, applyBuff, chanceJumpsOf, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type Predicate, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
-import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { buttonVariants, castFrames, excludes, neededBuffs, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /** The game buffs the log lists with values somewhere (effects or boundary effects). */
 export function listedWithValues(fx: LogFixture): Set<string> {
@@ -341,6 +341,25 @@ function loggedCastMatcher(kits: readonly OperatorKit[], stops: readonly TimeSto
     !(c.kind === "combo" && ticked.has(`${c.operator}|${skill}`) && (worldMs(Math.min(lc.t, c.start), c.start, stops) > COMBO_EVENT_MS || worldMs(c.lastHit, Math.max(lc.t, c.lastHit), stops) > COMBO_EVENT_AFTER_MS));
 }
 
+/**
+ * A placed cast that a logged cast event of another skill stands for: the event's skill shows no hit anywhere in the log
+ * (`shownElsewhere` false), and a cast of its button's other variant (logcasts.ts buttonVariants) by the same operator,
+ * placed from its hits, is near it (loggedCastMatcher) with no cast event of its own skill near. The game logs the
+ * button's skill while the kit casts the variant (db8711232de9: Laevatain's four battle-skill presses in Twilight, logged
+ * as normal_skill, are normal_skill_during_ult, placed from their hits 0.0–1.9 s later; made also as a cast of their
+ * own, each forced a normal_skill whose explosion and Combustion ticks the log never shows, 3.6% of the fight, and took
+ * the Link stack Camille's combo gave, which the logged during-ult hits carry: ×1.3 on all eleven).
+ */
+function variantCastOf(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts">, kit: OperatorKit | undefined, skill: OperatorKit["skills"][number], lc: { t: number; operator: string }, near: ReturnType<typeof loggedCastMatcher>): ReplayedCast | undefined {
+  return casts.find((c) => {
+    const variant = kit?.skills.find((k) => k.skillId === c.skillId);
+    return (
+      c.operator === lc.operator && variant !== undefined && c.skillId !== skill.skillId && kit !== undefined && buttonVariants(kit, skill, variant) && !c.slot && c.landings.length > 0 && near(c, lc, c.skillId) &&
+      !(fx.casts ?? []).some((o) => o.operator === lc.operator && o.skill === c.skillId && near(c, o, c.skillId))
+    );
+  });
+}
+
 export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[], data?: GameData, stops: readonly TimeStop[] = []): ReplayedCast[] {
   if (!fx.casts?.length) return [...casts];
   const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
@@ -351,6 +370,7 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
     if (!skill || skill.followUpOnly) continue;
     if (casts.some((c) => near(c, lc, lc.skill))) continue;
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)));
+    if (!shownElsewhere && variantCastOf(casts, fx, kits.find((k) => k.operator === lc.operator), skill, lc, near)) continue;
     const own = new Set(skill.hits.flatMap((h) => h.events));
     const kit = kits.find((k) => k.operator === lc.operator);
     const shows = shownElsewhere
@@ -377,20 +397,6 @@ function ordered(casts: readonly ReplayedCast[]): ReplayedCast[] {
     previous.set(c.operator, r);
     return r;
   });
-}
-
-/** The buffs a predicate needs active (a `buffActive`, alone or in an `all`). */
-function neededBuffs(p: Predicate | undefined): string[] {
-  if (!p) return [];
-  if ("buffActive" in p) return [p.buffActive];
-  if ("all" in p) return p.all.flatMap(neededBuffs);
-  return [];
-}
-
-/** Whether a branch's condition (`not` a buff active) rules out a skill whose availability needs that buff. */
-function excludes(branch: Predicate | undefined, available: Predicate | undefined): boolean {
-  const without = branch && "not" in branch ? neededBuffs(branch.not) : [];
-  return without.length > 0 && neededBuffs(available).some((b) => without.includes(b));
 }
 
 export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Placement, casts: readonly ReplayedCast[]): ReplayedCast[] {
@@ -722,6 +728,8 @@ export interface LoggedCastFate {
    */
   readonly fate: "placed" | "tick" | "press" | "cast" | "follow-up" | "unknown";
   readonly cast?: { readonly start: number; readonly world: number };
+  /** "placed" as a cast of another skill of its kind, the variant the kit casts in its place (variantCastOf). */
+  readonly variant?: string;
   readonly buff?: string;
 }
 
@@ -750,6 +758,8 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
     const tick = kit?.buffs.find((d) => d.ticksLoggedAs === lc.skill);
     if (tick) return { ...base, fate: "tick", buff: tick.id };
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => fx.hits.some((x) => x.operator === lc.operator && x.event === e)));
+    const variant = shownElsewhere ? undefined : variantCastOf(placed, fx, kit, skill, lc, near);
+    if (variant) return { ...base, fate: "placed", cast: { start: variant.start, world: Math.max(0, worldMs(Math.min(variant.start, lc.t), Math.max(variant.start, lc.t), stops)) }, variant: variant.skillId };
     return { ...base, fate: shownElsewhere ? "press" : "cast" };
   });
 }

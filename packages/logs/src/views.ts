@@ -327,7 +327,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const place = repeat ? null : castEventPlace(data, hitTimes, e);
     const what =
       e.fate === "placed" && e.cast
-        ? `the placed cast's at ${s(e.cast.start)} s (${s(e.cast.world)} s of world time apart, ${s(Math.abs(e.t - e.cast.start))} s of log time)`
+        ? `the placed cast's${e.variant ? ` (${shortSkill(e.variant)}, the variant its kit casts in its place)` : ""} at ${s(e.cast.start)} s (${s(e.cast.world)} s of world time apart, ${s(Math.abs(e.t - e.cast.start))} s of log time)`
         : e.fate === "tick"
           ? tickOrCast(e)
           : e.fate === "press"
