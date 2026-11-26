@@ -3,7 +3,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { assumedView, castsView, differencesReport, fallbackGroups, foldLabel, groupsReport, kindSet, otherKitHitCasts, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerSummary, staggerView, totalsAllView, type HitRecord, type StaggerRun } from "@efsim/logs";
+import { assumedView, castsView, differencesReport, fallbackGroups, foldLabel, groupsReport, kindSet, otherKitHitCasts, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerLine, staggerSummary, staggerView, totalsAllView, type HitRecord, type StaggerRun } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -88,6 +88,9 @@ describe("the placement and replay views", () => {
       { start: 9000, last: 12000, next: null, replay: [], engineEnd: "none", engineCut: null, dealt: 10 },
     ];
     expect(staggerSummary(runs)).toBe("2 logged Stagger runs: the engine's own ran short in 1 (shortfall quartiles 1.00 1.00 1.00 s), had none running in 0, and the replay had no window at all in 1");
+    // A replay window starting over a second from the log's first Staggered hit is flagged (round 15: d4fb's 86.50 s against 97.26 s).
+    expect(staggerLine(runs[0] as StaggerRun)).not.toContain("FLAG");
+    expect(staggerLine({ ...(runs[0] as StaggerRun), start: 97260, last: 109890, replay: [{ start: 86500, end: 109930 }] })).toContain("FLAG: the replay's window starts 10.76 s before the log's first Staggered hit");
   });
 });
 

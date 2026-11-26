@@ -5,6 +5,10 @@
 // prior for "which files will this question need", before the brief names any.
 //
 // Usage: node scripts/lead-files.ts <term>… [--ref <ref>] [--commits n] [--top n]
+//        node scripts/lead-files.ts --family <name>   a family's files, one per line, for a brief to list (never a
+//                                                     family's name: bursts-and-cooldowns report point 3, "the other
+//                                                     replay modules" left an agent guessing whether two files were
+//                                                     its); names: FAMILIES (replay, placement, check, holds, views, timeline)
 //   --ref      the history searched (default main)
 //   --commits  how many commits back (default 400)
 //   --top      files shown per term (default 12)
@@ -24,6 +28,20 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** A file counts as code: packages, scripts and tests, not the snapshots or fixtures. */
 export const isCode = (f: string) => /^(packages|scripts|tests)\//.test(f) && !f.startsWith("tests/snapshots/") && !f.includes("fixtures/");
+
+/**
+ * The families of files a brief tends to name by a word ("the replay modules"), each file listed (round 15): a brief
+ * pastes `--family <name>`'s list instead. tests/lead-files.test.ts checks every file exists, so a split or a rename
+ * updates it.
+ */
+export const FAMILIES: Readonly<Record<string, readonly string[]>> = {
+  replay: ["packages/logs/src/buffreplay.ts", "packages/logs/src/castassembly.ts", "packages/logs/src/replayrun.ts", "packages/logs/src/holdinputs.ts", "packages/logs/src/replaycrits.ts", "packages/logs/src/replayedhits.ts", "packages/logs/src/replayrecord.ts", "packages/logs/src/replaysteps.ts", "packages/logs/src/replaykeys.ts", "packages/logs/src/recordedburst.ts"],
+  placement: ["packages/logs/src/logcasts.ts", "packages/logs/src/castpairs.ts", "packages/logs/src/logeffects.ts"],
+  check: ["packages/logs/src/logcheck.ts", "packages/logs/src/enginecheck.ts", "packages/logs/src/assumptions.ts", "packages/logs/src/snapshotentry.ts", "packages/logs/src/onesided.ts", "packages/logs/src/reactioncheck.ts", "packages/logs/src/hitvalues.ts"],
+  holds: ["packages/logs/src/holds.ts", "packages/logs/src/holdinputs.ts", "packages/logs/src/rampsteps.ts"],
+  views: ["packages/logs/src/views.ts", "packages/logs/src/query.ts", "packages/logs/src/reports.ts", "packages/logs/src/hitexport.ts", "packages/logs/src/clockview.ts", "packages/logs/src/clocksview.ts", "packages/logs/src/burstsview.ts", "packages/logs/src/decisionsview.ts", "packages/logs/src/assumedview.ts", "packages/cli/src/commands/zmdlogs.ts"],
+  timeline: ["packages/engine/src/timeline/actions.ts", "packages/engine/src/timeline/advance.ts", "packages/engine/src/timeline/casting.ts", "packages/engine/src/timeline/clock.ts", "packages/engine/src/timeline/drivers.ts", "packages/engine/src/timeline/landing.ts", "packages/engine/src/timeline/paths.ts", "packages/engine/src/timeline/resources.ts", "packages/engine/src/timeline/timing.ts", "packages/engine/src/timeline/state.ts"],
+};
 
 /**
  * Per term, the code files of the commits (`log`: commit → message and files) whose message names it (case aside),
@@ -56,7 +74,13 @@ function history(ref: string, n: number): { commit: string; message: string; fil
 
 function main(argv: string[]): number {
   if (printHelp(argv, import.meta.url)) return 0;
-  const { values, positionals } = parseArgs({ args: argv, allowPositionals: true, options: { ref: { type: "string", default: "main" }, commits: { type: "string", default: "400" }, top: { type: "string", default: "12" } } });
+  const { values, positionals } = parseArgs({ args: argv, allowPositionals: true, options: { ref: { type: "string", default: "main" }, commits: { type: "string", default: "400" }, top: { type: "string", default: "12" }, family: { type: "string" } } });
+  if (values.family !== undefined) {
+    const files = FAMILIES[values.family];
+    if (!files) throw new Error(`lead-files: no family ${values.family} (${Object.keys(FAMILIES).join(", ")})`);
+    for (const f of files) process.stdout.write(`${f}\n`);
+    return 0;
+  }
   if (!positionals.length) {
     process.stderr.write("usage: node scripts/lead-files.ts <term>… [--ref <ref>] [--commits n] [--top n] (--help)\n");
     return 2;

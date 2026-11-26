@@ -92,6 +92,9 @@ describe("scripts/bash-guard.ts", () => {
     expect(refusal("git commit -q -m \"title\n\nbody\" -- a.ts")).toMatch(/multi-line commit message/);
     expect(refusal(`git commit -m "the ${B}x${B} view" -- a.ts`)).toMatch(/backtick the shell would run/);
     expect(refusal(`echo "${B}date${B}" > a.md`)).toMatch(/backtick the shell would run/);
+    // A sed insertion the harness's worktree check refuses (round 15): the refusal names the Edit tool first.
+    expect(refusal("sed -i '288a\\ a new line' packages/logs/src/x.ts")).toMatch(/a sed insertion .*the Edit tool/);
+    expect(refusal("sed -i 's/a/b/' packages/logs/src/x.ts")).toBeUndefined();
   });
 
   it("lets a backtick in single quotes or escaped through", () => {

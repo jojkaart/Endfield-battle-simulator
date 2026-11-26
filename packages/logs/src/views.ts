@@ -504,11 +504,20 @@ function attackInputKeys(data: GameData, fx: LogFixture): Map<string, "finisher"
   return out;
 }
 
+/**
+ * How far (ms) the replay's first window may start from the log's first Staggered hit before `zmdlogs stagger` flags
+ * it (bursts-and-cooldowns report point 2: d4fb's replay window from 86.50 s against the log's 97.26 s, read as a
+ * Stagger holding a cooldown; the record had derived a held Stagger's start from its end).
+ */
+export const STAGGER_START_FLAG_MS = 1000;
+
 /** One Stagger run against the replay's windows and the engine's own end. */
-function staggerLine(r: StaggerRun): string {
+export function staggerLine(r: StaggerRun): string {
   const first = r.replay[0];
   const gap = first ? r.last - first.end : 0;
-  const short = first ? `; the replay's first window ends ${s(Math.abs(gap))} s ${gap >= 0 ? "before" : "after"} the log's last Staggered hit` : "";
+  const lead = first ? r.start - first.start : 0;
+  const flag = first && Math.abs(lead) > STAGGER_START_FLAG_MS ? `; FLAG: the replay's window starts ${s(Math.abs(lead))} s ${lead > 0 ? "before" : "after"} the log's first Staggered hit` : "";
+  const short = first ? `; the replay's first window ends ${s(Math.abs(gap))} s ${gap >= 0 ? "before" : "after"} the log's last Staggered hit${flag}` : "";
   const engine = r.engineEnd === null ? (r.engineCut !== null ? `the engine's own would have run to ${s(r.engineCut)} (cut by the log's calm hit)` : "the engine's own covered it") : r.engineEnd === "none" ? "the engine had none running (held for the log)" : `the engine's own ended ${s(r.engineEnd)} (held for the log)`;
   return `  log ${s(r.start)}–${s(r.last)}${r.next === null ? " (to the fight's end)" : ` (next hit ${s(r.next)})`}, Stagger dealt ${r.dealt}: replay ${r.replay.map((w) => `${s(w.start)}–${s(w.end)}`).join(", ") || "none"}${short}; ${engine}`;
 }
