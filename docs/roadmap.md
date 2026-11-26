@@ -86,7 +86,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   Arts Intensity after its hit's before-damage triggers, a second enemy's landing by value (9c6e); the slug's purges
   read from the log 2026-11-26, `logged-purges`, 6339 plain 28 → 112; a stop's batched landings 2026-11-26: a logged
   ms's landings in its Stagger bars' order (c4f3's Estella, and with it the 13.07 s Breach's four stacks),
-  Pogranichnik's Fervent Morale before the damage of the hit that makes it: development plain 74.1 → 76.0%, earlier
+  Pogranichnik's Fervent Morale before the damage of the hit that makes it: development plain 74.3 → 76.2%, earlier
   73.0 → 77.7%): next e82d's Doubles Susceptibility ending after a second touch inside her seal (the only such log; a
   second one decides it), 7b54's partial purges, a hold bound from an end-boundary hit's value (c4f3's Wolven Blood),
   Pogranichnik's harasses' logged delays (0.6–1.3 s, d4fb 88.55 s), Estella's weapon ATK in c4f3's 7.05 s batch,

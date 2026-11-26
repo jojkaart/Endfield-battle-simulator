@@ -26,8 +26,8 @@ and 7910's early rogue wave.
   raise their stacks event then (landing.ts; only Pogranichnik's hits have both): the bank's layer counts for the slash
   that filled it (d4fb 47.92 s).
 
-**Scoreboard** (`npm run snapshots:update`): development plain 73.8 → 75.7%, mismatch 10.5 → 10.2%, mean |damage error|
-6.1 → 5.9%; hold-out plain 82.1 → 82.2%, 7.4 → 7.1% (2 better, none worse); earlier pending plain 73.0 → 77.7%,
+**Scoreboard** (`npm run snapshots:update` after merging main at f05036d, the logged purges; `measure --base f05036d`
+for this change alone): development plain 74.3 → 76.2%, mismatch 10.4 → 10.2%, mean |damage error| 5.1 → 4.9%; hold-out plain 82.1 → 82.2%, 7.4 → 7.1% (2 better, none worse); earlier pending plain 73.0 → 77.7%,
 mismatch 11.7 → 11.3%, 3.5 → 3.4%. Chen 43.0 → 74.3% plain, Pogranichnik 52.1 → 75.3%, Estella 59.9 → 81.0%, the male
 Endministrator 52.9 → 88.7%, Lifeng 43.5 → 91.2%. Better c4f3 (275 → 464, −3.4 → −0.8%), 3f78 (91 → 147, −3.7 →
 0.0%), a9d7 (265 → 333, −3.3 → −1.5%), d4fb (516 → 844), de6a (71 → 287), 458b, 7e19 and four by a hit or two. Mixed
