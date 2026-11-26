@@ -105,7 +105,9 @@ to rebalance the pending shards); `npm run measure -- --help` lists its
 options, checked before it queues. Diagnosis views: `efsim zmdlogs
 groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
 (each clock's lateness by stop kind), `holds --dropped --all`; every view
-that replays takes `--assume`; one command at two
+that replays takes `--assume`; what a reading changes: `zmdlogs decisions
+<fixture…|--all> --assume <id>=<r>` (the replay's decisions) and `hits
+<fixture> --against <id>=<r>` (the hits); one command at two
 commits' code, the lines that differ: `node scripts/cli-ab.ts <ref> --
 <efsim args>` (`--holds <fixture>`: which bounds a change moved). A new
 test that should fail before the change: `node scripts/verify-at.ts <base>
@@ -195,7 +197,8 @@ complex to verify"):
   (`.prettierignore` keeps `npx prettier` off): format by hand.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
-  `scripts/scratch-template.ts`, run `node scratch/x.ts`. Times go through
+  `scripts/scratch-template.ts`, run `node scratch/x.ts` (`node
+  scripts/typecheck-scratch.ts scratch/x.ts` typechecks it). Times go through
   `FPS` (30 frames a second): `withSeconds(scenario, s)` for a fight's
   length, `framesOf(s)` / `secondsOf(f)` otherwise, never a literal `* 60`.
   Operator ids from names: `operatorId(data, "Arcane")` (@efsim/data),
