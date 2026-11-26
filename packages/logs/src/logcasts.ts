@@ -909,14 +909,13 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const next = cur?.slots?.[cur.index + 1];
         const head = cur?.slots?.[0];
         const onTime = cur !== undefined && next !== undefined && head !== undefined && Math.abs(elapsed - msOf(next.frame - head.frame)) <= ON_TIME_MS;
-        // A launched entity's next landing is on its way only near its frame: not 7 s later (3aa6ab93bad4: Zhuang
-        // Fangyi's attack 4 at 98.59 s, cut after two range ticks, took attack 2's at 106.11 s, past her combo, battle
-        // skill and attack 1; attack 4 lasts 170 frames).
-        // Every stop holds it but its own cast's (joinable).
-        const launched = cur !== undefined && next !== undefined && head !== undefined && next.hits.some((x) => x.launch !== undefined) &&
-          worldMs(cur.first, h.t, stops.filter((s) => s.operator !== build.operator || s.skillId !== cur.cast.skillId)) <= msOf(next.frame - head.frame) + CAST_SLACK_MS;
-        const superseded = cur !== undefined && next !== undefined && !onTime && !next.hits.some((x) => x.detached && x.launch === undefined) && !launched &&
-          [...opened.values()].flat().some((c) => c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t);
+        const since = (c: LoggedCast) => cur !== undefined && c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t;
+        // Even a landing on its way isn't an older cast's once a newer cast of a skill with its key has started (3aa6ab93bad4:
+        // Zhuang Fangyi's attack 4 at 98.59 s, cut after two range ticks, took attack 2's at 106.11 s, whose swords at that
+        // ms had opened attack 2; attack 4 lasts 170 frames).
+        const onItsWay = next !== undefined && next.hits.some((x) => x.detached || x.launch !== undefined);
+        const rekeyed = onItsWay && !onTime && [...opened.values()].flat().some((c) => since(c) && candidates.some((g) => g.id === c.group));
+        const superseded = rekeyed || (cur !== undefined && next !== undefined && !onTime && !onItsWay && [...opened.values()].flat().some(since));
         const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
         // A variant's slot may never come (variantOrder): a logged press of a skill of the cast's kind since its first
         // landing starts a new cast (3aa6ab93bad4: a cast of two strikes doesn't take the next cast's seven; d774d0ce7bd3:
