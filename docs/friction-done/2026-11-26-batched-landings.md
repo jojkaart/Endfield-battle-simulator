@@ -63,3 +63,19 @@ consumed, and d4fb 86.67 s's Fervent Morale; branch worktree-agent-ad6a5b2979002
   run: the knock-on to lead 2 was visible immediately.
 - `measure --split files` separated the kit change from landing.ts in one run, with none worse.
 - `node scripts/at-commit.ts HEAD --run <probe>` gave the base's Breach-path table without a second checkout.
+
+## Outcome (round 16)
+
+- 1 (The Stagger bar's meaning was written down backwards in open-problems): done (50c434b): LogHit.poise.bar's doc
+  comment (the bar this hit leaves; before it bar + dealt; the batch's order) and a line in docs/design/data.md "What
+  the log records".
+- 2 (No view prints a batched ms's events in the bars' order beside the replay's): done but the count (5407f5a): the
+  bar on each LAND (`replay`) and HIT (`casts`) line of a batched ms ([bar 274 → 264]) and a BATCH line where the
+  replay's landing order differs from the bars' (views.ts batchDisagreements; c4f3 7.05 s: Estella's first Lift
+  before her ultimate, the accuracy list); the count in `zmdlogs decisions` carried (2026-11-26-backlog-after-round-16.md point 3).
+- 3 (A kit's stack values aren't traceable in the replay): done (00712d4): `zmdlogs replay --trace-stack owner:stack`
+  (the owner by name too; BuffReplay.stackTraces, replayrecord.ts StackTrace): a TRACE line per change with the step
+  (d4fb 86.67 s: Pogranichnik's bank 35 → 70). tests/stack-trace.test.ts.
+- 4 ("Fixed" items in open-problems have no place of their own): done (50c434b): docs/open-problems.md's header: a
+  fixed item shrinks to one line naming its journal entry, its open points move to its round's "Still possible"
+  list. The CLAUDE.md line is the lead's (round 16 summary, "For the lead").

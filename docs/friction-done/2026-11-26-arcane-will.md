@@ -54,3 +54,22 @@ Blood final and Estella's missing buffs on Chen in c4f3; branch worktree-agent-a
 - `zmdlogs raw --buffs` with the cached detail: the lanes' exact ends (49958 ms) decided both c4f3's and e82d's cases.
 - `hits --json` counterfactuals (`boundary off`) and `--zones`: the reading that fits is printed, no arithmetic.
 - `measure --variant` measured the assumption against the same code in one queued run, and docs/tried/ kept the result.
+
+## Outcome (round 16)
+
+- 1 (The lead's premise wasn't checked against the hit next to it): done (a11e8b4, 50c434b): (a) `zmdlogs hits
+  <fixture> --same-listing <s>` (packages/logs/src/listingview.ts sameListingLines): the hit at the moment and the
+  nearest hits with the very same listing (buff, source, value; boundary entries shown, not compared) with their
+  verdicts and a count by class (e82d 9.12 s: the 8.93 s slash under the same effects reads plain, the Doubles
+  Susceptibility only at its boundary); (b) `hits --listed <regex>` (with `--all --event`, one key across logs): only
+  hits listing a match, each line with the entries' sources, sinces and values. docs/open-problems.md's header: a
+  listing candidate names the neighbour hit that would rule it out, checked first.
+- 2 (`zmdlogs clock` pairs an instance with the wrong lane when two buffs share a logged name): done (b80f668):
+  BuffTrace.values (the instance's modifier and attribute values) and clockview.ts laneOfInstance: the run of the
+  instance's value first, a refreshed run listed across its start included, printed "(value …, the instance's)" or
+  "not the instance's …: another buff under this name?"; e82d's first instance now pairs with the 0.1794 run from
+  3.98 s (tests/clockview.test.ts).
+- 3 (A rule for every buff measured to settle one log's case): done (e9683e0): `efsim zmdlogs boundaries
+  <fixture…|--all> [--kit-buff <regex>]` (packages/logs/src/boundaryview.ts): per kit buff and side (the run's start
+  or end), how many boundary hits read with it, without it, both, neither, from the records' boundary
+  counterfactuals, cached as hits.

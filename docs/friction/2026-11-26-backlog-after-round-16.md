@@ -1,72 +1,16 @@
-# Backlog after improvement round 15 (2026-11-26)
+# Backlog after improvement round 16 (2026-11-26)
 
-Task: the points of the reports round 15 read (docs/friction-done/2026-11-26-round-15.md lists them) that round 15
-didn't do. Each point is complete on its own; the originals are in docs/friction-done/ with an "Outcome (round 15)"
-section. Point 1 is round 14's backlog's point 1, carried (its second carry: parked next round unless a report hits
-it); round 14's point 2 was closed by this round. Points 2–4 are new. Round 15 had every file to itself. The parked
-list and the accuracy list follow; the accuracy list gained four entries (the last four).
+Task: the points of the reports round 16 read (docs/friction-done/2026-11-26-round-16.md lists them) that round 16
+didn't do. Each point is complete on its own; the originals are in docs/friction-done/ with an "Outcome (round 16)"
+section. Point 1 is round 15's backlog's point 4, carried (its first carry); round 15's points 2 (fit-build's wider
+space) and 3 (the by-operator share) were closed by this round, the stage flag of point 3 left as point 2 here; round
+15's point 1 (the log context) moved to the parked list (carried twice without a new report). Point 3 is new. Round 16
+had every file to itself. The parked list and the accuracy list follow; the accuracy list lost its "slots by value"
+entry (closed by the slots-and-paths round) and gained one (the last).
 
 A branch that closes a point adds a line under it: "Closed by <branch>, <commit>: how".
 
-## 1. The log tools take the game data without the readings of it
-
-- **What happened:** making the ComboSkill curve a reading (engine assumption `combo-curve`) needed the log tools'
-  stop lists and the replay's timeline to read the same resampled data, but the log tools take `(data, fx)` in about
-  twenty places (placeHits, castTimeStops, skillStops' callers) while the readings travel apart in
-  ReplayOptions.assume, so the combo-hold round wrapped the data at four entries (createContext, snapshotEntry,
-  hitRecords, the zmdlogs CLI's data()). A script or view that called placeHits with the raw data under `--assume
-  combo-curve=…` mixed the two curves silently.
-- **Since round 14:** logBuffReplay refuses data not under its call's combo-curve reading (logcheck.ts: "the game data
-  is under another of its readings"); its first run caught `zmdlogs decisions` replaying the defaults on the reading's
-  data. The mix is now an error, not a wrong number; the signature still lets it be written.
-- **Cause:** the readings of the data are options of the replay, not of the data the placement reads.
-- **Suggestion:** a log context `{ data, assume }` (data already under the readings: withCurveReading and any later
-  data-level reading) that placeHits, the stop builders and the replay take, or `placeHits(data, fx, { assume })`
-  applying it, so the placement and the replay can't be given two readings; the views take the context from the CLI.
-- **Files:** packages/logs/src/logcasts.ts, logcheck.ts, snapshotentry.ts, hitexport.ts, views.ts, query.ts,
-  packages/cli/src/commands/zmdlogs.ts.
-- **Why it helps:** any later reading of a compiled table (a curve, a hold, a duration) is measurable without patches,
-  and a call can't be written wrong. Cost: a signature change across the package (behaviour-preserving: snapshots and
-  `zmdlogs hits --json` by cli-ab).
-- **From:** docs/friction-done/2026-11-26-combo-hold-and-replay.md point 3; docs/friction-done/2026-11-26-backlog-after-round-14.md, point 1.
-
-## 2. No search of which build changes give an operator's factor, and how many do by chance
-
-- **What happened:** Snowshine's ×0.9624 in 04d4 needed a scan of single and paired build changes (potential, weapon
-  skill levels, levels, each gear piece swapped or dropped); `zmdlogs fit-build` covers attribute nodes, the weapon's
-  level and foods only, so the bursts-and-cooldowns round wrote scripts/probes/stats/snowshine-builds.ts. 46 pairs fit
-  within 0.001: the question is undecidable, worth knowing before a round spends time on it.
-- **Cause:** fit-build's candidate space is fixed, and nothing counts how many candidates fit by chance.
-- **Suggestion:** `zmdlogs fit-build --pairs` over the wider space (skill levels, gear swaps within the worn set,
-  potential, attribute-node subsets by favourability, the operator's level with its promotion), from the probe,
-  printing the number of single changes and pairs within the tolerance beside the best, so "one constant, many
-  explanations" shows at once; then delete the probe (scripts/probes/README.md: a view replaces it).
-- **Needs:** packages/logs/src/buildfit.ts, packages/cli/src/commands/zmdlogs.ts (fit-build's options),
-  scripts/probes/stats/snowshine-builds.ts (removed). Tools only: no verdict moves.
-- **Why it helps:** a build offset is decided or flagged undecidable in one command; the backlog's accuracy list has
-  two such leads (04d4's Snowshine, 99fb's Purrchena at level 1).
-- **From:** docs/friction-done/2026-11-26-bursts-and-cooldowns.md point 4.
-
-## 3. The by-operator scoreboard reads as a fight metric but isn't
-
-- **What happened:** the totals-off brief's operator means (Perlica 17.3%, Liino 17.1% …) looked like a shared cause;
-  each is the operator's own total error (scripts/accuracy.ts perOperator), dominated by the four stage logs and by
-  small totals where a few replay-only beats are 20–60% (Liino's 0eef +58% on a 9 s fight). It took a jq pass over the
-  snapshots' `operator <id>` keys to see it.
-- **Cause:** docs/accuracy.md's "By operator" table gives the mean without the operator's share of the fight or a
-  median, and nothing tells a stage log's effect from a kit's. The share isn't in the snapshots: only each operator's
-  error is.
-- **Suggestion:** a `share operator <id>` key per fight in the snapshots (snapshotentry.ts totals: the operator's
-  logged damage ÷ the fight's), then the table's mean weighted by it and a median; and the stage logs flagged where
-  the scoreboard can read them without opening the hold-outs (a list of stage enemy ids in scripts/accuracy.ts, from
-  the fixtures' `enemy.id`, rather than a flag in fixtures/holdout/holdout.json). Round 15 didn't: the new key moves
-  every snapshot file (not a verdict), which a tooling round that must leave the snapshots byte for byte can't.
-- **Needs:** packages/logs/src/snapshotentry.ts, scripts/accuracy.ts, tests/snapshots/ (`npm run snapshots:update`:
-  the new keys), docs/accuracy.md (generated).
-- **Why it helps:** the next brief built on the table won't send an agent after a cause that is four stage logs.
-- **From:** docs/friction-done/2026-11-26-totals-off.md point 2.
-
-## 4. The replay's Stagger window starts are derived, not recorded
+## 1. The replay's Stagger window starts are derived, not recorded
 
 - **What happened:** `zmdlogs stagger d4fb` printed a replay window from 86.50 s against the log's 97.26 s; an earlier
   round read it as a Stagger holding a cooldown. The record took a window's start as its end less the Stagger's
@@ -80,11 +24,50 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   only), and a measure: the still spans read the windows, so a start that moves moves the holds.
 - **Why it helps:** the still spans, the windows' edges (kitBuffNearChange) and every "Staggered there" argument read
   this record; one recorded start replaces a bound.
-- **From:** docs/friction-done/2026-11-26-bursts-and-cooldowns.md point 2 (its first half).
+- **From:** docs/friction-done/2026-11-26-bursts-and-cooldowns.md point 2 (its first half); docs/friction-done/2026-11-26-backlog-after-round-15.md, point 4.
+
+## 2. The scoreboard can't tell a stage log's effect from a kit's
+
+- **What happened:** the totals-off brief's operator means (Perlica 17.3%, Liino 17.1% …) were dominated by four stage
+  logs and by small totals; round 16 added each operator's share of a fight (`share operator <id>`, a describing
+  snapshot key) and the by-operator table's median and share-weighted |error|, which take the small totals' weight
+  out. The stage logs are still mixed in: nothing in the snapshots says which fight is against a stage enemy.
+- **Cause:** the scoreboard reads the snapshots alone (scripts/accuracy.ts needs no game data or fixtures), and the
+  snapshots carry no fight's enemy.
+- **Suggestion:** a list of stage enemy ids (from the development fixtures' `enemy.id`, never read from a hold-out)
+  and the by-operator table without the stage fights beside it; or a describing key `stage 1` in a stage fight's
+  totals (snapshotentry.ts, from `fx.enemy.id` against a list in packages/logs), which the hold-outs carry blind too.
+- **Needs:** packages/logs/src/snapshotentry.ts (the key) or scripts/accuracy.ts (the list), tests/snapshots/
+  (`npm run snapshots:update`: keys added only, the round's summary names them), docs/accuracy.md (generated).
+- **Why it helps:** a brief built on the by-operator table reads a kit's error, not a stage's.
+- **From:** docs/friction-done/2026-11-26-totals-off.md point 2 (its stage half); docs/friction-done/2026-11-26-backlog-after-round-15.md, point 3.
+
+## 3. A batched ms's order disagreement isn't counted across logs
+
+- **What happened:** round 16 put each batched Stagger event's bar on `zmdlogs replay` / `casts` lines and a BATCH
+  line where the replay landed them in another order than the bars give (views.ts batchDisagreements); its first run
+  on c4f3 7.05 s shows Estella's first Lift landed before her ultimate, the bars after it. How many batches disagree
+  over every log, and of which kinds (a status event's landing, a trigger's hit), needs a replay view per log.
+- **Cause:** `zmdlogs decisions` reads the replay's own records (replayDecisions(data, replay)); the bars are the
+  fixture's, so BATCH isn't one of its kinds.
+- **Suggestion:** replayDecisions takes the fixture too (or decisionsView adds BATCH lines from batchDisagreements
+  beside the replay's), so `zmdlogs decisions --all` counts BATCH per log and `--assume` shows a reading's effect on
+  the batches.
+- **Needs:** packages/logs/src/decisionsview.ts, packages/logs/src/views.ts (batchDisagreements), tests/decisions.test.ts.
+  Tools only: no verdict moves.
+- **Why it helps:** the next batch-order rule (a trigger's hit in a batch, Estella's weapon ATK at 7.05 s) starts from
+  a count, not a log at a time.
+- **From:** docs/friction-done/2026-11-26-batched-landings.md point 2 (its count).
 
 ## Parked
 
 A new report that hits one brings it back with its full text from there.
+
+Round 14's backlog point 1, round 15's point 1 (full text in docs/friction-done/2026-11-26-backlog-after-round-15.md
+under point 1), carried twice without a new report:
+
+- 1. The log tools take the game data without the readings of it (a log context `{ data, assume }` that placeHits,
+  the stop builders and the replay take; a mix is an error since round 14).
 
 Round 12's backlog point 5 (holds per stretch) moved to the accuracy list below: it moves verdicts.
 
@@ -196,7 +179,9 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
   chr_0014_aurora`'s best needs two inputs (weapon level 51 and a food, 91 of 207 fit): undecided. And Purrchena in
   99fb (level 1 in the export, ×2.47): fit-build doesn't vary an operator's level (a buildfit.ts candidate set: the
   operator's level, its promotion following). A fitted override moves the verdicts: measure, snapshots:update; drop
-  the OFFSETS_EXPLAINED entry with it.
+  the OFFSETS_EXPLAINED entry with it. Round 16: `fit-build --pairs` counts the wider space's singles and pairs by ATK
+  (the operator's level among them, its promotion not), so Snowshine's is "no single, 26 pairs": undecidable by the
+  logs; Purrchena's level is the next try (`fit-build 99fb --operator Purrchena --pairs`).
 - **The log tools' stop lists from the timeline's applied slow-downs** (docs/friction-done/2026-11-23-remaining-leads.md
   point 3): BuffReplay.appliedStops has them; replayedCastStops could read the first run's, so a cast cut early or a
   kit trigger's jump shows. `zmdlogs stops --all --differ` gives what is left in a few minutes. Moves the placement:
@@ -219,13 +204,6 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
 - **Arcane's bursts** (kit-buff leads): `zmdlogs bursts --all --operator Arcane` (round 11) lists each logged burst
   against the replay's with each side's likely cause and the stops between: the first table for test 33's element and
   the burst's clock across her own ultimate's stop.
-- **Slots by value within a cast** (docs/friction-done/2026-11-26-totals-off.md point 3): 9c0b's Hunter Pursuit and
-  7910's Tangtang rogue wave are placed with a logged landing in the wrong slot (values ×5–17 off); realignUltimates
-  handles ultimates only and keeps the first landing's slot, so the cast's start (and its Link) stays wrong. A
-  realignment for any kind with the first slot free when the landings are fewer than the slots, by time and by the
-  logged values against the kit hits' scales (logcasts.ts). Moves the placement: measure.
-  Closed by worktree-agent-afcd0d768286cbdd8, f644801: logcasts.ts realignByValue (any kind, the first slot free for
-  a key that is its cast's only one); 7910's wave turned out to be the early rogue wave by value (open-problems).
 - **A reaction's level tried every way where the log decided it** (assumptions.ts ASSUMPTION_FACTS `stacks`, round
   15): logBuffReplay replays again with the levels the log shows (loggedReactionLevels), yet readingBasis still tries
   every other level 1–4 of a non-burst reaction, labelled "the replay's arts state isn't checked against the log's
@@ -239,10 +217,12 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
   has its inflictions and Vulnerable at each landing, but the check takes the enemy's side as unknown ("its
   inflictions aren't checked against the log's reactions") and tries both ways; a check of the replay's inflictions
   against the log's reactions first, then the replay's side as the primary reading's. Moves verdicts: measure.
+- **A batch's Lift before the ultimate the bars put first** (round 16's BATCH line, c4f3 7.05 s): the replay lands
+  Estella's first Lift (bar 234 → 224, logged 4,353, the replay's 2,044) right after her combo, before her ultimate
+  (254 → 234), which the bars put first; pinned landings follow the bars (schedule.ts dueBefore), a status event's
+  landing doesn't. Whether her ultimate's buffs are on that Lift's damage (×2.1) is the question; moves verdicts:
+  measure. With Estella's weapon ATK at 7.05 s (open-problems), one batch.
 
 ## What worked well
 
-The reports' episodes made each tool testable on arrival: 4d60's Empyrean end at 106.47 s is worldtime's line without
-frames, c4f3's Wolven Blood final pairs 68.50 s with the check's 72.30 s in `zmdlogs clock`, db87's 27.13 s Link is a
-LINK line, d4fb's 86.50 s window a FLAG; and the new fact table's test found three fallback readings assuming a crit
-the replay had read, on its first run.
+The reports' episodes made each view testable on arrival: 6339's purges and e82d's 8.93 s end are `zmdlogs ends` lines, e82d's Doubles instance pairs with its 0.1794 run in `zmdlogs clock`, c4f3's 7.05 s batch carries its bars and a BATCH line, d4fb's bank is a TRACE, 04d4's Snowshine is fit-build's pairs.
