@@ -56,7 +56,10 @@
 //                       one in <out>/hits.txt. Hold-outs never. A log new since the reference (or --base) commit
 //                       is measured there on this tree's copy of the fixture. Also, per such log, the placed hidden
 //                       holds' units that moved (zmdlogs holds' unit lines: placed, earliest, latest), the commonest
-//                       cause of a small worse log ("the holds placed again")
+//                       cause of a small worse log ("the holds placed again"). With --variant, also each variant's own
+//                       changed hits: against the plain tree (the same code without it), for the logs it moved there
+//   --help, -h          this text. The options are checked before the run queues for the lock (the readings against
+//                       the registered assumptions too): a typo fails in seconds
 //   --live              read the working tree when the run starts (after the queue's wait), not as it was queued
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
@@ -90,6 +93,7 @@ import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
+import { printHelp } from "./usage.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -220,7 +224,12 @@ function costs(tree: string, keys: readonly string[]): Map<string, number> {
 /** The teams of the logs (operator ids), read from the fixtures themselves. */
 const teamOf = (tree: string, key: string) => (JSON.parse(readFileSync(join(tree, "fixtures", key), "utf8")) as { team: { operator: string }[] }).team.map((b) => b.operator);
 
-async function main(argv: string[]): Promise<number> {
+/**
+ * The options, parsed and checked as far as they can be without the code or git (round 13, damage-factors report
+ * point 2: a typo or `--help` waited 5 min in the lock's queue before it failed): the entry point calls this before it
+ * queues, main again inside the lock. Throws on an unknown option or a bad value.
+ */
+export function measureOptions(argv: readonly string[]) {
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -258,11 +267,18 @@ async function main(argv: string[]): Promise<number> {
   if (values.group.length && values.split !== "files") throw new Error("--group goes with --split files");
   const workers = Number(values.workers);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
+  if (values.patch !== undefined && values.live) throw new Error("--patch applies to a commit (--at, or the tree as queued): not with --live");
+  parseReadings([...values.assume, ...values.variant.flatMap((x) => x.split(","))]);
+  if (values.patch !== undefined && !existsSync(resolve(values.patch))) throw new Error(`--patch ${values.patch}: no such file`);
+  return { values, workers };
+}
+
+async function main(argv: string[]): Promise<number> {
+  const { values, workers } = measureOptions(argv);
   const say = (l: string) => process.stdout.write(l + "\n");
 
   // The code: --at's commit, the snapshot taken when the run was queued (the entry point below), or the tree as it is now;
   // with --patch, that commit with the diff applied in a worktree of its own (removed after).
-  if (values.patch !== undefined && values.live) throw new Error("--patch applies to a commit (--at, or the tree as queued): not with --live");
   const at = values.at ?? values.snapshot ?? (values.patch !== undefined ? "HEAD" : undefined);
   const tree = at ? resolve(ROOT, "scratch/at", `${values.at && values.patch === undefined ? "" : "measure-"}${git(["rev-parse", "--short=9", "--verify", `${at}^{commit}`])}${values.patch !== undefined ? `-patch-${process.pid}` : ""}`) : ROOT;
   const ownTree = (values.patch !== undefined || (values.at === undefined && values.snapshot !== undefined)) && !existsSync(tree);
@@ -439,7 +455,11 @@ async function main(argv: string[]): Promise<number> {
     const mixedLines = mixedPerHit(mixed, (refTree && perHit.get(refTree)) || new Map(), perHit.get(`${tree}#${vi}`) ?? new Map());
     const hitLines = values.hits ? hitChanges(moved, (refTree && hitRows.get(refTree)) || new Map(), hitRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
     const holdLines = values.hits ? holdChanges(moved, (refTree && holdRows.get(refTree)) || new Map(), holdRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
-    if (hitLines?.full.length || holdLines?.full.length) writeFileSync(join(dir, "hits.txt"), [...(hitLines?.full ?? []), ...(holdLines?.full.length ? ["", "Hidden holds:", ...holdLines.full] : [])].join("\n") + "\n");
+    // A variant's own hits (round 13, holds-and-placement report point 3: which hits a reading moved took two `zmdlogs
+    // hits` runs and a diff per log): against the plain tree, the same code without the variant, measured beside it.
+    const ownMoved = values.hits && plain ? keys.filter((k) => !isHoldout(k) && JSON.stringify(entryOf(plain as Snapshots, k)) !== JSON.stringify(entryOf(after, k))) : [];
+    const ownLines = values.hits && plain ? hitChanges(ownMoved, hitRows.get(`${tree}#plain`) ?? new Map(), hitRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
+    if (hitLines?.full.length || holdLines?.full.length || ownLines?.full.length) writeFileSync(join(dir, "hits.txt"), [...(hitLines?.full ?? []), ...(holdLines?.full.length ? ["", "Hidden holds:", ...holdLines.full] : []), ...(ownLines?.full.length ? ["", "Against the plain tree (the variant's own effect):", ...ownLines.full] : [])].join("\n") + "\n");
 
     writeFileSync(join(dir, VERIFIED), formatSnapshot(after.verified as Entries, true));
     const files = splitPending(after.pending);
@@ -454,6 +474,7 @@ async function main(argv: string[]): Promise<number> {
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
       ...(holdLines?.summary ?? []),
+      ...(ownLines ? [`Variant ${vi + 1}'s own hits, against the plain tree:`, ...ownLines.summary.map((l) => `  ${l}`)] : []),
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...(await negativeLines(v.readings, label)),
@@ -480,7 +501,7 @@ async function main(argv: string[]): Promise<number> {
     }
   }
   if (values.split !== undefined && baseTree && before && whole) {
-    const lines = await splitParts(values.split, { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
+    const lines = await splitParts(values.split as "files" | "commits", { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
     writeFileSync(join(out, "summary.txt"), [...allLines, "", ...lines].join("\n") + "\n");
     allLines.push("", ...lines);
   }
@@ -554,6 +575,23 @@ export function kindLines(after: ReadonlyMap<string, Shares>, split: Split, befo
 }
 
 /** `<id>=<reading>` pairs as readings (--assume, --variant). */
+/**
+ * The readings of --assume and --variant checked against the kits' and the engine's registered assumptions (a
+ * misspelt id or reading fails here, before the queue, not after it). Loads the game data: seconds.
+ */
+export async function readingsProblem(values: { readonly assume: readonly string[]; readonly variant: readonly string[] }): Promise<string | null> {
+  const list = [...values.assume, ...values.variant.flatMap((x) => x.split(","))];
+  if (!list.length) return null;
+  const [{ loadGameData }, { allAssumptions }] = await Promise.all([import("@efsim/data"), import("@efsim/engine")]);
+  const known = allAssumptions(loadGameData());
+  for (const [id, reading] of list.map((x) => Object.entries(parseReadings([x]))[0] as [string, string])) {
+    const a = known.find((x) => x.id === id);
+    if (!a) return `measure: no assumption ${id} (the kits' and the engine's: ${known.map((x) => x.id).join(", ")})`;
+    if (!(reading in a.readings)) return `measure: ${id} has no reading ${reading} (${Object.keys(a.readings).join(", ")})`;
+  }
+  return null;
+}
+
 function parseReadings(list: readonly string[]): Record<string, string> {
   return Object.fromEntries(list.map((a) => {
     const [id, reading] = a.split("=");
@@ -884,6 +922,21 @@ export function patchProblem(argv: readonly string[], root = ROOT): string | nul
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
+  // The options before anything else: --help prints the header's usage, a bad option fails in a second, not after the
+  // queue's wait (round 13). Inside the lock (no lock file) main parses them again.
+  if (printHelp(argv, import.meta.url)) process.exit(0);
+  let problem: string | null = null;
+  try {
+    measureOptions(argv);
+  } catch (e) {
+    problem = `measure: ${e instanceof Error ? e.message : String(e)} (npm run measure -- --help for the options)`;
+  }
+  if (!problem && testLockFile()) problem = await readingsProblem(measureOptions(argv).values);
+  if (problem) {
+    process.stderr.write(problem + "\n");
+    process.stdout.write("EFSIM-DONE measure fail\n");
+    process.exit(2);
+  }
   if (testLockFile()) {
     // Under the test lock as a job (a queue: premerges and test suites go first), then this script again inside it.
     // A short job: the side lane, beside a long rule search, never beside a premerge or test suite (testlock.ts).

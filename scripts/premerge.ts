@@ -38,6 +38,7 @@ import { loadavg, tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mainCheckoutOf } from "../packages/data/src/checkout.ts";
+import { printHelp } from "./usage.ts";
 import { doneJob, type Runner } from "./done-line.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -261,4 +262,7 @@ async function main(argv: string[]): Promise<number> {
   return doneJob("premerge", `against ${base}`, (run) => premerge(base, keepGoing, run));
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2), import.meta.url)) process.exit(0);
+  void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+}

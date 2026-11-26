@@ -5,7 +5,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { runInTree } from "../scripts/at-commit.ts";
+import { spawnSync } from "node:child_process";
+import { applyPatch, runInTree } from "../scripts/at-commit.ts";
 
 const dir = mkdtempSync(join(tmpdir(), "efsim-at-commit-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -27,5 +28,22 @@ describe("at-commit --run", () => {
     expect(runInTree(tree, join(root, "scratch/s.ts"), [], root)).toBe(3);
     expect(existsSync(join(tree, "scratch/s.ts"))).toBe(false);
     expect(() => runInTree(tree, join(dir, "elsewhere.ts"), [], root)).toThrow(/not a file of this checkout/);
+  });
+});
+
+describe("at-commit --patch", () => {
+  it("names the hunk that failed and the files the diff touches (round 12 friction point 1)", () => {
+    const repo = join(dir, "repo");
+    mkdirSync(join(repo, "src"), { recursive: true });
+    const git = (...args: string[]) => spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd: repo, encoding: "utf8" });
+    git("init", "-q");
+    writeFileSync(join(repo, "src/view.ts"), "one\ntwo\nthree\n");
+    git("add", ".");
+    git("commit", "-qm", "base");
+    // A diff made against other text than the commit has at that place.
+    const diff = join(dir, "view.diff");
+    writeFileSync(diff, ["diff --git a/src/view.ts b/src/view.ts", "--- a/src/view.ts", "+++ b/src/view.ts", "@@ -1,3 +1,3 @@", " one", "-TWO", "+2", " three", ""].join("\n"));
+    expect(() => applyPatch(diff, repo, "HEAD", "0123456789abcdef")).toThrow(/the hunk\(s\) at src\/view\.ts at line 1 failed.*The diff touches src\/view\.ts/s);
+    expect(readFileSync(join(repo, "src/view.ts"), "utf8")).toBe("one\ntwo\nthree\n");
   });
 });

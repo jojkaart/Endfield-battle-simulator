@@ -17,8 +17,9 @@
 //   >>>>>>>
 //
 // `<<<<<<< all` replaces every occurrence (at least one); `<<<<<<< end` takes no old text and appends the new lines at
-// the end of the file (a new describe block, a journal paragraph); `@@@ new <path>` creates a file that mustn't exist
-// yet, from its blocks' new text. Markers are whole lines; anything outside blocks is ignored (comments).
+// the end of the file (a new describe block, a journal paragraph; its `=======` may be left out); `@@@ new <path>`
+// creates a file that mustn't exist yet, from its blocks' new text. Markers are whole lines; anything outside blocks is
+// ignored (comments).
 //
 // All or nothing: every old text must occur exactly once (`all`: at least once) in the file as the earlier blocks
 // left it, or nothing is written and each miss is reported with the file's nearest line. After writing, each edited
@@ -92,7 +93,12 @@ export function parseEdits(text: string): FileEdits[] {
       if (OPEN.test(x) || FILE.test(x)) throw new Error(`line ${i}: "${x}" inside the block opened at line ${start}`);
       part.push(x);
     }
-    if (!mid) throw new Error(`line ${start}: the block has no "=======" line${mode === "end" ? ` (an "end" block too: "<<<<<<< end", then "=======", the new lines, ">>>>>>>")` : ""}`);
+    // An "end" block replaces nothing, so its "=======" may be left out (round 12 friction point 6): the lines are the new text.
+    if (!mid && mode === "end") {
+      neu.push(...old.splice(0));
+      mid = true;
+    }
+    if (!mid) throw new Error(`line ${start}: the block has no "=======" line`);
     // The markers' one easy typo (round 10 friction point 4): the mode on a line of its own, read as the old text.
     if (mode === "once" && (old.join("\n").trim() === "end" || old.join("\n").trim() === "all")) throw new Error(`line ${start}: the old text is "${old.join("").trim()}": did you mean "<<<<<<< ${old.join("").trim()}" (the mode on the marker's own line)?`);
     if (mode === "end" && old.length) throw new Error(`line ${start}: an "end" block takes no old text (it appends)`);

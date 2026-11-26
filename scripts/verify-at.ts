@@ -18,6 +18,7 @@ import { copyFileSync, existsSync, rmSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { printHelp } from "./usage.ts";
 import { atCommit } from "./at-commit.ts";
 import { endRun, startRun } from "./runstate.ts";
 
@@ -70,4 +71,4 @@ function main(argv: string[]): number {
   return ok ? 0 : 1;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = printHelp(process.argv.slice(2), import.meta.url) ? 0 : main(process.argv.slice(2));

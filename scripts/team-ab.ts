@@ -29,6 +29,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const TEAMS = ["estella-si-akekuri-arcane", "typhoeus-arcane-liino-perlica"] as const;
@@ -186,6 +187,10 @@ async function main(argv: string[]): Promise<number> {
 /** Under the lock: the code fixed now, the identity check as a short job, then (if needed) the seeds as a long one. */
 async function locked(argv: string[]): Promise<number> {
   const values = parse(argv);
+  // What can fail without the code, before the queue (round 13): the base commit and the teams' files.
+  if (!values.base) throw new Error("team-ab takes --base <ref> (the code before the change)");
+  shortRef(values.base);
+  runsOf(values.team.length ? values.team : [...TEAMS]);
   const snap = snapshotCommit(ROOT);
   process.stderr.write(`team-ab: the code is fixed at queue time (${snap.dirty ? `a snapshot of the working tree, ${snap.commit.slice(0, 9)}` : `HEAD ${snap.head.slice(0, 9)}`}): keep editing while it waits\n`);
   const dir = mkdtempSync(join(tmpdir(), "efsim-team-ab-"));
@@ -207,6 +212,7 @@ async function locked(argv: string[]): Promise<number> {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
+  if (printHelp(argv, import.meta.url)) process.exit(0);
   const fail = (e: unknown) => {
     process.stderr.write(`team-ab: ${e instanceof Error ? e.message : String(e)}\n`);
     return 1;
