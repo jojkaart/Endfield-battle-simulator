@@ -17,7 +17,7 @@
 
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
-import { loggedCastFates } from "./castassembly.ts";
+import { batchOrder, loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
@@ -70,11 +70,55 @@ function batchMark(fx: LogFixture): (t: number) => string {
   };
 }
 
+/**
+ * A logged hit's Stagger bar at a ms several casts' Stagger events share (castassembly.ts batchOrder: the log's only
+ * order inside the batch), as " bar 274 → 264" (before it: bar + dealt), else "" (round 16, the batched-landings report
+ * point 2: the order evidence took three scratch scripts).
+ */
+function barMark(fx: LogFixture): (h: LogHit) => string {
+  const order = batchOrder(fx.hits);
+  return (h) => (h.poise && order.has(h) ? ` [bar ${h.poise.bar + h.poise.dealt} → ${h.poise.bar}]` : "");
+}
+
+/** A batched ms whose replay landings came in another order than the log's bars give (batchDisagreements). */
+export interface BatchDisagreement {
+  readonly t: number;
+  /** The logged hits in the replay's landing order, and in the bars'. */
+  readonly replay: readonly LogHit[];
+  readonly bars: readonly LogHit[];
+}
+
+/**
+ * The batched ms (castassembly.ts batchOrder) where the replay's landings of the logged hits came in another order
+ * than the bars' (a place lower than one landed before it): the BATCH lines of `zmdlogs replay`. Pinned landings land in
+ * the bars' order since 2026-11-26 (schedule.ts dueBefore), so these are landings the bars didn't order (a trigger's
+ * hit, a cast the replay moved).
+ */
+export function batchDisagreements(fx: LogFixture, landings: readonly LandedHit[], byLanding: ReadonlyMap<LandedHit, LogHit>): BatchDisagreement[] {
+  const order = batchOrder(fx.hits);
+  const at = new Map<number, LogHit[]>();
+  for (const l of landings) {
+    const h = byLanding.get(l);
+    if (!h || !order.has(h)) continue;
+    const list = at.get(h.t) ?? [];
+    if (!list.includes(h)) list.push(h);
+    at.set(h.t, list);
+  }
+  const out: BatchDisagreement[] = [];
+  for (const [t, replayed] of at) {
+    const places = replayed.map((h) => order.get(h) as number);
+    if (places.every((p, i) => i === 0 || p >= (places[i - 1] as number))) continue;
+    out.push({ t, replay: replayed, bars: [...replayed].sort((a, b) => (order.get(a) as number) - (order.get(b) as number)) });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
 /** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
 export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): string {
   const placement = placeHits(data, fx);
   const lines: Line[] = [];
   const batched = batchMark(fx);
+  const bar = barMark(fx);
   for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ t: c.t, order: 0, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
   for (const c of distinctCasts(placement)) {
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
@@ -100,7 +144,7 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { read
     // a projectile's or an entity's skill (Si's bursts by the stroke or Inksoul behind them).
     const origin = h.poise?.origin;
     const credited = origin !== undefined && origin !== h.event && !h.event.startsWith(origin) && origin !== p?.cast.skillId ? ` (origin ${shortSkill(origin)})` : "";
-    lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}` });
+    lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}${bar(h)}` });
   }
   return [`${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)${f.rules ? "; [the rule that chose the skill among those sharing its key: logcasts.ts choose, LoggedCast.chosen]" : ""}`, render(lines)].join("\n");
 }
@@ -258,14 +302,21 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
   const batched = batchMark(fx);
+  const bar = barMark(fx);
   for (const l of replay.hits) {
     const t = msOf(l.frame);
     if (!inWindow(f, t) || !mine(f, l.operator)) continue;
     const h = byLanding.get(l);
     // Where the log gives no crit: the crit the replay took and which inference gave it (BuffReplay.critSource).
     const crit = h && h.crit === null && l.loggedCrit !== undefined ? ` [crit ${l.loggedCrit ? "yes" : "no"}: ${replay.critSource(h)}]` : "";
-    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}${crit}` : "replay only";
+    const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}${bar(h)}${crit}` : "replay only";
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
+  }
+  // A batched ms the replay landed in another order than the log's bars (round 16, batched-landings report point 2).
+  for (const b of batchDisagreements(fx, replay.hits, byLanding)) {
+    if (!inWindow(f, b.t) || !b.replay.some((h) => mine(f, h.operator))) continue;
+    const words = (hs: readonly LogHit[]) => hs.map((h) => `${label(data, h.operator)} ${shortSkill(h.event)}`).join(", ");
+    lines.push({ t: b.t, order: 1, text: `BATCH  the replay landed ${words(b.replay)}; the log's bars give ${words(b.bars)}` });
   }
   // With the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding).
   for (const [h, why] of missing) {
