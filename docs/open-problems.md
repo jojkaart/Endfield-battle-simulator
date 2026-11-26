@@ -959,10 +959,19 @@ Stagger is on the 42–46 s ones and the log's ×1.3 is on top); 7910's ×1.099 
 - **9c6e** (two targets) and **e82d** −8.9% (Si's combo final ×1.205: the log lists Arcane's weapon WILL lines five
   times, will_dmg ×3 and will_atk ×2 at 0.168, the engine has two; five would be ×1.26: not exact, Arcane's weapon's
   stacking, not looked into further).
-- **Slots by value:** 9c0b's Hunter Pursuit (its first logged landing is hit_2 by its value, the placement takes it
-  as hit, so the frame-70 Link lands after Arcane's ultimate press and goes to Laevatain's battle skill, ×1/1.3 on
-  three hits) and 7910's Tangtang rogue wave (a logged 352,792 matched to a 20,160 hit, the wave replay-only); a
-  realignment like realignUltimates with the first slot free and the values deciding.
+- **Slots by value: done (2026-11-26, round 6).** logcasts.ts `realignByValue`: a cast's landings of a key fewer than
+  its slots, where the slots' kit multipliers differ by more than ×2 (VALUE_TOLERANCE), take the slots their logged
+  values fit under one scale (crits aside), then by world time; only where that leaves fewer landings off their
+  slot's value; the first slot moves (and the cast's start with it) only for a key that is the cast's only one, when
+  the values or the times of the landings no other cast's stop separates fit better. Six casts in five development
+  logs: 9c0b's Hunter Pursuit (hits 2–4: started 0.43 s earlier, its Link before Arcane's ultimate; plain 414 → 423,
+  2.9 → 1.1%), db87's Camille ultimate at 10.1 s (hit_2 and hit_3, plain 228 → 234), a27b's Mi Fu attack 3 hit_2,
+  00ae's Arcane INT lasers (the last laser and the final), 7910's wave. **7910's wave is the early rogue wave by its
+  value** (352,792 = ×17.5 her stares, atk_scale_3 8.05 ÷ 0.46, as b7b3's dive wave; the plain wave's 4.6 gives ×10):
+  now matched to the plain wave (predicted 201,595, ×1.75 under), 0.0 → −0.2% in total; no dive is logged near
+  54.3 s, so what ended her stare early (a dive whose own hit the log lacks?) is open. Tried: the first slot free
+  for every key alone by the time cost moved 7910's stares a slot each (Liino's stops between hold her stares less
+  than the stop list says), hence the clean-landings rule.
 
 ## Arts Intensity: what the logs settle and what they leave (2026-11-16)
 
