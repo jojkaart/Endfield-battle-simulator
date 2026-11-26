@@ -348,6 +348,26 @@ describe("a later landing of a cast across time stops", () => {
     // Two stacks consumed, as logged (149554); Gilberta's hit first would leave it none (67979).
     expect("unknown" in l ? null : Math.round(l.damage)).toBe(logged.value);
   });
+
+  it("pinned landings of one logged ms land in the order of the log's Stagger bars (c4f3 7049 ms: Estella's combo shatters before Chen Qianyu's combo, his ID lower)", async () => {
+    const { batchOrder, logBuffReplay } = await import("@efsim/logs");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-c4f307cd039a.json", import.meta.url).pathname);
+    const E = "chr_0021_whiten";
+    const C = "chr_0005_chen";
+    const hit = (op: string, event: string) => fx.hits.find((h) => h.t === 7049 && h.operator === op && h.event === event) as LogHit;
+    const order = batchOrder(fx.hits);
+    // Her combo 274 → 264, her ultimate 254 → 234, his combo and the Lifts 234 → 224.
+    expect([order.get(hit(E, `${E}_combo_skill`)), order.get(hit(E, `${E}_ultimate_skill`)), order.get(hit(C, `${C}_combo_skill`))]).toEqual([0, 1, 2]);
+    const r = logBuffReplay(data, fx).replay;
+    // Her combo on the Solidified enemy (its own variant), the Shatter hers; his combo and her ultimate as logged.
+    const combo = r.landing(hit(E, `${E}_combo_skill`));
+    expect("unknown" in combo ? null : combo.hitId).toBe("solidified");
+    expect(r.reactions.filter((e) => e.kind === "shatter" && e.frame === 211).map((e) => e.operator)).toEqual([E]);
+    for (const h of [hit(C, `${C}_combo_skill`), hit(E, `${E}_ultimate_skill`)]) {
+      const l = r.landing(h);
+      expect("unknown" in l ? null : Math.round(l.damage)).toBe(h.value);
+    }
+  });
 });
 
 describe("a trigger's landing on a skill's cast", () => {

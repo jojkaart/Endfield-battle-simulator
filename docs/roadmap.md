@@ -84,11 +84,14 @@ below ([review-2026-10.md](review-2026-10.md)).
   (7910 −6.1 → 0.0%); slots and paths by value 2026-11-26: a cast's slots by its landings' values (9c0b's Hunter
   Pursuit), Pogranichnik's combo path by its slashes' values and once (his bank's Fervent Morale on time), a Breach's
   Arts Intensity after its hit's before-damage triggers, a second enemy's landing by value (9c6e); the slug's purges
-  read from the log 2026-11-26, `logged-purges`, 6339 plain 28 → 112): next e82d's Doubles Susceptibility ending
-  after a second touch inside her seal (the only such log; a second one decides it), 7b54's partial purges, the order
-  of a stop's batched landings (c4f3's Estella at 7.05 s), a hold bound from an end-boundary hit's value (c4f3's
-  Wolven Blood), the Vulnerable stacks a Breach consumed read from the next combo's path (c4f3 13.07 s), 7910's early
-  rogue wave with no logged dive, other whole-game pauses outside a Stagger, 0c14's Stagger at its breaking hit.
+  read from the log 2026-11-26, `logged-purges`, 6339 plain 28 → 112; a stop's batched landings 2026-11-26: a logged
+  ms's landings in its Stagger bars' order (c4f3's Estella, and with it the 13.07 s Breach's four stacks),
+  Pogranichnik's Fervent Morale before the damage of the hit that makes it: development plain 74.3 → 76.2%, earlier
+  73.0 → 77.7%): next e82d's Doubles Susceptibility ending after a second touch inside her seal (the only such log; a
+  second one decides it), 7b54's partial purges, a hold bound from an end-boundary hit's value (c4f3's Wolven Blood),
+  Pogranichnik's harasses' logged delays (0.6–1.3 s, d4fb 88.55 s), Estella's weapon ATK in c4f3's 7.05 s batch,
+  7910's early rogue wave with no logged dive, other whole-game pauses outside a Stagger, 0c14's Stagger at its
+  breaking hit.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

@@ -133,6 +133,7 @@
       "id": "oath_harass_status_self",
       "on": { "event": "physicalStatus" },
       "by": "self",
+      "beforeDamage": true,
       "skill": "chr_0029_pograni_ultimate_skill",
       "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 2 }] },
       "do": [
@@ -141,12 +142,13 @@
         { "kind": "hits", "hits": [{ "id": "harass", "label": "Shieldguard harass", "scale": ["atk_scale_trigger"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_attack2"], "frames": [9], "sp": "atb_trigger", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_trigger" }] }] },
         { "kind": "buff", "buff": "fervent_morale", "duration": { "talent": 1, "key": "duration" }, "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
       ],
-      "note": "\"After an enemy suffers a Physical Status or takes DMG from Pogranichnik's combo skill, Pogranichnik consumes 1 point of Steel Oath and summons 1 Shieldguard\": with 2+ points, a harass. chr_0029_pograni_ultimate_skill_abilityentity_attack2: its frame 0 jumps by the count left; each path's ObtainCostAction atb_trigger (natural, atbSourceType 3: reached by the loader, D2) and DamageAction atk_scale_trigger (mask 512: ultimate, no poise unit) at its frame 9 (the paths' 108 / 209 / 307 are 9 frames into theirs); SP before damage (the ObtainCostAction comes first). Talent 2's Morale on him from his own physical status."
+      "note": "\"After an enemy suffers a Physical Status or takes DMG from Pogranichnik's combo skill, Pogranichnik consumes 1 point of Steel Oath and summons 1 Shieldguard\": with 2+ points, a harass. chr_0029_pograni_ultimate_skill_abilityentity_attack2: its frame 0 jumps by the count left; each path's ObtainCostAction atb_trigger (natural, atbSourceType 3: reached by the loader, D2) and DamageAction atk_scale_trigger (mask 512: ultimate, no poise unit) at its frame 9 (the paths' 108 / 209 / 307 are 9 frames into theirs); SP before damage (the ObtainCostAction comes first). Talent 2's Morale on him from his own physical status, before the hit's damage (beforeDamage: the in-aura buff's abilityEvent 59 comes with the status, the data's FractureAction before the battle skill's DamageAction): his Breach and its hit read the layer, which the logs list since their ms (d4fb69b036fe 86.67 and 161.59 s, c4f307cd039a 71.15 s, a9d7fcb089c5 205.06 s, de6a94e9cf6b 26.03 s: ×1.07–1.10 low without it)."
     },
     {
       "id": "oath_harass_status_mate",
       "on": { "event": "physicalStatus" },
       "by": "teammate",
+      "beforeDamage": true,
       "skill": "chr_0029_pograni_ultimate_skill",
       "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 2 }] },
       "do": [
@@ -155,7 +157,7 @@
         { "kind": "hits", "hits": [{ "id": "harass", "label": "Shieldguard harass", "scale": ["atk_scale_trigger"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_attack2"], "frames": [9], "sp": "atb_trigger", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_trigger" }] }] },
         { "kind": "buff", "buff": "fervent_morale_team", "to": "eventSubject", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
       ],
-      "note": "As oath_harass_status_self, from a teammate's physical status (abilityEvent 59 is anyone's); talent 2's Morale goes to that teammate (7e19: Ember at 25812 ms, Chen at 27753 ms)."
+      "note": "As oath_harass_status_self, from a teammate's physical status (abilityEvent 59 is anyone's); talent 2's Morale goes to that teammate (7e19: Ember at 25812 ms, Chen at 27753 ms), before the damage as there."
     },
     {
       "id": "oath_harass_combo",

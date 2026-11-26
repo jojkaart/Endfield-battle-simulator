@@ -21,8 +21,10 @@ import type { Clock, Scheduled, TimelineState } from "./state.ts";
  * 10. jump         jumps and ends on casts' timelines, a dive's next part: what's at the jump's own skill frame happens first
  * 11. auto         teammates' own basic attacks (teammates.ts): once the frame's own casts' effects are in
  *
- * Within a step at one frame: hits (and teammates' attacks) by their operator's ID (an arbitrary order the game's isn't known to follow; it
- * keeps a hit's order apart from the team's order), then everything in the order it was scheduled (`dueBefore`).
+ * Within a step at one frame: a replay's pinned landings by their logged ms, then at one ms by the log's Stagger bars
+ * (loggedOrder); hits (and teammates' attacks) by their operator's ID (an arbitrary order the game's isn't known to
+ * follow: the logs' batches follow neither it nor the team's order nor the casts'; it keeps a hit's order apart from the
+ * team's order), then everything in the order it was scheduled (`dueBefore`).
  */
 export const IN_FRAME = ["burst", "statusTick", "buffExpiry", "action", "energy", "enemyAction", "buffTick", "hit", "afterHits", "jump", "auto"] as const;
 export type Step = (typeof IN_FRAME)[number];
@@ -45,6 +47,9 @@ export function dueBefore(a: Scheduled, b: Scheduled): boolean {
   // Pinned landings in the log's order (9a8097fcf351: Rossi's perfect hit at 32489 ms consumes the infliction before
   // Gilberta's ultimate at 32511 ms, both in frame 975).
   if (a.loggedMs !== undefined && b.loggedMs !== undefined && a.loggedMs !== b.loggedMs) return a.loggedMs < b.loggedMs;
+  // At one logged ms (a batch of hits up to ~100 ms apart), in the order the log's Stagger bars give (c4f307cd039a at
+  // 7049 ms: Estella's combo shatters the Solidification before Chen Qianyu's combo, his ID lower).
+  if (a.loggedOrder !== undefined && b.loggedOrder !== undefined && a.loggedOrder !== b.loggedOrder) return a.loggedOrder < b.loggedOrder;
   // Hits, and teammates' attacks, by their operator's ID (not the team's order).
   return ((a.kind === "hit" && b.kind === "hit") || (a.kind === "auto" && b.kind === "auto")) && a.operator < b.operator;
 }

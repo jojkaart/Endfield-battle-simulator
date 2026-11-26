@@ -389,17 +389,17 @@
   ]
  },
  "pogranichnik-chen.scenario.json": {
-  "total": 297079.769,
+  "total": 301411.48,
   "hits": 68,
   "casts": 35,
   "perOperator": {
-   "chr_0029_pograni": 144796.427,
-   "chr_0005_chen": 152283.342
+   "chr_0029_pograni": 147171.432,
+   "chr_0005_chen": 154240.048
   },
-  "digest": "c95c845b6e8c",
+  "digest": "d1ae9bfab17f",
   "windows": [
-   "aa5689e09ba8",
-   "b234b415d565",
+   "efaf2cb94955",
+   "1a2065310a82",
    "8e7f0c465f14"
   ]
  },

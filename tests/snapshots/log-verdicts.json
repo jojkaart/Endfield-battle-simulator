@@ -21,11 +21,11 @@
   "totals": {"damage":-2.9,"operator chr_0013_aglina":4.2,"operator chr_0028_wulfa":-5.5,"operator chr_0033_camille":1.1,"operator chr_0021_whiten":-0.9,"kind basic":-0.6,"kind battle":1,"kind combo":0.3,"kind none":-6.5,"kind status":0.2,"kind ultimate":-6,"hits":1.4,"status hits":0,"staggered hits":0,"last hit":0,"time to kill":null,"crit share (points)":-0.1,"share matched":-3.4,"share replay-only":0.8,"share log-only":-0.3}
  },
  "zmdlogs-b7b3762d5da8.json": {
-  "chr_0032_lizhiyan": {"plain":11,"assumed":2,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":12,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0026_lastrite": {"plain":5,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0027_tangtang": {"plain":23,"assumed":1,"fallback":22,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":8,"assumed":13,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":0.4,"operator chr_0036_jsspsi":-5,"operator chr_0032_lizhiyan":-1.2,"operator chr_0027_tangtang":4.8,"operator chr_0026_lastrite":0,"kind basic":0,"kind battle":7.9,"kind combo":-2.7,"kind status":-1.2,"kind ultimate":-0.3,"hits":1.2,"status hits":0,"staggered hits":0,"last hit":0.1,"time to kill":0.1,"crit share (points)":0,"share matched":-0.2,"share replay-only":0.6,"share log-only":0}
+  "totals": {"damage":0.7,"operator chr_0036_jsspsi":-5,"operator chr_0032_lizhiyan":-1.7,"operator chr_0027_tangtang":5.5,"operator chr_0026_lastrite":0,"kind basic":0,"kind battle":9.1,"kind combo":-2.8,"kind status":-1.2,"kind ultimate":-0.3,"hits":1.2,"status hits":0,"staggered hits":0,"last hit":0.1,"time to kill":0.1,"crit share (points)":0,"share matched":0,"share replay-only":0.6,"share log-only":0}
  },
  "zmdlogs-bdf223db8e49.json": {
   "chr_0034_typhoea": {"plain":58,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},

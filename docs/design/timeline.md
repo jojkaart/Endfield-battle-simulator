@@ -358,6 +358,16 @@ show one case against it (2026-11-24): Estella's combo lands before Chen
 Qianyu's at one ms in three fights (combat-mechanics §3.6); the casts'
 order for logged simultaneous hits fixed those and moved batched landings
 at a stop's end the wrong way (docs/tried/2026-11-24-same-ms-cast-order.diff).
+The log's ms is a batch (it flushes about every 100 ms and at a stop's
+end), so its simultaneous hits are up to three frames apart in the game:
+the replay lands pinned landings at one logged ms in the order the log's
+Stagger bars give (each event's bar is the one before it less its
+Stagger), `loggedOrder` from the log check's castassembly.ts `batchOrder`
+(2026-11-26: c4f3's Estella at 7.05 s, plain 275 → 398). Over 60 such
+pairs of two operators' events the bars follow neither the IDs (28 right)
+nor the team's order (39) nor the casts' starts (29 of 44): no rule a
+simulation could use, so its hits of one frame keep the ID order
+(scripts/probes/physical/batch-rules.ts).
 
 **Team order.** A result depends on the order the team is listed in only
 where the game reads team positions: a kit's `teamSlotElement` predicate

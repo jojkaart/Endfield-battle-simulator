@@ -632,7 +632,7 @@ const HEADER_KEY = {
   kind: "the key groups the items by kind (scheduledKey)",
   frame: true,
   clock: "follows from the operator, the cast or the kind (the enemy's for bursts and enemy actions)",
-  cast: castRef, detached: true, launchAt: true, pinned: true, loggedMs: true,
+  cast: castRef, detached: true, launchAt: true, pinned: true, loggedMs: true, loggedOrder: true,
 } as const;
 
 /** An event with a cast index in it (hit, status and cast events), from the end of the cast list. */

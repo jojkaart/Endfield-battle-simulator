@@ -172,6 +172,11 @@ export interface ScheduledHeader {
   readonly pinned?: true;
   /** A pinned landing's logged time (ms): pinned landings due in one frame land in the log's order (schedule.ts dueBefore). */
   readonly loggedMs?: number;
+  /**
+   * Its place among the pinned landings the log stamps with the same ms, where the log's Stagger bars give one (the log
+   * batches hits up to about 100 ms apart into one ms: the log check's castassembly.ts batchOrder).
+   */
+  readonly loggedOrder?: number;
 }
 
 /** A hit on its way: it lands at its frame (landing.ts landHit). */

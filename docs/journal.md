@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 162 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 163 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -46,6 +46,55 @@ engine rule simulations read changed.
 **Left:** e82d −8.9% (a log with a second touch inside an Imprisonment decides it); 7b54's partial ends (16.48,
 19.59, 47.48 s: other debuffs listed on); 6339's Laevatain hits 14.6–19.2 s (the replay ×1.28) and Si's combo final
 slots at 11.31 s.
+
+## 2026-11-26: A stop's batched landings: the log's Stagger bars give their order; Pogranichnik's Morale before the damage
+
+**Goal:** the order of the landings the log batches at a stop's end (c4f3 7.05 s: Chen Qianyu's combo shattered the
+Solidification in the replay, Estella's in the game), as a general rule; the Vulnerable stacks c4f3's 13.07 s Breach
+consumed (three in the replay, four by the next combo's path); if time, d4fb 86.67 s (Pogranichnik's bank 0.3 s late)
+and 7910's early rogue wave.
+
+**Done:**
+- **A logged ms is a batch, its order the Stagger bars'.** The log flushes every ~100 ms and at a stop's end, so one ms
+  holds hits up to three frames apart; each Stagger event's bar (the one before it less its dealt) falls in the game's
+  order. c4f3 7049 ms: Estella's combo 274 → 264 (the Shatter credited to it), her ultimate 254 → 234, Chen's combo and
+  the Lifts 234 → 224 (open-problems had read the bars backwards). Over the development logs' 60 pairs of two operators'
+  events at one ms the bars follow neither the operator IDs (28 right), the team's order (39) nor the casts' starts (29
+  of 44: why docs/tried/2026-11-24-same-ms-cast-order.diff was mixed): the game's time order inside the batch, which only
+  the bars keep (scripts/probes/physical/batch-rules.ts). The replay now lands pinned landings at one logged ms in the
+  bars' order (castassembly.ts `batchOrder` → landings' `order` → engine `ScheduledHeader.loggedOrder`, schedule.ts
+  `dueBefore`). Simulations keep the ID order: no rule from cast data fits.
+- **Lead 2 was a knock-on of lead 1.** With the batch's order Estella's Lift adds the Vulnerable stack Chen's Shatter
+  had not, and c4f3's 13.07 s Breach consumes four; every Breach or Crush before a Pogranichnik combo whose path its
+  values decide now consumes the path's stacks (25 combos; at cbe7d5b c4f3 13.67 s alone differed:
+  scripts/probes/physical/breach-path.ts). c4f3's hits from 7.05 to 14.43 s replay exact.
+- **Fervent Morale before the damage of the hit that makes it** (lead 3, d4fb 86.67 s): the layer the logs list since a
+  Breach's ms is talent 2's, from his ultimate's follow-up on his own physical status, which comes with the data's
+  FractureAction before the battle skill's DamageAction: `beforeDamage` on oath_harass_status_self / _mate (d4fb 86.67,
+  161.59 s, c4f3 71.15 s, a9d7 205.06 s, de6a 26.03 s exact). And a hit's stacks gained with its SP before the damage
+  raise their stacks event then (landing.ts; only Pogranichnik's hits have both): the bank's layer counts for the slash
+  that filled it (d4fb 47.92 s).
+
+**Scoreboard** (`npm run snapshots:update` after merging main at f05036d, the logged purges; `measure --base f05036d`
+for this change alone): development plain 74.3 → 76.2%, mismatch 10.4 → 10.2%, mean |damage error| 5.1 → 4.9%; hold-out plain 82.1 → 82.2%, 7.4 → 7.1% (2 better, none worse); earlier pending plain 73.0 → 77.7%,
+mismatch 11.7 → 11.3%, 3.5 → 3.4%. Chen 43.0 → 74.3% plain, Pogranichnik 52.1 → 75.3%, Estella 59.9 → 81.0%, the male
+Endministrator 52.9 → 88.7%, Lifeng 43.5 → 91.2%. Better c4f3 (275 → 464, −3.4 → −0.8%), 3f78 (91 → 147, −3.7 →
+0.0%), a9d7 (265 → 333, −3.3 → −1.5%), d4fb (516 → 844), de6a (71 → 287), 458b, 7e19 and four by a hit or two. Mixed
+b7b3 (0.4 → 0.7%: Tangtang's battle-skill shot before Last Rite's combo by the bars, now an exact read crit, which had
+hidden her expected-crit landings' +12%; Arcane's touch at 7.15 s now exact) and 4bfc (−1.0 → −1.2%: Arclight's burst at
+88.82 s matched, Zhuang Fangyi's replay-only 19,584 gone). The per-operator total errors that rose (Arclight 4.8 → 5.7%,
+Tangtang 3.6 → 4.0%, Lifeng 0.9 → 1.3%) are those hits turning exact. team-ab: unchanged (both teams' own fights the same,
+the owner's Estella team included). The example pogranichnik-chen moved (+1.5%, the Morale timing), snapshot updated.
+
+**Decisions:** the bars are read only where the batch has two Stagger origins and two bars; several events at bar 0
+(a break) share a place, as do events without Stagger (the ID order then). schedule.ts, state.ts and planning/search.ts
+(a key field) were outside the brief's file list: one line each for `loggedOrder`. No assumption: the bars are the log's
+own record of the order.
+
+**Left:** Estella's weapon ATK at 7.05 s (her combo, Shatter and Lift with it, her ultimate after them without it: one
+batch, not built); the harasses' logged delays (0.6–1.3 s, the kit's 0.3 s) and d4fb's 88.55 s harass and 89.82 s
+Assault placed as an ultimate the replay doesn't cast; c4f3 92.93 / 147.41 s and a9d7 239.40 s Morale layers; 7910's
+early rogue wave (not attempted).
 
 ## 2026-11-26: Slots and paths by value: Hunter Pursuit, Pogranichnik's combo and his bank
 
@@ -327,48 +376,3 @@ accuracy list); the log context's signature change carried, its failure mode mad
 
 **Problems:** the first guard run showed `zmdlogs decisions --assume combo-curve=…` had replayed the defaults on the
 reading's data, the bug class the guard is for; "Chen" matched Purrchena too until the name's word starts came first.
-
-## 2026-11-26: 0c14 and the operator curve: a teammate's attack on its own path, crits read from values in the totals
-
-**Goal:** 0c14's under-prediction (−3.2%: Rossi's matched landings ×0.943, Si's ×0.964), a combo curve for the
-operators' clocks alone, the unlogged tails' cuts across the logs, then Alesh's eventless combo, 207f, Snowshine's
-×0.9624 and the buffreplay.ts split.
-
-**Done** (open-problems "0c14", "The damage factors", "The enemy's clock", "The replay's Stagger windows"):
-- **The totals' expected crits** (scripts/probes/totals/parts.ts): of Rossi's −186k, about 87k was crit-unknown hits
-  counted at expected crits though their values show the crit (her first ultimate ×1.032 off on every stab, its two
-  crit finals at ×0.766). Engine assumption `totals-crits` `read`, the new default (enginecheck.ts critFromValue:
-  the reading the value is within ×1.08 of, the other not).
-- **A teammate's attack 4 on its own path** (drivers.ts controlPathLandings): Rossi's kit jumps to hit_ai (× 0.5)
-  when she isn't controlled; the placement matched the controlled path's frames and the replay dropped the jump.
-  A jump on control now follows who the log shows controlled: 2fd9 plain 250 → 275, 99fb 161 → 173, 0c14 +2.
-- **What's left of 0c14** is Alesh's: her 12.5 s Rare Fin combo the log shows only by its buffs (a second Thermite
-  Cutter layer on everyone at 20.7–43.3 s, her P3 from 13.25 s), her 59.56 s combo's Rare Fin path (also 4e36, a9d7),
-  and a Stagger at its breaking hit (80.48 s, −30k; scripts/probes/stagger/break-order.ts: the breaking hit without it
-  45 of 47, the hits after it at its ms with it 10 of 29, every combo hit after its own Lift's break 4 of 4).
-- **Operators-only combo curves** (`combo-operator-hold` `plateau-0.5`/`0.6`/`0.7`/`flat`, timeline/clock.ts
-  comboOperatorCurve): verified plain 78.0 → 77.9 / 77.7 / 77.6 / 76.0%; 9a80 (Arcane's team) +4 under `plateau-0.5`,
-  3aa6 −13. Recorded and stopped, as the brief said.
-- **The tail cuts** (scripts/probes/tails/cuts.ts): 16 cuts, 7 dropping a landing, none against the log. 9c6e's is
-  the placement's two-enemy split (Liino's hit 1 on both enemies at one ms); de6a's hit_3 falls in a 2.3 s stretch with
-  no hit by anyone.
-- Snowshine: her nodes 5 and 7 need favorability, so two nodes give ×0.977 of the ×0.9624; ×0.985 left.
-
-**Scoreboard** (`npm run snapshots:update`): verified plain 78.0%, mean |damage error| 2.0 → 1.5%; development plain
-69.0%, mismatch 11.4%, mean |damage error| 7.0 → 6.9%; hold-out plain 80.6 → 80.8%, mismatch 5.6%, mean |damage
-error| 8.3 → 8.4% (1 mixed: +15 plain, Rossi's attack 4, its total further; 2 other); earlier pending plain 67.7 →
-68.0%, mismatch 11.9%, mean |damage error| 4.0 → 3.6% (0c14 plain 336 → 338, −3.2 → −1.3%; 2fd9 250 → 275, −3.6 →
-−1.3%; 99fb 161 → 173, −2.9 → −0.3%; b6aa −5.5 → −2.3%).
-
-**Decisions:** `totals-crits` `read` is a totals rule (plain counts unchanged): it takes one fight's crit luck out of
-the totals; the six logs whose totals got slightly further (de6a −0.8 → −1.0%, 9847 +0.2 → −0.5%, fc63, 5082, 458b,
-9555, ≤0.7 points) had expected crits covering a model error. The curve readings stay registered as the measured
-record. A placement rule taking a landing at its cast's previous one's ms as a second enemy's fixed 9c6e's Liino combo
-and broke 40d9's Si (her combo slashes batched at one ms, Si −23%): dropped. Alesh's two combo leads not built: a
-combo has no cast event and the Rare Fin path is a chance jump the replay doesn't roll; both need a cast or path read
-from the listing or the values (next steps). The buffreplay.ts split (point 6) not done: no time left after the
-accuracy items. 207f not reached. team-ab: unchanged (no simulated fight moved). Smoke passed.
-
-**Problems:** the totals' per-hit numbers aren't in any view (a probe written for it); two paths sharing keys show
-only as odd ratios; `hits --all` after an engine edit recomputes every log (friction report
-docs/friction/2026-11-26-0c14-and-operator-curve.md).
