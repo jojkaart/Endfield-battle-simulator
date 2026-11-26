@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 154 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 155 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Bursts and cooldowns: 4d60's runs a whole-game pause in a Stagger, the replay's Stagger starts
+
+**Goal:** 4d60's Perlica weapon and Arcane's Will burst runs (a refresh the replay misses), d4fb's 97.05 s Physical
+Suit exception, Snowshine's ×0.9846 left in 04d4, then test 33's reaction case.
+
+**Done** (open-problems "The kit buff leads", "Trigger cooldowns", "04d4 Snowshine", "Arcane's WILL combo touch"):
+- **4d60: not a refresh, a whole-game pause inside a Stagger.** Across 117.22–124.45 s (no hit by anyone) every clock
+  runs 6–7 s long: the log's Stagger, Perlica's Wild Wanderer and Qingbo layer, Arcane's two Solemn Phalanx debuffs,
+  Liino's beats. The hold placement couldn't put a hold there because the Stagger was a still span. Engine assumption
+  `pause-holds`, new default `away` (holds.ts withoutGaps cuts the away stretches out of the Stagger's still span):
+  5.4 s placed there, 13 clocks spanning each unit, earliest and latest within 0.4 s. The earlier ruling-out (Xiranflow
+  on time) doesn't hold for 4d60: its layers are replaced by later consumptions, and the world-time counts included
+  the Empyrean's end as a 78-frame stop.
+- **The replay's Stagger window record** took a window's start as its end less the Stagger's length; a Stagger the
+  log's listing holds ends at the listing's next moment, so d4fb's windows read 10 s early (97.26 → 86.50 s), and the
+  placement took those 10 s as still. Now no earlier than the last sample (replayrecord.ts).
+- **d4fb 97.05 s:** the missed proc's Lift is the hit that breaks the Stagger bar; the one other breaking status with
+  the cooldown clear (0c14's 182.30 s Crush) procs. A breaking Lift applying no status fits, on one case: not built.
+  The other misses are cascades (3.37 s, the fight's first, unexplained).
+- **Snowshine:** her nodes' favorability (60, 150, 300, 300) gives no ×0.9624 alone; on top of two nodes, 46 pairs of
+  build changes fit within 0.001 and no single one (scripts/probes/stats/snowshine-builds.ts): one constant, one
+  number, no log decides it.
+- **Test 33:** 9a80's and fc63's touches follow the same opener (Arcane's Nature forming Corrosion) and fit opposite
+  readings of `window-reaction`; the reaction kind doesn't decide it, the in-game test stays.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 69.0 → 69.6%, mismatch 11.4 → 11.2%, mean |damage
+error| 6.9 → 6.8%; hold-out unchanged; earlier pending plain 68.0 → 68.1%, mismatch 11.9%, mean |damage error| 3.6%.
+Better: 4d60 (plain 696 → 806, −4.1 → −1.5%), c4f3 (−3.0 → −2.5%), c6d8 (plain 112 → 125); d4fb other (±1); none worse.
+
+**Decisions:** `pause-holds` an assumption (the evidence is one log, though 13 clocks agree), read only by the log
+check's replay: no simulated fight moves, so no team-ab. The two small edits in buffreplay.ts and replayrecord.ts are
+in the replay modules the parallel inferred-casts agent owns; kept small and named for the lead.
+
+**Problems:** the world-time view counts a tick-read event's stop the placement leaves out (query.ts replayTimeStops),
+which misled the earlier round's Xiranflow count; `zmdlogs stagger`'s window start showed the record's error without
+anything flagging it.
 
 ## 2026-11-26: Improvement round 14: the replay's decisions as records, one composition each, the buffreplay.ts split
 
@@ -334,37 +371,3 @@ placement's handling. The third pass and the in-turn extensions kept as tried di
 
 **Problems:** inTurnStart has no record of why it left a pair (a temporary stderr print answered it; friction
 report); a debug print in inTurn also ran under settleCheck's third pass, mixing two passes' lines.
-
-## 2026-11-25: Improvement round 12: decisions kept with their reasons
-
-**Goal:** the four open friction reports (round 11's backlog of 13 points, round 11's own report, the cooldown-clock
-and remaining-leads reports), with the replay, the kit compiler, the check's core and the engine free this round. No
-verdict may move.
-
-**Done** (docs/friction-done/2026-11-25-round-12.md; the backlog: docs/friction/2026-11-25-backlog-after-round-12.md):
-- **The holds say why a unit sits where it does** (holds.ts holdPins, PlacedHolds.conflicts; `zmdlogs holds
-  --verbose`; `cli-ab --patch <diff>` runs a new view on the old code). 489c across the in-turn commit in one run: the
-  in-turn stop holds Li Zhiyan's Corrosion 2.07 s more, its status bound caps the holds at 0.19 s over 13.1–49.2 s, the
-  ramp bounds there are dropped against it (open-problems).
-- **The replay says why** it didn't land a pinned landing (landingWatch: branch, `if`, next cast, cast end, never
-  pinned) and didn't make a logged cast (BuffReplay.skipped, earliestStart's own error); `--trace-trigger`; the EVENT
-  line from the replay's decision, with the buff's end in frames; views' stops by the same decision.
-- **The placement's passes named** (placementPasses; settleCheck: 21 casts a third pass would move; ultimateOverlaps:
-  14 pairs, pinned; `zmdlogs placement`).
-- **The data's facts kept**: KitTrigger.cooldownFrom (`efsim kit`, equipment kits by id, kit-census), one compiler
-  message for a hit under another key, the likely-loggedAs screen from the data (none open), "enemy HP unknown"
-  (unknownFacts).
-- measure's moved.json and "Moved by an earlier measure too"; build.ts's built.json and partial/, load.py's fallback;
-  `zmdlogs reactions`' inflictions; data/README's absent tables.
-
-**Scoreboard** (`npm run snapshots:update`): "No log's verdicts moved"; only tests/snapshots/kits.json (27 digests,
-cooldownFrom). No engine timing change (no smoke, no team-ab).
-
-**Decisions:** no per-kit split of the hold-outs' aggregates: which kit's run moves a hold-out says what the hold-outs
-contain, which round 9 keeps out; a split by mechanism class is put to the lead (backlog point 4). The drop reasons
-watch the schedule from the replay (no engine change), and the verdicts' reason text stays as it was (the one-sided
-kinds group by it). The loggedAs screen is a test and a kit-census section, not a loader warning (a load would print it
-on every run). Round 11's backlog points 1, 2 and 4 parked (carried twice, no new report).
-
-**Problems:** the first settleCheck paired a moved cast with its neighbour's start (9a80's Rossi battle skills): pair
-the casts that stay first, then the moved ones.

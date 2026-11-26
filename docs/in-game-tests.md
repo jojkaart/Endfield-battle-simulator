@@ -1146,7 +1146,9 @@ ATK) more or less. (2026-11-25: one single-target log, fc63, says the
 other way for a reaction opener: after her Nature onto Perlica's
 Electric (Corrosion), the enemy had Nature after her touch, not
 Electric; 9a80's touches fit the consumed element better. Engine
-assumption `window-reaction`. The simpler test below now decides it.)
+assumption `window-reaction`. The simpler test below now decides it.
+2026-11-26: 9a80's and fc63's openers are the same kind, her own Nature
+forming Corrosion, so no log tells the two apart by the reaction.)
 **How:** Will > Intellect. A teammate applies Cryo (opening the window),
 then a Heat hit consumes it (Solidification: the enemy now has none),
 then a third teammate applies Electric (a new infliction, which opens the
