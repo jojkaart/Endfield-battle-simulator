@@ -43,7 +43,7 @@ describe("Zhuang Fangyi: the Empyrean's end logged as an ultimate_skill cast eve
     const Z = "chr_0030_zhuangfy";
     const fx = fixtureFile("pending/zmdlogs-4bfc6f3e84b8.json");
     // Both events are the Empyrean's tick by their key (loggedCastFates), and the replay reads both so: at 179.51 s its
-    // Empyrean ends on the event's own frame (the advance to it has ticked and ended it: buffreplay.ts endedWithTick;
+    // Empyrean ends on the event's own frame (the advance to it has ticked and ended it: holdinputs.ts endedWithTick;
     // before 2026-11-25 the replay made a real ultimate there, a 78-frame stop).
     const fates = loggedCastFates(data, fx).filter((e) => e.operator === Z && e.fate === "tick").map((e) => (e.t / 1000).toFixed(2));
     for (const t of ["92.68", "179.51"]) expect(fates).toContain(t);

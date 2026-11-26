@@ -1,4 +1,4 @@
-// Crits the log leaves out that the hits' values show (buffreplay.ts valueCrits): 5082's Yvonne, and a cross-validation
+// Crits the log leaves out that the hits' values show (replaycrits.ts valueCrits): 5082's Yvonne, and a cross-validation
 // on Rossi's logged crits (split from tests/buffreplay-fixtures.test.ts, 2026-11-23).
 import { describe, expect, it } from "vitest";
 import { effectiveKit } from "@efsim/engine";

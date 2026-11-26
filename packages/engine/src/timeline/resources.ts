@@ -212,7 +212,7 @@ export function refillPoise(ctx: TimelineContext, st: TimelineState): TimelineSt
 
 /**
  * The enemy's stagger HP set to `poise` (within 0 and full): its state as a log shows it, which a replay follows (cli
- * buffreplay.ts loggedPoiseBars) as it pins landings to their logged frames. Not while Staggered, unless `endStagger`:
+ * replaysteps.ts loggedPoiseBars) as it pins landings to their logged frames. Not while Staggered, unless `endStagger`:
  * the log shows the enemy not Staggered then.
  */
 export function setPoise(ctx: TimelineContext, st: TimelineState, poise: number, endStagger = false): TimelineState {
@@ -223,7 +223,7 @@ export function setPoise(ctx: TimelineContext, st: TimelineState, poise: number,
 /**
  * The enemy Staggered through `through` (a frame): a running Stagger lasts at least that long, else one begins now
  * (bar empty, its finisher unused), with no `staggered` event (nothing the timeline did broke the bar). The state a
- * log shows, which a replay follows (logs buffreplay.ts loggedStaggerSteps): the damage of the hits a log lists as
+ * log shows, which a replay follows (logs replaysteps.ts loggedStaggerSteps): the damage of the hits a log lists as
  * Staggered confirms the listing where the engine's own Stagger has ended (accuracy plan B1, 2026-11-17).
  */
 export function holdStagger(st: TimelineState, frame: number, through: number): TimelineState {

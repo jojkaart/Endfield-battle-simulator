@@ -16,7 +16,8 @@
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
-import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
+import type { BuffReplay } from "./buffreplay.ts";
+import { loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";

@@ -16,7 +16,8 @@ import { engineCheck, logDifferences, loggedEntries, readingBasis, type EngineCh
 import type { LogHit } from "./zmdlogs.ts";
 import { placeHits } from "./logcasts.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
-import { unknownFacts, type CritSource } from "./buffreplay.ts";
+import { unknownFacts } from "./buffreplay.ts";
+import type { CritSource } from "./replaycrits.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 
@@ -69,7 +70,7 @@ export interface HitRecord {
   readonly unknown?: string;
   /** The crit the replay's landing took (LandedHit.crit; null where the hit can't crit), with a landing. */
   readonly replayCrit?: boolean | null;
-  /** Where that crit comes from (buffreplay.ts CritSource: the log, an inference from the log, or none). */
+  /** Where that crit comes from (replaycrits.ts CritSource: the log, an inference from the log, or none). */
   readonly critSource?: CritSource;
   /** The game buffs the log lists at the hit (its effects, one entry per buff with its instance count when above 1: "id ×2"). */
   readonly listed: readonly string[];

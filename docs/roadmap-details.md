@@ -160,7 +160,7 @@ weapon Arts DMG, Typhoeus's Hovering ATK), the drift.
 was the Empyrean's end logged as an ultimate event (fixed in the kit); the others aren't kit values. Next, in order:
 (1) 4d60's unlogged holds, 3.6–6.1 s around 98–143 s (`zmdlogs holds 4d60`: the bounds dropped; the replay's Stagger
 window 114.30–133.37 s takes no holds, the enemy is away 117.22–124.45 s); (2) the hold placement's stop list for a
-cast event the replay reads as a buff's tick (buffreplay.ts replayedCastStops: the Empyrean end's phantom 78 frames;
+cast event the replay reads as a buff's tick (castassembly.ts replayedCastStops: the Empyrean end's phantom 78 frames;
 friction report 2026-11-24-kit-buff-leads point 2); (3) Arcane's bursts: replay-only after her WILL touch and
 ultimate (the enemy's infliction then, in-game test 33) and the 1 s burst delay across her own ultimate's stop (b7b3
 4.95 → 10.34 s); (4) Gilberta's weapon in 4a64 (two ultimates' overlapping stops: in turn?); (5) Zhuang Fangyi's d774
@@ -196,7 +196,7 @@ the replay makes, Zhuang Fangyi's _ult forms to 179.17 s, plain after), the repl
 
 **The remaining leads, 2026-11-25** (journal
 [2026-11-25-01](journal/2026-11-25-01-the-remaining-leads-the-empyrean-s-end-on-its-frame.md); open-problems "Misprediction
-statistics"): (c) done: the Empyrean ended on its logged event's own frame (buffreplay.ts endedWithTick), not early;
+statistics"): (c) done: the Empyrean ended on its logged event's own frame (holdinputs.ts endedWithTick), not early;
 ExtendBuffAction as a pause ruled out. (b) fc63 40.80 s: Gilberta's and Perlica's ultimates played in turn
 (logcasts.ts inTurn, 12 of 27 overlapping pairs with a quiet stretch of the first's stop length); fc63 85.13 s: the
 touch's element after a Corrosion opener (Nature, the applied one: assumption `window-reaction`, default `consumed`);
@@ -260,7 +260,7 @@ that landed, or a hold), Alesh's eventless 0c14 combo.
 **Combo hold and replay, 2026-11-26** (journal: the combo-hold-and-replay entry of 2026-11-26; open-problems "The
 damage factors", "The enemy's clock", "0c14"): 0c14's Rossi replay-only landings were one battle skill's tail the log
 doesn't have (no Lift, wolves or bleed after its two charge hits) and, from the Vulnerable stack it didn't add, her
-next battle skill's follow-up: engine assumption `unlogged-tails` `cut` (the default; buffreplay.ts tailCuts,
+next battle skill's follow-up: engine assumption `unlogged-tails` `cut` (the default; replayrun.ts tailCuts,
 ReplayCastOptions.endsAt), guarded by the operator's other logged hits, the listing's new runs, the away stretches
 and the fight's end; 0c14 plain 293 → 336, its total +2.7 → −3.2% (its matched Rossi ×0.943, Si ×0.964). a9d7's
 Slashing Edge past Chen's unlogged ultimate final is a hidden hold, not a landing (the away edge unchanged). The

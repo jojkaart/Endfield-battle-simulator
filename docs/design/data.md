@@ -452,7 +452,7 @@ detail):
   tick series, Corrosion's ramp steps read from the hits' damage;
   packages/logs holds.ts, rampsteps.ts) and holds the world's clock there for every timer, then keeps
   a listed buff on to the log's end (engine assumption `hidden-holds`,
-  default `placed`; buffreplay.ts `heldToLoggedEnds`). Where they fall:
+  default `placed`; holdinputs.ts `heldToLoggedEnds`). Where they fall:
   `efsim zmdlogs holds <fixture>`.
 - **Cast events** (`LogFixture.casts`: the detail's skill events without a
   damage value) are presses as the log has them, not the kit's frame 0:
@@ -615,7 +615,7 @@ in the logs):
 - **A hit's crit is often not logged** (`crit: null`): every log gives
   Rossi's ultimate stabs none, and some hits around them. The replay
   counts as crits those a trigger on crits shows by its own logged hits
-  at the same ms (buffreplay.ts shownCrits: her Seething Blood extras);
+  at the same ms (replaycrits.ts shownCrits: her Seething Blood extras);
   the rest the check tries both ways ("assumed").
 - **`isEnable false` in game data means the action never runs**
   (`efsim gamedata tree` prints DISABLED on its line).

@@ -257,12 +257,12 @@ export interface ReplayCastOptions {
   readonly teammate?: boolean;
   /**
    * A cast that hit nothing (its hits aren't in the log, the enemy out of reach: the log check's inferred missed shots,
-   * cli buffreplay.ts missedCasts): its own hits are dropped as it's cast.
+   * cli replayrun.ts missedCasts): its own hits are dropped as it's cast.
    */
   readonly missed?: boolean;
   /**
    * The cast ends at this frame (pinned: no stop or jump moves it), if it's still its operator's current action then:
-   * a cut the log shows and no input does (the log check's unlogged tails, packages/logs buffreplay.ts tailCuts: none of
+   * a cut the log shows and no input does (the log check's unlogged tails, packages/logs replayrun.ts tailCuts: none of
    * the cast's landings after its last logged one is in the log, the enemy there). What is detached by then goes on.
    */
   readonly endsAt?: number;

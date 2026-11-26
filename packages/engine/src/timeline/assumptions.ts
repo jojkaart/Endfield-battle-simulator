@@ -121,7 +121,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "hidden-holds",
     test: "111",
-    question: "What holds the operators' buffs and the enemy's timers past their modelled end in some windows (docs/open-problems.md \"The buff clock\")? The logs show unlogged world holds on one clock per fight, of about a perfect dodge's 0.512 s (enemy tick series, never while the enemy is Staggered), and longer pauses. The log check's replay can't see them; this decides whether it places them from the log's clocks (packages/logs holds.ts) and takes a decided buff's end from the log's listing where that runs later (buffreplay.ts heldToLoggedEnds). Simulations place dodges themselves (--dodge) and don't read it.",
+    question: "What holds the operators' buffs and the enemy's timers past their modelled end in some windows (docs/open-problems.md \"The buff clock\")? The logs show unlogged world holds on one clock per fight, of about a perfect dodge's 0.512 s (enemy tick series, never while the enemy is Staggered), and longer pauses. The log check's replay can't see them; this decides whether it places them from the log's clocks (packages/logs holds.ts) and takes a decided buff's end from the log's listing where that runs later (holdinputs.ts heldToLoggedEnds). Simulations place dodges themselves (--dodge) and don't read it.",
     default: "placed",
     readings: {
       placed: "the fight's hidden holds placed once from every clock the log shows (its buffs' runs against the replay's own expiries, the enemy's tick series; none while Staggered; the least total hold, midway between its earliest and latest placement: packages/logs holds.ts placeHolds) and held on the world's clock for every timer (timeline/clock.ts holdWorld: buffs, the enemy's statuses and debuffs, combo windows; not cooldowns, which the perfect dodge's slow-down doesn't hold, nor the operators' own timing, which is the log's), then `log` on top; measured against log 2026-11-23: development plain 59.9 → 62.6%, mismatch 16.4 → 15.6%, hold-outs 69.6 → 69.9%",
@@ -153,7 +153,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   },
   {
     id: "hitless-presses",
-    question: "Is a logged press of a skill whose hits the log shows elsewhere, but none of its own this time, made (the enemy there, not an away stretch's `unseen` press)? The press may have done nothing (a variant the slot held, a press the game dropped), or landed without its damage being logged. Read only by the log check's replay (packages/logs buffreplay.ts inferredPress).",
+    question: "Is a logged press of a skill whose hits the log shows elsewhere, but none of its own this time, made (the enemy there, not an away stretch's `unseen` press)? The press may have done nothing (a variant the slot held, a press the game dropped), or landed without its damage being logged. Read only by the log check's replay (packages/logs replayrun.ts inferredPress).",
     default: "inferred",
     readings: {
       skipped: "never: the slot held a variant, or the press did nothing (the replay until 2026-11-26)",
@@ -187,7 +187,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   },
   {
     id: "unlogged-tails",
-    question: "Did a cast whose landings after its last logged one are none of them in the log, the enemy there and the log recording, end there (a dodge, a swap, a hit on its operator: inputs no log records), or did those landings land unlogged? The logs record every landing that lands (enemy-away). Read only by the log check's replay (packages/logs buffreplay.ts tailCuts: ReplayCastOptions.endsAt).",
+    question: "Did a cast whose landings after its last logged one are none of them in the log, the enemy there and the log recording, end there (a dodge, a swap, a hit on its operator: inputs no log records), or did those landings land unlogged? The logs record every landing that lands (enemy-away). Read only by the log check's replay (packages/logs replayrun.ts tailCuts: ReplayCastOptions.endsAt).",
     default: "cut",
     readings: {
       kept: "the cast plays its whole path (the replay until 2026-11-26)",
@@ -206,7 +206,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   },
   {
     id: "enemy-hp",
-    question: "What is the enemy's HP over a logged fight, for the hits whose damage depends on it (enemyHpBelow: Chen Qianyu's P1 Shadowless, Alesh's P5 ultimate)? Read only by the log check's replay (packages/logs buffreplay.ts loggedEnemyHp), not by simulations: a simulation's scenario says the HP (TimelineScenario.enemyHp).",
+    question: "What is the enemy's HP over a logged fight, for the hits whose damage depends on it (enemyHpBelow: Chen Qianyu's P1 Shadowless, Alesh's P5 ultimate)? Read only by the log check's replay (packages/logs replayrun.ts loggedEnemyHp), not by simulations: a simulation's scenario says the HP (TimelineScenario.enemyHp).",
     default: "kill",
     readings: {
       kill: "a fight that ends in a kill (its last logged hit capped) has the logged total as its HP, the stage's scaling of Max HP included, in lives of about Max HP split where the enemy went away as the damage reached a multiple of it (Si, eny_0134_jsspsi: two lives); a fight whose total is the data's Max HP as under max-hp. Development logs 2026-11-24: Chen's hits in d4fb below half the logged total ×1.16 the reading without Shadowless (89 hits), above it ×1.00 (79); Alesh's ultimate ×1.5 exactly where a life's HP was below half in a9d7 (6 of 6), ad7f, 4e36 (2 of 2 each), 0c14 (2 of 3); a27b (the data's Max HP) fits Shadowless on below half and off above, both sides (in-game test 69)",

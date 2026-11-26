@@ -49,7 +49,9 @@ import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
 import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
 import { REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK } from "./replayrecord.ts";
-import { atLayers, disagreementRuns, replayedHits, replayKitBuffs, unknownFacts, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
+import { replayKitBuffs, unknownFacts, type BuffReplay, type Fact, type ReplayCastFacts, type ReplayOptions } from "./buffreplay.ts";
+import { atLayers, disagreementRuns, replayedHits, type DisagreementRun, type ReplayedHits } from "./replayedhits.ts";
+import type { ConsumedBuffs } from "./replayrun.ts";
 
 export type { Assumption, AssumptionKind } from "./assumptions.ts";
 import type { Assumption } from "./assumptions.ts";
@@ -375,7 +377,7 @@ export function layerVariants(hit: LogHit, cap: StackCap = () => null, decided: 
   let out: Variant[] = [NO_VARIANT];
   for (const buff of new Set(all.map((e) => e.buff))) {
     const st = buffFile(buff)?.stacking;
-    // A buff the kit-buff replay decides comes with its layers already (buffreplay.ts replayedHits).
+    // A buff the kit-buff replay decides comes with its layers already (replayedhits.ts replayedHits).
     if (decided.has(buff)) continue;
     if (st?.type !== 8 || [...counts].some(([k, n]) => k.startsWith(`${buff}|`) && n !== 1)) continue;
     const max = st.maxStacks ?? (st.maxStacksKey ? (cap(buff, st.maxStacksKey) ?? (st.maxStackCnt > 1 ? st.maxStackCnt : null)) : null);

@@ -529,7 +529,7 @@ operator first.
 **The logs (2026-11-18): not decidable; Gilberta is never the controlled
 operator in any development log.** A basic-attack hit that deals Stagger
 is the controlled operator's only (a Final Strike's, KitHit
-`poiseControlledOnly`; buffreplay.ts `controlledFromLog`). Her Final
+`poiseControlledOnly`; castassembly.ts `controlledFromLog`). Her Final
 Strike would deal Stagger, but none of her 371 Final-Strike hits in the
 20 logs with her and Stagger data does (her battle skill's explosion does,
 in 9 of them, so the field is recorded); before each of her 20 battle
@@ -820,7 +820,7 @@ bracketed by her last enhanced cast and her first plain cast after it (the place
 against the replay's Twilight (`efsim zmdlogs replay --kit-buff chr_0016_laevat:twilight`).
 Two placement fixes first: her ultimate's cast event comes at the end of her 2.03 s stop
 in nearly every log (the last hit before it 2.0–2.9 s earlier), and the replay now starts
-the ultimate 2.03 s before it in 17 of the 22 (11 before; buffreplay.ts `loggedCastStart`:
+the ultimate 2.03 s before it in 17 of the 22 (11 before; castassembly.ts `loggedCastStart`:
 another's hit within 0.5 s after the event, not only at it, says the stop ended there);
 and a window's holds are counted with Twilight long enough not to end early (an early end drops the later combos' and pauses' holds). Then, in the 7 closed
 windows (458b ×2, f879 ×2, c83c, e49e, 0206), the game's Twilight is longer than 15 s from

@@ -1,4 +1,4 @@
-// What one replay of a logged fight records as it goes (buffreplay.ts replayOnce fills it, step by step): each kit
+// What one replay of a logged fight records as it goes (replayrun.ts replayOnce fills it, step by step): each kit
 // buff's and game buff's instances per recipient, the Stagger windows, the traces of the kit buffs and enemy statuses
 // asked for, and the slow-downs the timeline applied. Its own module (improvement round 8: the replay's rules and its
 // views were one 800-line closure, so a view's new field locked out every rule change in buffreplay.ts): a view's new

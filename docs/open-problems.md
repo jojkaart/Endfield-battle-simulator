@@ -121,7 +121,7 @@ shares of the off error at that code):**
   finisher after. **Fixed 2026-11-25: a frame boundary, not the clock.** The replay's Empyrean ended at 179.50 s
   (frame 5385), the event's own frame; d774's at 135.20 s was held 0.37 s to its event at 135.57 s (heldTicks), which
   ends it on the event's frame too. The advance to that frame ticks and ends the buff before loggedTick looks, so the
-  replay made a real ultimate (a 78-frame stop) at both. buffreplay.ts endedWithTick reads an event on its buff's end
+  replay made a real ultimate (a 78-frame stop) at both. holdinputs.ts endedWithTick reads an event on its buff's end
   frame as the last tick (4bfc plain 819 → 820, d774 374 → 379, nothing else moved; tests/slow/log-cases.test.ts).
   **Ruled out: ExtendBuffAction as a pause.** Each Empyrean action holds ult_base over its first 17–35 frames; as a
   pause of its timer, 4bfc's third Empyrean (about 685 frames of actions) would last 47 s of world time, the log's
@@ -384,7 +384,7 @@ shares of the off error at that code):**
     while what it gives its own team still comes: d774's Liino presses her battle skill at 49.86 and 53.20 s inside its stretch and the log lists her
     stance's ATK on the team after it (9c6e's three presses at 15.3–21.4 s the same), so the operators' own buffs from
     such a hit apply. (2) A hitless press is made from the listing (`hitless-presses` `inferred`, the default:
-    buffreplay.ts inferredPress): only with the log's own cast event, a slot press the enemy was there for, its skill
+    replayrun.ts inferredPress): only with the log's own cast event, a slot press the enemy was there for, its skill
     able to start, the log's first hit after its landing within 1.5 s listing a new run of a decided game buff, and
     the replay with the press giving that buff's kit buff there and without it not; the press after it is then the
     variant it pulls (pullingPresses: Initial Stroke), and its own landings aren't counted (the log would show them).
@@ -398,7 +398,7 @@ shares of the off error at that code):**
     attack4 hits around them are logged (the enemy there). Without that Lift the Vulnerable stack it adds is missing,
     so her 52.04 s battle skill takes no follow-up: the log has its Lift's hit (53.55 s, exactly the replay's value
     once the first cast ends) but neither the Lift status nor the wolves. Built as engine assumption `unlogged-tails`
-    `cut` (the new default; buffreplay.ts tailCuts, ReplayCastOptions.endsAt): a battle skill, combo or ultimate whose
+    `cut` (the new default; replayrun.ts tailCuts, ReplayCastOptions.endsAt): a battle skill, combo or ultimate whose
     landings after its last logged one are none of them in the log ends there; not where the log has a hit of its
     operator's casts no other cast holds in that span (a follow-up's, a tick's, a variant's: 3f78's Rossi combo_2
     whose combo_3 the log has), where a decided game buff the tail starts is listed as a new run (db87's Camille
@@ -723,7 +723,7 @@ hit 2.2%, twin like 2.3%, no cast 2.3% (no cast · Fixed DMG 1.0%: Si's bursts),
     on a slot's frame, which an 8-blade cast's (23, 29 …, final 70) never do, so none was pinned and the logged strikes
     took the replay's landings nearest in time: 3aa6 at 83.7–87.5 s matched a strike to final_8 (82,869 for 13,193) and
     left the logged final (124,304) log-only. Now a variant's n-th landing of the key is the slot's n-th turn at its
-    own frame (logcasts.ts `Slot.at`, buffreplay.ts replayedCasts): the final lands on the logged final, exactly.
+    own frame (logcasts.ts `Slot.at`, castassembly.ts replayedCasts): the final lands on the logged final, exactly.
     3aa6 −2.1 → −1.6% (plain 380 → 394), 4bfc and d774 closer per hit, 4d60, c6d8.
 11. **A trigger's alternative paths as twins.** Si's Artful Intent burst is one landing by one of two hits actions
     (through the Inksoul, inkmove_2; as the mark, inkmark_projhit), the same damage (the record) either way; a log of
@@ -1029,7 +1029,7 @@ Blood extras led (113 and 144), with 116 hits without a landing.
    none of the Seething Blood extras, which the log has at each crit
    stab's very ms. The replay now counts as crits the largest m of an
    operator's crit-less hits at a moment where a trigger on crits logs m
-   hits (buffreplay.ts shownCrits). measure (with 3): development plain
+   hits (replaycrits.ts shownCrits). measure (with 3): development plain
    52.0 → 52.4%, mismatch 18.2 → 17.7%, mean |damage error| 12.6 →
    10.1% (489c −12.6 → −0.7%, 9a80 −14.7 → −0.4%, 3f78 −32.2 → −6.2%,
    4a64 −30.9 → +7.2%); hold-out 1 better, 0 worse (12.1 → 11.7%); 0c14's
@@ -1280,7 +1280,7 @@ mismatch against teammates' mismatches within 1.5 s at the same ratio
    mismatches 28 → 19 (the lasers at 55.99–56.47 s now land within 4
    frames), 79cc, c779 +1 plain; scoreboard rows unchanged.
 2. A buff only a chance path's hit applies is one the replay can't judge
-   (buffreplay.ts `chancePathBuff`): ad7f Arcane 34 → 1 mismatches, Si 80
+   (replaycrits.ts `chancePathBuff`): ad7f Arcane 34 → 1 mismatches, Si 80
    → 100 plain, 4e36 plain 117 → 239. Development plain 47.3 → 47.7%,
    mismatch 19.8 → 19.6%; hold-out plain 62.1 → 63.3%, mismatch 7.6 →
    7.7%, mean |damage error| 13.5 → 13.4%.
@@ -1322,7 +1322,7 @@ mismatch against teammates' mismatches within 1.5 s at the same ratio
    (`laser_wait`, 41 frames, `ticksLoggedAs`): the log's combo event 0–4
    frames before the first laser is the lasers' start (a7a7 5.41, 22.93,
    48.89 s; 8915 9.24, 33.44 s; 00ae, d9e5); a combo's own event is one
-   within 1.5 s of it (buffreplay.ts COMBO_EVENT_MS, for skills a buff's
+   within 1.5 s of it (castassembly.ts COMBO_EVENT_MS, for skills a buff's
    ticks are logged under), and a due tick waits up to 1 s for one
    (TICK_HOLD_FRAMES). a7a7's lasers at 5.4 and 23.0 s land within 0.06 s
    (were 0.2 and 0.4 s off); at 48.9 s they start at the logged start, the
@@ -2323,7 +2323,7 @@ whatever each holder's own stops or hits; exactly on time where no other ultimat
   so a paused game is out of the log's ms, not in it.
 
 **Fixed (2026-11-22): the replay keeps a buff on while the log lists it** (engine assumption `hidden-holds`, `log`
-default, `none` the replay before; buffreplay.ts `heldToLoggedEnds`): a timed kit buff whose single run (from its
+default, `none` the replay before; holdinputs.ts `heldToLoggedEnds`): a timed kit buff whose single run (from its
 application ±3 s, not refreshed in the log) the log lists past the replay's expiry runs on to a frame after its last
 listed hit, before any hit of a holder past the expiry that doesn't list it, a step at a time (the replay's later
 stops don't hold it past that end), within 40% of its life (the probes' most: Si's Amp 32%, Forgeborn 39%). Measured:
@@ -2552,7 +2552,7 @@ engine assumption `buff-in-stop`).
 - Twilight running through her own stop (15 s from the press, the kit's default until
   2026-11-18): every closed window needs at least 17.1 s.
 - Her ultimate placed at its cast event (the stop's end) instead of its press: fixed
-  (buffreplay.ts `loggedCastStart`, another's hit within 0.5 s after the event); in 6
+  (castassembly.ts `loggedCastStart`, another's hit within 0.5 s after the event); in 6
   windows that had moved the window 2 s later.
 - The battle skill's pause at its full 115 frames (no jump skips): f879 45.4 s, 458b
   156.3 s, 0206 and e49e would end after the first plain cast (and test 17's timings
@@ -3551,7 +3551,7 @@ From the kit check before simulating the team
   battle skill while End Stance holds the slot (the ultimate's
   ChangeSkillAction, frames 77–527), but the replay made it anyway inside
   Cosmovoice and kept the Amp. Now the replay infers the exit press after
-  the last listing (buffreplay `exitPresses`, made only while the stance
+  the last listing (castassembly `exitPresses`, made only while the stance
   is on and would last past then): 4360 Perlica plain 104 → 111,
   mismatches 16 → 12, Liino's totals +29 → +5.7%; 9847 the same at 73.1 s
   (its Amp unlisted from 74.44 s, battle skill 75.84 s). 4d60's inferred
@@ -3581,7 +3581,7 @@ against its 8 s (489c, 9847, 9c0b).
 (median) the replay's reading, the 214 the other way ×0.77. And no
 logged hit falls between a hit that breaks the bar and the first that
 lists Stagger (77–2676 ms later, median ~0.65 s). So the replay now
-follows the listing (buffreplay.ts `loggedStaggerSteps`, engine
+follows the listing (replaysteps.ts `loggedStaggerSteps`, engine
 `holdStagger`), as it follows the bar: Staggered through each listed
 moment to the next listed one, not Staggered at a moment that lists none
 (unless a hit there breaks the bar).
@@ -3741,7 +3741,7 @@ bound builders there were another agent's).
   (2026-11-23, remaining leads):** a refresh in place needs a reapplication on the holder inside the run, and the 27.37 s
   instance is Xaihi's last: INSTANCE_LATE_MS now applies only where the replay reapplies the buff inside the run (the
   22.53 s instance's runs, 2.9–3.6 s late, still skipped: the 27.37 s one may have refreshed them); otherwise the run is
-  a clock up to HIDDEN_HOLD_SHARE (buffreplay.ts runBounds). Arcane's hits from 50.51 s plain; 5082 plain 224 → 247,
+  a clock up to HIDDEN_HOLD_SHARE (holdinputs.ts runBounds). Arcane's hits from 50.51 s plain; 5082 plain 224 → 247,
   4d60 697 → 703 (Arcane's last will_dmg / will_atk runs from 97.4 / 98.5 s, 2.7–3.0 s late, now clocks: 3.0 s of holds
   in 98.5–131.8 s, which also hold her level-4 Corrosion past the log's end at 102.98 s, 15 hits plain → fallback: a
   Corrosion end read from the hits isn't a bound yet), af7b +2, c3c7 +1; hold-outs plain 77.6 → 77.7% (one mixed).
@@ -3787,7 +3787,7 @@ bound builders there were another agent's).
   **Fixed 2026-11-23 (ticks and layers):** a landing logged at another cast's frozen stop's end whose cast event puts it
   just before the stop (≤ 0.2 s) landed there: the cast starts at its event and that landing, with what it set off
   (its reaction, a trigger's hit), lands at its kit frame (logcasts.ts `beforeStopStart`, LoggedCast.beforeStop;
-  buffreplay.ts `batchedFrame`). a7a7's Corrosion from 2.97 s: ramp readings off the replay's step 15 → 4. Not 489c's
+  castassembly.ts `batchedFrame`). a7a7's Corrosion from 2.97 s: ramp readings off the replay's step 15 → 4. Not 489c's
   49.31 s: there Arcane's event (48.11 s) puts the hit inside Rossi's combo slow-down (48.37–49.00 s), logged 0.31 s
   after it, so the placement's held start (48.21 s) stays; 48 of its 204 readings are off a step. **Diagnosed
   (2026-11-23, remaining leads): 49.31 s is right.** The held start fits it (48.21 s + 20 frames + the 0.42 s Rossi's
