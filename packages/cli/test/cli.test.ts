@@ -11,7 +11,7 @@ import { checkReactions } from "../../logs/src/reactioncheck.ts";
 import { computeStats, type StatPanel } from "@efsim/engine";
 import { formatCensus, kitCensus } from "../src/census.ts";
 import { readScenario, searchCommand, searchWidths } from "../src/simulate.ts";
-import { command, mergedOptions, trackReads, unreadOptions, usageText } from "../src/command.ts";
+import { command, commandName, commandOptions, trackReads, unreadOptions, usageText } from "../src/command.ts";
 import { COMMANDS } from "../src/commands/index.ts";
 import { GLOBAL_NOTES, GLOBAL_OPTIONS } from "../src/commands/shared.ts";
 
@@ -86,11 +86,16 @@ describe("cli command registry (one module per command)", () => {
     expect(text.split("Options for calc and compare:")).toHaveLength(2);
   });
 
-  it("refuses an option two commands declare differently (the parse is shared)", () => {
-    expect(() => mergedOptions(COMMANDS, GLOBAL_OPTIONS)).not.toThrow();
+  it("parses each command with its own options: two commands may give one name two types, not a global one's (round 14)", () => {
+    for (const c of COMMANDS) expect(() => commandOptions(c, GLOBAL_OPTIONS)).not.toThrow();
     const a = command({ name: "a", usage: "  efsim a\n", options: { top: { type: "string" } }, run: () => "" });
     const b = command({ name: "b", usage: "  efsim b\n", options: { top: { type: "boolean", default: false } }, run: () => "" });
-    expect(() => mergedOptions([a, b], {})).toThrow(/option --top: b declares it unlike a/);
+    expect(commandOptions(a, GLOBAL_OPTIONS)["top"]).toEqual({ type: "string" });
+    expect(commandOptions(b, GLOBAL_OPTIONS)["top"]).toEqual({ type: "boolean", default: false });
+    const k = command({ name: "k", usage: "  efsim k\n", options: { kit: { type: "boolean", default: false } }, run: () => "" });
+    expect(() => commandOptions(k, GLOBAL_OPTIONS)).toThrow(/option --kit: k declares it unlike the global option/);
+    expect(commandName(["--kit", "x.json", "calc", "a.json", "--crit", "never"], GLOBAL_OPTIONS)).toBe("calc");
+    expect(commandName(["zmdlogs", "replay", "0c14"], GLOBAL_OPTIONS)).toBe("zmdlogs");
   });
 
   it("names an option given but never read (another command's: it did nothing), never a global one or a spread", () => {

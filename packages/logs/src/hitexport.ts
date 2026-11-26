@@ -12,7 +12,7 @@
 import { basename } from "node:path";
 import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, withCurveReading, type GameData, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
-import { engineCheck, logDifferences, loggedEntries, readingBasis, type EngineCheck, type LogDifference, type ReadingBasis } from "./enginecheck.ts";
+import { engineCheck, logDifferences, loggedEntries, readingBasis, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
 import { placeHits } from "./logcasts.ts";
 import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
@@ -44,6 +44,14 @@ export interface HitRecord {
   readonly predicted: number | null;
   /** logged / predicted − 1 (null without a prediction). Not the verdict's error: `verdictError`. */
   readonly error: number | null;
+  /**
+   * The number the fight's totals count for the hit (logcheck.ts engineReport: the primary reading, or for a hit whose
+   * crit the log doesn't give its reading at the crit the totals take), rounded, and how they took that crit
+   * (enginecheck.ts TotalsCrit: known, exact, read, expected); absent without a primary reading. `zmdlogs totals --by
+   * crit` sums them per operator.
+   */
+  readonly totalsPredicted?: number;
+  readonly totalsCrit?: TotalsCrit;
   /**
    * The reading the verdict rests on: a match's, an unquantified or unvalued hit's predicted value; a mismatch's nearest
    * reading tried (its first); null for an uncovered hit.
@@ -142,8 +150,9 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;
     const error = predicted ? hit.value / predicted - 1 : null;
+    const totals = predicted !== null && e ? { totalsPredicted: roundDamage(e.expected ?? predicted), totalsCrit: e.totalsCrit ?? ("known" as const) } : {};
     const basis = readingBasis(c, hit, hitPlace(data, fx, placement, replay, hit));
-    if ("unknown" in basis.landing) return { ...base, predicted, error, unknown: basis.landing.unknown };
+    if ("unknown" in basis.landing) return { ...base, predicted, error, ...totals, unknown: basis.landing.unknown };
     const ok = basis as Exclude<typeof basis, { readonly landing: { readonly unknown: string } }>;
     const { landing, primary } = ok;
     let d;
@@ -151,7 +160,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       d = landingDamage(data, c.target, primary.inputs, primary.options, primary.other);
     } catch (err) {
       if (!readingDoesNotApply(err)) throw err;
-      return { ...base, predicted, error, unknown: "no reading applies" };
+      return { ...base, predicted, error, ...totals, unknown: "no reading applies" };
     }
     const inputs = primary.inputs;
     const lr = ok.logReading();
@@ -171,6 +180,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       ...(counterfactuals.length ? { counterfactuals } : {}),
       predicted: predicted ?? roundDamage(d.exact),
       error: hit.value / (predicted ?? roundDamage(d.exact)) - 1,
+      ...totals,
       logReading,
       logError: logReading ? hit.value / logReading - 1 : null,
       landing: {
@@ -320,6 +330,48 @@ export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "
   const log = reading === "log" ? `  log reading ${r.logReading ?? "-"}  ${pct(r.logError)}` : "";
   const z = zones && r.landing ? `  ${zoneWords(r)}` : "";
   return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}${z}`;
+}
+
+/**
+ * `zmdlogs hits --against <id>=<r>`: the hits whose class or primary reading differ between two readings' records of the
+ * same logs (`before` the defaults, `after` the reading; each fixture's records in its hits' order, filtered alike), with
+ * both and the modifiers only one side has: measure's `--hits` lines for the named logs, without the lock (combo-hold
+ * report point 2: a reading's effect on its target log took two `hits --json` runs and a scratch pairing).
+ */
+export function recordChanges(before: readonly HitRecord[], after: readonly HitRecord[]): string[] {
+  const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
+  const mods = (r: HitRecord) => new Set((r.landing?.modifiers ?? []).map((m) => `${m.kitBuff ?? m.source}:${m.zone} ${Number(m.value.toPrecision(4))}`));
+  const byFixture = (rs: readonly HitRecord[]) => {
+    const m = new Map<string, HitRecord[]>();
+    for (const r of rs) m.set(r.fixture, [...(m.get(r.fixture) ?? []), r]);
+    return m;
+  };
+  const [a, b] = [byFixture(before), byFixture(after)];
+  const out: string[] = [];
+  const counts = new Map<string, number>();
+  for (const [fixture, rs] of a) {
+    const other = b.get(fixture) ?? [];
+    const name = basename(fixture).replace(/\.json$/, "");
+    if (other.length !== rs.length) {
+      out.push(`${name}: not comparable (${rs.length} records against ${other.length})`);
+      continue;
+    }
+    for (const [i, x] of rs.entries()) {
+      const y = other[i] as HitRecord;
+      if (x.t !== y.t || x.event !== y.event) throw new Error(`${name}: records out of step at ${i} (${x.t} ${x.event} against ${y.t} ${y.event})`);
+      if (x.class === y.class && x.predicted === y.predicted) continue;
+      const [mx, my] = [mods(x), mods(y)];
+      const gone = [...mx].filter((m) => !my.has(m));
+      const added = [...my].filter((m) => !mx.has(m));
+      const diff = gone.length || added.length ? `; modifiers ${[...added.map((m) => `+${m}`), ...gone.map((m) => `-${m}`)].join(", ")}` : "";
+      const why = y.unknown && y.unknown !== x.unknown ? `; now: ${y.unknown}` : "";
+      out.push(`${name}  t=${x.t}  ${x.operator}  ${x.event}  logged ${x.value}: ${x.class} ${x.predicted ?? "-"} (${pct(x.error)}) → ${y.class} ${y.predicted ?? "-"} (${pct(y.error)})${diff}${why}`);
+      const k = `${x.class} → ${y.class}`;
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+  }
+  const summary = [...counts].sort((p, q) => q[1] - p[1]).map(([k, n]) => `${k} ${n}`).join(", ");
+  return [...out, `${out.length} hit(s) changed${summary ? `: ${summary}` : ""}`];
 }
 
 /** A record's zones, crit and modifiers in words (formatRecord `zones`): numbers to 4 significant digits. */

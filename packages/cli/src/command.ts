@@ -1,14 +1,16 @@
 // What a CLI command is (one module per command under commands/, registered in commands/index.ts): its name, its
-// lines of the usage text, the options it reads, and what it runs. cli.ts builds one `parseArgs` call from every
-// command's options and the usage text from every command's lines, then dispatches. A new command or option touches
-// only its own module, so parallel branches don't collide in one file (friction round 1).
+// lines of the usage text, the options it reads, and what it runs. cli.ts finds the command, parses the arguments with
+// that command's options and the global ones (commandOptions), builds the usage text from every command's lines, then
+// dispatches. A new command or option touches only its own module, so parallel branches don't collide in one file
+// (friction round 1); option names are per command since round 14 (before, one parse held every command's, so a view's
+// natural name, `--why`, was taken if another command declared it with another type).
 
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import type { GameData } from "@efsim/engine";
 
 type Config<O extends ParseArgsOptionsConfig> = { args: string[]; allowPositionals: true; allowNegative: true; options: O };
 
-/** The parsed values of a command's options, typed from its declaration (the parse itself holds every command's). */
+/** The parsed values of a command's options, typed from its declaration. */
 export type ValuesOf<O extends ParseArgsOptionsConfig> = ReturnType<typeof parseArgs<Config<O>>>["values"];
 
 export interface CommandContext<V> {
@@ -16,7 +18,7 @@ export interface CommandContext<V> {
   readonly command: string;
   /** The positional arguments after the command's name. */
   readonly args: readonly string[];
-  /** Every option's value (the command's own typed; the parse is shared, so others' defaults are there too). */
+  /** Every option's value (the command's own, typed, and the global ones). */
   readonly values: V;
   /** The game data, loaded on first use (after the arguments are checked) with --kit applied. */
   readonly data: () => GameData;
@@ -48,30 +50,32 @@ export function command<const O extends ParseArgsOptionsConfig>(c: {
 }
 
 /**
- * Every command's options merged for the one parse (cli.ts): option names are global, so a name two commands use must be
- * declared alike (type, multiple, default); its meaning and the check of its values are each command's (calc's --buff
- * is `<id>[:<layers>]`, zmdlogs' a regex). Taken names with a shape: see the commands' `options`; a clash throws here,
- * naming both commands.
+ * One command's options for its parse (cli.ts): the global ones and its own. Names are per command (round 14; combo
+ * hold report point 4: `--why` was a regex in `holds` and `--rules` a file in `gear`, so a view's boolean couldn't take
+ * either while every command shared one parse); only a global name can't be redeclared otherwise (throws, naming it).
  */
-export function mergedOptions(commands: readonly Command[], global: ParseArgsOptionsConfig): ParseArgsOptionsConfig {
-  const out: Record<string, ParseArgsOptionsConfig[string]> = { ...global };
-  const owner = new Map<string, string>(Object.keys(global).map((k) => [k, "(global)"]));
-  for (const c of commands) {
-    for (const [name, def] of Object.entries(c.options)) {
-      const seen = out[name];
-      if (seen && JSON.stringify(seen) !== JSON.stringify(def)) throw new Error(`option --${name}: ${c.name} declares it unlike ${owner.get(name)} (${JSON.stringify(def)} vs ${JSON.stringify(seen)})`);
-      out[name] = def;
-      if (!owner.has(name)) owner.set(name, c.name);
-    }
+export function commandOptions(c: Pick<Command, "name" | "options">, global: ParseArgsOptionsConfig): ParseArgsOptionsConfig {
+  for (const [name, def] of Object.entries(c.options)) {
+    const g = global[name];
+    if (g && JSON.stringify(g) !== JSON.stringify(def)) throw new Error(`option --${name}: ${c.name} declares it unlike the global option (${JSON.stringify(def)} vs ${JSON.stringify(g)})`);
   }
-  return out;
+  return { ...global, ...c.options };
 }
 
 /**
- * The parsed values with a record of which options the command read. The parse is shared by every command, so an
- * option another command (or another zmdlogs view) declares is accepted anywhere and, where nothing reads it, did
- * nothing without a word (physical-statuses report point 5: `zmdlogs hits --from/--to` silently ignored); cli.ts warns
- * of each option given but never read (unreadOptions).
+ * The command an argument list names: its first positional, the global options (whose values parse as theirs) aside.
+ * A command's own options come after its name (`efsim zmdlogs replay 0c14 --from 10`), as every usage line writes them.
+ */
+export function commandName(argv: readonly string[], global: ParseArgsOptionsConfig): string | undefined {
+  const { positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: false, options: global });
+  return positionals[0];
+}
+
+/**
+ * The parsed values with a record of which options the command read. A command's options are shared by its
+ * subcommands (zmdlogs' views), so one a subcommand doesn't read is accepted and did nothing without a word
+ * (physical-statuses report point 5: `zmdlogs hits --from/--to` silently ignored); cli.ts warns of each option given but
+ * never read (unreadOptions).
  */
 export function trackReads<V extends object>(values: V): { readonly values: V; readonly read: ReadonlySet<string> } {
   const read = new Set<string>();

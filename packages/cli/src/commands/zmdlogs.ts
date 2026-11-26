@@ -15,6 +15,7 @@ import {
   cacheRawDetail,
   cadenceView,
   census,
+  decisionsView,
   clockView,
   controlView,
   devFixtures,
@@ -61,7 +62,7 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
-export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "stops", "totals", "stagger", "differences", "groups", "clock", "holds", "ramp", "clocks"]);
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "clock", "holds", "ramp", "clocks"]);
 export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "worldtime", "control", "cadence"]);
 
 export default command({
@@ -84,13 +85,17 @@ export default command({
                 [--event <regex>]         Only hits whose logged event key matches
                 [--from s] [--to s]       Only hits logged in this window (seconds, both ends included)
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's (not cached)
+                [--against <id>=<reading>] Instead: only the hits whose class or primary reading that reading (on top
+                                          of --assume) changes, both sides and the modifiers only one has, then a
+                                          count per change (measure --hits for these logs, no lock; repeatable)
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
                 [--reading log]           Text lines also give the log's reading and its error: off under both is the
                                           build or a kit value, off only under the primary the replay's timing
                 [--zones]                 Text lines also give the primary reading's zones, the replay's crit and
                                           its source (log, shown, layers, values, none) and the modifiers; with
                                           scripts/cli-ab.ts <ref> --key '^(\\S+  t=\\d+  \\S+  \\S+)' which zone moved
-                [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1)
+                [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1). With --operator only
+                                          the logs whose team has one are read (an uncached --all takes ~8 s a log)
   efsim zmdlogs raw <fixture | id>        A battle's raw detail as ZMDLogs recorded it: buff lanes (key, target,
                                           source, start–end, effects) and events (key, value, the skill a Stagger is
                                           credited to). A lane's end is a logged event's time near its last listed
@@ -183,6 +188,12 @@ export default command({
                                           engine's
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
+  efsim zmdlogs decisions <fixture…|--all> --assume <id>=<reading>  The replay's decisions (SKIP, TAILCUT, FAILED,
+                                          MISSED, INFER, MADE, FORCED, INSIDE, CUTS, as replay prints them) that
+                                          differ between the default readings (-) and the given one (+), per log,
+                                          then a count per kind: a replay rule's false positives before a measure
+                                          (two replays per log, seconds each); without --assume every decision;
+                                          --operator: only these operators'
   efsim zmdlogs stops <fixture…|--all>    replay --stops' STOP lines over several logs (default: every verified and
                                           pending development log with --all), then a count per kind (as listed,
                                           covered, length, timeline only, list only) and how many logs have each
@@ -195,6 +206,8 @@ export default command({
                                           (default 10)
                 [--by event]              Instead: the parts per operator and logged event (matched, replay-only
                                           by skill and hit, log-only), largest |share| first
+                [--by crit]               Instead: the matched parts per operator by how the totals took each crit
+                                          (known, exact, read from the value, expected crits): the model or the dice?
                 [--kinds]                 Instead: every replay-only landing and log-only hit, largest first, with
                                           its kind (onesided.ts: where it sits, nature, skill kind, flags) and twin
   efsim zmdlogs totals --all | <fixture…>  Every fight's total error split into matched / replay-only / log-only
@@ -314,6 +327,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     what: { type: "string" },
     hits: { type: "boolean", default: false },
     assume: { type: "string", multiple: true, default: [] },
+    against: { type: "string", multiple: true, default: [] },
     "no-foods": { type: "boolean", default: false },
     all: { type: "boolean", default: false },
     event: { type: "string" },
@@ -458,7 +472,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
       const reading = values.reading === "log" ? "log" : "primary";
       const window = { ...seconds(values.from, "from"), ...seconds(values.to, "to") };
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, progress });
+      const against = values.against.length ? parseAssume(ctx.data(), values.against) : {};
+      if (values.against.length && values.json) throw new Error("zmdlogs hits --against prints the changed hits as text lines (no --json)");
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });
@@ -472,9 +488,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
       if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume, kinds: values.kinds, json: values.json, progress });
-      if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
-      if (values.by !== undefined && values.by !== "event") throw new Error("--by takes event");
-      return totalsView(data(), readDevFixture(arg), { operators, ...top, assume, byEvent: values.by === "event", kinds: values.kinds });
+      if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event|crit, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
+      if (values.by !== undefined && values.by !== "event" && values.by !== "crit") throw new Error("zmdlogs totals --by takes event or crit");
+      return totalsView(data(), readDevFixture(arg), { operators, ...top, assume, byEvent: values.by === "event", byCrit: values.by === "crit", kinds: values.kinds });
     }
     if (sub === "stagger") return staggerReport(data(), args.slice(1), progress, assume);
     if (sub === "stops") {
@@ -483,6 +499,14 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (named.length && values.all) throw new Error("zmdlogs stops: fixtures or --all, not both");
       const logs = devFixtures(named.length ? { ids: named } : {});
       return stopsView(data(), logs, { differ: values.differ, operators, assume, progress });
+    }
+    if (sub === "decisions") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs decisions takes fixtures (ids such as 0c14) or --all (every verified and pending development log), with --assume <id>=<reading> (without it: every decision)");
+      if (named.length && values.all) throw new Error("zmdlogs decisions: fixtures or --all, not both");
+      // With --operator, only the logs whose team has one of them.
+      const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
+      return decisionsView(data(), logs, { assume, operators, progress });
     }
     if (sub === "placement") {
       const named = args.slice(1);

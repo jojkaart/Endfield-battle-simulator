@@ -208,7 +208,7 @@ const MAX_COMBINATIONS = 4096;
  * can't say, the event's other kit hits, an unlogged crit, the enemy's side of a condition, Corrosion or a reaction
  * level the replay lacks, log-only buffs at the hit's boundary). Empty without a landing.
  */
-export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { readings: EngineReading[]; primary: number | null; expected?: number; landing: LandedHit | { readonly unknown: string } } {
+export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { readings: EngineReading[]; primary: number | null; expected?: number; totalsCrit?: TotalsCrit; landing: LandedHit | { readonly unknown: string } } {
   const basis = readingBasis(c, hit, place);
   if ("unknown" in basis.landing) return { readings: [], primary: null, landing: basis.landing };
   const { landing, primary, groups } = basis as ReadingBasis;
@@ -233,22 +233,31 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
   if (hit.crit === null && primaryDamage !== null) {
     // Unless the logged value is one of the two exactly: then it says whether the hit crit (40d9a3c1da37: Si's killing
     // combo finish, 599,622 = ×1.5 the non-crit reading, counted at expected crits as 409,741).
-    if (primaryDamage === hit.value) return { readings, primary: primaryDamage, expected: primaryDamage, landing };
+    if (primaryDamage === hit.value) return { readings, primary: primaryDamage, expected: primaryDamage, totalsCrit: "exact", landing };
     const critOnly = readings.find((r) => r.assumptions.length === 1 && r.assumptions[0]?.kind === "crit");
-    if (critOnly && critOnly.predicted === hit.value) return { readings, primary: primaryDamage, expected: critOnly.predicted, landing };
+    if (critOnly && critOnly.predicted === hit.value) return { readings, primary: primaryDamage, expected: critOnly.predicted, totalsCrit: "exact", landing };
     // Or near one of the two only (engine assumption totals-crits `read`): the crit the value shows, the reading's own error
     // kept (0c14fb3ce77d: Rossi's first ultimate at 25.2–27.7 s, ×1.032 below the log on every stab for Alesh's
     // unlogged weapon layer, its 27.74 s crit of 326,856 counted at expected crits as 250,328).
     const read = critOnly ? critFromValue(hit.value, primaryDamage, critOnly.predicted, engineReadingOf(c.replay.assume, "totals-crits")) : null;
-    if (read !== null) return { readings, primary: primaryDamage, expected: read, landing };
+    if (read !== null) return { readings, primary: primaryDamage, expected: read, totalsCrit: "read", landing };
     try {
-      return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, landing };
+      return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, totalsCrit: "expected", landing };
     } catch (e) {
       if (!readingDoesNotApply(e)) throw e;
     }
   }
   return { readings, primary: primaryDamage, landing };
 }
+
+/**
+ * How the fight's totals count a logged hit's crit (engineReadings, for `zmdlogs totals --by crit` and `hits --json`
+ * totalsCrit): "known" the log gives it (the primary reading's own), "exact" the value is one of its two readings,
+ * "read" it is near one of them only (engine assumption totals-crits `read`), "expected" neither: expected crits, so
+ * the hit's part of a total's error is partly the fight's crit luck (0c14-and-operator-curve report point 1: Rossi's
+ * "matched −5.7%" in 0c14 was 108k of two ultimate finals counted at expected crits).
+ */
+export type TotalsCrit = "known" | "exact" | "read" | "expected";
 
 /**
  * What engineReadings reads a logged hit from: its landing, the primary reading (the engine's modifiers with the log's

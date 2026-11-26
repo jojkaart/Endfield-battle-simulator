@@ -109,6 +109,13 @@ export interface BuffReplay {
    */
   readonly inferred: ReadonlyMap<number, string>;
   /**
+   * Every cast the replay made (the final run, in order): the assembled cast, the frame and the skill it was made as (a
+   * slot's variant, a tick's real cast, an inferred press), its index in the timeline's casts, and why an inferred press
+   * was made (`inferred`, as BuffReplay.inferred): the replay's own record of each decision, which the views read
+   * (EVENT, INFER, MADE lines; `zmdlogs decisions`) instead of matching again (improvement round 14).
+   */
+  readonly made: readonly MadeCast[];
+  /**
    * Where the crit the replay gave a logged hit's landing comes from (CritSource): the log's flag, or, where the log
    * gives none, which inference made it a logged crit (shownCrits, layerCrits, valueCrits), else none (the landing
    * doesn't crit in the replay the check reads).
@@ -183,6 +190,19 @@ export interface BuffReplay {
    * cost silently: docs/open-problems.md "Team SP"), for the casts that lacked any.
    */
   readonly spTopUps: readonly { readonly frame: number; readonly operator: string; readonly skillId: string; readonly sp: number }[];
+}
+
+/** A cast the replay made (BuffReplay.made). */
+export interface MadeCast {
+  readonly cast: ReplayedCast;
+  /** The frame it was made at. */
+  readonly frame: number;
+  /** The skill it was made as (the cast's own skillId, or another the replay chose: replayrun.ts makeCast). */
+  readonly skillId: string;
+  /** Its index in the timeline's casts. */
+  readonly index: number;
+  /** A hitless press made from the listing (hitless-presses `inferred`): why. */
+  readonly inferred?: string;
 }
 
 /** A fact the replay knows, or why it doesn't (the log check then tries alternatives, labelled with the reason). */
@@ -524,6 +544,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     skipped: main?.skipped ?? [],
     tailCuts: [...cuts].map(([cast, frame]) => ({ cast, frame })),
     inferred: new Map((main?.made ?? []).flatMap((m) => (m.inferred !== undefined ? [[m.index, m.inferred] as const] : []))),
+    made: (main?.made ?? []).map((m) => ({ cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}) })),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
       if (i === undefined || landed.has(String(i)) || !main) return null;
