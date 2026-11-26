@@ -5,7 +5,7 @@
 // controlled (controlledFromLog, controlSwaps), each logged cast event's fate (loggedCastFates) and the stops the
 // replay's casts hold (replayedCastStops). Split from buffreplay.ts (improvement round 14).
 
-import { allActions, applyBuff, chanceJumpsOf, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type Predicate, type SkillType } from "@efsim/engine";
+import { allActions, applyBuff, chanceJumpsOf, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { buttonVariants, castFrames, excludes, neededBuffs, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";

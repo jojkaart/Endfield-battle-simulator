@@ -869,6 +869,45 @@ reaction at its ms (logged in fights with and without the extra).
 **Next check:** measure's physical misses by status kind for the hold-outs; Zhuang Fangyi's Empyrean free path in the
 data; Rossi's bleed end against the listing; slots by value within a cast (9a80, 7910, a27b).
 
+**Round 5 (2026-11-26, the fights outside ±5%).** Before: development 8915 +62.3, 7b54 +49.0, 6339 +40.8 (stage
+logs), 9c6e −13.5 (two targets), c83c +7.9, 7910 −6.1, db87 −6.0%; earlier pending c6d8 +43.9 (stage), e82d −8.9%.
+The by-operator means the brief named (Perlica, Liino, Camille, Wulfgard, Laevatain, Purrchena) are the operators'
+own totals (scripts/accuracy.ts perOperator), mostly the stage logs' (Perlica c6d8 +165%, Wulfgard 8915 +93%,
+Laevatain and Camille 7b54 / 6339 +59–90%) and small totals with a few one-sided landings (Liino's beats the log
+never shows: 1cd1 +23%, af7b +20%, 1d91 +18%, 0eef +58% on a 9 s fight; Purrchena 99fb −43%).
+
+**Found and fixed (round 5):**
+16. **A cast event logged as its button's other variant** (db87 −6.0 → −1.2%): "db87: ×1.3 on Laevatain's hits"
+    below. The Link stack Camille's combo gives went to a forced normal_skill the replay made from the log's
+    `normal_skill` events in Twilight. logcasts.ts `buttonVariants` (two skills of a kind, one castable only without
+    a buff the other needs, neither giving it on its cast: not Purrchena's battle skill and the counter it readies),
+    castassembly.ts `variantCastOf`, and the placement times the variant from that event.
+17. **A tail cut takes its detached landings** (c83c +7.9 → +1.9%): Si's combo final at 56.73 s (374k, an ability
+    entity's detached hit) came a frame after her last logged slash; the cut at lastLogged + 1 ran after that frame's
+    hits and left detached ones alone, though the rule's premise (none of the tail is in the log) covers them. Now
+    the cut is at the last logged landing's frame and drops the cast's later hits, detached ones too (drivers.ts
+    replayCast `endsAt`). Hold-out mean 8.4 → 7.4% (4 better, 1 mixed), the largest move of the round.
+18. **A carried Corrosion shred above the new one's cap stays** (7910 −6.1 → 0.0%, plain 340 → 456, mismatch 102 →
+    15): every hit 51–62 s ×1.099 (Liino's ×1.143: one resistance step, +11.35 points either way) after Ardelia's
+    forced level-1 Corrosion at 49.37 s replaced Arcane's level 4; the data's tick adds and clamps only while the shred
+    is below the cap (combat-mechanics §3.5), so the carried 25.5 stood where the engine clamped to 14.2.
+
+**Ruled out (round 5):** db87's ×1.3 as the sword buff's value, Laevatain's P1 ratio or a Stagger (the engine's
+Stagger is on the 42–46 s ones and the log's ×1.3 is on top); 7910's ×1.099 as Liino's weapon layers (cap 4, test
+25) or the Stagger.
+
+**Still possible / left (round 5):**
+- **The stage logs** (8915, 7b54, 6339, c6d8): unchanged; 6339's largest one-sided landings are Si's combo final at
+  11.30 s (16.5%, at the start of the 11.3–14.6 s gap with no hit by anyone: the slug's number shield?) and
+  Laevatain's finisher hit_2 at 21.60 s (14.3%).
+- **9c6e** (two targets) and **e82d** −8.9% (Si's combo final ×1.205: the log lists Arcane's weapon WILL lines five
+  times, will_dmg ×3 and will_atk ×2 at 0.168, the engine has two; five would be ×1.26: not exact, Arcane's weapon's
+  stacking, not looked into further).
+- **Slots by value:** 9c0b's Hunter Pursuit (its first logged landing is hit_2 by its value, the placement takes it
+  as hit, so the frame-70 Link lands after Arcane's ultimate press and goes to Laevatain's battle skill, ×1/1.3 on
+  three hits) and 7910's Tangtang rogue wave (a logged 352,792 matched to a 20,160 hit, the wave replay-only); a
+  realignment like realignUltimates with the first slot free and the values deciding.
+
 ## Arts Intensity: what the logs settle and what they leave (2026-11-16)
 
 The owner asked whether the engine's Arts Intensity handling is right (it
@@ -1807,10 +1846,22 @@ buff at 2.1 and fits exactly.
 
 **Ruled out:** her battle skill's multipliers (both readings carry it).
 
-**Still possible:** the buff's value or stacks in db87 (listed 1.2 against
-what the engine applies), another buff on the same hits, db87's build.
-
-**Next check:** the sword buff's value and stacks in db87 against e989.
+**Found (2026-11-26): not the sword buff, the Link.** All eleven of
+db87's normal_skill_during_ult hits are ×1.3000 = Link (1) on a battle
+skill (Camille's combos give the team one stack). The log records her four
+Twilight presses as `normal_skill` cast events; the replay made each as a
+cast of its own besides the placed during-ult cast: a forced normal_skill
+(its explosion and ticks replay-only, 3.6% of the fight) that took the
+Link stack. Now such an event is the placed cast of its button's other
+variant (logcasts.ts `buttonVariants`, castassembly.ts `variantCastOf`;
+the placement times the cast from it, so the 27.13 s press comes before
+Si's ultimate and takes the stack): db87 −6.0 → −1.2%, plain 208 → 228.
+**Left:** 55.31 s extra ×1.435 (×1.3 × 1.104); 9c0b's three during-ult
+hits ×1/1.3 (the replay gives them the Link that Arcane's ultimate takes
+in the game: Camille's Hunter Pursuit at 12.70 s is placed with its first
+logged landing as `hit` where its values say hit_2 to hit_4, so its frame-70
+Link comes after Arcane's ultimate press: slots by value); f879's 94.7–96.2 s
+dots ×1/1.3 (a Link the game's cast didn't carry, not traced).
 
 ## Ink Melt logs (round five): Combustion ticks, a stage factor, Si's late combo buffs
 

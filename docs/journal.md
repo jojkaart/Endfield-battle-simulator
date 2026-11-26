@@ -4,9 +4,45 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 156 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 157 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Fights outside 5%: a variant's cast event, detached tails, a carried Corrosion
+
+**Goal:** the development and earlier-pending fights whose totals are off by more than 5% (8915, 7b54, 6339, c6d8:
+stage logs; 9c6e, c83c, 7910, db87, e82d), split by operator and landing kind, fixed by mechanisms (open-problems
+"Fight totals", round 5).
+
+**Done:**
+- **db87 (−6.0 → −1.2%): a cast event logged as its button's other variant.** Every Twilight battle-skill hit was
+  ×1.3000, Link (1) from Camille's combo: the log records the presses as `normal_skill`, and the replay made each as a
+  forced normal_skill besides the placed normal_skill_during_ult; that phantom took the Link and landed an explosion
+  and ticks the log never shows. logcasts.ts `buttonVariants` (one castable only without a buff the other needs,
+  neither giving it on its cast: Purrchena's battle skill readies her counter, so it isn't one), castassembly.ts
+  `variantCastOf`; the placement times the variant from that event (the 27.13 s press before Si's ultimate stop).
+- **c83c (+7.9 → +1.9%): a tail cut takes detached landings.** Si's combo final (an ability entity's detached hit,
+  374k) a frame after her last logged slash survived the cut (at lastLogged + 1, after that frame's hits, detached
+  ones exempt). Now at the last logged landing's frame, dropping the cast's later hits, detached too (drivers.ts
+  `endsAt`). The hold-outs moved most from this.
+- **7910 (−6.1 → 0.0%): a carried Corrosion above its cap stays.** Hits 51–62 s ×1.099 (one resistance step, the same
+  +11.35 points for everyone) after Ardelia's forced level-1 Corrosion replaced Arcane's level 4: the data's tick
+  adds and clamps only below the cap (reactions.ts corrosionShred; combat-mechanics §3.5).
+
+**Scoreboard** (measure against 36e3bc8, then `npm run snapshots:update` before the merge of 9e1904d): development
+mean |damage error| 6.8 → 6.3%, within 5% 25 → 28, plain 69.7 → 70.5%, mismatch 11.2 → 10.6%; hold-out 8.4 →
+7.4% (4 better, 1 mixed: plain −1, assumed +1), plain 81.0%; earlier pending unchanged (3.5%; 4bfc −0.8 → −1.0%,
+3aa6 mixed, d4fb better). Worse: 79cc 0.0 → −0.1%, 4bfc: replay-only tail landings removed from fights the replay
+under-predicts. The numbers after the merge: the friction report's hand-back.
+
+**Decisions:** the Corrosion rule isn't an assumption (the data's gate is explicit and 7910's 143 hits fit it); the
+variant rule needs complementary availability, not the same kind alone (04d4 and 99fb lost 91 and 30 plain with
+kind only). Stage logs left (no enemy data for hsbear_hdg018 or wgabyss_hdg011). By-operator means are each
+operator's own total, mostly the stage logs and small totals (Liino's unlogged beats).
+
+**Left:** slots by value (9c0b's Hunter Pursuit, whose misplaced first landing sends its Link to the wrong cast;
+7910's rogue wave), e82d's Si combo final (Arcane's weapon WILL lines ×5 listed, ×2 in the engine), 9c6e (two
+targets). Friction report docs/friction/2026-11-26-totals-off.md.
 
 ## 2026-11-26: Alesh's Rare Fin: chance paths and a cast from the listing
 
@@ -333,39 +369,3 @@ show. Not reached: Electrification / Solidification across a freeze (no listed r
 **Problems:** the ComboSkill curve's measures waited behind another worktree's measures in the lock's queue (about
 10 min each); the probes' first cut (per tick pair) split a stop's time between neighbouring pairs, so only chain
 sums with whole stops inside are evidence.
-
-## 2026-11-26: Damage factors: Catcher's weapon, the Crush's stacks from Si's away press, Ember's listed layers
-
-**Goal:** the damage factors the misprediction statistics left, largest first: the Crush ×2.2 (0c14) and ×1.90 (2fd9),
-04d4's Catcher ×2.1 and Snowshine ×0.962, Ember's ×1.096 (7e19), Rossi's ultimate ×1.09 / ×1.08, bleed clock, slash2
-extras and combo_3 over-hold, then the cast tails; another agent held the replay, holds and check files.
-
-**Done** (open-problems "Misprediction statistics", The damage factors):
-- **The Crush is right; its misses were Vulnerable stacks.** Every logged Crush reads exactly with the data's
-  multiplier by stacks consumed. Rossi's perfect combo gives a Lift and one more stack per consumed infliction, so one
-  infliction the replay lacks costs two stacks: 2fd9's (fixed by round 4's counter bash), and 0c14's at 182.30 s (2 →
-  4: 172,059 exactly). 0c14's cause: Si's battle-skill press in the away stretch (139.68 s), made by the replay, landed
-  nothing in the game, and her hitless 153.99 s press was her battle skill (Jade Vessel's Immobilization debuff listed
-  from the next hit, her Artful Intent ending at the log's 181.00 s). Hard-coded as a measurement:
-  docs/tried/2026-11-26-0c14-si-away-press.diff (0c14 plain 172 → 293, −4.9 → +1.2%); the rule is the replay's.
-- **04d4's Catcher: weapon level 3** (fixture buildOverrides). fit-build threw on his DEF-scaled hits under a DEF food
-  candidate; such a candidate is now unscored (buildfit.ts, tests/buildfit-fit.test.ts). 04d4 plain 185 → 376.
-- **Ember's ×1.096:** the check's loggedEntries dropped her listed talent ATK (+0.09) as one of Thermite Cutter's
-  layers (fix held back: docs/tried/2026-11-26-log-entries-own-buff.diff, hold-out plain 79.0 → 80.4%, 3 better, 0
-  worse), and her talent's layers aren't listed (one entry at 1–3 layers: 04d4's steps ×1.023 / 1.085 / 1.147).
-- **Rossi:** her ultimate's ×1.09 / ×1.08 fit now (closed); the slash2s without an extra are a fight's or a life's last
-  hit (scripts/probes/rossi/slash2.py; the totals rule is mixed and too broad, docs/tried/2026-11-26-life-end-landings.diff);
-  the bleed's unlanded ticks and combo_3's over-hold left to the holds' owner.
-- Snowshine narrowed (her attribute bonus 3.325 → 3.200 exactly; no weapon level or node count reaches it); the cast
-  tails' largest are stage, two-target and placement cases, no kit cause.
-
-**Scoreboard** (`npm run snapshots:update`): verified unchanged; development plain 69.0%, mismatch 11.4%, mean |damage
-error| 7.0% (unchanged); hold-out 79.0%, 5.9%, 8.5% (unchanged); earlier pending plain 64.7 → 66.3%, mismatch 13.9 →
-12.0%, mean |damage error| 4.1 → 4.2% (04d4 mixed: per hit 17.9 → 6.5%, its total +2.1 → −3.0%, the over-prediction had
-hidden the rest of its deficit). No kit or engine change: team-ab not needed.
-
-**Decisions:** fixes in files another agent held were measured with `--patch` and kept as docs/tried diffs marked held
-back (README paragraph), not applied; Catcher's level-3 weapon taken though the weapon's skill levels (3, 2, 3) can't be
-checked against a breakthrough table the data sources lack.
-
-**Problems:** `measure -- --help` queued 5 min for the lock before rejecting the option (friction report).
