@@ -25,9 +25,9 @@ commit, and how many logs got better or worse.
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 78.0% | 99.3% | 0.0% | 2.0% | 6 |
 | Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 69.0% | 85.3% | 11.4% | 7.0% | 24 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 79.0% | 92.3% | 5.9% | 8.5% | 9 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 66.3% | 87.7% | 12.0% | 4.2% | 19 |
-| All but the hold-outs | 61 | 29035 | 68.1% | 86.6% | 11.4% | 5.5% | 49 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 80.4% | 92.6% | 5.6% | 8.4% | 9 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 66.3% | 87.7% | 12.0% | 4.1% | 19 |
+| All but the hold-outs | 61 | 29035 | 68.1% | 86.7% | 11.3% | 5.4% | 49 |
 
 ## Where the total's error lives
 
@@ -40,8 +40,8 @@ over |matched|, so the error is in what lands, not in its scale.
 |---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 2.2% | 0.5% | 0.1% | 2 |
 | Development (fixtures/pending, holdout.json `development`) | 32 | 5.0% | 5.9% | 3.6% | 25 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.4% | 4.8% | 4.9% | 12 |
-| Earlier pending (imported before the hold-out split) | 23 | 3.8% | 2.0% | 1.1% | 15 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.3% | 4.8% | 4.9% | 12 |
+| Earlier pending (imported before the hold-out split) | 23 | 3.7% | 2.0% | 1.1% | 15 |
 
 ## By operator (every log but the hold-outs)
 
@@ -50,10 +50,10 @@ over |matched|, so the error is in what lands, not in its scale.
 | chr_0002_endminm | 1 | 310 | 52.6% | 2.9% | 2.1% |
 | chr_0003_endminf | 2 | 162 | 45.1% | 1.2% | 5.9% |
 | chr_0004_pelica | 11 | 1076 | 78.3% | 12.3% | 18.4% |
-| chr_0005_chen | 6 | 810 | 30.2% | 8.3% | 1.6% |
+| chr_0005_chen | 6 | 810 | 30.2% | 7.9% | 1.6% |
 | chr_0006_wolfgd | 7 | 808 | 79.6% | 12.6% | 15.0% |
 | chr_0007_ikut | 2 | 257 | 93.4% | 1.9% | 20.5% |
-| chr_0009_azrila | 4 | 388 | 13.1% | 83.0% | 2.8% |
+| chr_0009_azrila | 4 | 388 | 13.1% | 82.7% | 2.5% |
 | chr_0011_seraph | 7 | 266 | 87.6% | 0.0% | 1.5% |
 | chr_0012_avywen | 2 | 186 | 68.3% | 28.5% | 0.3% |
 | chr_0013_aglina | 15 | 1174 | 84.4% | 7.9% | 3.2% |
@@ -65,7 +65,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | chr_0020_meurs | 1 | 252 | 75.8% | 13.9% | 0.9% |
 | chr_0021_whiten | 5 | 289 | 53.3% | 3.1% | 5.1% |
 | chr_0022_bounda | 1 | 56 | 89.3% | 0.0% | 4.3% |
-| chr_0024_deepfin | 4 | 169 | 36.7% | 20.1% | 6.4% |
+| chr_0024_deepfin | 4 | 169 | 36.7% | 20.1% | 6.6% |
 | chr_0025_ardelia | 11 | 1470 | 78.3% | 10.7% | 3.5% |
 | chr_0026_lastrite | 4 | 156 | 67.3% | 0.6% | 3.6% |
 | chr_0027_tangtang | 2 | 265 | 56.6% | 21.5% | 5.4% |

@@ -4,9 +4,26 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 148 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 149 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: The lead: the check's own-buff fix adopted, the two accuracy rounds merged
+
+- **Goal:** merge the two parallel accuracy rounds of 2026-11-26 (damage factors; the enemy's clock) and apply what
+  the damage-factors round held back because the check was the other agent's file.
+- **Merged:** both rounds. The only conflicts were in docs/roadmap.md, docs/roadmap-details.md and docs/tried/README.md,
+  where both sides added text; I combined them.
+- **Adopted:** the check's loggedEntries now matches an unjudged kit buff's listed entry only against its own game
+  buff's engine modifiers. Before, Ember's Pay the Ferric Price was dropped as one of Thermite Cutter's +0.09 layers in
+  7e19. The held-back diff is deleted, as docs/tried/README.md says.
+- **Scoreboard** (`npm run snapshots:update`):
+  - hold-out plain 79.0 → 80.4%, mismatch 5.9 → 5.6%, mean |damage error| 8.5 → 8.4% (3 better, 0 worse);
+  - development and verified unchanged;
+  - earlier pending's mean |damage error| 4.2 → 4.1%, with 0c14 −4.9 → −3.4% and 7e19 better.
+- **Still held back:** the 0c14 diff (Si's away press, hard-coded) and the life-end landings diff (mixed). Both need
+  general rules in the replay: an enemy-absent away state, and a hitless press inferred from a buff only its hit gives.
+  They are next steps, not adoptions.
 
 ## 2026-11-26: The enemy's clock: combos hold every clock more than their stops; no pause while the enemy is away
 
@@ -343,38 +360,3 @@ report, not changed.
 **Left:** 4d60's 3.6–6.1 s of unlogged holds (its Stagger window takes none); Arcane's bursts (test 33's element, the
 burst's clock across her own ultimate's stop); Zhuang Fangyi's d774 104.18 s Empyrean battle skill (3 logged hits, no
 final, the replay 8 and the final).
-
-## 2026-11-24: Misprediction candidates: logged-as buffs, the enemy's HP, Ardelia's chain
-
-**Goal:** work through the misprediction analysis's candidates (docs/analysis/2026-11-24-misprediction-stats.md): the
-weapon "ready" buffs, the rest of the ×1.5 band, the fight-wide factors below the offsets screen, then the one-buff
-list's largest; root cause and fix, or ruled out with why.
-
-**Done** (the analysis's follow-up section; open-problems "Misprediction statistics"):
-- **The "ready" buffs were a double count.** The consuming cast's hits list the attached buff with the modifier
-  (`_valid`), not the kit buff's modifier-less gameBuff (`_exist`): the check added both (59 hits in 0c14, 7e19, d4fb,
-  a27b). `loggedAs` on Grand Vision's and Glorious Memory's buffs, Aspirant's, Cohesive Traction's, and Yvonne's ultimate
-  states (P5 child, 5082's 72 hits; found by scripts/probes/stats/doublecount.py).
-- **The enemy's HP from a kill's total, in lives** (engine assumption `enemy-hp`, buffreplay.ts loggedEnemyHp): the
-  replay had an HP only when the total was the data's Max HP. Chen Qianyu's P1 below half (d4fb ×1.16 below, ×1.00
-  above; in-game test 69 decided from a27b) and Alesh's P5 ultimate (×1.5 below half: a9d7 6 of 6 over Si's two lives).
-- **Ardelia's ×1.5 basic attacks were placements:** attacks 1 and 2 share a key; after attack 3 and a combo the
-  placement took an older attack 1's window (logcasts.ts choose: the latest basic cast says the step).
-- **Si's Amp in 9c0b:** her ultimate pressed before the log's first hit, skipped for energy the log can't show; made now.
-- **Ruled out:** Liino's 7910 / af7b factors as builds (fit-build fits her clean hits as exported; the screen is right).
-
-**Scoreboard** (`npm run snapshots:update`): development plain 67.1 → 67.8%, matched 83.5 → 83.9%, mismatch 11.6 →
-11.5%, mean |damage error| 7.2 → 7.0%; hold-out plain 77.6 → 78.3%, mismatch 6.2 → 5.9%, mean |damage error| 8.0 →
-8.5% (2 better, 4 mixed, per hit closer; the total that moved most came with the "ready" fix, which exposed an
-under-prediction the double count hid, as in 7e19); earlier pending plain 63.7 → 64.2%, 4.5 → 4.4%; all but the
-hold-outs 5.7 → 5.5%. Better: d4fb +9.6 → +0.5% (plain 465 → 516), 9c0b −4.9 → +3.0% (367 → 410), a9d7 −5.0 →
-−1.8%, c4f3 −5.0 → −3.1% (214 → 242), 5082, a27b. Totals worse with per-hit closer: 7e19 +2.0 → −6.6% (the
-Endministrator +21.9 → +2.3% exposed Ember's −21.5% and Chen's ×1.15), 0c14 −3.5 → −4.9%, 4e36 and de6a (matched
-closer, replay-only landings left). Teams (team-ab against a4f6ddb): every team's fight the same (the log check's changes only).
-
-**Decisions:** the HP rule behind an assumption (the stage pools are a kill's total, not seen in any data file); lives
-only where an away stretch starts at a multiple of Max HP (Si's eight fights all show it). The pre-log ultimate rule
-only before the first hit: every unseen ultimate made regardless made 1cd1 −19.5% (docs/tried/).
-
-**Left:** Liino's ultimate Amp starts later in the replay than in the game (1cd1, af7b: the replay's stop of her
-ultimate covers teammates' logged hits); 7e19's Chen ×1.15; the one-buff list's rest.
