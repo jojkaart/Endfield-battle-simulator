@@ -38,6 +38,7 @@ import {
   formatReactionCheck,
   groupsCliReport,
   assumedCliReport,
+  boundariesCliReport,
   hitsReport,
   importBattle,
   offsetsReport,
@@ -66,7 +67,7 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
-export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "clock", "holds", "ramp", "clocks", "worldtime"]);
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime"]);
 export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
 
 export default command({
@@ -257,6 +258,11 @@ export default command({
                                           first fitting reading): by kind, kind set, event and kind, folded label
                                           (default: every development log with it; cached as hits; --workers n)
                 [--kind <set>]            The hits of one kind set (crit, boundary+logListing, …); --top n rows
+  efsim zmdlogs boundaries <fixture…|--all>  Kit buffs listed at a hit's boundary (the log can't say whether they
+                                          applied): per kit buff and side (the run's start or its end), how many
+                                          hits read with it, without it, both, neither: a boundary rule's base rate
+                                          before a measure (cached as hits; --operator: their hits; --workers n)
+                [--kit-buff <regex>]      Only the kit buffs (owner:id) matching
 The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 and operators by name):
   efsim zmdlogs instances <fixture>       Every real cast as the log means it (loggedSkillInstances): placed from its
                                           hits (combos log no cast event), with the log's cast events of it (an
@@ -590,6 +596,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     if (sub === "groups") {
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
       return groupsCliReport(data, values.operator[0] as string, selection, { workers: values.workers, verbose: values.verbose, cache: !values["no-cache"], assume, progress });
+    }
+    if (sub === "boundaries") {
+      if (values["kit-buff"].length > 1) throw new Error("zmdlogs boundaries takes one --kit-buff <regex>");
+      return boundariesCliReport(data, selection, { workers: values.workers, operators, ...(values["kit-buff"][0] !== undefined ? { kitBuff: new RegExp(values["kit-buff"][0]) } : {}), cache: !values["no-cache"], assume, progress });
     }
     if (sub === "assumed") {
       if (values.operator.length !== 1) throw new Error("zmdlogs assumed takes one --operator <op> (an id, its name or part of the id) and optional fixtures (--kind <set>, --top n)");

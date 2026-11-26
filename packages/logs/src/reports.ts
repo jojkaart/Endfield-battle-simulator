@@ -21,6 +21,7 @@ import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } fr
 import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
 import { assumedView } from "./assumedview.ts";
 import { hitOfRecord, listedEntryWords, sameListingLines } from "./listingview.ts";
+import { boundaryRows, boundaryView } from "./boundaryview.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -334,6 +335,17 @@ export async function assumedCliReport(data: () => GameData, operator: string, s
   const assume = opts.assume ?? {};
   const records = await collectRecords(data, files, opts.workers, { operators: [id] }, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
   return assumedView(records, id, { fixtureLabel, ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
+}
+
+/**
+ * `efsim zmdlogs boundaries <fixture…|--all>`: per kit buff and side, whether its boundary hits read with it or without
+ * it (boundaryview.ts), from the cached hit records (`--operator`: those operators' hits).
+ */
+export async function boundariesCliReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly kitBuff?: RegExp; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+  const assume = opts.assume ?? {};
+  const files = withOperatorsOnly(selectedFiles(sel, "boundaries"), opts.operators, opts.progress);
+  const records = await collectRecords(data, files, opts.workers, opts, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
+  return boundaryView(boundaryRows(data(), records, readLogFixture, opts.kitBuff ? { kitBuff: opts.kitBuff } : {}), files.length);
 }
 
 /**
