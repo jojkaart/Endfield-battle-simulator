@@ -62,6 +62,14 @@ export const SNAPSHOT_TOTALS_KEY = "totals";
  */
 export const SHARE_KEYS = { matched: "share matched", replayOnly: "share replay-only", logOnly: "share log-only" } as const;
 
+/**
+ * The totals key of an operator's share of the fight's logged total (%, to 0.1; round 16, the totals-off report point
+ * 2: the scoreboard's by-operator mean read as a fight metric while each is the operator's own error, dominated by
+ * small totals). It describes, never a verdict (a `share ` key: scripts/accuracy.ts `direction` leaves it out); the
+ * scoreboard weights each operator's error by it.
+ */
+export const operatorShareKey = (operator: string) => `share operator ${operator}`;
+
 export interface SnapshotEntry {
   /** Per operator its verdict counts, and under SNAPSHOT_TOTALS_KEY the totals' errors in % (engineReport errors) and the shares (SHARE_KEYS). */
   readonly entry: Record<string, Record<string, number | null>>;
@@ -85,6 +93,8 @@ export function snapshotEntry(raw: GameData, fx: LogFixture, opts: Pick<ReplayOp
   const report = engineReport(data, fx, replay, byHit, verdicts);
   const shares = totalsShares(fx.hits, report.totals);
   const r1 = (x: number) => Math.round(x * 10) / 10 + 0; // + 0: no -0 in the snapshots
-  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly) };
+  const logged = report.totals.logged;
+  const operatorShares = Object.fromEntries(Object.keys(logged.perOperator).map((op) => [operatorShareKey(op), logged.damage ? r1((100 * (logged.perOperator[op] ?? 0)) / logged.damage) : null]));
+  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares };
   return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares, oneSided: report.totals.oneSided, replay, byHit, verdicts };
 }

@@ -27,7 +27,7 @@ import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSyn
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { changedLogs, readSnapshots, snapshotsAt } from "./accuracy.ts";
+import { addedKeysOnly, changedLogs, readSnapshots, snapshotsAt } from "./accuracy.ts";
 import { doneJob, type Runner } from "./done-line.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { printHelp } from "./usage.ts";
@@ -103,7 +103,11 @@ async function regenerate(costs: boolean, ref: string, run: Runner, onKill: (f: 
   await run(["git", "--no-pager", "diff", "--stat", ref, "--", "tests/snapshots", "docs/accuracy.md", "tests/slow/pending-costs.json"]);
   await run(["node", "scripts/accuracy.ts", "--compare", ref]);
 
-  const changed = changedLogs(snapshotsAt(ref), readSnapshots());
+  const [before, after] = [snapshotsAt(ref), readSnapshots()];
+  // Entries that only gained totals keys (a describing key: round 16's `share operator <id>`), no value moved.
+  const added = addedKeysOnly(before, after);
+  if (added.logs) process.stdout.write(`snapshots: keys added only in ${added.logs} log(s), no existing value moved there: ${[...added.kinds].map(([k, n]) => `${k} ×${n}`).join(", ")}\n`);
+  const changed = changedLogs(before, after);
   const knockOns = testsNaming(
     changed,
     defaultTestFiles().map((path) => ({ path, text: readFileSync(join(ROOT, path), "utf8") })),
