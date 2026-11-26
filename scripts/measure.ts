@@ -40,7 +40,9 @@
 //                       each changed file's diff alone on --base (`--group a,b` puts the files under these path
 //                       prefixes into one part; repeatable; `--only a,b` instead: those files one part and every
 //                       other file one more, two parts for "did these move it"); commits, each commit of --base..the
-//                       code against its parent (the working tree's own changes the last). Each part is measured only on the logs the
+//                       code against its parent (the working tree's own changes the last). Files that import a name
+//                       another changed file adds go in one part on their own (importLinks: a new export and its
+//                       users can't run apart; round 16). Each part is measured only on the logs the
 //                       whole change moved, so a split costs about one measure of those per part. Not with --variant,
 //                       --patch or --live
 //   --patch <file>      measure the code with this diff applied on top (git apply; the code at --at, else the tree
@@ -675,7 +677,7 @@ const NOT_CODE = (f: string) => f.startsWith("docs/") || f.endsWith(".md") || f.
  * two parts: the files under them and every other code file (0c14-and-operator-curve report point 4: which of two files
  * moved 9c6e took five parts, 35 minutes).
  */
-export function splitGroups(files: readonly string[], groups: readonly string[], only?: string): { readonly label: string; readonly files: readonly string[] }[] {
+export function splitGroups(files: readonly string[], groups: readonly string[], only?: string, links: readonly (readonly string[])[] = []): { readonly label: string; readonly files: readonly string[] }[] {
   const code = files.filter((f) => !NOT_CODE(f));
   if (only !== undefined) {
     const ps = only.split(",").map((p) => p.trim()).filter(Boolean);
@@ -689,13 +691,77 @@ export function splitGroups(files: readonly string[], groups: readonly string[],
   const out: { label: string; files: string[] }[] = prefixes.map((ps) => ({ label: ps.join(", "), files: [] }));
   const hold: string[] = [];
   const alone: { label: string; files: string[] }[] = [];
+  // Files linked by a new export (importLinks), none of them under a --group: one part, its files named.
+  const linked = new Map<string, { label: string; files: string[] }>();
   for (const f of code) {
     const g = prefixes.findIndex((ps) => ps.some((p) => f === p || f.startsWith(p.endsWith("/") ? p : `${p}/`) || f.startsWith(p)));
     if (g >= 0) (out[g] as { files: string[] }).files.push(f);
     else if (f.startsWith("fixtures/holdout/")) hold.push(f);
-    else alone.push({ label: f, files: [f] });
+    else {
+      const link = links.find((l) => l.includes(f));
+      if (!link) {
+        alone.push({ label: f, files: [f] });
+        continue;
+      }
+      const key = link.join("|");
+      const part = linked.get(key) ?? { label: "", files: [] };
+      part.files.push(f);
+      linked.set(key, part);
+      if (part.files.length === 1) alone.push(part);
+    }
   }
+  for (const part of linked.values()) part.label = part.files.length > 1 ? `${part.files.join(" + ")} (linked by a new export)` : (part.files[0] as string);
   return [...out.filter((g) => g.files.length), ...alone, ...(hold.length ? [{ label: `fixtures/holdout/ (${hold.length} file(s))`, files: hold }] : [])];
+}
+
+/** The names a TypeScript text exports by declaration (export function / const / class / interface / type / enum), and from `export { … }`. */
+export function exportedNames(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of text.matchAll(/^export\s+(?:declare\s+)?(?:async\s+)?(?:function\*?|const|let|var|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/gm)) out.add(m[1] as string);
+  for (const m of text.matchAll(/^export\s+(?:type\s+)?\{([^}]*)\}/gm)) for (const n of (m[1] as string).split(",")) {
+    const name = n.trim().split(/\s+as\s+/).pop()?.replace(/^type\s+/, "").trim();
+    if (name) out.add(name);
+  }
+  return out;
+}
+
+/** A TypeScript text's named imports: each with the module specifier it comes from. */
+export function importedNames(text: string): { readonly from: string; readonly names: readonly string[] }[] {
+  return [...text.matchAll(/^import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+"([^"]+)"/gm)].map((m) => ({
+    from: m[2] as string,
+    names: (m[1] as string).split(",").map((n) => n.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]?.trim() ?? "").filter(Boolean),
+  }));
+}
+
+/**
+ * The changed TypeScript files that can't be measured apart (round 16, the slots-and-paths report point 3: a new
+ * export in paths.ts used by drivers.ts, timeline.ts and castassembly.ts made three parts "not measured alone", and
+ * the `--group` the message named a second run): a file importing a name another changed file adds (exported at the
+ * code, not at the base) is linked to it, through a relative import or a package's (`@efsim/<pkg>`: any changed file
+ * under packages/<pkg>/src/ adding it). The linked sets, each of two or more files, sorted.
+ */
+export function importLinks(files: readonly { readonly path: string; readonly text: string; readonly baseText: string | null }[]): string[][] {
+  const ts = files.filter((f) => f.path.endsWith(".ts"));
+  const added = new Map(ts.map((f) => {
+    const before = f.baseText === null ? new Set<string>() : exportedNames(f.baseText);
+    return [f.path, new Set([...exportedNames(f.text)].filter((n) => !before.has(n)))] as const;
+  }));
+  const parent = new Map(ts.map((f) => [f.path, f.path]));
+  const find = (x: string): string => {
+    const p = parent.get(x) as string;
+    return p === x ? x : find(p);
+  };
+  const unite = (a: string, b: string) => parent.set(find(a), find(b));
+  for (const f of ts) {
+    for (const imp of importedNames(f.text)) {
+      const pkg = /^@efsim\/([a-z]+)/.exec(imp.from)?.[1];
+      const targets = imp.from.startsWith(".") ? ts.filter((t) => t.path === resolve("/", dirname(f.path), imp.from).slice(1)) : pkg ? ts.filter((t) => t.path.startsWith(`packages/${pkg}/src/`)) : [];
+      for (const t of targets) if (t.path !== f.path && imp.names.some((n) => added.get(t.path)?.has(n))) unite(f.path, t.path);
+    }
+  }
+  const sets = new Map<string, string[]>();
+  for (const f of ts) sets.set(find(f.path), [...(sets.get(find(f.path)) ?? []), f.path]);
+  return [...sets.values()].filter((s) => s.length > 1).map((s) => s.sort());
 }
 
 /**
@@ -763,7 +829,16 @@ async function splitParts(how: "files" | "commits", r: SplitRun): Promise<string
   const notes: string[] = [];
   if (how === "files") {
     const files = git(["diff", "--name-only", r.base, r.code]).split("\n").filter(Boolean);
-    const groups = splitGroups(files, r.groups, r.only);
+    // A file and the changed files whose new exports it imports: one part (importLinks).
+    const show = (ref: string, f: string) => {
+      try {
+        return execFileSync("git", ["show", `${ref}:${f}`], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 << 20 });
+      } catch {
+        return null;
+      }
+    };
+    const links = r.only !== undefined ? [] : importLinks(files.filter((f) => f.endsWith(".ts") && !NOT_CODE(f)).map((f) => ({ path: f, text: show(r.code, f) ?? "", baseText: show(r.base, f) })));
+    const groups = splitGroups(files, r.groups, r.only, links);
     const left = files.filter(NOT_CODE).length;
     if (!groups.length) return [head, `  nothing to split: no code file changed (${left} doc or test file(s) left out)`];
     const patches = join(ROOT, "scratch/measure/patches");
