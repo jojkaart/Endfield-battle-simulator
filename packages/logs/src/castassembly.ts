@@ -136,31 +136,61 @@ function chancePathHits(kit: OperatorKit, skillId: string): { readonly trigger: 
  * The chance jumps of the replay's casts that the log's listing decides (ReplayedCast.chanceJumps): a jump whose path
  * has a hit applying a buff the log lists (chancePathHits) was taken where a run of that buff starts at the hit's logged
  * landing (its `since` within a frame of it), and not where the log lists the buff somewhere in the fight but none of
- * its hits in LISTED_AFTER_MS after the landing does (a running one, refreshed or not, leaves it to the roll). Alesh's
- * Rare Fin (2026-11-26): her P3 team ATK, which only the Rare Fin's slam gives, is listed from exactly the slam's
- * logged ms in every development log (0c14 60.13 s, 4e36 20.33 and 32.92 s, a9d7 12.52, 39.82 and 61.52 s), where
- * the hits' values are ×1.5–1.6 the normal path's; the replay had rolled the path (0c14 199.57 s: a Rare Fin hook the
- * log hasn't), and the placement matches either path's hits by their frames, the same from the cast's start.
+ * its hits in LISTED_AFTER_MS after the landing does. A run already going there keeps its `since` when refreshed, so
+ * it says which by its end: listed until at least the buff's duration after the landing, refreshed (taken); its last
+ * listing sooner than that, with hits after it that don't list it, not (4e36's 42.96 s slam: the run since 32.92 s ends
+ * at 47.3–47.6 s, a refresh would last to 53 s; its hits ×1.14 the normal path's, not ×1.6); else undecided (rolled).
+ * Alesh's Rare Fin (2026-11-26): her P3 team ATK, which only the Rare Fin's slam gives, is listed from exactly the
+ * slam's logged ms in every development log (0c14 60.13 s, 4e36 20.33 and 32.92 s, a9d7 12.52, 39.82 and 61.52 s),
+ * where the hits' values are ×1.5–1.6 the normal path's; the replay had rolled the path (0c14 199.57 s: a Rare Fin
+ * hook the log hasn't), and the placement matches either path's hits by their frames, the same from the cast's start.
  */
-export function listedPaths(kits: readonly OperatorKit[], fx: Pick<LogFixture, "hits">, casts: readonly ReplayedCast[]): ReplayedCast[] {
+export function listedPaths(data: GameData, kits: readonly OperatorKit[], fx: Pick<LogFixture, "hits" | "team">, casts: readonly ReplayedCast[]): ReplayedCast[] {
   const listedAnywhere = new Set(fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects].map((e) => e.buff)));
   return casts.map((c) => {
     if (c.chanceJumps || c.landings.length === 0) return c;
     const kit = kits.find((k) => k.operator === c.operator);
-    const paths = kit ? chancePathHits(kit, c.skillId) : [];
+    const build = fx.team.find((b) => b.operator === c.operator);
+    const paths = kit && build ? chancePathHits(kit, c.skillId) : [];
     const out: Record<string, boolean> = {};
     for (const p of paths) {
-      if (out[p.trigger] !== undefined) continue;
+      if (out[p.trigger] !== undefined || !kit || !build) continue;
       const landing = c.landings.find((l) => l.hitId === p.hit.id || l.hitId === p.other?.id);
       const names = p.buffs.filter((g) => listedAnywhere.has(g));
       if (!landing || !names.length) continue;
       const m = landing.ms;
       const listings = fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects].filter((e) => names.includes(e.buff)).map((e) => ({ t: h.t, since: e.since })));
+      const after = listings.filter((e) => e.t > m && e.t <= m + LISTED_AFTER_MS);
       if (listings.some((e) => e.since !== undefined && Math.abs(e.since - m) <= LISTED_SINCE_MS)) out[p.trigger] = true;
-      else if (!listings.some((e) => e.t > m && e.t <= m + LISTED_AFTER_MS) && fx.hits.some((h) => h.t > m && h.t <= m + LISTED_AFTER_MS)) out[p.trigger] = false;
+      else if (!after.length && fx.hits.some((h) => h.t > m && h.t <= m + LISTED_AFTER_MS)) out[p.trigger] = false;
+      else {
+        // A run going on: by its end against the buff's duration from the landing.
+        const ms = hitBuffMs(data, build, kit, p.hit, c.skillId);
+        const since = after[0]?.since;
+        if (ms === null || since === undefined) continue;
+        const last = Math.max(...listings.filter((e) => e.since === since).map((e) => e.t));
+        if (last >= m + ms) out[p.trigger] = true;
+        else if (fx.hits.some((h) => h.t > last && h.t < m + ms && !listings.some((e) => e.t === h.t))) out[p.trigger] = false;
+      }
     }
     return Object.keys(out).length ? { ...c, chanceJumps: out } : c;
   });
+}
+
+/** The shortest duration (ms) of a kit hit's own buffs with game buffs, or null (none, or one that needs a fight). */
+function hitBuffMs(data: GameData, build: LogFixture["team"][number], kit: OperatorKit, hit: KitHit, skillId: string): number | null {
+  let out: number | null = null;
+  for (const b of hit.buffs ?? []) {
+    const def = kit.buffs.find((d) => d.id === b.buff);
+    if (!def?.gameBuff) continue;
+    try {
+      const a = applyBuff(data, build, computeStats(data, build), skillId, def, 0);
+      if (a && Number.isFinite(a.expiresAt)) out = Math.min(out ?? Infinity, (a.expiresAt * 1000) / FPS);
+    } catch (e) {
+      if (!readingDoesNotApply(e)) throw e;
+    }
+  }
+  return out;
 }
 
 /**
@@ -748,7 +778,7 @@ export function assembleCasts(data: GameData, fx: LogFixture, placement: Placeme
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
   // Engine assumption listed-casts: with `inferred`, the casts the log shows only by a buff one of their hits alone gives.
   const listedCasts = (assume["listed-casts"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "listed-casts")?.default) === "inferred";
-  const paths = listedPaths(kits, fx, castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement))))))))));
+  const paths = listedPaths(data, kits, fx, castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement))))))))));
   return listedCasts ? castsFromHitBuffs(kits, fx, paths) : paths;
 }
 
