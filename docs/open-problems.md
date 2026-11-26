@@ -98,24 +98,43 @@ inference reads (57 of Rossi's).
   Morale 15.97 → 34.03 s (the log's 34.04 s Breach), d4fb's 194.43 s layer (none in the log) gone, 174.50 s (log
   174.03 s). A Breach now takes its applier's Arts Intensity after its hit's before-damage triggers (timeline
   landing.ts: the data's SP before its FractureAction, so the bank's layer counts). Pogranichnik plain 41.9 → 52.1%,
-  Chen 38.8 → 43.0% (docs/accuracy.md). **Still open:** d4fb 86.67 s (the bank reaches 80 at a harass 0.3 s later in
-  the replay: its Breach and hit ×1.074 without the layer); c4f3 13.07 s's Breach consumed three stacks in the replay, four in the game (its combo's
-  path says so; the battle skill's SP is atb3 where the game's was atb4); the harasses' layers on whom (c4f3 68.83 s
-  on Pogranichnik in the log, the replay's at 71.17 s twice); a9d7 197.07 s (a layer the log lists from 205.06 s).
+  Chen 38.8 → 43.0% (docs/accuracy.md). **Fixed 2026-11-26 (a stop's batched landings):** c4f3 13.07 s's Breach
+  consumed three stacks in the replay, four in the game: a knock-on of the batch at 7.05 s (Chen's Shatter, below); with
+  the batch's order every Breach or Crush before a combo whose path its values decide consumes the path's stacks
+  (scripts/probes/physical/breach-path.ts, 25 combos). d4fb 86.67 s: the layer listed since the Breach is talent 2's,
+  from his ultimate's follow-up on his own Breach, which comes with the data's FractureAction before the battle skill's
+  DamageAction (the follow-ups `beforeDamage`); the bank's layer came at the follow-up's harass 0.3 s later in the
+  replay, which the log has 1.3 s later (87.97 s, beside the combo's own follow-up layer: two since 87966). And a hit's
+  bank gains with its SP before the damage raise their trigger then (landing.ts: d4fb 47.92 s, the slash with the
+  layer it made). d4fb plain 516 → 844, de6a 71 → 287, a9d7 282 → 333, c4f3 398 → 464. **Still open:** the harasses'
+  delays (logged 0.6–1.3 s after their event, the kit's frame 9 is 0.3 s: d4fb 78.34 → 78.95, 84.18 → 85.42, 86.67 →
+  87.97 s; the placement then takes d4fb's 88.55 s harass and 89.82 s Assault as an ultimate the replay doesn't cast);
+  c4f3 92.93 and 147.41 s (a layer short, ×1.10: an earlier layer's end), a9d7 239.40 s (a layer too many, ×0.93); the
+  harasses' layers on whom (c4f3 68.83 s on Pogranichnik in the log, the replay's at 71.17 s twice); a9d7 197.07 s (a
+  layer the log lists from 205.06 s).
   de6a 26–61 s ×1.004 on every Pogranichnik hit and the ×1.003 on the Endministrator's d4fb fallbacks: a small
   factor not traced.
-- **Estella's set and Susceptibility on Chen in c4f3** (`log only`, 29 and 16 hits, ×1.15–1.33): the replay lacks them.
-  **Found (2026-11-26, not fixed): they are one batch's order at 7.05 s.** Every one of these hits is in 8.25–22.4 s,
+- **Estella's set and Susceptibility on Chen in c4f3** (`log only`, 29 and 16 hits, ×1.15–1.33). **Fixed 2026-11-26
+  (a stop's batched landings): the order of the hits the log stamps with one ms is its Stagger bars'.** The log flushes
+  every ~100 ms and at a stop's end, so a batch's hits are up to three frames apart, in an order the log keeps only in
+  each Stagger event's bar (before less dealt: 274 → 264 Estella's combo and the Shatter, 254 → 234 her ultimate, 234 →
+  224 Chen's combo and the Lifts; the earlier note read the bars backwards). The replay lands pinned landings at one
+  ms in that order (castassembly.ts `batchOrder`, the engine's `loggedOrder`); over the development logs' 60 pairs of
+  two operators' events at one ms the bars follow neither the IDs (28 right), the team's order (39) nor the casts' starts
+  (29 of 44: why docs/tried/2026-11-24-same-ms-cast-order.diff was mixed), so simulations keep the ID order
+  (scripts/probes/physical/batch-rules.ts). c4f3 plain 275 → 398, −3.4 → −1.4%; 3f78 91 → 147, −3.7 → 0.0%; a9d7, 4bfc
+  (Arclight's burst now matched, Zhuang Fangyi's replay-only one gone), b7b3 (Tangtang's shot read as an exact crit)
+  and hold-outs 2 better. **Still open:** at 7.05 s Estella's combo, Shatter and first Lift read with her weapon's
+  ATK +0.42 (buff_wpn_lance_0004_atk_up, listed since 7049 ms: the Vulnerable her combo's Lift adds to a clean enemy),
+  her ultimate after them by the bars without it (plain); the weapon's trigger runs after the damage in the engine.
+  One batch only, not built. The earlier finding: every one of these hits is in 8.25–22.4 s,
   from the runs the log starts at 7.05 s (buff_common_affixes_vulnerable_physical and buff_equipsuit_usp_02_AddAttack
   from Estella, `zmdlogs lanes`). At 7.05 s the log batches seven hits: Chen's combo and its Lifts, Estella's ultimate,
   her combo (12416) and a Shatter credited to her combo (buff_common_cryst_triggered_physical_break, poise origin
   whiten_combo_skill). The replay (`zmdlogs replay`, 7.03 s) lands Chen's combo first, shatters the Solidification
   with it (a replay-only Chen Shatter, 11202) and so takes Estella's combo as its `not_solidified` variant (4345 against
   the logged 12416, ×2.86), which gives neither the Susceptibility nor the set's trigger; the log's NOLANDs there are
-  Estella's Shatter and two Lifts. **Next:** the order of the landings batched at a stop's end, or which hit of the
-  batch consumes the Solidification (castassembly.ts / the engine's landing order, another agent's files this round);
-  the log's Stagger bars (Chen's group at 224, Estella's ultimate 234, her combo 264) put Chen's combo first, so the
-  question is why it didn't shatter in the game (its Lift's physical on a Solidified enemy).
+  Estella's Shatter and two Lifts.
 - **Rossi's `unlogged own combo_crit`** (108 fallbacks with the listing): her combo's crit buff on hits where the
   engine reading also misses a Wolven Blood layer or a teammate's buff; not grouped further.
 - **Chen's Wolven Blood final's end** (c4f3 99.1 s in the log, 104.5 s in the replay). **Found 2026-11-26: a layer
