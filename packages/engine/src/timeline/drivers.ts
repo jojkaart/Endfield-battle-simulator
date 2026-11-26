@@ -186,7 +186,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   }
   if (opts.endsAt !== undefined && opts.endsAt > frame) {
     const end: PendingJump = { kind: "jump", frame: opts.endsAt, clock: { operator }, cast: { operator, index }, operator, from: opts.endsAt - frame, to: opts.endsAt - frame, end: true, pinned: true };
-    st = schedule(st, [end]);
+    // Its hits after the end don't land, detached ones too: the cut says none of them is in the log, which records every
+    // landing (c83c75d02a85: Si's combo final at 56.73 s, an ability entity's detached hit, 374k the log never shows).
+    const endsAt = opts.endsAt;
+    st = schedule({ ...st, scheduled: st.scheduled.filter((x) => !(x.kind === "hit" && !x.pinned && ofCast(x, operator, index) && x.frame > endsAt)) }, [end]);
   }
   // A taken chance jump at its trigger's frame (its delay, within the jump's frames), on the cast's clock as the
   // trigger's delayed action would be; a decided one's trigger doesn't run on the cast (no roll).
@@ -318,7 +321,8 @@ export interface ReplayCastOptions {
   /**
    * The cast ends at this frame (pinned: no stop or jump moves it), if it's still its operator's current action then:
    * a cut the log shows and no input does (the log check's unlogged tails, packages/logs replayrun.ts tailCuts: none of
-   * the cast's landings after its last logged one is in the log, the enemy there). What is detached by then goes on.
+   * the cast's landings after its last logged one is in the log, the enemy there). Its hits after it don't land,
+   * detached ones too (none is in the log); its other detached actions go on.
    */
   readonly endsAt?: number;
   /**

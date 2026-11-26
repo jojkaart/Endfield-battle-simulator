@@ -356,8 +356,14 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   Behaviour under slow-downs and freezes: [OPEN] (tests 4 and 37).
 - **Carry-over:** a Corrosion applied while one is running starts from the
   running one's shred (the stronger of that and its own start). It then
-  ramps to its own cap, which its first tick clamps to. [SETTLED] (the
-  wrapper's GetTargetBuffBBAdvanced; a7a7 plain 137 → 315)
+  ramps to its own cap. [SETTLED] (the wrapper's GetTargetBuffBBAdvanced;
+  a7a7 plain 137 → 315) A carried shred above its cap stays as it is for
+  the whole status: the tick adds and clamps only while the shred is below
+  the cap (buff_common_natural_natural_corrupt_do: CompareFloat
+  def_decrease > max_def_decrease gates both). [SETTLED] (7910: Ardelia's
+  forced level-1 Corrosion over Arcane's level 4 kept 25.5 points from
+  49.4 to 62 s, every hit ×1.099 against a clamp to its 14.2; 7910
+  −6.1 → 0.0%)
 - **Its own initial hit** (log key `buff_common_natural_triggered`) is dealt
   by the Nature wrapper before the status exists. So that hit sees neither
   its own shred nor what the new status triggers. [SETTLED] (accuracy plan

@@ -18,7 +18,16 @@ describe("unlogged tails (0c14's Rossi)", () => {
     const rossi = replay.tailCuts.filter((x) => x.cast.operator === ROSSI);
     expect(rossi.map((x) => [x.cast.skillId, Math.round(x.cast.start / 10) * 10])).toEqual([[SKILL, 35400]]);
     const last = Math.max(...(rossi[0]?.cast.landings ?? []).map((l) => l.frame));
-    expect(rossi[0]?.frame).toBe(last + 1);
+    expect(rossi[0]?.frame).toBe(last);
+  });
+
+  // c83c75d02a85: Si's combo final at 56.73 s comes a frame after her last logged slash (56.70 s); an end at the frame
+  // after that slash ran after the frame's hits (schedule.ts IN_FRAME) and let the final land (374k, 5.0% of the fight).
+  it("cuts a tail landing the frame after the last logged one (c83c's Si combo final)", () => {
+    const c83c = (devFixtures({ ids: ["c83c"] })[0] as { fx: Parameters<typeof logBuffReplay>[1] }).fx;
+    const r = logBuffReplay(data, c83c).replay;
+    const finals = r.hits.filter((h) => h.operator === "chr_0036_jsspsi" && h.skillId === "chr_0036_jsspsi_combo_skill" && h.hitId === "final" && h.frame >= 1695 && h.frame <= 1710);
+    expect(finals).toEqual([]);
   });
 
   it("lands none of its Lift, wolves or bleed; under `kept` they come back", () => {

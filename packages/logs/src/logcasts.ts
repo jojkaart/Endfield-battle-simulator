@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
 
@@ -416,6 +416,32 @@ function newCastStart(t: number, frame: number, stops: readonly TimeStop[], even
  * for an event of a skill the operator's kit doesn't have, the kit's skill in its slot (the log names the slot:
  * Typhoeus's battle skill normal_skill_floating_start as normal_skill, her hovering ultimate as ultimate_skill).
  */
+/** The buffs a predicate needs active (a `buffActive`, alone or in an `all`). */
+export function neededBuffs(p: Predicate | undefined): string[] {
+  if (!p) return [];
+  if ("buffActive" in p) return [p.buffActive];
+  if ("all" in p) return p.all.flatMap(neededBuffs);
+  return [];
+}
+
+/** Whether a condition (`not` a buff active: a branch's, a skill's availability) rules out a skill whose availability needs that buff. */
+export function excludes(branch: Predicate | undefined, available: Predicate | undefined): boolean {
+  const without = branch && "not" in branch ? neededBuffs(branch.not) : [];
+  return without.length > 0 && neededBuffs(available).some((b) => without.includes(b));
+}
+
+/**
+ * Whether two skills of a kind are one button's variants by their kits' availability: one is castable only without a
+ * buff the other needs (Laevatain's battle skill, `not` Twilight, and her Twilight battle skill, which needs it), a buff
+ * neither of them gives on its cast: not a skill and the follow-up its own cast makes ready (Purrchena's battle skill
+ * gives counter_ready, which her counter needs: 04d401ad257e, 99fb3c35fda2, where each logged press is the battle skill).
+ */
+export function buttonVariants(kit: Pick<OperatorKit, "triggers">, a: { readonly skillId: string; readonly kind: SkillType; readonly available?: Predicate }, b: { readonly skillId: string; readonly kind: SkillType; readonly available?: Predicate }): boolean {
+  const gives = (x: typeof a, buffs: readonly string[]) =>
+    kit.triggers.some((t) => t.on.event === "cast" && (t.on.skills ?? []).includes(x.skillId) && allActions(t.do).some((d) => d.kind === "buff" && buffs.includes(d.buff)));
+  return a.kind === b.kind && (excludes(a.available, b.available) || excludes(b.available, a.available)) && !gives(a, neededBuffs(b.available)) && !gives(b, neededBuffs(a.available));
+}
+
 export function castEventOf(eventSkill: string, skillId: string, kitSkills: ReadonlySet<string>): boolean {
   return skillId === eventSkill || (!kitSkills.has(eventSkill) && skillId.startsWith(eventSkill));
 }
@@ -805,7 +831,19 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     // 3.90 s, her seal at 7.02 s at frame 15 only after Jsspsi's and her own ultimates).
     const stopping = (fx.casts ?? []).filter((c) => c.operator !== build.operator && data.skills[c.skill]?.timing?.slowdowns.some((d) => Math.min(...d.scales) === 0));
     const events = (fx.casts ?? []).filter((c) => c.operator === build.operator && !stopping.some((x) => Math.abs(x.t - c.t) <= 1));
-    const eventsOf = (g: Group) => (g.kind === null ? [] : events.filter((e) => castEventOf(e.skill, g.skillId, kitSkills)).map((e) => e.t));
+    // A kit skill whose own keys the log never shows for the operator is logged in place of its button's other variant
+    // (buttonVariants): its cast events are the variant's (castassembly.ts variantCastOf; db8711232de9: Laevatain's
+    // battle-skill presses in Twilight, logged as normal_skill, are normal_skill_during_ult, the 27.13 s one held by Si's
+    // ultimate stop).
+    const shownKeys = new Set(mine.map((h) => h.event));
+    const kit = effectiveKit(data, build);
+    const kitSkill = new Map((kit?.skills ?? []).map((s) => [s.skillId, s]));
+    const shown = (skillId: string) => (kitSkill.get(skillId)?.hits ?? []).some((h) => h.events.some((e) => shownKeys.has(e)));
+    const variantEvent = (eventSkill: string, g: Group) => {
+      const [a, b] = [kitSkill.get(eventSkill), kitSkill.get(g.skillId)];
+      return kit !== null && kit !== undefined && a !== undefined && b !== undefined && eventSkill !== g.skillId && !shown(eventSkill) && shown(g.skillId) && buttonVariants(kit, a, b);
+    };
+    const eventsOf = (g: Group) => (g.kind === null ? [] : events.filter((e) => castEventOf(e.skill, g.skillId, kitSkills) || variantEvent(e.skill, g)).map((e) => e.t));
     /** One pass over the operator's logged hits; `starts` (by skill) picks among groups sharing a key. */
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {
       const placed = new Map<LogHit, PlacedHit>();

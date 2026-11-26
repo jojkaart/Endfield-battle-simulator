@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 157 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 158 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -44,6 +44,43 @@ kit buffs changing within 500 ms, Link the replay can't say, crits no inference 
 
 **Next / open:** Pogranichnik's Thermite Cutter and Fervent Morale, both on SP the log doesn't record, behind most of
 Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's Wolven Blood final end (a clock).
+
+## 2026-11-26: Fights outside 5%: a variant's cast event, detached tails, a carried Corrosion
+
+**Goal:** the development and earlier-pending fights whose totals are off by more than 5% (8915, 7b54, 6339, c6d8:
+stage logs; 9c6e, c83c, 7910, db87, e82d), split by operator and landing kind, fixed by mechanisms (open-problems
+"Fight totals", round 5).
+
+**Done:**
+- **db87 (−6.0 → −1.2%): a cast event logged as its button's other variant.** Every Twilight battle-skill hit was
+  ×1.3000, Link (1) from Camille's combo: the log records the presses as `normal_skill`, and the replay made each as a
+  forced normal_skill besides the placed normal_skill_during_ult; that phantom took the Link and landed an explosion
+  and ticks the log never shows. logcasts.ts `buttonVariants` (one castable only without a buff the other needs,
+  neither giving it on its cast: Purrchena's battle skill readies her counter, so it isn't one), castassembly.ts
+  `variantCastOf`; the placement times the variant from that event (the 27.13 s press before Si's ultimate stop).
+- **c83c (+7.9 → +1.9%): a tail cut takes detached landings.** Si's combo final (an ability entity's detached hit,
+  374k) a frame after her last logged slash survived the cut (at lastLogged + 1, after that frame's hits, detached
+  ones exempt). Now at the last logged landing's frame, dropping the cast's later hits, detached too (drivers.ts
+  `endsAt`). The hold-outs moved most from this.
+- **7910 (−6.1 → 0.0%): a carried Corrosion above its cap stays.** Hits 51–62 s ×1.099 (one resistance step, the same
+  +11.35 points for everyone) after Ardelia's forced level-1 Corrosion replaced Arcane's level 4: the data's tick
+  adds and clamps only below the cap (reactions.ts corrosionShred; combat-mechanics §3.5).
+
+**Scoreboard** (`measure --base 9e1904d` after merging main, then `npm run snapshots:update`): development mean
+|damage error| 6.8 → 6.3%, within 5% 25 → 28, plain 71.8 → 72.7%, mismatch 11.2 → 10.6%; hold-out 8.4 → 7.4% (4
+better, 1 mixed: plain −1, assumed +1), plain 82.1%; earlier pending plain 72.9 → 73.0%, 3.4 → 3.5% (4bfc −0.8 →
+−1.0%, 3aa6 mixed: plain +6, total 0.2 → 0.6%, d4fb better). Worse: 79cc 0.0 → −0.1%, 4bfc: replay-only tail
+landings removed from fights the replay under-predicts. team-ab (against 36e3bc8): only estella-si-akekuri-arcane
+(zero energy)'s 60 s timeline moved, +0.83% (the Corrosion rule); sustained DPS unchanged.
+
+**Decisions:** the Corrosion rule isn't an assumption (the data's gate is explicit and 7910's 143 hits fit it); the
+variant rule needs complementary availability, not the same kind alone (04d4 and 99fb lost 91 and 30 plain with
+kind only). Stage logs left (no enemy data for hsbear_hdg018 or wgabyss_hdg011). By-operator means are each
+operator's own total, mostly the stage logs and small totals (Liino's unlogged beats).
+
+**Left:** slots by value (9c0b's Hunter Pursuit, whose misplaced first landing sends its Link to the wrong cast;
+7910's rogue wave), e82d's Si combo final (Arcane's weapon WILL lines ×5 listed, ×2 in the engine), 9c6e (two
+targets). Friction report docs/friction/2026-11-26-totals-off.md.
 
 ## 2026-11-26: Alesh's Rare Fin: chance paths and a cast from the listing
 
@@ -333,40 +370,3 @@ type name clash across `export *` (ClockRow) at the first typecheck.
 - **Still held back:** the 0c14 diff (Si's away press, hard-coded) and the life-end landings diff (mixed). Both need
   general rules in the replay: an enemy-absent away state, and a hitless press inferred from a buff only its hit gives.
   They are next steps, not adoptions.
-
-## 2026-11-26: The enemy's clock: combos hold every clock more than their stops; no pause while the enemy is away
-
-**Goal:** the holds-and-placement round's leads, in order: db87's enemy-clock delay in a Stagger (its Corrosion 0.58 s
-past the replay's end, Combustion ticks 1.5 s apart), a burst's delay as a hold bound (9a80 35.05 s), 4d60's unlogged
-holds (a boss-phase pause?), d4fb 97.05 s; if time, freezes on Electrification / Solidification and a placement pass
-by quiet stretches.
-
-**Done** (open-problems "The enemy's clock", new; the four leads' paragraphs):
-- **Found: across a combo's stop every clock runs late** by a fifth to a half of what the stop list holds, across an
-  ultimate's on time (scripts/probes/combo-hold/): the enemy's tick chains in a Stagger 3.43 s over 87 pairs with a
-  combo against 0.02 s over 30 without; an operator's cast across a teammate's combo +263 ms median (112 casts);
-  bursts +181 ms (45); buff runs 0.45 × the combo-held time. db87's four tick pairs each span one combo.
-- **Ruled out:** Arcane's Imprisonment slowing the enemy's clock (SealAction's curve, over 1 s or its 6.6 s: the
-  ticks after a seal are on time; in-game test 37's Arcane part decided from the logs); a Stagger or the enemy's
-  actions (Staggered chains without combos run on their period); a longer ComboSkill curve (flat: verified 78.0 →
-  73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; a middle curve worse too; docs/tried/2026-11-26-combo-curve-flat.diff);
-  a burst's delay as a hold bound (placed holds don't hold bursts: 012a, 458b, 489c, 7910 on time across 0.10–0.42 s
-  of them); a pause of the operators' timers while the enemy is away (Xiranflow's 25 s layers on Zhuang Fangyi run on
-  time across 4d60's and d774's away windows); for d4fb 97.05 s a cooldown shared by the set's two wearers and one
-  restarted by every Physical status.
-- **Registered, not the default:** engine assumption `stagger-holds` (`combos`: the hidden holds may rise inside a
-  Stagger within a combo's stop, up to half its hold; holds.ts comboHoldSpans, placeHolds `slow`): development plain
-  69.0 → 69.2%, hold-out 79.0 → 79.2%, verified 78.0 → 77.5% (0eef), db87 −6.0 → −5.9% only.
-
-**Scoreboard:** no default changed, no verdict moved (`npm run snapshots:update`). No engine timing change (no smoke,
-no team-ab).
-
-**Decisions:** `stagger-holds` stays off with a verified log worse and db87 barely moved: the placement's least
-total takes the Stagger's 0.44 s from holds placed earlier, and nothing bounds the unlisted Corrosion past the
-replay's end. The burst bound wasn't built: its mechanism (dodges holding the operators' clocks) isn't what the bursts
-show. Not reached: Electrification / Solidification across a freeze (no listed run across one found in a first look,
-7910's Solidification unlisted), the quiet-stretch placement pass.
-
-**Problems:** the ComboSkill curve's measures waited behind another worktree's measures in the lock's queue (about
-10 min each); the probes' first cut (per tick pair) split a stop's time between neighbouring pairs, so only chain
-sums with whole stops inside are evidence.

@@ -77,8 +77,8 @@ export function artsIntensityEffect(ai: number): number {
  * buff_common_natural_natural_corrupt_triggered). `carried`: the shred a
  * Corrosion it replaced had then (the wrapper's GetTargetBuffBBAdvanced
  * copies its `def_decrease`; on its add the new one keeps the stronger of
- * that and its own start, and ramps from there to its own cap, which its
- * first tick clamps to).
+ * that and its own start, and ramps from there to its own cap; one above
+ * its cap stays as it is, unclamped).
  */
 export function corrosionShred(level: number, elapsedMs: number, applierAi: number, capScale = 1, scale = 1, carried = 0): number {
   const i = level - 1;
@@ -89,8 +89,12 @@ export function corrosionShred(level: number, elapsedMs: number, applierAi: numb
   const k = scale * artsIntensityEffect(applierAi);
   const start = Math.max(carried, initial * k);
   const ticks = Math.floor(Math.max(0, elapsedMs) / 1000);
-  // The cap holds from its first tick (each tick adds, then clamps); a carried shred above it stands until then.
-  return ticks === 0 ? start : Math.min(max * capScale * k, start + perSecond * k * ticks);
+  const cap = max * capScale * k;
+  // Each tick adds, then clamps to the cap, only while the shred is below the cap (buff_common_natural_natural_corrupt_do's
+  // tick: CompareFloat def_decrease > max_def_decrease gates the add and the clamp): a carried shred above the cap
+  // stands for the whole status (791020039384: Ardelia's forced level-1 Corrosion at 49.37 s over Arcane's level 4 kept
+  // its 25.5 points to 62 s, every hit ×1.099 against a clamp to 14.2).
+  return ticks === 0 || start >= cap ? start : Math.min(cap, start + perSecond * k * ticks);
 }
 
 /** Corrosion as a modifier: its shred adds back resistance points for every element (Physical included). */

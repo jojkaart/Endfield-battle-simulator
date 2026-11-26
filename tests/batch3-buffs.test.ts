@@ -62,6 +62,11 @@ describe("A1: a forced status's strength × the applying skill's scaleKey", () =
     expect(statusModifiers(applyToEnemy(heat, { kind: "infliction", element: "pulse" }, 0, op, 0).state, 1)[0]?.value).toBe(0.12);
     const corroded = applyToEnemy(NO_STATUS, { kind: "forcedReaction", status: "corrosion", scaleKey: "extra_scaling" }, 0, op, 0, scale).state;
     expect(statusModifiers(corroded, 30 * 5)[0]?.value).toBeCloseTo(corrosionShred(1, 5000, 0) * 1.33, 9);
+    // A carried shred above the new one's cap stands (the tick adds and clamps only below the cap: 7910's Ardelia
+    // level 1 over Arcane's level 4); one below it ramps from the carried value to the cap.
+    expect(corrosionShred(1, 10000, 0, 1, 1, 25.5)).toBe(25.5);
+    expect(corrosionShred(1, 2000, 0, 1, 1, 8)).toBeCloseTo(8 + 2 * 0.84, 9);
+    expect(corrosionShred(1, 10000, 0, 1, 1, 8)).toBe(12);
     const vulnerable = applyToEnemy(NO_STATUS, { kind: "vulnerable", stacks: 2 }, 0, op, 0).state;
     const breached = applyToEnemy(vulnerable, { kind: "physicalStatus", status: "breach", scaleKey: "extra_scaling" }, 0, op, 0, scale);
     expect(statusModifiers(breached.state, 1)).toMatchObject([{ zone: "damageTaken", element: "physical", value: 0.16 * 1.33 }]);

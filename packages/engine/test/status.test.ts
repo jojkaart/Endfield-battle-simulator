@@ -90,13 +90,14 @@ describe("statuses", () => {
     expect(s.statuses[0]).toMatchObject({ level: 1, appliedAt: 100, expiresAt: 100 + 450 });
   });
 
-  it("a Corrosion reapplied while one is on keeps the stronger of the old one's shred and its own start, and ramps to its own cap", () => {
+  it("a Corrosion reapplied while one is on keeps the stronger of the old one's shred and its own start, and ramps to its own cap (one above it stays)", () => {
     // Level 4 from 0: at frame 100 (3 whole seconds) 7.2 + 3 × 1.68 = 12.24; a level 1 then starts there, not at 3.6.
     const { s } = run([[0, { kind: "forcedReaction", status: "corrosion", level: 4 }], [100, { kind: "forcedReaction", status: "corrosion", level: 1 }]]);
     expect(s.statuses[0]?.carried).toBeCloseTo(12.24, 9);
     expect(statusModifiers(s, 100)[0]?.value).toBeCloseTo(12.24, 9);
-    // Its ramp from there (+0.84 a second), up to level 1's own cap (12): already above it, so held at 12 from its first tick.
-    expect(statusModifiers(s, 130)[0]?.value).toBeCloseTo(12, 9);
+    // Already above level 1's own cap (12): the tick adds and clamps only below the cap (corrupt_do's CompareFloat), so it
+    // stays at 12.24 (791020039384: 25.5 carried under a cap of 14.2, every hit ×1.099 against a clamp).
+    expect(statusModifiers(s, 130)[0]?.value).toBeCloseTo(12.24, 9);
     // Over a weaker one, its own start: a level 1 at 0, a level 4 at 30 starts at 7.2, not at 3.6 + 0.84.
     const { s: up } = run([[0, { kind: "forcedReaction", status: "corrosion", level: 1 }], [30, { kind: "forcedReaction", status: "corrosion", level: 4 }]]);
     expect(statusModifiers(up, 30)[0]?.value).toBeCloseTo(7.2, 9);
