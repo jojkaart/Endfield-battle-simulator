@@ -304,6 +304,18 @@ describe("Rossi's equipment kits", () => {
     expect(layers(run(scenario(), chain))).toBe(0);
   });
 
+  it("Lupine Scarlet: a status's damage that crits adds a layer too (abilityEvent 44, any crit: a9d7's Chen, d572's Rossi at their Lifts' crits)", () => {
+    // Two battle skills: the first Lift gives the enemy its first Vulnerable stack, the second Lifts it, whose
+    // physical-status hit crits under `always`.
+    const s = run(scenario({}, "always"), [r("normal_skill"), r("normal_skill", 4 * 30)], 6 * 30);
+    const layers = s.buffs.filter((b) => b.id === "wpn_sword_0022.layer").length;
+    const kitHits = mine(s).filter((h) => !h.skillId.startsWith("reaction:")).length;
+    const statusHits = mine(s).filter((h) => h.skillId === "reaction:lift");
+    expect(statusHits).toHaveLength(1);
+    expect(statusHits[0]?.crit).toBe(true);
+    expect(layers).toBe(kitHits + 1);
+  });
+
   it("Rapid Ascent: battle-skill and ultimate Physical DMG +0.42; DMG +0.98 against a Staggered enemy on every hit (interim: the data's reading)", () => {
     const ra = { weapon: { id: "wpn_sword_0011", level: 90, skillLevels: [9, 9, 9] } };
     const s = run(scenario(ra), [r("attack1"), r("normal_skill"), r("normal_skill")]);

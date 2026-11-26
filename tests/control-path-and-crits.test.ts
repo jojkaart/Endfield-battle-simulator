@@ -4,9 +4,9 @@
 //   0c14's 154.09 s (Si controlled) and 2fd9's 8.71 s (Mi Fu); with her controlled (0c14's 44.39 s), the controlled
 //   path (d572's 9.89 s stays hit_ai: the placement put 7 landings in one cast of 5 hits, so they aren't moved);
 // - a crit-unknown hit's crit read from its value in the totals (engine assumption totals-crits `read`): 0c14's Rossi
-//   ultimate stab at 25.45 s, 8,790, her crit reading ×0.993, counted at it, not at expected crits (its final at
-//   27.74 s, the round's case at ×1.032, reads exactly since Alesh's 12.0 s combo from the listing:
-//   listed-paths.test.ts).
+//   combo at 165.49 s, 55,903, her crit reading ×0.988, counted at it, not at expected crits (×0.82). The round's
+//   cases now read exactly: her ultimate's final at 27.74 s since Alesh's 12.0 s combo from the listing
+//   (listed-paths.test.ts), the stab at 25.45 s (8,790) since a Lift's crit adds a Wolven Blood layer (2026-11-26).
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, devFixtures, engineHits, engineReport, logBuffReplay } from "@efsim/logs";
@@ -38,13 +38,13 @@ describe("totals-crits", () => {
     const replay = logBuffReplay(data, fx, undefined, { assume });
     const byHit = engineHits(data, fx, replay);
     const t = engineReport(data, fx, replay, byHit, checkLog(data, fx, { replay, engineHits: byHit })).totals;
-    return t.parts.find((p) => p.logged?.operator === ROSSI && p.logged.t === 25446 && p.logged.value === 8790)?.damage;
+    return t.parts.find((p) => p.logged?.operator === ROSSI && p.logged.t === 165486 && p.logged.value === 55903)?.damage;
   };
   it("counts a crit-unknown hit at the crit its value shows under `read`, at expected crits under `expected`", () => {
     const read = final({}) as number;
     const expected = final({ "totals-crits": "expected" }) as number;
-    expect(Math.abs(read / 8790 - 1)).toBeLessThan(0.02);
-    expect(expected).toBeLessThan(0.85 * 8790);
+    expect(Math.abs(read / 55903 - 1)).toBeLessThan(0.02);
+    expect(expected).toBeLessThan(0.85 * 55903);
   });
 });
 

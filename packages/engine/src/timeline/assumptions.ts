@@ -223,6 +223,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "check-crits",
+    question: "Which crit does the log check's primary reading of a hit whose crit the log doesn't give take: the crit the replay read from the log (packages/logs replaycrits.ts: a crit trigger's own logged hits, the layers it adds, the hits' values; BuffReplay.critSource), or none? Read only by the log check's readings (packages/logs enginecheck.ts readingBasis), not by simulations: it decides which of a hit's two crit readings is plain and which is an assumption.",
+    default: "replay",
+    readings: {
+      replay: "the replay's crit where it read one from the log (critSource shown, layers or values: every development log leaves the crit out of Rossi's ultimate stabs, whose Seething Blood extras at the stab's ms show it, and Yvonne's ultimate, whose values show it), the other reading labelled `no crit`; no crit elsewhere",
+      none: "no crit, the crit reading labelled `crit` (the check until 2026-11-26)",
+    },
+  },
+  {
     id: "enemy-hp",
     question: "What is the enemy's HP over a logged fight, for the hits whose damage depends on it (enemyHpBelow: Chen Qianyu's P1 Shadowless, Alesh's P5 ultimate)? Read only by the log check's replay (packages/logs replayrun.ts loggedEnemyHp), not by simulations: a simulation's scenario says the HP (TimelineScenario.enemyHp).",
     default: "kill",
