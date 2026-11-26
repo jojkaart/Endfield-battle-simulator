@@ -5,7 +5,7 @@
 // controlled (controlledFromLog, controlSwaps), each logged cast event's fate (loggedCastFates) and the stops the
 // replay's casts hold (replayedCastStops). Split from buffreplay.ts (improvement round 14).
 
-import { allActions, applyBuff, chanceJumpsOf, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
+import { allActions, applyBuff, chanceJumpsOf, pathTwin, skippedHits, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { buttonVariants, castFrames, excludes, neededBuffs, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
@@ -106,17 +106,10 @@ function hitGameBuffs(kit: OperatorKit, hit: KitHit): string[] {
   });
 }
 
-/** Whether kit hit `b` is `a` on a chance jump's path: the same keys, its frames `by` (the jump's length) later. */
-function sameFromStart(a: KitHit, b: KitHit, by: number): boolean {
-  const fa = a.frames ?? [];
-  const fb = b.frames ?? [];
-  return fa.length > 0 && fa.length === fb.length && fa.every((f, i) => fb[i] === f + by) && a.events.length === b.events.length && a.events.every((e) => b.events.includes(e));
-}
-
 /**
  * The hits of a skill's chance jumps' paths (chanceJumpsOf) and their buffs' game buffs: for each chance jump, the kit
  * hits past its target that apply a buff the log can list, each with the hit it stands for on the path not jumped (the
- * same keys in the part the jump skips: Alesh's slam_ex for slam), if any.
+ * hit in the part the jump skips whose twin it is, engine paths.ts pathTwin: Alesh's slam for slam_ex), if any.
  */
 function chancePathHits(kit: OperatorKit, skillId: string): { readonly trigger: string; readonly at: number; readonly to: number; readonly hit: KitHit; readonly other: KitHit | undefined; readonly buffs: readonly string[] }[] {
   const skill = kit.skills.find((s) => s.skillId === skillId);
@@ -126,7 +119,7 @@ function chancePathHits(kit: OperatorKit, skillId: string): { readonly trigger: 
     skill.hits.flatMap((hit) => {
       const buffs = hitGameBuffs(kit, hit);
       if (!buffs.length || !frames(hit).length || !frames(hit).every((f) => f >= c.to)) return [];
-      const other = skill.hits.find((x) => x !== hit && sameFromStart(x, hit, c.to - c.at));
+      const other = skippedHits(skill, c.at, c.to).find((x) => pathTwin(skill, x, c.at, c.to) === hit);
       return [{ ...c, hit, other, buffs }];
     }),
   );

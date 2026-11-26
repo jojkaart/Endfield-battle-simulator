@@ -3,7 +3,7 @@
 // and the interims' behaviour (Shatter opens his combo, A7; the Rare Fin as a chance trigger).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, Attr, computeStats, createContext, evalContext, evaluate, init, type Build, type GameData, type KitBuff, type KitTrigger, type LandedHit, type OperatorKit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { advance, apply, Attr, chanceJumpsOf, computeStats, pathLandings, pathTwin, skippedHits, createContext, evalContext, evaluate, init, type Build, type GameData, type KitBuff, type KitHit, type KitTrigger, type LandedHit, type OperatorKit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readScenario } from "@efsim/cli";
 
@@ -222,7 +222,26 @@ describe("Alesh's combo: its triggers, two paths, the Rare Fin chance, P3", () =
     const noTalent = { ...alesh, talents: [2, 0] };
     expect(evaluate(t?.chance ?? 0, evalContext(data, noTalent, computeStats(data, noTalent), P + "combo_skill"))).toBeCloseTo(0.1, 6);
   });
+
+  it("pairs each hit with its twin on the other path by frames, not by the one key all four share (paths.ts pathTwin; round 15)", () => {
+    const kit = data.kits.operators[A] as OperatorKit;
+    const combo = kit.skills.find((s) => s.skillId === P + "combo_skill") as OperatorKit["skills"][number];
+    const [jump] = chanceJumpsOf(kit.triggers, P + "combo_skill");
+    expect(jump).toMatchObject({ at: 10, to: 65 });
+    const hit = (id: string) => combo.hits.find((h) => h.id === id) as NonNullable<(typeof combo.hits)[number]>;
+    expect(skippedHits(combo, 10, 65).map((h) => h.id)).toEqual(["hook", "slam"]);
+    expect(pathTwin(combo, hit("hook"), 10, 65)?.id).toBe("hook_ex");
+    expect(pathTwin(combo, hit("slam"), 10, 65)?.id).toBe("slam_ex");
+    // A landing the placement gave slam_ex goes to slam on the normal path, hook's to hook_ex on the Rare Fin's.
+    const landings = [{ hitId: "hook", nth: 0, frame: 22 }, { hitId: "slam_ex", nth: 0, frame: 38 }];
+    expect(pathLandings(combo, [{ at: 10, to: 65, taken: false }], landings).map((l) => l.hitId)).toEqual(["hook", "slam"]);
+    expect(pathLandings(combo, [{ at: 10, to: 65, taken: true }], landings).map((l) => l.hitId)).toEqual(["hook_ex", "slam_ex"]);
+    // Rossi's attack 4 off control (0 → 189): its five frames within a frame of the jump's length.
+    const rossi = (data.kits.operators["chr_0028_wulfa"] as OperatorKit).skills.find((s) => s.skillId === "chr_0028_wulfa_attack4") as OperatorKit["skills"][number];
+    expect(pathTwin(rossi, rossi.hits.find((h) => h.id === "hit") as KitHit, 0, 189)?.id).toBe("hit_ai");
+  });
 });
+
 
 describe("Alesh's ultimate", () => {
   it("9.8 × ATK Cryo at 90 with a Cryo Infliction and 20 stagger; 25 natural SP of source 3 (no kills)", () => {

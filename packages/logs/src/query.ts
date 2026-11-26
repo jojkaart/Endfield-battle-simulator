@@ -19,7 +19,7 @@ import { effectiveKit, FPS, type GameData, type SkillType } from "@efsim/engine"
 import type { BuffReplay } from "./buffreplay.ts";
 import { assembleCasts, controlSwaps, replayStops, type ReplayTimeStop } from "./castassembly.ts";
 import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
-import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 
