@@ -143,6 +143,8 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
 - Not done by worktree-agent-aab5ad7209df6114a (2026-11-26, combo hold and replay): the round's replay work (the tail
   cuts beside the hitless presses, about 120 lines) went in without needing it, by grep; a move of 3,100 lines with
   its proof (snapshots:update "No log's verdicts moved") didn't fit beside the accuracy items. Still live.
+- Not done by worktree-agent-a732e41da13b26399 (2026-11-26, 0c14 and the operator curve): no time left after the
+  accuracy items (the round's replay change went into the engine's replayCast, not buffreplay.ts). Still live.
 
 ## Parked
 

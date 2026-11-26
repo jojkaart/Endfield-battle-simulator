@@ -407,7 +407,22 @@ shares of the off error at that code):**
     336 (43.5–60.2 s plain: the Endministrator's Essence Disintegration ATK and Razor Clawmark no longer there), the
     replay-only landings 58 → 14 (0.30M → 0.07M); its total +2.7 → −3.2%: its Rossi landings that stand for logged
     hits are ×0.943 (−5.7%) and Si's ×0.964 below the log, which the tail had covered. **Next:** 0c14's Rossi and Si
-    under-prediction (−5.7%, −3.6% on matched landings). Also fixed on the way: a recorded burst
+    under-prediction (−5.7%, −3.6% on matched landings). **Found (2026-11-26, 0c14 and the operator curve; "0c14"
+    below):** half of Rossi's was the totals counting crit-unknown hits at expected crits (`totals-crits` `read`), 18k
+    her attack 4 on the controlled path while a teammate (drivers.ts controlPathLandings), the rest Alesh's unlogged
+    12.5 s combo (her weapon's second layer, her P3) and a Stagger at its breaking hit: the team −3.2 → −1.3%.
+    **The tail rule's cuts across the logs (2026-11-26; scripts/probes/tails/cuts.ts):** 16 cuts in the development
+    logs, 7 dropping a landing the `kept` replay has; none against the log. 0c14's Rossi (the rule's case) and Alesh's
+    60.17 s slam_ex (her combo on the Rare Fin path, "0c14" below); 4bfc's Arclight combos at 44.27 and 48.23 s (the
+    placement made one combo's three hits two casts: the cut drops the first's extra hit2s); 9c6e's Liino combo at
+    48.53 s (two enemies: her 47.72 s hit 1 on both, the second taken for hit 2, the 48.49 s hit 2 for a new combo's
+    hit 1, whose hit 2 the cut drops; the total −13.2 → −13.5% only lost a landing that stood for nothing; a placement
+    rule taking a landing at its cast's previous one's ms as a second enemy's, its next slot 3 frames or more later
+    and no other's stop ending there, fixed the combo and broke 40d9's Si, whose combo slashes the log batches at one
+    ms, Si −23%: dropped); de6a's Pogranichnik combo hit_3 (its hit_2 0.3 s later than his other combos' and the log
+    has no hit by anyone from 29.73 to 32.05 s: the enemy out of reach; its −0.4 → −0.8% total a replay-only landing
+    gone). The other 9 move nothing (the kept replay lands no more). **Still possible:** a cut where the placement's
+    split of one cast into two hides the tail (4bfc: right by luck), so a cast split view first. Also fixed on the way: a recorded burst
     whose record's applier isn't logged (recordedburst.ts: the latest logged applier more than twice the buff's life
     before the burst) is unread, not read over 73 s of every hit (0c14's 181.42 s burst had shifted Si +0.18M).
   - **04d4 Catcher ×0.470: his weapon at level 3** (fixed: fixture buildOverrides). fit-build threw on him (his P1
@@ -426,7 +441,10 @@ shares of the off error at that code):**
     her nodes give Str 10, 15, 15 (and 20 at promotion 4), so no count drops 25. fit-build's two-input fits (a level
     and a food, 86 of 148 clean) are coincidences of that kind. **Still possible:** a gear line (one piece's variant:
     her gauntlets' Str 43, an edc's Will 41), Former Finery's skill-1 level (Will 68 at level 4), her potential's Will
-    (+20 at P4), a subset of nodes (the engine takes the first n).
+    (+20 at P4), a subset of nodes (the engine takes the first n). (2026-11-26: her nodes are 1, 3, 5, 7 at Str 10,
+    15, 15, 20, break stages 1–4; nodes 5 and 7 need favorability 300 (fc63, 0c14's Si), so at promotion 3 two nodes,
+    1 and 3, give ×0.9774 of the ×0.9624; the rest, ×0.9846, is attribute bonus −0.05: Str −10 or Will −25, which no
+    node gives alone. Still a gear line or the weapon's skill 1 with the two nodes: fit-build's pairs next.)
   - **7e19 Ember ×1.096: half the check, half her talent's layers.** (1) The check dropped her listed Pay the Ferric
     Price (+0.09 ATK, talent 2, on `attacked`, so its state is the log's) as if it were one of Pogranichnik's two
     Thermite Cutter layers (+0.09 ATK each): loggedEntries matches an unjudged buff's entry against any engine
@@ -574,6 +592,20 @@ at every combo isn't it. **Also a reading now:** the curve itself (`combo-curve`
 13's backlog point 4), so a curve for the operators alone could be tried next. **Still possible:** the operators'
 own animation pause in a combo's cut-in that only some combos have (4bfc's and 3aa6's Xaihi and Zhuang Fangyi got
 worse with it), the caster's layer-1 dilation on its targets.
+**2026-11-26 (0c14 and the operator curve): a curve for the operators alone measured worse too.** Engine assumption
+`combo-operator-hold`'s curve readings (timeline/clock.ts comboOperatorCurve: the operators a combo holds lose the
+frames of their own curve, the world keeps combo-curve's guess, 0.01 to 40% then a ramp to 1 at 93%): `plateau-0.5`
+(0.01 to 50%, about 1.2 frames more on a 24-frame combo) verified plain 78.0 → 77.9% (4e5e −1), earlier pending 68.0 →
+67.9% (3aa6 −13, 4bfc −3, 9a80 +4, c6d8 +4), development and hold-out plain unchanged; `plateau-0.6` (about 2.4
+frames) verified 77.7%; `plateau-0.7` (about 4) 77.6%, development 68.9%; `flat` (the operators at 0.01 for the whole
+stop) verified 76.0%, earlier 67.6%, hold-out 80.8 → 80.6%. Arcane's team's 9a80 gains (`plateau-0.5`), 3aa6 (Zhuang
+Fangyi, Xaihi) loses more. The engine shifts what comes after a slow-down's start by the frames it takes (clock.ts
+slowDown), so a curve and a constant differ only in how the total scales with the combo's length: with the uniform
+`3f`/`4f`/`6f` and the share-like curves all worse on the verified logs, **ruled out:** one extra hold of the
+operators' clocks at every combo, constant or in proportion. Not pursued further (the brief's stop rule). **Still
+possible:** a per-combo cause (the cut-in some combos have, the caster's layer-1 dilation), which a per-operator split
+of the `plateau-0.5` hits (that measure's variant-2/hits.txt: 9a80's moved hits are Si's, Arcane's and Rossi's, 3aa6's mostly Zhuang
+Fangyi's) would start from.
 
 ## Fight totals: what moves them (2026-11-23)
 
@@ -2962,6 +2994,42 @@ off) and, from its missing Vulnerable stack, her 52.04 s battle skill's follow-u
 +2.7 → −3.2% (her matched landings ×0.943, Si's ×0.964). Alesh's eventless 12.5 s combo and the remaining
 under-prediction: next.
 
+**Found (2026-11-26, 0c14 and the operator curve): of Rossi's −186k matched, about 87k was the totals' expected
+crits, 18k her attack 4 on the wrong path; the rest is Alesh's unlogged combo and one Stagger.**
+(scripts/probes/totals/parts.ts, by window and crit kind):
+- **Expected crits** (−108k at 25.2–27.7 s, −23k at 160–176 s): her ultimate's stabs log no crit; a crit-unknown hit
+  whose value neither reading gives exactly was counted at expected crits, so one fight's crit luck went into the
+  total (her first ultimate's two finals, 326,856 and 108,952, both crits, at ×0.766). Her readings there are ×1.032
+  below the log on every stab, crit and non-crit alike, so the values say which crit: 17 of its 28 crit-unknown
+  landings by their values against 18.5 expected. Engine assumption `totals-crits` `read` (the new default;
+  enginecheck.ts critFromValue): the reading the value is within ×1.08 of, the other not. 0c14 −3.2 → −1.3% with the
+  rest.
+- **Her attack 4 as a teammate** (−18k at 154.1 and 174.3–174.9 s, ×0.40): her kit jumps 0 → 189 to the not-controlled
+  path (hit_ai, × 0.5 a hit against the controlled path's × 0.2) when she isn't controlled, and the log shows Si, then
+  the Endministrator controlled there; the placement had matched the logged hits to the controlled path's frames
+  (the same after the jump) and the replay dropped the jump the pinned landings contradicted. Built in general:
+  drivers.ts controlPathLandings (a jump on whether its operator is controlled follows who the log shows
+  controlled; the landings go to its path's hit of the same keys). 2fd9 plain 250 → 275 and 99fb 161 → 173 (Rossi
+  under Mi Fu), 0c14 +2.
+- **Alesh's 12.5 s combo** (×1.032 on everyone's hits at 20.7–43.3 s, Rossi's first ultimate and Si's 30 s combo among
+  them; Si ×0.917 at 13.3–20 s): the log lists two layers of her Thermite Cutter team ATK (+0.06 each; since 12.71 and
+  20.72 s) where the replay has one (from her ultimate's SP), and her P3 team ATK from 13.25 s. Both come from her
+  combo's Rare Fin path (P3 only after slam_ex; the two `since`s 0.55 s apart, hook_ex 77 to slam_ex 93 = 16 frames),
+  pressed with Si's combo (12.52 s) and no hit of it logged. Not built: a combo has no cast event, and the Rare Fin
+  path is a chance jump the replay doesn't roll (both would need a cast made from the listing alone).
+- **The Stagger at 80.48 s** (−30k): Rossi's combo_2 hit and its Lift's airborne hit read ×1.3 (the Stagger) though
+  they are the hits that break the bar (3 → 0); the replay's window starts the frame after. "The replay's Stagger
+  windows" below: the breaking hit at its ms.
+Left after these (with totals-crits `read`): Rossi −1.0% (matched −2.5%), Si −1.5% (shifts included), the team −1.3%.
+**Still possible** for the rest: the Alesh combo above (about +25k Rossi, +15k Si), the 80.48 s Stagger, Alesh's
+Rare Fin path at 59.56 s ("0c14" Alesh below).
+**Alesh's Rare Fin path from the values (2026-11-26):** her combo's two paths share keys and the placement takes the
+normal one's hits (hook 22, slam 38) for every cast; the casts whose values are ×1.5–1.6 that reading are the Rare
+Fin path (hook_ex 77, slam_ex 93, after the trigger's chance jump 10 → 65): 0c14 59.56 s (assumed), 4e36 19.87 and
+32.32 s (4 mismatches), a9d7 11.68, 39.37, 60.72 s (assumed, fallback). Next: a chance jump's path chosen from the
+landings' values (a second replay, as the reaction levels are read: logcheck.ts logBuffReplay), which would also give
+0c14's 59.56 s P3.
+
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window (2026-11-22: the max-stack bonus's length is the open
 part, "Rossi: her bleed" above).
@@ -3540,7 +3608,12 @@ teams' sustained DPS −1.2% (the owner's), +0.7% (Ink Melt), −0.2%
 **Also left:** hits at the breaking hit's own ms the log lists without
 Stagger while the engine counts them (~20 over all logs; their damage is
 mixed: ×0.77 and ×1.0), so whether a Stagger starts the frame after
-the break is open. And 4e5e's unattributed Stagger (accuracy plan B1's
+the break is open (2026-11-26, scripts/probes/stagger/break-order.ts over every development log: the hit that breaks
+the bar reads without the Stagger in 45 of 47, the hits after it at the same ms with it in 10 of 29, among them every
+combo hit whose own Lift's airborne hit broke it, a27b 64.14, c4f3 82.65, d4fb 40.68 s, and 0c14's 80.48 s (both its
+hits with it, ×1.256 = 1.3 × Alesh's weapon layer the log doesn't list there: −30k of Rossi's total); de6a 122.05 s,
+Chen's battle skill and its airborne hit, both without. A rule "the hits after the breaking one at its ms" would get
+19 of 29 wrong; a combo's hit after its own Lift breaks the bar, 4 of 4, isn't built on four). And 4e5e's unattributed Stagger (accuracy plan B1's
 lead): from 53.2 to 55.4 s the bar falls 68 more than the logged hits
 deal, in three steps: 24 at 53.177 s (with Estella's battle skill and
 its Cryo-on-Heat reaction, 12 listed), 29.92 at 54.882 s (her combo and

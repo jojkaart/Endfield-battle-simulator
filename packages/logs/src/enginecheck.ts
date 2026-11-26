@@ -236,6 +236,11 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
     if (primaryDamage === hit.value) return { readings, primary: primaryDamage, expected: primaryDamage, landing };
     const critOnly = readings.find((r) => r.assumptions.length === 1 && r.assumptions[0]?.kind === "crit");
     if (critOnly && critOnly.predicted === hit.value) return { readings, primary: primaryDamage, expected: critOnly.predicted, landing };
+    // Or near one of the two only (engine assumption totals-crits `read`): the crit the value shows, the reading's own error
+    // kept (0c14fb3ce77d: Rossi's first ultimate at 25.2–27.7 s, ×1.032 below the log on every stab for Alesh's
+    // unlogged weapon layer, its 27.74 s crit of 326,856 counted at expected crits as 250,328).
+    const read = critOnly ? critFromValue(hit.value, primaryDamage, critOnly.predicted, engineReadingOf(c.replay.assume, "totals-crits")) : null;
+    if (read !== null) return { readings, primary: primaryDamage, expected: read, landing };
     try {
       return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, landing };
     } catch (e) {
@@ -837,6 +842,22 @@ export function lastLifeKilled(data: GameData, fx: LogFixture): boolean {
 /** Whether a reading of engine assumption enemy-away leaves the away stretches' landings out of the totals. */
 export function awayLeftOutOfTotals(reading: string | undefined): boolean {
   return reading === "away" || reading === "absent" || reading === "absent-edge";
+}
+
+/** How near (×, either way) the nearer of a crit-unknown hit's two readings must be for its value to say whether it crit (critFromValue). */
+const CRIT_READ_NEAR = 1.08;
+
+/**
+ * Whether a crit-unknown hit crit, read from its value (engine assumption totals-crits `read`): its non-crit or its crit
+ * reading, whichever is within CRIT_READ_NEAR of the value while the other isn't; null under `expected`, or when
+ * neither or both are (the totals then take expected crits). A crit's factor is ×1.5 or more, so the two bands never
+ * meet; a value the readings both miss says nothing.
+ */
+function critFromValue(value: number, nonCrit: number, crit: number, reading: string | undefined): number | null {
+  if (reading !== "read" || !(value > 0) || !(nonCrit > 0) || !(crit > 0)) return null;
+  const near = (x: number) => Math.abs(Math.log(value / x)) <= Math.log(CRIT_READ_NEAR);
+  if (near(nonCrit) === near(crit)) return null;
+  return near(crit) ? crit : nonCrit;
 }
 
 /** An engine assumption's reading under a replay's `assume` (its default when not set). */

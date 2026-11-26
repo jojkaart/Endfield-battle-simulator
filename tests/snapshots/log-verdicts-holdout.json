@@ -18,7 +18,7 @@
   "chr_0016_laevat": {"plain":9,"assumed":0,"fallback":12,"mismatch":34,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":10,"assumed":18,"fallback":1,"mismatch":39,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0036_jsspsi": {"plain":6,"assumed":4,"fallback":0,"mismatch":40,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":39.4,"operator chr_0016_laevat":15.5,"operator chr_0036_jsspsi":71.7,"operator chr_0033_camille":57.9,"operator chr_0032_lizhiyan":-0.8,"kind basic":16.2,"kind battle":28.4,"kind combo":80.2,"kind status":17,"kind ultimate":34,"kind uncovered":-100,"hits":12.4,"status hits":25,"staggered hits":null,"last hit":0,"time to kill":-23.6,"crit share (points)":0.2,"share matched":11.7,"share replay-only":33.9,"share log-only":-6.3}
+  "totals": {"damage":39.4,"operator chr_0016_laevat":15.5,"operator chr_0036_jsspsi":72,"operator chr_0033_camille":57.9,"operator chr_0032_lizhiyan":-0.8,"kind basic":16.2,"kind battle":28.4,"kind combo":80.1,"kind status":17,"kind ultimate":35.6,"kind uncovered":-100,"hits":12.4,"status hits":25,"staggered hits":null,"last hit":0,"time to kill":-23.6,"crit share (points)":0.2,"share matched":11.8,"share replay-only":33.9,"share log-only":-6.3}
  },
  "holdout/zmdlogs-0dfc9d76c84d.json": {
   "chr_0021_whiten": {"plain":57,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -64,10 +64,10 @@
  },
  "holdout/zmdlogs-7be1ca9f455b.json": {
   "chr_0036_jsspsi": {"plain":63,"assumed":13,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":6,"uncovered":0},
-  "chr_0028_wulfa": {"plain":92,"assumed":91,"fallback":2,"mismatch":3,"unvalued":0,"unquantified":16,"uncovered":0},
+  "chr_0028_wulfa": {"plain":107,"assumed":76,"fallback":2,"mismatch":3,"unvalued":0,"unquantified":16,"uncovered":0},
   "chr_0013_aglina": {"plain":51,"assumed":2,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":166,"assumed":7,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":15,"uncovered":0},
-  "totals": {"damage":0.6,"operator chr_0036_jsspsi":-1,"operator chr_0028_wulfa":-1.4,"operator chr_0032_lizhiyan":22.9,"operator chr_0013_aglina":-1.6,"kind basic":-4.6,"kind battle":0.7,"kind combo":-1.7,"kind none":0.3,"kind status":16.7,"kind ultimate":0.5,"hits":0,"status hits":5,"staggered hits":0.5,"last hit":0,"time to kill":-0.2,"crit share (points)":-0.1,"share matched":-0.6,"share replay-only":1.4,"share log-only":-0.2}
+  "totals": {"damage":1.8,"operator chr_0036_jsspsi":-1,"operator chr_0028_wulfa":0.3,"operator chr_0032_lizhiyan":22.9,"operator chr_0013_aglina":-1.6,"kind basic":3.9,"kind battle":1.2,"kind combo":-1.7,"kind none":0.3,"kind status":16.7,"kind ultimate":0.5,"hits":0,"status hits":5,"staggered hits":0.5,"last hit":0,"time to kill":-1.9,"crit share (points)":-0.1,"share matched":0.6,"share replay-only":1.4,"share log-only":-0.2}
  },
  "holdout/zmdlogs-890bcadb4933.json": {
   "chr_0030_zhuangfy": {"plain":150,"assumed":10,"fallback":28,"mismatch":21,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -88,6 +88,6 @@
   "chr_0036_jsspsi": {"plain":12,"assumed":17,"fallback":21,"mismatch":14,"unvalued":0,"unquantified":3,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":20,"assumed":17,"fallback":51,"mismatch":9,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0006_wolfgd": {"plain":0,"assumed":0,"fallback":0,"mismatch":68,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":16.1,"operator chr_0006_wolfgd":72.9,"operator chr_0016_laevat":13.4,"operator chr_0036_jsspsi":18.8,"operator chr_0032_lizhiyan":13.2,"kind basic":18.4,"kind battle":7.5,"kind combo":3.7,"kind status":167.4,"kind ultimate":36.9,"hits":7.5,"status hits":95,"staggered hits":0,"last hit":0,"time to kill":-6.3,"crit share (points)":0.4,"share matched":4.5,"share replay-only":18.4,"share log-only":-6.9}
+  "totals": {"damage":16.1,"operator chr_0006_wolfgd":72.9,"operator chr_0016_laevat":13.4,"operator chr_0036_jsspsi":18.7,"operator chr_0032_lizhiyan":13.2,"kind basic":18.4,"kind battle":7.5,"kind combo":3.7,"kind status":167.4,"kind ultimate":36.7,"hits":7.5,"status hits":95,"staggered hits":0,"last hit":0,"time to kill":-6.3,"crit share (points)":0.4,"share matched":4.5,"share replay-only":18.4,"share log-only":-6.9}
  }
 }
