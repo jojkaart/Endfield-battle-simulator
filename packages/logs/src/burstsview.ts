@@ -6,11 +6,13 @@
 // - the logged burst (a hit logged under buff_common_<e>_<e>_triggered) and the replay's burst landing the log check
 //   pairs with it (BuffReplay.statusLanding: same operator and element, nearest within its window), with the offset;
 //   a logged burst without one says why; a replay burst no logged one took is "replay only";
-// - its likely cause on each side: the operator's latest hit with an infliction (KitHit.applies) at least the element's
-//   burst delay (BattleConstants burstDelayFrames, on the operator's clock) of world time before it: the logged hit
-//   (placed as a kit hit: logcasts.ts placeHits) and the replay's landing, with the world time between (the replay's
-//   casts' stops out: query.ts replayTimeStops). The log records no infliction, and the replay's burst records no
-//   cause, so this is the nearest candidate, not a certainty: a burst on stacks applied long before has an older one;
+// - its cause on each side: on the replay's, the landing whose infliction set it off, from the burst's own record
+//   (StatusEvent `inflictedAt`, engine landing.ts delayBursts; improvement round 14, backlog after round 13 point 2),
+//   and on the log's the logged hit that landing stands for; where there is none of those (a burst with no delay, a
+//   cause the log has no hit for), the operator's latest hit with an infliction (KitHit.applies) at least the element's
+//   burst delay (BattleConstants burstDelayFrames, on the operator's clock) of world time before it, marked "nearest"
+//   (the log records no infliction: a candidate, not a certainty); each with the world time between (the replay's
+//   casts' stops out: query.ts replayTimeStops);
 // - the time stops between the cause and the burst (whose, which skill, frames): a burst delayed across a stop.
 // Then per operator: logged bursts, those with a replay landing (the offsets' median), log only, replay only.
 
@@ -24,11 +26,13 @@ const msOf = (frames: number) => (frames * 1000) / FPS;
 const s = (ms: number) => (ms / 1000).toFixed(2);
 const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 
-/** A burst's likely cause on one side: the hit (logged event or replayed skill and hit), its time and the world time to the burst (ms). */
+/** A burst's cause on one side: the hit (logged event or replayed skill and hit), its time and the world time to the burst (ms). */
 export interface BurstCause {
   readonly t: number;
   readonly what: string;
   readonly world: number;
+  /** From the replay's record of the burst (its infliction's landing, or the logged hit standing for it); absent: the nearest candidate. */
+  readonly recorded?: true;
 }
 
 /** One Arts Burst of a fight: the log's, the replay's, or both paired. Times in ms. */
@@ -65,6 +69,7 @@ export function burstRows(data: GameData, fx: LogFixture, opts: { readonly opera
   const delayMs = (e: string) => msOf(data.constants.burstDelayFrames?.[e as ArtsElement] ?? 0);
   const mine = (op: string) => !opts.operators?.length || opts.operators.includes(op);
   const hits = [...fx.hits].sort((a, b) => a.t - b.t);
+  const landings = [...replay.hits].sort((a, b) => a.frame - b.frame);
   const lastLogged = hits.at(-1)?.t ?? 0;
   const loggedInflicting = (h: LogHit) => inflicts(placement.hits.get(h)?.hits[0]);
   /** The latest candidate before `t` with at least the delay of world time to it. */
@@ -76,13 +81,30 @@ export function burstRows(data: GameData, fx: LogFixture, opts: { readonly opera
     }
     return undefined;
   };
-  const loggedCause = (b: LogHit, element: string): BurstCause | null => {
+  // The logged hit each replay landing stands for (BuffReplay.landing), for a recorded cause on the log's side.
+  const loggedOf = new Map<LandedHit, LogHit>();
+  for (const h of hits) {
+    if (parseReactionEvent(h.event)) continue;
+    const l = replay.landing(h);
+    if (!("unknown" in l)) loggedOf.set(l, h);
+  }
+  // The replay's landing whose infliction set a burst landing off (the burst's record: StatusEvent inflictedAt).
+  const recordedSource = (b: LandedHit): LandedHit | undefined => {
+    const rec = replay.reactions.find((r) => r.kind === "burst" && r.frame === b.frame && r.operator === b.operator && r.element === b.element);
+    const at = rec?.kind === "burst" ? rec.inflictedAt : undefined;
+    if (at === undefined) return undefined;
+    return landings.filter((l) => l.operator === b.operator && l.frame === at && !l.skillId.startsWith("reaction:") && inflicts(kitHitOf(kits.get(b.operator), l))).at(-1);
+  };
+  const loggedCause = (b: LogHit, element: string, source?: LandedHit): BurstCause | null => {
+    const shown = source ? loggedOf.get(source) : undefined;
+    if (shown && shown.t <= b.t) return { t: shown.t, what: shortSkill(shown.event), world: worldMs(shown.t, b.t, stops), recorded: true };
     const own = hits.filter((h) => h.operator === b.operator && h !== b && !parseReactionEvent(h.event) && loggedInflicting(h));
     const c = latest(own, (h) => h.t, b.t, delayMs(element));
     return c ? { t: c.t, what: shortSkill(c.event), world: worldMs(c.t, b.t, stops) } : null;
   };
-  const landings = [...replay.hits].sort((a, b) => a.frame - b.frame);
   const replayCause = (b: LandedHit): BurstCause | null => {
+    const src = recordedSource(b);
+    if (src) return { t: msOf(src.frame), what: `${shortSkill(src.skillId)} ${src.hitId}`, world: worldMs(msOf(src.frame), msOf(b.frame), stops), recorded: true };
     const own = landings.filter((l) => l.operator === b.operator && !l.skillId.startsWith("reaction:") && inflicts(kitHitOf(kits.get(b.operator), l)));
     const c = latest(own, (l) => msOf(l.frame), msOf(b.frame), delayMs(b.element));
     return c ? { t: msOf(c.frame), what: `${shortSkill(c.skillId)} ${c.hitId}`, world: worldMs(msOf(c.frame), msOf(b.frame), stops) } : null;
@@ -97,7 +119,7 @@ export function burstRows(data: GameData, fx: LogFixture, opts: { readonly opera
     const r = parseReactionEvent(h.event);
     if (!r || r.kind !== "burst" || !mine(h.operator)) continue;
     const l = replay.statusLanding(h);
-    const lc = loggedCause(h, r.element);
+    const lc = loggedCause(h, r.element, "unknown" in l ? undefined : recordedSource(l));
     if ("unknown" in l) {
       rows.push({ operator: h.operator, element: r.element, logged: { t: h.t, value: h.value, cause: lc }, unknown: l.unknown, stops: lc ? between(lc.t, h.t) : [] });
       continue;
@@ -116,7 +138,7 @@ export function burstRows(data: GameData, fx: LogFixture, opts: { readonly opera
   return rows.sort((a, b) => (a.logged?.t ?? a.replay?.t ?? 0) - (b.logged?.t ?? b.replay?.t ?? 0));
 }
 
-const cause = (c: BurstCause | null) => (c ? `${c.what} at ${s(c.t)} (${s(c.world)} s of world time before)` : "none found");
+const cause = (c: BurstCause | null) => (c ? `${c.what} at ${s(c.t)} (${s(c.world)} s of world time before${c.recorded ? "" : "; nearest"})` : "none found");
 
 /** One row as a line. */
 export function burstLine(data: GameData, r: BurstRow): string {
@@ -148,7 +170,7 @@ export function burstCounts(data: GameData, rows: readonly BurstRow[]): string[]
 /** `zmdlogs bursts`: per log its bursts' lines, then the counts per operator (over every log given, too). */
 export function burstsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly operators?: readonly string[]; readonly from?: number; readonly to?: number; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void } = {}): string {
   const out = [
-    "Arts Bursts, logged against replayed (BuffReplay.statusLanding pairs them; offset = replay − log). cause: the operator's latest hit with an infliction at least the element's burst delay of world time before it (the log records no infliction, the replay's burst no cause: the nearest candidate); stops between: the replay's casts' time stops from the cause to the burst. Times in s.",
+    "Arts Bursts, logged against replayed (BuffReplay.statusLanding pairs them; offset = replay − log). cause: the replay's landing whose infliction set the burst off (its record) and the logged hit standing for it; marked nearest where there is none: the operator's latest hit with an infliction at least the element's burst delay of world time before it (the log records no infliction: a candidate); stops between: the replay's casts' time stops from the cause to the burst. Times in s.",
   ];
   const all: BurstRow[] = [];
   for (const { short, fx } of logs) {

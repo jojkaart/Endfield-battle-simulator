@@ -23,9 +23,13 @@ describe("a fight's Arts Bursts (zmdlogs bursts)", () => {
     for (const r of rows) {
       expect(r.operator).toBe(arcane);
       if (r.logged && r.replay) expect(Math.abs(r.replay.t - r.logged.t)).toBeLessThan(4000);
-      // A cause comes at least the burst delay of world time before (1 frame of slack).
-      for (const c of [r.logged?.cause, r.replay?.cause]) if (c) expect(c.world).toBeGreaterThanOrEqual(1000 - 1000 / 30);
+      // A cause found as the nearest candidate, and the replay's own from its record, comes at least the burst delay of
+      // world time before (1 frame of slack); a recorded cause on the log's side is the logged hit standing for the
+      // replay's, at the log's time for it.
+      for (const c of [r.logged?.cause, r.replay?.cause]) if (c && (c === r.replay?.cause || !c.recorded)) expect(c.world).toBeGreaterThanOrEqual(1000 - 1000 / 30);
     }
+    // Round 14: the replay's causes come from the bursts' records (StatusEvent inflictedAt), not the search.
+    expect(rows.filter((r) => r.replay?.cause?.recorded).length).toBeGreaterThan(0);
   });
 
   it("prints a line per burst and the counts per operator", () => {

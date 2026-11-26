@@ -8,8 +8,9 @@
 //   row is all in the Stagger or all out of it;
 // - cast: one placed cast's first and last logged landings outside every other operator's stop: their kit frames'
 //   distance (the placement's PlacedHit.frame) of world time;
-// - burst: a logged Arts Burst after its likely cause (burstsview.ts burstRows: a replay per log, so only with
-//   `--clock burst`): the element's burst delay of world time.
+// - burst: a logged Arts Burst after its cause (burstsview.ts burstRows: the logged hit standing for the replay's
+//   recorded infliction since round 14, else the nearest candidate; a replay per log, so only with `--clock burst`):
+//   the element's burst delay of world time.
 // Each row: the clock's world time under the replay's casts' stops (query.ts replayTimeStops, the views' one list) less
 // the time it should take (the residual: positive, the clock ran late, so something held it more than the stop list),
 // and the time the stops inside hold, by the stops' kind and operator. Rows whose span a stop straddles (one that starts

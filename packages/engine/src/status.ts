@@ -229,8 +229,12 @@ export const NO_STATUS: EnemyStatus = { infliction: null, statuses: [], vulnerab
 export type StatusEvent =
   /** An infliction landed without a reaction (fresh, or stacking with a burst); `stacks` is the count after it. */
   | { readonly kind: "inflicted"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly stacks: number }
-  /** `inflictionBy`: who applied the infliction stacks it bursts on (Infliction.by, before the new stacks). */
-  | { readonly kind: "burst"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly inflictionBy?: readonly string[] }
+  /**
+   * `inflictionBy`: who applied the infliction stacks it bursts on (Infliction.by, before the new stacks). `inflictedAt`:
+   * for a burst landing its element's delay later (timeline landing.ts delayBursts), the frame of the infliction that set
+   * it off. Record only (the log check's `zmdlogs bursts` cause): nothing reads it to decide.
+   */
+  | { readonly kind: "burst"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly inflictionBy?: readonly string[]; readonly inflictedAt?: number }
   | {
       readonly kind: "reaction";
       readonly frame: number;
