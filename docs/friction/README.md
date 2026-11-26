@@ -65,7 +65,10 @@ Short: things that made the task easy and should be kept.
 ```
 
 Only real friction the agent hit, ordered by cost; a task with none says so
-in one line. No player names, account IDs or private data.
+in one line. No player names, account IDs or private data. Every numbered
+point has its **Files:** line (a backlog's points: **Needs:**): `node
+scripts/friction.ts check <report.md>` lists those without one, and
+tests/friction.test.ts holds every open report here to it (round 14).
 
 ## The request (for the lead to send)
 

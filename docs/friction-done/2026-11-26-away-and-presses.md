@@ -69,3 +69,11 @@ then look at a per-edge delay for the combos' extra hold; branch of worktree age
 - The held-back diffs' headers said exactly what a general rule needed (both conditions for the inferred press), and
   the hard-coded measurement (0c14 plain 172 → 293) was a target the general rule reproduced exactly.
 - `zmdlogs replay --kit-buff` and `zmdlogs lanes --buff` answered the Chen and Liino questions in one call each.
+
+## Outcome (round 14)
+
+- 1 (Kill and life detection live in two places, each with its own test): not done, moved to the backlog's accuracy list (2026-11-26-backlog-after-round-14.md, "One model of a fight's lives"): the two rules differ (lastLifeKilled: a whole number of Max HPs to 10% over at a stretch; loggedEnemyHp: −0.1% to the excess +0.5% over j × Max HP, two lives or more), so one function picks one and moves verdicts
+- 2 (The replay view describes an inferred press as a skipped tick): done (ef86905): BuffReplay.made, the EVENT line's fate from the replay's own records (made, as what, inferred, skipped, failed) and INFER / MADE lines; 8915 111.23 s now reads "the replay made the press from the listing" (tests/decisions.test.ts)
+- 3 (A recorded burst's start is the latest logged applier, however long ago): done in the away branch (the start within twice the buff's life); the further suggestion (each recorded burst's window length in `zmdlogs bursts`) not done: bursts lists the Arts Bursts, not Si's recorded bursts, and the bound turns the 70 s case into an explicit unknown
+- 4 (Names an option accepts differ between commands): done (7d612b5): operatorId takes a unique word start of the name after the exact name ("Chen" for Chen Qianyu, though Purrchena contains it); every `--operator` goes through it (operatorNamed), refusing an ambiguous part instead of taking the first
+- 5 (A scratch script mis-called logBuffReplay without a type error): done (7d612b5): logBuffReplay takes `{ placement?, assume?, trace? }` as its third argument (the positional form kept for measure-worker's older commits), and `node scripts/typecheck-scratch.ts scratch/x.ts` typechecks a scratch script with the repository's options (the template names both)

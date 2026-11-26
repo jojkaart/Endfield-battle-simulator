@@ -16,18 +16,16 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–13
-  done (round 13, 2026-11-26: `zmdlogs clocks`, `holds --dropped`,
-  `differences --clusters`; `--assume` on every view that replays;
-  measure's options before the queue, `--help` on the locked scripts, a
-  variant's own hits; one cast pairing; `lead-files.ts` for the lead's
-  split; the hold-out output rules in docs/design/tests.md); the backlog
-  ([2026-11-26-backlog-after-round-13.md](friction/2026-11-26-backlog-after-round-13.md),
-  6 points, each in a file an accuracy agent held: the placement's
-  `--why` record, the bursts' recorded cause, one check composition, the
-  slow-down curves as a reading, reason strings as keys, the
-  buffreplay.ts split; 1 and 4 closed 2026-11-26 by the combo hold and
-  replay round: `casts` / `placement --choices`, `combo-curve`) joins the
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–14
+  done (round 14, 2026-11-26: buffreplay.ts in six modules; the replay's
+  decisions as records, `zmdlogs decisions --assume`, `hits --against`,
+  INFER / MADE / JUMPDROP lines; one check composition, the snapshots'
+  key strings, a burst's recorded cause; `totals --by crit`, per-command
+  CLI options, `measure --split --only`, typecheck-scratch.ts); the
+  backlog
+  ([2026-11-26-backlog-after-round-14.md](friction/2026-11-26-backlog-after-round-14.md),
+  2 points: the log context `{ data, assume }`, a groups row for
+  shared-key paths; the fight's lives on its accuracy list) joins the
   next round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,

@@ -54,3 +54,9 @@ aren't repeated.
 - `friction.ts carry` and `outcomes --backlog`: the carried outcomes filled on the first pass, as in round 12.
 - scripts/edit.ts for every multi-block edit (fourteen batches), and its new end block without `=======` used at once.
 - The new readings check in measure caught my own test's misspelt reading (`enemy-away=none`) in a second.
+
+## Outcome (round 14)
+
+- 1 (Which file a friction point needs isn't in the point): its leftover done (e0cec23): `node scripts/friction.ts check <report…>` lists the points without a **Files:** (a backlog's **Needs:**) line, and tests/friction.test.ts holds every open report in docs/friction/ to it
+- 2 (Whether a view replays isn't marked anywhere): its leftover done (126cf94): collectRecords itself keeps a reading's records out of the cache, for every records view
+- 3 (`export *` over thirty modules makes a type name collide only at typecheck): done in round 13 (index.ts's header line); nothing further

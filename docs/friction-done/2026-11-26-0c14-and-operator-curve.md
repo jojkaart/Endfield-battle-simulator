@@ -65,3 +65,10 @@ worktree-agent-a732e41da13b26399.
 - `zmdlogs control` answered "who was controlled at 154 s" at once; `zmdlogs differences --what` found Alesh's
   weapon layer in one call.
 - scripts/edit.ts for doc edits with backticks, and the bash guard's refusal messages saying the safe form.
+
+## Outcome (round 14)
+
+- 1 (The totals' "matched −5.7%" mixed the model's error with one fight's crit luck, and no view split them): done (ef86905): `zmdlogs totals <fixture> --by crit` (the matched parts per operator by TotalsCrit: known, exact, read, expected, each kind's error and share of the fight) and `hits --json` `totalsPredicted` / `totalsCrit` (enginecheck.ts engineReadings records how the totals took the crit); 0c14's Rossi: 8 landings at expected crits −22.9%, −0.3% of the fight
+- 2 (Paths that share keys: no view says which path a cast took against its values): the JUMPDROP half done (e0cec23: drivers.ts replayCast tells a `dropped` callback, record only, team-ab identity unchanged; `zmdlogs replay` and `decisions` print each dropped jump with the logged landings that contradicted it, 489c's Rossi sequence 2 at 18.77 s); the groups row carried (2026-11-26-backlog-after-round-14.md point 2)
+- 3 (A changed engine file recomputes every log's hits cache, and `hits --all` runs in the foreground): done (ef86905): with `--operator`, `hits` and `differences` read only the logs whose team has one (reports.ts withOperatorsOnly), and a run with more than 8 logs to check says how long (about 8 s a log per worker) and to run it in the background
+- 4 (A measure with --split files re-measures every part on every moved log): done (7d612b5): `measure --split files --only a,b`: those files one part, every other file one more
