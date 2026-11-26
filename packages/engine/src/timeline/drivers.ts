@@ -3,7 +3,7 @@
 import type { Build } from "../build.ts";
 import { evalContext } from "../damage.ts";
 import { EngineError } from "../errors.ts";
-import type { GameData } from "../model.ts";
+import type { GameData, KitHit, KitSkill } from "../model.ts";
 import { evaluate } from "../expr.ts";
 import { NO_STATUS } from "../status.ts";
 import { type DamageMoments, hitsMoments } from "../moments.ts";
@@ -138,12 +138,13 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   // it uses up at the cast, its on-cast triggers and follow-ups).
   if (opts.missed) st = { ...st, scheduled: st.scheduled.filter((h) => h.kind !== "hit" || !ofCast(h, operator, index) || h.trigger !== undefined || h.skillId !== skillId) };
   else if (opts.landings?.length) {
+    const landings = controlPathLandings(skill, ofKind(st.scheduled, "jump").filter((j) => !j.end && ofCast(j, operator, index)), opts.landings);
     // The cast's own landings of each kit hit, in frame order: the n-th moves to its logged frame.
     const own = new Map<string, PendingHit[]>();
     for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
     for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
     const moved = new Map<PendingHit, { frame: number; ref?: string; loggedMs?: number }>();
-    for (const l of opts.landings) {
+    for (const l of landings) {
       const h = own.get(l.hitId)?.[l.nth];
       if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms } : {}) });
     }
@@ -180,6 +181,39 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     st = schedule(st, [end]);
   }
   return runTriggers(ctx, st, r.events, r.origin);
+}
+
+/**
+ * A replayed cast's logged landings on the path its jumps on control took (replayCast): a kit jump whose condition is
+ * whether its operator is controlled (Rossi's attack 4: not controlled, it jumps 0 → 189 to hit_ai, × 0.5 a hit
+ * against the controlled path's × 0.2) is decided by who the log shows controlled (the log check's controlledFromLog:
+ * a teammate's own attack keeps the controlled operator), so a landing the placement gave a kit hit of the other path
+ * goes to this path's hit of the same keys, the landings of the two in frame order. The placement matches the two by
+ * their frames, which are the same after the jump (6, 8, 13, 15, 23 and 195, 198, 203, 205, 213), and the replay
+ * dropped the jump the landing contradicted: 0c14fb3ce77d's attack 4 at 154.09 and 174.33 s while Si and the
+ * Endministrator were controlled, 2fd915292bb7's and 99fb3c35fda2's under Mi Fu, all × 2.5 the controlled path's;
+ * d5720d9ceb94's at 9.89 s with Rossi controlled, × 0.4. Other jumps stay as the landings show (Rossi's sequence 2).
+ */
+function controlPathLandings(skill: KitSkill, taken: readonly PendingJump[], landings: NonNullable<ReplayCastOptions["landings"]>): NonNullable<ReplayCastOptions["landings"]> {
+  let out = [...landings];
+  for (const k of skill.jumps ?? []) {
+    if (k.to === undefined || !JSON.stringify(k.if ?? null).includes('"controlled"')) continue;
+    const to = k.to;
+    const jumped = taken.some((j) => j.from === k.at && j.to === to);
+    const frames = (h: KitHit) => h.frames ?? [];
+    const skipped = skill.hits.filter((h) => frames(h).length > 0 && frames(h).every((f) => f >= k.at && f < to));
+    const target = skill.hits.filter((h) => frames(h).length > 0 && frames(h).every((f) => f >= to));
+    for (const a of skipped) {
+      const b = target.find((x) => x.events.length === a.events.length && x.events.every((e) => a.events.includes(e)));
+      if (!b) continue;
+      const path = jumped ? b : a;
+      const mine = out.filter((l) => l.hitId === a.id || l.hitId === b.id).sort((x, y) => x.frame - y.frame);
+      if (mine.every((l) => l.hitId === path.id) || mine.length > frames(path).length) continue;
+      const renamed = new Map(mine.map((l, i) => [l, { ...l, hitId: path.id, nth: i }]));
+      out = out.map((l) => renamed.get(l) ?? l);
+    }
+  }
+  return out;
 }
 
 /**

@@ -8,6 +8,7 @@ import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
 import { engineReading } from "./assumptions.ts";
+import { COMBO_CURVE, curveScales } from "./curves.ts";
 
 /**
  * A skill's global slow-downs (docs/design/timeline.md "Time"): the world (enemy
@@ -39,13 +40,16 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   // teammate's combo, 81.53 s: 1.48 s; a held world puts it later), as the log tools' stop lists cut it (withResets).
   const pending = reading === "reaches" ? (s.resets ?? []).filter((r) => r.frame > frame) : [];
   if (reading === "reaches") s = { ...s, resets: [...pending, ...resets.filter((r) => r.frame > frame).map((r) => ({ ...r, by: caster }))] };
+  // Engine assumption combo-operator-hold's curve readings: the operators a combo holds follow another curve than the world.
+  const opCurve = kind === "combo" ? comboOperatorCurve(ctx) : undefined;
   const own = timing.slowdowns
     .map((d) => {
       const whole = { start: frame + d.from, scales: d.scales, ...(d.priority !== undefined ? { priority: d.priority } : {}) };
       const cut = cutAtResets([whole], [...pending, ...resets])[0] as typeof whole;
       // The caster of a pending reset that cuts it isn't held by it: her frame 9 comes when it ends (the reset's frame).
       const by = cut.scales.length < whole.scales.length ? pending.find((r) => r.priority === cut.priority && r.frame === cut.start + cut.scales.length)?.by : undefined;
-      return { ...cut, ...(by !== undefined ? { spares: by } : {}) };
+      const opScales = opCurve && d.curve === COMBO_CURVE ? curveScales(opCurve, d.scales.length).slice(0, cut.scales.length) : undefined;
+      return { ...cut, ...(by !== undefined ? { spares: by } : {}), ...(opScales ? { opScales } : {}) };
     })
     .filter((d) => d.scales.length > 0);
   for (const d of own) {
@@ -66,7 +70,8 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
       if (who === caster || who === d.spares) return { n: 0, from: start };
       let sum = 0;
       let from: number | null = null;
-      d.scales.forEach((v, k) => {
+      const scales = who !== null && d.opScales ? d.opScales : d.scales;
+      scales.forEach((v, k) => {
         const held = ownStop(who, start + k) ? 0 : Math.max(0, scaleAt(who, start + k) - v);
         if (held > 0 && from === null) from = start + k;
         sum += held;
@@ -91,6 +96,20 @@ function comboOperatorHold(ctx: TimelineContext): number {
   const r = engineReading(ctx.scenario, "combo-operator-hold");
   const m = /^(\d+)f$/.exec(r ?? "");
   return m ? Number(m[1]) : 0;
+}
+
+/**
+ * The curve a combo's slow-down holds the operators by under engine assumption combo-operator-hold's curve readings
+ * (`plateau-0.6`: 0.01 to 60% of its duration, then a linear ramp to 1 at 93%; the world keeps combo-curve's), else
+ * undefined (the world's curve).
+ */
+function comboOperatorCurve(ctx: TimelineContext): ((t: number) => number) | undefined {
+  const r = engineReading(ctx.scenario, "combo-operator-hold");
+  const m = /^plateau-(0\.\d+)(?:-(0\.\d+))?$/.exec(r ?? "");
+  if (!m) return r === "flat" ? () => 0.01 : undefined;
+  const until = Number(m[1]);
+  const end = m[2] !== undefined ? Number(m[2]) : 0.93;
+  return (t) => (t <= until ? 0.01 : t >= end ? 1 : 0.01 + ((t - until) / (end - until)) * 0.99);
 }
 
 /**

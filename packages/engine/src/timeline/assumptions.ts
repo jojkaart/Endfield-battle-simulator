@@ -179,6 +179,10 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
       "3f": "3 frames more on every operator it holds at all (measured 2026-11-26 against `none`: verified plain 78.0 → 77.4%, development 69.0%, hold-out 80.6 → 80.5%, earlier pending 67.3 → 66.4%)",
       "4f": "4 frames more (verified 77.1%, development 69.0%, hold-out 80.5%, earlier 66.4%: 9a80 +4, 9c0b +3 and c6d8 +13 plain against 4bfc −92 and 3aa6 −33)",
       "6f": "6 frames more (verified 76.4%, development 68.9%, hold-out 80.4%, earlier 66.3%)",
+      "plateau-0.6": "the operators held by their own curve, 0.01 to 60% of the combo's slow-down, then a linear ramp to 1 at 93% (the world keeps combo-curve's: 0.01 to 40%); about 2.4 frames more on a 24-frame combo, in proportion to its length",
+      "plateau-0.7": "the same to 70% (about 4 frames more on a 24-frame combo)",
+      "plateau-0.5": "the same to 50% (about 1.2 frames more on a 24-frame combo)",
+      flat: "the operators held at 0.01 for the whole combo slow-down (the world's curve unchanged)",
     },
   },
   {
@@ -189,6 +193,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
       kept: "the cast plays its whole path (the replay until 2026-11-26)",
       cut: "a battle skill, combo or ultimate ends the frame after its last logged landing (each of its logged landings its own, not a variant's) when the log has no hit of its operator's casts that another cast doesn't hold from there to 1.5 s after its first later landing, that landing is outside the away stretches and the fight's last 1.5 s with a logged hit of anyone within 1.5 s after it, and no decided game buff the replay starts in the tail is listed as a new run within 1.5 s (the earliest such cast first, the replay made again after each): pending/zmdlogs-0c14fb3ce77d.json, Rossi's battle skill at 35.40 s (its two charge hits logged, no Lift at frame 35, no wolves, no bleed: the Vulnerable stack the Lift would add isn't there at 53.57 s, where the log has her Lift's hit but neither its Lift status nor the follow-up; with it the Endministrator's combo the Lift set off and its Essence Disintegration ATK go, and 43.5–60.2 s read plain). Measured 2026-11-26 against `kept`: 0c14 plain 293 → 336 (its total +2.7 → −3.2%: its hits that now fit were over-predicted with what the tail gave, its Rossi and Si under-predicted elsewhere), development plain and verified unchanged (9c6e −13.2 → −13.5%, Liino's combo hit2 at 48.73 s out of an under-predicted total), earlier pending 67.3 → 67.7%, hold-out plain unchanged, mean |damage error| 8.4 → 8.3% (1 better, 2 worse, totals only). Without the listing check and the fight's-end rule the first cut lost db87 15 plain (Camille's ultimate, whose gear-set and weapon buffs the log lists after its unlogged hits) and 2fd9's killing Crush",
       "cut-all": "as `cut`, basic attacks too (measured 2026-11-26 against `kept`: plain as `cut`; mean |damage error| development 7.0 → 6.9%, hold-out 8.4 → 8.3%, earlier 4.0 → 4.0%, 8 development logs' totals closer, 6 further)",
+    },
+  },
+  {
+    id: "totals-crits",
+    question: "How does a fight's total count a matched hit whose crit the log doesn't give and whose value neither of its readings (crit, non-crit) gives exactly? Read only by the log check's totals (packages/logs enginecheck.ts engineReadings, critFromValue), not by simulations.",
+    default: "expected",
+    readings: {
+      expected: "at expected crits (the totals until 2026-11-26; accuracy plan A3: counted as non-crits they ran low)",
+      read: "at the reading its value is within ×1.08 of while the other isn't (a crit's factor is ×1.5 or more, so the value says which), else at expected crits: pending/zmdlogs-0c14fb3ce77d.json, Rossi's first ultimate (25.2–27.7 s), ×1.032 below the log on every stab (Alesh's weapon layer the replay lacks), 15 of its 27 crit-unknown landings crits by their values, its two finals among them (326,856 and 108,952, counted at expected crits as 250,328 and 83,443)",
     },
   },
   {
