@@ -307,6 +307,15 @@ crits: events.ts statusCritMatches). Next: Pogranichnik's Thermite Cutter and Fe
 doesn't record ("Team SP"), behind most of Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's
 Wolven Blood final ending 5 s late (a clock).
 
+**Arcane's WILL lines and Chen's late final (2026-11-26, [journal](journal/2026-11-26-12-arcane-s-will-lines-and-chen-s-late-wolven-blood-final.md)):**
+e82d's Si combo final isn't the five Solemn Phalanx lines (the game counts one of each; plain finals with ×3–×4 listed)
+but Arcane's combo Susceptibility ending before it (e82d, 6339), its cause open. c4f3's late second final is a layer
+lost at 49958 ms, where the first final's lane ends at a crit's ms and the replay ends it 42 ms later; a rule taking
+end-boundary hits as past the run measured mixed (docs/tried/2026-11-26-boundary-ends-before.diff). c4f3's Estella at
+7.05 s: Chen's combo shatters first in the replay's batch, so her combo is the not-Solidified variant. Next: the seal
+chain's data for the doubles' end; a hold bound only where the end-boundary hit's value decides; the batch order at a
+stop's end.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**
