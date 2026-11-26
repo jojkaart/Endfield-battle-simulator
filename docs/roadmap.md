@@ -83,8 +83,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   (db87's Link), tail cuts take detached hits (c83c, hold-out 8.4 → 7.4%), a carried Corrosion above its cap unclamped
   (7910 −6.1 → 0.0%); slots and paths by value 2026-11-26: a cast's slots by its landings' values (9c0b's Hunter
   Pursuit), Pogranichnik's combo path by its slashes' values and once (his bank's Fervent Morale on time), a Breach's
-  Arts Intensity after its hit's before-damage triggers, a second enemy's landing by value (9c6e)): next Arcane's
-  doubles Susceptibility ending before Si's combo final (e82d, 6339; the WILL lines ruled out 2026-11-26), the order
+  Arts Intensity after its hit's before-damage triggers, a second enemy's landing by value (9c6e); the slug's purges
+  read from the log 2026-11-26, `logged-purges`, 6339 plain 28 → 112): next e82d's Doubles Susceptibility ending
+  after a second touch inside her seal (the only such log; a second one decides it), 7b54's partial purges, the order
   of a stop's batched landings (c4f3's Estella at 7.05 s), a hold bound from an end-boundary hit's value (c4f3's
   Wolven Blood), the Vulnerable stacks a Breach consumed read from the next combo's path (c4f3 13.07 s), 7910's early
   rogue wave with no logged dive, other whole-game pauses outside a Stagger, 0c14's Stagger at its breaking hit.

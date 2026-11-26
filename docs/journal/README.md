@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-26: What ends Arcane's Doubles Susceptibility: the slug's purges, e82d's second touch](2026-11-26-13-what-ends-arcane-s-doubles-susceptibility-the-slug-s-purges.md)
 - [2026-11-26: Slots and paths by value: Hunter Pursuit, Pogranichnik's combo and his bank](2026-11-26-12-slots-and-paths-by-value-hunter-pursuit-pogranichnik-s-combo.md)
 - [2026-11-26: Arcane's WILL lines and Chen's late Wolven Blood final](2026-11-26-12-arcane-s-will-lines-and-chen-s-late-wolven-blood-final.md)
 - [2026-11-26: Improvement round 15: one rule for each fact, records the views carry](2026-11-26-11-improvement-round-15-one-rule-for-each-fact-records-the.md)

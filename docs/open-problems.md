@@ -820,7 +820,7 @@ takeAtkSnapshot false).
 - **d4fb +9.6%:** Chen's ultimate matched +6.0% (28 hits); her hits ×1.11 the replay's elsewhere, 0 clean hits to fit.
   Chen's readings mismatch in most logs (35% overall): a Chen kit question first.
 - **e82d −8.9%:** one hit, Si's combo final (above; 2026-11-26: Arcane's doubles Susceptibility gone by the hit, round 5
-  below). **1cd1 −7.2%** (Typhoeus matched −7.0%), **7910 −5.8%** (Tangtang
+  below; round 6: the only second touch inside her seal in any log, not decided). **1cd1 −7.2%** (Typhoeus matched −7.0%), **7910 −5.8%** (Tangtang
   matched −7.5%, replay-only +6.2%), **db87 −4.5%** (Laevatain −9.0 / +4.9): not looked into.
 - **Over:** c83c +7.9% (Si's combo final at 56.73 s replay-only, 384k: the log has no final there), fc63 +6.8% (her
   95.1 and 96.5 s shots plain in the log, power shots with bursts in the replay: the replay's Hunting Arrows after her
@@ -1007,11 +1007,30 @@ Stagger is on the 42–46 s ones and the log's ×1.3 is on top); 7910's ×1.099 
   instances, −6.3 s). 6339 shows the same: its doubles listed to Si's last combo slash at 29.38 s, none at her final at
   29.57 s. Ruled out as the cause: Si's and Arcane's combos cast together (207f ×2, 3f78 ×2, 4a64 ×2, 489c 15.21 s do
   that and their finals list it), the time since its start (489c's final 0.59 s after it lists it), a Stagger break at
-  the final (none). **Still possible:** the second seal replacing the first (buff_chr_0032_lizhiyan_combo_skill_seal,
-  maxStackCnt 1; its seal_listener's abilityEvent 204 casts seal_again per bunshin), a SealAction ended by another
-  control (finishByAction; Si's Initial Stroke pressed at 8.73 s in e82d, none in 6339), a stage rule in 6339 (both its
-  instances end early). **Next:** the seal chain's data (seal_listener 204, seal_again's frames, the bunshin's end) and
-  6339's other instance (6.23 s, listed to 10.35 s, own expiry 13.67 s).
+  the final (none).
+  **Round 6 (2026-11-26, every Arcane log: each listed run of it, its world length and what sits at its end,
+  scripts/probes/kits/arcane-doubles-runs.ts; second touches, arcane-second-touch.ts; Si's Immobilization,
+  arcane-doubles-immobilization.ts).** In WILL every run ends at its seal's tick (6.1–7.6 s of world time) but four: **6339 at 10.35 and 29.38 s
+  and 7b54 at 47.48 s are the slug's, not Arcane's**: the team's other debuffs on the enemy end at the same logged
+  moment (6339: Jade Vessel, Camille's Susceptibility, Arcane's weapon lines, none listed on; 7b54: Camille's and
+  Arcane's six, six others listed on). 6339's two are now read from the log (engine assumption `logged-purges`,
+  "Hard 33's slug" below); 7b54's partial one isn't (it doesn't qualify). **e82d's is the only one left, and the only
+  second touch while her seal lasts in any log** (multi-target included: the first combo's touch 7.02 s, the second's
+  8.73 s, 1.1 s of world time apart). Only the Doubles Susceptibility goes (her ultimate's Susceptibility, Jade Vessel
+  and her weapon lines are listed on to the end); the first run's listing ends at 8.56 s where the second's begins (one
+  value, 0.179399), the second's after the slash at 8.82 s, at the 8.93 s slash's boundary. Ruled out (round 6): Si's
+  Immobilization ending it (seals applied 0.1–1.5 s after her battle-skill hit run their full length: db87 11.40 s,
+  f978 22.38 s, 79cc 23.14 s, c83c 63.97 s), Si's Initial Stroke (0eef presses it at 8.74 s inside the run; its final
+  at 9.33 s lists it), a Stagger node (Rhodagn's 50% node at bar 140; the bar is 225 at the final), an early end of the
+  seal by abilityEvent 8 / 1403 / 1601 (that casts abilityentity_end, logged as a combo cast as at 6339's 10.46 s:
+  none in e82d after 8.37 s), the Imprisonment's own tick (6.1 s after its start). **Still possible** (the data doesn't
+  say which instance a second application keeps: the seal is maxStackCnt 1 with no stackingType, the Susceptibility
+  stackingType 2, maxStackCnt 1, the seal's child): the second application refreshing the first instance (the log
+  moving its since), which then ends with the first seal, ended by the second touch's InterruptAction (immobilizedTime
+  1, after the second seal's SealAction: a control from an earlier cast, finishByAction); 8.82 s is 87 ms after the
+  touch, inside the log's batching. Arcane's passive's TagQueryListener (tags 1105446346 / 507365453, named in no
+  other file) finishing every seal and clone is the other path. **Next:** a log with a second touch inside an
+  Imprisonment, the Susceptibility's end against that touch; until then nothing to implement (one hit in one log).
 - **9c6e** (two targets) and **e82d** −8.9% (Si's combo final ×1.205: the log lists Arcane's weapon WILL lines five
   times, will_dmg ×3 and will_atk ×2 at 0.168, the engine has two; five would be ×1.26: not exact, Arcane's weapon's
   stacking, not looked into further).
@@ -1651,6 +1670,18 @@ hits ×1.18 → plain in 207f. Left in 2fd9: Mi Fu's Crush hits ×1.90 low ("Fig
 **Next check:** a Hard 27 log with Electric hits (Electric 35 or 11).
 
 ## Hard 33's slug: debuffs the engine keeps don't act (7b54, 6339)
+
+**Found (2026-11-26, round 6): 6339's are purges.** At 10.35 and 29.38 s every debuff of the team on the slug ends
+at one logged moment (Jade Vessel, Camille's and Arcane's Susceptibilities, Arcane's weapon lines), and every hit
+after 11.27 s read exactly with the log's listing, the replay's 1.40 times the logged. The log check's replay now ends
+the enemy-side kit buffs, statuses, inflictions, Vulnerable stacks and controls there, and an Arts Burst on its way
+(engine assumption `logged-purges`, reading `log`: holdinputs.ts loggedPurges, purgedByLog; the burst at 29.40 s, a
+replay-only landing, had put Arcane's Solemn Phalanx line on every hit after it). Measured against `none`: 6339 plain
+28 → 112 of 140, damage +40.8 → −8.0% (the over-prediction that cancelled Si's low combo-final slots at 11.31 s gone),
+development plain 73.8 → 74.3%, mean |damage error| 6.1 → 5.1%, nothing else moved. A debuff's per-element affixes
+count once: without that, 3aa6 at 25.42 s (Arcane's Doubles pair and Perlica's Electrification) read as one and lost
+26 plain. 7b54's ends at 16.48, 19.59 and 47.48 s are partial (others listed on): not purges by the rule, still open,
+as 6339's Laevatain hits 14.6–19.2 s (the replay ×1.28, Scorching Heart and Camille's lines: not a purge).
 
 **Shows:** hits low by the engine's damage-taken and susceptibility
 entries, which the log lists but the damage ignores (Jade Vessel's 0.12,

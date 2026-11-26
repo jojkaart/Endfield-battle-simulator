@@ -126,11 +126,11 @@
   "totals": {"damage":-0.2,"operator chr_0025_ardelia":-3.3,"operator chr_0017_yvonne":0.1,"operator chr_0011_seraph":-2.9,"operator chr_0032_lizhiyan":-2.8,"kind basic":0.1,"kind battle":0,"kind combo":-0.5,"kind status":-7.8,"kind ultimate":-3.9,"hits":3.6,"status hits":0,"staggered hits":-3.1,"last hit":0,"crit share (points)":0.1,"share matched":-1,"share replay-only":2.8,"share log-only":-2}
  },
  "pending/zmdlogs-63398339803e.json": {
-  "chr_0016_laevat": {"plain":21,"assumed":0,"fallback":24,"mismatch":1,"unvalued":0,"unquantified":1,"uncovered":0},
-  "chr_0036_jsspsi": {"plain":4,"assumed":7,"fallback":28,"mismatch":2,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0033_camille": {"plain":2,"assumed":0,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":5},
-  "chr_0032_lizhiyan": {"plain":1,"assumed":14,"fallback":20,"mismatch":6,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":40.8,"operator chr_0016_laevat":77.2,"operator chr_0036_jsspsi":7.4,"operator chr_0032_lizhiyan":129.2,"operator chr_0033_camille":77.9,"kind basic":144.9,"kind battle":4,"kind combo":19.7,"kind status":721.2,"kind uncovered":-100,"hits":19.3,"status hits":1000,"staggered hits":200,"last hit":-0.9,"time to kill":-18.2,"crit share (points)":0.3,"share matched":0.1,"share replay-only":60.6,"share log-only":-19.8}
+  "chr_0016_laevat": {"plain":31,"assumed":0,"fallback":15,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0036_jsspsi": {"plain":35,"assumed":3,"fallback":1,"mismatch":2,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0033_camille": {"plain":6,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":5},
+  "chr_0032_lizhiyan": {"plain":40,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "totals": {"damage":-8,"operator chr_0016_laevat":27.9,"operator chr_0036_jsspsi":-27.8,"operator chr_0032_lizhiyan":-3.2,"operator chr_0033_camille":0.8,"kind basic":81.2,"kind battle":-39.7,"kind combo":-14.2,"kind status":211.3,"kind uncovered":-100,"hits":13.6,"status hits":500,"staggered hits":100,"last hit":-0.9,"time to kill":null,"crit share (points)":0.3,"share matched":-19.8,"share replay-only":37.4,"share log-only":-25.6}
  },
  "pending/zmdlogs-791020039384.json": {
   "chr_0025_ardelia": {"plain":84,"assumed":4,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":7,"uncovered":0},
