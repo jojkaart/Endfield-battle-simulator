@@ -243,6 +243,20 @@ landings) without moving the statuses; d4fb 97.05 s (2.18 s short, the combos gi
 and Will burst runs (a refresh the replay misses); not reached: freezes on Electrification / Solidification, the
 quiet-stretch placement pass.
 
+**Away and presses, 2026-11-26** (journal: the away-and-presses entry of 2026-11-26; open-problems "The damage
+factors" and "The enemy's clock"): the damage-factors round's hard-coded fixes as general rules. The replay's enemy
+is away in the away stretches (engine assumption `enemy-away` `absent`, the default: TimelineScenario.enemyAway): a hit
+there applies nothing to the enemy, the operators' own buffs from it still come (d774's and 9c6e's Liino stances). A
+press the log shows no hit of is made when its cast event is logged and the next hit lists a new run of a buff only it
+gives (`hitless-presses` `inferred`: 0c14's Si, 891566c224f8's Liino); 0c14 plain 172 → 293. The enemy leaves with a
+stretch's last logged hit (the totals leave out the unmatched landings of its frame), and a fight of several lives
+ends in a kill when its last life dealt one Max HP (4a64 +2.9 → +0.7%). The check reads a layered unjudged buff
+listed once at each count to its maximum (7e19, 04d4, 99fb). A fixed delay per stop edge can't give both the enemy's
+ticks (57 ms a combo) and the operators' casts (140 ms). Next: where the operators' extra hold sits in a combo (its end
+against its start, casts.ts --rows by where the stop falls), 0c14's Rossi (58 replay-only landings, 0.30M), 207f's
+last slash2 (no kill the log shows), a9d7's Slashing Edge refresh from Chen's ultimate final inside its stretch (a hit
+that landed, or a hold), Alesh's eventless 0c14 combo.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**
