@@ -174,7 +174,7 @@ export function loggedEntries(c: EngineCheck, effects: readonly LogEffect[], gam
   const out: LogEffect[] = [];
   for (const e of effects) {
     if (!gameBuffs.has(e.buff)) continue;
-    const i = pool.findIndex((m) => m.zone === e.zone && (m.element ?? null) === (e.element ?? null) && near(m.value, e.value));
+    const i = pool.findIndex((m) => m.zone === e.zone && (m.element ?? null) === (e.element ?? null) && near(m.value, e.value) && m.kitBuff !== undefined && (c.names.ofKitBuff.get(`${m.kitBuff.owner}:${m.kitBuff.id}`) ?? []).includes(e.buff));
     if (i >= 0) pool.splice(i, 1);
     else out.push(e);
   }

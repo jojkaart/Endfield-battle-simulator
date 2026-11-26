@@ -18,12 +18,10 @@ worked, found by reading 80 lines of prose).
 
 ## Files
 
-Three of 2026-11-26 (damage-factors round) are held back, not dropped: changes in files another agent held, measured,
-for the lead to apply or build in general (each header says which).
+Two of 2026-11-26 (damage-factors round) are held back, not dropped: changes in files another agent held, measured,
+for the lead to apply or build in general (each header says which). A third, the check's loggedEntries matching an
+unjudged buff's entry only against its own game buff, was adopted by the lead on 2026-11-26 and its diff deleted.
 
-- [2026-11-26-log-entries-own-buff.diff](2026-11-26-log-entries-own-buff.diff): ready. An unjudged kit buff's listed
-  entry is matched only against the engine's modifiers of its own game buff (Ember's Pay the Ferric Price had been
-  dropped as one of Thermite Cutter's +0.09 layers); hold-out plain 79.0 → 80.4%, 3 better, 0 worse.
 - [2026-11-26-0c14-si-away-press.diff](2026-11-26-0c14-si-away-press.diff): a measurement hard-coded to two presses
   (Si's away-stretch press makes nothing; her next, hitless, is her battle skill by Jade Vessel's listing); 0c14 plain
   172 → 293, −4.9 → +1.2%, the Endministrator's Crush exact. The general rule is to build.

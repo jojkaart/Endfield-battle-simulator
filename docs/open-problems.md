@@ -396,8 +396,8 @@ shares of the off error at that code):**
   - **7e19 Ember ×1.096: half the check, half her talent's layers.** (1) The check dropped her listed Pay the Ferric
     Price (+0.09 ATK, talent 2, on `attacked`, so its state is the log's) as if it were one of Pogranichnik's two
     Thermite Cutter layers (+0.09 ATK each): loggedEntries matches an unjudged buff's entry against any engine
-    modifier of the same zone and value. Matched against its own game buff only
-    (docs/tried/2026-11-26-log-entries-own-buff.diff, held back: the check is another agent's), her 25.81 s slam fits
+    modifier of the same zone and value. Matched against its own game buff only (adopted by the lead 2026-11-26 in
+    enginecheck.ts loggedEntries; the held-back diff deleted), her 25.81 s slam fits
     with Fervent Morale at its boundary (+0.17 ATK%), and the hold-outs go 79.0 → 80.4% plain (3 better, 0 worse).
     (2) Left ×1.0457 at 28.6–30.9 s and ×1.0957 at 33.15 s: one and two more +0.09 ATK layers. Ferric Price stacks to
     3 (stackingType 10, one timer each layer refreshes), and the log lists one entry whatever its layers: 04d4's Ember
