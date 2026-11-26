@@ -163,7 +163,35 @@ text table, BuffData effects, the kit analyses (docs/kit-batches/).
 | CompareFloat.compare | 0 / 1 / 2 / 3 / 4 | `<` / `<=` / `>` / `>=` / `==` | derived from branches whose meaning the descriptions fix: batch-1 chr_0032_lizhiyan, chr_0036_jsspsi |
 | SpellInfliction.inflictionType | 0 / 1 / 2 / 3 | Heat / Electric / Cryo / Nature | batch-1 chr_0032_lizhiyan; design.md |
 | lifeType | 0 / 1 | timed (its `duration`) / until something finishes it (duration ignored) | inferred: batch-1 chr_0034_typhoea (rows 8, 41: open test T1) |
-| stackingType | 13 values | unlimited, high priority, stack, enhance, refresh, extend, modify, unique, enhance+refresh, overwrite duration, enhance+overwrite, high priority with max, timed growing enhance (order to verify) | Endaxis (described, not copied) |
+| stackingType | 13 values | unlimited, high priority, stack, enhance, refresh, extend, modify, unique, enhance+refresh, overwrite duration, enhance+overwrite, high priority with max, timed growing enhance (order to verify); the engine's readings below | Endaxis (described, not copied) |
+
+### stackingType readings
+
+What the engine reads each `stackingSettings.stackingType` as (round 16,
+arcane-doubles-end report point 2: which instance a re-application keeps
+was re-derived from scattered kit notes each time), and what decided it;
+`efsim gamedata tree` prints the reading beside the number
+(packages/cli/src/gamedata.ts `ENUMS`). Where the code reads it:
+packages/data/src/kits.ts (`LAYERED_TYPES`, `SHARED_TIMER_TYPES`,
+`groupsInstances`, `oneLayerOnHolder`, `gameBuffInstances`). Add the log
+or test that decides an unverified one here and in `ENUMS`.
+
+| stackingType | The engine's reading | Decided by |
+|---|---|---|
+| 0 | instances add up; a priority key alone doesn't rank them | btl_upload_b7b3762d5da8: `buff_common_affixes_vulnerable_crystal` (type 0, priority `rate`) from two sources adds up |
+| 1 | only the strongest instance acts (a stack group); with a priority key, ranked by it, up to maxStackCnt | the kits' notes ("effects of the same name don't stack"); e82d's WILL lines (one will_atk and one will_dmg counted) |
+| 2 | layers, each with its own timer; a literal maxStackCnt 1 on others: one layer whoever applies | 9555de54bb3d (two wearers' `buff_equipsuit_usp_02_AddAttack`: one +0.16) |
+| 3, 5, 6, 12 | unverified (no kit reads them) | — |
+| 4 | one instance, refreshed | the kits' notes |
+| 7, 9 | not layers; no further reading | — |
+| 8 | layers on one timer each new layer refreshes | in-game test 62 (batch-3 B3) |
+| 10 | layers on one shared timer | the inflictions (`buff_common_enemy_spell_*_attached`); 7e19489ae503's Ember talent 2 listed once though applied twice |
+| 11 | layers, each with its own timer; with a priority key and a literal one instance, a stack group | Jade Vessel (open-problems: max_stack 2, the replay's two against the log's listing) |
+
+Open: which instance a second application keeps when the first is still on
+(Arcane's Imprisonment in e82d: the seal maxStackCnt 1, stackingType 0,
+its Susceptibility type 2, max 1, the seal's child; one log only,
+docs/open-problems.md).
 
 ### abilityEvent numbers
 

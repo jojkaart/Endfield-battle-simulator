@@ -73,5 +73,7 @@ describe("finding actions by type", () => {
     expect(formatFound(found)).toMatch(/^\d+ action\(s\) in \d+ file\(s\):\n {2}BuffData\/buff_chr_0036_jsspsi/);
     expect(formatFound(found, { count: "isEnable" })).toMatch(/by isEnable:/);
     expect(gamedataTree("buff_chr_0032_lizhiyan_combo_skill_seal")).toContain("abilityEvent 8 (owner defeated?)");
+    // A buff's stacking type with the engine's reading of it (round 16, docs/game-data-format.md "stackingType readings").
+    expect(gamedataTree("buff_chr_0032_lizhiyan_combo_skill_seal")).toMatch(/stackingType 0 \(instances add up/);
   });
 });
