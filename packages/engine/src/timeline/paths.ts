@@ -51,6 +51,43 @@ export function chanceJumpsOf(triggers: readonly KitTrigger[], skillId: string):
   });
 }
 
+/** A kit hit's landing frames: its frames, and past them, up to a literal count, its last frame `framesEvery` apart. */
+export function hitLandingFrames(h: Pick<KitHit, "frames" | "count" | "framesEvery">): number[] {
+  const frames = [...framesOf(h as KitHit)];
+  if (typeof h.count === "number" && frames.length) for (let i = frames.length; i < h.count; i++) frames.push((frames.at(-1) as number) + (h.framesEvery ?? 0));
+  return frames;
+}
+
+/**
+ * A replayed cast's logged landings on the path its taken jumps (at, to) go to: a landing whose kit frame lies in a
+ * taken jump's skipped part is that logged hit's landing on the jumped-to path, the landing to − at frames later of
+ * the same hit (a slash both paths have) or of another hit with its keys landing there (its path twin at that frame);
+ * left where it is when there is none (drivers.ts replayCast then judges the jump contradicted). Pogranichnik's combo
+ * jumps from frame 0 to 200 on three Vulnerable stacks consumed: the placement gives its slashes the 4-stack path's
+ * frames 23, 37, 61 by kit order, and the replay landed them there besides the 3-stack path's own 223, 237 and 261
+ * (a9d7fcb089c5 49.7–50.9 s and 142.0–145.8 s, d4fb69b036fe 47.2–48.5 s: six slashes a cast, twice its SP into his
+ * Living Banner's bank).
+ */
+export function takenPathLandings<L extends PathLanding>(skill: Pick<KitSkill, "hits">, jumps: readonly { readonly at: number; readonly to: number }[], landings: readonly L[]): L[] {
+  if (jumps.length === 0) return [...landings];
+  const used = new Set(landings.map((l) => `${l.hitId}|${l.nth}`));
+  return landings.map((l) => {
+    const hit = skill.hits.find((h) => h.id === l.hitId);
+    const f = hit ? hitLandingFrames(hit)[l.nth] : undefined;
+    const j = f === undefined ? undefined : jumps.find((x) => f >= x.at && f < x.to);
+    if (!hit || f === undefined || !j) return l;
+    const g = f + (j.to - j.at);
+    for (const x of [hit, ...skill.hits.filter((y) => y !== hit && sameKeys(hit, y))]) {
+      const nth = hitLandingFrames(x).indexOf(g);
+      if (nth < 0 || used.has(`${x.id}|${nth}`)) continue;
+      used.delete(`${l.hitId}|${l.nth}`);
+      used.add(`${x.id}|${nth}`);
+      return { ...l, hitId: x.id, nth };
+    }
+    return l;
+  });
+}
+
 /** A replayed cast's landing of a kit hit (drivers.ts ReplayCastOptions.landings). */
 interface PathLanding {
   readonly hitId: string;

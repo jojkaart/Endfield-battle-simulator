@@ -81,13 +81,26 @@ applied`, 80 of Rossi's: the log's resolution); a kit buff changing within 500 m
 inference reads (57 of Rossi's).
 
 **Still possible (not fixed):**
-- **Pogranichnik's SP-driven team buffs (Chen, Lifeng, Pogranichnik, the Endministrator: a9d7, c4f3, d4fb, de6a).** Most
-  of their fallbacks sit under Thermite Cutter's team ATK (layers on natural skill SP, `other values` on 259 of
-  Pogranichnik's hits, 210 of the Endministrator's in d4fb) and Fervent Morale (layers per 80 SP the team spends, `other
-  values` on 144, ×1.048 on 69): the replay's SP ("Team SP" below) decides both. de6a 26–61 s: every Pogranichnik hit
-  ×1.004 under both readings, the Breach applied at 26.03 s weaker than the game's (its Arts Intensity from fewer
-  Fervent Morale layers than the log lists). d4fb 24–34 s: the log lists Thermite Cutter on the Endministrator's hits
-  that read plain without it; 60–72 s it is needed (×1.0195): not decided.
+- **Pogranichnik's SP-driven team buffs (Chen, Lifeng, Pogranichnik, the Endministrator: a9d7, c4f3, d4fb, de6a).**
+  Worked 2026-11-26 (round 6 of the fights, "slots by value"): neither buff reads the team's SP. **Thermite Cutter is
+  right in the replay:** its `other values` (245 of Pogranichnik's hits in the four logs) are the log's listing, once
+  per application (7 at d4fb 92.0 s), where the replay's two layers read the hits' values (d4fb 61.76 s plain with
+  2 × 0.09, the log listing one); d4fb's 60–72 s ×1.0195 on the Endministrator is his gear set's
+  `suit_crush_fracture.phys` (0.24 in the replay, 0.27 listed: the Vulnerable stacks a Crush or Breach consumed, and
+  whether the enemy was Susceptible), not Thermite. **Fervent Morale's bank was double-fed:** his combo jumps from
+  frame 0 to 200 / 400 / 600 by the Vulnerable stacks consumed (4 / 3 / 2 / 1), the placement gives the slashes the
+  4-stack path's frames 23, 37, 61 by kit order, and the replay landed them there besides the jumped-to path's own
+  (six slashes, both paths' SP into the bank: a9d7 48.9 and 141.2 s, d4fb 46.5 s, c4f3 13.7 s). Now a logged landing
+  in a taken jump's skipped part goes to its hit's landing on the jumped-to path (engine paths.ts
+  `takenPathLandings`, drivers.ts replayCast), and the path is the values' where they decide (castassembly.ts
+  `valuePaths`, replayCast `kitJumps`; PATH lines in `zmdlogs decisions`): the third slash ×3.13 the first is the
+  4-stack path's 2.97, ×1.36–1.85 the 3-stack path's 1.49 (25 combos, all as the values say). c4f3's first Fervent
+  Morale 15.97 → 34.03 s (the log's 34.04 s Breach), d4fb's 194.43 s layer (none in the log) gone, 174.50 s (log
+  174.03 s). **Still open:** c4f3 13.07 s's Breach consumed three stacks in the replay, four in the game (its combo's
+  path says so; the battle skill's SP is atb3 where the game's was atb4); the harasses' layers on whom (c4f3 68.83 s
+  on Pogranichnik in the log, the replay's at 71.17 s twice); a9d7 197.07 s (a layer the log lists from 205.06 s).
+  de6a 26–61 s ×1.004 on every Pogranichnik hit and the ×1.003 on the Endministrator's d4fb fallbacks: a small
+  factor not traced.
 - **Estella's set and Susceptibility on Chen in c4f3** (`log only`, 29 and 16 hits, ×1.15–1.33): the replay lacks them.
 - **Rossi's `unlogged own combo_crit`** (108 fallbacks with the listing): her combo's crit buff on hits where the
   engine reading also misses a Wolven Blood layer or a teammate's buff; not grouped further.
@@ -971,7 +984,12 @@ Stagger is on the 42–46 s ones and the log's ×1.3 is on top); 7910's ×1.099 
   now matched to the plain wave (predicted 201,595, ×1.75 under), 0.0 → −0.2% in total; no dive is logged near
   54.3 s, so what ended her stare early (a dive whose own hit the log lacks?) is open. Tried: the first slot free
   for every key alone by the time cost moved 7910's stares a slot each (Liino's stops between hold her stares less
-  than the stop list says), hence the clean-landings rule.
+  than the stop list says), hence the clean-landings rule. **9c6e's Liino combo on two enemies** (round 5's left
+  item): a landing at its cast's last landing's ms whose value is that landing's (within ×1.25) and not the next
+  slot's is the same landing on a second enemy (logcasts.ts `sameByValue`): her 47.72 s hit 1 (6368 and 6035) one
+  slot, the 48.49 s hit 2 (10,743, ×1.69: hit2's 3.15 ÷ 1.89) the same cast's. 40d9's Si combo slashes, batched at one
+  ms, are unchanged (no placement there moved); 7b54's Camille combo at 16.34 s (three hit-2 landings, its 17.04 s
+  hit 3 the same cast's) moved too.
 
 ## Arts Intensity: what the logs settle and what they leave (2026-11-16)
 

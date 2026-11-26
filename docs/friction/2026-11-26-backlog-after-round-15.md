@@ -224,6 +224,8 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
   handles ultimates only and keeps the first landing's slot, so the cast's start (and its Link) stays wrong. A
   realignment for any kind with the first slot free when the landings are fewer than the slots, by time and by the
   logged values against the kit hits' scales (logcasts.ts). Moves the placement: measure.
+  Closed by worktree-agent-afcd0d768286cbdd8, f644801: logcasts.ts realignByValue (any kind, the first slot free for
+  a key that is its cast's only one); 7910's wave turned out to be the early rogue wave by value (open-problems).
 - **A reaction's level tried every way where the log decided it** (assumptions.ts ASSUMPTION_FACTS `stacks`, round
   15): logBuffReplay replays again with the levels the log shows (loggedReactionLevels), yet readingBasis still tries
   every other level 1–4 of a non-burst reaction, labelled "the replay's arts state isn't checked against the log's

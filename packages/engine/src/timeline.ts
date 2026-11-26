@@ -26,7 +26,7 @@ export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
 export { init, apply, canStartAt, replayCast, replayWindowCount, simulate, simulateRuns, startsNow } from "./timeline/drivers.ts";
-export { chanceJumpsOf, pathLandings, pathTwin, skippedHits } from "./timeline/paths.ts";
+export { chanceJumpsOf, hitLandingFrames, pathLandings, pathTwin, skippedHits, takenPathLandings } from "./timeline/paths.ts";
 export { SKILL_BUTTONS, buttonShows, buttonSkill, buttonSkills, diveOf, nextBasics, type SkillButton } from "./timeline/buttons.ts";
 export type { ReplayCastOptions, TimelineResult, RunSpread } from "./timeline/drivers.ts";
 

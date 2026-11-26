@@ -174,6 +174,17 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     expect(at(mifu, placeHits(data, mifu), 60839, "chr_0031_mifu_attack3")?.frame).toBe(30);
   });
 
+  it("a landing at its cast's last landing's ms whose value is that landing's, not the next slot's, is the same landing on a second enemy (9c6e: Liino's combo hit 1 at 47.72 s on both, 6368 and 6035; her 48.49 s hit 2 the same cast's)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9c6e97486a9d.json", import.meta.url).pathname);
+    const p = placeHits(data, fx);
+    const key = "chr_0035_liino_combo_skill";
+    const at = (t: number, v: number) => p.hits.get(fx.hits.find((h) => h.t === t && h.event === key && h.value === v) as LogHit);
+    expect(at(47720, 6035)?.sameAs).toBeDefined();
+    expect(at(47720, 6035)?.frame).toBe(9);
+    expect(at(48489, 10743)?.frame).toBe(33);
+    expect(at(48489, 10743)?.cast).toBe(at(47720, 6368)?.cast);
+  });
+
   it("Typhoeus's shots: an off-field hit isn't placed while the log shows her controlled, and a burst's cast isn't joined by the next shot's arrow (fc63 88–93 s: her 4th shot was placed as the 5th, every burst a shot early)", () => {
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-fc63a2001251.json", import.meta.url).pathname);
     const p = placeHits(data, fx);

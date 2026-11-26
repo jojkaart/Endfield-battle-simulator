@@ -18,7 +18,7 @@ import { castSkill, jumpToDive } from "./casting.ts";
 import { advance } from "./advance.ts";
 import { ofCast, ofKind, schedule } from "./schedule.ts";
 import { teammateStart } from "./teammates.ts";
-import { chanceJumpsOf, pathLandings } from "./paths.ts";
+import { chanceJumpsOf, pathLandings, takenPathLandings } from "./paths.ts";
 
 export function init(ctx: TimelineContext): TimelineState {
   const st = initialState(ctx);
@@ -146,9 +146,22 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     // path's × 0.2; 0c14fb3ce77d's at 154.09 and 174.33 s, 2fd915292bb7's and 99fb3c35fda2's under Mi Fu, all × 2.5 the
     // controlled path's before), then the chance jumps the log decides. Other jumps stay as the landings show (Rossi's
     // sequence 2).
+    const onControlJump = (k: NonNullable<typeof skill.jumps>[number]) => JSON.stringify(k.if ?? null).includes('"controlled"');
+    // The kit's jumps on the cast's state, not on control, as the log's values show them where they decide
+    // (opts.kitJumps): a taken one replaces the others from its frame, one not taken goes.
+    if (opts.kitJumps?.length) {
+      const kj = opts.kitJumps;
+      const mine = ofKind(st.scheduled, "jump").filter((j) => !j.end && ofCast(j, operator, index));
+      const gone = mine.filter((j) => kj.some((k) => k.at === j.from && (k.taken ? k.to !== j.to : k.to === j.to)));
+      const add = kj.filter((k) => k.taken && !mine.some((j) => j.from === k.at && j.to === k.to));
+      st = schedule({ ...st, scheduled: st.scheduled.filter((x) => !(x.kind === "jump" && gone.includes(x))) }, add.map((k): PendingJump => ({ kind: "jump", frame: frame + k.at, clock: { operator }, cast: { operator, index }, operator, from: k.at, to: k.to })));
+    }
     const jumps = ofKind(st.scheduled, "jump").filter((j) => !j.end && ofCast(j, operator, index));
-    const onControl = (skill.jumps ?? []).flatMap((k) => (k.to !== undefined && JSON.stringify(k.if ?? null).includes('"controlled"') ? [{ at: k.at, to: k.to, taken: jumps.some((j) => j.from === k.at && j.to === k.to) }] : []));
-    const landings = pathLandings(skill, [...onControl, ...decided], opts.landings);
+    const onControl = (skill.jumps ?? []).flatMap((k) => (k.to !== undefined && onControlJump(k) ? [{ at: k.at, to: k.to, taken: jumps.some((j) => j.from === k.at && j.to === k.to) }] : []));
+    // A logged landing in the part a taken kit jump on the cast's state skips is its hit's landing on the path the jump
+    // goes to (paths.ts takenPathLandings: Pogranichnik's combo slashes).
+    const onState = jumps.filter((j) => (skill.jumps ?? []).some((k) => k.at === j.from && (k.to === undefined || k.to === j.to) && !onControlJump(k))).map((j) => ({ at: j.from, to: j.to }));
+    const landings = takenPathLandings(skill, onState, pathLandings(skill, [...onControl, ...decided], opts.landings));
     // The cast's own landings of each kit hit, in frame order: the n-th moves to its logged frame.
     const own = new Map<string, PendingHit[]>();
     for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
@@ -269,6 +282,12 @@ export interface ReplayCastOptions {
    * the log lists from the slam's landing).
    */
   readonly chanceJumps?: Readonly<Record<string, boolean>>;
+  /**
+   * The kit's jumps on the cast's state (KitSkill.jumps, not on control) the log's values decide, taken or not, instead
+   * of the replay's state: packages/logs castassembly.ts valuePaths (Pogranichnik's combo path, by its slashes' values,
+   * where the replay's Vulnerable count consumed differs from the game's).
+   */
+  readonly kitJumps?: readonly { readonly at: number; readonly to: number; readonly taken: boolean }[];
 }
 
 /** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */
