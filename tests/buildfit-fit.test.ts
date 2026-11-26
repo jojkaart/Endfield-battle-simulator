@@ -1,6 +1,7 @@
 // `efsim zmdlogs fit-build` (packages/logs/src/buildfit.ts): an operator's attribute nodes, weapon level and food
 // fitted to its logged hits. Its two fits of 2026-11-18 are found again from the exported builds (the fixtures' overrides
-// taken off): 9555de54bb3d's Si without attribute nodes, f978430a083a's Ardelia with her weapon at level 60.
+// taken off): 9555de54bb3d's Si without attribute nodes, f978430a083a's Ardelia with her weapon at level 60; and
+// 04d401ad257e's Catcher with his weapon at level 3 (2026-11-26).
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
@@ -29,5 +30,14 @@ describe("the build fitter", () => {
     expect(fit.best[0]?.set).toEqual({ weapon: { level: 60 } });
     expect(fit.best[0]?.cleanFits).toBe(fit.clean);
     expect(fit.best[0]?.fits).toBeGreaterThan(100);
+  });
+
+  it("finds 04d401ad257e's Catcher with his weapon at level 3, foods tried (a DEF food can't be scored on his DEF hits)", () => {
+    // His P1 hits scale with DEF; Superhot Slug Gratin's DEF % sits in an unknown formula slot (StatLine.unmodelled),
+    // which threw out of the whole fit before 2026-11-26.
+    const fit = fitBuild(data, exported("04d401ad257e"), "chr_0020_meurs");
+    expect(fit.exported.fits).toBe(0);
+    expect(fit.best[0]?.set).toEqual({ weapon: { level: 3 } });
+    expect(fit.best[0]?.cleanFits).toBeGreaterThanOrEqual(150);
   });
 });

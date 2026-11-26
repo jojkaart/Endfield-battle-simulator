@@ -40967,5 +40967,16 @@
    "operator": "chr_0038_purrche",
    "skill": "chr_0038_purrche_normal_skill"
   }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0020_meurs",
+   "set": {
+    "weapon": {
+     "level": 3
+    }
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-26): as exported 0 of 248 landed hits within ±1 (×0.4701 on every ATK hit: basic attacks, combo, ultimate, talent shockwave, his Knock Down and Swordmancer procs alike); weapon level 3 (OBJ Heavy Burden) alone fits 188 of 248, 160 of 167 clean (median ×1.0005). The export (parser v58) has no weapon level. The hits it leaves are his P1 hits (DEF-scaled, ×1.03–1.12, which the weapon's level doesn't move) and a few under timing differences. Not checked against the weapon's skill levels (3, 2, 3): the breakthrough table isn't in the data sources."
+  }
  ]
 }

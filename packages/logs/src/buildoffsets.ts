@@ -103,7 +103,6 @@ export const OFFSETS_EXPLAINED: Readonly<Record<string, string>> = {
   "6339 chr_0032_lizhiyan": "the stage's shield and phase factors: a stage log",
   // Build inputs known and not fitted (docs/open-problems.md "Hard 27", "Fight-wide factors in older imports").
   "99fb chr_0038_purrche": "her level is 1 in the export (×2.47); fit-build doesn't vary an operator's level",
-  "04d4 chr_0020_meurs": "his weapon fits level ~1 (×1.0265 left); not fitted (an older import)",
   // Found by the screen (round 9), not decided: accuracy leads (a buildOverride moves the verdicts).
   "04d4 chr_0014_aurora": "open: ×0.962 on 77% of her hits; fit-build's best needs two inputs (weapon level 51 and a food, 91 of 207 fit): undecided",
 };
