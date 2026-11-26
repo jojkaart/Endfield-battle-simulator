@@ -38,6 +38,61 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Low plain, low mismatch: Rossi, Chen Qianyu, Yvonne, Lifeng, Pogranichnik, the Endministrator (2026-11-26)
+
+**Shows:** at 36e3bc8 Rossi 51.9% plain (2305 hits), Chen 30.2% (810), Yvonne 31.9% (323), Lifeng 43.5% (260),
+Pogranichnik 44.1% (649), the male Endministrator 52.6% (310), each with a mismatch share under 8%: most of their hits
+match only under an assumption or by the log-listing fallback. Grouped by what the first fitting reading assumes
+(scripts/probes/assumed/kinds.ts `<operator>`: the check's own composition, per kind, kind set, event and label).
+
+**Found and fixed:**
+1. **The crit the replay already read (Rossi, Yvonne).** 418 of Rossi's 1109 non-plain matches and 150 of Yvonne's
+   assumed only `crit`: the log leaves the crit out of every ultimate stab of Rossi's (and Yvonne's ultimate), the
+   check's primary reading took none, and the crit reading was the assumption; yet the replay had read those crits
+   from the log (replaycrits.ts: a Seething Blood extra at the stab's ms, the Wolven Blood layers its crits add, the
+   hits' values; `hits --json` critSource `shown` 200, `layers` 205 of them). Engine assumption `check-crits`, new
+   default `replay`: the primary reading takes the replay's read crit and the other reading is `no crit`
+   (enginecheck.ts readingBasis, primaryCritRead). Rossi plain 1196 → 1610 alone; 9 of her hits now need `no crit`
+   (the read crit wrong there). The totals are unchanged by it (critFromValue is symmetric in its two readings).
+2. **A status's damage that crits counts as a crit (Chen, Rossi; Lupine Scarlet and MI Security).** Chen's Wolven Blood
+   layers in a9d7, one per crit, gain one at each of her Lift hits that crit (12.04, 25.86, 40.46, 61.52 s), none at
+   the Lifts that don't (23.91, 38.76 s); the replay counted kit hits only and fell a layer further behind at each,
+   ×1.013 → ×1.044 under the log by 69 s on every one of her hits (a9d7 Chen plain 0 of 186). Rossi in d572: two
+   layers at 5.50 s from her combo's crit and its Lift's. The game's abilityEvent 44 (the wielder deals Critical DMG,
+   its damage mask disabled) is the trigger of both Lupine Scarlet and MI Security. A status event's battle event now
+   carries its damage's crit (engine landing.ts recordStatus `crits`, asEvents), and a trigger on crits with no filter
+   a status's damage fails (kinds without `none`, skills, Final Strike, decorations, `reaction: false`) fires on it
+   (events.ts statusCritMatches); a replayed status's hit takes its logged crit (eventDamage, reactionEventKeys).
+   Seething Blood and the Wolf Pistol's crit trigger (kinds battle / combo) don't see it.
+
+**Measured** (`measure --variant check-crits=none`, against 36e3bc8's snapshots; the status crits alone): development
+plain 69.7 → 70.1%, hold-out 81.0 → 81.2%, earlier pending 70.2 → 70.7% (mean |damage error| 3.5 → 3.4%); a9d7 plain
+101 → 177, 0c14 493 → 509, d572 925 → 952, 2fd9, 99fb, 4e5e better; c4f3 worse (243 → 223, −2.5 → −2.9%): Chen's
+second Wolven Blood final ends at 104.5 s in the replay against the log's 99.1 s, and with the layers now counted right
+the hidden-hold placement, which reads that run as a clock, moves its units 10–21 (111.6 → 80.9 s and on), so the third
+final and Pogranichnik's hits at 116–146 s read ×1.04 off. `check-crits` on top: development 70.1 → 71.8%, hold-out
+81.2 → 82.1%, earlier 70.7 → 72.9% (docs/accuracy.md: Rossi 73.2%, Yvonne 71.2%, Chen 38.8%, Pogranichnik 41.9%
+for c4f3, Lifeng and the Endministrator unchanged).
+
+**Only the check's tolerance (left as they are):** a buff starting or ending at the hit's ms (`boundary buffs
+applied`, 80 of Rossi's: the log's resolution); a kit buff changing within 500 ms of the hit, read as listed or off
+(the replay's edge); Link stacks the replay can't say (4e5e's 27 ultimate stabs); a crit the log doesn't give and no
+inference reads (57 of Rossi's).
+
+**Still possible (not fixed):**
+- **Pogranichnik's SP-driven team buffs (Chen, Lifeng, Pogranichnik, the Endministrator: a9d7, c4f3, d4fb, de6a).** Most
+  of their fallbacks sit under Thermite Cutter's team ATK (layers on natural skill SP, `other values` on 259 of
+  Pogranichnik's hits, 210 of the Endministrator's in d4fb) and Fervent Morale (layers per 80 SP the team spends, `other
+  values` on 144, ×1.048 on 69): the replay's SP ("Team SP" below) decides both. de6a 26–61 s: every Pogranichnik hit
+  ×1.004 under both readings, the Breach applied at 26.03 s weaker than the game's (its Arts Intensity from fewer
+  Fervent Morale layers than the log lists). d4fb 24–34 s: the log lists Thermite Cutter on the Endministrator's hits
+  that read plain without it; 60–72 s it is needed (×1.0195): not decided.
+- **Estella's set and Susceptibility on Chen in c4f3** (`log only`, 29 and 16 hits, ×1.15–1.33): the replay lacks them.
+- **Rossi's `unlogged own combo_crit`** (108 fallbacks with the listing): her combo's crit buff on hits where the
+  engine reading also misses a Wolven Blood layer or a teammate's buff; not grouped further.
+- **Chen's Wolven Blood final's end** (c4f3 99.1 s in the log, 104.5 s in the replay): a clock question, the buff's
+  run of 20 s over the hidden holds.
+
 ## Misprediction statistics: candidates across the logs (2026-11-24)
 
 **Shows:** one statistical pass over every development log's hits and one-sided landings

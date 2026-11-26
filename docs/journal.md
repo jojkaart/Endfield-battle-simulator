@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 156 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 157 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Low plain, low mismatch: the replay's read crits and a status's crit
+
+**Goal:** why most of Rossi's hits (and Chen Qianyu's, Yvonne's, Lifeng's, Pogranichnik's, the male Endministrator's)
+match only under an assumption or the log-listing fallback; make the readings with a mechanism the default, and say
+which are only the check's tolerance (open-problems "Low plain, low mismatch").
+
+**Done:**
+- **Grouped the non-plain matches by what they assume** (scripts/probes/assumed/kinds.ts): Rossi's 1109 were 418
+  `crit` alone (her ultimate stabs and Seething Blood extras), 165 boundary, 181 fallbacks; Yvonne's 150 `crit`; Chen's,
+  Lifeng's, Pogranichnik's and the Endministrator's nearly all fallbacks.
+- **The crit the replay read is the primary reading's** (engine assumption `check-crits`, default `replay`;
+  enginecheck.ts readingBasis, primaryCritRead): the replay had read those crits from the log (replaycrits.ts:
+  Seething Blood extras at the stab's ms, Wolven Blood layers, values) but the check took none and assumed the crit.
+- **A status's damage that crits fires triggers on crits** (engine events.ts statusCritMatches, landing.ts recordStatus
+  `crits`, asEvents; a replayed status's hit takes its logged crit, reactions.ts reactionEventKeys): Chen's Wolven
+  Blood layers in a9d7 gain one at each crit Lift and fell a layer further behind at each (×1.013 → ×1.044 by 69 s);
+  Lupine Scarlet and MI Security are both on abilityEvent 44 (any crit). Seething Blood and the pistol's kind-filtered
+  triggers don't see it.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 69.7 → 71.8%, mismatch 11.2%, mean |damage error|
+6.8%; hold-out plain 81.0 → 82.1% (one log mixed: plain +65, totals); earlier pending plain 70.2 → 72.9%, mean |damage
+error| 3.5 → 3.4%; verified 78.0 → 78.1%. By operator: Rossi 51.9 → 73.2%, Yvonne 31.9 → 71.2%, Chen 30.2 → 38.8%,
+Pogranichnik 44.1 → 41.9%, Lifeng and the Endministrator unchanged. Better: 0c14, 2fd9, 99fb, abfd, d572, a9d7 (101 →
+177 plain), 3f78, 489c, 5082, 4e5e; mixed 207f, 4a64, 9a80 (totals +0.1–0.4%); worse c4f3 (243 → 223, −2.5 → −2.9%):
+Chen's layers now right, her second Wolven Blood final ends 5 s late in the replay and the hidden-hold placement, which
+reads it as a clock, moves its later units, so the third final and Pogranichnik's hits at 116–146 s read ×1.04 off.
+team-ab: both teams' fights unchanged; examples.json: Rossi's example +0.46% (her Lifts' crits add layers).
+
+**Decisions:** `check-crits` registered as an engine reading so the old classification stays one `--assume` away (the
+value inference is cross-validated at 0.90, not proof); the status crit isn't an assumption (the log shows the layer at
+every crit Lift and none at the others). Status damage counts only for triggers on crits: nothing in the logs says
+whether it counts as a hit for other hit triggers. Left as the check's tolerance: boundary buffs at the hit's ms,
+kit buffs changing within 500 ms, Link the replay can't say, crits no inference reads.
+
+**Next / open:** Pogranichnik's Thermite Cutter and Fervent Morale, both on SP the log doesn't record, behind most of
+Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's Wolven Blood final end (a clock).
 
 ## 2026-11-26: Alesh's Rare Fin: chance paths and a cast from the listing
 
@@ -333,39 +370,3 @@ show. Not reached: Electrification / Solidification across a freeze (no listed r
 **Problems:** the ComboSkill curve's measures waited behind another worktree's measures in the lock's queue (about
 10 min each); the probes' first cut (per tick pair) split a stop's time between neighbouring pairs, so only chain
 sums with whole stops inside are evidence.
-
-## 2026-11-26: Damage factors: Catcher's weapon, the Crush's stacks from Si's away press, Ember's listed layers
-
-**Goal:** the damage factors the misprediction statistics left, largest first: the Crush ×2.2 (0c14) and ×1.90 (2fd9),
-04d4's Catcher ×2.1 and Snowshine ×0.962, Ember's ×1.096 (7e19), Rossi's ultimate ×1.09 / ×1.08, bleed clock, slash2
-extras and combo_3 over-hold, then the cast tails; another agent held the replay, holds and check files.
-
-**Done** (open-problems "Misprediction statistics", The damage factors):
-- **The Crush is right; its misses were Vulnerable stacks.** Every logged Crush reads exactly with the data's
-  multiplier by stacks consumed. Rossi's perfect combo gives a Lift and one more stack per consumed infliction, so one
-  infliction the replay lacks costs two stacks: 2fd9's (fixed by round 4's counter bash), and 0c14's at 182.30 s (2 →
-  4: 172,059 exactly). 0c14's cause: Si's battle-skill press in the away stretch (139.68 s), made by the replay, landed
-  nothing in the game, and her hitless 153.99 s press was her battle skill (Jade Vessel's Immobilization debuff listed
-  from the next hit, her Artful Intent ending at the log's 181.00 s). Hard-coded as a measurement:
-  docs/tried/2026-11-26-0c14-si-away-press.diff (0c14 plain 172 → 293, −4.9 → +1.2%); the rule is the replay's.
-- **04d4's Catcher: weapon level 3** (fixture buildOverrides). fit-build threw on his DEF-scaled hits under a DEF food
-  candidate; such a candidate is now unscored (buildfit.ts, tests/buildfit-fit.test.ts). 04d4 plain 185 → 376.
-- **Ember's ×1.096:** the check's loggedEntries dropped her listed talent ATK (+0.09) as one of Thermite Cutter's
-  layers (fix held back: docs/tried/2026-11-26-log-entries-own-buff.diff, hold-out plain 79.0 → 80.4%, 3 better, 0
-  worse), and her talent's layers aren't listed (one entry at 1–3 layers: 04d4's steps ×1.023 / 1.085 / 1.147).
-- **Rossi:** her ultimate's ×1.09 / ×1.08 fit now (closed); the slash2s without an extra are a fight's or a life's last
-  hit (scripts/probes/rossi/slash2.py; the totals rule is mixed and too broad, docs/tried/2026-11-26-life-end-landings.diff);
-  the bleed's unlanded ticks and combo_3's over-hold left to the holds' owner.
-- Snowshine narrowed (her attribute bonus 3.325 → 3.200 exactly; no weapon level or node count reaches it); the cast
-  tails' largest are stage, two-target and placement cases, no kit cause.
-
-**Scoreboard** (`npm run snapshots:update`): verified unchanged; development plain 69.0%, mismatch 11.4%, mean |damage
-error| 7.0% (unchanged); hold-out 79.0%, 5.9%, 8.5% (unchanged); earlier pending plain 64.7 → 66.3%, mismatch 13.9 →
-12.0%, mean |damage error| 4.1 → 4.2% (04d4 mixed: per hit 17.9 → 6.5%, its total +2.1 → −3.0%, the over-prediction had
-hidden the rest of its deficit). No kit or engine change: team-ab not needed.
-
-**Decisions:** fixes in files another agent held were measured with `--patch` and kept as docs/tried diffs marked held
-back (README paragraph), not applied; Catcher's level-3 weapon taken though the weapon's skill levels (3, 2, 3) can't be
-checked against a breakthrough table the data sources lack.
-
-**Problems:** `measure -- --help` queued 5 min for the lock before rejecting the option (friction report).
