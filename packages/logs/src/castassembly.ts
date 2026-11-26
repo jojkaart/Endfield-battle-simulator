@@ -186,22 +186,6 @@ export function listedPaths(data: GameData, kits: readonly OperatorKit[], fx: Pi
   });
 }
 
-/**
- * The game buffs on chance paths (chancePathHits) whose every cast the listing decided (ReplayedCast.chanceJumps from
- * listedPaths or castsFromHitBuffs): the replay can judge those (replaycrits.ts chancePathBuff); one cast left to the
- * roll leaves the buff to the log.
- */
-export function listedPathBuffs(kits: readonly OperatorKit[], casts: readonly ReplayedCast[]): Set<string> {
-  const out = new Set<string>();
-  const left = new Set<string>();
-  for (const kit of kits) for (const skill of kit.skills) for (const p of chancePathHits(kit, skill.skillId)) {
-    const mine = casts.filter((c) => c.operator === kit.operator && c.skillId === skill.skillId && !c.beforeLog);
-    for (const g of p.buffs) (mine.every((c) => c.chanceJumps?.[p.trigger] !== undefined) ? out : left).add(g);
-  }
-  for (const g of left) out.delete(g);
-  return out;
-}
-
 /** The shortest duration (ms) of a kit hit's own buffs with game buffs, or null (none, or one that needs a fight). */
 function hitBuffMs(data: GameData, build: LogFixture["team"][number], kit: OperatorKit, hit: KitHit, skillId: string): number | null {
   let out: number | null = null;

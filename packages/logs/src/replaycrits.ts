@@ -6,7 +6,6 @@
 import { allActions, kitHitEntries, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 import type { Placement } from "./logcasts.ts";
-import { loggedNames } from "./enginecheck.ts";
 
 /** Trigger events a log doesn't let the replay judge: the enemy's own actions. */
 const UNJUDGED_EVENTS: ReadonlySet<string> = new Set(["attacked", "perfectDodge", "enemyCharge"]);
@@ -235,13 +234,9 @@ export function critTriggers(kit: OperatorKit, buffId: string, depth = 0): KitTr
  * (every frame of it at or after the jump's target), which the replay rolls on its own stream and the log doesn't
  * give. ad7f5ee2c91c: the replay rolled Alesh's Rare Fin at 13.8 s (his logged slam fits the normal one, ×0.85 as all
  * his hits), so his P3 team ATK, which only the Rare Fin's slam applies, stood on 10 s of everyone's hits the log
- * lists it on none of (Arcane's 30 basic attacks ×0.904, Si's ×0.929). Not one of `shown` (game buffs whose chance
- * path the listing decided in every cast, castassembly.ts listedPathBuffs): the replay takes the path its listing
- * shows (listedPaths, 2026-11-26: her P3 is listed from exactly the Rare Fin slam's ms in every development log).
+ * lists it on none of (Arcane's 30 basic attacks ×0.904, Si's ×0.929).
  */
-function chancePathBuff(kit: OperatorKit, buffId: string, shown: ReadonlySet<string>): string | null {
-  const def = kit.buffs.find((d) => d.id === buffId);
-  if (def && loggedNames(def).some((g) => shown.has(g))) return null;
+function chancePathBuff(kit: OperatorKit, buffId: string): string | null {
   for (const t of kit.triggers) {
     if (t.chance === undefined) continue;
     for (const a of allActions(t.do)) {
@@ -259,18 +254,18 @@ function chancePathBuff(kit: OperatorKit, buffId: string, shown: ReadonlySet<str
 /**
  * Why the replay can't decide one of a kit's buffs, or null: a trigger that
  * applies it can't be judged, or listens to a buff that can't (to a depth of
- * a few such links). `shown`: the game buffs whose chance paths the listing decided (chancePathBuff).
+ * a few such links).
  */
-export function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0, shown: ReadonlySet<string> = new Set()): string | null {
+export function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0): string | null {
   if (depth > 4) return null;
-  const byChance = chancePathBuff(kit, buffId, shown);
+  const byChance = chancePathBuff(kit, buffId);
   if (byChance) return byChance;
   for (const t of kit.triggers) {
     if (!allActions(t.do).some((a) => a.kind === "buff" && a.buff === buffId)) continue;
     const own = unjudged(t, kit);
     if (own) return own;
     if ("buff" in t.on && t.on.buff !== buffId) {
-      const via = undecidedBuff(kit, t.on.buff, depth + 1, shown);
+      const via = undecidedBuff(kit, t.on.buff, depth + 1);
       if (via) return `${t.id} via ${via}`;
     }
   }

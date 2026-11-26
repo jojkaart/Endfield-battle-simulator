@@ -48,7 +48,9 @@ describe("Alesh's combo paths and cast from the listing (0c14)", () => {
   it("lands the 59.56 s combo on the Rare Fin path (P3 listed from its slam's 60.13 s) and the 199.03 s one on the normal path", () => {
     expect([landedAs(59560), landedAs(60129)]).toEqual(["hook_ex", "slam_ex"]);
     expect([landedAs(199033), landedAs(199464)]).toEqual(["hook", "slam"]);
-    expect(r.replay.unjudgedKitBuffs.has(`${A}:p3_atk`)).toBe(false);
+    // P3 itself stays the log's (docs/tried/2026-11-26-chance-path-buffs-decided.diff: judged by the replay, a hold-out
+    // log lost 47 plain).
+    expect(r.replay.unjudgedKitBuffs.get(`${A}:p3_atk`)).toMatch(/rare_fin: a chance/);
   });
   it("makes the 12.0 s combo the log shows only by its P3 and Thermite layer; its landings count for nothing in the totals", () => {
     const made = r.replay.made.find((m) => m.cast.listed !== undefined);
