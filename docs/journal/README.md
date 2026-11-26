@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-26: Improvement round 13: clocks, dropped bounds, --assume everywhere, options before the queue](2026-11-26-03-improvement-round-13-clocks-dropped-bounds-assume-everywhere.md)
 - [2026-11-26: The lead: the check's own-buff fix adopted, the two accuracy rounds merged](2026-11-26-02-the-lead-the-check-s-own-buff-fix-adopted-the-two-accuracy.md)
 - [2026-11-26: The enemy's clock: combos hold every clock more than their stops; no pause while the enemy is away](2026-11-26-01-the-enemy-s-clock-combos-hold-every-clock-more-than-their.md)
 - [2026-11-26: Damage factors: Catcher's weapon, the Crush's stacks from Si's away press, Ember's listed layers](2026-11-26-01-damage-factors-catcher-s-weapon-the-crush-s-stacks-from-si-s.md)

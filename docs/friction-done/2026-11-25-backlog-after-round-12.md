@@ -212,3 +212,11 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
 The reports named their episodes (489c's units, de6a's Swordmancer, 4bfc 179.51 s, 9c0b's skipped ultimate, Zhuang
 Fangyi's combo_skill_ult), so each tool was tried on the episode it should have shortened, and cli-ab with a patch
 answered the costliest one (489c) in a single run.
+
+## Outcome (round 13)
+
+- 1 (`zmdlogs casts --why`: which rule chose a skill among those sharing a key): carried (2026-11-26-backlog-after-round-13.md point 1), joined there by the holds-and-placement report's `placement --why` (the same record of the placement's choices; logcasts.ts was the accuracy agent's this round)
+- 2 (The burst view's causes are a heuristic, and the enemy's inflictions before a burst aren't shown): carried (2026-11-26-backlog-after-round-13.md point 2); engine and replay record, the accuracy agent's this round
+- 3 (Two compositions of one fight's check: the snapshot check's and the hit records'): carried (2026-11-26-backlog-after-round-13.md point 3); the composition is of the check the accuracy agent was changing
+- 4 (A change to many kits can't be attributed among the hold-outs without saying what they contain): closed by the lead's decision (2026-11-25), not carried; the rule it rested on is now a list in docs/design/tests.md "What a hold-out output may say" (87ee6c5)
+- 5 (The hold placement's units move far from a change): moved to the new backlog's accuracy list (it moves verdicts), with round 13's `zmdlogs holds --dropped --all` counts as its first evidence (56de13b)

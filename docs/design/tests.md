@@ -121,8 +121,10 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   The per-hit reference without `--base` is the code of the commit that
   wrote the reference's snapshots (round 7: after a code-only commit,
   HEAD's code is the measured code and "no hit's verdict changed").
-  `--changed placement` also names the casts placed only before (-) and
-  only now (+). Under `--hits` each moved log's placed hidden holds
+  `--changed placement` also names the casts that moved (~, paired as
+  packages/logs/src/castpairs.ts `pairCasts` pairs placements: the casts
+  that stay first, then the moved ones by nearest start), those placed
+  only before (-) and only now (+). Under `--hits` each moved log's placed hidden holds
   (`zmdlogs holds`' 0.512 s units: placed, earliest–latest) come too,
   the units placed elsewhere, new or gone listed: "the holds placed
   again" in one line instead of a diff of traces (round 9).
@@ -168,6 +170,18 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   to [docs/tried/](../tried/README.md) with its measure in a header, named
   in its open-problems paragraph, so `--patch docs/tried/<file>` measures
   it again once what blocked it is fixed (round 9).
+- **Options before the queue** (round 13: `measure -- --help` waited
+  5 min for the lock, then failed): measure parses its options and
+  checks `--assume` / `--variant` readings against the registered
+  assumptions before it queues, and `--help` / `-h` prints its header's
+  usage (scripts/usage.ts); snapshots, premerge, team-ab and verify-at
+  take `--help` too, team-ab checks `--base` and the teams' files first.
+- **A variant's own hits** (round 13): with `--variant … --hits` each
+  variant's summary also lists the hits it moved against the plain tree
+  (the same code without it), and hits.txt has them in full: the first
+  question after "this reading moved db87" without two `zmdlogs hits`
+  runs and a diff. A patch's own hits: `--patch <diff> --base HEAD --hits`,
+  or `node scripts/cli-ab.ts HEAD --patch <diff> -- zmdlogs hits <fx>`.
 - **The negative control in every measure** (round 7): the verified
   logs measured are also checked with every value ×0.97 and ×1.03, the
   bound test:logs fails on, flagged `!`; a reading fitted to the damage it
@@ -271,3 +285,26 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   so a job that exits right after signalling its children leaves them
   "alive" to `kill(pid, 0)` (round 10: the ported done-line test failed
   so; done-line.ts now waits for its children itself).
+
+## What a hold-out output may say
+
+The standing rule (the lead, round 9, docs/friction-done/2026-11-23-round-9.md;
+written here in round 13 so the next tool is checked against a list, not a
+search): "which operators the moved hold-outs have tells what the hold-outs
+contain; the field kinds stay". A tool that reads the hold-outs
+(scripts/accuracy.ts `--compare`, measure's hold-out lines and kind tables,
+snapshots:update's summary) may print:
+
+- counts per group and direction (better, worse, mixed, other), and the
+  scoreboard's aggregates;
+- field kinds (verdict classes, totals keys, one-sided kinds) and their
+  net changes, summed over the hold-outs;
+- the means of a kinds table over the hold-outs;
+- how many moved hold-outs have an operator, only where round 9's
+  measure already prints it (counts, never which log).
+
+Never: a hold-out's id or file name, its team, an operator, weapon or gear
+set per log, a split per kit or per mechanism class (the lead, 2026-11-25:
+the classes are small enough to narrow a team), a hit, a time or a value
+of one log. Attribution among the hold-outs stays patch-per-kit measures
+on development logs, with the hold-outs' aggregates as the check.

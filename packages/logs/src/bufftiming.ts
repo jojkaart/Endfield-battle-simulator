@@ -164,6 +164,8 @@ export interface TimingOptions {
   readonly assumed?: boolean;
   /** Pairs for hits no single toggle fits (default true). */
   readonly pairs?: boolean;
+  /** Readings of open assumptions to replay under (`zmdlogs timing --assume`). */
+  readonly assume?: Readonly<Record<string, string>>;
 }
 
 const ms = (f: number) => (f * 1000) / FPS;
@@ -329,7 +331,7 @@ function damageOf(c: EngineCheck, r: Reading): number | null {
 /** The report for one log (never a hold-out: the caller chooses). */
 export function fixtureTiming(data: GameData, fx: LogFixture, opts: TimingOptions = {}): FixtureTiming {
   const placement = placeHits(data, fx);
-  const replay = logBuffReplay(data, fx, placement);
+  const replay = logBuffReplay(data, fx, placement, opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {});
   const byHit = engineHits(data, fx, replay, placement);
   const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
   const c = engineCheck(data, fx, replay.replay);

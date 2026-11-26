@@ -16,18 +16,19 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–12
-  done (round 12, 2026-11-25: the holds' pins and conflicts, `cli-ab
-  --patch`; the replay's dropped-landing and skipped-press reasons,
-  `--trace-trigger`; the cooldowns' mechanism in `efsim kit`; the
-  placement's named passes and `zmdlogs placement`; the compiler's one
-  message and a likely-loggedAs screen from the data; the "enemy HP
-  unknown" label; measure's moved.json); the backlog
-  ([2026-11-25-backlog-after-round-12.md](friction/2026-11-25-backlog-after-round-12.md),
-  5 live points: `casts --why`, the bursts' recorded cause, one check
-  composition, the hold-outs' attribution (the lead's decision), holds
-  per stretch) joins the next round once about five new reports have
-  collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–13
+  done (round 13, 2026-11-26: `zmdlogs clocks`, `holds --dropped`,
+  `differences --clusters`; `--assume` on every view that replays;
+  measure's options before the queue, `--help` on the locked scripts, a
+  variant's own hits; one cast pairing; `lead-files.ts` for the lead's
+  split; the hold-out output rules in docs/design/tests.md); the backlog
+  ([2026-11-26-backlog-after-round-13.md](friction/2026-11-26-backlog-after-round-13.md),
+  6 live points, each in a file an accuracy agent held: the placement's
+  `--why` record, the bursts' recorded cause, one check composition, the
+  slow-down curves as a reading, reason strings as keys, the
+  buffreplay.ts split) joins the next round once about five new reports
+  have collected; points 1, 4 and 6 suit the next agent holding the
+  replay and placement between accuracy tasks.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

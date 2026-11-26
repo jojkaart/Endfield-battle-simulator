@@ -83,3 +83,12 @@ docs/friction/2026-11-25-backlog-after-round-12.md aren't repeated.
 - `zmdlogs stops --all --differ` by cli-ab proved the replay-decision change for the views identical in four minutes.
 - Writing the new backlog first and `friction.ts outcomes --backlog` filled every carried outcome on the first pass.
 - The bash guard's refusals each named the safe form (four this round).
+
+## Outcome (round 13)
+
+- 1 (A view a change adds can't be compared at an older commit): done, the rest (b68f663): at-commit.ts `applyPatch` names the hunks that failed, the files missing at that commit and the files the diff touches, and says a view's patch needs only the view's files (cli-ab and measure use it); tests/at-commit.test.ts
+- 2 (Two pairings of casts between placements): done in packages/logs (87ee6c5): castpairs.ts `pairCasts` (the casts that stay first, then the moved by nearest; 9a80's shape in tests/clocksview.test.ts), used by `measure --changed placement` (now "~ moved" lines). settleCheck's own copy in logcasts.ts carried (2026-11-26-backlog-after-round-13.md point 1)
+- 3 (Which strings are keys, and which are only text): carried (2026-11-26-backlog-after-round-13.md point 5); the strings are made in buffreplay.ts
+- 4 (The hold-outs' blindness rules are in a round write-up): done (87ee6c5): docs/design/tests.md "What a hold-out output may say", cited from scripts/accuracy.ts's header and measure's kindLines
+- 5 (buffreplay.ts is one 2,900-line file): carried (2026-11-26-backlog-after-round-13.md point 6); the accuracy agent held the file
+- 6 (edit.ts's append block): done (b68f663): an end block may leave out its `=======`; tests/edit-guard.test.ts

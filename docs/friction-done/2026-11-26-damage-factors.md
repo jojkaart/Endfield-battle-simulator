@@ -72,3 +72,11 @@ another accuracy agent holding packages/logs' replay, holds and check files. Bra
 - `measure --at HEAD --patch` let me size three changes in files I couldn't edit without touching the tree, in
   parallel, with `--hits` naming the moved hits and their modifiers.
 - scripts/edit.ts for the fixture and the multi-block doc edits: exact and all-or-nothing.
+
+## Outcome (round 13)
+
+- 1 (Most root causes sat in files the brief kept me out of): the lead's (noted in docs/friction-done/2026-11-26-round-13.md, "For the lead"); a tool for it (87ee6c5): `node scripts/lead-files.ts <fixture id|operator|word>…` lists the code files of the commits naming a lead, marked where another worktree's branch changed them (`0c14`: buffreplay.ts first, the file the cause was in); CLAUDE.md's lead paragraph names it, the split by question where the cause is unknown, and the held-back diff in docs/tried/
+- 2 (`npm run measure -- --help` queued for the lock and then failed): done (b68f663): measure parses and checks its options, the readings against the registered assumptions too, before it queues; `--help` / `-h` prints the header's usage (scripts/usage.ts) for measure, snapshots, premerge, team-ab and verify-at; team-ab checks `--base` and the teams' files before its queue
+- 3 (fit-build threw on an operator with a DEF-scaled hit and never fitted him): done in that round (an unmodelled line leaves a candidate unscored); fit-build takes `--assume` since round 13
+- 4 (The log listing of a layered buff hides its layers, and nothing says so): done (56de13b, 87ee6c5): `zmdlogs differences --clusters` prints each group's ratio clusters (×1.023 n=…, ×1.085 n=…; with `--operator`, one operator's), and docs/design/data.md's "Common misreadings" names it: a layered buff of one timer is listed once
+- 5 (The replay's "unseen" press rule and the away stretches are two separate ideas): the parallel accuracy agent's task this round (the away state and hitless presses in the replay); on the new backlog's accuracy list

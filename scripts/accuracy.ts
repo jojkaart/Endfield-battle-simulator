@@ -6,7 +6,8 @@
 // accuracy change in the scoreboard's diff.
 //
 // Hold-out logs are counted blind: only their group's aggregates appear (in the scoreboard and in --compare's
-// direction counts), never a hold-out log's own numbers (docs/accuracy-plan.md, "Choosing logs").
+// direction counts), never a hold-out log's own numbers (docs/accuracy-plan.md, "Choosing logs"). What any hold-out
+// output may say: docs/design/tests.md "What a hold-out output may say".
 //
 // Usage: node scripts/accuracy.ts [--write | --check | --compare <git ref>]
 //   (none)      print the scoreboard

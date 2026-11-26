@@ -58,9 +58,9 @@ const median = (xs: readonly number[]) => {
 };
 
 /** The operator's landed kit hits in a fixture (its builds as read: overrides applied). */
-function fitHits(data: GameData, fx: LogFixture, operator: string): FitHit[] {
+function fitHits(data: GameData, fx: LogFixture, operator: string, assume: Readonly<Record<string, string>> = {}): FitHit[] {
   const placement = placeHits(data, fx);
-  const replay = logBuffReplay(data, fx, placement);
+  const replay = logBuffReplay(data, fx, placement, Object.keys(assume).length ? { assume } : {});
   const c = engineCheck(data, fx, replay.replay);
   const out: FitHit[] = [];
   for (const hit of fx.hits) {
@@ -97,10 +97,10 @@ function readings(data: GameData, fx: LogFixture, h: FitHit, build: Build, panel
  * Fit an operator's attribute nodes, weapon level and food to its hits in a fixture: every combination is screened on
  * a sample of the hits, the promising ones scored on all of them. `top` candidates are returned.
  */
-export function fitBuild(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean } = {}): BuildFit {
+export function fitBuild(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean; readonly assume?: Readonly<Record<string, string>> } = {}): BuildFit {
   const base = fx.team.find((b) => b.operator === operator);
   if (!base) throw new Error(`${fx.id}: ${operator} isn't in the team`);
-  const hits = fitHits(data, fx, operator);
+  const hits = fitHits(data, fx, operator, opts.assume);
   const score = (build: Build, hs: readonly FitHit[]): { fits: number; cleanFits: number; median: number } => {
     let panels: { fed: StatPanel; unfed: StatPanel };
     try {

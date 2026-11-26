@@ -101,8 +101,11 @@ own: `--base HEAD` is then this tree's change alone),
 [docs/design/tests.md](docs/design/tests.md#measuring-a-change); a change
 measured and dropped keeps its diff in [docs/tried/](docs/tried/README.md)),
 and run `snapshots:update` once for the final commit (`-- --costs` only
-to rebalance the pending shards). Diagnosis views: `efsim zmdlogs
-groups|differences|casts|replay|stagger|bursts|holds --why`; one command at two
+to rebalance the pending shards); `npm run measure -- --help` lists its
+options, checked before it queues. Diagnosis views: `efsim zmdlogs
+groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
+(each clock's lateness by stop kind), `holds --dropped --all`; every view
+that replays takes `--assume`; one command at two
 commits' code, the lines that differ: `node scripts/cli-ab.ts <ref> --
 <efsim args>` (`--holds <fixture>`: which bounds a change moved). A new
 test that should fail before the change: `node scripts/verify-at.ts <base>
@@ -245,7 +248,12 @@ count only.
 
 The lead: name the base commit (or branch) in a sub-agent's brief, and
 the files each parallel agent is expected to edit (`node scripts/runstate.ts
---touching` lists what other worktrees' branches changed so far), and
+--touching` lists what other worktrees' branches changed so far; `node
+scripts/lead-files.ts <fixture id|operator|word>…` the code files earlier
+commits naming a lead changed, so a split by files sees where the causes
+tend to live; where the cause is unknown, split by question; a fix in
+another agent's file goes back as a measured diff in docs/tried/, "held
+back", for the lead to apply after the merge), and
 merge with `npm run merge -- <branch>…` (one or a batch; rebuilds the
 journal, runs the tests related to code both sides changed, says when
 snapshots need `npm run snapshots:update`: once per batch).

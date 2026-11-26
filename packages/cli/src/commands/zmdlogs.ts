@@ -7,6 +7,10 @@ import {
   battleIdOf,
   buffsView,
   burstsView,
+  CLOCK_KINDS,
+  clocksView,
+  droppedView,
+  type ClockKind,
   placementView,
   cacheRawDetail,
   cadenceView,
@@ -49,6 +53,15 @@ import { readFileSync } from "node:fs";
 import { parseAssume } from "../assume.ts";
 import { command } from "../command.ts";
 import { formatLogList, logDirs } from "../logtools.ts";
+
+/**
+ * The subcommands that replay the kits (logBuffReplay), so `--assume <id>=<reading>` changes what they show; every one
+ * takes it (holds-and-placement report point 2: holds, ramp, bursts, stops and differences didn't, and each needed a
+ * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
+ * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
+ */
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "stops", "totals", "stagger", "differences", "groups", "clock", "holds", "ramp", "clocks"]);
+export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "worldtime", "control", "cadence"]);
 
 export default command({
   name: "zmdlogs",
@@ -107,6 +120,13 @@ export default command({
                 [--singles]               No pairs of toggles
                 [--top n] [--verbose]     Patterns shown (default 20); every run, and each hit's best fit
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
+  efsim zmdlogs clocks <fixture…|--all>   How late each clock of known pace runs across the time stops inside it
+                                          (clocksview.ts): enemy tick chains, a cast's landings against its kit
+                                          frames, bursts against their delay; per clock kind and what holds it (no
+                                          stop, combos only, an ultimate, other stops), the ticks also in and out of the
+                                          log's Stagger: rows, residual and held medians, Σ residual ÷ Σ held
+                [--clock tick,cast,burst] The clocks (default tick,cast; burst replays each log)
+                [--by operator] [--rows]  Also per combo operator (rows with one operator's combos only); each row
   efsim zmdlogs placement <fixture…|--all> What the placement's passes leave: ultimates whose time stops still
                                           overlap after the in-turn rule, and the casts a third pass would move
                                           (the placement isn't a fixed point there: logcasts.ts placeHits)
@@ -192,6 +212,8 @@ export default command({
                                           does the damage side with the log or the replay?
                 [--what <regex>] [--hits] Only differences about this; each hit too. --operator, --event, --workers n,
                                           --fixtures-from, --no-cache as hits
+                [--clusters]              Each group's ratios in clusters (×1.023 n=26, ×1.085 n=21, …): equal steps
+                                          are a layered buff the log lists once (with --operator: one operator's)
   efsim zmdlogs groups --operator <op> [fixture…]  An operator's mismatches sorted into causes: team-wide (a
                                           teammate mismatches at the same ratio nearby), no landing, own by skill
                                           event and by what the log and replay disagree on (default: every
@@ -242,6 +264,9 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                                           is a clock or not (the rule that skipped it), kept or dropped
                 [--assume <id>=<reading>] Under another reading of an open assumption
                                           Between two commits' code: node scripts/cli-ab.ts <ref> --holds <fixture>
+  efsim zmdlogs holds --dropped <fixture…|--all>  The placement's dropped bounds over the logs, grouped by bound kind
+                                          and what covers their span (the log's Stagger; the kinds of stops inside),
+                                          with the logs, the asks and how many of the group were kept; --verbose each
   efsim zmdlogs ramp <fixture>            Corrosion's ramp as the logged hits read it: per listed Corrosion, the
                                           hits whose fitting step differs from the replay's or whose placed hold
                                           falls outside what the steps allow (--verbose every hit)
@@ -254,6 +279,9 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                                           in each log (default: every verified and pending development log with the
                                           operator), with world-time gaps (time stops taken out), the stops between
                                           and the nearest cast event; the gaps' spread (timer, cooldown or event?)
+--assume <id>=<reading> (repeatable) goes with every subcommand that replays the kits (${[...REPLAYING].join(", ")}),
+under another reading of a kit's or the engine's open assumption; the others read the log or the placement only and
+refuse it. Their --operator takes ids or names, --from / --to seconds.
 `,
   options: {
     with: { type: "string", multiple: true, default: [] },
@@ -303,10 +331,17 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     by: { type: "string" },
     differ: { type: "boolean", default: false },
     kinds: { type: "boolean", default: false },
+    clock: { type: "string" },
+    rows: { type: "boolean", default: false },
+    dropped: { type: "boolean", default: false },
+    clusters: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args, data } = ctx;
     const [sub, arg, op] = args;
+    if (sub !== undefined && values.assume.length && !REPLAYING.has(sub)) throw new Error(`zmdlogs ${sub} doesn't replay the kits, so --assume changes nothing there; the subcommands that do: ${[...REPLAYING].join(", ")}`);
+    // The readings every replaying view runs under (none: the default replay, the very same call).
+    const assume = values.assume.length ? parseAssume(data(), values.assume) : {};
     if (sub === "list") {
       if (args.length !== 1) throw new Error("zmdlogs list takes no argument (--with <operator>, --dir <dir>, --json, --ids)");
       const dirs = logDirs(values.dir);
@@ -331,11 +366,27 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     }
     if (sub === "ramp") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs ramp takes one fixture (a path or an id such as db87)");
-      return rampView(data(), readDevFixture(arg), { verbose: values.verbose, why: values.held });
+      return rampView(data(), readDevFixture(arg), { verbose: values.verbose, why: values.held, assume });
+    }
+    if (sub === "holds" && values.dropped) {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs holds --dropped takes fixtures (ids such as 0c14) or --all (every verified and pending development log)");
+      if (named.length && values.all) throw new Error("zmdlogs holds --dropped: fixtures or --all, not both");
+      return droppedView(data(), devFixtures(named.length ? { ids: named } : {}), { assume, verbose: values.verbose, progress });
     }
     if (sub === "holds") {
-      if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14)");
-      return holdsView(data(), readDevFixture(arg), { verbose: values.verbose, ...(values.why !== undefined ? { why: new RegExp(values.why) } : {}), assume: parseAssume(data(), values.assume) });
+      if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14); --dropped for several or --all");
+      return holdsView(data(), readDevFixture(arg), { verbose: values.verbose, ...(values.why !== undefined ? { why: new RegExp(values.why) } : {}), assume });
+    }
+    if (sub === "clocks") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs clocks takes fixtures (ids such as 0c14) or --all (every verified and pending development log; --clock tick,cast,burst, --by operator, --rows)");
+      if (named.length && values.all) throw new Error("zmdlogs clocks: fixtures or --all, not both");
+      const kinds = (values.clock ?? "tick,cast").split(",").filter(Boolean);
+      const bad = kinds.filter((k) => !(CLOCK_KINDS as readonly string[]).includes(k));
+      if (bad.length || !kinds.length) throw new Error(`--clock takes ${CLOCK_KINDS.join(", ")} (comma-separated)`);
+      if (values.by !== undefined && values.by !== "operator" && values.by !== "kind") throw new Error("zmdlogs clocks --by takes operator (or kind, the default)");
+      return clocksView(data(), devFixtures(named.length ? { ids: named } : {}), { kinds: kinds as ClockKind[], ...(values.by === "operator" ? { by: "operator" as const } : {}), rows: values.rows, assume, progress });
     }
     if (sub === "instances" || sub === "control" || sub === "lanes") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture (a path or an id such as 0c14)`);
@@ -350,7 +401,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       const kitBuff = values["kit-buff"][0] as string;
       const named = args.slice(1);
       const logs = devFixtures({ ...(named.length ? { ids: named } : { withOperators: [kitBuff.split(":")[0] as string] }) });
-      return clockView(data(), logs, kitBuff, parseAssume(data(), values.assume));
+      return clockView(data(), logs, kitBuff, assume);
     }
     if (sub === "census" || sub === "buffs" || sub === "cadence") {
       const named = args.slice(1);
@@ -399,31 +450,31 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (values.reading !== undefined && values.reading !== "log" && values.reading !== "primary") throw new Error("--reading takes log (or primary)");
       const reading = values.reading === "log" ? "log" : "primary";
       const window = { ...seconds(values.from, "from"), ...seconds(values.to, "to") };
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), progress });
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, progress });
     }
     if (sub === "timing") {
-      return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), progress });
+      return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });
     }
     if (sub === "casts" || sub === "replay") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume: parseAssume(data(), values.assume), stops: values.stops });
+      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume, stops: values.stops });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
-      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume: parseAssume(data(), values.assume), kinds: values.kinds, json: values.json, progress });
+      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume, kinds: values.kinds, json: values.json, progress });
       if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
       if (values.by !== undefined && values.by !== "event") throw new Error("--by takes event");
-      return totalsView(data(), readDevFixture(arg), { operators, ...top, assume: parseAssume(data(), values.assume), byEvent: values.by === "event", kinds: values.kinds });
+      return totalsView(data(), readDevFixture(arg), { operators, ...top, assume, byEvent: values.by === "event", kinds: values.kinds });
     }
-    if (sub === "stagger") return staggerReport(data(), args.slice(1), progress);
+    if (sub === "stagger") return staggerReport(data(), args.slice(1), progress, assume);
     if (sub === "stops") {
       const named = args.slice(1);
       if (!named.length && !values.all) throw new Error("zmdlogs stops takes fixtures (ids such as 0c14) or --all (every verified and pending development log; --differ, --operator op)");
       if (named.length && values.all) throw new Error("zmdlogs stops: fixtures or --all, not both");
       const logs = devFixtures(named.length ? { ids: named } : {});
-      return stopsView(data(), logs, { differ: values.differ, operators, progress });
+      return stopsView(data(), logs, { differ: values.differ, operators, assume, progress });
     }
     if (sub === "placement") {
       const named = args.slice(1);
@@ -437,17 +488,17 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
       if (named.length && values.all) throw new Error("zmdlogs bursts: fixtures or --all, not both");
       // With --operator, only the logs whose team has one of them.
       const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
-      return burstsView(data(), logs, { operators, ...seconds(values.from, "from"), ...seconds(values.to, "to"), progress });
+      return burstsView(data(), logs, { operators, ...seconds(values.from, "from"), ...seconds(values.to, "to"), assume, progress });
     }
-    if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, cache: !values["no-cache"], progress });
+    if (sub === "differences") return differencesCliReport(data, selection, { workers: values.workers, operators, ...event, ...(values.what !== undefined ? { what: values.what } : {}), hits: values.hits, clusters: values.clusters, cache: !values["no-cache"], assume, progress });
     if (sub === "groups") {
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
-      return groupsCliReport(data, values.operator[0] as string, selection, { workers: values.workers, verbose: values.verbose, cache: !values["no-cache"], progress });
+      return groupsCliReport(data, values.operator[0] as string, selection, { workers: values.workers, verbose: values.verbose, cache: !values["no-cache"], assume, progress });
     }
-    if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], progress });
+    if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], assume, progress });
     if (sub === "fit-build") {
       if (args.length !== 2 || !arg || values.operator.length !== 1) throw new Error("zmdlogs fit-build takes one fixture file and one --operator <op> (--top n, --no-foods)");
-      return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"] });
+      return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"], assume });
     }
     if ((sub === "scales" || sub === "find-scales") && arg && op) {
       const fx = readDevFixture(arg);
@@ -467,7 +518,7 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
     }
     if (sub === "check") {
       const fx = readDevFixture(arg);
-      return checkReport(data(), fx, { logBuffs: values["log-buffs"], simulate: values.simulate, assume: parseAssume(data(), values.assume) });
+      return checkReport(data(), fx, { logBuffs: values["log-buffs"], simulate: values.simulate, assume });
     }
     const file = await importBattle(data(), arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail, (d) => cacheRawDetail(arg, d));
     return `wrote ${file}`;
