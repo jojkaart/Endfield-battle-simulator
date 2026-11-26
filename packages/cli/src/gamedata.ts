@@ -84,6 +84,24 @@ export const ENUMS: Readonly<Record<string, Readonly<Record<number, string>>>> =
   costType: { 0: "ultimate energy", 1: "SP" },
   inflictionType: { 0: "Heat", 1: "Electric", 2: "Cryo", 3: "Nature" },
   lifeType: { 0: "timed", 1: "until finished?" },
+  // docs/game-data-format.md "stackingType readings" (round 16, arcane-doubles-end report point 2): the engine's reading
+  // of each type (packages/data kits.ts LAYERED_TYPES, SHARED_TIMER_TYPES, groupsInstances, oneLayerOnHolder) with the
+  // kit or log that decided it there; "unverified" where none has, Endaxis' described label after it.
+  stackingType: {
+    0: "instances add up; a priority key alone doesn't rank them: b7b3",
+    1: "only the strongest instance acts: a stack group, by its priority key where it has one",
+    2: "layers, each its own timer; a literal max 1 on others: one layer whoever applies: 9555",
+    3: "unverified (enhance?)",
+    4: "one instance, refreshed",
+    5: "unverified (extend?)",
+    6: "unverified (modify?)",
+    7: "not layers, reading unverified (unique?)",
+    8: "layers on one timer each new layer refreshes: in-game test 62",
+    9: "not layers, reading unverified (overwrite duration?)",
+    10: "layers on one shared timer: the inflictions, 7e19's Ember",
+    11: "layers, each its own timer; a priority key, one instance: a stack group: Jade Vessel",
+    12: "unverified (timed growing enhance?)",
+  },
 };
 
 /** Action types that only present (animation, sound, camera, effects): left out of the tree. */

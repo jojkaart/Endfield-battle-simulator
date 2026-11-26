@@ -55,3 +55,20 @@ log, implement and measure (branch worktree-agent-a398015d0b6e84aab). Outcome: 6
 - `measure --base … --at HEAD` in about three minutes, three times: the 3aa6 false positive showed up as the one
   worse earlier-pending log and fixed the rule.
 - The `held` hook in buffreplay.ts (heldTicks, heldToLoggedEnds): a log-read rule slots in as one function.
+
+## Outcome (round 16)
+
+- 1 (No view says "which of the enemy's debuffs ended at this moment, and which went on"): done (b80f668): `efsim
+  zmdlogs ends <fixture> [--at s] [--side enemy|team] [--min n]` (packages/logs/src/endsview.ts listedRuns,
+  momentEnds): per logged moment the runs ending together (a debuff's affixes once) and how many of the side go on,
+  "(all)" for a purge's shape and PURGE where loggedPurges reads one; `--at` one moment's END / ON / START runs with
+  each end's next unlisted moment and the cast events within its grain. tests/ends-view.test.ts on 6339's two purges
+  and e82d's 8.93 s end.
+- 2 (`gamedata tree` doesn't show which instance a re-application keeps): done (117d16e): `ENUMS.stackingType` prints
+  the engine's reading beside each type ("unverified" with Endaxis' label where nothing decides it), and
+  docs/game-data-format.md "stackingType readings" names what decided each (b7b3, 9555, test 62, the inflictions,
+  Jade Vessel) and the open question of e82d's second touch. Which instance a second application keeps is still
+  undecided (one log).
+- 3 (A log's batching makes "listed 87 ms after X" undecidable, and the docs say so only in passing): done (b80f668):
+  `zmdlogs lanes` prints the moment spacing at each run's last listing and the cast events within it ("no order
+  against the end"); `zmdlogs ends` prints it per moment; docs/design/data.md's batching line names both.

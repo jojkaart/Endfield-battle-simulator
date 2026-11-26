@@ -197,7 +197,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
       const skipped = [...moved.keys()].filter((h) => h.frame >= j.frame && h.frame < target);
       const drop = skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
       // Record only (the log check's JUMPDROP lines): which jump went, and the logged landings it would have skipped.
-      if (drop && opts.dropped) opts.dropped({ frame: j.frame, from: j.from, to: j.to }, skipped.map((h) => ({ hitId: h.hitId, frame: (moved.get(h) as { frame: number }).frame })));
+      const at = () => skipped.map((h) => ({ hitId: h.hitId, frame: (moved.get(h) as { frame: number }).frame }));
+      if (drop && opts.dropped) opts.dropped({ frame: j.frame, from: j.from, to: j.to }, at());
+      // Record only (BOTHPATHS lines): a jump kept with pinned landings in the part it skips, which land all the same.
+      if (!drop && skipped.length > 0 && opts.keptSkipped) opts.keptSkipped({ frame: j.frame, from: j.from, to: j.to }, at());
       return drop;
     });
     const jumpedTo = new Set(contradicted.flatMap((j) => [...own.values()].flat().filter((h) => !moved.has(h) && h.frame >= j.frame + (j.to - j.from))));
@@ -275,6 +278,13 @@ export interface ReplayCastOptions {
    * path read off an operator's odd ratio, the jump's drop silent).
    */
   readonly dropped?: (jump: { readonly frame: number; readonly from: number; readonly to: number }, landings: readonly { readonly hitId: string; readonly frame: number }[]) => void;
+  /**
+   * Told of each kit jump the cast keeps although pinned landings lie in the part it skips (their kit frames there):
+   * pinned landings survive a jump (schedule.ts jumpCast), so they land beside the path the jump goes to, both paths'
+   * hits in one cast (round 16, the slots-and-paths report point 1: Pogranichnik's combo landed six slashes, its bank
+   * both paths' SP). Record only, as `dropped`.
+   */
+  readonly keptSkipped?: (jump: { readonly frame: number; readonly from: number; readonly to: number }, landings: readonly { readonly hitId: string; readonly frame: number }[]) => void;
   /**
    * The outcome of the cast's chance jumps the log shows (chanceJumpsOf: by trigger id, taken or not), instead of a
    * roll: a taken one jumps at its frame, and the logged landings go to its path's hits (chancePathLandings). The log

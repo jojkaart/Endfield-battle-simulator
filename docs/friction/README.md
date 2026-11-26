@@ -19,6 +19,11 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    doing.
 3. Accuracy rules still apply to improvement rounds: tests stay green,
    snapshots only move with a reason, `node scripts/premerge.ts` before merging.
+   A round may add a snapshot key that only describes (round 16, round 15's
+   own report point 2: `share operator <id>`) when `npm run
+   snapshots:update` prints "keys added only in n log(s)" and "No log's
+   verdicts moved", and docs/accuracy.md's existing numbers stay the same;
+   the round's summary names the keys added.
 4. **The backlog stays short** (round 6): a branch that closes a backlog
    point (any task, not only an improvement round) adds one line under it
    in the same branch: "Closed by <branch>, <commit>: how". A point carried

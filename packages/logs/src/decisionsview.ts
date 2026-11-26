@@ -19,13 +19,13 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
+  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
   readonly operator: string;
   readonly text: string;
 }
 
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "LINK", "FORCED", "INSIDE", "CUTS"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "LINK", "FORCED", "INSIDE", "CUTS"];
 
 /** The replay's decisions (BuffReplay.skipped, tailCuts, failed, missed, made, castFlags), in time order. */
 export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLine[] {
@@ -56,6 +56,12 @@ export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLin
     for (const j of m.dropped ?? []) {
       const at = j.landings.map((l) => `${l.hitId}@${s(msOf(l.frame))}`).join(", ");
       out.push({ t: msOf(j.frame), kind: "JUMPDROP", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): its jump ${j.from} → ${j.to} dropped, the logged landing(s) ${at} in the part it skips (a shared key's other path, or its condition read otherwise in the game)` });
+    }
+    // A kit jump kept with pinned landings in its skipped part (drivers.ts replayCast `keptSkipped`): they land all the
+    // same, beside the path the jump goes to (round 16, slots-and-paths report point 1: six slashes for one combo).
+    for (const j of m.keptSkipped ?? []) {
+      const at = j.landings.map((l) => `${l.hitId}@${s(msOf(l.frame))}`).join(", ");
+      out.push({ t: msOf(j.frame), kind: "BOTHPATHS", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): its jump ${j.from} → ${j.to} kept, yet the pinned landing(s) ${at} are in the part it skips and land too: both paths' hits in one cast (their SP, stacks and triggers twice)?` });
     }
   }
   for (const x of replay.castFlags) {

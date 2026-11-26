@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { withCurveReading } from "@efsim/engine";
-import { decisionsDiff, linkGains, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type DecisionLine, type HitRecord } from "@efsim/logs";
+import { decisionsDiff, lanePairs, linkGains, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type BuffReplay, type DecisionLine, type HitRecord } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -35,6 +35,21 @@ describe("the replay's decisions", () => {
     const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-489c0be3e162.json"));
     const drops = replayDecisions(data, logBuffReplay(data, fx).replay).filter((x) => x.kind === "JUMPDROP" && x.t < 20000);
     expect(drops.map((x) => x.text)).toEqual([expect.stringMatching(/^Rossi combo_3_skill \(made at 18\.77\): its jump 0 → 212 dropped, the logged landing\(s\) perfect@19\.73/)]);
+  });
+
+  it("says when a cast kept a jump with pinned landings in the part it skips: both paths land (BOTHPATHS; round 16)", () => {
+    // The slots-and-paths report's case before its fix: Pogranichnik's combo, its 3-stack path's jump 0 → 200 kept, the
+    // slashes pinned at the 4-stack path's frames landing too (none in the development logs since: a guard).
+    const cast = { operator: "op_p", skillId: "op_p_combo_skill", start: 47200, landings: [] };
+    const replay = { skipped: [], tailCuts: [], failed: [], missed: [], castFlags: [], made: [{ cast, frame: 1416, skillId: cast.skillId, index: 3, keptSkipped: [{ frame: 1416, from: 0, to: 200, landings: [{ hitId: "slash", frame: 1439 }, { hitId: "slash", frame: 1453 }] }] }] } as unknown as BuffReplay;
+    const lines = replayDecisions(data, replay).filter((x) => x.kind === "BOTHPATHS");
+    expect(lines.map((x) => x.text)).toEqual([expect.stringMatching(/combo_skill \(made at 47\.20\): its jump 0 → 200 kept, yet the pinned landing\(s\) slash@47\.97, slash@48\.43 are in the part it skips and land too/)]);
+    expect(lanePairs([1000, 5000, 20000], [1200, 4000, 9000])).toEqual([
+      { logged: 1000, replay: 1200 },
+      { logged: 5000, replay: 4000 },
+      { logged: null, replay: 9000 },
+      { logged: 20000, replay: null },
+    ]);
   });
 
   it("says where each Link stack came from and which cast took it (LINK; round 15, totals-off report point 1: db87)", () => {

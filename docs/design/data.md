@@ -463,7 +463,15 @@ detail):
   log flushes in steps of about 100 ms and at a stop's end, so a residual
   under ~0.2 s, or one at a ms many hits share, isn't timing evidence;
   "uneven batches" of a periodic hit may be the log's, not the game's.
-  World time between two moments: `efsim zmdlogs worldtime`.
+  World time between two moments: `efsim zmdlogs worldtime`. The spacing
+  at one moment (the gap to the moments before and after it): `zmdlogs
+  lanes` beside each end, `zmdlogs ends` per moment (round 16).
+- **The Stagger bar** (`LogHit.poise.bar`, round 16; 2026-11-26, a stop's
+  batched landings): the bar *this hit leaves*, so the bar before it is
+  `bar + dealt` (replaysteps.ts `loggedPoiseBars`). It falls in the game's
+  order inside a batched ms, the log's only record of that order
+  (castassembly.ts `batchOrder`): read as rising, c4f3's bars at 7.05 s
+  put the wrong combo first.
 - **A hit's Stagger origin** (`LogHit.poise.origin`, imports and refreshes
   since 2026-11-16; 2026-11-23, Si's strokes): the skill whose cast the
   hit's Stagger is credited to, the skill id the hit's own skill inherits
@@ -738,9 +746,16 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | A kit trigger's firings and its cooldown's shifts | `efsim zmdlogs replay <fixture> --trace-trigger owner:id` (or the id alone); the game's mechanism behind each cooldown: `efsim kit <operator \| wpn_… \| suit_…>`, counts in `efsim kit-census` |
 | Why a hidden-hold unit sits where it does; which bounds a change made conflict | `efsim zmdlogs holds <fixture> --verbose` (each unit's "earliest held back by" / "latest forced by", each dropped bound's "conflicting with"); between two commits `node scripts/cli-ab.ts <ref> --patch <view diff> --holds <fixture>` |
 | A hit whose kit reads a fact the replay doesn't know | `zmdlogs check` (a line under the operator), `zmdlogs differences` (a section), `hits --json` `unknownFacts` ("enemy HP unknown": buffreplay.ts unknownFacts) |
-| What a new replay rule or reading decides differently, across the logs, before its first measure | `efsim zmdlogs decisions <fixture…\|--all> --assume <id>=<r>` (decisionsview.ts: the SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, JUMPDROP, FORCED, INSIDE, CUTS lines only one side has, a count per kind; without `--assume` every decision; `replayDecisions` over BuffReplay's records in a script) |
+| What a new replay rule or reading decides differently, across the logs, before its first measure | `efsim zmdlogs decisions <fixture…\|--all> --assume <id>=<r>` (decisionsview.ts: the SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, JUMPDROP, BOTHPATHS, FORCED, INSIDE, CUTS lines only one side has, a count per kind; without `--assume` every decision; `replayDecisions` over BuffReplay's records in a script) |
 | Which hits of one log a reading changes, without the lock | `efsim zmdlogs hits <fixture…> --against <id>=<r>` (class and primary before and after, the modifiers only one side has; hitexport.ts `recordChanges`) |
 | A press the replay made from the listing, a cast made as another skill, a kit jump the logged landings contradicted | `efsim zmdlogs replay <fixture>`: INFER, MADE, JUMPDROP lines (BuffReplay.made; the EVENT line names the replay's own fate of its cast) |
+| A cast that lands both paths of a kit jump (pinned landings in the part a kept jump skips: twice the SP, stacks and triggers) | `efsim zmdlogs decisions <fixture…\|--all>`: BOTHPATHS lines (drivers.ts replayCast `keptSkipped`, round 16) |
+| Which listed buffs end at one logged moment and which go on (a purge, a stage phase, a buff ending alone), and the log's moment spacing there | `efsim zmdlogs ends <fixture> [--at <s>]` (endsview.ts, round 16; `zmdlogs lanes` gives the spacing beside each end) |
+| Whether a listing difference is a cause: the nearest hits with the very same listing and their verdicts; one key's listed values across logs | `efsim zmdlogs hits <fixture> --same-listing <s>`; `hits --all --event <regex> --listed <regex>` (listingview.ts, round 16) |
+| How often a kit buff listed at a hit's boundary (a run's start or end) reads with it or without it, before a boundary rule's measure | `efsim zmdlogs boundaries <fixture…\|--all> [--kit-buff <regex>]` (boundaryview.ts, round 16) |
+| A kit stack's value (a bank, a counter) step by step | `efsim zmdlogs replay <fixture> --trace-stack owner:stack` (BuffReplay.stackTraces, round 16) |
+| A kit buff's logged runs against the replay's windows, by start | `efsim zmdlogs replay <fixture> --kit-buff owner:id --against-lanes` (views.ts lanePairs, round 16) |
+| A batched ms's order: the Stagger bars against the replay's landing order | `efsim zmdlogs replay <fixture>`: the bar on each LAND line of a batch, BATCH where the orders differ (views.ts batchDisagreements, round 16) |
 | Is a total's miss the model or the fight's crit luck | `efsim zmdlogs totals <fixture> --by crit` (matched parts per operator by how the totals took each crit: known, exact, read from the value, expected); per hit `hits --json` `totalsPredicted`, `totalsCrit` |
 | A burst's cause | `efsim zmdlogs bursts`: the replay's infliction that set it off (StatusEvent `inflictedAt`) and the logged hit standing for it; "nearest" where neither is known |
 | Does a scratch script call the packages right | `node scripts/typecheck-scratch.ts scratch/x.ts` (the repository's compiler options; scratch/ isn't in `npm run typecheck`) |

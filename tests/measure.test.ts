@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { defaultReference, hitChanges, holdChanges, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { defaultReference, exportedNames, hitChanges, holdChanges, importLinks, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 import { headerUsage, wantsHelp } from "../scripts/usage.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
@@ -201,6 +201,20 @@ describe("measure --split (round 11: which part of a change moved a log)", () =>
     expect(parts.map((p) => p.label)).toEqual(["packages/logs/src/logcasts.ts, packages/data/kits", "packages/logs/src/buffreplay.ts", "fixtures/holdout/ (1 file(s))"]);
     expect(parts[0]?.files).toEqual(["packages/logs/src/logcasts.ts", "packages/data/kits/x.json"]);
     expect(parts.map((p) => p.label).join(" ")).not.toMatch(/cccc/);
+  });
+
+  it("puts files that import another changed file's new export in one part (round 16, slots-and-paths report point 3)", () => {
+    const files = [
+      { path: "packages/engine/src/timeline/paths.ts", text: "export function old() {}\nexport function pathTwin() {}\n", baseText: "export function old() {}\n" },
+      { path: "packages/engine/src/timeline/drivers.ts", text: 'import { old, pathTwin } from "./paths.ts";\n', baseText: 'import { old } from "./paths.ts";\n' },
+      { path: "packages/logs/src/castassembly.ts", text: 'import { pathTwin, type X } from "@efsim/engine";\n', baseText: "" },
+      { path: "packages/logs/src/views.ts", text: 'import { old } from "@efsim/engine";\n', baseText: 'import { old } from "@efsim/engine";\n' },
+    ];
+    expect(importLinks(files)).toEqual([["packages/engine/src/timeline/drivers.ts", "packages/engine/src/timeline/paths.ts", "packages/logs/src/castassembly.ts"]]);
+    const parts = splitGroups(files.map((f) => f.path), [], undefined, importLinks(files));
+    expect(parts.map((p) => p.files)).toEqual([["packages/engine/src/timeline/paths.ts", "packages/engine/src/timeline/drivers.ts", "packages/logs/src/castassembly.ts"], ["packages/logs/src/views.ts"]]);
+    expect(parts[0]?.label).toMatch(/\(linked by a new export\)$/);
+    expect([...exportedNames("export const a = 1;\nexport interface B {}\nexport { c as d, type E };\n")]).toEqual(["a", "B", "d", "E"]);
   });
 
   it("with --only, two parts: the named files and every other code file (hold-outs named by count only)", () => {

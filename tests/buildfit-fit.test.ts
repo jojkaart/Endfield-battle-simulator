@@ -5,7 +5,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { fitBuild, readLogFixtureRaw } from "@efsim/logs";
+import { buildChanges, fitBuild, readLogFixtureRaw } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -39,5 +39,16 @@ describe("the build fitter", () => {
     expect(fit.exported.fits).toBe(0);
     expect(fit.best[0]?.set).toEqual({ weapon: { level: 3 } });
     expect(fit.best[0]?.cleanFits).toBeGreaterThanOrEqual(150);
+  });
+
+  it("counts the wider space's single changes and pairs that give an offset (--pairs; round 16): 04d4's Snowshine ×0.9624", () => {
+    // The bursts-and-cooldowns round's probe (scripts/probes/stats/snowshine-builds.ts, on top of two nodes: 46 pairs):
+    // from the build as read, no single change and many pairs, so the logs don't decide it.
+    const base = exported("04d401ad257e").team.find((b) => b.operator === "chr_0014_aurora");
+    const c = buildChanges(data, base as NonNullable<typeof base>, 0.9624);
+    expect(c.singles).toEqual([]);
+    expect(c.pairs.length).toBeGreaterThan(10);
+    for (const p of c.pairs) expect(Math.abs(p.ratio - 0.9624)).toBeLessThanOrEqual(0.001);
+    expect(c.pairs.some((p) => /^weapon level \d+ \+ gear \d /.test(p.what))).toBe(true);
   });
 });

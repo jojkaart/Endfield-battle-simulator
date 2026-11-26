@@ -9,7 +9,10 @@
 // As a Claude Code PreToolUse hook on Bash (the owner wires it in .claude/settings.json; agents don't edit those):
 //   { "hooks": { "PreToolUse": [ { "matcher": "Bash", "hooks": [ { "type": "command", "command": "node scripts/bash-guard.ts" } ] } ] } }
 // it reads the tool call's JSON on stdin and exits 2 with the reason on stderr (the call is refused, the agent reads
-// why), else 0. By hand: node scripts/bash-guard.ts --check '<command>' (prints the reason, exit 1; "ok", exit 0).
+// why), else 0. By hand: node scripts/bash-guard.ts --check '<command>' (prints the reason, exit 1; "ok", exit 0), or
+// --check-file <file> for a command written to a file with the Write tool (round 16, round 15's own report point 1: a
+// forbidden form passed to --check as an argument gets the whole call refused by the harness before the guard runs).
+// A refused call runs nothing, its other commands included: the refusal says so for a chained one.
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -52,9 +55,20 @@ export function refusal(command: string): string | undefined {
   return undefined;
 }
 
+/** A command of several (`&&`, `||`, `;`, a pipe or a newline outside quotes, roughly): its refusal says none of them ran. */
+export function chained(command: string): boolean {
+  return /&&|\|\||;|\n|(?:^|[^|])\|(?!\|)/.test(command.replace(/'[^']*'|"(?:[^"\\]|\\.)*"/g, "''"));
+}
+
+/** The refusal's text as the hook prints it: the reason, and for a chained call that nothing in it ran. */
+export function refusalText(command: string, why: string): string {
+  return `bash-guard: refused ${why}${chained(command) ? " Nothing in this call ran, its other commands included: run them again, each in a call of its own." : ""}\n`;
+}
+
 function main(argv: readonly string[]): number {
-  if (argv[0] === "--check") {
-    const why = refusal(argv.slice(1).join(" "));
+  if (argv[0] === "--check" || argv[0] === "--check-file") {
+    const command = argv[0] === "--check-file" ? readFileSync(argv[1] ?? "", "utf8").replace(/\n$/, "") : argv.slice(1).join(" ");
+    const why = refusal(command);
     process.stdout.write(why ? `refused: ${why}\n` : "ok\n");
     return why ? 1 : 0;
   }
@@ -68,7 +82,7 @@ function main(argv: readonly string[]): number {
   if ((input.tool_name !== undefined && input.tool_name !== "Bash") || typeof command !== "string") return 0;
   const why = refusal(command);
   if (!why) return 0;
-  process.stderr.write(`bash-guard: refused ${why}\n`);
+  process.stderr.write(refusalText(command, why));
   return 2;
 }
 

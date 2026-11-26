@@ -29,6 +29,24 @@ doesn't hide a kit error; its fit goes into the fixture's
 and dropped keeps its diff in [docs/tried/](tried/README.md), named here
 with its measure, so it can be measured again later.
 
+A candidate about the log's listing ("the log lists X five times, the
+engine has two") names the neighbour hit that would rule it out, and is
+checked against it first (round 16, the arcane-will report: the combo
+slash 0.19 s before e82d's final listed the same five lines and read
+plain with two): `efsim zmdlogs hits <fixture> --same-listing <s>` gives
+the nearest hits with the very same listing and their verdicts, `hits
+--all --event <regex> --listed <regex>` one key's listings across logs. A
+listing difference that reads plain next door is no cause. An early end:
+`efsim zmdlogs ends <fixture> --at <s>` says whether it ended alone or
+with everything else listed there, and the moment spacing (an end within
+one grain of an event has no order against it).
+
+**A fixed item** (round 16, the batched-landings report point 4) shrinks
+to one line naming the journal entry that fixed it ("Fixed: … —
+docs/journal/<file>.md"); its points still open move to its round's
+"Still possible" list, so no fixed history sits under a "not fixed"
+heading.
+
 Operators are named here by display name; their ids (an internal name:
 Arcane is `chr_0032_lizhiyan`, Gilberta `chr_0013_aglina`) come from `efsim
 find --operators`, or `operatorId(data, "Arcane")` (@efsim/data) in a
@@ -591,7 +609,8 @@ shares of the off error at that code):**
     single change within 0.001, 46 pairs within it (her weapon's skill 1 at 5 with one edc fewer ×0.9624, the body
     and an edc swapped ×0.9621, …). One constant on every hit is one number: any of them fits, and the multi-target
     146d is the same build. What no log records (her gear's lines, favorability) is the player's screen, not the
-    owner's: leave it as the fixture's offset.)
+    owner's: leave it as the fixture's offset.) (Round 16: `efsim zmdlogs fit-build 04d4 --operator Snowshine --pairs`
+    is the same search from the build as read: no single change, 26 pairs of 7,268, 7 distinct ATK values.)
   - **7e19 Ember ×1.096: half the check, half her talent's layers.** (1) The check dropped her listed Pay the Ferric
     Price (+0.09 ATK, talent 2, on `attacked`, so its state is the log's) as if it were one of Pogranichnik's two
     Thermite Cutter layers (+0.09 ATK each): loggedEntries matches an unjudged buff's entry against any engine

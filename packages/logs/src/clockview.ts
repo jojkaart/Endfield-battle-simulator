@@ -52,8 +52,13 @@ export interface ClockRow {
    */
   readonly check: ClockEnd | null;
   readonly checkStart?: number;
-  /** The log's run of its game buff this instance stands for (null: none listed from near its start). */
-  readonly lane: Pick<BuffLane, "buff" | "since" | "firstListed" | "lastListed" | "nextUnlisted"> | null;
+  /**
+   * The log's run of its game buff this instance stands for (null: none listed from near its start), with its values
+   * and whether one is the instance's own (`byValue`; null: the instance has no value to compare, or none was traced).
+   */
+  readonly lane: (Pick<BuffLane, "buff" | "since" | "firstListed" | "lastListed" | "nextUnlisted" | "values"> & { readonly byValue: boolean | null }) | null;
+  /** The instance's modifier and attribute values (BuffTrace.values), as the replay resolved them. */
+  readonly values?: readonly number[];
   /** The last listed hit less `own`, real and world time (ms; null without a lane or an own expiry). */
   readonly late: { readonly real: number; readonly world: number } | null;
   /**
@@ -86,6 +91,32 @@ export interface ClockInstance {
   readonly first: number | null;
   readonly own: number | null;
   readonly ended: ClockEnd;
+  readonly values?: readonly number[];
+}
+
+/** A lane value this close to a kit buff's (absolute, or relative to it) is the same number (the log rounds to 6 decimals). */
+const VALUE_TOLERANCE = 5e-6;
+const sameValue = (a: number, b: number) => Math.abs(a - b) <= Math.max(VALUE_TOLERANCE, 1e-4 * Math.abs(b));
+
+/**
+ * The log's run an instance stands for (round 16, arcane-will report point 2: e82d's first Doubles Susceptibility
+ * instance was paired with Arcane's talent Susceptibility, logged under the same buff_common_affixes_vulnerable_crystal
+ * from the same source at 0.197 against its 0.1794). Candidates: the runs whose since falls from its start (less the
+ * log's batching) to the next instance's, then those listed across its start (a refresh keeps the run's since). With
+ * the instance's values, the first candidate of one of them; without a match, or without values, the first by since of
+ * the first group (the rule before round 16).
+ */
+export function laneOfInstance(lanes: readonly BuffLane[], start: number, next: number, values: readonly number[] = []): { readonly lane: BuffLane; readonly byValue: boolean | null } | undefined {
+  const by = (l: BuffLane) => l.since ?? l.firstListed;
+  const from = lanes.filter((l) => by(l) >= start - 300 && by(l) < next - 300).sort((a, b) => by(a) - by(b));
+  const across = lanes.filter((l) => by(l) < start - 300 && l.lastListed >= start).sort((a, b) => by(b) - by(a));
+  const matches = (l: BuffLane) => l.values.some((v) => values.some((x) => sameValue(v, x)));
+  if (values.length) {
+    const hit = [...from, ...across].find(matches);
+    if (hit) return { lane: hit, byValue: true };
+  }
+  const first = from[0];
+  return first ? { lane: first, byValue: values.length ? false : null } : undefined;
 }
 
 /** A replay's instances of a traced buff from its traces (frames → ms). */
@@ -110,7 +141,8 @@ function instancesOf(traces: readonly BuffTrace[], buff: string): ClockInstance[
         : gone.from !== null && gone.from <= gone.frame + 1
           ? { at: msOf(Math.min(gone.from, gone.frame)), how: "ran out" }
           : { at: msOf(gone.frame), how: `cut at ${gone.step}${gone.from !== null && Number.isFinite(gone.from) ? ` (its expiry ${s(msOf(gone.from))} s)` : ""}` };
-      return { start: msOf(at), first: ms(first), own: ms(own), ended };
+      const values = ts.find((t) => t.values)?.values;
+      return { start: msOf(at), first: ms(first), own: ms(own), ended, ...(values ? { values } : {}) };
     });
 }
 
@@ -129,13 +161,15 @@ export function kitBuffClock(data: GameData, fx: LogFixture, kitBuff: string, as
   const { paired, unpaired } = pairInstances(own, check);
   const rows = own.map((i, n): ClockRow => {
     const next = own[n + 1]?.start ?? Infinity;
-    // The lane this instance stands for: listed from its start (less the log's batching) before the next instance's.
-    const lane = lanes.filter((l) => (l.since ?? l.firstListed) >= i.start - 300 && (l.since ?? l.firstListed) < next - 300).sort((a, b) => (a.since ?? a.firstListed) - (b.since ?? b.firstListed))[0];
+    // The lane this instance stands for: by its value where one matches, else listed from its start (less the log's
+    // batching) before the next instance's (laneOfInstance).
+    const found = laneOfInstance(lanes, i.start, next, i.values);
+    const lane = found?.lane;
     const c = paired[n] ?? null;
     const late = lane && i.own !== null && Number.isFinite(i.own) ? { real: lane.lastListed - i.own, world: lane.lastListed >= i.own ? worldMs(i.own, lane.lastListed, stops) : -worldMs(lane.lastListed, i.own, stops) } : null;
     // Cut at the step that applied this one (the same frame): this one refreshed it.
     const replaced = own.find((o) => o.start < i.start && o.ended.how.startsWith("cut") && o.ended.at !== null && Math.abs(o.ended.at - i.start) <= 1000 / FPS);
-    return { ...(replaced ? { replaces: replaced.start } : {}), start: i.start, first: i.first, own: i.own, ended: i.ended, check: c ? c.ended : null, ...(c ? { checkStart: c.start } : {}), lane: lane ? { buff: lane.buff, since: lane.since, firstListed: lane.firstListed, lastListed: lane.lastListed, nextUnlisted: lane.nextUnlisted } : null, late };
+    return { ...(replaced ? { replaces: replaced.start } : {}), start: i.start, first: i.first, own: i.own, ended: i.ended, check: c ? c.ended : null, ...(c ? { checkStart: c.start } : {}), lane: lane && found ? { buff: lane.buff, since: lane.since, firstListed: lane.firstListed, lastListed: lane.lastListed, nextUnlisted: lane.nextUnlisted, values: lane.values, byValue: found.byValue } : null, late, ...(i.values ? { values: i.values } : {}) };
   });
   // The check's instances with no own one near: a row of their own (no own clock, no lane read).
   return [...rows, ...unpaired.map((c): ClockRow => ({ start: c.start, first: null, own: null, ended: { at: null, how: "no instance on the own clock" }, check: c.ended, checkStart: c.start, lane: null, late: null }))].sort((a, b) => a.start - b.start);
@@ -148,7 +182,7 @@ const end = (e: ClockEnd | null) => (e === null ? "none" : `${t(e.at)} ${e.how}`
 export function clockView(data: GameData, logs: readonly DevFixture[], kitBuff: string, assume: Readonly<Record<string, string>> = {}): string {
   const owner = kitBuff.split(":")[0] as string;
   const out = [
-    `${kitBuff} (${operatorLabel(data, owner)}): each instance's clock in the replay against the log (times in s). first: the expiry the replay first gave it; own: its expiry on the replay's own clock (hidden-holds=none: the replay's casts' stops, no hidden holds, no log ends) before a step shortened or removed it; ended: how it ended there; check: how it ended in the check's replay (its instance nearest the start within ${CHECK_PAIR_MS / 1000} s, "from" where its start differs: the check's hidden holds moved it)${Object.keys(assume).length ? ` (under ${Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}; log: its game buff's run (since, last listed, next unlisted hit); late: the last listed hit less own (world: stops out)`,
+    `${kitBuff} (${operatorLabel(data, owner)}): each instance's clock in the replay against the log (times in s). first: the expiry the replay first gave it; own: its expiry on the replay's own clock (hidden-holds=none: the replay's casts' stops, no hidden holds, no log ends) before a step shortened or removed it; ended: how it ended there; check: how it ended in the check's replay (its instance nearest the start within ${CHECK_PAIR_MS / 1000} s, "from" where its start differs: the check's hidden holds moved it)${Object.keys(assume).length ? ` (under ${Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}; log: its game buff's run (since, last listed, next unlisted hit; the run of the instance's value where one is, a refreshed run's since included: laneOfInstance); late: the last listed hit less own (world: stops out)`,
   ];
   const lates: number[] = [];
   let rows = 0;
@@ -161,7 +195,9 @@ export function clockView(data: GameData, logs: readonly DevFixture[], kitBuff: 
       rows++;
       if (!x.lane) unlisted++;
       if (x.late && x.lane?.nextUnlisted !== null) lates.push(x.late.world);
-      const log = x.lane ? `log since ${t(x.lane.since)}, listed to ${t(x.lane.lastListed)}, next unlisted ${t(x.lane.nextUnlisted)}` : "log: no run listed";
+      const num = (v: number) => String(Number(v.toPrecision(6)));
+      const value = !x.lane ? "" : x.lane.byValue === true ? ` (value ${x.lane.values.map(num).join(", ")}, the instance's)` : x.lane.byValue === false ? ` (value ${x.lane.values.map(num).join(", ")}, not the instance's ${(x.values ?? []).map(num).join(", ")}: another buff under this name?)` : "";
+      const log = x.lane ? `log since ${t(x.lane.since)}, listed to ${t(x.lane.lastListed)}, next unlisted ${t(x.lane.nextUnlisted)}${value}` : "log: no run listed";
       const late = x.late ? `; late ${x.late.real >= 0 ? "+" : ""}${s(x.late.real)} (world ${x.late.world >= 0 ? "+" : ""}${s(x.late.world)})` : "";
       const chain = x.replaces !== undefined ? ` (refreshes the one from ${t(x.replaces)})` : "";
       // The check's instance start where it differs from the own clock's (its hidden holds moved it).

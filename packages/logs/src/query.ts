@@ -21,7 +21,7 @@ import { assembleCasts, controlSwaps, replayStops, type ReplayTimeStop } from ".
 import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
 import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
-import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
+import type { LogCast, LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 const s = (ms: number) => (ms / 1000).toFixed(2);
@@ -271,12 +271,46 @@ export function loggedStaggerSpans(fx: Pick<LogFixture, "hits">): { readonly fro
   return spans;
 }
 
-/** `zmdlogs lanes`: a fight's runs of the listed buffs matching `buff`; with `world`, each run's length in world time too. */
+/** The log's moments (distinct hit times, ms), in order. */
+export function logMoments(fx: Pick<LogFixture, "hits">): number[] {
+  return [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
+}
+
+/** The gaps (ms) from a moment to the log's moments before and after it (null: none), and those moments: the log's batching grain there. */
+export function momentSpacing(moments: readonly number[], t: number): { readonly before: number | null; readonly after: number | null; readonly prev: number | null; readonly next: number | null } {
+  const prev = [...moments].reverse().find((m) => m < t) ?? null;
+  const next = moments.find((m) => m > t) ?? null;
+  return { before: prev === null ? null : t - prev, after: next === null ? null : next - t, prev, next };
+}
+
+/** The spacing as words: "moments −87 / +104 ms", "moments −103 ms / none (the fight's last)". */
+export function spacingText(sp: ReturnType<typeof momentSpacing>): string {
+  if (sp.after === null) return `moments ${sp.before === null ? "none" : `−${Math.round(sp.before)} ms`} / none (the fight's last)`;
+  return `moments ${sp.before === null ? "none" : `−${Math.round(sp.before)}`} / +${Math.round(sp.after)} ms`;
+}
+
+/**
+ * The log's cast events from the moment before `t` to the one after it (ms): within the log's grain of an end at `t`,
+ * so the log doesn't order them against it (arcane-doubles-end report point 3: e82d's last inside listing 87 ms after
+ * the second touch, the boundary 191 ms after).
+ */
+export function castsWithinGrain(fx: Pick<LogFixture, "casts">, sp: ReturnType<typeof momentSpacing>, t: number): LogCast[] {
+  return (fx.casts ?? []).filter((c) => c.t >= (sp.prev ?? t) && c.t <= (sp.next ?? t));
+}
+
+/**
+ * `zmdlogs lanes`: a fight's runs of the listed buffs matching `buff`; beside each end the log's moment spacing there
+ * and the cast events within it (round 16); with `world`, each run's length in world time too.
+ */
 export function lanesView(data: GameData, fx: LogFixture, buff?: RegExp, opts: { readonly world?: boolean } = {}): string {
   const lanes = buffLanes(fx, buff);
   const stops = opts.world ? replayTimeStops(data, fx) : [];
+  const moments = logMoments(fx);
   const lines = lanes.map((l) => {
-    const end = l.nextUnlisted === null ? "listed to the fight's end" : `next unlisted hit ${s(l.nextUnlisted)}`;
+    const sp = momentSpacing(moments, l.lastListed);
+    const within = castsWithinGrain(fx, sp, l.lastListed).map((c) => `${operatorLabel(data, c.operator)} ${shortSkill(c.skill)} ${s(c.t)}`);
+    const grain = `; at its last listing ${spacingText(sp)}${within.length ? `, cast event(s) within: ${within.join(", ")} (no order against the end)` : ""}`;
+    const end = l.nextUnlisted === null ? "listed to the fight's end" : `next unlisted hit ${s(l.nextUnlisted)}${grain}`;
     const from = l.since ?? l.firstListed;
     const world = opts.world
       ? `; world time from ${l.since === null ? "the first listed hit" : "since"}: to the last listed ${s(worldMs(from, l.lastListed, stops))} s (real ${s(l.lastListed - from)})${l.nextUnlisted === null ? "" : `, to the next unlisted ${s(worldMs(from, l.nextUnlisted, stops))} s (real ${s(l.nextUnlisted - from)})`}`

@@ -16,10 +16,12 @@ import type { TotalsShares } from "./enginecheck.ts";
 import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
-import { fitBuild, type BuildCandidate } from "./buildfit.ts";
+import { BUILD_PAIR_TOLERANCE, buildChanges, fitBuild, type BuildCandidate } from "./buildfit.ts";
 import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
 import { assumedView } from "./assumedview.ts";
+import { hitOfRecord, listedEntryWords, sameListingLines } from "./listingview.ts";
+import { boundaryRows, boundaryView } from "./boundaryview.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -86,17 +88,45 @@ export interface RecordFilter {
  * `efsim zmdlogs hits`: the per-hit records of the selected logs (never a hold-out); on worker threads when `workers`
  * (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called); from the per-fixture cache when
  * the code and the fixture are unchanged (hitsCacheKey). `reading` "log": the text lines also give the log's reading.
+ * `sameListing` (ms, one fixture): the hit there and its nearest neighbours with the same listing (listingview.ts);
+ * `listed`: only the hits listing a matching buff (effects or boundary), each text line with those entries' sources,
+ * sinces and values (round 16, arcane-will report point 1).
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly listed?: RegExp; readonly progress: (line: string) => void }): Promise<string> {
   // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
   const assume = opts.assume ?? {};
   const under = Object.keys(assume).length > 0;
   const files = withOperatorsOnly(selectedFiles(sel, "hits"), opts.operators, opts.progress);
+  if (opts.sameListing !== undefined) {
+    const [file] = files;
+    if (files.length !== 1 || file === undefined) throw new Error("zmdlogs hits --same-listing <s> takes one fixture (--operator, --event, --kind pick the hit at that moment)");
+    // Every hit of the fight is a neighbour: the filter picks the hit at the moment only.
+    const all = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !under, assume);
+    const pick = (r: HitRecord) => filterRecords([r], { ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.event ? { event: opts.event } : {}) }).length > 0;
+    return sameListingLines(all, readLogFixture(file), opts.sameListing, pick).join("\n");
+  }
   const records = await collectRecords(data, files, opts.workers, opts, opts.progress, (opts.cache ?? true) && !under, assume);
   // --against: the hits another reading (on top of --assume) changes, paired with these (recordChanges).
   if (opts.against && Object.keys(opts.against).length) {
     const other = await collectRecords(data, files, opts.workers, opts, opts.progress, false, { ...assume, ...opts.against });
     return recordChanges(records, other).join("\n");
+  }
+  const listed = opts.listed;
+  if (listed) {
+    const hitOf = new Map<string, ReturnType<typeof hitOfRecord>>();
+    const of = (r: HitRecord) => {
+      let f = hitOf.get(r.fixture);
+      if (!f) hitOf.set(r.fixture, (f = hitOfRecord(readLogFixture(r.fixture))));
+      return f(r);
+    };
+    return records
+      .flatMap((r) => {
+        const h = of(r);
+        const words = h ? listedEntryWords(h, listed) : [];
+        if (!words.length) return [];
+        return [opts.json ? formatRecord(r, true) : `${formatRecord(r, false, opts.reading, opts.zones === true)}  listed: ${words.join("; ")}`];
+      })
+      .join("\n");
   }
   return records.map((r) => formatRecord(r, opts.json, opts.reading, opts.zones === true)).join("\n");
 }
@@ -225,7 +255,7 @@ export function castsReport(data: GameData, fx: LogFixture, filter: ViewFilter &
 }
 
 /** `efsim zmdlogs replay`: the replay view of one log, with the named kit buffs' windows. */
-export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean }): string {
+export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly againstLanes?: boolean }): string {
   return replayView(data, fx, filter);
 }
 
@@ -305,6 +335,17 @@ export async function assumedCliReport(data: () => GameData, operator: string, s
   const assume = opts.assume ?? {};
   const records = await collectRecords(data, files, opts.workers, { operators: [id] }, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
   return assumedView(records, id, { fixtureLabel, ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
+}
+
+/**
+ * `efsim zmdlogs boundaries <fixture…|--all>`: per kit buff and side, whether its boundary hits read with it or without
+ * it (boundaryview.ts), from the cached hit records (`--operator`: those operators' hits).
+ */
+export async function boundariesCliReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly kitBuff?: RegExp; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+  const assume = opts.assume ?? {};
+  const files = withOperatorsOnly(selectedFiles(sel, "boundaries"), opts.operators, opts.progress);
+  const records = await collectRecords(data, files, opts.workers, opts, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
+  return boundaryView(boundaryRows(data(), records, readLogFixture, opts.kitBuff ? { kitBuff: opts.kitBuff } : {}), files.length);
 }
 
 /**
@@ -466,16 +507,29 @@ export function operatorNamed(data: GameData, operator: string): string {
 }
 
 /** `efsim zmdlogs fit-build`: an operator's attribute nodes, weapon level and food fitted to its clean hits (buildfit.ts). */
-export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly pairs?: boolean } = {}): string {
   const id = operatorNamed(data, operator);
   const fit = fitBuild(data, fx, id, opts);
   const line = (c: BuildCandidate) => `  ${String(c.fits).padStart(4)} of ${fit.landed} fit (${c.cleanFits} of ${fit.clean} clean)  median ×${c.median.toFixed(4)}  ${c.label}${Object.keys(c.set).length ? `  set ${JSON.stringify(c.set)}` : ""}`;
   const overrides = fx.buildOverrides?.filter((o) => o.operator === id) ?? [];
+  const pairLines = () => {
+    const base = fx.team.find((b) => b.operator === id);
+    const target = fit.exported.median;
+    if (!base || !Number.isFinite(target)) return [];
+    const c = buildChanges(data, base, target);
+    const show = (xs: readonly { what: string; ratio: number }[]) => xs.slice(0, opts.top ?? 8).map((x) => `  ×${x.ratio.toFixed(4)}  ${x.what}`);
+    return [
+      `the wider space (buildChanges; ATK only, within ±${BUILD_PAIR_TOLERANCE} of the offset ×${target.toFixed(4)}): ${c.singles.length} of ${c.tried.singles} single changes and ${c.pairs.length} of ${c.tried.pairs} pairs give it (${new Set([...c.singles, ...c.pairs].map((x) => x.ratio.toFixed(6))).size} distinct ATK values: changes the panel's ATK doesn't tell apart count once there)${c.singles.length + c.pairs.length > 3 ? ": one constant, many explanations; the logs don't decide it alone" : ""}`,
+      ...(c.singles.length ? ["singles:", ...show(c.singles)] : []),
+      ...(c.pairs.length ? ["pairs:", ...show(c.pairs)] : []),
+    ];
+  };
   return [
     `${fx.id} ${data.operators[id]?.name ?? id}: ${fit.landed} landed kit hits, ${fit.clean} clean (the log and the replay agree on their modifiers); fits within ±1 of the primary reading`,
     ...(overrides.length ? [`  (the build as read: the fixture's overrides ${overrides.map((o) => JSON.stringify(o.set)).join(", ")} applied)`] : []),
     line(fit.exported),
     "best:",
     ...fit.best.map(line),
+    ...(opts.pairs ? pairLines() : []),
   ].join("\n");
 }

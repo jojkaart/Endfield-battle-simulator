@@ -16,18 +16,18 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–15
-  done (round 15, 2026-11-26: one list of the replay's stops, one twin
-  rule for a jump's paths, each assumption kind's fact with its test;
-  `zmdlogs assumed`, groups' other-kit-hit casts, LINK lines, the hold
-  units' pins in measure, clock's check pairing; measure's default
-  reference the merge base with main; split-module.ts, stale-citation
-  check, cli-ab's paths; `--no-cache` honoured); the backlog
-  ([2026-11-26-backlog-after-round-15.md](friction/2026-11-26-backlog-after-round-15.md),
-  4 points: the log context, fit-build's wider space, the by-operator
-  share, a recorded Stagger start; slots by value and three fact-table
-  candidates on its accuracy list) joins the next round once about five
-  new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–16
+  done (round 16, 2026-11-26: `zmdlogs ends` per moment, lanes' grain,
+  `hits --same-listing` / `--listed`, `boundaries`, clock pairs by value,
+  a batch's bars and BATCH lines, `replay --trace-stack` and
+  `--against-lanes`, BOTHPATHS decisions, stackingType readings in
+  `gamedata tree`, `fit-build --pairs`, measure's linked parts, the
+  `share operator` key and the by-operator table's median and weights);
+  the backlog
+  ([2026-11-26-backlog-after-round-16.md](friction/2026-11-26-backlog-after-round-16.md),
+  3 points: a recorded Stagger start, the stage logs' flag, BATCH in
+  decisions; c4f3's batched Lift on its accuracy list) joins the next
+  round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

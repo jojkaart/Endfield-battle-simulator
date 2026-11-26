@@ -58,3 +58,17 @@ aren't repeated.
 - The reports' episodes as tests (4d60 106.47 s, c4f3 68.50 s, db87 27.13 s, d4fb 86.50 s), and the new fact table's
   test finding three real cases on its first run.
 - scripts/edit.ts for every multi-line edit (thirty batches) and the bash guard's refusals naming the safe form.
+
+## Outcome (round 16)
+
+- 1 (A refused Bash call runs nothing, and nothing says so): done (50c434b): bash-guard's refusal of a chained call
+  ends "Nothing in this call ran, its other commands included: run them again, each in a call of its own"
+  (scripts/bash-guard.ts chained, refusalText); `node scripts/bash-guard.ts --check-file <file>` tries a command
+  written to a file. The harness's own refusals aren't the guard's; the CLAUDE.md clause is the lead's (round 16
+  summary).
+- 2 (A tooling round can't add a snapshot key, so a whole class of view work waits): done (23e95bd, 50c434b):
+  docs/friction/README.md step 3 allows a describing key when snapshots:update says "keys added only" and no verdict
+  moved; scripts/snapshots.ts prints "keys added only in n log(s) … share operator <id> ×n" (accuracy.ts
+  addedKeysOnly; changedLogs leaves such an entry out of the knock-on tests). Round 16 added `share operator <id>`.
+- 3 (The outcomes skeleton missed the carried point): nothing to do (round 15 fixed it); this round's skeleton came
+  out right.

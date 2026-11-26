@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { direction, directionSummary, groupOf, readSnapshots, readSplit, render, ROOT, SCOREBOARD, type Entry, type Snapshots } from "../scripts/accuracy.ts";
+import { addedKeysOnly, addsKeysOnly, changedLogs, direction, directionSummary, groupOf, perOperator, readSnapshots, readSplit, render, ROOT, SCOREBOARD, type Entry, type Snapshots } from "../scripts/accuracy.ts";
 
 describe("accuracy scoreboard", () => {
   it("is what the log verdict snapshots give (after a snapshot change: npm run accuracy, or npm run snapshots:update)", () => {
@@ -79,5 +79,30 @@ describe("the fit measure (direction)", () => {
     expect(lines).toContain("  other (1, summed, counts only): verdict classes assumed −2, fallback +2; totals operator keys 1");
     expect(lines.join("\n")).not.toMatch(/by operator/);
     expect(lines.join("\n")).not.toMatch(/zmdlogs-h/);
+  });
+});
+
+describe("the by-operator table and describing keys (round 16, totals-off report point 2)", () => {
+  const e = (err: number, share: number | undefined): Entry => ({ chr_a: { plain: 1 }, totals: { damage: 1, "operator chr_a": err, ...(share !== undefined ? { "share operator chr_a": share } : {}) } });
+
+  it("gives each operator's mean, median and share-weighted |error| and its mean share", () => {
+    const a = perOperator([e(60, 5), e(2, 40), e(-4, 55)]).get("chr_a");
+    expect(a?.meanDamageError).toBeCloseTo(22, 6);
+    expect(a?.medianDamageError).toBe(4);
+    expect(a?.weightedDamageError).toBeCloseTo((5 * 60 + 40 * 2 + 55 * 4) / 100, 6);
+    expect(a?.meanShare).toBeCloseTo(100 / 3, 6);
+    expect(perOperator([e(3, undefined)]).get("chr_a")).toMatchObject({ weightedDamageError: null, meanShare: null });
+  });
+
+  it("tells an entry that only gained totals keys from one whose values moved, naming kinds, never ids", () => {
+    expect(addsKeysOnly(e(3, undefined), e(3, 20))).toBe(true);
+    expect(addsKeysOnly(e(3, undefined), e(4, 20))).toBe(false);
+    expect(addsKeysOnly(e(3, undefined), { ...e(3, 20), chr_a: { plain: 1, mismatch: 1 } })).toBe(false);
+    expect(addsKeysOnly(undefined, e(3, 20))).toBe(false);
+    const split = { development: new Set(["zmdlogs-d"]), holdout: new Set(["zmdlogs-h"]) };
+    const at = (s: number | undefined): Snapshots => ({ verified: {}, pending: { "pending/zmdlogs-d.json": e(3, s), "holdout/zmdlogs-h.json": e(3, s) }, split });
+    expect(addedKeysOnly(at(undefined), at(20))).toEqual({ logs: 2, kinds: new Map([["share operator <id>", 2]]) });
+    expect(changedLogs(at(undefined), at(20))).toEqual([]);
+    expect(directionSummary(at(undefined), at(20))).toEqual(["No log's verdicts moved."]);
   });
 });

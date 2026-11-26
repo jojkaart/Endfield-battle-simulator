@@ -50,3 +50,18 @@ worktree-agent-afcd0d768286cbdd8.
 The placement dump diffed against the base (`at-commit.ts --run` with a small scratch script) listed every pairing the
 slot rule moved in all logs in two minutes, which caught the first version moving 7910's stares; `measure --hits` named
 the Breach's Arts Intensity as the c4f3 regression directly from its modifier lines.
+
+## Outcome (round 16)
+
+- 1 (No view shows a cast's landings twice over (both paths of a jump)): done (d3983ca): engine drivers.ts replayCast
+  `keptSkipped` (record only, as `dropped`): a kit jump kept with pinned landings in the part it skips; BOTHPATHS
+  lines in `zmdlogs replay` and `zmdlogs decisions` (MadeCast.keptSkipped). None in the development logs since the
+  slots-and-paths fix: a guard. team-ab against 33c3248: unchanged.
+- 2 (A kit buff's windows against the log's lanes take two commands and an eye): done (d3983ca): `zmdlogs replay
+  --kit-buff owner:id --against-lanes`: each logged run's since beside the replay's nearest chain start (views.ts
+  lanePairs, the closest pairs first), the unpaired on each side, the median offset (d4fb's Fervent Morale: 4
+  paired, median −0.00 s, 3 log only).
+- 3 (measure --split files fails on a change whose files import each other's new exports): done (06de4ab):
+  measure.ts importLinks: changed TypeScript files importing a name another changed file adds (relative, or
+  `@efsim/<pkg>` from a changed file under packages/<pkg>/src/) are one part "(linked by a new export)". Retrying a
+  failed part with the files its error names isn't built (the links cover the case reported).

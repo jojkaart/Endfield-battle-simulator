@@ -27,7 +27,7 @@ import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
 import type { LoggedCast, Placement } from "./logcasts.ts";
 import { loggedStagger } from "./replaysteps.ts";
-import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
+import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StackTrace, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
 import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
@@ -172,6 +172,8 @@ export interface BuffReplay {
   readonly statusTraces: readonly StatusTrace[];
   /** With ReplayOptions.trace `trigger:<owner:id>`: each firing of a kit trigger and each shift of its ready frame, step by step. */
   readonly triggerTraces: readonly TriggerTrace[];
+  /** With ReplayOptions.trace `stack:<owner:stack>`: each change of a kit stack's value, step by step (`zmdlogs replay --trace-stack`). */
+  readonly stackTraces: readonly StackTrace[];
   /**
    * The slow-downs the replay's timeline applied (frames; a reset's cut and a path's ends and jumps in them), beside the
    * stop lists the log tools build for its casts (replayedCastStops): where they differ, the lists aren't the engine's.
@@ -207,6 +209,8 @@ export interface MadeCast {
   readonly inferred?: string;
   /** The kit jumps its logged landings contradicted, which the engine dropped (JUMPDROP lines). */
   readonly dropped?: readonly JumpDrop[];
+  /** The kit jumps it kept with pinned landings in the part they skip, which land beside the jumped-to path (BOTHPATHS lines). */
+  readonly keptSkipped?: readonly JumpDrop[];
   /** The Link stacks it used (Cast.link; absent: none): LINK lines. */
   readonly link?: number;
   /**
@@ -554,7 +558,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       // Gained at the cast and in the advance to the next one (the last one's: to its post state).
       const next = all[k + 1];
       const gained = [...linkGains(m.pre, m.post), ...(next ? linkGains(m.post, next.pre) : [])];
-      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
+      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.keptSkipped ? { keptSkipped: m.keptSkipped } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
     }),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
@@ -568,6 +572,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     traces: main?.traces ?? [],
     statusTraces: main?.statusTraces ?? [],
     triggerTraces: main?.triggerTraces ?? [],
+    stackTraces: main?.stackTraces ?? [],
     appliedStops: main?.appliedStops ?? [],
     hiddenHolds: placedHolds,
     holdClocks,

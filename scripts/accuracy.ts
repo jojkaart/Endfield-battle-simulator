@@ -246,33 +246,71 @@ function aggregate(entries: readonly Entry[]): Aggregate {
   };
 }
 
-interface OperatorAggregate {
+export interface OperatorAggregate {
   readonly logs: number;
   readonly hits: number;
   readonly plain: number;
   readonly mismatch: number;
   readonly meanDamageError: number | null;
+  /** The median |error| of its total damage over the fights with one. */
+  readonly medianDamageError: number | null;
+  /**
+   * The |errors| weighted by its share of each fight's logged total (the `share operator <id>` key, round 16): what
+   * its error weighs in the fights' totals, so a few small totals 20–60% off (Liino's 0eef on a 9 s fight) don't read
+   * as a fight metric (null: no fight with both).
+   */
+  readonly weightedDamageError: number | null;
+  /** Its mean share of a fight's logged total, in % (null: no share key). */
+  readonly meanShare: number | null;
 }
 
-/** Per operator, over the given logs: its hits' verdicts and the mean |error| of its total damage. */
-function perOperator(entries: readonly Entry[]): Map<string, OperatorAggregate> {
-  const acc = new Map<string, { logs: number; hits: number; plain: number; mismatch: number; errors: number[] }>();
+/** The median of some numbers (null: none). */
+const median = (xs: readonly number[]) => {
+  if (!xs.length) return null;
+  const v = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(v.length / 2);
+  return v.length % 2 ? (v[m] as number) : ((v[m - 1] as number) + (v[m] as number)) / 2;
+};
+
+/** Per operator, over the given logs: its hits' verdicts and the |error| of its total damage (mean, median, by its share of the fight). */
+export function perOperator(entries: readonly Entry[]): Map<string, OperatorAggregate> {
+  const acc = new Map<string, { logs: number; hits: number; plain: number; mismatch: number; errors: number[]; weighted: number; weights: number; shares: number[] }>();
   for (const e of entries) {
     for (const [op, c] of operators(e)) {
-      const a = acc.get(op) ?? { logs: 0, hits: 0, plain: 0, mismatch: 0, errors: [] };
+      const a = acc.get(op) ?? { logs: 0, hits: 0, plain: 0, mismatch: 0, errors: [], weighted: 0, weights: 0, shares: [] };
       a.logs++;
       a.hits += allHits(c);
       a.plain += sum(c, "plain");
       a.mismatch += sum(c, "mismatch");
       const d = e[TOTALS]?.[`operator ${op}`];
+      const share = e[TOTALS]?.[`share operator ${op}`];
       if (d !== undefined && d !== null) a.errors.push(Math.abs(d));
+      if (share !== undefined && share !== null) {
+        a.shares.push(share);
+        if (d !== undefined && d !== null) {
+          a.weighted += share * Math.abs(d);
+          a.weights += share;
+        }
+      }
       acc.set(op, a);
     }
   }
   return new Map(
     [...acc.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([op, a]) => [op, { logs: a.logs, hits: a.hits, plain: a.plain, mismatch: a.mismatch, meanDamageError: a.errors.length ? a.errors.reduce((s, x) => s + x, 0) / a.errors.length : null }]),
+      .map(([op, a]) => [
+        op,
+        {
+          logs: a.logs,
+          hits: a.hits,
+          plain: a.plain,
+          mismatch: a.mismatch,
+          meanDamageError: a.errors.length ? a.errors.reduce((s, x) => s + x, 0) / a.errors.length : null,
+          medianDamageError: median(a.errors),
+          weightedDamageError: a.weights > 0 ? a.weighted / a.weights : null,
+          meanShare: a.shares.length ? a.shares.reduce((s, x) => s + x, 0) / a.shares.length : null,
+        },
+      ]),
   );
 }
 
@@ -374,9 +412,14 @@ export function render(s: Snapshots): string {
     ...sharesTable(s),
     "## By operator (every log but the hold-outs)",
     "",
-    "| Operator | Fights | Hits | Plain | Mismatch | Mean \\|damage error\\| |",
-    "|---|---|---|---|---|---|",
-    ...[...perOperator(visible)].map(([op, a]) => `| ${op} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.mismatch, a.hits)} | ${err(a.meanDamageError)} |`),
+    "Each operator's |damage error| is its own total's (simulated ÷ logged − 1 over its own hits), not the fight's: the",
+    "mean over its fights, the median, and the mean weighted by its share of each fight's logged total (the",
+    "`share operator <id>` key), which a few small totals far off (a 9 s fight's +58%) don't dominate; **Share**: its",
+    "mean share of a fight's logged total.",
+    "",
+    "| Operator | Fights | Hits | Plain | Mismatch | Mean \\|damage error\\| | Median | Weighted by share | Share |",
+    "|---|---|---|---|---|---|---|---|---|",
+    ...[...perOperator(visible)].map(([op, a]) => `| ${op} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.mismatch, a.hits)} | ${err(a.meanDamageError)} | ${err(a.medianDamageError)} | ${err(a.weightedDamageError)} | ${a.meanShare === null ? "-" : `${a.meanShare.toFixed(1)}%`} |`),
     "",
   ];
   return lines.join("\n");
@@ -469,7 +512,45 @@ export function directionSummary(before: Snapshots, after: Snapshots): string[] 
  */
 export function changedLogs(before: Snapshots, after: Snapshots): string[] {
   const a = allLogs(before);
-  return [...allLogs(after)].filter(([k, l]) => l.group !== "holdout" && JSON.stringify(a.get(k)?.entry) !== JSON.stringify(l.entry)).map(([k]) => k);
+  return [...allLogs(after)].filter(([k, l]) => l.group !== "holdout" && JSON.stringify(a.get(k)?.entry) !== JSON.stringify(l.entry) && !addsKeysOnly(a.get(k)?.entry, l.entry)).map(([k]) => k);
+}
+
+/**
+ * Whether an entry only adds totals keys to the one before (every value `was` holds is `now`'s, no operator or verdict
+ * class new): a key that describes (round 16: `share operator <id>`), no number moved. False without `was`.
+ */
+export function addsKeysOnly(was: Entry | undefined, now: Entry): boolean {
+  if (!was) return false;
+  if (Object.keys(now).some((k) => !(k in was))) return false;
+  for (const [k, fields] of Object.entries(was)) {
+    const n = now[k];
+    if (!n) return false;
+    if (Object.entries(fields).some(([f, v]) => n[f] !== v)) return false;
+    if (k !== TOTALS && Object.keys(n).some((f) => !(f in fields))) return false;
+  }
+  return true;
+}
+
+/**
+ * The totals keys the entries gained with no value moving (addsKeysOnly), by kind (an operator's id taken out, so a
+ * hold-out names none): what `npm run snapshots:update` reports as "keys added only" (round 15's own report point 2: a
+ * new describing key is tooling, not accuracy work, when nothing else moved).
+ */
+export function addedKeysOnly(before: Snapshots, after: Snapshots): { readonly logs: number; readonly kinds: ReadonlyMap<string, number> } {
+  const a = allLogs(before);
+  const kinds = new Map<string, number>();
+  let logs = 0;
+  for (const [k, l] of allLogs(after)) {
+    const was = a.get(k)?.entry;
+    if (!was || JSON.stringify(was) === JSON.stringify(l.entry) || !addsKeysOnly(was, l.entry)) continue;
+    logs++;
+    for (const f of Object.keys(l.entry[TOTALS] ?? {})) {
+      if (f in (was[TOTALS] ?? {})) continue;
+      const kind = f.replace(/ chr_\S+$/, " <id>");
+      kinds.set(kind, (kinds.get(kind) ?? 0) + 1);
+    }
+  }
+  return { logs, kinds };
 }
 
 /** The snapshots as committed at a git ref. */

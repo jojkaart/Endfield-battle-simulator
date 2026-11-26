@@ -66,7 +66,16 @@ export interface LogHit {
    * skill the Stagger is credited to (poiseDamage.orig_source; imports and refreshes since 2026-11-16), which tells
    * e.g. Si's Final Stroke burst (normal_skill_2) from an Inksoul expiry (normal_skill_inkmove_2).
    */
-  readonly poise?: { readonly dealt: number; readonly bar: number; readonly origin?: string };
+  readonly poise?: {
+    readonly dealt: number;
+    /**
+     * The Stagger bar this hit leaves: before it the bar was `bar + dealt` (replaysteps.ts loggedPoiseBars). It falls
+     * in the game's order inside a batched ms, the log's only record of that order (castassembly.ts batchOrder; the
+     * batched-landings report point 1: read as rising, c4f3's bars at 7.05 s put Chen's combo first, not Estella's).
+     */
+    readonly bar: number;
+    readonly origin?: string;
+  };
 }
 
 export interface LogFixture {

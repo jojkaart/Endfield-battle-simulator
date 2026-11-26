@@ -3,7 +3,11 @@
 // scripts/edit.ts (exact replacements from an edits file), scripts/check-links.ts damagedText (the damage's shapes in
 // a doc) and scripts/bash-guard.ts (the hook that refuses the forms).
 import { describe, expect, it } from "vitest";
-import { refusal } from "../scripts/bash-guard.ts";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { chained, refusal, refusalText } from "../scripts/bash-guard.ts";
 import { damagedDocs, damagedText } from "../scripts/check-links.ts";
 import { applyEdits, parseEdits } from "../scripts/edit.ts";
 
@@ -107,5 +111,23 @@ describe("scripts/bash-guard.ts", () => {
 
   it("lets plain commands through", () => {
     for (const c of ["python3 -I scratch/patch.py", "python3 -I -c \"print(1)\"", "node scratch/x.ts --flag", "node scripts/edit.ts scratch/e.txt", "git commit -F scratch/msg.txt -- docs", "npx vitest run tests/x.test.ts -t \"a << b\"".replace("<< b", "<<1"), "echo $((1 << 2))", "bash scratch/x.sh"]) expect(refusal(c), c).toBeUndefined();
+  });
+
+  it("says a refused chained call ran nothing (round 16, round 15's own report point 1)", () => {
+    const heredoc = "cat > a <<'EOF'\nx\nEOF";
+    expect(chained(`node scripts/edit.ts e.txt && ${heredoc}`)).toBe(true);
+    expect(chained("node scripts/edit.ts e.txt | head")).toBe(true);
+    expect(chained("grep -n 'a && b; c | d' docs/x.md")).toBe(false);
+    expect(chained("node scripts/edit.ts e.txt")).toBe(false);
+    expect(refusalText(`node scripts/edit.ts e.txt && ${heredoc}`, "a heredoc.")).toMatch(/Nothing in this call ran, its other commands included/);
+    expect(refusalText("echo \"`date`\"", "a backtick.")).not.toMatch(/Nothing in this call ran/);
+  });
+
+  it("checks a command written to a file (--check-file), so a forbidden form is tried without the harness seeing it", () => {
+    const file = join(mkdtempSync(join(tmpdir(), "guard-")), "cmd.txt");
+    writeFileSync(file, "sed -i '288a\\ a new line' packages/logs/src/x.ts\n");
+    const r = spawnSync(process.execPath, [join(import.meta.dirname, "..", "scripts", "bash-guard.ts"), "--check-file", file], { encoding: "utf8" });
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/^refused: a sed insertion/);
   });
 });
