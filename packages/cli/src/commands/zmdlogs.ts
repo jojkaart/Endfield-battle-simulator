@@ -197,6 +197,8 @@ export default command({
                 [--trace-trigger owner:id] Each firing of a kit trigger (owner:id, or the id alone for any owner:
                                           suit_phy01.proc), its ready frame, and each shift of it with the step
                                           that made it (a stop, a hidden hold: a world clock's cooldown); repeatable
+                [--trace-stack owner:stack] Each change of a kit stack's value (efsim kit <operator> lists its
+                                          stacks: a bank, a counter) and the step that made it; repeatable
                 [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
                                           the log tools build for its casts: where they differ, the list isn't the
                                           engine's
@@ -355,6 +357,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "kit-buff": { type: "string", multiple: true, default: [] },
     "trace-buff": { type: "string", multiple: true, default: [] },
     "trace-trigger": { type: "string", multiple: true, default: [] },
+    "trace-stack": { type: "string", multiple: true, default: [] },
     what: { type: "string" },
     hits: { type: "boolean", default: false },
     assume: { type: "string", multiple: true, default: [] },
@@ -414,6 +417,12 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       return formatRaw(detail, { ...(values.buffs !== undefined ? { buffs: values.buffs } : {}), ...(values.events !== undefined ? { events: values.events } : {}) });
     }
     const progress = (l: string) => process.stderr.write(l + "\n");
+    // `--trace-stack owner:stack`, the owner by id or name.
+    const stackSpec = (x: string) => {
+      const i = x.lastIndexOf(":");
+      if (i <= 0) throw new Error(`--trace-stack ${x}: takes owner:stack (efsim kit <operator> lists its stacks)`);
+      return `${operatorNamed(data(), x.slice(0, i))}:${x.slice(i + 1)}`;
+    };
     // Operators by id, name or part of the id (operatorNamed), in every view.
     const operators = values.operator.map((o) => operatorNamed(data(), o));
     const selection = { named: args.slice(1), all: values.all, ...(values["fixtures-from"] !== undefined ? { fixturesFrom: values["fixtures-from"] } : {}) };
@@ -538,7 +547,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};

@@ -94,6 +94,20 @@ export interface TriggerTrace {
   readonly to: { readonly readyAt: number; readonly count: number; readonly world: boolean };
 }
 
+/**
+ * One change of a traced kit stack's value (ReplayOptions.trace `stack:<owner:stack>`, `zmdlogs replay --trace-stack`;
+ * round 16, the batched-landings report point 3: Pogranichnik's bank read from trigger firings and buff lengths, a
+ * shortfall nearly chased that wasn't there): its value before and after a step (null: not set).
+ */
+export interface StackTrace {
+  readonly operator: string;
+  readonly stack: string;
+  readonly frame: number;
+  readonly step: string;
+  readonly from: number | null;
+  readonly to: number | null;
+}
+
 /** Whether a triggerState key is one a `trigger:` trace asks for: `owner:id` (and its per-subject keys), or `id` for any owner. */
 export function tracesTrigger(spec: string, key: string): boolean {
   if (key.includes("@")) return false;
@@ -149,6 +163,7 @@ export interface ReplayRecord {
   readonly traces: readonly BuffTrace[];
   readonly statusTraces: readonly StatusTrace[];
   readonly triggerTraces: readonly TriggerTrace[];
+  readonly stackTraces: readonly StackTrace[];
   readonly appliedStops: readonly AppliedStop[];
   readonly changes: ReadonlyMap<string, readonly Change[]>;
   readonly kitChanges: ReadonlyMap<string, readonly Change[]>;
@@ -189,7 +204,10 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
     kitInstances.set(rec.key, [...(kitInstances.get(rec.key) ?? []), { start: rec.start, end, expired, ...(rec.replaces !== undefined ? { replaces: rec.replaces } : {}) }]);
   let staggerOpen: { start: number; until: number } | null = null;
   let lastSample = 0;
-  const traced = new Set(o.trace.filter((x) => !x.startsWith("status:") && !x.startsWith("trigger:")));
+  const traced = new Set(o.trace.filter((x) => !x.startsWith("status:") && !x.startsWith("trigger:") && !x.startsWith("stack:")));
+  const tracedStacks = o.trace.filter((x) => x.startsWith("stack:")).map((x) => x.slice("stack:".length).split(":") as [string, string]);
+  const stackTraces: StackTrace[] = [];
+  let stacksNow: TimelineState["stacks"] = {};
   const tracedStatuses = new Set(o.trace.filter((x) => x.startsWith("status:")).map((x) => x.slice("status:".length)));
   const tracedTriggers = o.trace.filter((x) => x.startsWith("trigger:")).map((x) => x.slice("trigger:".length));
   const traces: BuffTrace[] = [];
@@ -325,6 +343,13 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         }
         triggersNow = st.triggerState;
       }
+      if (tracedStacks.length && st.stacks !== stacksNow) {
+        for (const [op, name] of tracedStacks) {
+          const [from, to] = [stacksNow[op]?.[name] ?? null, st.stacks[op]?.[name] ?? null];
+          if (from !== to) stackTraces.push({ operator: op, stack: name, frame: st.frame, step: words, from, to });
+        }
+        stacksNow = st.stacks;
+      }
     },
     finish(brokenAt) {
       for (const rec of open.values()) close(rec.key, rec.start, brokenAt ?? rec.expiresAt, brokenAt === null && Number.isFinite(rec.expiresAt));
@@ -338,6 +363,7 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         traces,
         statusTraces,
         triggerTraces,
+        stackTraces,
         appliedStops: [...stops.values()].flatMap((recs) => recs.map((r) => r.stop)).sort((a, b) => a.start - b.start),
         changes: countChanges(instances, o.edge),
         kitChanges: countChanges(kitInstances, o.edge),

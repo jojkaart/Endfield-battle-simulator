@@ -410,6 +410,12 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const moved = x.from?.appliedAt !== undefined && x.to?.appliedAt !== undefined && x.from.appliedAt !== x.to.appliedAt ? ` (application moved ${x.to.appliedAt - x.from.appliedAt > 0 ? "+" : ""}${x.to.appliedAt - x.from.appliedAt} frames: a hold, not a reapplication)` : "";
     lines.push({ t, order: 0, text: `TRACE  status:${x.status} by ${x.operator ? label(data, x.operator) : "-"}: ${st(x.from)} → ${st(x.to)}${moved} at ${x.step}` });
   }
+  // A kit stack's value, each change with the step that made it (`--trace-stack`: BuffReplay.stackTraces, round 16).
+  for (const x of replay.stackTraces) {
+    const t = msOf(x.frame);
+    if (!inWindow(f, t)) continue;
+    lines.push({ t, order: 0, text: `TRACE  stack ${label(data, x.operator)}:${x.stack} ${x.from ?? "unset"} → ${x.to ?? "unset"} at ${x.step}` });
+  }
   // A kit trigger's firings and its ready frame's shifts (`--trace-trigger`: BuffReplay.triggerTraces); consecutive
   // shifts by steps of one kind (a placed hold comes a frame at a time) on one line.
   const shifts: { first: TriggerTrace; last: TriggerTrace; n: number }[] = [];
@@ -464,7 +470,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early, LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, or a kit trigger's firings and ready frame) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early, LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines), ...pairs].join("\n");
 }
 

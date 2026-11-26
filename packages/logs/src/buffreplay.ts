@@ -27,7 +27,7 @@ import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
 import type { LoggedCast, Placement } from "./logcasts.ts";
 import { loggedStagger } from "./replaysteps.ts";
-import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
+import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StackTrace, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
 import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
@@ -172,6 +172,8 @@ export interface BuffReplay {
   readonly statusTraces: readonly StatusTrace[];
   /** With ReplayOptions.trace `trigger:<owner:id>`: each firing of a kit trigger and each shift of its ready frame, step by step. */
   readonly triggerTraces: readonly TriggerTrace[];
+  /** With ReplayOptions.trace `stack:<owner:stack>`: each change of a kit stack's value, step by step (`zmdlogs replay --trace-stack`). */
+  readonly stackTraces: readonly StackTrace[];
   /**
    * The slow-downs the replay's timeline applied (frames; a reset's cut and a path's ends and jumps in them), beside the
    * stop lists the log tools build for its casts (replayedCastStops): where they differ, the lists aren't the engine's.
@@ -570,6 +572,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     traces: main?.traces ?? [],
     statusTraces: main?.statusTraces ?? [],
     triggerTraces: main?.triggerTraces ?? [],
+    stackTraces: main?.stackTraces ?? [],
     appliedStops: main?.appliedStops ?? [],
     hiddenHolds: placedHolds,
     holdClocks,
