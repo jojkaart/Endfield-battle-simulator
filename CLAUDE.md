@@ -21,7 +21,8 @@ After that milestone, a `dev` branch takes over the role `main` has now.
   [docs/roadmap-details.md](docs/roadmap-details.md)).
 - Keep [docs/open-problems.md](docs/open-problems.md) current: for each
   unexplained accuracy problem, what is ruled out and what is still possible.
-  Diagnosis briefs ask for both.
+  Diagnosis briefs ask for both. A fixed item shrinks to one line naming
+  its journal entry; its open points move to the round's "Still possible".
 - Before a session ends (or after a significant milestone), add a short
   journal entry: goal, what was done, decisions and why, dead ends or
   problems. Each entry is its own file: `npm run journal:new -- "Title"`
@@ -109,7 +110,12 @@ options, checked before it queues; with no reference named and stale
 snapshots it measures against the merge base with main (`--against-snapshots`
 keeps the snapshots). Diagnosis views: `efsim zmdlogs
 groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
-(each clock's lateness by stop kind), `holds --dropped --all`; every view
+(each clock's lateness by stop kind), `holds --dropped --all`, `ends
+<fixture> [--at <s>]` (which listed buffs end at a moment, which go on),
+`hits <fixture> --same-listing <s>` (the nearest hits with the same
+listing: check a listing lead there first), `boundaries` (a boundary
+rule's base rate), `replay --trace-stack owner:stack`, `replay --kit-buff
+<b> --against-lanes`; every view
 that replays takes `--assume`; what an operator's non-plain matches
 assume: `zmdlogs assumed --operator <op>`; what a reading changes: `zmdlogs decisions
 <fixture…|--all> --assume <id>=<r>` (the replay's decisions) and `hits
@@ -199,7 +205,9 @@ complex to verify"):
   damagedText); `node scripts/bash-guard.ts --check '<cmd>'` says whether
   a command is one of the forbidden forms, and the same script runs as a
   PreToolUse hook on every Bash call (.claude/settings.json, the owner
-  2026-11-24): a refused command comes back with the reason and the safe form. No code formatter
+  2026-11-24): a refused command comes back with the reason and the safe form;
+  it ran nothing, its other commands included: run them again (`node
+  scripts/bash-guard.ts --check-file <file>` tries a form). No code formatter
   (`.prettierignore` keeps `npx prettier` off): format by hand.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
@@ -285,7 +293,9 @@ that slowed it down, and how to make future agents' work easier, written to
 are there). When about five unprocessed reports have collected, launch one
 sub-agent to read them, deduce the overall improvements and implement them,
 then move the reports to [docs/friction-done/](docs/friction-done/README.md)
-(docs/friction/ only holds what still needs doing).
+(docs/friction/ only holds what still needs doing). A tooling round may add
+a snapshot key that only describes, when snapshots:update says "keys added
+only" and "No log's verdicts moved"; its summary names the keys.
 
 ## Data and reference code
 
