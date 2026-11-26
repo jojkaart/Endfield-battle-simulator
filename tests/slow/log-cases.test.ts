@@ -62,12 +62,14 @@ describe("Zhuang Fangyi: the Empyrean's end logged as an ultimate_skill cast eve
 
 // The cooldown-clock round (2026-11-24): engine assumption finisher-stagger.
 describe("a finisher's hits after the Stagger's end", () => {
-  it("7e19: Ember's finisher hit_2 at 33.15 s, after the log's Stagger ended, deals with the Staggered parts: both hits read the same ×1.096", () => {
+  it("7e19: Ember's finisher hit_2 at 33.15 s, after the log's Stagger ended, deals with the Staggered parts: both hits off only by her talent's unlisted layers", () => {
     const E = "chr_0009_azrila";
     const v = checkLog(data, fixtureFile("pending/zmdlogs-7e19489ae503.json")).filter((x) => x.hit.operator === E && x.hit.event === `${E}_power_attack`);
     expect(v.map((x) => x.hit.t)).toEqual([30861, 33152]);
-    // ×1.096: Pogranichnik's team ATK layers the log lists as values (open); without the Staggered parts hit_2 read ×1.564.
-    for (const x of v) expect(x.kind === "mismatch" ? x.ratio : NaN).toBeCloseTo(1.096, 2);
+    // Since the check counts her listed Pay the Ferric Price (2026-11-26, loggedEntries by its own game buff), what's left
+    // is one and two more of its +0.09 ATK layers, which the log lists as one entry (open-problems, 7e19 Ember): ×1.046
+    // and ×1.096. Without the Staggered parts hit_2 read ×1.564.
+    expect(v.map((x) => (x.kind === "mismatch" ? x.ratio : NaN))).toEqual([expect.closeTo(1.046, 2), expect.closeTo(1.096, 2)]);
   });
 });
 
