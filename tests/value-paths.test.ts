@@ -46,7 +46,7 @@ describe("Pogranichnik's combo paths in the replay", () => {
     const slashes = fx.hits.filter((h) => h.operator === P && h.event === COMBO && h.t > 48800 && h.t < 51500).map((h) => h.t);
     expect(slashes.map(at)).toEqual(["hit", "hit_2", "hit_4"]);
   });
-  it("takes the 4-stack path its values show where the replay consumed three stacks (c4f3 13.7 s: ×3.13, hit_3); his first Fervent Morale at the 34.04 s Breach, as the log lists it", () => {
+  it("takes the 4-stack path its values show (c4f3 13.7 s: ×3.13, hit_3; the replay's Breach consumed three before the batch order at 7.05 s); his first Fervent Morale at the 34.04 s Breach, as the log lists it", () => {
     const fx = fixture("c4f3");
     const r = logBuffReplay(data, fx);
     const h = fx.hits.find((x) => x.operator === P && x.event === COMBO && x.t === 15968);
@@ -62,5 +62,23 @@ describe("Pogranichnik's combo paths in the replay", () => {
     const v = checkLog(data, fx, { replay: r }).filter((x) => x.hit.operator === P && x.hit.t >= 34000 && x.hit.t <= 39300);
     expect(v.length).toBeGreaterThanOrEqual(4);
     expect(v.every((x) => x.kind === "match")).toBe(true);
+  });
+});
+
+describe("Pogranichnik's Fervent Morale before the damage of the hit that makes it", () => {
+  const plainAt = (id: string, t0: number, t1: number) => {
+    const fx = fixture(id);
+    const r = logBuffReplay(data, fx);
+    return checkLog(data, fx, { replay: r }).filter((x) => x.hit.operator === P && x.hit.t >= t0 && x.hit.t <= t1);
+  };
+  it("from the bank a combo slash's SP fills (d4fb 47.92 s: the slash reads the layer it made)", () => {
+    const v = plainAt("d4fb", 47900, 47950).filter((x) => x.hit.event === COMBO);
+    expect(v.length).toBe(1);
+    expect(v.every((x) => x.kind === "match" && x.class === "plain")).toBe(true);
+  });
+  it("from the harass follow-up on his own Breach (d4fb 86.67 s: the Breach and its hit with the layer listed since their ms)", () => {
+    const v = plainAt("d4fb", 86660, 86680);
+    expect(v.length).toBe(2);
+    expect(v.every((x) => x.kind === "match" && x.class === "plain")).toBe(true);
   });
 });

@@ -453,9 +453,14 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     if (amount > 0) into.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: grant.kind === "natural", ...(grant.sourceType !== undefined ? { sourceType: grant.sourceType } : {}) });
   };
   // SP granted before the damage (KitHit.spBeforeDamage): its triggers act before it too (a buff they apply counts for the hit).
+  // The stacks the hit gains with it go too: what fills a bank of SP (Pogranichnik's Living Banner, talent 1's
+  // abilityEvent on the ObtainCostAction) makes its layer before the DamageAction (d4fb69b036fe 47.92 s: his combo's
+  // second slash crosses 80 and reads with the Fervent Morale it made, the log listing it since that ms).
+  const stacksEarly = kitHit.spBeforeDamage === true && (kitHit.gains?.length ?? 0) > 0 && !late;
   if (kitHit.spBeforeDamage) {
     const early: BattleEvent[] = [];
     grantSp(early);
+    if (stacksEarly) early.push({ type: "stacks", frame: hit.frame, operator: hit.operator, changed: stacksChanged });
     if (early.length) st = runTriggers(ctx, st, early, { operator: hit.operator, kind });
   }
   // A Combustion the hit formed keeps the attacker side its damage sees: with what its application's triggers gave.
@@ -555,7 +560,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   const all: BattleEvent[] = [
     ...(withDamage && !away ? [hitEvent] : []), ...asEvents(statusEvents, kind, castIndex, crits), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex, crits), ...poiseEvents, ...events, ...spEvents,
     ...(kitHit.heals && withDamage ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
-    ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
+    ...(kitHit.gains?.length && !stacksEarly ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
   return runTriggers(ctx, st, all, { operator: hit.operator, kind }, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }
