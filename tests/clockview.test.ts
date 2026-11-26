@@ -1,7 +1,7 @@
 // `zmdlogs clock` (packages/logs/src/clockview.ts): a kit buff's own clock in the replay against the log's run.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { CHECK_PAIR_MS, clockView, devFixtures, kitBuffClock, pairInstances } from "@efsim/logs";
+import { CHECK_PAIR_MS, clockView, devFixtures, kitBuffClock, laneOfInstance, pairInstances, type BuffLane } from "@efsim/logs";
 
 const data = loadGameData();
 const AMP = "chr_0036_jsspsi:ultimate_amp";
@@ -37,5 +37,25 @@ describe("a kit buff's clock (zmdlogs clock)", () => {
     expect(paired).toEqual([x, null, null]);
     expect(unpaired).toEqual([y]);
     expect(CHECK_PAIR_MS).toBe(5000);
+  });
+});
+
+describe("pairing an instance with the log's run by value (round 16, arcane-will report point 2)", () => {
+  it("pairs e82d's first Doubles Susceptibility with its own 0.1794 run, not Arcane's talent run under the same name", () => {
+    const [e82d] = devFixtures({ ids: ["e82d"] });
+    const rows = kitBuffClock(data, (e82d as NonNullable<typeof e82d>).fx, "chr_0032_lizhiyan:doubles_susceptibility");
+    const first = rows.find((r) => Math.abs(r.start - 6900) < 100);
+    expect(first?.values?.some((v) => Math.abs(v - 0.179399) < 1e-5)).toBe(true);
+    // The refreshed run from 3.98 s (listed across the instance's start), not the talent's 0.197 run from 7.02 s.
+    expect(first?.lane).toMatchObject({ since: 3983, byValue: true });
+    expect(clockView(data, [e82d as NonNullable<typeof e82d>], "chr_0032_lizhiyan:doubles_susceptibility")).toMatch(/log since 3\.98, listed to 8\.56, next unlisted 8\.65 \(value 0\.179399, the instance's\)/);
+  });
+
+  it("keeps the rule by since where no value matches or none was traced", () => {
+    const lane = (since: number, value: number, last: number): BuffLane => ({ buff: "b", source: "x", since, firstListed: since, lastListed: last, nextUnlisted: null, listedHits: 1, boundaryOnly: false, values: [value], hitters: ["x"] });
+    const [a, b] = [lane(1000, 0.2, 5000), lane(3000, 0.1, 6000)];
+    expect(laneOfInstance([a, b], 3000, Infinity, [0.2])).toEqual({ lane: a, byValue: true });
+    expect(laneOfInstance([a, b], 3000, Infinity, [0.5])).toEqual({ lane: b, byValue: false });
+    expect(laneOfInstance([a, b], 3000, Infinity)).toEqual({ lane: b, byValue: null });
   });
 });

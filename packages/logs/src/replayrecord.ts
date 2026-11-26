@@ -71,6 +71,12 @@ export interface BuffTrace {
    */
   readonly from: number | null;
   readonly to: number | null;
+  /**
+   * On an instance's first trace (`from` null): its modifiers' and attributes' values as the replay resolved them, the
+   * numbers the log lists for it (`zmdlogs clock` pairs an instance with the log's run of that value: round 16, the
+   * arcane-will report point 2, two kit buffs logged under one common name).
+   */
+  readonly values?: readonly number[];
 }
 
 /**
@@ -286,8 +292,17 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
       }
       if (traced.size) {
         const now = new Map<string, number>();
-        for (const b of st.buffs) if (b.cast === undefined && traced.has(`${b.owner}:${b.id}`)) now.set(`${b.owner}:${b.id}|${b.appliedAt}`, b.expiresAt);
-        for (const [k, to] of now) if (tracedNow.get(k) !== to) traces.push({ buff: k.split("|")[0] as string, appliedAt: Number(k.split("|")[1]), frame: st.frame, step: words, from: tracedNow.get(k) ?? null, to });
+        const values = new Map<string, number[]>();
+        for (const b of st.buffs) {
+          if (b.cast !== undefined || !traced.has(`${b.owner}:${b.id}`)) continue;
+          now.set(`${b.owner}:${b.id}|${b.appliedAt}`, b.expiresAt);
+          values.set(`${b.owner}:${b.id}|${b.appliedAt}`, [...b.modifiers.map((m) => m.value), ...(b.attrs ?? []).map((a) => a.value)]);
+        }
+        for (const [k, to] of now) {
+          if (tracedNow.get(k) === to) continue;
+          const from = tracedNow.get(k) ?? null;
+          traces.push({ buff: k.split("|")[0] as string, appliedAt: Number(k.split("|")[1]), frame: st.frame, step: words, from, to, ...(from === null ? { values: values.get(k) ?? [] } : {}) });
+        }
         for (const [k, from] of tracedNow) if (!now.has(k)) traces.push({ buff: k.split("|")[0] as string, appliedAt: Number(k.split("|")[1]), frame: st.frame, step: words, from, to: null });
         tracedNow = now;
       }
