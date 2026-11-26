@@ -609,7 +609,8 @@ shares of the off error at that code):**
     single change within 0.001, 46 pairs within it (her weapon's skill 1 at 5 with one edc fewer ×0.9624, the body
     and an edc swapped ×0.9621, …). One constant on every hit is one number: any of them fits, and the multi-target
     146d is the same build. What no log records (her gear's lines, favorability) is the player's screen, not the
-    owner's: leave it as the fixture's offset.)
+    owner's: leave it as the fixture's offset.) (Round 16: `efsim zmdlogs fit-build 04d4 --operator Snowshine --pairs`
+    is the same search from the build as read: no single change, 26 pairs of 7,268, 7 distinct ATK values.)
   - **7e19 Ember ×1.096: half the check, half her talent's layers.** (1) The check dropped her listed Pay the Ferric
     Price (+0.09 ATK, talent 2, on `attacked`, so its state is the log's) as if it were one of Pogranichnik's two
     Thermite Cutter layers (+0.09 ATK each): loggedEntries matches an unjudged buff's entry against any engine

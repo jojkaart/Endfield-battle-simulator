@@ -16,7 +16,7 @@ import type { TotalsShares } from "./enginecheck.ts";
 import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
-import { fitBuild, type BuildCandidate } from "./buildfit.ts";
+import { BUILD_PAIR_TOLERANCE, buildChanges, fitBuild, type BuildCandidate } from "./buildfit.ts";
 import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
 import { assumedView } from "./assumedview.ts";
@@ -507,16 +507,29 @@ export function operatorNamed(data: GameData, operator: string): string {
 }
 
 /** `efsim zmdlogs fit-build`: an operator's attribute nodes, weapon level and food fitted to its clean hits (buildfit.ts). */
-export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean; readonly assume?: Readonly<Record<string, string>> } = {}): string {
+export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly pairs?: boolean } = {}): string {
   const id = operatorNamed(data, operator);
   const fit = fitBuild(data, fx, id, opts);
   const line = (c: BuildCandidate) => `  ${String(c.fits).padStart(4)} of ${fit.landed} fit (${c.cleanFits} of ${fit.clean} clean)  median ×${c.median.toFixed(4)}  ${c.label}${Object.keys(c.set).length ? `  set ${JSON.stringify(c.set)}` : ""}`;
   const overrides = fx.buildOverrides?.filter((o) => o.operator === id) ?? [];
+  const pairLines = () => {
+    const base = fx.team.find((b) => b.operator === id);
+    const target = fit.exported.median;
+    if (!base || !Number.isFinite(target)) return [];
+    const c = buildChanges(data, base, target);
+    const show = (xs: readonly { what: string; ratio: number }[]) => xs.slice(0, opts.top ?? 8).map((x) => `  ×${x.ratio.toFixed(4)}  ${x.what}`);
+    return [
+      `the wider space (buildChanges; ATK only, within ±${BUILD_PAIR_TOLERANCE} of the offset ×${target.toFixed(4)}): ${c.singles.length} of ${c.tried.singles} single changes and ${c.pairs.length} of ${c.tried.pairs} pairs give it (${new Set([...c.singles, ...c.pairs].map((x) => x.ratio.toFixed(6))).size} distinct ATK values: changes the panel's ATK doesn't tell apart count once there)${c.singles.length + c.pairs.length > 3 ? ": one constant, many explanations; the logs don't decide it alone" : ""}`,
+      ...(c.singles.length ? ["singles:", ...show(c.singles)] : []),
+      ...(c.pairs.length ? ["pairs:", ...show(c.pairs)] : []),
+    ];
+  };
   return [
     `${fx.id} ${data.operators[id]?.name ?? id}: ${fit.landed} landed kit hits, ${fit.clean} clean (the log and the replay agree on their modifiers); fits within ±1 of the primary reading`,
     ...(overrides.length ? [`  (the build as read: the fixture's overrides ${overrides.map((o) => JSON.stringify(o.set)).join(", ")} applied)`] : []),
     line(fit.exported),
     "best:",
     ...fit.best.map(line),
+    ...(opts.pairs ? pairLines() : []),
   ].join("\n");
 }

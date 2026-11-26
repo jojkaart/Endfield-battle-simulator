@@ -166,6 +166,9 @@ export default command({
                                           operator's clean hits (log and replay agree) within ±1; the evidence for a
                                           fixture's buildOverrides
                 [--top n] [--no-foods]    Candidates shown (default 8); without trying foods
+                [--pairs]                 Also the wider space as single changes and pairs (potential, weapon skill
+                                          levels, levels, gear swaps within the worn set, nodes) whose ATK gives
+                                          the offset, with how many do: one constant, many explanations?
   efsim zmdlogs offsets <fixture…|--all>  The build-offset screen: per log and operator, the median of logged ÷ the
                                           primary reading over non-crit kit hits and the share within 1% of it; a
                                           tight median off by 3% or more (*) is one factor all fight (a food, a node,
@@ -371,6 +374,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "no-foods": { type: "boolean", default: false },
     "same-listing": { type: "string" },
     "against-lanes": { type: "boolean", default: false },
+    pairs: { type: "boolean", default: false },
     listed: { type: "string" },
     all: { type: "boolean", default: false },
     event: { type: "string" },
@@ -608,7 +612,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], assume, progress });
     if (sub === "fit-build") {
       if (args.length !== 2 || !arg || values.operator.length !== 1) throw new Error("zmdlogs fit-build takes one fixture file and one --operator <op> (--top n, --no-foods)");
-      return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"], assume });
+      return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"], assume, pairs: values.pairs });
     }
     if ((sub === "scales" || sub === "find-scales") && arg && op) {
       const fx = readDevFixture(arg);

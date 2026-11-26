@@ -7,8 +7,10 @@
 //
 // It replaces hand fits in notes (docs/open-problems.md, "build offsets"): the counts are the evidence an override's
 // `why` cites. Not searched: gear artifice, weapon skill levels, potential, skill levels (the log gives those), operator
-// level. The weapon's level isn't bounded by its logged skill levels yet (WeaponBreakThroughTemplateTable's
-// skillLevelBounds aren't loaded): check a fitted level against them by hand.
+// level; `--pairs` (buildChanges, round 16) counts the single changes and pairs of that wider space whose ATK gives the
+// operator's offset, so "one constant, many explanations" shows before an override is written. The weapon's level isn't
+// bounded by its logged skill levels yet (WeaponBreakThroughTemplateTable's skillLevelBounds aren't loaded): check a
+// fitted level against them by hand.
 
 import { computeStats, DEFAULT_STAT_OPTIONS, foodOf, landingDamage, readingDoesNotApply, roundDamage, type Build, type GameData, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -193,4 +195,70 @@ export function fitBuild(data: GameData, fx: LogFixture, operator: string, opts:
     return true;
   });
   return { operator, landed: hits.length, clean: hits.filter((h) => h.clean).length, exported, best: best.slice(0, opts.top ?? 8) };
+}
+
+/** A pair search's ATK ratio within this of the target is a candidate (buildChanges; the probe's ±0.001). */
+export const BUILD_PAIR_TOLERANCE = 0.001;
+
+/** One build change of the wider space (buildChanges): what it changes and the ATK ratio it gives over the build as read. */
+export interface BuildChange {
+  readonly what: string;
+  readonly ratio: number;
+}
+
+/**
+ * The wider space fit-build doesn't search, as single changes and their pairs on top of the build as read (round 16,
+ * backlog after round 15 point 2, from scripts/probes/stats/snowshine-builds.ts): potential, each weapon skill level,
+ * the operator's level, the weapon's level, each gear piece swapped for another of its set or dropped, the attribute
+ * nodes; each scored by the panel's ATK over the build's, against `target` (the operator's offset: fit-build's
+ * median of logged ÷ reading). How many land within BUILD_PAIR_TOLERANCE says whether one constant has many
+ * explanations (04d4's Snowshine ×0.9624: 46 pairs), decided or not by the logs. ATK only: a change that moves a crit
+ * or DMG line reads as no change here.
+ */
+export function buildChanges(data: GameData, base: Build, target: number, tolerance = BUILD_PAIR_TOLERANCE): { readonly singles: readonly BuildChange[]; readonly pairs: readonly BuildChange[]; readonly tried: { readonly singles: number; readonly pairs: number } } {
+  const atk = (b: Build) => computeStats(data, b).atk.total;
+  const a0 = atk(base);
+  type Change = { what: string; apply: (b: Build) => Build };
+  const changes: Change[] = [];
+  const weapon = base.weapon;
+  for (let p = 0; p <= 5; p++) if (p !== base.potential) changes.push({ what: `potential ${p}`, apply: (b) => ({ ...b, potential: p }) });
+  if (weapon) {
+    for (let i = 0; i < weapon.skillLevels.length; i++) for (let l = 1; l <= 9; l++) if (l !== weapon.skillLevels[i]) changes.push({ what: `weapon skill ${i + 1} level ${l}`, apply: (b) => ({ ...b, weapon: { ...(b.weapon as NonNullable<Build["weapon"]>), skillLevels: (b.weapon as NonNullable<Build["weapon"]>).skillLevels.map((x, j) => (j === i ? l : x)) } }) });
+    for (let l = 1; l <= 90; l++) if (l !== weapon.level && data.weapons[weapon.id]?.baseAtk[l - 1] !== undefined && (l % 5 === 0 || Math.abs(l - weapon.level) <= 5)) changes.push({ what: `weapon level ${l}`, apply: (b) => ({ ...b, weapon: { ...(b.weapon as NonNullable<Build["weapon"]>), level: l } }) });
+  }
+  for (let l = 1; l <= 90; l++) if (l !== base.level && (l % 5 === 0 || Math.abs(l - base.level) <= 5)) changes.push({ what: `level ${l}`, apply: (b) => ({ ...b, level: l }) });
+  for (let n = 0; n <= 8; n++) if (n !== base.attributeNodes) changes.push({ what: `attributeNodes ${n}`, apply: (b) => ({ ...b, attributeNodes: n }) });
+  for (const [g, piece] of base.gear.entries()) {
+    const set = /^(.*suit_[a-z0-9]+_)/.exec(piece.id)?.[1];
+    for (const other of set ? Object.keys(data.gear).filter((k) => k.startsWith(set) && k !== piece.id) : []) changes.push({ what: `gear ${g + 1} ${piece.id} → ${other}`, apply: (b) => ({ ...b, gear: b.gear.map((x, j) => (j === g ? { ...x, id: other } : x)) }) });
+    changes.push({ what: `gear ${g + 1} ${piece.id} dropped`, apply: (b) => ({ ...b, gear: b.gear.filter((_, j) => j !== g) }) });
+  }
+  const ratioOf = (b: Build): number | null => {
+    try {
+      const r = atk(b) / a0;
+      return Number.isFinite(r) ? r : null;
+    } catch {
+      return null; // a build the data doesn't allow (a level past the promotion's cap, say)
+    }
+  };
+  const near = (r: number | null): r is number => r !== null && Math.abs(r - target) <= tolerance;
+  const singles: BuildChange[] = [];
+  const pairs: BuildChange[] = [];
+  let tried = 0;
+  for (const c of changes) {
+    const r = ratioOf(c.apply(base));
+    if (near(r)) singles.push({ what: c.what, ratio: r });
+  }
+  for (let i = 0; i < changes.length; i++) {
+    for (let j = i + 1; j < changes.length; j++) {
+      const [x, y] = [changes[i] as Change, changes[j] as Change];
+      // Two changes of one field (two potentials, two levels) aren't a pair.
+      if (x.what.replace(/ \S+$/, "") === y.what.replace(/ \S+$/, "") || (x.what.startsWith("gear ") && x.what.split(" ")[1] === y.what.split(" ")[1])) continue;
+      tried++;
+      const r = ratioOf(y.apply(x.apply(base)));
+      if (near(r)) pairs.push({ what: `${x.what} + ${y.what}`, ratio: r });
+    }
+  }
+  const byFit = (a: BuildChange, b: BuildChange) => Math.abs(a.ratio - target) - Math.abs(b.ratio - target);
+  return { singles: singles.sort(byFit), pairs: pairs.sort(byFit), tried: { singles: changes.length, pairs: tried } };
 }
