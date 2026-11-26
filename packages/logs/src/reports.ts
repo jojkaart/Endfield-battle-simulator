@@ -36,12 +36,12 @@ export function timingFixtures(named: readonly string[], root: string = REPO_ROO
 }
 
 /** `efsim zmdlogs timing`: the buff timing report over the named logs (or every development log). */
-export function timingReport(data: () => GameData, named: readonly string[], opts: { readonly assumed: boolean; readonly singles: boolean; readonly verbose: boolean; readonly top?: number; readonly progress?: (line: string) => void }): string {
+export function timingReport(data: () => GameData, named: readonly string[], opts: { readonly assumed: boolean; readonly singles: boolean; readonly verbose: boolean; readonly top?: number; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void }): string {
   const start = performance.now();
   const sel = timingFixtures(named);
   const reports = sel.files.map((f) => {
     opts.progress?.(`timing ${basename(f)}`);
-    return fixtureTiming(data(), readLogFixture(f), { assumed: opts.assumed, pairs: !opts.singles });
+    return fixtureTiming(data(), readLogFixture(f), { assumed: opts.assumed, pairs: !opts.singles, ...(opts.assume ? { assume: opts.assume } : {}) });
   });
   return formatTimingReport(data(), reports, { verbose: opts.verbose, skipped: sel.skipped, seconds: (performance.now() - start) / 1000, ...(opts.top !== undefined ? { top: opts.top } : {}) });
 }
@@ -201,22 +201,24 @@ export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter 
 }
 
 /** `efsim zmdlogs stagger`: the Stagger runs of the named logs (or of every verified and pending development log), and a summary over them. */
-export function staggerReport(data: GameData, named: readonly string[], progress?: (line: string) => void): string {
+export function staggerReport(data: GameData, named: readonly string[], progress?: (line: string) => void, assume: Readonly<Record<string, string>> = {}): string {
+  const under = Object.keys(assume).length ? { assume } : {};
   const files = named.length ? resolveFixtures(named) : logFixtureFiles(REPO_ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
   const out: string[] = [];
   const runs = files.flatMap((f) => {
     progress?.(`stagger ${fixtureLabel(f)}`);
     const fx = readLogFixture(f);
-    out.push(staggerView(data, fx));
-    return staggerRuns(data, fx);
+    out.push(staggerView(data, fx, under));
+    return staggerRuns(data, fx, under);
   });
   if (files.length > 1) out.push("", staggerSummary(runs));
   return out.join("\n");
 }
 
 /** `efsim zmdlogs differences`: where the log's listing and the replay disagree, grouped, with the damage's ratio per group. */
-export async function differencesCliReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly what?: string; readonly hits: boolean; readonly cache?: boolean; readonly progress: (line: string) => void }): Promise<string> {
-  const records = await collectRecords(data, selectedFiles(sel, "differences"), opts.workers, opts, opts.progress, opts.cache ?? true);
+export async function differencesCliReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly what?: string; readonly hits: boolean; readonly clusters?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+  const assume = opts.assume ?? {};
+  const records = await collectRecords(data, selectedFiles(sel, "differences"), opts.workers, opts, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
   // The likely-loggedAs pairs from the same records (loggedas.ts: a kit buff and an unmapped listed buff with one effect).
   const byFixture = new Map<string, HitRecord[]>();
   for (const r of records) byFixture.set(r.fixture, [...(byFixture.get(r.fixture) ?? []), r]);
@@ -231,7 +233,7 @@ export async function differencesCliReport(data: () => GameData, sel: LogSelecti
       }),
     };
   });
-  return [differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, fixtureLabel }), "", ...loggedAsLines(pairs), ...unknownFactLines(records)].join("\n");
+  return [differencesReport(records, { ...(opts.what !== undefined ? { what: new RegExp(opts.what) } : {}), hits: opts.hits, clusters: opts.clusters === true, fixtureLabel }), "", ...loggedAsLines(pairs), ...unknownFactLines(records)].join("\n");
 }
 
 /**
@@ -254,11 +256,12 @@ function unknownFactLines(records: readonly HitRecord[]): string[] {
 }
 
 /** `efsim zmdlogs groups --operator <op>`: an operator's mismatches grouped (the named logs, or every development log with it). */
-export async function groupsCliReport(data: () => GameData, operator: string, sel: LogSelection, opts: { readonly workers: string | undefined; readonly verbose: boolean; readonly cache?: boolean; readonly progress: (line: string) => void }): Promise<string> {
+export async function groupsCliReport(data: () => GameData, operator: string, sel: LogSelection, opts: { readonly workers: string | undefined; readonly verbose: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
   const id = operatorNamed(data(), operator);
   const named = resolveFixtures(sel.named, sel.fixturesFrom);
   const files = named.length ? named : listLogs({ dirs: ["verified", "pending"], withOperators: [id] }).map((l) => join(REPO_ROOT, l.file));
-  const records = await collectRecords(data, files, opts.workers, {}, opts.progress, opts.cache ?? true);
+  const assume = opts.assume ?? {};
+  const records = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
   return groupsReport(records, id, { verbose: opts.verbose, fixtureLabel });
 }
 
@@ -307,9 +310,10 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
  * logs' hit records (from the per-fixture cache where the code and the fixture are unchanged, else checked on
  * `workers` threads). Multi-target logs are left out (their verdicts mean nothing); never a hold-out.
  */
-export async function offsetsReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly progress?: (line: string) => void }): Promise<string> {
+export async function offsetsReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void }): Promise<string> {
   const files = selectedFiles(sel, "offsets").filter((f) => !isMultiTarget(f));
-  const records = await collectRecords(data, files, opts.workers, {}, opts.progress, opts.cache ?? true);
+  const assume = opts.assume ?? {};
+  const records = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
   const byFile = new Map<string, HitRecord[]>();
   for (const r of records) byFile.set(r.fixture, [...(byFile.get(r.fixture) ?? []), r]);
   const rows = files.flatMap((f) => {
@@ -414,7 +418,7 @@ export function operatorNamed(data: GameData, operator: string): string {
 }
 
 /** `efsim zmdlogs fit-build`: an operator's attribute nodes, weapon level and food fitted to its clean hits (buildfit.ts). */
-export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean } = {}): string {
+export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean; readonly assume?: Readonly<Record<string, string>> } = {}): string {
   const id = operatorNamed(data, operator);
   const fit = fitBuild(data, fx, id, opts);
   const line = (c: BuildCandidate) => `  ${String(c.fits).padStart(4)} of ${fit.landed} fit (${c.cleanFits} of ${fit.clean} clean)  median ×${c.median.toFixed(4)}  ${c.label}${Object.keys(c.set).length ? `  set ${JSON.stringify(c.set)}` : ""}`;

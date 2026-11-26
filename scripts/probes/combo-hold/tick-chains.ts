@@ -3,24 +3,19 @@
 // Enemy tick chains: residual against the number of combo stops inside and their held time (two regressors, no
 // intercept), and per combo operator (chains with one combo only). Is the extra hold a constant per combo or a share?
 import { loadGameData } from "@efsim/data";
-import { castTimeStops, devFixtures, placeHits, worldMs } from "@efsim/logs";
+import { castTimeStops, devFixtures, loggedStaggerSpans, placeHits, worldMs } from "@efsim/logs";
 
 const data = loadGameData();
 const TICK = /^(buff_chr_0028_wulfa_normal_bleed|buff_common_burning_status)$/;
-const STAG = "buff_common_poise_break_damage_taken_scale";
 type Row = { r: number; n: number; count: number; held: number; ops: string[]; stag: boolean; maxPair: number; tag: string };
 const rows: Row[] = [];
 for (const { short, fx } of devFixtures({ dirs: ["verified", "pending"] })) {
   if (!fx.hits.some((h) => TICK.test(h.event))) continue;
   const stops = castTimeStops(data, placeHits(data, fx).casts);
-  const st = [...new Set(fx.hits.filter((h) => [...h.effects, ...h.boundaryEffects].some((e) => e.buff === STAG)).map((h) => h.t))].sort((a, b) => a - b);
-  const spans: [number, number][] = [];
-  for (const t of st) {
-    const last = spans.at(-1);
-    if (last && t - last[1] < 1500) last[1] = t;
-    else spans.push([t, t]);
-  }
-  const stagOf = (t: number) => spans.findIndex(([x, y]) => x <= t && t <= y);
+  // The log's Stagger spans (round 13: the shared helper, query.ts loggedStaggerSpans; `efsim zmdlogs clocks` is this
+  // probe's view over every clock).
+  const spans = loggedStaggerSpans(fx);
+  const stagOf = (t: number) => spans.findIndex((x) => x.from <= t && t <= x.to);
   const by = new Map<string, number[]>();
   for (const h of fx.hits) if (TICK.test(h.event)) by.set(`${h.operator}|${h.event}|${h.target ?? ""}`, [...(by.get(`${h.operator}|${h.event}|${h.target ?? ""}`) ?? []), h.t]);
   for (const ts0 of by.values()) {

@@ -57,9 +57,9 @@ function kitHitOf(kit: OperatorKit | undefined, l: LandedHit): KitHit | undefine
 }
 
 /** Every Arts Burst of a fight, logged against replayed, with each side's likely cause and the stops between. */
-export function burstRows(data: GameData, fx: LogFixture, opts: { readonly operators?: readonly string[] } = {}): BurstRow[] {
+export function burstRows(data: GameData, fx: LogFixture, opts: { readonly operators?: readonly string[]; readonly assume?: Readonly<Record<string, string>> } = {}): BurstRow[] {
   const placement = placeHits(data, fx);
-  const { replay } = logBuffReplay(data, fx, placement);
+  const { replay } = logBuffReplay(data, fx, placement, opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {});
   const stops = replayTimeStops(data, fx, placement);
   const kits = new Map(fx.team.map((b) => [b.operator, effectiveKit(data, b)]));
   const delayMs = (e: string) => msOf(data.constants.burstDelayFrames?.[e as ArtsElement] ?? 0);
@@ -146,14 +146,14 @@ export function burstCounts(data: GameData, rows: readonly BurstRow[]): string[]
 }
 
 /** `zmdlogs bursts`: per log its bursts' lines, then the counts per operator (over every log given, too). */
-export function burstsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly operators?: readonly string[]; readonly from?: number; readonly to?: number; readonly progress?: (line: string) => void } = {}): string {
+export function burstsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly operators?: readonly string[]; readonly from?: number; readonly to?: number; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void } = {}): string {
   const out = [
     "Arts Bursts, logged against replayed (BuffReplay.statusLanding pairs them; offset = replay − log). cause: the operator's latest hit with an infliction at least the element's burst delay of world time before it (the log records no infliction, the replay's burst no cause: the nearest candidate); stops between: the replay's casts' time stops from the cause to the burst. Times in s.",
   ];
   const all: BurstRow[] = [];
   for (const { short, fx } of logs) {
     opts.progress?.(`bursts ${short}`);
-    const rows = burstRows(data, fx, opts.operators ? { operators: opts.operators } : {}).filter((r) => {
+    const rows = burstRows(data, fx, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.assume ? { assume: opts.assume } : {}) }).filter((r) => {
       const t = r.logged?.t ?? r.replay?.t ?? 0;
       return t >= (opts.from ?? -Infinity) && t <= (opts.to ?? Infinity);
     });
