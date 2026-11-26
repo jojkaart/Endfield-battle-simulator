@@ -155,10 +155,19 @@ export function listedPaths(data: GameData, kits: readonly OperatorKit[], fx: Pi
     const out: Record<string, boolean> = {};
     for (const p of paths) {
       if (out[p.trigger] !== undefined || !kit || !build) continue;
-      const landing = c.landings.find((l) => l.hitId === p.hit.id || l.hitId === p.other?.id);
+      // The hit's logged landing, else where another logged landing of the cast puts it (its frame from the cast's
+      // start on either path: a9d7's 98.88 s hook, its slam unlogged).
+      const fromStart = (h: KitHit | undefined) => {
+        const f = h?.frames?.length === 1 ? (h.frames[0] as number) : undefined;
+        return f === undefined ? undefined : f >= p.to ? f - (p.to - p.at) : f;
+      };
+      const own = c.landings.find((l) => l.hitId === p.hit.id || l.hitId === p.other?.id);
+      const skill = kit.skills.find((s) => s.skillId === c.skillId);
+      const near = own ? null : c.landings.find((l) => fromStart(skill?.hits.find((h) => h.id === l.hitId)) !== undefined);
+      const nearFrame = near ? fromStart(skill?.hits.find((h) => h.id === near.hitId)) : undefined;
       const names = p.buffs.filter((g) => listedAnywhere.has(g));
-      if (!landing || !names.length) continue;
-      const m = landing.ms;
+      const m = own ? own.ms : near && nearFrame !== undefined ? near.ms + (((fromStart(p.hit) as number) - nearFrame) * 1000) / FPS : undefined;
+      if (m === undefined || !names.length) continue;
       const listings = fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects].filter((e) => names.includes(e.buff)).map((e) => ({ t: h.t, since: e.since })));
       const after = listings.filter((e) => e.t > m && e.t <= m + LISTED_AFTER_MS);
       if (listings.some((e) => e.since !== undefined && Math.abs(e.since - m) <= LISTED_SINCE_MS)) out[p.trigger] = true;
