@@ -23,8 +23,11 @@ export interface ReplayedCast extends LoggedCast {
   readonly lastHit: number;
   /** The operator's cast before it keeps its hits to come: the log has them landing after this one started (replayCast keepPrevious). */
   readonly keepPrevious: boolean;
-  /** Its landings at their logged frames (replayCast landings): each logged hit of the cast whose kit landing the placement knows. */
-  readonly landings: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref: string; readonly ms: number }[];
+  /**
+   * Its landings at their logged frames (replayCast landings): each logged hit of the cast whose kit landing the placement
+   * knows; `order`, its place among the Stagger events of its logged ms (batchOrder), where the log's bars give one.
+   */
+  readonly landings: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref: string; readonly ms: number; readonly order?: number }[];
   /**
    * A logged cast event of a skill whose damage the log shows elsewhere, kept only for the slot it stands for: the replay
    * makes it only when the skill can't start there and another of the operator's skills of its kind can (replayedSkill:
@@ -963,6 +966,34 @@ export function batchedFrame(casts: readonly ReplayedCast[], h: Pick<LogHit, "t"
 }
 
 /**
+ * The game's order of the Stagger events the log stamps with one ms: each hit with Stagger at a ms several casts' events
+ * share, by its event's place among them (0 first). The log flushes its hits in steps of about 100 ms and at a stop's
+ * end (docs/design/data.md "What the log records"), so a ms can hold hits up to three frames apart, in no order; the
+ * Stagger bar each event leaves (LogHit.poise.bar, the bar before it less its dealt) falls from one to the next in the
+ * order they came. Events whose bars don't tell them apart (the same bar; several leaving it at 0, a break) share a
+ * place. Over the development logs' 60 such pairs of two operators' events, the bars follow neither the operators' IDs
+ * (wrong in 32) nor the team's order (21) nor the casts' starts (15 of the 44 whose casts the replay made): the game's
+ * time order inside the batch, which the log keeps only in the bars (scripts/probes/physical/batch-rules.ts).
+ * c4f307cd039a at 7049 ms: Estella's combo (274 → 264, the Shatter credited to it), her ultimate (254 → 234), then
+ * Chen Qianyu's combo and its Lifts (234 → 224); the replay had landed Chen's first by ID, shattered with it and taken
+ * her combo as its not-Solidified variant, a Vulnerable stack short at Pogranichnik's Breach at 13.07 s
+ * (scripts/probes/physical/breach-path.ts: the only Breach whose stacks the next combo's path contradicted).
+ */
+export function batchOrder(hits: readonly LogHit[]): Map<LogHit, number> {
+  const byMs = new Map<number, LogHit[]>();
+  for (const h of hits) if (h.poise) byMs.set(h.t, [...(byMs.get(h.t) ?? []), h]);
+  const out = new Map<LogHit, number>();
+  for (const batch of byMs.values()) {
+    if (new Set(batch.map((h) => h.poise?.origin ?? "")).size < 2) continue;
+    // An event's place: its bar's (several at 0 one place, after every bar above 0).
+    const bars = [...new Set(batch.map((h) => h.poise?.bar as number))].sort((a, b) => b - a);
+    if (bars.length < 2) continue;
+    for (const h of batch) out.set(h, bars.indexOf(h.poise?.bar as number));
+  }
+  return out;
+}
+
+/**
  * The logged casts (distinctCasts) as the replay casts them, in time order,
  * each with its logged landings: the timeline lands the cast's hits the log
  * shows at their logged frames (the log's time has other casts' time stops
@@ -976,8 +1007,10 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
   // Its own cast, else the one it merged into (distinctCasts: the same skill placed from another key, within mergeMs).
   const ofCast = (c: LoggedCast): LoggedCast | undefined => (casts.includes(c) ? c : casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= mergeMs(placement, c.skillId)));
   const last = new Map<LoggedCast, number>();
-  const landings = new Map<LoggedCast, { hitId: string; nth: number; frame: number; ref: string; ms: number }[]>();
+  const landings = new Map<LoggedCast, { hitId: string; nth: number; frame: number; ref: string; ms: number; order?: number }[]>();
   const used = new Map<string, Set<number>>();
+  // Pinned landings due in one frame land in the log's order (schedule.ts dueBefore): a batched ms's by its bars.
+  const order = fx ? batchOrder(fx.hits) : new Map<LogHit, number>();
   for (const [h, p] of [...placement.hits].sort((a, b) => a[0].t - b[0].t)) {
     const d = ofCast(p.cast);
     if (!d) {
@@ -1003,7 +1036,8 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
       used.set(key, taken);
       // Batched at another cast's stop's end, it landed at its kit frame before the stop (LoggedCast.beforeStop).
       const at = d.beforeStop !== undefined && Math.abs(h.t - d.beforeStop) <= BATCHED_MS ? frameOf(d.start) + p.frame : frameOf(h.t);
-      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: at, ref: String(hitIndex.get(h)), ms: h.t }]);
+      const place = order.get(h);
+      landings.set(d, [...(landings.get(d) ?? []), { hitId: k.id, nth, frame: at, ref: String(hitIndex.get(h)), ms: h.t, ...(place !== undefined ? { order: place } : {}) }]);
     }
   }
   const out: ReplayedCast[] = [];

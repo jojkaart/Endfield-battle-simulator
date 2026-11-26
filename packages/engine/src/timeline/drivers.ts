@@ -166,15 +166,15 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const own = new Map<string, PendingHit[]>();
     for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
     for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
-    const moved = new Map<PendingHit, { frame: number; ref?: string; loggedMs?: number }>();
+    const moved = new Map<PendingHit, { frame: number; ref?: string; loggedMs?: number; loggedOrder?: number }>();
     for (const l of landings) {
       const h = own.get(l.hitId)?.[l.nth];
-      if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms } : {}) });
+      if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms, ...(l.order !== undefined ? { loggedOrder: l.order } : {}) } : {}) });
     }
     // A pinned landing was launched by its logged frame (a detached one's launch, KitHit.launch, is on the kit's timeline, which jumps shorten).
     // A delayed hit's logged frame is its damage's (KitHit.enemyDelay): its landing stays at its kit frame.
     const delayed = new Set(skill.hits.filter((h) => h.enemyDelay !== undefined).map((h) => h.id));
-    const pin = (h: PendingHit, m: { frame: number; ref?: string; loggedMs?: number }): PendingHit =>
+    const pin = (h: PendingHit, m: { frame: number; ref?: string; loggedMs?: number; loggedOrder?: number }): PendingHit =>
       delayed.has(h.hitId)
         ? { ...h, damageFrame: Math.max(m.frame, h.frame), ...(m.ref !== undefined ? { ref: m.ref } : {}) }
         : { ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) };
@@ -253,7 +253,7 @@ export interface ReplayCastOptions {
    * Landings at their logged frames: the `nth` landing (0: the first, in frame order) of the cast's kit hit `hitId` lands at `frame`;
    * with `ref`, its LandedHit carries the reference and its facts (LandingFacts).
    */
-  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string; readonly ms?: number }[];
+  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string; readonly ms?: number; readonly order?: number }[];
   /** A teammate's own basic attack (the log shows someone else controlled): the controlled operator stays. */
   readonly teammate?: boolean;
   /**
