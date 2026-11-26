@@ -191,8 +191,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
  * goes to this path's hit of the same keys, the landings of the two in frame order. The placement matches the two by
  * their frames, which are the same after the jump (6, 8, 13, 15, 23 and 195, 198, 203, 205, 213), and the replay
  * dropped the jump the landing contradicted: 0c14fb3ce77d's attack 4 at 154.09 and 174.33 s while Si and the
- * Endministrator were controlled, 2fd915292bb7's and 99fb3c35fda2's under Mi Fu, all × 2.5 the controlled path's;
- * d5720d9ceb94's at 9.89 s with Rossi controlled, × 0.4. Other jumps stay as the landings show (Rossi's sequence 2).
+ * Endministrator were controlled, 2fd915292bb7's and 99fb3c35fda2's under Mi Fu, all × 2.5 the controlled path's.
+ * Not when the cast has more such landings than the path's hit lands (d5720d9ceb94's at 7.91 s: 7 landings placed in
+ * one 5-hit cast, the last two as hit_ai with Rossi controlled, × 0.4). Other jumps stay as the landings show (Rossi's
+ * sequence 2).
  */
 function controlPathLandings(skill: KitSkill, taken: readonly PendingJump[], landings: NonNullable<ReplayCastOptions["landings"]>): NonNullable<ReplayCastOptions["landings"]> {
   let out = [...landings];

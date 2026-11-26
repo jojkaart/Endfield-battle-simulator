@@ -198,10 +198,10 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "totals-crits",
     question: "How does a fight's total count a matched hit whose crit the log doesn't give and whose value neither of its readings (crit, non-crit) gives exactly? Read only by the log check's totals (packages/logs enginecheck.ts engineReadings, critFromValue), not by simulations.",
-    default: "expected",
+    default: "read",
     readings: {
       expected: "at expected crits (the totals until 2026-11-26; accuracy plan A3: counted as non-crits they ran low)",
-      read: "at the reading its value is within ×1.08 of while the other isn't (a crit's factor is ×1.5 or more, so the value says which), else at expected crits: pending/zmdlogs-0c14fb3ce77d.json, Rossi's first ultimate (25.2–27.7 s), ×1.032 below the log on every stab (Alesh's weapon layer the replay lacks), 15 of its 27 crit-unknown landings crits by their values, its two finals among them (326,856 and 108,952, counted at expected crits as 250,328 and 83,443)",
+      read: "at the reading its value is within ×1.08 of while the other isn't (a crit's factor is ×1.5 or more, so the value says which), else at expected crits: pending/zmdlogs-0c14fb3ce77d.json, Rossi's first ultimate (25.2–27.7 s), ×1.032 below the log on every stab (Alesh's weapon layer the replay lacks), 15 of its 27 crit-unknown landings crits by their values, its two finals among them (326,856 and 108,952, counted at expected crits as 250,328 and 83,443). Measured 2026-11-26 against `expected`: mean |damage error| verified 2.0 → 1.5%, development 7.0 → 6.9%, earlier pending 3.9 → 3.6% (0c14 −2.8 → −1.3%, b6aa −5.5 → −2.3%, 99fb −1.9 → −0.3%), hold-out unchanged; plain counts unchanged (a totals rule only)",
     },
   },
   {
