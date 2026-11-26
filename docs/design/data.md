@@ -386,6 +386,40 @@ point, `zmdlogs check --simulate` (`simulateLog`), compares each logged
 hit with its landing's damage, with only crits, enemy HP and effects no
 kit models from the log: a diagnostic (journal 2026-10-25).
 
+**Each assumption kind's fact** (round 15, low-plain-low-mismatch report
+point 2: the replay read crits from the log that the check's primary
+reading never took, so 418 of Rossi's matches were "assumed: crit"). Per
+kind of assumption a reading can carry: the fact, where the replay decides
+it, what the primary reading takes, and when the check tries the others.
+The code is packages/logs/src/assumptions.ts `ASSUMPTION_FACTS` (a row per
+kind, so a new kind needs one); tests/assumption-facts.test.ts holds this
+table to it and checks, on a log's hit records, that an alternative of a
+fact the replay decides comes only with the replay's reason for not
+deciding it there (`zmdlogs assumed --operator <op>` folds them by kind).
+"Candidate" marks a fact the replay decides that the check still tries
+both ways: where the next "assumed, but the replay knew" is likeliest.
+
+| Kind | The fact | Decided by the replay | The primary reading takes | Alternatives tried |
+|---|---|---|---|---|
+| `crit` | whether a hit the log gives no crit flag crit | replaycrits.ts shownCrits, layerCrits, valueCrits (BuffReplay.critSource) | the replay's read crit, else none (engine assumption check-crits `replay`) | a crit where the replay read none; both ways in the log-listing fallback's readings (logcheck.ts candidates: candidate, a fallback stays one) |
+| `noCrit` | as crit | as crit | as crit | no crit where the replay read one |
+| `boundary` | whether a buff starting or ending at the hit applied | its kit buffs (BuffReplay.kitBuffNearChange: unsure within 500 ms); none for log-only buffs | the replay's kit buffs; log-only buffs inside the hit | a kit buff changing near the hit as listed or off; the log-only boundary buffs' subsets |
+| `corrosion` | Corrosion's level where the log lists it without a value | its own Corrosion at the landing (ramp, cap) | the replay's level | levels 1–4 where the replay has none at the hit |
+| `stacks` | a reaction status hit's level | its arts state, replayed again with the levels the log shows (logcheck.ts loggedReactionLevels) | the replay's level | every other level of a non-burst reaction, even where the log decided it (candidate) |
+| `kitHit` | which of the event's kit hits the logged hit is | the placement's landing on the path the replay took (logcasts.ts placeHits; engine paths.ts pathLandings) | the replay's landed hit | the event's other kit hits, always (a player's timing chooses some: Rossi's perfect combo); zmdlogs groups rows a cast matched only so |
+| `situational` | the enemy's side of a kit hit's condition (KitHit.if, extraScale) | its enemy state at the landing, not checked against the log's reactions | the replay's situation, its enemy side left open | taken as met and as not met (candidate: the replay's inflictions) |
+| `eventCount` | a combo's window count behind a value | the window it opened (ReplayCastFacts.windowCount) | the replay's count | counts 1–4 where the replay can't say |
+| `value` | what a value reads that only a fight knows (hitvalues.ts: consumed stacks, the enemy's stacks) | the operator's side from the landing's facts; the enemy's side not taken | the landing's facts | over the value's range where the facts don't say (candidate: the enemy's side) |
+| `unloggedCastBuff` | buffs the hit's cast consumed that the log doesn't list | the buffs its cast consumed (ReplayCastFacts.consumed) | the replay's | 0 up to the most layers where the replay can't say |
+| `unloggedOwnBuff` | the hitter's own kit buffs (or their crit parts) the log doesn't list | nothing | none | with them (logcheck.ts unloggedOwnBuffs), the old check's reading |
+| `link` | the Link stacks a battle skill or ultimate used | Cast.link (ReplayCastFacts.link) | the replay's | Link 0–4 where the replay can't say |
+| `enemyAura` | an enemy-side team aura the log doesn't list | nothing | none | with it (logcheck.ts unloggedEnemyAuras) |
+| `layers` | a layered buff's layers where the log lists it once | a kit buff it judges (its layers); none for one it can't judge | the replay's layers; one layer for an unjudged one | each count up to its maximum for an unjudged kit buff (enginecheck.ts unjudgedLayered) or a log-only one |
+| `unquantifiedFromKit` | the value of a buff the log lists without one | nothing | none | valued from the kit that names it (logcheck.ts unquantifiedFromKit) |
+| `stagger` | whether the enemy was Staggered at the hit | its Stagger, held to the log's listing (loggedStaggerSteps, holdStagger) | the replay's | the other way where the replay's Stagger changes within 500 ms |
+| `logListing` | every buff as the log lists it, where no engine reading fits | nothing | the engine's reading (a fallback match is the log's) | the log's listing, the fallback (LOG_LISTING) |
+| `recordEnd` | when a recording buff's record stopped before its burst | the recorded burst's record (recordedburst.ts) | the replay's record | the record's end shifted where the replay's burst value doesn't fit |
+
 **What the replay takes from the log** (round 3, 2026-11-18: one list of
 the "follow the log" mechanisms that grew one at a time in
 packages/logs/src/buffreplay.ts and logcheck.ts). Each row is something the
@@ -653,7 +687,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window=a,b] [--list]` (the window in ms; `=` for a negative start, as the `rerun:` line prints it) |
 | What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
-| The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s>` (the stops of the replay's casts: placed, from a cast event, inferred; `replayTimeStops` in a script, not `castTimeStops`, which has the placed casts' only) |
+| The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s> [--assume …]` (the stops of the replay's casts: placed, from a cast event, inferred; the hold placement's own list since round 15, castassembly.ts `replayStops`: an event the replay read as a buff's tick is a line without frames; `replayTimeStops(data, fx, placement, replay)` in a script, never without the replay for a count, nor `castTimeStops`, which has the placed casts' only) |
 | The fight's hidden holds (unlogged dodges, pauses) the replay places: each 0.512 s unit, its earliest and latest time, the clocks spanning it | `efsim zmdlogs holds <fixture> [--verbose]` |
 | Why a buff's or status's run is (not) a clock of the holds: the run paired with each instance, the rule that skipped it, kept or dropped | `efsim zmdlogs holds <fixture> --why <re>` (`owner:id`, `Perlica:wpn`, `status:corrosion`); its last lines: whether each instance was kept to the log's end, and why not (heldToLoggedEnds) |
 | Which bounds and holds a change moved (bounds added, removed, each unit and bound before and after) | `node scripts/cli-ab.ts <ref> --holds <fixture>`; any command at two commits: `node scripts/cli-ab.ts <ref> [--key <re>] -- <efsim args>` |
@@ -680,17 +714,19 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Which landings make a total: matched (predicted vs logged), replay only, log only | `efsim zmdlogs totals <fixture> [--operator <op>] [--by event]`; between two commits with `node scripts/cli-ab.ts <ref> -- zmdlogs totals …` |
 | Every fight's total by where its error lives (matched, replay-only, log-only shares), largest first, and each group's means | `efsim zmdlogs totals --all --workers 3` (development logs); each group's means, the hold-outs' too, in docs/accuracy.md ("Where the total's error lives", from the snapshots' share keys) and `npm run measure`'s summary |
 | Which landings are one-sided (replay-only, log-only) and why: where each sits (a twin, its cast's logged landings, the replay's reason), its nature and skill kind | `efsim zmdlogs totals <fixture> --kinds` (one fight, each landing); `efsim zmdlogs totals --all --kinds --workers 3` (ranked per group, then by operator and key); the hold-outs' means by kind only in `npm run measure` ("One-sided landings by kind") |
-| Does a kit buff run long or short: each instance's first expiry, its expiry on the replay's own clock (no hidden holds, no log ends), how it ended there and in the check's replay, the log's run and the lateness past the own expiry | `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (default every development log with the owner; `kitBuffClock` in a script). The check's window (`replay --kit-buff`) is already cut or held to the log's end: not the buff's natural end |
+| Does a kit buff run long or short: each instance's first expiry, its expiry on the replay's own clock (no hidden holds, no log ends), how it ended there and in the check's replay, the log's run and the lateness past the own expiry | `efsim zmdlogs clock --kit-buff owner:id [fixture…]` (default every development log with the owner; `kitBuffClock` in a script; "check from …": the check's instance nearest within 5 s, its start moved by the hidden holds). The check's window (`replay --kit-buff`) is already cut or held to the log's end: not the buff's natural end |
 | Per hit: engine modifiers, the log's listing and reading | `efsim zmdlogs hits <fixture…\|--all> [--json] [--reading log] [--event <re>]` |
 | Which zone or modifier moved at each hit between two commits | `node scripts/cli-ab.ts <ref> --key '^(\S+  t=\d+  \S+  \S+)' -- zmdlogs hits <fixture> --zones` |
 | A build offset (off under both readings) | `efsim zmdlogs hits … --reading log`, then `zmdlogs fit-build` |
 | A kit buff counted twice beside the game buff it is logged as (an unmapped listed buff of its owner or equipment with the same zone and value) | `efsim zmdlogs differences --all` (its last section, "Likely loggedAs"; packages/logs/src/loggedas.ts); the pending suite fails on a new pair |
 | Which operators are off by one factor all fight, over every log (a missing food, a node, a weapon level) | `efsim zmdlogs offsets --all --workers 3` (a tight median of logged ÷ primary off by 3% or more: `*`, with the fit-build command; the log suites fail on one no buildOverride or OFFSETS_EXPLAINED entry accounts for) |
-| An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
-| Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]`; the summary's first line says when the snapshots compared against aren't that commit's code (`--base HEAD` then measures the tree's change alone) |
+| An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` (its last rows: the casts whose every landing matched only as the event's other kit hit, a path the replay didn't take) |
+| What an operator's non-plain matches assume (a "low plain" lead's first step) | `efsim zmdlogs assumed --operator <op> [fixture…] [--kind <set>]` (by kind, kind set, event and kind, folded label; cached as `hits`; `zmdlogs hits --json` has each hit's `assumptions`); which kinds are facts the replay decides: "Each assumption kind's fact" above |
+| Where a Link stack came from and which cast took it; two casts of one operator at one frame | `efsim zmdlogs replay <fixture>` (LINK and MADE lines; `zmdlogs decisions` lists them too) |
+| Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]`; with no reference named and the snapshots not the code's own, it measures the merge base with main as `--base` (round 15; the summary's first line says so; `--against-snapshots` keeps the snapshots) |
 | Which part of a batch moved which log | `npm run measure -- --split files [--group a,b \| --only a,b]` (each changed file's diff alone on HEAD, or `--base <ref>`; `--only`: those files one part, the rest another) or `--split commits --base <ref>` (each commit against the one before), measured on the logs the whole change moved |
 | An idea on top of the tree, as a reading | `npm run measure -- --variant <id>=<r>`: each variant against the snapshots and against the same code without it (the plain run; `--no-plain` skips it) |
-| Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
+| Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt; a moved hidden-hold unit names the bounds that set its earliest or latest where they changed) |
 | Which casts a placement change moved | `npm run measure -- --changed placement` |
 | Ultimates whose stops still overlap after the placement; casts a third pass would move | `efsim zmdlogs placement <fixture…\|--all>` (OVERLAP, SETTLE: logcasts.ts `ultimateOverlaps`, `settleCheck`) |
 | How late each clock runs across each kind of stop (enemy tick chains, a cast's landings against its kit frames, bursts against their delay), in and out of the log's Stagger, per combo operator | `efsim zmdlogs clocks <fixture…\|--all> [--clock tick,cast,burst] [--by operator] [--rows]` (clocksview.ts `logClocks` in a script; the log's Stagger spans: query.ts `loggedStaggerSpans`, never rebuilt by hand) |

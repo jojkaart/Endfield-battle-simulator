@@ -73,3 +73,10 @@ docs/friction/2026-11-26-backlog-after-round-14.md aren't repeated.
   time the tool ran.
 - The new logBuffReplay guard found a real mixed-curve call (`zmdlogs decisions`) on its first run.
 - scripts/edit.ts for every multi-block edit (forty batches), the bash guard's refusal naming the safe form.
+
+## Outcome (round 15)
+
+- 1 (No tool splits a module by statement): done (8a88031): `node scripts/split-module.ts <file.ts> --to <new.ts>=<names> … [--dry-run]` (from round 14's scratch/split.ts, verifymove.ts and cite.ts): the statements placed, imports and exports generated, importers and an index's `export *` rewritten, unused imports pruned (prune-unused.ts `importsOnly`), the AST check, the citations; a warning when two files import each other. The CLAUDE.md line ("a split is a move checked by a measure") proposed for the lead
+- 2 (cli-ab's outputs differ by the other worktree's path): done (03ac29d): cli-ab reads the other worktree's root as this checkout's before comparing (withRoot; `--raw` keeps it)
+- 3 (Prose citations of a function's file go stale silently): done (03ac29d): check-links.ts staleCitations ("<file>.ts <identifier>" with a code-shaped identifier, history docs aside), tests/doc-links.test.ts holds the tree to none; the eight stale ones in live docs and sources fixed (drivers.ts controlPathLandings, buffreplay.ts chainStepFor, holds.ts rampBounds, damage.ts kitHits, …)
+- 4 (Friction rounds and CLAUDE.md): done (this round's paperwork commit): docs/friction/README.md process step 6, a round proposes CLAUDE.md lines in its summary's "For the lead"

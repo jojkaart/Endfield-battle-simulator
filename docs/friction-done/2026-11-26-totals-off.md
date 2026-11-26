@@ -52,3 +52,9 @@ landing kind, fixed by mechanisms (base main 36e3bc8, worktree agent-a5914ecf660
   operator) in minutes.
 - `npm run measure -- --base <ref>` after each WIP commit separated the three changes' effects cleanly.
 - `efsim gamedata tree` on buff_common_natural_natural_corrupt_do showed the tick's gate directly.
+
+## Outcome (round 15)
+
+- 1 (Where a Link stack (or any cast-scoped buff) went is in no view): done (84f1322): MadeCast `link` and `linkGained` (buffreplay.ts linkGains: TimelineState.link's new expiries in each cast's step), LINK lines in `zmdlogs replay` and `zmdlogs decisions` (gained in whose step, taken by which cast), and a MADE line for two casts of one operator at one frame (db87 27.13 s, tests/decisions.test.ts)
+- 2 (The by-operator scoreboard reads as a fight metric but isn't): carried (2026-11-26-backlog-after-round-15.md point 3)
+- 3 (A cast's slots by time only, and the first landing's slot fixed): moved to the backlog's accuracy list ("Slots by value within a cast"): it moves the placement

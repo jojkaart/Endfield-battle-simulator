@@ -62,7 +62,9 @@ export function carriedFrom(backlog: string, report: string): Map<number, number
     for (const part of text.split(";")) {
       const at = part.indexOf(file);
       if (at < 0) continue;
-      const m = /^\s+points?\s+(.*)$/.exec(part.slice(at + file.length).replace(/\([^)]*\)/g, ""));
+      // "<file> point n", or "<file>, point n" as `carry --label "<name>,"` (the README's form) writes it (round 15:
+      // the carried point's outcome came out blank).
+      const m = /^,?\s+points?\s+(.*)$/.exec(part.slice(at + file.length).replace(/\([^)]*\)/g, ""));
       if (!m) continue;
       for (const n of (m[1] as string).match(/\d+/g) ?? []) out.set(Number(n), [...(out.get(Number(n)) ?? []), p.n]);
     }

@@ -75,6 +75,9 @@ describe("a shell substitution's damage in a doc", () => {
     ]);
     expect(damagedText("a `` ` `` double span\n```\nfenced  block\n```\n| a  table |\n| row  |")).toEqual([]);
     expect(damagedText("a span `over\ntwo  lines` is code")).toEqual([]);
+    // A merge's conflict markers (round 15: docs/roadmap.md had one).
+    expect(damagedText("text\n>>>>>>> 9e1904d\nmore").map((d) => d.why)).toEqual(["a merge's conflict marker"]);
+    expect(damagedText("<<<<<<< HEAD").map((d) => d.why)).toEqual(["a merge's conflict marker"]);
   });
 
   it("no doc in the repository has any (scripts/check-links.ts prints them)", () => {
@@ -92,6 +95,9 @@ describe("scripts/bash-guard.ts", () => {
     expect(refusal("git commit -q -m \"title\n\nbody\" -- a.ts")).toMatch(/multi-line commit message/);
     expect(refusal(`git commit -m "the ${B}x${B} view" -- a.ts`)).toMatch(/backtick the shell would run/);
     expect(refusal(`echo "${B}date${B}" > a.md`)).toMatch(/backtick the shell would run/);
+    // A sed insertion the harness's worktree check refuses (round 15): the refusal names the Edit tool first.
+    expect(refusal("sed -i '288a\\ a new line' packages/logs/src/x.ts")).toMatch(/a sed insertion .*the Edit tool/);
+    expect(refusal("sed -i 's/a/b/' packages/logs/src/x.ts")).toBeUndefined();
   });
 
   it("lets a backtick in single quotes or escaped through", () => {

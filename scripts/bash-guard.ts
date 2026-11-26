@@ -44,6 +44,9 @@ export function refusal(command: string): string | undefined {
   }
   // A commit message typed into the command (round 9's own slip: a multi-line `git commit -m "…"` with code spans).
   if (/(?:^|[\s;&|])git\s+commit\b[^\n]*\s-[a-zA-Z]*m\b/.test(command) && command.includes("\n")) return `a multi-line commit message in the command (CLAUDE.md: write scratch/msg.txt with the Write tool, then git commit -F scratch/msg.txt -- <paths>)`;
+  // sed's insert, append or change commands (`sed -i '288a\ …'`): the harness's worktree check refuses them as "too
+  // complex to verify" (alesh-rare-fin report point 4), so say the way that works before that refusal does.
+  if (/(?:^|[\s;&|])sed\b[^\n|;]*\s-i\b[^\n|;]*'[^']*\d+\s*[aic]\\/.test(command)) return `a sed insertion (a, i or c with a backslash: the harness refuses it as too complex to verify). A line inserted or changed in a file: the Edit tool, or several at once: node scripts/edit.ts <edits file> (its header has the format)`;
   // Backtick substitution anywhere outside single quotes: in a message or a doc's text it runs the span as a command.
   if (liveBacktick(command)) return `a backtick the shell would run as a command (outside single quotes): Markdown code spans in an argument become their command's output. ${SAFE}`;
   return undefined;

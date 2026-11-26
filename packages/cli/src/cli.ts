@@ -6,7 +6,7 @@
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { loadGameData, withKitFiles } from "@efsim/data";
-import { commandName, commandOptions, trackReads, unreadOptions, usageText, type CommandContext } from "./command.ts";
+import { commandName, commandOptions, trackReads, unreadOptions, usageText, withDeclaredNegatives, type CommandContext } from "./command.ts";
 import { COMMANDS } from "./commands/index.ts";
 import { GLOBAL_NOTES, GLOBAL_OPTIONS } from "./commands/shared.ts";
 import { setWorkerKitFiles } from "./rulespool.ts";
@@ -18,8 +18,9 @@ async function main(argv: string[]): Promise<number> {
   const cmd = COMMANDS.find((c) => c.name === name);
   if (name !== undefined && !cmd) throw new Error(`unknown command ${name}\n\n${USAGE}`);
   let parsed: ReturnType<typeof parseArgs<{ args: string[]; allowPositionals: true; allowNegative: true; options: typeof GLOBAL_OPTIONS; tokens: true }>>;
+  const options = cmd ? commandOptions(cmd, GLOBAL_OPTIONS) : GLOBAL_OPTIONS;
   try {
-    parsed = parseArgs({ args: argv, allowPositionals: true, allowNegative: true, options: cmd ? commandOptions(cmd, GLOBAL_OPTIONS) : GLOBAL_OPTIONS, tokens: true }) as typeof parsed;
+    parsed = parseArgs({ args: argv, allowPositionals: true, allowNegative: true, options, tokens: true }) as typeof parsed;
   } catch (e) {
     // An option the command doesn't declare (names are per command): say whose it is, if another command's.
     const m = e instanceof Error ? /Unknown option '--?([^']+)'/.exec(e.message) : null;
@@ -27,7 +28,9 @@ async function main(argv: string[]): Promise<number> {
     const owners = COMMANDS.filter((c) => m[1] !== undefined && m[1] in c.options).map((c) => c.name);
     throw new Error(`${name ?? "efsim"} has no option --${m[1]}${owners.length ? ` (${owners.join(", ")} ${owners.length === 1 ? "has" : "have"} one)` : ""}; efsim --help lists each command's`, { cause: e });
   }
-  const { values, positionals, tokens } = parsed;
+  const { positionals, tokens } = parsed;
+  // `--no-cache` and the like: the declared no- option, not allowNegative's negation of an undeclared one.
+  const values = withDeclaredNegatives(parsed.values, tokens, options);
   const [command, ...args] = positionals;
   if (values["help"] || !command || !cmd) {
     process.stdout.write(USAGE);

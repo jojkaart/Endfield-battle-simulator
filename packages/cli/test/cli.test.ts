@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "../src/index.ts";
@@ -11,7 +12,7 @@ import { checkReactions } from "../../logs/src/reactioncheck.ts";
 import { computeStats, type StatPanel } from "@efsim/engine";
 import { formatCensus, kitCensus } from "../src/census.ts";
 import { readScenario, searchCommand, searchWidths } from "../src/simulate.ts";
-import { command, commandName, commandOptions, trackReads, unreadOptions, usageText } from "../src/command.ts";
+import { command, commandName, commandOptions, trackReads, unreadOptions, usageText, withDeclaredNegatives } from "../src/command.ts";
 import { COMMANDS } from "../src/commands/index.ts";
 import { GLOBAL_NOTES, GLOBAL_OPTIONS } from "../src/commands/shared.ts";
 
@@ -111,6 +112,17 @@ describe("cli command registry (one module per command)", () => {
     const s = trackReads<Record<string, unknown>>({ from: "3" });
     void { ...s.values };
     expect(unreadOptions(tokens.slice(0, 1), s.read, {})).toEqual([]);
+  });
+
+  it("takes a declared no- option as given, not as allowNegative's negation (round 15: --no-cache was dropped)", () => {
+    const options = { "no-cache": { type: "boolean", default: false }, negative: { type: "boolean", default: true } } as const;
+    const parsed = parseArgs({ args: ["--no-cache", "--no-negative"], options, allowNegative: true, tokens: true });
+    const values = withDeclaredNegatives(parsed.values as Record<string, unknown>, parsed.tokens, options);
+    expect(values["no-cache"]).toBe(true);
+    expect("cache" in values).toBe(false);
+    // An option declared under its own name keeps allowNegative's reading.
+    expect(values["negative"]).toBe(false);
+    expect(parsed.tokens.flatMap((t) => (t.kind === "option" ? [t.name] : []))).toEqual(["no-cache", "negative"]);
   });
 });
 

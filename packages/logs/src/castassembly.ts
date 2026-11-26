@@ -5,7 +5,7 @@
 // controlled (controlledFromLog, controlSwaps), each logged cast event's fate (loggedCastFates) and the stops the
 // replay's casts hold (replayedCastStops). Split from buffreplay.ts (improvement round 14).
 
-import { allActions, applyBuff, chanceJumpsOf, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
+import { allActions, applyBuff, chanceJumpsOf, pathTwin, skippedHits, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { buttonVariants, castFrames, excludes, neededBuffs, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
@@ -106,17 +106,10 @@ function hitGameBuffs(kit: OperatorKit, hit: KitHit): string[] {
   });
 }
 
-/** Whether kit hit `b` is `a` on a chance jump's path: the same keys, its frames `by` (the jump's length) later. */
-function sameFromStart(a: KitHit, b: KitHit, by: number): boolean {
-  const fa = a.frames ?? [];
-  const fb = b.frames ?? [];
-  return fa.length > 0 && fa.length === fb.length && fa.every((f, i) => fb[i] === f + by) && a.events.length === b.events.length && a.events.every((e) => b.events.includes(e));
-}
-
 /**
  * The hits of a skill's chance jumps' paths (chanceJumpsOf) and their buffs' game buffs: for each chance jump, the kit
  * hits past its target that apply a buff the log can list, each with the hit it stands for on the path not jumped (the
- * same keys in the part the jump skips: Alesh's slam_ex for slam), if any.
+ * hit in the part the jump skips whose twin it is, engine paths.ts pathTwin: Alesh's slam for slam_ex), if any.
  */
 function chancePathHits(kit: OperatorKit, skillId: string): { readonly trigger: string; readonly at: number; readonly to: number; readonly hit: KitHit; readonly other: KitHit | undefined; readonly buffs: readonly string[] }[] {
   const skill = kit.skills.find((s) => s.skillId === skillId);
@@ -126,7 +119,7 @@ function chancePathHits(kit: OperatorKit, skillId: string): { readonly trigger: 
     skill.hits.flatMap((hit) => {
       const buffs = hitGameBuffs(kit, hit);
       if (!buffs.length || !frames(hit).length || !frames(hit).every((f) => f >= c.to)) return [];
-      const other = skill.hits.find((x) => x !== hit && sameFromStart(x, hit, c.to - c.at));
+      const other = skippedHits(skill, c.at, c.to).find((x) => pathTwin(skill, x, c.at, c.to) === hit);
       return [{ ...c, hit, other, buffs }];
     }),
   );
@@ -784,6 +777,39 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
       return [{ stops: stops.map((s) => ({ ...s, placed: c.landings.length > 0 && !c.listed })), resets }];
     }),
   );
+}
+
+/** A time stop of a cast the replay makes, and whether the placement has that cast from its hits. */
+export interface ReplayTimeStop extends TimeStop {
+  /** False for a cast the replay makes without placed hits: from a cast event (an ultimate at its stop: withLoggedCasts), or inferred. */
+  readonly placed: boolean;
+  /** A hitless cast event of a skill a kit buff of its operator ticks as (KitBuff.ticksLoggedAs), listed without a replay to say whether it was made (replayStops). */
+  readonly tickRead?: true;
+}
+
+/** The skills a kit buff of their operator ticks as (KitBuff.ticksLoggedAs), as `operator|skillId`. */
+export function tickSkills(kits: readonly OperatorKit[]): Set<string> {
+  return new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
+}
+
+/** A cast's key for "the replay made it": its operator, skill and start (a made-cast record's `c` / `cast`). */
+export const madeKey = (c: Pick<ReplayedCast, "operator" | "skillId" | "start">) => `${c.operator}|${c.skillId}|${c.start}`;
+
+/**
+ * The replay's stops: the one list of them, which the hidden-hold placement (buffreplay.ts replayKitBuffs) and the
+ * world-time views (query.ts replayTimeStops) both read (bursts-and-cooldowns report point 1: the views counted a
+ * hitless event the replay read as a buff's tick, Zhuang Fangyi's Empyrean end in 4d60e7fe92c2 at 106.47 s, as a
+ * 78-frame stop the placement left out, and a ruling-out rested on the 2.6 s). With `made` (the casts a replay made:
+ * BuffReplay.made, a run's made), a hitless cast of a skill a kit buff ticks as (KitBuff.ticksLoggedAs) that the replay
+ * didn't make is that buff's tick, never a stop: it is left out before the resets cut the list, and `ticks` names it.
+ * Without, it stays, its stops marked `tickRead` (a view without the replay says so).
+ */
+export function replayStops(data: GameData, kits: readonly OperatorKit[], casts: readonly ReplayedCast[], made?: readonly Pick<ReplayedCast, "operator" | "skillId" | "start">[]): { readonly stops: ReplayTimeStop[]; readonly ticks: readonly ReplayedCast[] } {
+  const ticksAs = tickSkills(kits);
+  if (!made) return { stops: replayedCastStops(data, casts).map((st) => (!st.placed && ticksAs.has(`${st.operator}|${st.skillId}`) ? { ...st, tickRead: true as const } : st)), ticks: [] };
+  const done = new Set(made.map(madeKey));
+  const ticked = (c: ReplayedCast) => c.landings.length === 0 && ticksAs.has(`${c.operator}|${c.skillId}`) && !done.has(madeKey(c));
+  return { stops: replayedCastStops(data, casts.filter((c) => !ticked(c))), ticks: casts.filter(ticked) };
 }
 
 /**

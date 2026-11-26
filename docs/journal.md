@@ -4,9 +4,43 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 158 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 159 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Improvement round 15: one rule for each fact, records the views carry
+
+**Goal:** the five open friction reports and round 14's backlog (docs/friction/README.md's round), every file free:
+the structural causes first (a fact computed twice by two rules, a record the views didn't carry, a comparison against
+the wrong reference), behaviour-preserving.
+
+**Done** (docs/friction-done/2026-11-26-round-15.md has the list and the commits):
+- One rule each: the replay's stops (castassembly.ts replayStops, read by the hold placement and every world-time view;
+  `zmdlogs worldtime` replays and shows a tick-read event without frames); a hit's twin on a jump's other path (engine
+  timeline/paths.ts pathTwin, pathLandings, for the control and chance paths and castassembly.ts); each assumption
+  kind's fact (assumptions.ts ASSUMPTION_FACTS, docs/design/data.md's table, tests/assumption-facts.test.ts); one
+  reason per kit buff (replaycrits.ts buffDecidability).
+- Records the views carry: HitRecord.assumptions and landing.cast, `zmdlogs assumed --operator`, groups' rows of casts
+  matched only as another kit hit, LINK and two-casts MADE lines, measure's hold units with their pinning bounds,
+  `zmdlogs clock`'s check paired by the nearest start, `zmdlogs stagger`'s FLAG.
+- The reference: measure with no reference named and stale snapshots measures the merge base with main as --base;
+  cli-ab reads the other worktree's paths as this checkout's.
+- Tools: scripts/split-module.ts (a split as a checked move), check-links.ts staleCitations (eight fixed) and conflict
+  markers (docs/roadmap.md had a merge's, resolved), `lead-files.ts --family`, bash-guard's sed hint, process step 6
+  (CLAUDE.md is the lead's: lines proposed in the summary's "For the lead").
+
+**Checks:** `npm run measure -- --base 32dfacd --at HEAD` after the refactors: no log's verdicts moved; team-ab against
+32dfacd: every team's fight the same; `npm run snapshots:update` at the end: the scoreboard unchanged.
+
+**Found on the way:** the CLI's `--no-cache` and `--no-foods` were dropped by parseArgs' allowNegative (read as an
+undeclared `cache=false`), so the hits cache was read whatever the flag said; fixed (command.ts withDeclaredNegatives).
+The fact table's test found the log-listing fallback trying both crits where the replay had read one (three hits in
+0c14 and a9d7; a fallback either way): on the backlog's accuracy list with two other candidates the table names
+(reaction levels the log decided, the enemy's side).
+
+**Left** (docs/friction/2026-11-26-backlog-after-round-15.md): the log context `{ data, assume }` (carried twice),
+fit-build over a wider space with chance counts, the by-operator scoreboard's share (a new snapshot key), a recorded
+Stagger start.
 
 ## 2026-11-26: Low plain, low mismatch: the replay's read crits and a status's crit
 
@@ -353,20 +387,3 @@ change (no smoke, no team-ab).
 
 **Problems:** finding which file each point needed took about twenty minutes of grep (hence the **Files:** line); a
 type name clash across `export *` (ClockRow) at the first typecheck.
-
-## 2026-11-26: The lead: the check's own-buff fix adopted, the two accuracy rounds merged
-
-- **Goal:** merge the two parallel accuracy rounds of 2026-11-26 (damage factors; the enemy's clock) and apply what
-  the damage-factors round held back because the check was the other agent's file.
-- **Merged:** both rounds. The only conflicts were in docs/roadmap.md, docs/roadmap-details.md and docs/tried/README.md,
-  where both sides added text; I combined them.
-- **Adopted:** the check's loggedEntries now matches an unjudged kit buff's listed entry only against its own game
-  buff's engine modifiers. Before, Ember's Pay the Ferric Price was dropped as one of Thermite Cutter's +0.09 layers in
-  7e19. The held-back diff is deleted, as docs/tried/README.md says.
-- **Scoreboard** (`npm run snapshots:update`):
-  - hold-out plain 79.0 → 80.4%, mismatch 5.9 → 5.6%, mean |damage error| 8.5 → 8.4% (3 better, 0 worse);
-  - development and verified unchanged;
-  - earlier pending's mean |damage error| 4.2 → 4.1%, with 0c14 −4.9 → −3.4% and 7e19 better.
-- **Still held back:** the 0c14 diff (Si's away press, hard-coded) and the life-end landings diff (mixed). Both need
-  general rules in the replay: an enemy-absent away state, and a hitless press inferred from a buff only its hit gives.
-  They are next steps, not adoptions.

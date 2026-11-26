@@ -1151,7 +1151,7 @@ const ANCHOR_MS = 1500;
  * a basic attack cast during its skill: Wulfgard's combo 3); else the
  * first in kit order. Steps gated by the kit's state rather than windows (Typhoeus's
  * hover attacks): the replay casts the step the engine allows
- * (buffreplay.ts chainStepFor).
+ * (replayrun.ts replayedSkill).
  */
 function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prevs: readonly { cast: LoggedCast; timing: SkillTiming | null | undefined }[], stops: readonly TimeStop[]): { readonly g: Group; readonly why: CastChoice } {
   const ids = candidates.map((g) => g.id);

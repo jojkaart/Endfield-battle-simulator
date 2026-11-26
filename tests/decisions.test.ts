@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { withCurveReading } from "@efsim/engine";
-import { decisionsDiff, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type DecisionLine, type HitRecord } from "@efsim/logs";
+import { decisionsDiff, linkGains, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type DecisionLine, type HitRecord } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -35,6 +35,16 @@ describe("the replay's decisions", () => {
     const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-489c0be3e162.json"));
     const drops = replayDecisions(data, logBuffReplay(data, fx).replay).filter((x) => x.kind === "JUMPDROP" && x.t < 20000);
     expect(drops.map((x) => x.text)).toEqual([expect.stringMatching(/^Rossi combo_3_skill \(made at 18\.77\): its jump 0 → 212 dropped, the logged landing\(s\) perfect@19\.73/)]);
+  });
+
+  it("says where each Link stack came from and which cast took it (LINK; round 15, totals-off report point 1: db87)", () => {
+    expect(linkGains({ link: [100, 600] }, { link: [600, 950, 950] })).toEqual([{ frame: 950 - 450, n: 2 }]);
+    expect(linkGains({ link: [600] }, { link: [] })).toEqual([]);
+    const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-db8711232de9.json"));
+    const lines = replayDecisions(data, logBuffReplay(data, fx).replay).filter((x) => x.kind === "LINK");
+    // Twilight's battle skill during her ultimate at 27.13 s takes Camille's combo's stack.
+    expect(lines.map((x) => x.text)).toContain("Laevatain normal_skill_during_ult (made at 27.13) took 1 Link stack(s)");
+    expect(lines.some((x) => /^\+1 Link stack\(s\) for the team at 2\d\.\d\d, in the step of /.test(x.text))).toBe(true);
   });
 });
 

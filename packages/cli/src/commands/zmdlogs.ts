@@ -22,6 +22,8 @@ import {
   instancesView,
   lanesView,
   worldTimeView,
+  logBuffReplay,
+  placeHits,
   holdsView,
   rampView,
   parseSelector,
@@ -34,6 +36,7 @@ import {
   formatRaw,
   formatReactionCheck,
   groupsCliReport,
+  assumedCliReport,
   hitsReport,
   importBattle,
   offsetsReport,
@@ -62,8 +65,8 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
-export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "clock", "holds", "ramp", "clocks"]);
-export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "worldtime", "control", "cadence"]);
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "clock", "holds", "ramp", "clocks", "worldtime"]);
+export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "control", "cadence"]);
 
 export default command({
   name: "zmdlogs",
@@ -235,7 +238,12 @@ export default command({
   efsim zmdlogs groups --operator <op> [fixture…]  An operator's mismatches sorted into causes: team-wide (a
                                           teammate mismatches at the same ratio nearby), no landing, own by skill
                                           event and by what the log and replay disagree on (default: every
-                                          development log with it; --verbose each mismatch; --workers n)
+                                          development log with it; --verbose each mismatch; --workers n); and
+                                          the casts whose every landing matched only as the event's other kit hit
+  efsim zmdlogs assumed --operator <op> [fixture…]  What the operator's non-plain matches assume (the verdict's
+                                          first fitting reading): by kind, kind set, event and kind, folded label
+                                          (default: every development log with it; cached as hits; --workers n)
+                [--kind <set>]            The hits of one kind set (crit, boundary+logListing, …); --top n rows
 The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 and operators by name):
   efsim zmdlogs instances <fixture>       Every real cast as the log means it (loggedSkillInstances): placed from its
                                           hits (combos log no cast event), with the log's cast events of it (an
@@ -266,7 +274,9 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                                           taken out: placed, from cast events, inferred)
   efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the time
                                           stops of the replay's casts (placed, from cast events, inferred), and the
-                                          stops between (operator, skill, frames, lowest scale)
+                                          stops between (operator, skill, frames, lowest scale): the hold
+                                          placement's own list, so an event the replay read as a buff's tick is a
+                                          line without frames (--assume: under another reading)
   efsim zmdlogs clock --kit-buff owner:id [fixture…]  Each instance of a kit buff: the expiry the replay first
                                           gave it, its expiry on the replay's own clock (no hidden holds, no log
                                           ends) and how it ended there, how it ended in the check's replay, the
@@ -384,7 +394,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     if (sub === "worldtime") {
       const [from, to] = [Number(args[2]), Number(args[3])];
       if (args.length !== 4 || !arg || !Number.isFinite(from) || !Number.isFinite(to)) throw new Error("zmdlogs worldtime takes one fixture and two times in seconds: <fixture> <from s> <to s>");
-      return worldTimeView(data(), readDevFixture(arg), from * 1000, to * 1000);
+      // The replay's own stops (an event it read as a buff's tick holds nothing: round 15), under --assume.
+      const fx = readDevFixture(arg);
+      const placement = placeHits(data(), fx);
+      return worldTimeView(data(), fx, from * 1000, to * 1000, logBuffReplay(data(), fx, placement, { assume }).replay, placement);
     }
     if (sub === "ramp") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs ramp takes one fixture (a path or an id such as db87)");
@@ -526,6 +539,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     if (sub === "groups") {
       if (values.operator.length !== 1) throw new Error("zmdlogs groups takes one --operator <op> (an id, its name or part of the id) and optional fixtures");
       return groupsCliReport(data, values.operator[0] as string, selection, { workers: values.workers, verbose: values.verbose, cache: !values["no-cache"], assume, progress });
+    }
+    if (sub === "assumed") {
+      if (values.operator.length !== 1) throw new Error("zmdlogs assumed takes one --operator <op> (an id, its name or part of the id) and optional fixtures (--kind <set>, --top n)");
+      return assumedCliReport(data, values.operator[0] as string, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], assume, progress });
     }
     if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], assume, progress });
     if (sub === "fit-build") {

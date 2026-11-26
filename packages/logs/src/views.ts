@@ -411,7 +411,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, TAILCUT casts it ended early${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, or a kit trigger's firings and ready frame) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, TAILCUT casts it ended early, LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, or a kit trigger's firings and ready frame) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines)].join("\n");
 }
 
@@ -504,11 +504,20 @@ function attackInputKeys(data: GameData, fx: LogFixture): Map<string, "finisher"
   return out;
 }
 
+/**
+ * How far (ms) the replay's first window may start from the log's first Staggered hit before `zmdlogs stagger` flags
+ * it (bursts-and-cooldowns report point 2: d4fb's replay window from 86.50 s against the log's 97.26 s, read as a
+ * Stagger holding a cooldown; the record had derived a held Stagger's start from its end).
+ */
+export const STAGGER_START_FLAG_MS = 1000;
+
 /** One Stagger run against the replay's windows and the engine's own end. */
-function staggerLine(r: StaggerRun): string {
+export function staggerLine(r: StaggerRun): string {
   const first = r.replay[0];
   const gap = first ? r.last - first.end : 0;
-  const short = first ? `; the replay's first window ends ${s(Math.abs(gap))} s ${gap >= 0 ? "before" : "after"} the log's last Staggered hit` : "";
+  const lead = first ? r.start - first.start : 0;
+  const flag = first && Math.abs(lead) > STAGGER_START_FLAG_MS ? `; FLAG: the replay's window starts ${s(Math.abs(lead))} s ${lead > 0 ? "before" : "after"} the log's first Staggered hit` : "";
+  const short = first ? `; the replay's first window ends ${s(Math.abs(gap))} s ${gap >= 0 ? "before" : "after"} the log's last Staggered hit${flag}` : "";
   const engine = r.engineEnd === null ? (r.engineCut !== null ? `the engine's own would have run to ${s(r.engineCut)} (cut by the log's calm hit)` : "the engine's own covered it") : r.engineEnd === "none" ? "the engine had none running (held for the log)" : `the engine's own ended ${s(r.engineEnd)} (held for the log)`;
   return `  log ${s(r.start)}–${s(r.last)}${r.next === null ? " (to the fight's end)" : ` (next hit ${s(r.next)})`}, Stagger dealt ${r.dealt}: replay ${r.replay.map((w) => `${s(w.start)}–${s(w.end)}`).join(", ") || "none"}${short}; ${engine}`;
 }
@@ -692,12 +701,38 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
     "",
     ...fallbackGroups(records.filter((r) => r.operator === operator)),
+    ...otherKitHitCasts(records.filter((r) => r.operator === operator), fxLabel),
   ];
   if (opts.verbose) {
     out.push("", "Each own mismatch:");
     for (const { r, q } of own) out.push(`  ${fxLabel(r.fixture)} ${s(r.t)} ${r.event} logged ${r.value} predicted ${r.predicted ?? "-"} ×${q?.toFixed(4) ?? "-"}${r.differences?.length ? `  ${r.differences.map((d) => `${d.kind}:${d.what}`).join("; ")}` : ""}`);
   }
   return out.join("\n");
+}
+
+/**
+ * `zmdlogs groups`' rows of the replay's casts every one of whose logged landings matched only as the event's other
+ * kit hit (a `kitHit` assumption on each: HitRecord.assumptions, landing.cast): the shape of a path the replay didn't
+ * take where the log's key is shared (Rossi's attack 4 under a teammate, ×2.5 in 2fd9; Alesh's Rare Fin combos,
+ * ×1.5–1.6 in 0c14, 4e36, a9d7), each found as an operator's odd ratio before (backlog after round 14 point 2). A row:
+ * the log, the cast's first landing, its skill, how many landings, the kit hits they matched as for the ones landed,
+ * and the median logged ÷ predicted (the replay's path).
+ */
+export function otherKitHitCasts(records: readonly HitRecord[], fxLabel: (fixture: string) => string = (x) => x): string[] {
+  const casts = new Map<string, HitRecord[]>();
+  for (const r of records) if (r.landing?.cast !== undefined) casts.set(`${r.fixture}|${r.landing.cast}`, [...(casts.get(`${r.fixture}|${r.landing.cast}`) ?? []), r]);
+  const rows: { t: number; text: string }[] = [];
+  for (const rs of casts.values()) {
+    const kit = (r: HitRecord) => r.assumptions?.filter((a) => a.kind === "kitHit") ?? [];
+    if (!rs.every((r) => (r.class === "assumed" || r.class === "fallback") && kit(r).length > 0)) continue;
+    const first = rs.reduce((a, b) => (b.t < a.t ? b : a));
+    const pairs = [...new Set(rs.map((r) => `${kit(r)[0]?.buffs?.[0] ?? "?"} for ${r.landing?.hitId ?? "?"}`))];
+    const ratios = rs.flatMap((r) => (r.predicted ? [r.value / r.predicted] : [])).sort((a, b) => a - b);
+    const median = ratios.length ? `×${(ratios[Math.floor((ratios.length - 1) / 2)] as number).toFixed(3)}` : "-";
+    rows.push({ t: first.t, text: `  ${fxLabel(first.fixture)} ${s(first.t)} s ${first.landing?.skillId.replace(/^chr_\d+_[a-z0-9]+_/, "") ?? "?"}: ${rs.length} landing(s), matched as ${pairs.join(", ")}; logged ÷ the replay's path ${median}` });
+  }
+  if (!rows.length) return [];
+  return ["", "Casts whose every landing matched only as the event's other kit hit (a path the replay didn't take, the log's key shared by both: the kit's jumps, a chance or control path; zmdlogs decisions has the replay's PATH and JUMPDROP lines):", ...rows.sort((a, b) => a.t - b.t).map((x) => x.text)];
 }
 
 /** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */

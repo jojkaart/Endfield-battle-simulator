@@ -669,7 +669,7 @@ function scheduledKey(list: readonly Scheduled[], env: KeyEnv): Record<string, u
 const BUFF_KEY: KeyRules<ActiveBuff> = {
   id: true, stackGroup: true, owner: true, target: true, appliedAt: true, expiresAt: true, modifiers: true, attrs: true, categories: true, recipients: true,
   excluded: true, maxLayers: true, maxInstances: true, priority: true, consumedBy: true, cast: (i, env) => env.rel(i),
-  // Read only while `frame < until` (buffs.ts modifiersAt) or to cut it shorter (casting.ts): over, it's as if it had none.
+  // Read only while `frame < until` (buffs.ts buffModifiers) or to cut it shorter (casting.ts): over, it's as if it had none.
   whileCasting: (w, env) => (w.until > env.frame ? w : undefined),
   blocksEnergy: true, runsThroughFreeze: true, pinned: true, every: true, nextTick: true, noTickAtEnd: true, endsWithCast: (i, env) => env.rel(i), skipped: true, gameBuff: true, sharedTimer: true, link: true,
   basicAttack: true, records: true, snapshot: true,

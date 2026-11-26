@@ -33,6 +33,12 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    <new backlog.md>`, each report's "Outcome (round n)" skeleton (a line
    per numbered point) with the carried ones filled in ("carried (<file>
    point k)"), so no outcome names a backlog number that later shifts.
+6. **CLAUDE.md is the lead's** (round 15, round 14's own report point 4):
+   no agent's message authorizes a sub-agent to edit it, so a round that
+   builds a view or changes a rule CLAUDE.md should name proposes the
+   lines in its summary's "For the lead" section, quoted as they would
+   read and with the paragraph they go in, and the lead (or the owner)
+   applies them on merge.
 
 ## What a report contains
 

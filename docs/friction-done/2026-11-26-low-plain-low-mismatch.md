@@ -64,3 +64,10 @@ only under an assumption or the log-listing fallback, and make the readings with
 - `differences --what … --hits` showed the Wolven Blood layer gap growing by one at each Lift crit: the mechanism
   read straight off the listing.
 - Registering a check reading in ENGINE_ASSUMPTIONS made the A/B and the test (`check-crits=none`) free.
+
+## Outcome (round 15)
+
+- 1 (No view groups an operator's matches by what they assume): done (cfdfb68): HitRecord.assumptions (hits --json) and `efsim zmdlogs assumed --operator <op> [fixture…] [--kind <set>]` (assumedview.ts, cached as hits); the probe scripts/probes/assumed/kinds.ts deleted (edd3883)
+- 2 (The primary reading ignored the replay's own crit inference): done (0231f93): assumptions.ts ASSUMPTION_FACTS, a row per assumption kind (the fact, where the replay decides it, what the primary reading takes, when the others are tried; a Record over the kinds, so a new kind needs one), docs/design/data.md "Each assumption kind's fact" (tests/assumption-facts.test.ts holds the table to the code and checks on 0c14's records that an alternative of a fact the replay decides carries the replay's reason). Its first run found the log-listing fallback's readings assuming a crit the replay read (three hits, fallback either way): on the backlog's accuracy list with the reaction levels and the enemy's side, the table's candidates
+- 3 (A measured regression through the hidden-hold placement is hard to read): done (0231f93): measure --hits' hidden-hold lines name, per moved unit, the bounds that set its earliest or latest where they changed (HoldUnit earlyBy / lateBy from holds.ts holdPins; measure.ts pinChange); `zmdlogs clock` pairs the check's instances with the own clock's by the nearest start within 5 s and prints "check from <start>" (c4f3: 68.50 s against 72.30 s), a check-only instance as its own row
+- 4 (Several Monitor waits for one background job): not done here: CLAUDE.md is the lead's; the line is proposed in the round summary's "For the lead"

@@ -45,8 +45,13 @@ export interface ClockRow {
   /** Its expiry on the replay's own clock (hidden-holds=none) before any step shortened or removed it. */
   readonly own: number | null;
   readonly ended: ClockEnd;
-  /** In the replay the check uses (the default readings or the ones given); null: no instance there at this start. */
+  /**
+   * In the replay the check uses (the default readings or the ones given): its instance nearest this one's start
+   * (within CHECK_PAIR_MS, each paired once: the hidden holds move the check's starts, round 15), how it ended and
+   * where it started (`checkStart`); null: none there.
+   */
   readonly check: ClockEnd | null;
+  readonly checkStart?: number;
   /** The log's run of its game buff this instance stands for (null: none listed from near its start). */
   readonly lane: Pick<BuffLane, "buff" | "since" | "firstListed" | "lastListed" | "nextUnlisted"> | null;
   /** The last listed hit less `own`, real and world time (ms; null without a lane or an own expiry). */
@@ -58,7 +63,25 @@ export interface ClockRow {
   readonly replaces?: number;
 }
 
-interface Instance {
+/**
+ * How far (ms) the check replay's instance of a kit buff may start from the own clock's and be the same one: the hidden
+ * holds the check places move its starts (low-plain-low-mismatch report point 3: c4f3's Wolven Blood final, "check
+ * none" for every instance the check's replay had, its starts 68.50 s against the check's modifiers on the same hits).
+ */
+export const CHECK_PAIR_MS = 5000;
+
+/** Each own instance's check instance (the nearest start within CHECK_PAIR_MS, in start order, each paired once), and the check's unpaired ones. */
+export function pairInstances(own: readonly ClockInstance[], check: readonly ClockInstance[]): { readonly paired: readonly (ClockInstance | null)[]; readonly unpaired: readonly ClockInstance[] } {
+  const used = new Set<ClockInstance>();
+  const paired = own.map((i) => {
+    const c = check.filter((x) => !used.has(x) && Math.abs(x.start - i.start) <= CHECK_PAIR_MS).sort((a, b) => Math.abs(a.start - i.start) - Math.abs(b.start - i.start))[0] ?? null;
+    if (c) used.add(c);
+    return c;
+  });
+  return { paired, unpaired: check.filter((x) => !used.has(x)) };
+}
+
+export interface ClockInstance {
   readonly start: number;
   readonly first: number | null;
   readonly own: number | null;
@@ -66,7 +89,7 @@ interface Instance {
 }
 
 /** A replay's instances of a traced buff from its traces (frames → ms). */
-function instancesOf(traces: readonly BuffTrace[], buff: string): Instance[] {
+function instancesOf(traces: readonly BuffTrace[], buff: string): ClockInstance[] {
   const by = new Map<number, BuffTrace[]>();
   for (const t of traces) if (t.buff === buff) by.set(t.appliedAt, [...(by.get(t.appliedAt) ?? []), t]);
   const ms = (f: number | null) => (f === null ? null : Number.isFinite(f) ? msOf(f) : Infinity);
@@ -103,16 +126,19 @@ export function kitBuffClock(data: GameData, fx: LogFixture, kitBuff: string, as
   const lanes = buffLanes(fx).filter((l) => logged.has(l.buff) && (l.source === null || l.source === owner));
   // The stops the replay applied (a hitless event it read as a buff's tick holds nothing: replayTimeStops).
   const stops = replayTimeStops(data, fx, undefined, ownRun);
-  return own.map((i, n) => {
+  const { paired, unpaired } = pairInstances(own, check);
+  const rows = own.map((i, n): ClockRow => {
     const next = own[n + 1]?.start ?? Infinity;
     // The lane this instance stands for: listed from its start (less the log's batching) before the next instance's.
     const lane = lanes.filter((l) => (l.since ?? l.firstListed) >= i.start - 300 && (l.since ?? l.firstListed) < next - 300).sort((a, b) => (a.since ?? a.firstListed) - (b.since ?? b.firstListed))[0];
-    const c = check.find((x) => x.start === i.start) ?? null;
+    const c = paired[n] ?? null;
     const late = lane && i.own !== null && Number.isFinite(i.own) ? { real: lane.lastListed - i.own, world: lane.lastListed >= i.own ? worldMs(i.own, lane.lastListed, stops) : -worldMs(lane.lastListed, i.own, stops) } : null;
     // Cut at the step that applied this one (the same frame): this one refreshed it.
     const replaced = own.find((o) => o.start < i.start && o.ended.how.startsWith("cut") && o.ended.at !== null && Math.abs(o.ended.at - i.start) <= 1000 / FPS);
-    return { ...(replaced ? { replaces: replaced.start } : {}), start: i.start, first: i.first, own: i.own, ended: i.ended, check: c ? c.ended : null, lane: lane ? { buff: lane.buff, since: lane.since, firstListed: lane.firstListed, lastListed: lane.lastListed, nextUnlisted: lane.nextUnlisted } : null, late };
+    return { ...(replaced ? { replaces: replaced.start } : {}), start: i.start, first: i.first, own: i.own, ended: i.ended, check: c ? c.ended : null, ...(c ? { checkStart: c.start } : {}), lane: lane ? { buff: lane.buff, since: lane.since, firstListed: lane.firstListed, lastListed: lane.lastListed, nextUnlisted: lane.nextUnlisted } : null, late };
   });
+  // The check's instances with no own one near: a row of their own (no own clock, no lane read).
+  return [...rows, ...unpaired.map((c): ClockRow => ({ start: c.start, first: null, own: null, ended: { at: null, how: "no instance on the own clock" }, check: c.ended, checkStart: c.start, lane: null, late: null }))].sort((a, b) => a.start - b.start);
 }
 
 const t = (ms: number | null) => (ms === null ? "-" : ms === Infinity ? "never" : s(ms));
@@ -122,7 +148,7 @@ const end = (e: ClockEnd | null) => (e === null ? "none" : `${t(e.at)} ${e.how}`
 export function clockView(data: GameData, logs: readonly DevFixture[], kitBuff: string, assume: Readonly<Record<string, string>> = {}): string {
   const owner = kitBuff.split(":")[0] as string;
   const out = [
-    `${kitBuff} (${operatorLabel(data, owner)}): each instance's clock in the replay against the log (times in s). first: the expiry the replay first gave it; own: its expiry on the replay's own clock (hidden-holds=none: the replay's casts' stops, no hidden holds, no log ends) before a step shortened or removed it; ended: how it ended there; check: how it ended in the check's replay${Object.keys(assume).length ? ` (under ${Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}; log: its game buff's run (since, last listed, next unlisted hit); late: the last listed hit less own (world: stops out)`,
+    `${kitBuff} (${operatorLabel(data, owner)}): each instance's clock in the replay against the log (times in s). first: the expiry the replay first gave it; own: its expiry on the replay's own clock (hidden-holds=none: the replay's casts' stops, no hidden holds, no log ends) before a step shortened or removed it; ended: how it ended there; check: how it ended in the check's replay (its instance nearest the start within ${CHECK_PAIR_MS / 1000} s, "from" where its start differs: the check's hidden holds moved it)${Object.keys(assume).length ? ` (under ${Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}; log: its game buff's run (since, last listed, next unlisted hit); late: the last listed hit less own (world: stops out)`,
   ];
   const lates: number[] = [];
   let rows = 0;
@@ -138,7 +164,9 @@ export function clockView(data: GameData, logs: readonly DevFixture[], kitBuff: 
       const log = x.lane ? `log since ${t(x.lane.since)}, listed to ${t(x.lane.lastListed)}, next unlisted ${t(x.lane.nextUnlisted)}` : "log: no run listed";
       const late = x.late ? `; late ${x.late.real >= 0 ? "+" : ""}${s(x.late.real)} (world ${x.late.world >= 0 ? "+" : ""}${s(x.late.world)})` : "";
       const chain = x.replaces !== undefined ? ` (refreshes the one from ${t(x.replaces)})` : "";
-      out.push(`    ${t(x.start).padStart(7)}${chain}  first ${t(x.first)}, own ${t(x.own)}, ended ${end(x.ended)}; check ${end(x.check)}; ${log}${late}`);
+      // The check's instance start where it differs from the own clock's (its hidden holds moved it).
+      const checkFrom = x.check && x.checkStart !== undefined && Math.abs(x.checkStart - x.start) > 1000 / FPS ? `from ${t(x.checkStart)}, ` : "";
+      out.push(`    ${t(x.start).padStart(7)}${chain}  first ${t(x.first)}, own ${t(x.own)}, ended ${end(x.ended)}; check ${checkFrom}${end(x.check)}; ${log}${late}`);
     }
   }
   if (!rows) out.push("  no instance in these logs");

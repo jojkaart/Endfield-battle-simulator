@@ -14,7 +14,11 @@
 //                       working tree; commit work in progress, then `--at HEAD` keeps the working tree editable
 //   --against <ref>     compare with the snapshots committed at <ref> (default: the --at ref, else HEAD); when the code
 //                       changed since those snapshots were written, the summary's first line says so (it then mixes
-//                       those commits' changes in: --base HEAD measures the tree's change alone)
+//                       those commits' changes in: --base HEAD measures the tree's change alone). With none of
+//                       --against, --base and --at named and the snapshots at HEAD not the code's own up to the merge
+//                       base with main, that merge base's code is measured as --base (round 15: the first measure of a
+//                       task compared against stale snapshots); the summary's first line names the reference
+//   --against-snapshots compare with the snapshots at HEAD even when they aren't the code's own (no base run)
 //   --base <ref>        measure <ref>'s code too, on the same logs, and compare the two measurements (A/B of two
 //                       commits' code, whatever their committed snapshots say)
 //   --with <operator>   only logs whose team has it (operator id, or part of the id or name; repeatable: any of them)
@@ -238,6 +242,7 @@ export function measureOptions(argv: readonly string[]) {
     options: {
       at: { type: "string" },
       against: { type: "string" },
+      "against-snapshots": { type: "boolean", default: false },
       base: { type: "string" },
       with: { type: "string", multiple: true, default: [] },
       logs: { type: "string", multiple: true, default: [] },
@@ -294,11 +299,19 @@ async function main(argv: string[]): Promise<number> {
     process.on("exit", () => removeAtCommit(tree));
     for (const sig of ["SIGTERM", "SIGINT", "SIGHUP"] as const) process.on(sig, () => process.exit(1));
   }
+  const short = (ref: string) => git(["rev-parse", "--short=9", ref]);
+  // No reference named: the merge base with main's code when the snapshots aren't the code's own (defaultReference).
+  let defaulted: { readonly base?: string; readonly lines: readonly string[] } | undefined;
+  if (values.base === undefined && values.against === undefined && values.at === undefined && !values["against-snapshots"]) {
+    const ref = values["snapshot-head"] ?? "HEAD";
+    const writer = snapshotWriter(ref);
+    defaulted = defaultReference(ref, writer, writer.changed ? mainBase(ref, writer.commit) : null, short);
+    if (defaulted.base) values.base = short(defaulted.base);
+  }
   const against = values.base ?? values.against ?? values.at ?? values["snapshot-head"] ?? "HEAD";
   const baseTree = values.base ? resolve(ROOT, "scratch/at", git(["rev-parse", "--short=9", "--verify", `${values.base}^{commit}`])) : undefined;
   if (values.base && baseTree) atCommit(values.base, baseTree);
   const assume = parseReadings(values.assume);
-  const short = (ref: string) => git(["rev-parse", "--short=9", ref]);
   const snapshot = values.snapshot && !values.at ? values.snapshot : undefined;
   const code = values.at
     ? `the code at ${values.at}`
@@ -308,10 +321,10 @@ async function main(argv: string[]): Promise<number> {
         : `the working tree as queued (snapshot ${short(snapshot)} on ${short(values["snapshot-head"] ?? "HEAD")})`
       : "the working tree";
   const patched = values.patch !== undefined ? `${code} with ${values.patch} applied` : code;
-  const what = `${patched}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}` : ` against the snapshots at ${against}`}`;
+  const what = `${patched}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}${defaulted?.base ? " (the merge base with main)" : ""}` : ` against the snapshots at ${against}`}`;
   // The reference's own code (placement-leads report point 3): after a code commit the snapshots at HEAD aren't HEAD's
   // code, so "against the snapshots" mixes those commits' changes into this tree's. Said first, in the summary too.
-  const referenceLine = values.base ? [] : referenceNote(against, snapshotWriter(against), short);
+  const referenceLine = defaulted ? [...defaulted.lines] : values.base ? [] : referenceNote(against, snapshotWriter(against), short);
 
   // The selection.
   const split = readSplit(readFileSync(join(tree, "fixtures/holdout/holdout.json"), "utf8"));
@@ -613,8 +626,34 @@ function parseReadings(list: readonly string[]): Record<string, string> {
  */
 function snapshotWriter(ref: string): { readonly commit: string; readonly changed: number } {
   const commit = git(["log", "-1", "--format=%H", ref, "--", "tests/snapshots/"]) || git(["rev-parse", `${ref}^{commit}`]);
-  const files = git(["diff", "--name-only", commit, ref]).split("\n").filter((f) => f && !f.startsWith("docs/") && !f.startsWith("tests/snapshots/") && !f.endsWith(".md"));
-  return { commit, changed: files.length };
+  return { commit, changed: codeFilesChanged(commit, ref) };
+}
+
+/** How many code files differ between two commits (docs, Markdown and snapshots aside). */
+function codeFilesChanged(from: string, to: string): number {
+  return git(["diff", "--name-only", from, to]).split("\n").filter((f) => f && !f.startsWith("docs/") && !f.startsWith("tests/snapshots/") && !f.endsWith(".md")).length;
+}
+
+/** The merge base of `ref` and main, with how many code files changed from the snapshots' writer to it; null without a main. */
+function mainBase(ref: string, writer: string): { readonly commit: string; readonly changedFromWriter: number } | null {
+  const r = spawnSync("git", ["merge-base", ref, "main"], { cwd: ROOT, encoding: "utf8" });
+  const commit = r.status === 0 ? r.stdout.trim() : "";
+  return commit ? { commit, changedFromWriter: codeFilesChanged(writer, commit) } : null;
+}
+
+/**
+ * The reference of a measure that names none (no --base, --against, --at; alesh-rare-fin report point 1: the first
+ * measure of a task, against snapshots 51 code files older than main's code, mixed main's unmeasured merges into the
+ * task's change, and only a second measure with --base gave the change alone). The snapshots at `against` when its own
+ * code wrote them, or when they are the code's own at the merge base with main (the branch's commits are then the change
+ * measured); otherwise the merge base's code, measured as --base (a base run: the measure's CPU doubles, the price of a
+ * first measure that means what it says). `--against-snapshots` keeps the snapshots (referenceNote then says so).
+ */
+export function defaultReference(against: string, writer: { readonly commit: string; readonly changed: number }, base: { readonly commit: string; readonly changedFromWriter: number } | null, short: (ref: string) => string = (r) => r.slice(0, 9)): { readonly base?: string; readonly lines: readonly string[] } {
+  if (!writer.changed) return { lines: [] };
+  if (!base) return { lines: referenceNote(against, writer, short) };
+  if (!base.changedFromWriter) return { lines: [`Reference: the snapshots at ${against} are the code's own at the merge base with main (${short(base.commit)}; written by ${short(writer.commit)}): the comparison is this branch's change.`] };
+  return { base: base.commit, lines: [`Reference: the snapshots at ${against} were written by ${short(writer.commit)}'s code, and ${base.changedFromWriter} code file(s) changed from it to the merge base with main: that commit's code (${short(base.commit)}) is measured as --base, so the comparison is this branch's and tree's change alone (--against-snapshots compares with the snapshots instead).`] };
 }
 
 /**
@@ -894,13 +933,28 @@ export function holdChanges(logs: readonly string[], before: ReadonlyMap<string,
     for (let i = 0; i < Math.max(a.length, b.length); i++) {
       const [x, y] = [a[i], b[i]];
       if (x && y && Math.abs(x.mid - y.mid) <= tolMs && Math.abs(x.early - y.early) <= tolMs && Math.abs(x.late - y.late) <= tolMs) continue;
-      moved.push(`unit ${i + 1}: ${x ? unit(x) : "-"} → ${y ? unit(y) : "-"} s`);
+      moved.push(`unit ${i + 1}: ${x ? unit(x) : "-"} → ${y ? unit(y) : "-"} s${pinChange(x, y)}`);
     }
     const head = `  ${k}: hidden holds ${a.length} → ${b.length} units (${s(a.length * 512)} → ${s(b.length * 512)} s), ${moved.length ? `${moved.length} placed elsewhere or new or gone` : "placed as before"}`;
     summary.push(head, ...moved.slice(0, examples).map((m) => `    ${m}`), ...(moved.length > examples ? [`    … ${moved.length - examples} more (hits.txt)`] : []));
     if (moved.length) full.push(`${k}:`, ...moved.map((m) => `  ${m}`));
   }
-  return { summary: summary.length ? ["Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s):", ...summary] : [], full };
+  return { summary: summary.length ? ["Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s; the bounds that set a moved unit's earliest or latest, where they changed: holds --verbose's pins):", ...summary] : [], full };
+}
+
+/**
+ * The clocks behind a moved hold unit (round 15, low-plain-low-mismatch report point 3: c4f3's units 10–21 moved 30 s
+ * and no line said which clock moved them): per side (earliest, latest), the bounds pinning it now that didn't before
+ * and those that no longer do (HoldUnit.earlyBy / lateBy; nothing where either side's code lacks them or they agree).
+ */
+export function pinChange(x: HoldUnit | undefined, y: HoldUnit | undefined): string {
+  const side = (name: string, was: readonly string[] | undefined, now: readonly string[] | undefined): string[] => {
+    if (!was || !now) return [];
+    const [added, gone] = [now.filter((t) => !was.includes(t)), was.filter((t) => !now.includes(t))];
+    return added.length || gone.length ? [`${name} ${[...added.map((t) => `+${t}`), ...gone.map((t) => `−${t}`)].join(", ")}`] : [];
+  };
+  const parts = [...side("earliest held back by", x?.earlyBy, y?.earlyBy), ...side("latest forced by", x?.lateBy, y?.lateBy)];
+  return parts.length ? `; ${parts.join("; ")}` : "";
 }
 
 /**

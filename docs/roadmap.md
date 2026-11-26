@@ -16,17 +16,18 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–14
-  done (round 14, 2026-11-26: buffreplay.ts in six modules; the replay's
-  decisions as records, `zmdlogs decisions --assume`, `hits --against`,
-  INFER / MADE / JUMPDROP lines; one check composition, the snapshots'
-  key strings, a burst's recorded cause; `totals --by crit`, per-command
-  CLI options, `measure --split --only`, typecheck-scratch.ts); the
-  backlog
-  ([2026-11-26-backlog-after-round-14.md](friction/2026-11-26-backlog-after-round-14.md),
-  2 points: the log context `{ data, assume }`, a groups row for
-  shared-key paths; the fight's lives on its accuracy list) joins the
-  next round once about five new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–15
+  done (round 15, 2026-11-26: one list of the replay's stops, one twin
+  rule for a jump's paths, each assumption kind's fact with its test;
+  `zmdlogs assumed`, groups' other-kit-hit casts, LINK lines, the hold
+  units' pins in measure, clock's check pairing; measure's default
+  reference the merge base with main; split-module.ts, stale-citation
+  check, cli-ab's paths; `--no-cache` honoured); the backlog
+  ([2026-11-26-backlog-after-round-15.md](friction/2026-11-26-backlog-after-round-15.md),
+  4 points: the log context, fit-build's wider space, the by-operator
+  share, a recorded Stagger start; slots by value and three fact-table
+  candidates on its accuracy list) joins the next round once about five
+  new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's
@@ -78,23 +79,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   Snowshine's ×0.9846 and test 33's reaction case undecidable by the logs; Alesh's Rare Fin 2026-11-26: chance paths
   from the listing, a cast from a hit's listed buff, `listed-casts`, 0c14 338 → 493 plain; low plain, low mismatch
   2026-11-26: the replay's read crits are the primary reading's, `check-crits`, a status's crit counts for triggers on
-  crits, Rossi 51.9 → 73% plain): next Pogranichnik's SP-driven team buffs (Chen, Lifeng, the Endministrator), other
-  whole-game pauses outside a Stagger, 0c14's Stagger at its breaking hit, a chance path from the values.
->>>>>>> 9e1904d
-=======
-  from the listing, a cast from a hit's listed buff, `listed-casts`, 0c14 338 → 493 plain; low plain, low mismatch
-  2026-11-26: the replay's read crits are the primary reading's, `check-crits`, a status's crit counts for triggers on
   crits, Rossi 51.9 → 73% plain; the fights outside ±5% 2026-11-26: a cast event logged as its button's other variant
   (db87's Link), tail cuts take detached hits (c83c, hold-out 8.4 → 7.4%), a carried Corrosion above its cap unclamped
   (7910 −6.1 → 0.0%)): next Pogranichnik's SP-driven team buffs (Chen, Lifeng, the Endministrator), slots by value
   within a cast (9c0b's Hunter Pursuit and its Link, 7910's rogue wave), other whole-game pauses outside a Stagger,
   0c14's Stagger at its breaking hit, a chance path from the values.
-=======
-  from the listing, a cast from a hit's listed buff, `listed-casts`, 0c14 338 → 493 plain; low plain, low mismatch
-  2026-11-26: the replay's read crits are the primary reading's, `check-crits`, a status's crit counts for triggers on
-  crits, Rossi 51.9 → 73% plain): next Pogranichnik's SP-driven team buffs (Chen, Lifeng, the Endministrator), other
-  whole-game pauses outside a Stagger, 0c14's Stagger at its breaking hit, a chance path from the values.
->>>>>>> 9e1904d
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

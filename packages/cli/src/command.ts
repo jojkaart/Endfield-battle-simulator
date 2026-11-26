@@ -93,6 +93,25 @@ export function trackReads<V extends object>(values: V): { readonly values: V; r
   return { values: proxy, read };
 }
 
+/**
+ * An option declared as `no-<x>` (zmdlogs `--no-cache`, `--no-foods`), which parseArgs' allowNegative reads as `<x>`
+ * set false when no `<x>` is declared: the declared one set true, its token renamed (round 15: every `--no-cache` the
+ * zmdlogs views took was dropped this way, the cache read all the same, and the unread-option warning named `--cache`).
+ */
+export function withDeclaredNegatives<V extends Record<string, unknown>>(values: V, tokens: { kind: string; name?: string; rawName?: string }[], options: ParseArgsOptionsConfig): V {
+  const out: Record<string, unknown> = { ...values };
+  const dropped = new Set<string>();
+  for (const t of tokens) {
+    if (t.kind !== "option" || t.name === undefined || t.rawName !== `--no-${t.name}`) continue;
+    const declared = `no-${t.name}`;
+    if (!(declared in options) || t.name in options || options[declared]?.type !== "boolean") continue;
+    out[declared] = true;
+    dropped.add(t.name);
+    t.name = declared;
+  }
+  return Object.fromEntries(Object.entries(out).filter(([k]) => !dropped.has(k))) as V;
+}
+
 /** The options given on the command line (parseArgs tokens) that the command never read, global ones left out. */
 export function unreadOptions(tokens: readonly { readonly kind: string; readonly name?: string }[], read: ReadonlySet<string>, global: ParseArgsOptionsConfig): string[] {
   const given = new Set(tokens.flatMap((t) => (t.kind === "option" && t.name !== undefined ? [t.name] : [])));

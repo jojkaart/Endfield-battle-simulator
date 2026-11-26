@@ -43,3 +43,4 @@ export * from "./castpairs.ts";
 export * from "./loggedas.ts";
 export * from "./snapshotentry.ts";
 export * from "./decisionsview.ts";
+export * from "./assumedview.ts";

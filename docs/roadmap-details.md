@@ -273,7 +273,7 @@ curve, Snowshine's ×0.9624 (level, potential and weapon skill levels ruled out)
 **0c14 and the operator curve (2026-11-26, [journal](journal/2026-11-26-06-0c14-and-the-operator-curve-a-teammate-s-attack-on-its-own.md)):**
 half of 0c14's Rossi deficit was the totals counting crit-unknown hits at expected crits where their values show the
 crit (engine assumption `totals-crits` `read`, enginecheck.ts critFromValue); Rossi's attack 4 as a teammate takes
-the kit's not-controlled path (drivers.ts controlPathLandings; 2fd9, 99fb, 0c14). The rest of 0c14 is
+the kit's not-controlled path (paths.ts pathLandings; 2fd9, 99fb, 0c14). The rest of 0c14 is
 Alesh's: her 12.5 s Rare Fin combo the log shows only by its buffs, and her 59.56 s combo's Rare Fin path; and a
 Stagger at its breaking hit (80.48 s). The operators' own combo curve (`combo-operator-hold` `plateau-0.5/0.6/0.7`,
 `flat`) measured worse on the verified logs in every shape: stopped. The 16 tail cuts over the development logs

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, holdChanges, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { defaultReference, hitChanges, holdChanges, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 import { headerUsage, wantsHelp } from "../scripts/usage.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
@@ -113,7 +113,7 @@ describe("measure --hits: the hidden holds that moved", () => {
     const k = "pending/zmdlogs-a.json";
     const { summary, full } = holdChanges([k, "pending/zmdlogs-b.json"], new Map([[k, [u(10000), u(45200)]]]), new Map([[k, [u(10020), u(52100), u(60000)]]]));
     expect(summary).toEqual([
-      "Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s):",
+      "Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s; the bounds that set a moved unit's earliest or latest, where they changed: holds --verbose's pins):",
       `  ${k}: hidden holds 2 → 3 units (1.02 → 1.54 s), 2 placed elsewhere or new or gone`,
       "    unit 2: 45.20 (44.20–46.20) → 52.10 (51.10–53.10) s",
       "    unit 3: - → 60.00 (59.00–61.00) s",
@@ -121,6 +121,15 @@ describe("measure --hits: the hidden holds that moved", () => {
     expect(full).toHaveLength(3);
     expect(holdChanges([k], new Map([[k, [u(1)]]]), new Map([[k, [u(1)]]])).summary[1]).toMatch(/placed as before$/);
     expect(holdChanges([k], new Map(), new Map()).summary).toEqual([]);
+  });
+
+  it("names the bounds that set a moved unit's earliest or latest where they changed (round 15)", () => {
+    const x = { mid: 68500, early: 60000, late: 70000, earlyBy: ["run Wolven Blood final 60.10–65.20"], lateBy: ["tick Combustion 10→20"] };
+    const y = { mid: 98500, early: 90000, late: 100000, earlyBy: ["run Wolven Blood final 60.10–70.20"], lateBy: ["tick Combustion 10→20"] };
+    expect(pinChange(x, y)).toBe("; earliest held back by +run Wolven Blood final 60.10–70.20, −run Wolven Blood final 60.10–65.20");
+    expect(pinChange({ mid: 1, early: 0, late: 2 }, y)).toBe("");
+    const k = "pending/zmdlogs-c4f3.json";
+    expect(holdChanges([k], new Map([[k, [x]]]), new Map([[k, [y]]])).summary[2]).toMatch(/^ {4}unit 1: 68\.50 .* s; earliest held back by \+run Wolven Blood final 60\.10–70\.20/);
   });
 });
 
@@ -218,6 +227,22 @@ describe("measure --split (round 11: which part of a change moved a log)", () =>
   it("says first when the snapshots compared against weren't written by that commit's code", () => {
     expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 0 })).toEqual([]);
     expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 3 })[0]).toMatch(/^Reference: the snapshots at HEAD were written by c6f1874aa's code, and 3 code file\(s\) changed since.*`--base HEAD`/);
+  });
+
+  it("measures the merge base with main as --base when the snapshots aren't its code's own (round 15)", () => {
+    const writer = { commit: "c6f1874aaaaaaa", changed: 51 };
+    expect(defaultReference("HEAD", { ...writer, changed: 0 }, null)).toEqual({ lines: [] });
+    // The branch's own commits since the snapshots: they are the change measured.
+    const own = defaultReference("HEAD", writer, { commit: "4569c99bbbbbbb", changedFromWriter: 0 });
+    expect(own.base).toBeUndefined();
+    expect(own.lines[0]).toMatch(/code's own at the merge base with main \(4569c99bb/);
+    // Main's unmeasured merges: the merge base's code is the reference.
+    const stale = defaultReference("HEAD", writer, { commit: "4569c99bbbbbbb", changedFromWriter: 51 });
+    expect(stale.base).toBe("4569c99bbbbbbb");
+    expect(stale.lines[0]).toMatch(/51 code file\(s\) changed from it to the merge base with main.*--against-snapshots/);
+    // No main branch: the note alone.
+    expect(defaultReference("HEAD", writer, null).lines[0]).toMatch(/^Reference: the snapshots at HEAD were written by/);
+    expect(measureOptions(["--against-snapshots"]).values["against-snapshots"]).toBe(true);
   });
 });
 
