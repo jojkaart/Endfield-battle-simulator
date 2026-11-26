@@ -4,6 +4,7 @@ import type { Build } from "../build.ts";
 import { evalContext } from "../damage.ts";
 import { EngineError } from "../errors.ts";
 import type { GameData, KitHit, KitSkill } from "../model.ts";
+import type { KitTrigger } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { NO_STATUS } from "../status.ts";
 import { type DamageMoments, hitsMoments } from "../moments.ts";
@@ -125,6 +126,8 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     if (!windowOpen(advanced, operator, key, frame)) advanced = { ...advanced, comboWindow: { ...advanced.comboWindow, [key]: { from: frame, until: frame + 1, count: 1 } } };
   }
   const index = advanced.casts.length;
+  // The cast's chance jumps the log decides (opts.chanceJumps): not rolled; a taken one's jump scheduled below.
+  const decided = opts.chanceJumps ? chanceJumpsOf(ctx.kits.get(operator)?.triggers ?? [], skillId).filter((c) => opts.chanceJumps?.[c.trigger] !== undefined).map((c) => ({ ...c, taken: opts.chanceJumps?.[c.trigger] === true })) : [];
   // Inside its operator's own cantCastSkill channel the game couldn't have cut the running cast: its hits and actions
   // stand (dbaee23b801d: a hit of Xaihi's attack 1 placed 0.45 s into her ultimate, whose Amp comes at frame 58).
   // A logged cast after which the previous one's logged hits go on keeps what that one had to come, but the follow-ups its
@@ -138,7 +141,7 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   // it uses up at the cast, its on-cast triggers and follow-ups).
   if (opts.missed) st = { ...st, scheduled: st.scheduled.filter((h) => h.kind !== "hit" || !ofCast(h, operator, index) || h.trigger !== undefined || h.skillId !== skillId) };
   else if (opts.landings?.length) {
-    const landings = controlPathLandings(skill, ofKind(st.scheduled, "jump").filter((j) => !j.end && ofCast(j, operator, index)), opts.landings);
+    const landings = chancePathLandings(skill, decided, controlPathLandings(skill, ofKind(st.scheduled, "jump").filter((j) => !j.end && ofCast(j, operator, index)), opts.landings));
     // The cast's own landings of each kit hit, in frame order: the n-th moves to its logged frame.
     const own = new Map<string, PendingHit[]>();
     for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
@@ -168,6 +171,8 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     // matching it by kit frame).
     const contradicted = ofKind(st.scheduled, "jump").filter((j) => {
       if (j.end || !ofCast(j, operator, index)) return false;
+      // A jump in the part a taken chance jump skips is never reached: the landings past it are that path's.
+      if (decided.some((c) => c.taken && j.frame - frame >= c.at && j.frame - frame < c.to)) return false;
       const target = j.frame + (j.to - j.from);
       const skipped = [...moved.keys()].filter((h) => h.frame >= j.frame && h.frame < target);
       const drop = skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
@@ -183,7 +188,54 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const end: PendingJump = { kind: "jump", frame: opts.endsAt, clock: { operator }, cast: { operator, index }, operator, from: opts.endsAt - frame, to: opts.endsAt - frame, end: true, pinned: true };
     st = schedule(st, [end]);
   }
-  return runTriggers(ctx, st, r.events, r.origin);
+  // A taken chance jump at its trigger's frame (its delay, within the jump's frames), on the cast's clock as the
+  // trigger's delayed action would be; a decided one's trigger doesn't run on the cast (no roll).
+  const takenJumps: PendingJump[] = decided.filter((c) => c.taken).map((c) => ({ kind: "jump", frame: frame + c.at, clock: { operator }, cast: { operator, index }, operator, from: c.at, to: c.to }));
+  if (takenJumps.length) st = schedule(st, takenJumps);
+  const decidedIds = new Set(decided.map((c) => c.trigger));
+  return runTriggers(ctx, st, r.events, r.origin, decidedIds.size ? (t) => !decidedIds.has(t.id) : undefined);
+}
+
+/**
+ * A skill's chance jumps (ReplayCastOptions.chanceJumps): its operator's kit triggers on its own cast of the skill with
+ * a `chance` whose actions are a jump on the skill, each with the skill frame it jumps at (its delay, within the jump's
+ * frames) and to. Alesh's Rare Fin (rare_fin: combo frame 10 → 65, its chance from her Intellect).
+ */
+export function chanceJumpsOf(triggers: readonly KitTrigger[], skillId: string): { readonly trigger: string; readonly at: number; readonly to: number }[] {
+  return triggers.flatMap((t) => {
+    if (t.chance === undefined || t.on.event !== "cast" || t.by !== "self" || !(t.on.skills ?? []).includes(skillId) || t.do.length !== 1) return [];
+    const a = t.do[0];
+    if (a?.kind !== "jump" || a.skill !== skillId) return [];
+    const at = Math.max(t.delay ?? 0, a.from);
+    return at < a.until && a.to > at ? [{ trigger: t.id, at, to: a.to }] : [];
+  });
+}
+
+/**
+ * A replayed cast's logged landings on the path its decided chance jumps took (replayCast, ReplayCastOptions.chanceJumps):
+ * a kit hit in the part a chance jump skips and one with the same keys the jump's length later are one logged hit on either
+ * path (Alesh's combo: hook 22 and slam 38 on the normal path, hook_ex 77 and slam_ex 93 after the Rare Fin jump 10 → 65,
+ * the same frames from the cast's start), so the landings of the two go to the path's hit, in frame order (as
+ * controlPathLandings does for a jump on control). Not when the cast has more such landings than the path's hit lands.
+ */
+function chancePathLandings(skill: KitSkill, decided: readonly { readonly at: number; readonly to: number; readonly taken: boolean }[], landings: NonNullable<ReplayCastOptions["landings"]>): NonNullable<ReplayCastOptions["landings"]> {
+  let out = [...landings];
+  const frames = (h: KitHit) => h.frames ?? [];
+  for (const c of decided) {
+    const skipped = skill.hits.filter((h) => frames(h).length > 0 && frames(h).every((f) => f >= c.at && f < c.to));
+    const by = c.to - c.at;
+    for (const a of skipped) {
+      // Its hit on the other path: the same keys at the same frames from the cast's start (its frames the jump's length later).
+      const b = skill.hits.find((x) => x !== a && frames(x).length === frames(a).length && frames(a).every((f, i) => frames(x)[i] === f + by) && x.events.length === a.events.length && x.events.every((e) => a.events.includes(e)));
+      if (!b) continue;
+      const path = c.taken ? b : a;
+      const mine = out.filter((l) => l.hitId === a.id || l.hitId === b.id).sort((x, y) => x.frame - y.frame);
+      if (mine.every((l) => l.hitId === path.id) || mine.length > frames(path).length) continue;
+      const renamed = new Map(mine.map((l, i) => [l, { ...l, hitId: path.id, nth: i }]));
+      out = out.map((l) => renamed.get(l) ?? l);
+    }
+  }
+  return out;
 }
 
 /**
@@ -276,6 +328,13 @@ export interface ReplayCastOptions {
    * path read off an operator's odd ratio, the jump's drop silent).
    */
   readonly dropped?: (jump: { readonly frame: number; readonly from: number; readonly to: number }, landings: readonly { readonly hitId: string; readonly frame: number }[]) => void;
+  /**
+   * The outcome of the cast's chance jumps the log shows (chanceJumpsOf: by trigger id, taken or not), instead of a
+   * roll: a taken one jumps at its frame, and the logged landings go to its path's hits (chancePathLandings). The log
+   * check reads it from the listing (packages/logs castassembly.ts listedPaths: Alesh's Rare Fin, whose P3 team ATK
+   * the log lists from the slam's landing).
+   */
+  readonly chanceJumps?: Readonly<Record<string, boolean>>;
 }
 
 /** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */

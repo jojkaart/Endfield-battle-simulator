@@ -361,7 +361,7 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
   const last = Math.max(0, ...fx.hits.map((h) => h.t));
   for (const m of run.made) {
     const c = m.c;
-    if (c.cutAt !== undefined || c.missed || c.slot || c.inferred || c.expires || c.beforeLog || c.kind === null || !kinds.has(c.kind) || c.landings.length === 0) continue;
+    if (c.cutAt !== undefined || c.missed || c.slot || c.inferred || c.listed || c.expires || c.beforeLog || c.kind === null || !kinds.has(c.kind) || c.landings.length === 0) continue;
     // Every logged landing of the cast landed as its own (not a cast made as another variant, whose path the log's keys don't follow).
     const refs = new Set(c.landings.map((l) => l.ref));
     if (run.st.hits.filter((h) => h.ref !== undefined && refs.has(h.ref) && h.cast === m.index).length !== refs.size) continue;
@@ -623,8 +623,10 @@ export function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCa
   const flag = castFlag(ctx, st, c, skillId, f);
   // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
   const dropped: JumpDrop[] = [];
-  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}), dropped: (j, landings) => dropped.push({ ...j, landings }) });
-  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(inferred ? { inferred: inferred.why } : {}), ...(dropped.length ? { dropped } : {}) };
+  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}), ...(c.chanceJumps ? { chanceJumps: c.chanceJumps } : {}), dropped: (j, landings) => dropped.push({ ...j, landings }) });
+  // A cast made from the listing alone (castsFromHitBuffs): recorded as an inferred one, its landings dealt nothing.
+  const why = inferred?.why ?? (c.listed ? `a cast the log shows only by a buff its hit alone gives, made (listed-casts inferred): ${c.listed.buff} listed from ${(c.listed.since / 1000).toFixed(2)} s` : undefined);
+  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(why !== undefined ? { inferred: why } : {}), ...(dropped.length ? { dropped } : {}) };
 }
 
 /** What every replay of a fight (replayOnce) reads that its passes share: the fight, the options, the log's Stagger steps and crits. */

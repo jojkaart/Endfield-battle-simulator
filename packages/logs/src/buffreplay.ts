@@ -291,7 +291,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   for (const kit of kits) {
     for (const def of kit.buffs) {
       if (!def.gameBuff || !listed.has(def.gameBuff) || def.consumedBy || def.link) continue;
-      const why = undecidedBuff(kit, def.id);
+      const why = undecidedBuff(kit, def.id, 0, listed);
       if (why) undecided.set(def.gameBuff, `${kit.operator} ${why}`);
       else decided.set(def.gameBuff, [...(decided.get(def.gameBuff) ?? []), `${kit.operator}:${def.id}`]);
     }
@@ -305,7 +305,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const allListed = new Set(fx.hits.flatMap((h) => h.effects.map((e) => e.buff)));
   for (const kit of kits) for (const def of kit.buffs) {
     if (!kit.buffs.some((d) => d.gameBuff !== undefined && allListed.has(d.gameBuff))) continue;
-    const why = undecidedBuff(kit, def.id);
+    const why = undecidedBuff(kit, def.id, 0, listed);
     if (why) unjudgedKitBuffs.set(`${kit.operator}:${def.id}`, why);
   }
   const failed: { cast: ReplayedCast; error: string }[] = [];
@@ -318,7 +318,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const kitIds = [...decided].flatMap(([g, defs]) => defs.map((d) => ({ g, owner: d.split(":", 2)[0] as string, id: d.split(":", 2)[1] as string })));
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
-  const assembled = assembleCasts(data, fx, placement, kits);
+  const assembled = assembleCasts(data, fx, placement, kits, opts.assume);
   const control = controlledFromLog(placement, assembled);
   const stagger = loggedStagger(fx);
   const logged = control?.casts ?? assembled;

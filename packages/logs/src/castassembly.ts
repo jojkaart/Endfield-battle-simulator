@@ -5,7 +5,7 @@
 // controlled (controlledFromLog, controlSwaps), each logged cast event's fate (loggedCastFates) and the stops the
 // replay's casts hold (replayedCastStops). Split from buffreplay.ts (improvement round 14).
 
-import { allActions, applyBuff, computeStats, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitTrigger, type OperatorKit, type Predicate, type SkillType } from "@efsim/engine";
+import { allActions, applyBuff, chanceJumpsOf, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type Predicate, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
@@ -80,6 +80,138 @@ export interface ReplayedCast extends LoggedCast {
   readonly beforeLog?: true;
   /** The frame it ends at, its later landings none of them logged (tailCuts, engine assumption unlogged-tails `cut`). */
   readonly cutAt?: number;
+  /**
+   * The outcome of its chance jumps the log's listing shows (by trigger id; replayCast chanceJumps): listedPaths, or
+   * the path of a cast made from the listing (castsFromHitBuffs).
+   */
+  readonly chanceJumps?: Readonly<Record<string, boolean>>;
+  /**
+   * A cast the log shows only by a buff one of its hits alone gives (castsFromHitBuffs, engine assumption listed-casts
+   * `inferred`): the game buff and the `since` (ms) of the run it starts. Its own landings stand for no damage the log
+   * shows (the totals leave them out, as an inferred press's).
+   */
+  readonly listed?: { readonly buff: string; readonly since: number };
+}
+
+/** How close (ms) a listed run's `since` is to a landing for that landing to have started it (listedPaths, castsFromHitBuffs): a frame. */
+const LISTED_SINCE_MS = 1000 / FPS + 1;
+/** How long after a landing the log's hits must list a buff it gives for the listing to say it didn't (listedPaths; ms): 0c14's 122.85 s slam, the last hit for 1.7 s. */
+const LISTED_AFTER_MS = 3000;
+
+/** The game buffs a kit hit's own buffs stand for (BuffApplication: their kit buffs' logged names). */
+function hitGameBuffs(kit: OperatorKit, hit: KitHit): string[] {
+  return (hit.buffs ?? []).flatMap((b) => {
+    const def = kit.buffs.find((d) => d.id === b.buff);
+    return def ? loggedNames(def) : [];
+  });
+}
+
+/** Whether kit hit `b` is `a` on a chance jump's path: the same keys, its frames `by` (the jump's length) later. */
+function sameFromStart(a: KitHit, b: KitHit, by: number): boolean {
+  const fa = a.frames ?? [];
+  const fb = b.frames ?? [];
+  return fa.length > 0 && fa.length === fb.length && fa.every((f, i) => fb[i] === f + by) && a.events.length === b.events.length && a.events.every((e) => b.events.includes(e));
+}
+
+/**
+ * The hits of a skill's chance jumps' paths (chanceJumpsOf) and their buffs' game buffs: for each chance jump, the kit
+ * hits past its target that apply a buff the log can list, each with the hit it stands for on the path not jumped (the
+ * same keys in the part the jump skips: Alesh's slam_ex for slam), if any.
+ */
+function chancePathHits(kit: OperatorKit, skillId: string): { readonly trigger: string; readonly at: number; readonly to: number; readonly hit: KitHit; readonly other: KitHit | undefined; readonly buffs: readonly string[] }[] {
+  const skill = kit.skills.find((s) => s.skillId === skillId);
+  if (!skill) return [];
+  const frames = (h: KitHit) => h.frames ?? [];
+  return chanceJumpsOf(kit.triggers, skillId).flatMap((c) =>
+    skill.hits.flatMap((hit) => {
+      const buffs = hitGameBuffs(kit, hit);
+      if (!buffs.length || !frames(hit).length || !frames(hit).every((f) => f >= c.to)) return [];
+      const other = skill.hits.find((x) => x !== hit && sameFromStart(x, hit, c.to - c.at));
+      return [{ ...c, hit, other, buffs }];
+    }),
+  );
+}
+
+/**
+ * The chance jumps of the replay's casts that the log's listing decides (ReplayedCast.chanceJumps): a jump whose path
+ * has a hit applying a buff the log lists (chancePathHits) was taken where a run of that buff starts at the hit's logged
+ * landing (its `since` within a frame of it), and not where the log lists the buff somewhere in the fight but none of
+ * its hits in LISTED_AFTER_MS after the landing does (a running one, refreshed or not, leaves it to the roll). Alesh's
+ * Rare Fin (2026-11-26): her P3 team ATK, which only the Rare Fin's slam gives, is listed from exactly the slam's
+ * logged ms in every development log (0c14 60.13 s, 4e36 20.33 and 32.92 s, a9d7 12.52, 39.82 and 61.52 s), where
+ * the hits' values are ×1.5–1.6 the normal path's; the replay had rolled the path (0c14 199.57 s: a Rare Fin hook the
+ * log hasn't), and the placement matches either path's hits by their frames, the same from the cast's start.
+ */
+export function listedPaths(kits: readonly OperatorKit[], fx: Pick<LogFixture, "hits">, casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const listedAnywhere = new Set(fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects].map((e) => e.buff)));
+  return casts.map((c) => {
+    if (c.chanceJumps || c.landings.length === 0) return c;
+    const kit = kits.find((k) => k.operator === c.operator);
+    const paths = kit ? chancePathHits(kit, c.skillId) : [];
+    const out: Record<string, boolean> = {};
+    for (const p of paths) {
+      if (out[p.trigger] !== undefined) continue;
+      const landing = c.landings.find((l) => l.hitId === p.hit.id || l.hitId === p.other?.id);
+      const names = p.buffs.filter((g) => listedAnywhere.has(g));
+      if (!landing || !names.length) continue;
+      const m = landing.ms;
+      const listings = fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects].filter((e) => names.includes(e.buff)).map((e) => ({ t: h.t, since: e.since })));
+      if (listings.some((e) => e.since !== undefined && Math.abs(e.since - m) <= LISTED_SINCE_MS)) out[p.trigger] = true;
+      else if (!listings.some((e) => e.t > m && e.t <= m + LISTED_AFTER_MS) && fx.hits.some((h) => h.t > m && h.t <= m + LISTED_AFTER_MS)) out[p.trigger] = false;
+    }
+    return Object.keys(out).length ? { ...c, chanceJumps: out } : c;
+  });
+}
+
+/**
+ * Casts the log shows only by a buff one of their hits alone gives (engine assumption listed-casts `inferred`): a game
+ * buff the log lists that exactly one kit hit of the team applies (no trigger, no other hit), whose run starts (its
+ * `since`) where no replayed cast of that hit's skill could have landed it, gets a cast of the skill timed so the hit
+ * lands at the run's start (its kit frame on the path that has it: a chance jump's path is then the cast's,
+ * ReplayedCast.chanceJumps), when the operator has no logged hit from the cast's start to the hit and it starts within
+ * the fight. pending/zmdlogs-0c14fb3ce77d.json (2026-11-26): Alesh's P3 team ATK, which only her combo's Rare Fin slam
+ * gives, listed from 13.25 s with no hit or cast event of her combo near; the Rare Fin hook's natural SP then gives the
+ * second Thermite Cutter layer the log lists from 12.71 s (16 frames before: hook_ex 77, slam_ex 93), and her combo
+ * window was open (the Endministrator's Originium Crystals consumed at 11.23 s).
+ */
+export function castsFromHitBuffs(kits: readonly OperatorKit[], fx: Pick<LogFixture, "hits">, casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const givers = new Map<string, { kit: OperatorKit; skillId: string; hit: KitHit }[]>();
+  const byTrigger = new Set<string>();
+  for (const kit of kits) {
+    for (const e of kitHitEntries(kit)) for (const g of hitGameBuffs(kit, e.hit)) givers.set(g, [...(givers.get(g) ?? []), { kit, skillId: e.skillId, hit: e.hit }]);
+    for (const t of kit.triggers) for (const a of allActions(t.do)) {
+      const def = a.kind === "buff" ? kit.buffs.find((b) => b.id === a.buff) : undefined;
+      if (def) for (const g of loggedNames(def)) byTrigger.add(g);
+    }
+  }
+  const added: ReplayedCast[] = [];
+  for (const [g, list] of givers) {
+    const giver = list[0];
+    if (list.length !== 1 || !giver || byTrigger.has(g)) continue;
+    const { kit, skillId, hit } = giver;
+    const skill = kit.skills.find((s) => s.skillId === skillId);
+    const kitFrame = hit.frames?.[0];
+    if (!skill || skill.followUpOnly || kitFrame === undefined || (hit.frames?.length ?? 0) !== 1) continue;
+    // Its frame from the cast's start on the path that has it (a chance jump skips to it).
+    const path = chancePathHits(kit, skillId).find((p) => p.hit === hit);
+    const frame = path ? kitFrame - (path.to - path.at) : kitFrame;
+    const sinces = [...new Set(fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects].flatMap((e) => (e.buff === g && e.since !== undefined ? [e.since] : []))))].sort((a, b) => a - b);
+    for (const since of sinces) {
+      const start = Math.round(since - (frame * 1000) / FPS);
+      if (start < 0) continue;
+      // A cast of the skill that could have landed it: one starting from the logged cast window before the run to it.
+      if ([...casts, ...added].some((c) => c.operator === kit.operator && c.skillId === skillId && c.start <= since + LISTED_SINCE_MS && c.start >= start - LOGGED_CAST_MS)) continue;
+      // The operator busy with another cast then (a logged hit of its own between the cast's start and the hit).
+      if (fx.hits.some((h) => h.operator === kit.operator && h.t >= start && h.t <= since)) continue;
+      // The hit at the run's start, and the path's hits before it at their kit frames before that (the cast's own clock
+      // ran as its kit says between them: 0c14's Thermite and P3 `since`s 16 frames apart, as hook_ex 77 and slam_ex 93,
+      // inside Si's combo stop), pinned: they stand for no logged hit (`listed:` refs match none).
+      const before = path ? skill.hits.filter((h) => h.frames?.length === 1 && (h.frames[0] as number) >= path.to && (h.frames[0] as number) <= kitFrame) : [hit];
+      const landings = before.map((h, i) => ({ hitId: h.id, nth: 0, frame: frameOf(since) - (kitFrame - (h.frames?.[0] as number)), ref: `listed:${i}`, ms: since - ((kitFrame - (h.frames?.[0] as number)) * 1000) / FPS }));
+      added.push({ operator: kit.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings, listed: { buff: g, since }, ...(path ? { chanceJumps: { [path.trigger]: true } } : {}) });
+    }
+  }
+  return added.length ? ordered([...casts, ...added]) : [...casts];
 }
 
 /** How far from a placed cast's start a logged cast event of its skill may be to be that cast (ms). */
@@ -600,7 +732,7 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
         return f === undefined ? [] : [f];
       });
       const { stops, resets } = skillStops(data, skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId, kind: c.kind }, landed);
-      return [{ stops: stops.map((s) => ({ ...s, placed: c.landings.length > 0 })), resets }];
+      return [{ stops: stops.map((s) => ({ ...s, placed: c.landings.length > 0 && !c.listed })), resets }];
     }),
   );
 }
@@ -611,10 +743,13 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
  * hits, buff ends and exits (castsFromBuffLanes, castsFromTriggerHits, castsFromBuffEnds, exitPresses), and the presses
  * that pull a buff (pullingPresses).
  */
-export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[]): ReplayedCast[] {
+export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> = {}): ReplayedCast[] {
   if (kits.length === 0) return [];
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  return castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement)))))))));
+  // Engine assumption listed-casts: with `inferred`, the casts the log shows only by a buff one of their hits alone gives.
+  const listedCasts = (assume["listed-casts"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "listed-casts")?.default) === "inferred";
+  const paths = listedPaths(kits, fx, castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement))))))))));
+  return listedCasts ? castsFromHitBuffs(kits, fx, paths) : paths;
 }
 
 /**
