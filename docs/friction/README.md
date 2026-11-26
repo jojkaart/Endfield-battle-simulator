@@ -53,6 +53,8 @@ Task: one or two sentences on what the agent was asked to do, and its branch.
 - **Cause:** the structural reason (design, layout, missing tool, stale or
   scattered docs, slow feedback, ...), not just the symptom.
 - **Suggestion:** the change, specific enough to implement (where, what).
+- **Files:** the files the suggestion touches (round 13: a lead splitting a
+  round beside another agent sorts the points by this line).
 - **Why it helps:** what it saves future agents, and any risk or cost.
 
 ## 2. ...
@@ -70,7 +72,8 @@ in one line. No player names, account IDs or private data.
 > Before you finish: write a friction report as `docs/friction/YYYY-MM-DD-<slug>.md`
 > on your branch and commit it (format: docs/friction/README.md on main; in
 > short, per problem: what happened, cause, suggestion, why it helps, complete
-> enough that reading the report alone is enough). Cover structural problems
+> enough that reading the report alone is enough; a **Files:** line per point
+> names the files its suggestion touches). Cover structural problems
 > in the code design, repository, docs or tools that slowed you down or caused
 > mistakes, and how to make future agents' work easier. Only real friction you
 > hit, most costly first; then a short "what worked well".

@@ -3,7 +3,9 @@
 // engine (logcheck.ts the orchestration and verdicts, enginecheck.ts the engine's readings, buffreplay.ts the replay of
 // the logged casts, logcasts.ts, logeffects.ts, reactioncheck.ts, recordedburst.ts, hitvalues.ts), the per-hit export
 // (hitexport.ts) and the buff timing report (bufftiming.ts). The CLI's `efsim zmdlogs` commands are thin wrappers
-// (packages/cli/src/commands/zmdlogs.ts); @efsim/cli re-exports this package for older imports.
+// (packages/cli/src/commands/zmdlogs.ts); @efsim/cli re-exports this package for older imports. Every module is
+// re-exported whole, so exported names are one namespace across the package: a view's types carry the view's name
+// (clockview.ts ClockRow, clocksview.ts PaceRow), or the build fails with TS2308.
 export * from "./assumptions.ts";
 export * from "./zmdlogs.ts";
 export * from "./logs.ts";
