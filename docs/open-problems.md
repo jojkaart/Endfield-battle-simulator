@@ -514,7 +514,8 @@ operators' casts across combos only (76 within 0.4 s) 140 ms a combo, rms 149 ms
 600 ms held); the enemy's tick chains 57 ms a combo (rms 117) against 0.190 × held (rms 112; none 153), Arcane's
 9-frame combo (177, 12, 105 ms) as late as Si's 24-frame one (164). So the logs can't tell a per-edge delay from a
 share, but one delay on the world's clock is ruled out: it would hold the enemy's ticks and the operators' landings
-alike, and they differ by ×2.5 (about 1.7 frames a combo against 4.2). **Still possible:** two delays, the
+alike, and they differ by ×2.5 (about 1.7 frames a combo against 4.2; `zmdlogs clocks --all`, round 13, gives the
+shares as Σ residual ÷ Σ held: 0.23 tick chains, 0.40 casts, 0.33 bursts). **Still possible:** two delays, the
 operators' own clock resuming later than the world's at a combo's end (their animation's cut-in); not built
 (`stagger-holds` stays off). **Next check:** whether the operators' excess sits at the combo's end (their first
 landing after it late, their last before it on time) against its start, from casts.ts --rows split by where the
