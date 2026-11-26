@@ -914,7 +914,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // Zhuang Fangyi's attack 4 at 98.59 s, cut after two range ticks, took attack 2's at 106.11 s, whose swords at that
         // ms had opened attack 2; attack 4 lasts 170 frames).
         const onItsWay = next !== undefined && next.hits.some((x) => x.detached || x.launch !== undefined);
-        const rekeyed = onItsWay && !onTime && [...opened.values()].flat().some((c) => since(c) && candidates.some((g) => g.id === c.group));
+        // Only one later than its frame by CAST_SLACK_MS: a projectile from the cast before lands after the next cast's
+        // start (Yvonne's ultimate shots, 5082ceaffad1 42.44 s, abfd4b7478ec 35.99 s).
+        const overdue = next !== undefined && head !== undefined && elapsed > msOf(next.frame - head.frame) + CAST_SLACK_MS;
+        const rekeyed = onItsWay && overdue && [...opened.values()].flat().some((c) => since(c) && candidates.some((g) => g.id === c.group));
         const superseded = rekeyed || (cur !== undefined && next !== undefined && !onTime && !onItsWay && [...opened.values()].flat().some(since));
         const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
         // A variant's slot may never come (variantOrder): a logged press of a skill of the cast's kind since its first
