@@ -274,7 +274,20 @@ export function purgedByLog(st: TimelineState, frame: number, purges: readonly n
     changed = true;
     return { ...b, expiresAt: p, pinned: true as const };
   });
-  return changed ? { ...st, buffs } : st;
+  // Its statuses, inflictions, Vulnerable stacks and controls go with them (6339 at 29.38 s: the Heat inflictions the
+  // replay had built made an Arts Burst at 29.40 s the log hasn't, and its Solemn Phalanx line on every hit after).
+  const end = <T extends { readonly expiresAt: number }>(x: T): T => {
+    const p = due.find((y) => x.expiresAt > y);
+    if (p === undefined) return x;
+    changed = true;
+    return { ...x, expiresAt: p };
+  };
+  const e = st.enemy;
+  const enemy = { ...e, vulnerable: e.vulnerable && end(e.vulnerable), infliction: e.infliction && end(e.infliction), physical: e.physical.map(end), controls: e.controls.map(end), statuses: e.statuses.map(end) };
+  // An Arts Burst on its way from inflictions the purge cleared doesn't come.
+  const scheduled = st.scheduled.filter((x) => !(x.kind === "burst" && due.some((p) => x.frame >= p)));
+  if (scheduled.length !== st.scheduled.length) changed = true;
+  return changed ? { ...st, buffs, enemy, scheduled } : st;
 }
 
 /**
