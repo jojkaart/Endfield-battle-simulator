@@ -219,6 +219,64 @@ export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
   return { runs: out, hits, decided: new Map(), why: new Map() };
 }
 
+/** The fewest of the team's runs on the enemy that end at one logged moment for the log to show a purge (loggedPurges). */
+export const PURGE_MIN_RUNS = 3;
+
+/** The longest wait (ms) from a purge's moment to the log's next one (loggedPurges): a longer gap is an away stretch. */
+export const PURGE_GAP_MS = 1500;
+
+/**
+ * The frames at which the log shows the enemy's debuffs cleared at once (engine assumption logged-purges, reading
+ * `log`): a logged moment after which none of the team's runs on the enemy (game buffs in an enemy-side zone,
+ * TARGET_SIDE_ZONES, one run per buff, source and since) listed there is ever listed again, at least PURGE_MIN_RUNS of
+ * them from at least two operators, with the next logged moment within PURGE_GAP_MS. Its frame is the one after the
+ * moment's. Hard 33's slug (eny_0129_slwood_hdg033) does it at its phase changes: pending/zmdlogs-63398339803e.json
+ * at 10.35 s (Jade Vessel, Arcane's Tactical Doubles Susceptibility and her weapon's two lines, none listed from 10.91
+ * s; every hit after 11.27 s reads exactly with the log's listing and ×1.40 low with the replay's) and at 29.38 s
+ * (Camille's Susceptibility, Arcane's: her Doubles one gone before Si's combo final at 29.57 s). No kit's rule ends
+ * them; a purge ends every enemy-side kit buff on (purgedByLog).
+ */
+export function loggedPurges(fx: Pick<LogFixture, "hits" | "team">): number[] {
+  const team = new Set(fx.team.map((b) => b.operator));
+  const runs = new Map<string, { source: string; first: number; last: number }>();
+  for (const h of fx.hits) {
+    // A boundary effect at the run's start says nothing of its end; one at its end is the end itself (loggedLaneEnds).
+    for (const e of [...h.effects, ...h.boundaryEffects.filter((x) => x.since !== h.t)]) {
+      if (e.source === undefined || !team.has(e.source) || !TARGET_SIDE_ZONES.has(e.zone)) continue;
+      const key = `${e.buff}|${e.source}|${e.since ?? ""}`;
+      const r = runs.get(key);
+      runs.set(key, r ? { ...r, first: Math.min(r.first, h.t), last: Math.max(r.last, h.t) } : { source: e.source, first: h.t, last: h.t });
+    }
+  }
+  const moments = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
+  const out: number[] = [];
+  for (const [i, t] of moments.entries()) {
+    const next = moments[i + 1];
+    if (next === undefined || next - t > PURGE_GAP_MS) continue;
+    const listed = [...runs.values()].filter((r) => r.first <= t && r.last >= t);
+    if (listed.length < PURGE_MIN_RUNS || listed.some((r) => r.last > t) || new Set(listed.map((r) => r.source)).size < 2) continue;
+    out.push(frameOf(t) + 1);
+  }
+  return out;
+}
+
+/**
+ * The state with every enemy-side kit buff on at a purge the log shows (loggedPurges) inside (st.frame, `frame`]
+ * ended there (pinned: the log's time holds every stop up to it). Its triggers on ending run as on any end.
+ */
+export function purgedByLog(st: TimelineState, frame: number, purges: readonly number[]): TimelineState {
+  const due = purges.filter((p) => p > st.frame && p <= frame);
+  if (due.length === 0) return st;
+  let changed = false;
+  const buffs = st.buffs.map((b) => {
+    const p = due.find((x) => b.target === "enemy" && b.cast === undefined && b.appliedAt < x && b.expiresAt > x);
+    if (p === undefined) return b;
+    changed = true;
+    return { ...b, expiresAt: p, pinned: true as const };
+  });
+  return changed ? { ...st, buffs } : st;
+}
+
 /**
  * How much of a buff's own life (frames from its application to its expiry) the hidden holds may add (hidden-holds
  * `log`). An interim bound from the development logs (scratch measurement, 2026-11-22, docs/open-problems.md "The buff

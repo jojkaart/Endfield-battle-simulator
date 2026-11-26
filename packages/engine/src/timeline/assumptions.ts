@@ -161,6 +161,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "logged-purges",
+    question: "Does the enemy shed the team's debuffs at once where the log shows them all gone together (a stage's phase change)? No kit rule ends them there. Read only by the log check's replay (packages/logs holdinputs.ts loggedPurges, purgedByLog).",
+    default: "log",
+    readings: {
+      none: "no: each debuff runs to its own end (the replay until 2026-11-26)",
+      log: "yes: at a logged moment after which none of the team's runs on the enemy listed there is listed again (at least 3 runs, from two operators or more, the next logged moment within 1.5 s), every enemy-side kit buff on ends. Hard 33's slug, pending/zmdlogs-63398339803e.json at 10.35 s and 29.38 s (Jade Vessel, Camille's and Arcane's Susceptibilities, Arcane's weapon lines: the hits after 11.27 s read exactly with the log's listing); among the development logs also pending/zmdlogs-3aa6ab93bad4.json at 25.42 s, where the replay had ended those three already",
+    },
+  },
+  {
     id: "hitless-presses",
     question: "Is a logged press of a skill whose hits the log shows elsewhere, but none of its own this time, made (the enemy there, not an away stretch's `unseen` press)? The press may have done nothing (a variant the slot held, a press the game dropped), or landed without its damage being logged. Read only by the log check's replay (packages/logs replayrun.ts inferredPress).",
     default: "inferred",
