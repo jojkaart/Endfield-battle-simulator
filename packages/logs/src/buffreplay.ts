@@ -16,7 +16,7 @@ import {
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
-import { awayWindows, loggedNames } from "./enginecheck.ts";
+import { awayWindows, enemyAwaySpans, lastLifeKilled, loggedNames } from "./enginecheck.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { loggedStagger, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
@@ -355,6 +355,12 @@ export interface BuffReplay {
   /** The logged casts the replay didn't make, and why (a tick, a slot's variant, its energy or state, …): SKIP lines. */
   readonly skipped: readonly SkippedCast[];
   /**
+   * Presses the log shows no hit of that the replay made from the listing (engine assumption hitless-presses
+   * `inferred`: inferredPress), by their index in the timeline's casts, and why: their own landings stand for no damage
+   * the game dealt (the log would show it), so the totals leave them out.
+   */
+  readonly inferred: ReadonlyMap<number, string>;
+  /**
    * Where the crit the replay gave a logged hit's landing comes from (CritSource): the log's flag, or, where the log
    * gives none, which inference made it a logged crit (shownCrits, layerCrits, valueCrits), else none (the landing
    * doesn't crit in the replay the check reads).
@@ -537,7 +543,7 @@ function loggedEnemyHp(data: GameData, fx: LogFixture, reading: string): Timelin
   const total = hits.reduce((s, h) => s + h.value, 0);
   const last = (hits.at(-1) as LogHit).t;
   const capped = hits.some((h) => h.t === last && h.uncapped !== undefined && h.uncapped > h.value);
-  if (Math.abs(total / max - 1) > 1e-3 && (reading !== "kill" || !capped)) return undefined;
+  if (Math.abs(total / max - 1) > 1e-3 && (reading !== "kill" || !(capped || lastLifeKilled(data, fx)))) return undefined;
   // Each life's first dealt damage (as a sum of the hits before it): an away stretch that starts once the damage has
   // reached j × Max HP, within the fight's excess over its whole lives (under 10% of Max HP).
   const lives = Math.floor(total / max + 1e-3);
@@ -609,6 +615,11 @@ export interface ReplayedCast extends LoggedCast {
   readonly unseen?: true;
   /** An unseen slot press before the log's first hit (no hit of anyone yet): an ultimate then skips the energy check. */
   readonly beforeHits?: true;
+  /**
+   * A slot press the log shows no hit of that a first replay made as its skill by the log's listing (inferredPress,
+   * engine assumption hitless-presses `inferred`): pullingPresses counts it as a landed cast of its skill.
+   */
+  readonly inferred?: true;
   /**
    * No cast: the logged end of `whileBuff`'s buff is its expiry, which the replay's clock has later (castsFromBuffEnds:
    * the logged hit's trigger branch rules out the cast that ends it). Made by ending the buff then (it expires at the
@@ -875,7 +886,7 @@ export function pullingPresses(kits: readonly OperatorKit[], placement: Placemen
         if (branches.length && branches.every((x) => x.if !== undefined && "not" in x.if && neededBuffs(x.if.not).some((b) => pulled.includes(b)))) noPull.push(pc.start);
       }
       const own = casts.flatMap((c, i) => (c.operator === kit.operator ? [{ c, i }] : []));
-      const starts = own.filter(({ c }) => appliers.has(c.skillId) && c.landings.length > 0);
+      const starts = own.filter(({ c }) => appliers.has(c.skillId) && (c.landings.length > 0 || c.inferred === true));
       for (const [k, { c }] of starts.entries()) {
         const next = starts[k + 1]?.c;
         if (noPull.some((t) => t > c.lastHit && t <= (next?.lastHit ?? Infinity))) continue;
@@ -1921,6 +1932,49 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
   return made(c.skillId);
 }
 
+/** How soon after a hitless press's landing the log's next hit must come for its listing to show what the press gave (ms; inferredPress). */
+const INFERRED_PRESS_MS = 1500;
+
+/** What inferredPress reads of the fight: its hits in time order and the kit buffs standing for the decided game buffs. */
+interface PressEvidence {
+  readonly hits: readonly LogHit[];
+  readonly kitIds: readonly { readonly g: string; readonly owner: string; readonly id: string }[];
+}
+
+/**
+ * A slot press the log shows no hit of (replayedSkill's skip), made after all when the log shows what only its hit
+ * gives (2026-11-26): pending/zmdlogs-0c14fb3ce77d.json, Si's battle skill pressed at 153.99 s, its hit unlogged, yet
+ * Jade Vessel's enemy_vul (from her battle skill's Immobilization alone) starts a new run on the next logged hit,
+ * 155.79 s, and her Artful Intent ends at the log's 181.00 s. Made only when all of these hold, so it never makes a
+ * press the log doesn't support: the log has the press's own cast event (a slot press, not `unseen`: the enemy was there,
+ * not one the kit or the slot reads as another skill); its skill can start then; the first logged hit after its
+ * landing comes within INFERRED_PRESS_MS; that hit lists a run of a decided game buff that starts after the hit before
+ * the landing; and the replay with the press has an instance of its kit buff applied between the press and that hit,
+ * the replay without it none. Null: not made so.
+ */
+function inferredPress(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number, ev: PressEvidence): { readonly skill: string; readonly why: string } | null {
+  if (!c.slot || c.leadsTo || c.unseen || c.as || c.shows?.length || c.missed) return null;
+  const skill = ctx.kits.get(c.operator)?.skills.find((k) => k.skillId === c.skillId);
+  const first = Math.min(...(skill?.hits ?? []).flatMap((h) => loggedFrames(h) ?? []));
+  if (!skill || !Number.isFinite(first) || !skillAvailable(ctx, st, c.operator, c.skillId, f)) return null;
+  const r = earliestStart(ctx, st, { operator: c.operator, skill: c.skillId });
+  if ("error" in r || r.frame > f + 1) return null;
+  const landsAt = ((f + first) * 1000) / FPS;
+  const next = ev.hits.find((h) => h.t >= landsAt);
+  if (!next || next.t - landsAt > INFERRED_PRESS_MS) return null;
+  const before = ev.hits.filter((h) => h.t < landsAt).at(-1);
+  const listedBefore = new Set(before ? [...before.effects, ...before.boundaryEffects].map((e) => `${e.buff}|${e.since ?? ""}`) : []);
+  const fresh = new Set([...next.effects, ...next.boundaryEffects].filter((e) => !listedBefore.has(`${e.buff}|${e.since ?? ""}`) && (e.since === undefined || e.since > (before?.t ?? -Infinity))).map((e) => e.buff));
+  const candidates = ev.kitIds.filter((k) => fresh.has(k.g));
+  if (!candidates.length) return null;
+  const to = frameOf(next.t);
+  const withIt = advance(ctx, replayCast(ctx, st, c.operator, c.skillId, f, { keepPrevious: true }), to);
+  const without = advance(ctx, st, to);
+  const gave = (x: TimelineState, k: { owner: string; id: string }) => x.buffs.some((b) => b.owner === k.owner && b.id === k.id && b.appliedAt >= f && b.appliedAt <= to);
+  const shown = candidates.find((k) => gave(withIt, k) && !gave(without, k));
+  return shown ? { skill: c.skillId, why: `a press the log shows no hit of, made: the log's next hit after its landing (${(next.t / 1000).toFixed(2)} s) starts a run of ${shown.g}, which only this press gives (${shown.owner}:${shown.id})` } : null;
+}
+
 /**
  * The step a cast that hit nothing is (ReplayedCast.missed): the operator's next basic-attack step the kit allows at the
  * frame by its state and timing (the chain's next steps first, then any of its basic attacks in kit order; not a
@@ -2158,7 +2212,7 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
  * REPLAY_EDGE_MS either side of it.
  */
 /** A logged cast as one replay made it (replayOnce): its frame, skill, the states either side, and what it found. */
-type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
+type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string };
 /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */
 type Need = { c: ReplayedCast; f: number };
 
@@ -2166,7 +2220,7 @@ type Need = { c: ReplayedCast; f: number };
  * One cast made at `f` (the state not yet advanced to it): the state after it, the skill it was made as (null: none,
  * a tick or a press the slot doesn't make), the state before it and the combo window count it found.
  */
-function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: number, list: readonly ReplayedCast[]) {
+function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: number, list: readonly ReplayedCast[], ev?: PressEvidence) {
   let st = advance(ctx, withoutFollowUps(ctx, st0, list, f), f);
   const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
   const pre = st;
@@ -2174,13 +2228,16 @@ function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: 
   if (tick) return { st: tick, skillId: null, pre, windowCount, why: "a tick of a kit buff (KitBuff.ticksLoggedAs): the buff's tick moved to the event" };
   if (!c.missed && endedWithTick(ctx, st0, c, f)) return { st, skillId: null, pre, windowCount, why: "a tick of a kit buff (KitBuff.ticksLoggedAs) that ended on this very frame: its last tick" };
   if (c.expires) return { st: expiredAt(st, c, f), skillId: null, pre, windowCount, why: "not a cast: the log's end of its buff (ReplayedCast.expires)" };
-  const chosen = c.missed ? { skill: missedStep(ctx, st, c.operator, f), why: "no basic-attack step the kit allows then (a cast that hits nothing)" } : replayedSkill(ctx, st, c, f);
+  let chosen: { readonly skill: string | null; readonly why?: string } = c.missed ? { skill: missedStep(ctx, st, c.operator, f), why: "no basic-attack step the kit allows then (a cast that hits nothing)" } : replayedSkill(ctx, st, c, f);
+  // A hitless press the log's listing shows (engine assumption hitless-presses `inferred`).
+  const inferred = chosen.skill === null && ev ? inferredPress(ctx, st, c, f, ev) : null;
+  if (inferred) chosen = inferred;
   const skillId = chosen.skill;
   if (skillId === null) return { st, skillId, pre, windowCount, ...(chosen.why !== undefined ? { why: chosen.why } : {}) };
   const flag = castFlag(ctx, st, c, skillId, f);
   // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
   st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}) });
-  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}) };
+  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(inferred ? { inferred: inferred.why } : {}) };
 }
 
 /** What every replay of a fight (replayOnce) reads that its passes share: the fight, the options, the log's Stagger steps and crits. */
@@ -2200,6 +2257,8 @@ interface ReplayInput {
   /** The crits the log leaves out that the replay takes as logged, by hit index (shownCrits, layerCrits, valueCrits). */
   readonly crits: ReadonlyMap<number, boolean>;
   readonly stagger: LoggedStagger;
+  /** The logged hits in time order. */
+  readonly hitsInOrder: readonly LogHit[];
 }
 
 /**
@@ -2256,6 +2315,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   let brokenAt: number | null = null;
   const firstBasic = control ? { operator: control.first } : list.find((c) => c.kind === "basic");
   const enemyHp = loggedEnemyHp(data, fx, opts.assume?.["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
+  const enemyAway = enemyAwaySpans(fx, opts.assume?.["enemy-away"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-away")?.default);
   const scenario: TimelineScenario = {
     team: fx.team,
     target: { enemy: fx.enemy.id, level: fx.enemy.level },
@@ -2264,6 +2324,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
     options: { crit, ...(opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {}) },
     ...(firstBasic ? { controlled: firstBasic.operator } : {}),
     ...(enemyHp?.length ? { enemyHp } : {}),
+    ...(enemyAway.length ? { enemyAway } : {}),
     // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.
     // Crits the log leaves out but a trigger on crits shows by its logged hits (shownCrits), by the layers it adds
     // (layerCrits) or the hits' values show (valueCrits) count as logged.
@@ -2278,6 +2339,8 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
     ...(opts.reactionLevels?.length ? { loggedReactionLevels: opts.reactionLevels } : {}),
   };
   const ctx = createContext(data, scenario);
+  // Engine assumption hitless-presses: with `inferred`, a press the log shows no hit of is made where its listing shows what only it gives.
+  const pressEvidence: PressEvidence | undefined = (opts.assume?.["hitless-presses"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "hitless-presses")?.default) === "inferred" ? { hits: input.hitsInOrder, kitIds: input.kitIds } : undefined;
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });
@@ -2301,7 +2364,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
       const c = s.cast;
       try {
         const f = Math.max(s.frame, st.frame);
-        const r = makeCast(ctx, st, c, f, list);
+        const r = makeCast(ctx, st, c, f, list, pressEvidence);
         if (crit === "never" && unmet(ctx, r.pre, c, f)) needs.push({ c, f });
         if ("flag" in r && r.flag) flags.push(r.flag);
         st = r.st;
@@ -2314,7 +2377,7 @@ function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
         const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
         const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
-        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed });
+        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}) });
       } catch (e) {
         castErrors.push({ cast: c, error: e instanceof Error ? e.message : String(e) });
       }
@@ -2492,10 +2555,17 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const byValues = valueCrits(kits, fx, placement, byLayers);
   const shown = new Map([...byLayers, ...byValues]);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
-  const input: ReplayInput = { data, fx, opts, control, kitIds, team, edge, sampleFrames, crits: shown, stagger };
+  const input: ReplayInput = { data, fx, opts, control, kitIds, team, edge, sampleFrames, crits: shown, stagger, hitsInOrder: [...fx.hits].sort((a, b) => a.t - b.t) };
   /** A replay of the casts (by default the logged ones with the missed casts found so far), the holds as placed so far. */
   const run = (crit: "never" | "always", list: readonly ReplayedCast[] = casts) => replayOnce(input, { crit, casts: list, worldHolds, held });
   let main = kits.length > 0 ? run("never") : null;
+  // Hitless presses the first replay made from the listing (inferredPress): marked, so the press after one is the
+  // variant it pulls (pullingPresses: Si's Initial Stroke after an inferred battle skill), and the replay made again.
+  const inferredPresses = new Set(main?.made.filter((m) => m.inferred !== undefined).map((m) => m.c) ?? []);
+  if (main && inferredPresses.size) {
+    casts = pullingPresses(kits, placement, casts.map((c) => (inferredPresses.has(c) ? { ...c, inferred: true as const } : c)));
+    main = run("never");
+  }
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops (replayedCastStops): the placed casts' miss an ultimate placed from its cast event.
@@ -2670,6 +2740,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerCuts: main?.staggerCuts ?? [],
     castFlags: main?.flags ?? [],
     skipped: main?.skipped ?? [],
+    inferred: new Map((main?.made ?? []).flatMap((m) => (m.inferred !== undefined ? [[m.index, m.inferred] as const] : []))),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
       if (i === undefined || landed.has(String(i)) || !main) return null;

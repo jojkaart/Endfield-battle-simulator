@@ -11,7 +11,7 @@ import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
 import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_INFLICTION_STACKS, NO_STATUS, ownHitEnemy, type StatusEvent } from "../status.ts";
 import type { LandedHit, LandingFacts, LandingInputs, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
-import { kitSkill, panelAt } from "./context.ts";
+import { enemyAwayAt, kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
 import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
@@ -317,6 +317,8 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // A delayed hit's damage (`late`: only its damage), or its landing without it (`withDamage` false).
   const late = hit.deferred !== undefined;
   const withDamage = kitHit.enemyDelay === undefined || late;
+  // The enemy out of reach (TimelineScenario.enemyAway): the hit lands on nothing; what it gives its own team comes.
+  const away = enemyAwayAt(ctx.scenario, hit.frame);
   const spEvents: BattleEvent[] = [];
   if (hit.sp > 0 && !late) {
     const spKind = hit.spKind ?? "returned";
@@ -349,7 +351,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   } else if (!happens(hit)) return st;
   // A poise-only landing (KitHit.poiseOnly): its Stagger and nothing else (the cast's SP on its first landing stays).
   if (kitHit.poiseOnly) {
-    if (kitHit.poise === undefined || (kitHit.poiseControlledOnly && controlled !== hit.operator)) return spEvents.length ? runTriggers(ctx, st, spEvents, { operator: hit.operator, kind }) : st;
+    if (kitHit.poise === undefined || away || (kitHit.poiseControlledOnly && controlled !== hit.operator)) return spEvents.length ? runTriggers(ctx, st, spEvents, { operator: hit.operator, kind }) : st;
     const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, before), hit.frame);
     return runTriggers(ctx, r.state, [...r.events, ...spEvents], { operator: hit.operator, kind });
   }
@@ -358,7 +360,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   let consumed = hit.deferred?.consumed ?? 0;
   const applyPhase = (afterDamage: boolean): StatusEvent[] => {
     const out: StatusEvent[] = [];
-    const apps = late ? [] : (kitHit.applies ?? []).filter((app) => (app.afterDamage ?? false) === afterDamage);
+    const apps = late || away ? [] : (kitHit.applies ?? []).filter((app) => (app.afterDamage ?? false) === afterDamage);
     if (!apps.length) return out;
     const ai = artsIntensity(ctx, st, hit.operator, hit.frame);
     for (const app of apps) {
@@ -376,7 +378,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   };
   const statusEvents = applyPhase(false);
   // A hit computed as a burst is one for triggers too (its damage is the hit's own).
-  const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" && withDamage ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
+  const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" && withDamage && !away ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
   // Those on the infliction itself (inflictionApplied: the game's abilityEvent 126, sent before it resolves the
   // infliction into a reaction) run first, so a reaction's own hit sees what they give; those on the reaction or status
@@ -406,6 +408,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       if ((a.beforeDamage ?? false) !== beforeDamage) continue;
       const def = kitBuff(a.buff);
       if (!def) throw new EngineError(`${hit.operator} has no buff ${a.buff}`);
+      if (away && def.target === "enemy") continue;
       if (a.if && !decide(a.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
       const r = addBuff(ctx, st, hit.operator, hit.skillId, a.duration !== undefined ? { ...def, duration: a.duration } : def, hit.frame, at(consumed), undefined, a.untilFrame);
       st = r.state;
@@ -435,7 +438,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   const critMode = ctx.scenario.options.crit;
   let roll: number | undefined;
   // Rolled crits roll every hit; `distribution` only those a crit-triggered effect could fire on (critMatters).
-  if ((critMode === "rolled" || (critMode === "distribution" && critMatters(ctx, hitEventOf(st, hit, kitHit, finisher)))) && hit.fixed === undefined && withDamage) ({ value: roll, state: st } = draw(ctx, st, "crit"));
+  if ((critMode === "rolled" || (critMode === "distribution" && critMatters(ctx, hitEventOf(st, hit, kitHit, finisher)))) && hit.fixed === undefined && withDamage && !away) ({ value: roll, state: st } = draw(ctx, st, "crit"));
   // A landing of a random landed count at the expected count (PendingHit.landedOf): its damage and Stagger × E[N] / L.
   const landedCounts = hit.landedOf !== undefined && kitHit.landedCount ? landedCountsAt(kitHit.landedCount, build.potential) : undefined;
   const landedScale = landedCounts ? landedCounts.reduce((a, b) => a + b, 0) / landedCounts.length / (hit.landedOf as number) : 1;
@@ -445,7 +448,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // The first tick of a ticking buff lands before the buff's own modifiers act (PendingHit.firstTickOf).
   const first = hit.firstTickOf;
   const seen = first ? { ...st, buffs: st.buffs.filter((b) => !(b.owner === first.owner && b.id === first.id && b.appliedAt === first.appliedAt)) } : st;
-  const landingOptions = hit.fixed !== undefined || !withDamage ? null : damageOptions(ctx, seen, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot, ATK_SNAPSHOT_ZONES);
+  const landingOptions = hit.fixed !== undefined || !withDamage || away ? null : damageOptions(ctx, seen, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot, ATK_SNAPSHOT_ZONES);
   // A finisher, castable only on a Staggered enemy, deals every hit with the Stagger's parts, a hit after the Stagger's
   // end too (engine assumption finisher-stagger): pending/zmdlogs-7e19489ae503, Ember's hit_2 at 33.15 s after Chen's
   // ultimate stop ×1.564 the replay's unstaggered reading (×1.43 its Staggered parts, × the ×1.096 her first hit has),
@@ -467,7 +470,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
     ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...buffSituation(at(consumed)) } } : {}),
   } };
-  const result = !withDamage ? null : !inputs ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : landingDamage(ctx.data, ctx.scenario.target, inputs);
+  const result = !withDamage || away ? null : !inputs ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : landingDamage(ctx.data, ctx.scenario.target, inputs);
   const facts = (): LandingFacts => {
     const layers: Record<string, number> = {};
     for (const b of buffsAtLanding) if (b.owner === hit.operator && b.cast === undefined && activeAt(b, hit.frame)) layers[b.id] = (layers[b.id] ?? 0) + 1;
@@ -501,7 +504,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy, undefined, beforeLateTriggers);
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];
-  if (withDamage && kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {
+  if (withDamage && !away && kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {
     const landing = {
       hit: { element: kitHit.reaction?.element ?? kitHit.element, skillType: kitHit.reaction || kind === "none" ? null : kind, staggered: isStaggered(st, hit.frame), kind: kitHit.reaction?.kind ?? kind, decorations },
       ec: evalContext(ctx.data, build, panel, hit.skillId, at(consumed)),
@@ -515,14 +518,14 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     ...hitEventOf(st, hit, kitHit, finisher),
     ...(typeof loggedCrit === "boolean" ? (loggedCrit ? { crit: true } : {}) : (ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result?.crit ? { crit: true } : {}),
   };
-  if (!withDamage) {
+  if (!withDamage && !away) {
     // Its damage, on the enemy's clock (a replay's at its logged frame); its landing is past, cut casts or not.
     const { branch: _b, launchAt: _l, damageFrame, pinned: _p, ...rest } = hit;
     const at = damageFrame ?? hit.frame + (kitHit.enemyDelay as number);
     st = schedule(st, [{ ...rest, frame: at, clock: "enemy", detached: true, deferred: { consumed }, ...(damageFrame !== undefined ? { pinned: true as const } : {}) }]);
   }
   const all: BattleEvent[] = [
-    ...(withDamage ? [hitEvent] : []), ...asEvents(statusEvents, kind, castIndex), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex), ...poiseEvents, ...events, ...spEvents,
+    ...(withDamage && !away ? [hitEvent] : []), ...asEvents(statusEvents, kind, castIndex), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex), ...poiseEvents, ...events, ...spEvents,
     ...(kitHit.heals && withDamage ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
     ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
@@ -531,6 +534,10 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
 
 /** A burst lands: before-damage triggers on it, its damage (on the enemy as it is now), then its other triggers. */
 export function landBurst(ctx: TimelineContext, state: TimelineState, b: PendingBurst): TimelineState {
+  // Not held back while the enemy is away (TimelineScenario.enemyAway): an Arts Burst is of inflictions it already
+  // took, and its effects come (pending/zmdlogs-4a64e58e75ad.json: Arcane's Nature burst at 29.30 s, 0.15 s into the
+  // stretch and unlogged, gave the Will burst debuff of her weapon the log lists from 51.31 s; held back, 6 plain
+  // fewer). The totals leave its damage out (fightTotals).
   const origin = { operator: b.event.operator, kind: b.fromKind };
   // As it was inflicted, at its own frame (kind and frame first, as status.ts makes it).
   const { kind: burstKind, ...rest } = b.event;

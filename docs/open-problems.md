@@ -374,12 +374,26 @@ shares of the off error at that code):**
     163.13 s burst_mark is replay-only), no Jade Vessel on the 152.9–154.2 s hits (×0.92 with it); and the 153.99 s
     press was her battle skill: Jade Vessel's enemy_vul (only its Immobilization gives it) is listed from 155.79 s,
     the next logged hit after its landing, and its Artful Intent ends at the log's 181.00 s with the inkmove_2 burst at
-    181.42 s. With both presses so (hard-coded, docs/tried/2026-11-26-0c14-si-away-press.diff): Rossi's 165.49 s
-    Lift, the crystal shatter and the Endministrator's Essence Disintegration team ATK (165.49–186.28 s) appear, the
-    Crush and Si's 167 s combo slashes read plain; 0c14 plain 172 → 293, −4.9 → +1.2%. **Open, not mine to build**
-    (buffreplay.ts): a press in an away stretch applies nothing to the enemy; a hitless press is made where the log
-    lists, from its landing to the next logged hit, a buff only its hit gives (Alesh's 12.5 s combo, "0c14" below, is
-    the other case).
+    181.42 s. With both presses so (then hard-coded as a measurement): Rossi's 165.49 s Lift, the crystal shatter
+    and the Endministrator's Essence Disintegration team ATK (165.49–186.28 s) appear, the Crush and Si's 167 s combo
+    slashes read plain; 0c14 plain 172 → 293. **Built in general (2026-11-26, away and presses; the diff deleted):**
+    (1) the replay's enemy is away in the away stretches (engine assumption enemy-away `absent`, the default:
+    TimelineScenario.enemyAway, timeline/landing.ts): a hit landing there applies nothing to the enemy (no damage,
+    application, Stagger, enemy-side buff or hit event; an Arts Burst still lands, its effects coming: 4a64's Nature
+    burst at 29.30 s, unlogged, gives Arcane's weapon debuff the log lists from 51.31 s; held back it cost 6 plain),
+    while what it gives its own team still comes: d774's Liino presses her battle skill at 49.86 and 53.20 s inside its stretch and the log lists her
+    stance's ATK on the team after it (9c6e's three presses at 15.3–21.4 s the same), so the operators' own buffs from
+    such a hit apply. (2) A hitless press is made from the listing (`hitless-presses` `inferred`, the default:
+    buffreplay.ts inferredPress): only with the log's own cast event, a slot press the enemy was there for, its skill
+    able to start, the log's first hit after its landing within 1.5 s listing a new run of a decided game buff, and
+    the replay with the press giving that buff's kit buff there and without it not; the press after it is then the
+    variant it pulls (pullingPresses: Initial Stroke), and its own landings aren't counted (the log would show them).
+    Across the development logs it makes two presses: 0c14's Si at 153.99 s and 891566c224f8's Liino at 111.23 s
+    (her stance's ATK from 111.65 s). Alesh's 12.5 s combo ("0c14" below) has no cast event: not made, open. With
+    both, 0c14 plain 172 → 293 as hard-coded, its total −3.4 → +2.7%: the hits that now fit raise it onto what the
+    replay over-predicts elsewhere (Rossi's 58 replay-only landings, 0.30M). Also fixed on the way: a recorded burst
+    whose record's applier isn't logged (recordedburst.ts: the latest logged applier more than twice the buff's life
+    before the burst) is unread, not read over 73 s of every hit (0c14's 181.42 s burst had shifted Si +0.18M).
   - **04d4 Catcher ×0.470: his weapon at level 3** (fixed: fixture buildOverrides). fit-build threw on him (his P1
     hits scale with DEF and a DEF food's % is in an unknown formula slot: such candidates are now unscored): weapon
     level 3 alone fits 188 of 248, 160 of 167 clean. 04d4 plain 185 → 376, mismatch 833 → 616, per-hit 17.9 → 6.5%
@@ -406,17 +420,28 @@ shares of the off error at that code):**
     about 33.2 s (the lane's 24.85–31.85 s is the first layer's). **Ruled out** for the ×1.096: Pogranichnik's weapon
     layers (all four operators list the same nine instances, the others plain with two), Fervent Morale (one
     instance on her), her gear set (the replay's Æthertech lines the log doesn't list would lower, not raise, the
-    reading). **Next:** an unjudged layered buff listed once read at 1 … maxStacks layers (an alternative in the
-    check, or the replay's state from the damage).
+    reading). **Built (2026-11-26, away and presses):** the check reads a kit buff the replay can't judge whose
+    layers run on one timer (BuffData stackingType 8 or 10) and the log lists once at a hit at each count up to its
+    maximum (enginecheck.ts unjudgedLayered, an assumption of kind `layers`): 7e19's 28.6–30.9 s hits fit at 2 layers
+    (mismatch 4 → 1), 04d4 mismatch 616 → 614, 99fb 116 → 111; the negative control holds. **Still open:** the
+    33.15 s finisher ×1.096: the log lists no run of Ferric Price then (its lane 24.85–31.85 s), so the layer that
+    refreshed it past 31.85 s is unlisted, and no listing-based reading reaches it.
   - **Rossi's ultimate ×1.090 (9a80) and ×1.081 (2fd9): fixed earlier.** Every stab of both fits within ±1 now (27 and
     27 hits, `zmdlogs hits 9a80 2fd9 --operator Rossi --event 'ultimate_skill$'`; plain or crit-assumed).
   - **Rossi's slash2 extras: not the bleed clock.** Of the 13 slash2s on an enemy listing her bleed, the 3 without a
     Seething Blood extra (207f 42.85 s, 4a64 29.15, 71.46 s) are each the last logged hit of the fight or of Si's first
     life (no hit by anyone within 3 s; scripts/probes/rossi/slash2.py); the other 10 have theirs at the slash's ms and
     bleed ticks after. The enemy dies or leaves at the slash. Neither fight reads as a kill (no capped last hit), so
-    the totals count the extras; a rule taking every unlogged landing of a fight's last frame
-    (docs/tried/2026-11-26-life-end-landings.diff) is mixed (4a64 +2.9 → +2.0%, 207f −2.9 → −3.5%) and too broad
-    (0c14's same-frame extra before another hit's kill is logged).
+    the totals counted the extras; a rule taking every unlogged landing of a fight's last frame was mixed (4a64 +2.9 →
+    +2.0%, 207f −2.9 → −3.5%) and too broad (0c14's same-frame extra before another hit's kill is logged).
+    **Superseded (2026-11-26, away and presses; the diff deleted):** two general rules cover 4a64's both. Under
+    enemy-away `absent` the enemy leaves with an away stretch's last logged hit, so a landing no logged hit stands for
+    at that hit's frame or later in the stretch isn't counted (29.15 s, Si's first life's end; with it Arcane's Nature
+    burst at 29.30 s, 47k); and a fight of several lives ends in a kill when the damage after its last life's end is
+    one Max HP within 0.5% (enginecheck.ts lastLifeKilled: 4a64 1.074 then exactly 1.000; also read by enemy-hp
+    `kill`), so the kill rule leaves out the 71.47 s extra. 4a64 +2.9 → +0.7%. Neither touches 0c14's logged extra
+    (a matched landing counts). **Still open:** 207f's 42.85 s: a fight's last hit with no kill the log shows (5.760
+    × Max HP of hdg027, the other two hdg027 logs' kills 5.280).
   - **Rossi's bleed ticks and combo_3's over-hold: not reached past the views.** The bleed's unlanded logged ticks
     (489c 44.66, 45.66, 52.18, 72.81, 102.55 s; d572 64.16, 128.21 s: "a landing whose order the kit doesn't give")
     and combo_2 / combo_3's 0.15–0.2 s over-hold (3f78 5.77–8.43 s: the replay's stops are as listed, combo_3 on its
@@ -483,9 +508,19 @@ same. db87 −6.0 → −5.9% only. Not the default with a verified log worse.
 combo's camera or cut-in holding the teammates' actions apart from the world's clock; the caster's layer-1
 TimeDilationAction (dropped by the compiler) on its targets (Arcane's has the enemy among them: 0.25 s, about
 0.17 s lost; most combos have none, and their stops show the same excess).
-**Next check:** the excess per combo against its slow-down's length and its operator over more logs (per-combo
-table: scripts/probes/combo-hold/casts.ts --rows), and whether it is a fixed delay per stop edge; then a reading of
-the stops that holds the operators' clocks (bursts, landings) and not the statuses.
+**2026-11-26 (away and presses): a fixed delay at each stop's edge doesn't explain both.** One constant per combo
+fits as well as a share of its hold, on both sides (scripts/probes/combo-hold/edge-casts.ts, edge-ticks.ts): the
+operators' casts across combos only (76 within 0.4 s) 140 ms a combo, rms 149 ms, against 0.333 × held, rms 147 ms
+(none: 223 ms), the residual not rising with the one combo's hold (169, 196, 84, 263 ms at about 300, 400, 500,
+600 ms held); the enemy's tick chains 57 ms a combo (rms 117) against 0.190 × held (rms 112; none 153), Arcane's
+9-frame combo (177, 12, 105 ms) as late as Si's 24-frame one (164). So the logs can't tell a per-edge delay from a
+share, but one delay on the world's clock is ruled out: it would hold the enemy's ticks and the operators' landings
+alike, and they differ by ×2.5 (about 1.7 frames a combo against 4.2; `zmdlogs clocks --all`, round 13, gives the
+shares as Σ residual ÷ Σ held: 0.23 tick chains, 0.40 casts, 0.33 bursts). **Still possible:** two delays, the
+operators' own clock resuming later than the world's at a combo's end (their animation's cut-in); not built
+(`stagger-holds` stays off). **Next check:** whether the operators' excess sits at the combo's end (their first
+landing after it late, their last before it on time) against its start, from casts.ts --rows split by where the
+stop falls in the cast.
 
 ## Fight totals: what moves them (2026-11-23)
 
@@ -2854,8 +2889,10 @@ Edge"). Alesh: ×1.146 at 26 s (the log lists her ATK buff twice, the
 engine once), ×1.38–1.44 at 59–60 s, her ultimates ×1.34 and ×1.90.
 For the replay: a cast inferred from a buff only it gives (a logged
 effect whose `since` no replayed cast explains, like
-castsFromBuffEnds for ends): not built; Alesh's combo here is its first
-case.
+castsFromBuffEnds for ends): built 2026-11-26 for a press with its own
+cast event (`hitless-presses` `inferred`: Si's 153.99 s here); Alesh's
+combo has no event, so it stays open (a press made from a listing
+alone could invent casts the log doesn't support).
 
 **Found (2026-11-23, fight totals):** the +26.1% was the Endministrator's crystal shatters at Rossi's Lifts placed
 as seven ultimates the log doesn't have (19.5% of the fight) and Si's bursts in her two phases ("Fight totals" above):
@@ -2863,7 +2900,7 @@ now −3.4%.
 
 **Found (2026-11-26, damage factors):** the Endministrator's Crush ×2.2 at 182.30 s and Si's log-only inkmove_2 at
 181.42 s are one cause, Si's battle-skill presses at 139.68 s (in the away stretch) and 153.99 s ("The damage factors"
-under "Misprediction statistics"; docs/tried/2026-11-26-0c14-si-away-press.diff).
+under "Misprediction statistics"; built in general 2026-11-26: plain 172 → 293, the total −3.4 → +2.7%).
 
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window (2026-11-22: the max-stack bonus's length is the open

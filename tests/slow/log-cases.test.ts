@@ -68,8 +68,12 @@ describe("a finisher's hits after the Stagger's end", () => {
     expect(v.map((x) => x.hit.t)).toEqual([30861, 33152]);
     // Since the check counts her listed Pay the Ferric Price (2026-11-26, loggedEntries by its own game buff), what's left
     // is one and two more of its +0.09 ATK layers, which the log lists as one entry (open-problems, 7e19 Ember): ×1.046
-    // and ×1.096. Without the Staggered parts hit_2 read ×1.564.
-    expect(v.map((x) => (x.kind === "mismatch" ? x.ratio : NaN))).toEqual([expect.closeTo(1.046, 2), expect.closeTo(1.096, 2)]);
+    // and ×1.096. Without the Staggered parts hit_2 read ×1.564. Since 2026-11-26 (away and presses) the check reads a
+    // layered unjudged buff listed once at each count to its maximum: hit 1 fits at 2 layers; hit_2's ×1.096 stays, the
+    // log listing no run of it then (its lane 24.85–31.85 s, the layer that refreshed it past that unlisted).
+    const [first, second] = v;
+    expect(first?.kind === "match" && first.assumptions.some((a) => a.kind === "layers" && a.n === 2)).toBe(true);
+    expect(second?.kind === "mismatch" ? second.ratio : NaN).toBeCloseTo(1.096, 2);
   });
 });
 
