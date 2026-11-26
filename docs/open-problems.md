@@ -415,7 +415,7 @@ shares of the off error at that code):**
     the replay with the press giving that buff's kit buff there and without it not; the press after it is then the
     variant it pulls (pullingPresses: Initial Stroke), and its own landings aren't counted (the log would show them).
     Across the development logs it makes two presses: 0c14's Si at 153.99 s and 891566c224f8's Liino at 111.23 s
-    (her stance's ATK from 111.65 s). Alesh's 12.5 s combo ("0c14" below) has no cast event: not made, open. With
+    (her stance's ATK from 111.65 s). Alesh's 12.5 s combo ("0c14" below) has no cast event: not made so (made from the listing since, listed-casts). With
     both, 0c14 plain 172 → 293 as hard-coded, its total −3.4 → +2.7%: the hits that now fit raise it onto what the
     replay over-predicts elsewhere (Rossi's 58 replay-only landings, 0.30M). **Found (2026-11-26, combo hold and
     replay): most of those 58 were one cast's tail.** Rossi's battle skill at 35.40 s lands its two charge hits (35.94,
@@ -439,7 +439,7 @@ shares of the off error at that code):**
     12.5 s combo (her weapon's second layer, her P3) and a Stagger at its breaking hit: the team −3.2 → −1.3%.
     **The tail rule's cuts across the logs (2026-11-26; scripts/probes/tails/cuts.ts):** 16 cuts in the development
     logs, 7 dropping a landing the `kept` replay has; none against the log. 0c14's Rossi (the rule's case) and Alesh's
-    60.17 s slam_ex (her combo on the Rare Fin path, "0c14" below); 4bfc's Arclight combos at 44.27 and 48.23 s (the
+    60.17 s slam_ex (her combo on the Rare Fin path, "0c14" below; gone since the path is the listing's, 2026-11-26); 4bfc's Arclight combos at 44.27 and 48.23 s (the
     placement made one combo's three hits two casts: the cut drops the first's extra hit2s); 9c6e's Liino combo at
     48.53 s (two enemies: her 47.72 s hit 1 on both, the second taken for hit 2, the 48.49 s hit 2 for a new combo's
     hit 1, whose hit 2 the cut drops; the total −13.2 → −13.5% only lost a landing that stood for nothing; a placement
@@ -3060,20 +3060,41 @@ crits, 18k her attack 4 on the wrong path; the rest is Alesh's unlogged combo an
   them; Si ×0.917 at 13.3–20 s): the log lists two layers of her Thermite Cutter team ATK (+0.06 each; since 12.71 and
   20.72 s) where the replay has one (from her ultimate's SP), and her P3 team ATK from 13.25 s. Both come from her
   combo's Rare Fin path (P3 only after slam_ex; the two `since`s 0.55 s apart, hook_ex 77 to slam_ex 93 = 16 frames),
-  pressed with Si's combo (12.52 s) and no hit of it logged. Not built: a combo has no cast event, and the Rare Fin
-  path is a chance jump the replay doesn't roll (both would need a cast made from the listing alone).
+  pressed with Si's combo (12.52 s) and no hit of it logged. **Built (2026-11-26, Alesh's Rare Fin round):** a cast
+  made from the listing alone, engine assumption `listed-casts` `inferred` (castassembly.ts castsFromHitBuffs): a
+  game buff exactly one kit hit of the team gives (no trigger, no other hit), its run's `since` where no cast of that
+  skill could have landed it, gets a cast timed so the hit lands there, its path's chance jump taken, the path's
+  earlier hits pinned at their kit frames before it (hook_ex 16 frames before slam_ex: the replay's Thermite layer at
+  12.73 s against the log's 12.71 s, inside Si's stop, which would otherwise have held them to 13.3–13.8 s), its
+  landings counted for nothing. Made at 12.00 s; `zmdlogs decisions --all --assume listed-casts=none`: the only
+  such cast in 61 development logs. Its own effect (measure `--variant listed-casts=none`): 0c14 plain 404 → 493,
+  mismatch 17 → 12, total −1.6 → −0.3% (Rossi's first ultimate final now reads exactly: tests/listed-paths.test.ts).
 - **The Stagger at 80.48 s** (−30k): Rossi's combo_2 hit and its Lift's airborne hit read ×1.3 (the Stagger) though
   they are the hits that break the bar (3 → 0); the replay's window starts the frame after. "The replay's Stagger
   windows" below: the breaking hit at its ms.
 Left after these (with totals-crits `read`): Rossi −1.0% (matched −2.5%), Si −1.5% (shifts included), the team −1.3%.
-**Still possible** for the rest: the Alesh combo above (about +25k Rossi, +15k Si), the 80.48 s Stagger, Alesh's
-Rare Fin path at 59.56 s ("0c14" Alesh below).
+**Still possible** for the rest: the 80.48 s Stagger (the Alesh combo and her 59.56 s path are built, below).
 **Alesh's Rare Fin path from the values (2026-11-26):** her combo's two paths share keys and the placement takes the
 normal one's hits (hook 22, slam 38) for every cast; the casts whose values are ×1.5–1.6 that reading are the Rare
 Fin path (hook_ex 77, slam_ex 93, after the trigger's chance jump 10 → 65): 0c14 59.56 s (assumed), 4e36 19.87 and
-32.32 s (4 mismatches), a9d7 11.68, 39.37, 60.72 s (assumed, fallback). Next: a chance jump's path chosen from the
-landings' values (a second replay, as the reaction levels are read: logcheck.ts logBuffReplay), which would also give
-0c14's 59.56 s P3.
+32.32 s (4 mismatches), a9d7 11.68, 39.37, 60.72 s (assumed, fallback).
+**Built from the listing, not the values (2026-11-26, Alesh's Rare Fin round):** her P3 team ATK, which only the
+Rare Fin slam gives, is listed from exactly that slam's logged ms in every case (0c14 60129, 4e36 20332 and 32919,
+a9d7 12520, 39815, 61516; the 12.0 s cast's 13254), so the listing decides the path, a frame's tolerance
+(castassembly.ts listedPaths → ReplayedCast.chanceJumps → drivers.ts replayCast `chanceJumps`: the trigger isn't
+rolled, a taken jump is scheduled at its frame, the logged landings go to the path's hits of the same keys at the same
+frames from the cast's start, chancePathLandings). Not taken where the log lists P3 somewhere but none of its hits in
+3 s after the slam does; a run already going is decided by its end (a refresh keeps the `since`: 4e36's 42.96 s slam,
+the run since 32.92 s ending at 47.3–47.6 s, not refreshed); a slam the log hasn't is placed from the cast's logged
+hook (a9d7 98.88 s). 17 decisions in 3 logs (`zmdlogs decisions --all --operator Alesh`: PATH lines), none against
+the values; the rolled Rare Fin landings the log hasn't gone (0c14 122.83 and 199.57 s, a9d7 12–184 s: Alesh's
+replay-only 56k → 16k there, her matched −5.6 → −0.7%). P3 itself stays the log's (replaycrits.ts chancePathBuff):
+judged by the replay where every cast's path was decided, one hold-out log lost 47 plain and nothing in
+development gained (tried: docs/tried/2026-11-26-chance-path-buffs-decided.diff). Measured against ade98a1 (both
+rules): 0c14 plain 338 → 493, total −1.3 → −0.3%; 4e36 281 → 368, +2.2 → +0.9%; a9d7 99 → 101, −2.2 → −2.6% (its
+replay-only Rare Fin landings gone; its Estella and Chen under-predicted, −5 and −4% matched); hold-out plain
+80.8 → 81.0% (1 better, 1 mixed: +4 plain, its total further). **Still possible:** a path the listing can't decide
+(an Alesh below P3, a log that doesn't list her buffs: ad7f, P3 never listed, still rolled) by the hits' values.
 
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window (2026-11-22: the max-stack bonus's length is the open

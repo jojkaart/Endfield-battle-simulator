@@ -290,6 +290,14 @@ is a Lift that breaks the bar (one case, not built); Snowshine's offset and test
 from the logs. Next: whole-game pauses outside a Stagger (9c0b's 7.5 s after Laevatain's ultimate: does the placement
 already take it?), the world-time view without tick-read stops (query.ts replayTimeStops), Alesh's combo paths.
 
+**Alesh's Rare Fin (2026-11-26, [journal](journal/2026-11-26-09-alesh-s-rare-fin-chance-paths-and-a-cast-from-the-listing.md)):**
+a chance jump's path read from the listing (her P3, which only the Rare Fin slam gives, listed from exactly the
+slam's ms: castassembly.ts listedPaths, drivers.ts replayCast `chanceJumps`), and a cast the log shows only by a buff
+one of its hits alone gives (engine assumption `listed-casts` `inferred`: 0c14's 12.0 s combo). 0c14 plain 338 → 493,
+−1.3 → −0.3%; 4e36 281 → 368; hold-out plain 80.8 → 81.0%. P3 stays the log's (judged by the replay, a hold-out log
+lost 47 plain: docs/tried/). Next: 0c14's 80.48 s Stagger at its breaking hit (four combo cases, more evidence
+first), a path the listing can't decide read from the hits' values (ad7f still rolls), one model of a fight's lives.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

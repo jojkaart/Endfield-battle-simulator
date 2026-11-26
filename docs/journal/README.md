@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-26: Alesh's Rare Fin: chance paths and a cast from the listing](2026-11-26-09-alesh-s-rare-fin-chance-paths-and-a-cast-from-the-listing.md)
 - [2026-11-26: Bursts and cooldowns: 4d60's runs a whole-game pause in a Stagger, the replay's Stagger starts](2026-11-26-08-bursts-and-cooldowns-4d60-s-runs-a-whole-game-pause-in-a.md)
 - [2026-11-26: Improvement round 14: the replay's decisions as records, one composition each, the buffreplay.ts split](2026-11-26-07-improvement-round-14-the-replay-s-decisions-as-records-one.md)
 - [2026-11-26: 0c14 and the operator curve: a teammate's attack on its own path, crits read from values in the totals](2026-11-26-06-0c14-and-the-operator-curve-a-teammate-s-attack-on-its-own.md)
