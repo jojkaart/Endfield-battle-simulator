@@ -662,7 +662,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // A fight that ends in a kill: its last logged hits are capped at the enemy's remaining HP, whether or not the log
   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
-  const away = engineReadingOf(c.replay.assume, "enemy-away") === "away" ? awayWindows(fx) : [];
+  const away = awayLeftOutOfTotals(engineReadingOf(c.replay.assume, "enemy-away")) ? awayWindows(fx) : [];
   const isAway = (frame: number) => away.some((w) => (frame * 1000) / 30 > w.from + AWAY_EDGE_MS && (frame * 1000) / 30 < w.to - AWAY_EDGE_MS);
   let awayLeftOut = 0;
   // The killing blow's frame: the log's, or the replay's landing of a killing hit if sooner (4360: the battle skill's
@@ -740,6 +740,28 @@ export function awayWindows(fx: LogFixture): { readonly from: number; readonly t
   const out: { from: number; to: number }[] = [];
   for (let i = 1; i < ts.length; i++) if ((ts[i] as number) - (ts[i - 1] as number) >= ENEMY_AWAY_MS) out.push({ from: ts[i - 1] as number, to: ts[i] as number });
   return out;
+}
+
+/**
+ * Where the replay's enemy is out of reach (TimelineScenario.enemyAway, frames), under engine assumption enemy-away:
+ * `absent`, each away stretch from the frame after its last logged hit to the frame before the next (the log records
+ * every hit that lands, so an unlogged landing there found no one: pending/zmdlogs-0c14fb3ce77d.json, Si's battle skill
+ * pressed at 139.68 s in the stretch 134.97–152.91 s made no Artful Intent, no Cryo and no Jade Vessel run in the game);
+ * `absent-edge`, AWAY_EDGE_MS inside both ends, as the totals leave landings out; else none.
+ */
+export function enemyAwaySpans(fx: LogFixture, reading: string | undefined): { readonly from: number; readonly to: number }[] {
+  if (reading !== "absent" && reading !== "absent-edge") return [];
+  const edge = reading === "absent" ? 0 : AWAY_EDGE_MS;
+  return awayWindows(fx).flatMap((w) => {
+    const from = Math.max(Math.round(((w.from + edge) * 30) / 1000), Math.round((w.from * 30) / 1000) + 1);
+    const to = Math.min(Math.round(((w.to - edge) * 30) / 1000), Math.round((w.to * 30) / 1000) - 1);
+    return to >= from ? [{ from, to }] : [];
+  });
+}
+
+/** Whether a reading of engine assumption enemy-away leaves the away stretches' landings out of the totals. */
+export function awayLeftOutOfTotals(reading: string | undefined): boolean {
+  return reading === "away" || reading === "absent" || reading === "absent-edge";
 }
 
 /** An engine assumption's reading under a replay's `assume` (its default when not set). */

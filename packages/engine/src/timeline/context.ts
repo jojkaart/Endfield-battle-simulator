@@ -203,6 +203,11 @@ export function maxPoise(ctx: TimelineContext): number {
   return v > 0 ? v : Infinity;
 }
 
+/** Whether the enemy is out of reach at a frame (TimelineScenario.enemyAway). */
+export function enemyAwayAt(scenario: TimelineScenario, frame: number): boolean {
+  return (scenario.enemyAway ?? []).some((w) => frame >= w.from && frame <= w.to);
+}
+
 /** The enemy's HP fraction at a frame (TimelineScenario.enemyHp; 1 before the first entry). */
 export function enemyHpAt(scenario: TimelineScenario, frame: number): number {
   let hp = 1;

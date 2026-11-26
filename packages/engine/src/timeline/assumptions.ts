@@ -147,6 +147,17 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       away: "no: the enemy is out of reach (a boss phase), and the replay's landings there that stand for no logged hit, more than 0.3 s inside it, aren't counted in the simulated total, as a fixture's hand-written `absent` landings aren't. The logs' gaps fall apart at 6 s (development logs 2026-11-23: 18 of 4–6 s, then 1 of 6–7 s and 30 of 7–46 s, in 8 fights against Si (eny_0134_jsspsi, 19 gaps: about 20–24 s, then 13–14 s, a phase each fight) and 4 against eny_0125_fdcentur (7), eny_0128_babyents_hdg031 (3) and eny_0120_klbear_tower015 (2)), and the team still presses there (pending/zmdlogs-d774d0ce7bd3.json 30.6–54.6 s: Liino's ultimate and battle skills, Arcane's combo; Zhuang Fangyi's Empyrean strikes and finale, 0.78M, land there in the replay alone) (2026-11-23)",
       counted: "yes: every replay landing up to the log's last hit counts (the totals until 2026-11-23)",
+      absent: "no, and the replay's enemy isn't there either (TimelineScenario.enemyAway, timeline/landing.ts landHit): a hit landing from the frame after the stretch's last logged hit to the frame before the next lands on nothing (no damage, application, Stagger, enemy-side buff or hit event), what it gives its own team still comes; the totals as under `away`",
+      "absent-edge": "as `absent`, the replay's enemy away only from 0.3 s inside the stretch's ends, as the totals leave landings out",
+    },
+  },
+  {
+    id: "hitless-presses",
+    question: "Is a logged press of a skill whose hits the log shows elsewhere, but none of its own this time, made (the enemy there, not an away stretch's `unseen` press)? The press may have done nothing (a variant the slot held, a press the game dropped), or landed without its damage being logged. Read only by the log check's replay (packages/logs buffreplay.ts inferredPress).",
+    default: "skipped",
+    readings: {
+      skipped: "never: the slot held a variant, or the press did nothing (the replay until 2026-11-26)",
+      inferred: "made when the log lists, on its first hit after the press's landing (within 1.5 s), a run of a decided game buff starting there that the replay gives with the press and not without it: pending/zmdlogs-0c14fb3ce77d.json, Si's battle skill at 153.99 s (Jade Vessel's enemy_vul from 155.79 s, which only her battle skill's Immobilization gives; her Artful Intent then ending at the log's 181.00 s)",
     },
   },
   {

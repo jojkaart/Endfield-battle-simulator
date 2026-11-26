@@ -73,6 +73,14 @@ export interface TimelineScenario {
    */
   readonly enemyHp?: readonly { readonly from: number; readonly fraction: number }[];
   /**
+   * Where the enemy is out of reach, from each `from` frame to its `to` (both included): a hit landing there lands on
+   * nothing (landing.ts landHit): no damage, no application, Stagger or enemy-side buff, no hit or status event for
+   * triggers; what it gives its own team (buffs on self or the team, SP, energy, stacks) still comes (pending/zmdlogs-
+   * d774d0ce7bd3.json: Liino's battle skill at 49.86 s, the enemy away 30.6–54.6 s, puts her stance's ATK on the team).
+   * The log check's replay only (engine assumption enemy-away `absent`: a boss phase or a life's end), never a simulation.
+   */
+  readonly enemyAway?: readonly { readonly from: number; readonly to: number }[];
+  /**
    * A logged fight's crits (the log check's replay only; no scenario file sets it): a kit hit of `operator` with
    * `event` among its events landing at `frame` (±1) crits as the log says, whatever `options.crit` says, and its
    * hit event says so to crit triggers. Its LandedHit records whether the log decided it (`loggedCrit`).
