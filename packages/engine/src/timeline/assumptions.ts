@@ -141,6 +141,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "pause-holds",
+    question: "May the hidden holds (hidden-holds `placed`) rise in an away stretch (no logged hit by anyone for ENEMY_AWAY_MS or more) that a Stagger covers? A Staggered enemy doesn't attack, so no dodge holds the world there (stagger-holds); but a whole-game pause the log's clock runs through holds every timer, the Stagger's own included. Read only by the log check's replay (packages/logs holds.ts withoutGaps).",
+    default: "away",
+    readings: {
+      none: "no: the Stagger is still from its start to its end (the placement until 2026-11-26)",
+      away: "yes: each away stretch is cut out of the Stagger's still span, and the clocks place what they ask there. pending/zmdlogs-4d60e7fe92c2.json (eny_0120_klbear_tower015) 117.22–124.45 s, inside the log's Stagger 115.75–133.34 s: its Stagger lasts 7 s longer than the engine's, and Perlica's Wild Wanderer team buff, Arcane's two Solemn Phalanx debuffs on the enemy, Perlica's Qingbo layer and Liino's beats all run 5.5–7 s past their ends across it; 5.4 s placed there, 13 clocks spanning it, earliest and latest within 0.4 s. Measured 2026-11-26 against `none`: development plain 69.0 → 69.6% (4d60 696 → 806, −4.1 → −1.5%), no other log moved, hold-outs unchanged",
+    },
+  },
+  {
     id: "enemy-away",
     question: "Is the enemy there in a stretch of the fight where the log has no hit at all for 6 s or more (ENEMY_AWAY_MS)? Read only by the log check (packages/logs enginecheck.ts fightTotals, enemyAwaySpans: the replay's TimelineScenario.enemyAway), not by simulations: a stage's boss phase isn't the team's to model.",
     default: "absent",

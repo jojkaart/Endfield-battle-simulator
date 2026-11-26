@@ -3,7 +3,7 @@
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
 import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
-import { comboHoldSpans, holdPins, notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
+import { comboHoldSpans, holdPins, notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, withoutGaps, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -46,6 +46,23 @@ describe("placeHolds", () => {
     }
     // A slow span outside every still span changes nothing (P already rises at real time there).
     expect(placeHolds([run(0, 4000, 200, 300)], { end: 5000, slow: [{ a: 1000, b: 1100, rate: 0.1 }] }).total).toBeCloseTo(200, 6);
+  });
+
+  it("withoutGaps: an away stretch cut out of a still span lets the holds rise there (pause-holds `away`)", () => {
+    // A Stagger 5–20 s with a hitless stretch 8–14 s in it (4d60's whole-game pause): the run asking 5 s over 6–18 s
+    // fits only in the stretch.
+    const still = withoutGaps([[5000, 20000]], [{ from: 8000, to: 14000 }, { from: 30000, to: 40000 }]);
+    expect(still).toEqual([[5000, 8000], [14000, 20000]]);
+    expect(withoutGaps([[5000, 20000]], [{ from: 2000, to: 6000 }])).toEqual([[6000, 20000]]);
+    expect(withoutGaps([[5000, 20000]], [{ from: 4000, to: 21000 }])).toEqual([]);
+    const ask = run(6000, 18000, 5000, 5500);
+    expect(placeHolds([ask], { end: 20000, still: [[5000, 20000]] }).total).toBe(0);
+    const p = placeHolds([ask], { end: 20000, still });
+    expect(p.total).toBeCloseTo(5000, 6);
+    for (const h of p.holds) {
+      expect(h.frame).toBeGreaterThanOrEqual(Math.floor((8000 * FPS) / 1000));
+      expect(h.frame).toBeLessThan(Math.ceil((14000 * FPS) / 1000));
+    }
   });
 
   it("comboHoldSpans: a combo stop's span at `share` of its own hold per ms, other stops none", () => {

@@ -392,6 +392,16 @@ export function comboHoldSpans(stops: readonly TimeStop[], share: number): HoldS
 }
 
 /**
+ * The still spans (ms) less the gaps cut out of them (engine assumption pause-holds, reading `away`: the away
+ * stretches, a whole-game pause the log's clock runs through may fall in a Stagger): each span split around each gap.
+ */
+export function withoutGaps(still: readonly (readonly [number, number])[], gaps: readonly { readonly from: number; readonly to: number }[]): [number, number][] {
+  let out: [number, number][] = still.map(([a, b]) => [a, b]);
+  for (const g of gaps) out = out.flatMap(([a, b]): [number, number][] => (g.to <= a || g.from >= b ? [[a, b]] : [...(g.from > a ? [[a, g.from] as [number, number]] : []), ...(g.to < b ? [[g.to, b] as [number, number]] : [])]));
+  return out;
+}
+
+/**
  * The hidden holds from the clocks' bounds: P nondecreasing, rising no faster than real time, flat inside `still` (ms
  * spans where nothing holds: the enemy Staggered doesn't attack, so nothing is dodged), every kept bound met (difference
  * constraints; a bound in a negative cycle dropped until none is left). The least total hold H that the bounds allow
