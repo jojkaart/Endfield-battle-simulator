@@ -10,13 +10,13 @@
 // primary with one disagreement taken the log's way (hitCounterfactuals).
 
 import { basename } from "node:path";
-import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, withCurveReading, type GameData, type Zones } from "@efsim/engine";
+import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
-import { engineCheck, logDifferences, loggedEntries, readingBasis, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
+import { logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
-import { placeHits } from "./logcasts.ts";
-import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
+import { verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
 import { unknownFacts } from "./buffreplay.ts";
+import { composeCheck } from "./snapshotentry.ts";
 import type { CritSource } from "./replaycrits.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
@@ -120,15 +120,12 @@ export interface HitRecord {
 
 /** Every logged hit of a fixture as a record (the multi-target fixtures aren't checked: single-target engine). */
 export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.id, assume: Readonly<Record<string, string>> = {}): HitRecord[] {
-  // Engine assumption combo-curve: the placement's stop lists on the reading's curve, as the replay's timeline.
-  const data = withCurveReading(raw, assume);
-  const placement = placeHits(data, fx);
-  // Under other readings of open assumptions (`zmdlogs hits --assume`; round 6: it ignored the option and printed the
-  // defaults' verdicts), as measure and the check replay them (snapshotentry.ts).
-  const replay = Object.keys(assume).length ? logBuffReplay(data, fx, placement, { assume }) : logBuffReplay(data, fx, placement);
-  const byHit = engineHits(data, fx, replay, placement);
-  const verdicts = new Map(checkLog(data, fx, { replay, engineHits: byHit }).map((v) => [v.hit, v]));
-  const c = engineCheck(data, fx, replay.replay);
+  // The snapshots' composition (snapshotentry.ts composeCheck): the same placement, replay (under other readings of
+  // open assumptions, `zmdlogs hits --assume`), engine readings and verdicts, so the records are the suite's reading.
+  const k = composeCheck(raw, fx, { assume });
+  const { data, replay, byHit } = k;
+  const verdicts = new Map(k.verdicts.map((v) => [v.hit, v]));
+  const c = k.check();
   const facts = unknownFacts(data, fx, assume);
   return fx.hits.map((hit) => {
     const v = verdicts.get(hit) as HitVerdict;
@@ -151,7 +148,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
     const predicted = e?.primary ?? null;
     const error = predicted ? hit.value / predicted - 1 : null;
     const totals = predicted !== null && e ? { totalsPredicted: roundDamage(e.expected ?? predicted), totalsCrit: e.totalsCrit ?? ("known" as const) } : {};
-    const basis = readingBasis(c, hit, hitPlace(data, fx, placement, replay, hit));
+    const basis = k.basis(hit);
     if ("unknown" in basis.landing) return { ...base, predicted, error, ...totals, unknown: basis.landing.unknown };
     const ok = basis as Exclude<typeof basis, { readonly landing: { readonly unknown: string } }>;
     const { landing, primary } = ok;

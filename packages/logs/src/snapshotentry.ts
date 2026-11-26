@@ -1,13 +1,56 @@
 // What the log verdict snapshots record of a log (tests/snapshots/log-verdicts*.json), computed in one place: the
 // verified logs' test (tests/logs.test.ts), the pending suite (tests/slow/pending.ts) and scripts/measure-worker.ts all
 // call this, so a measurement can't drift from the snapshots (round 3's own report: the composition lived in three
-// places that had to agree byte for byte).
+// places that had to agree byte for byte). The check itself is composed once, in composeCheck, which the hit records
+// (hitexport.ts hitRecords: `zmdlogs hits`, `differences`, `groups`) build on too, so a screen in the suite and a view
+// over the records read the same reading (backlog after round 13 point 3).
 
 import { withCurveReading, type GameData } from "@efsim/engine";
 import type { ReplayOptions } from "./buffreplay.ts";
-import { checkLog, engineHits, engineReport, logBuffReplay, verdictCounts, type EngineHits, type HitVerdict, type LogBuffReplay } from "./logcheck.ts";
-import type { LogFixture } from "./zmdlogs.ts";
-import { totalsShares, type TotalsComparison, type TotalsShares } from "./enginecheck.ts";
+import { checkLog, engineHits, engineReport, hitPlace, logBuffReplay, verdictCounts, type EngineHits, type HitVerdict, type LogBuffReplay } from "./logcheck.ts";
+import { placeHits, type Placement } from "./logcasts.ts";
+import type { LogFixture, LogHit } from "./zmdlogs.ts";
+import { engineCheck, readingBasis, totalsShares, type EngineCheck, type TotalsComparison, type TotalsShares } from "./enginecheck.ts";
+
+/** One fight's check, composed once (composeCheck): what the snapshots and the hit records both read. */
+export interface CheckComposition {
+  /** The game data under the readings (withCurveReading: engine assumption combo-curve's stop lists). */
+  readonly data: GameData;
+  readonly placement: Placement;
+  readonly replay: LogBuffReplay;
+  readonly byHit: EngineHits;
+  readonly verdicts: HitVerdict[];
+  /** The engine's check of the fight (enginecheck.ts engineCheck), made on first use. */
+  check(): EngineCheck;
+  /** A hit's reading basis (enginecheck.ts readingBasis at its place), memoised per hit. */
+  basis(hit: LogHit): ReturnType<typeof readingBasis>;
+}
+
+/** The check of a fight under `assume`'s readings: placement, replay, the engine's readings and the verdicts. */
+export function composeCheck(raw: GameData, fx: LogFixture, opts: Pick<ReplayOptions, "assume"> = {}): CheckComposition {
+  // Engine assumption combo-curve: the log tools' stop lists and the replay's timeline on the same resampled curve.
+  const data = withCurveReading(raw, opts.assume);
+  const placement = placeHits(data, fx);
+  const replay = opts.assume && Object.keys(opts.assume).length ? logBuffReplay(data, fx, placement, { assume: opts.assume }) : logBuffReplay(data, fx, placement);
+  const byHit = engineHits(data, fx, replay, placement);
+  const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
+  let c: EngineCheck | undefined;
+  const bases = new Map<LogHit, ReturnType<typeof readingBasis>>();
+  const check = () => (c ??= engineCheck(data, fx, replay.replay));
+  return {
+    data,
+    placement,
+    replay,
+    byHit,
+    verdicts,
+    check,
+    basis(hit) {
+      let b = bases.get(hit);
+      if (!b) bases.set(hit, (b = readingBasis(check(), hit, hitPlace(data, fx, placement, replay, hit))));
+      return b;
+    },
+  };
+}
 
 /** The key of a snapshot entry that holds the totals' errors instead of an operator's counts. */
 export const SNAPSHOT_TOTALS_KEY = "totals";
@@ -37,11 +80,7 @@ export interface SnapshotEntry {
 
 /** A log's snapshot entry: the replay of its casts (under `assume`'s readings), the engine's readings, the check's verdicts, their counts and the totals' errors. */
 export function snapshotEntry(raw: GameData, fx: LogFixture, opts: Pick<ReplayOptions, "assume"> = {}): SnapshotEntry {
-  // Engine assumption combo-curve: the log tools' stop lists and the replay's timeline on the same resampled curve.
-  const data = withCurveReading(raw, opts.assume);
-  const replay = opts.assume && Object.keys(opts.assume).length ? logBuffReplay(data, fx, undefined, { assume: opts.assume }) : logBuffReplay(data, fx);
-  const byHit = engineHits(data, fx, replay);
-  const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
+  const { data, replay, byHit, verdicts } = composeCheck(raw, fx, opts);
   const counts = verdictCounts(fx, verdicts);
   const report = engineReport(data, fx, replay, byHit, verdicts);
   const shares = totalsShares(fx.hits, report.totals);
