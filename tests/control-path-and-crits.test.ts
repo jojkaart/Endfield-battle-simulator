@@ -4,7 +4,7 @@
 //   0c14's 154.09 s (Si controlled) and 2fd9's 8.71 s (Mi Fu); with her controlled (0c14's 44.39 s), the controlled
 //   path (d572's 9.89 s stays hit_ai: the placement put 7 landings in one cast of 5 hits, so they aren't moved);
 // - a crit-unknown hit's crit read from its value in the totals (engine assumption totals-crits `read`): 0c14's Rossi
-//   ultimate final at 27.74 s, 326,856 = her crit reading ×1.032, counted at it, not at expected crits.
+//   ultimate final at 27.74 s, 326,856 = her crit reading (×1.032 before Alesh's 12.0 s combo from the listing gave the second Thermite Cutter layer: listed-paths.test.ts), counted at it, not at expected crits.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, devFixtures, engineHits, engineReport, logBuffReplay } from "@efsim/logs";
@@ -41,7 +41,7 @@ describe("totals-crits", () => {
   it("counts a crit-unknown hit at the crit its value shows under `read`, at expected crits under `expected`", () => {
     const read = final({}) as number;
     const expected = final({ "totals-crits": "expected" }) as number;
-    expect(read / 326856).toBeCloseTo(1 / 1.032, 2);
+    expect(read / 326856).toBeCloseTo(1, 2);
     expect(expected).toBeLessThan(0.8 * 326856);
   });
 });

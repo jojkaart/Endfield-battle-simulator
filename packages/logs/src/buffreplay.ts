@@ -29,7 +29,7 @@ import type { LoggedCast, Placement } from "./logcasts.ts";
 import { loggedStagger } from "./replaysteps.ts";
 import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
 import { comboHoldSpans, placeHolds, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
-import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCastStops, replayedCasts } from "./castassembly.ts";
+import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedPathBuffs, listedWithValues, pullingPresses, replayedCastStops, replayedCasts } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedTickFrames, loggedTickLandings, msOfFrame, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, critTriggers, layerCrits, shownCrits, undecidedBuff, valueCrits } from "./replaycrits.ts";
 import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
@@ -286,12 +286,15 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const k = effectiveKit(data, b);
     return k ? [k] : [];
   });
+  const assembled = assembleCasts(data, fx, placement, kits, opts.assume);
+  // The chance paths the listing decided for every cast (castassembly.ts listedPaths): their buffs are the replay's to judge.
+  const pathsShown = listedPathBuffs(kits, assembled);
   const decided = new Map<string, string[]>();
   const undecided = new Map<string, string>();
   for (const kit of kits) {
     for (const def of kit.buffs) {
       if (!def.gameBuff || !listed.has(def.gameBuff) || def.consumedBy || def.link) continue;
-      const why = undecidedBuff(kit, def.id, 0, listed);
+      const why = undecidedBuff(kit, def.id, 0, pathsShown);
       if (why) undecided.set(def.gameBuff, `${kit.operator} ${why}`);
       else decided.set(def.gameBuff, [...(decided.get(def.gameBuff) ?? []), `${kit.operator}:${def.id}`]);
     }
@@ -305,7 +308,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const allListed = new Set(fx.hits.flatMap((h) => h.effects.map((e) => e.buff)));
   for (const kit of kits) for (const def of kit.buffs) {
     if (!kit.buffs.some((d) => d.gameBuff !== undefined && allListed.has(d.gameBuff))) continue;
-    const why = undecidedBuff(kit, def.id, 0, listed);
+    const why = undecidedBuff(kit, def.id, 0, pathsShown);
     if (why) unjudgedKitBuffs.set(`${kit.operator}:${def.id}`, why);
   }
   const failed: { cast: ReplayedCast; error: string }[] = [];
@@ -318,7 +321,6 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const kitIds = [...decided].flatMap(([g, defs]) => defs.map((d) => ({ g, owner: d.split(":", 2)[0] as string, id: d.split(":", 2)[1] as string })));
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
-  const assembled = assembleCasts(data, fx, placement, kits, opts.assume);
   const control = controlledFromLog(placement, assembled);
   const stagger = loggedStagger(fx);
   const logged = control?.casts ?? assembled;
