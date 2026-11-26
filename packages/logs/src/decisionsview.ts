@@ -123,7 +123,7 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
   const reading = Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ");
   const head = under
     ? `The replay's decisions that differ under ${reading} (decisionsview.ts; - only under the defaults, + only under the reading), ${changed} of ${logs.length} log(s):`
-    : `The replay's decisions (decisionsview.ts: SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, JUMPDROP, FORCED, INSIDE, CUTS), ${logs.length} log(s):`;
+    : `The replay's decisions (decisionsview.ts: ${DECISION_KINDS.join(", ")}), ${logs.length} log(s):`;
   const summary = DECISION_KINDS.filter((k) => counts.has(k)).map((k) => {
     const c = counts.get(k) as { minus: number; plus: number; logs: Set<string> };
     return `  ${k.padEnd(7)} ${under ? `-${c.minus} +${c.plus}` : String(c.plus)} in ${c.logs.size} log(s)`;
