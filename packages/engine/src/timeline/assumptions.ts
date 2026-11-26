@@ -161,6 +161,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "logged-purges",
+    question: "Does the enemy shed the team's debuffs at once where the log shows them all gone together (a stage's phase change)? No kit rule ends them there. Read only by the log check's replay (packages/logs holdinputs.ts loggedPurges, purgedByLog).",
+    default: "log",
+    readings: {
+      none: "no: each debuff runs to its own end (the replay until 2026-11-26)",
+      log: "yes: at a logged moment after which none of the team's runs on the enemy listed there is listed again (at least 3 debuffs, a debuff's per-element affixes counted once, from two operators or more, the next logged moment within 1.5 s), every enemy-side kit buff, status, infliction, Vulnerable stack and control on ends, and an Arts Burst on its way doesn't come. Hard 33's slug, pending/zmdlogs-63398339803e.json at 10.35 s and 29.38 s (Jade Vessel, Camille's and Arcane's Susceptibilities, Arcane's weapon lines: the hits after 11.27 s read exactly with the log's listing, the replay's 1.40 times the logged; the burst at 29.40 s the log hasn't put Arcane's Solemn Phalanx line on every hit after it); no other development log has one. Measured 2026-11-26 against `none`: development plain 73.8 → 74.3%, mean |damage error| 6.1 → 5.1% (6339 plain 28 → 112 of 140, +40.8 → −8.0%: the over-prediction that cancelled Si's low combo-final slots at 11.31 s gone; those and Laevatain's replay-only hit_2 at 21.60 s left), every other log, the hold-outs and the earlier pending unchanged",
+    },
+  },
+  {
     id: "hitless-presses",
     question: "Is a logged press of a skill whose hits the log shows elsewhere, but none of its own this time, made (the enemy there, not an away stretch's `unseen` press)? The press may have done nothing (a variant the slot held, a press the game dropped), or landed without its damage being logged. Read only by the log check's replay (packages/logs replayrun.ts inferredPress).",
     default: "inferred",
