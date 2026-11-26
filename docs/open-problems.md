@@ -379,8 +379,9 @@ shares of the off error at that code):**
     slashes read plain; 0c14 plain 172 → 293. **Built in general (2026-11-26, away and presses; the diff deleted):**
     (1) the replay's enemy is away in the away stretches (engine assumption enemy-away `absent`, the default:
     TimelineScenario.enemyAway, timeline/landing.ts): a hit landing there applies nothing to the enemy (no damage,
-    application, Stagger, enemy-side buff or hit event; an Arts Burst neither), while what it gives its own team
-    still comes: d774's Liino presses her battle skill at 49.86 and 53.20 s inside its stretch and the log lists her
+    application, Stagger, enemy-side buff or hit event; an Arts Burst still lands, its effects coming: 4a64's Nature
+    burst at 29.30 s, unlogged, gives Arcane's weapon debuff the log lists from 51.31 s; held back it cost 6 plain),
+    while what it gives its own team still comes: d774's Liino presses her battle skill at 49.86 and 53.20 s inside its stretch and the log lists her
     stance's ATK on the team after it (9c6e's three presses at 15.3–21.4 s the same), so the operators' own buffs from
     such a hit apply. (2) A hitless press is made from the listing (`hitless-presses` `inferred`, the default:
     buffreplay.ts inferredPress): only with the log's own cast event, a slot press the enemy was there for, its skill

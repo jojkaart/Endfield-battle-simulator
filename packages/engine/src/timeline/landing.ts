@@ -534,8 +534,10 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
 
 /** A burst lands: before-damage triggers on it, its damage (on the enemy as it is now), then its other triggers. */
 export function landBurst(ctx: TimelineContext, state: TimelineState, b: PendingBurst): TimelineState {
-  // The enemy out of reach (TimelineScenario.enemyAway): the burst finds no one, as a hit does.
-  if (enemyAwayAt(ctx.scenario, b.frame)) return state;
+  // Not held back while the enemy is away (TimelineScenario.enemyAway): an Arts Burst is of inflictions it already
+  // took, and its effects come (pending/zmdlogs-4a64e58e75ad.json: Arcane's Nature burst at 29.30 s, 0.15 s into the
+  // stretch and unlogged, gave the Will burst debuff of her weapon the log lists from 51.31 s; held back, 6 plain
+  // fewer). The totals leave its damage out (fightTotals).
   const origin = { operator: b.event.operator, kind: b.fromKind };
   // As it was inflicted, at its own frame (kind and frame first, as status.ts makes it).
   const { kind: burstKind, ...rest } = b.event;
