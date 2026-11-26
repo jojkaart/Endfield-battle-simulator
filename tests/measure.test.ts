@@ -146,8 +146,8 @@ describe("measure's negative control", () => {
 
 describe("measure --changed placement", () => {
   it("names the casts placed only before and only now", () => {
-    const lines = movedCasts(["a.json", "b.json"], new Map([["a.json", ["1.00 s op skill", "2.00 s op combo"]], ["b.json", ["1.00 s op skill"]]]), new Map([["a.json", ["1.00 s op skill", "2.10 s op combo"]], ["b.json", ["1.00 s op skill"]]]));
-    expect(lines).toEqual(["  a.json: 1 cast(s) only before, 1 only now", "    - 2.00 s op combo", "    + 2.10 s op combo", "  b.json: the same casts; some hits moved between them"]);
+    const lines = movedCasts(["a.json", "b.json"], new Map([["a.json", ["1.00 s op skill", "2.00 s op combo", "9.00 s op ult"]], ["b.json", ["1.00 s op skill"]]]), new Map([["a.json", ["1.00 s op skill", "2.10 s op combo", "20.00 s op ult"]], ["b.json", ["1.00 s op skill"]]]));
+    expect(lines).toEqual(["  a.json: 1 cast(s) moved, 1 only before, 1 only now", "    ~ 2.00 s op combo → 2.10 s", "    - 9.00 s op ult", "    + 20.00 s op ult", "  b.json: the same casts; some hits moved between them"]);
   });
 });
 

@@ -4,7 +4,7 @@
 // ratioClusters; the damage-factors report point 4). Structural: what each row is, not the clocks' numbers.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { boundCover, devFixtures, droppedView, heldBy, logClocks, loggedStaggerSpans, ratioClusters, replayTimeStops, STAGGER_LISTED, worldMs, type LogHit } from "@efsim/logs";
+import { boundCover, devFixtures, pairCasts, droppedView, heldBy, logClocks, loggedStaggerSpans, ratioClusters, replayTimeStops, STAGGER_LISTED, worldMs, type LogHit } from "@efsim/logs";
 
 const data = loadGameData();
 
@@ -74,5 +74,23 @@ describe("a group's ratios in clusters (differences --clusters)", () => {
       { ratio: 1.147, n: 3 },
       { ratio: 1.3, n: 1 },
     ]);
+  });
+});
+describe("two placements' casts paired (castpairs.ts; round 12 friction point 2)", () => {
+  it("pairs the casts that stay first, so one cast gone among its neighbours reads as one gone, not each moved", () => {
+    // 9a80's shape: five battle skills of one operator, the third gone in the other placement.
+    const c = (start: number) => ({ operator: "rossi", skillId: "battle", start });
+    const before = [c(1000), c(4000), c(7000), c(10000), c(13000)];
+    const after = [c(1000), c(4000), c(10000), c(13020), c(21000)];
+    const p = pairCasts(before, after);
+    expect(p.kept.map(([a]) => a.start)).toEqual([1000, 4000, 10000, 13000]);
+    expect(p.moved).toEqual([]);
+    expect(p.gone.map((x) => x.start)).toEqual([7000]);
+    expect(p.added.map((x) => x.start)).toEqual([21000]);
+    // Within MOVED_MAX_MS a cast moved; another skill never pairs.
+    const q = pairCasts([c(1000), { ...c(2000), skillId: "combo" }], [c(1800), { ...c(2000), skillId: "ult" }]);
+    expect(q.moved.map(([a, b]) => [a.start, b.start])).toEqual([[1000, 1800]]);
+    expect(q.gone.map((x) => x.skillId)).toEqual(["combo"]);
+    expect(q.added.map((x) => x.skillId)).toEqual(["ult"]);
   });
 });

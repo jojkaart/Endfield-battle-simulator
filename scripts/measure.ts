@@ -21,7 +21,8 @@
 //   --logs <id,…>       only these logs (ids or unique parts of them; never a hold-out)
 //   --changed placement only logs whose placed casts (placeHits) differ between the measured code and the --base /
 //                       --against ref's code (seconds per log, then only those are checked); prints, per
-//                       development log, the casts placed only before (-) and only now (+)
+//                       development log, the casts that moved (~, paired as packages/logs/src/castpairs.ts does), those
+//                       placed only before (-) and only now (+)
 //   --assume <id>=<r>   replay under another reading of a kit's or the engine's open assumption (e.g.
 //                       control-immunity=bosses; repeatable): the reading's effect against the reference
 //   --variant <id>=<r>[,<id>=<r>…]  measure once per --variant (repeatable; each on top of --assume), all of the
@@ -94,6 +95,7 @@ import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { printHelp } from "./usage.ts";
+import { pairCasts } from "../packages/logs/src/castpairs.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -541,7 +543,8 @@ const KIND_LINES = 8;
  * The measured fights' one-sided landings by kind (Shares.kinds, packages/logs onesided.ts: where they sit, and where
  * they sit · nature), as the mean % of a fight's logged total per scoreboard group: gross (replay-only + |log-only|),
  * replay-only, log-only, largest gross first. The hold-outs' only view of which landings are one-sided: by kind, never
- * a log, an operator or a key. With `before` each gross as before → after.
+ * a log, an operator or a key (docs/design/tests.md "What a hold-out output may say"). With `before` each gross as
+ * before → after.
  */
 export function kindLines(after: ReadonlyMap<string, Shares>, split: Split, before?: ReadonlyMap<string, Shares>, beforeLabel?: string): string[] {
   if (![...after.values()].some((x) => x.kinds)) return [];
@@ -802,12 +805,18 @@ export function mixedPerHit(mixed: readonly string[], before: ReadonlyMap<string
  */
 export function movedCasts(logs: readonly string[], before: ReadonlyMap<string, readonly string[]>, after: ReadonlyMap<string, readonly string[]>, limit = 8): string[] {
   const out: string[] = [];
+  // The worker's signatures ("12.34 s <operator> <skill>", measure-worker.ts placementOf) as casts, paired as the
+  // library pairs placements (packages/logs/src/castpairs.ts: the casts that stay first, then the moved by nearest).
+  const parse = (sig: string) => {
+    const m = /^(-?[\d.]+) s (\S+) (\S+)$/.exec(sig);
+    return { sig, operator: m?.[2] ?? sig, skillId: m?.[3] ?? "", start: m ? Number(m[1]) * 1000 : NaN };
+  };
   for (const k of logs) {
-    const [a, b] = [new Set(before.get(k) ?? []), new Set(after.get(k) ?? [])];
-    const gone = [...a].filter((c) => !b.has(c));
-    const added = [...b].filter((c) => !a.has(c));
-    out.push(`  ${k}: ${gone.length || added.length ? `${gone.length} cast(s) only before, ${added.length} only now` : "the same casts; some hits moved between them"}`);
-    for (const [sign, cs] of [["-", gone], ["+", added]] as const) {
+    const p = pairCasts((before.get(k) ?? []).map(parse), (after.get(k) ?? []).map(parse));
+    const changed = p.moved.length + p.gone.length + p.added.length;
+    out.push(`  ${k}: ${changed ? `${p.moved.length} cast(s) moved, ${p.gone.length} only before, ${p.added.length} only now` : "the same casts; some hits moved between them"}`);
+    const moved = p.moved.map(([a, b]) => `${a.sig} → ${(b.start / 1000).toFixed(2)} s`);
+    for (const [sign, cs] of [["~", moved], ["-", p.gone.map((c) => c.sig)], ["+", p.added.map((c) => c.sig)]] as const) {
       for (const c of cs.slice(0, limit)) out.push(`    ${sign} ${c}`);
       if (cs.length > limit) out.push(`    ${sign} … ${cs.length - limit} more`);
     }
