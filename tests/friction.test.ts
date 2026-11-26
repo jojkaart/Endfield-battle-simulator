@@ -47,6 +47,8 @@ describe("friction.ts outcomes --backlog (round 10's own report point 2)", () =>
     expect([...carried].sort((a, b) => a[0] - b[0])).toEqual([[1, [1]], [2, [2]], [3, [1]]]);
     const r = ["## 1. One", "## 2. Two", "## 3. Three", "## 4. Four"].join("\n");
     expect(outcomeSkeleton(r, 11, { name: "backlog.md", carried })).toBe("## Outcome (round 11)\n\n- 1 (One): carried (backlog.md point 1)\n- 2 (Two): carried (backlog.md point 2)\n- 3 (Three): carried (backlog.md point 1)\n- 4 (Four): ");
+    // carry --label "<name>," writes "<file>, point n" (round 15).
+    expect([...carriedFrom("## 1. A\n- **From:** docs/friction-done/2026-11-26-backlog-after-round-14.md, point 1.", "docs/friction/2026-11-26-backlog-after-round-14.md")]).toEqual([[1, [1]]]);
   });
 });
 
