@@ -106,6 +106,13 @@ shares of the off error at that code):**
   ult-overlap probe). Still possible: a boss-phase pause of the operators' timers while the enemy is away (no log
   with an away stretch has been checked for it: d774's 24 s away window at 30.6–54.6 s is the test), Arcane's Will
   burst runs refreshed by a burst the replay doesn't make.
+  **2026-11-26 (the enemy's clock): a pause of the operators' timers while the enemy is away is ruled out**, in both
+  logs: Xiranflow's layers (buff_equipsuit_expend_spelldamage, each layer its own 25 s) on Zhuang Fangyi run on time
+  across the away windows: 4d60's layer from 108.12 s is listed to 135.90 s and gone by 137.88 s (24.38–26.36 s of
+  world time across 117.22–124.45 s: 0–2.0 s of hold, not the 7.2 s gap), d774's from 29.59 s to 56.21 s, gone by
+  56.79 s (26.62–27.20 s of world time across the 24 s away window). Its layers aren't one of the placement's clocks
+  (`maxStacks`), so `zmdlogs holds` doesn't show them; `zmdlogs lanes <fx> --buff expend`, `zmdlogs worldtime`. What
+  asks 3.6–6.1 s in 4d60 is Perlica's weapon and Arcane's Will burst runs: a refresh the replay misses, still open.
   The hold placement's stop list (buffreplay.ts, before replayedCastStops) leaves out an event the replay read as a
   tick since 2026-11-24 (placement leads); query.ts replayTimeStops (the views' world time) still counts it.
   **4bfc 179.51 s (2026-11-24, the lead's question): Empyrean's end, not a cast**, but the replay makes a cast there
@@ -167,7 +174,8 @@ shares of the off error at that code):**
   (2026-11-25: the log has no hit by anyone in 29.66–30.00 s, before Gilberta's combo slow-down, where one hidden hold
   of a dodge's 0.4–0.5 s would carry the burst into her ultimate's stop and past Rossi's; the placement puts none
   there, and a burst isn't one of its clocks: a burst's world-time delay from its infliction's logged hit as a hold
-  bound would decide it). 79cc 24.23 s:
+  bound would decide it; 2026-11-26: not sound, the placed holds don't hold bursts and bursts run late with the
+  combos between, as every clock does: "The enemy's clock" below). 79cc 24.23 s:
   the log's burst comes 1.01 s after the touch with no hold at all, so Ardelia's combo slow-down (its event at 23.03 s
   with Arcane's) didn't hold it: a combo pressed before Arcane's frame-9 reset (23.02 s placed) would be cut by it;
   a frame either way; open.
@@ -238,6 +246,11 @@ shares of the off error at that code):**
   Corrosion-only reading (its end and ramp, the other statuses held) measured the same on 489c and db87 but not on
   f978's ticks. Still possible: Electrification and Solidification held after all (no log decides them); db87's
   Stagger-time delay. The holds per stretch (round 12's backlog point 5) weren't needed for this.
+  **2026-11-26: the delay is the combos'** (below, "The enemy's clock"): each of db87's four Combustion tick pairs in
+  47.4–53.7 s spans one combo stop and comes 0.09–0.21 s late (0.59 s in all); no Stagger, enemy action or
+  Imprisonment does it. Not fixed: holds allowed at the combos' stops in a Stagger (`stagger-holds` `combos`) move
+  db87 −6.0 → −5.9% only (the least total takes the 0.44 s from holds placed earlier), and no clock bounds the
+  Corrosion past the replay's end (db87 lists none; its ramp steps read only hits the replay's Corrosion reaches).
 - **The placement's 20 unsettled casts (round 12's settleCheck; 2026-11-25): a third pass doesn't settle them.** One
   more pass 2 from the in-turn placement's stops, then the in-turn rule again (docs/tried/2026-11-25-third-placement-pass.diff):
   12 settle, but 4a64's, 7910's and 9090's oscillate (a fourth pass moves them back: Rossi 21.23 ↔ 24.55 s, Arcane
@@ -336,6 +349,10 @@ shares of the off error at that code):**
   there (buff_physical_airborne at 97.05 s), so the status was applied. **Ruled out:** a Stagger holding the cooldown
   (86.50–109.93 s is Staggered: held, the 106.13 s proc couldn't come either); an unplaced cast's stop (the log has no
   cast event there; Lifeng's only slow-down is at 96.93 s). Open.
+  **2026-11-26:** also ruled out: one cooldown shared by the set's wearers (Chen Qianyu and Lifeng both wear it in
+  d4fb; Chen's proc at 196.89 s comes 7.5 s after Lifeng's at 189.37 s); a cooldown restarted by every Physical status
+  in it, proc or not (106.13 s procs 9 s after the 97.05 s Lift). The combos' extra hold ("The enemy's clock", below)
+  gives at most 0.2 s a combo, 0.6–0.8 s over the three between 78.33 and 97.05 s, not 2.18 s. Open.
 - **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
   unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6%. 4e36:
   small replay-only basic-attack tails (Si's attack4, Ardelia's attack3 projectiles) and +1.6% matched. de6a: the
@@ -351,6 +368,56 @@ shares of the off error at that code):**
   differences 7910 --what wpn_pistol_0011`: 311 hits, median 1.000, upper quartile 1.099); af7b's ×1.161 is her
   ultimate at 59.9–60.6 s, where the log lists Eternal Xiranite's team DMG (+0.16, 19 hits fit with it) and the
   Amp's start (above, Liino's windows).
+
+## The enemy's clock: a combo holds every clock more than its stop list says (2026-11-26)
+
+**Shows:** db87's Combustion ticks in its Stagger (47.39, 49.26, 50.67, 52.17, 53.74 s) run 0.59 s late over 6.4 s
+where the placement allows no hold (no dodge while the enemy is Staggered), and its Corrosion (read from the damage)
+acts 0.58 s past the replay's end. Each of those tick pairs spans exactly one combo's stop.
+**Found: across a combo's stop every clock the logs show runs late**, by about a fifth to a half of what the stop
+list says the combo holds; across an ultimate's stop, on time (scripts/probes/combo-hold/):
+- the enemy's tick chains (Combustion, Rossi's bleed): inside the log's Stagger, chains with no combo stop 0.02 s
+  over 30 pairs, with one 3.43 s over 87 pairs (15.36 s held by the combos: 0.17–0.20 ×, about 50–70 ms a combo);
+  outside the Stagger, chains with no pair of a dodge's size, the same (0.24 ×; no stop: −11 ms a pair);
+- an operator's own cast across a teammate's combo (its first and last landings, both outside every stop): +263 ms
+  median over 112 casts (combo-held median 395 ms; 0.33 ×), +9 ms over 4,629 casts with no stop, −13 ms across an
+  ultimate's; Arcane's 9-frame combo (her reset at frame 9) +200 ms too;
+- Arts Bursts: the world delay past the burst delay 181 ms median over 45 bursts with combos between (0.40 ×), 14 ms
+  over 106 with no stop;
+- buff runs (exact single runs): excess = 0.45 × combo-held + 0.04 × ultimate-held + 0.008 × duration (532 runs;
+  dodges correlate with combos there, so the upper end).
+**Ruled out:**
+- **Arcane's Imprisonment slowing the enemy's clock** (SealAction's 0.3 → 0.2 → 1 curve, in-game test 37's Arcane
+  part): over its duration (6.6 s, about 2.8 s lost) the ticks after a seal ask none (20 pairs with ≥ 0.3 s of that
+  loss: residual − loss median −623 ms); over 1 s (0.42 s lost) the tick right after a seal is on time in 207f
+  31.91 s, 489c 46.54 and 74.05 s, a7a7 51.88 s, f978 22.37 s, and the seal windows' lateness (54–385 ms) is the
+  combos' at those casts (scripts/probes/combo-hold/seal-ticks.ts). Test 37's Arcane part is decided from the logs:
+  no.
+- **A Stagger or the enemy's own actions** holding the enemy's statuses: Staggered chains with no combo run on their
+  period (above).
+- **A longer ComboSkill curve** (the named curve is a guess: skillData.ts NAMED_CURVES): 0.01 for its whole duration
+  measured verified plain 78.0 → 73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; 0.01 to 70% then a ramp,
+  verified 75.6%, development 68.6%, hold-out 77.8% (docs/tried/2026-11-26-combo-curve-flat.diff). The Corrosion
+  ramps, buff ends and landings the verified logs pin fit the guessed curve: whatever holds the clocks above isn't
+  the curve every timer follows.
+- **A burst's delay from its infliction as a bound for the hold placement** (9a80 35.05 s): the placed holds don't
+  hold bursts (012a 31.91, 458b 174.11, 489c 75.17, 7910 29.85 s: on time with 0.10–0.42 s placed between), and the
+  bursts' lateness goes with the combos between (above), not with the holds; 9a80's 0.44 s has Gilberta's combo at
+  30.00 s inside it. Not built.
+**Registered, not the default:** engine assumption `stagger-holds` (`none` the default; `combos`: inside the replay's
+Stagger the holds may rise within a combo's stop, up to half its own hold; `combos-full`: its whole hold; holds.ts
+comboHoldSpans, placeHolds `slow`). Measured: `combos` development plain 69.0 → 69.2%, hold-out 79.0 → 79.2% (3 better,
+2 worse), earlier pending 64.7%, verified 78.0 → 77.5% (0eef 45 → 41: a hold moved into its replay's Stagger window
+puts a Corrosion step off at 7.57 s, the log having no Stagger there); `combos-full` development 69.3%, the rest the
+same. db87 −6.0 → −5.9% only. Not the default with a verified log worse.
+**Still possible:** the time scale's change at a combo's start or end taking effect a few frames late on the clocks
+(about 2 frames a combo for the enemy's ticks, 6 for the operators' landings: no single curve does both); the
+combo's camera or cut-in holding the teammates' actions apart from the world's clock; the caster's layer-1
+TimeDilationAction (dropped by the compiler) on its targets (Arcane's has the enemy among them: 0.25 s, about
+0.17 s lost; most combos have none, and their stops show the same excess).
+**Next check:** the excess per combo against its slow-down's length and its operator over more logs (per-combo
+table: scripts/probes/combo-hold/casts.ts --rows), and whether it is a fixed delay per stop edge; then a reading of
+the stops that holds the operators' clocks (bursts, landings) and not the statuses.
 
 ## Fight totals: what moves them (2026-11-23)
 

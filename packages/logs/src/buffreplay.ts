@@ -21,7 +21,7 @@ import { isRecordedBurst } from "./recordedburst.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { loggedStagger, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { REPLAY_EDGE_MS, replayRecorder, type AppliedStop, type BuffTrace, type Change, type KitWindow, type ReplayRecord, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
-import { HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
+import { comboHoldSpans, HOLD_BOUND_TOL_MS, notAClock, placeHolds, refreshedIn, RUN_START_MS, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds, type StatusInstance } from "./holds.ts";
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
 const NEAR_FRAMES = 16;
@@ -2507,9 +2507,13 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const ticked = (c: ReplayedCast) => c.landings.length === 0 && tickSkills.has(`${c.operator}|${c.skillId}`) && !made.has(`${c.operator}|${c.skillId}|${c.start}`);
     const stops = replayedCastStops(data, assembled.filter((c) => !ticked(c)));
     const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks);
+    // Engine assumption stagger-holds: inside the Stagger, holds only at the combos' stops (holds.ts comboHoldSpans).
+    const staggerHolds = opts.assume?.["stagger-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "stagger-holds")?.default;
+    const comboShare = staggerHolds === "combos" ? 0.5 : staggerHolds === "combos-full" ? 1 : 0;
     placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),
       still: main.staggerWindows.map((w) => [msOfFrame(w.start), msOfFrame(Number.isFinite(w.end) ? w.end : frameOf(Math.max(0, ...fx.hits.map((h) => h.t))))] as const),
+      ...(comboShare > 0 ? { slow: comboHoldSpans(stops, comboShare) } : {}),
     });
     worldHolds = placedHolds.holds;
     if (hiddenHolds) laneEnds = loggedLaneEnds(fx);

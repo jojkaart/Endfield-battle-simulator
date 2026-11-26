@@ -131,6 +131,16 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "stagger-holds",
+    question: "May the hidden holds (hidden-holds `placed`) rise while the enemy is Staggered? No dodge is possible then (a Staggered enemy doesn't attack), but the enemy's tick chains inside the log's Stagger come late by about a fifth of what the combos' stops hold where a combo falls (3.43 s over 15.36 s held, 87 pairs), on time where none does (30 pairs, 0.02 s): a combo slow-down holds more than its stop list says (docs/open-problems.md \"The enemy's clock\"). Read only by the log check's replay (packages/logs holds.ts comboHoldSpans).",
+    default: "none",
+    readings: {
+      none: "no hold while the replay's Stagger lasts (the placement until 2026-11-26)",
+      combos: "inside the Stagger, holds only within a combo's stop, up to half its own hold (Σ 1 − scale) there",
+      "combos-full": "the same, up to its whole own hold",
+    },
+  },
+  {
     id: "enemy-away",
     question: "Does the enemy take damage in a stretch of the fight where the log has no hit at all for 6 s or more (ENEMY_AWAY_MS)? Read only by the log check's totals (packages/logs enginecheck.ts fightTotals), not by simulations: a stage's boss phase isn't the team's to model.",
     default: "away",

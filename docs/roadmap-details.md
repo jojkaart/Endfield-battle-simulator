@@ -216,6 +216,18 @@ world-time delay from its infliction as a hold bound (9a80 35.05 s: a dodge-size
 log is quiet), db87's slow Combustion ticks in a Stagger (50.7–53.8 s, ~0.6 s), d4fb 97.05 s (2.18 s short; not the
 Stagger), a placement pass that moves a cast only where the quiet stretches favour it.
 
+**The enemy's clock, 2026-11-26** (journal: the enemy's-clock entry of 2026-11-26; open-problems "The enemy's
+clock"): db87's Stagger-time delay is the combos': across a combo's stop every clock runs late (the enemy's tick
+chains 0.17–0.24 × the combo-held time, an operator's cast across a teammate's combo 0.33 ×, bursts 0.40 ×, buff runs
+0.45 ×; across an ultimate's stop on time; scripts/probes/combo-hold/). Ruled out: Arcane's Imprisonment (test 37's
+Arcane part decided), a Stagger, a longer ComboSkill curve (flat: verified 78.0 → 73.0%; docs/tried/), a burst bound
+(placed holds don't hold bursts), a pause of the operators' timers while the enemy is away (Xiranflow's layers on
+time in 4d60 and d774). `stagger-holds` `combos` registered off (development +0.2 points, 0eef worse). Next: whether
+the combos' excess is a fixed delay per stop edge, and a stop reading that holds the operators' clocks (bursts,
+landings) without moving the statuses; d4fb 97.05 s (2.18 s short, the combos give 0.6–0.8 s); 4d60's Perlica weapon
+and Will burst runs (a refresh the replay misses); not reached: freezes on Electrification / Solidification, the
+quiet-stretch placement pass.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

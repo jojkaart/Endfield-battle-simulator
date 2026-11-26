@@ -18,6 +18,9 @@ worked, found by reading 80 lines of prose).
 
 ## Files
 
+- [2026-11-26-combo-curve-flat.diff](2026-11-26-combo-curve-flat.diff): the ComboSkill slow-down curve at 0.01 for
+  its whole duration (the clocks run late across combos by more than the guessed curve holds); verified plain 78.0 →
+  73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; a middle curve worse too.
 - [2026-11-25-third-placement-pass.diff](2026-11-25-third-placement-pass.diff): pass 2 and the in-turn rule run once
   more (settleCheck's third pass as the placement); 2-cycles, not a fixed point: development plain 68.1 → 67.8%
   (9090 −42, 4a64 −10, fc63 +10).

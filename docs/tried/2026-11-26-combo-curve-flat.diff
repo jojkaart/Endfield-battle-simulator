@@ -1,0 +1,25 @@
+The ComboSkill slow-down curve (a named asset not in the data; skillData.ts NAMED_CURVES guesses 0.01 for 40% of the
+duration, then a linear ramp to 1 at 93%) held at 0.01 for its whole duration. Why: every clock the logs show runs
+late across a combo's stop by more than the guessed curve holds (the enemy's tick chains in a Stagger +0.20 × the
+combos' held time, an operator's own cast across a teammate's combo +0.33, Arts Bursts +0.40, buff runs +0.45;
+scripts/probes/combo-hold/, docs/open-problems.md "The enemy's clock"). Measured 2026-11-26 (`measure --patch`, against
+c509b8f's snapshots, the tree's code otherwise): verified plain 78.0 → 73.0% (5 of 6 worse), development 69.0 → 68.0%,
+hold-out 79.0 → 76.7% (7 worse, 1 better), earlier pending 64.7 → 62.2%, mismatch 13.9 → 15.5%. A middle curve (0.01
+to 70% of the duration, then a linear ramp to 1: `(t) => (t <= 0.7 ? 0.01 : 0.01 + ((t - 0.7) / 0.3) * 0.99)` in the
+line below): verified 78.0 → 75.6%,
+development 68.6%, hold-out 77.8%, earlier 63.2%. Dropped: whatever holds the clocks more across a combo isn't the
+curve every timer follows (the logs' Corrosion ramps, buff ends and landings fit the guessed one better). What would
+have to change: a mechanism that holds the clocks the probes see (the enemy's ticks, the operators' casts, bursts) and
+not the ones the verified logs pin.
+
+diff --git a/packages/data/src/skillData.ts b/packages/data/src/skillData.ts
+--- a/packages/data/src/skillData.ts
++++ b/packages/data/src/skillData.ts
+@@ -93,6 +93,6 @@
+  * taken as linear). RESETto1 is 1 throughout. Others are unknown.
+  */
+ const NAMED_CURVES: Readonly<Record<string, (t: number) => number>> = {
+-  ComboSkill: (t) => (t <= 0.4 ? 0.01 : t >= 0.93 ? 1 : 0.01 + ((t - 0.4) / 0.53) * 0.99),
++  ComboSkill: () => 0.01,
+   RESETto1: () => 1,
+ };

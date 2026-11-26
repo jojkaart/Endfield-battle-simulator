@@ -368,24 +368,50 @@ function shortestPaths(n: number, edges: readonly Edge[], s: number): { dist: nu
   return { dist, pred };
 }
 
+/** A span (ms) where the hidden holds may rise at most `rate` ms per ms, though a still span covers it (placeHolds `slow`). */
+export interface HoldSpan {
+  readonly a: number;
+  readonly b: number;
+  readonly rate: number;
+}
+
+/**
+ * The combo slow-downs' spans where the hidden holds may rise inside the Stagger (engine assumption stagger-holds,
+ * reading `combos`): the enemy's tick chains inside the log's Stagger run on their period where no combo's stop falls
+ * (30 pairs, 0.02 s in all) and late by about a fifth of the time a combo's stop holds where one does (87 pairs, 3.43 s
+ * over 15.36 s held; outside the Stagger the same, 0.24; scripts/probes/combo-hold/tick-chains.ts), which no dodge
+ * explains in a Stagger. A longer ComboSkill curve (skillData.ts NAMED_CURVES) measured worse everywhere
+ * (docs/tried/2026-11-26-combo-curve-flat.diff), so the excess is placed as holds here instead, where the clocks ask
+ * for it. Each combo stop allows up to `share` of its own hold (Σ 1 − scale) there, spread over its frames. Not the
+ * default: development plain 69.0 → 69.2%, but a verified log worse (docs/open-problems.md "The enemy's clock").
+ */
+export function comboHoldSpans(stops: readonly TimeStop[], share: number): HoldSpan[] {
+  return stops
+    .filter((s) => s.kind === "combo" && s.scales.length > 0)
+    .map((s) => ({ a: (s.start * 1000) / FPS, b: ((s.start + s.scales.length) * 1000) / FPS, rate: (share * s.scales.reduce((t, x) => t + (1 - x), 0)) / s.scales.length }));
+}
+
 /**
  * The hidden holds from the clocks' bounds: P nondecreasing, rising no faster than real time, flat inside `still` (ms
  * spans where nothing holds: the enemy Staggered doesn't attack, so nothing is dodged), every kept bound met (difference
  * constraints; a bound in a negative cycle dropped until none is left). The least total hold H that the bounds allow
  * (P(end) at its least), then under P(end) = H the earliest and the latest P at every node, and their midpoint.
  */
-export function placeHolds(bounds: readonly HoldBound[], opts: { readonly end: number; readonly still?: readonly (readonly [number, number])[] }): PlacedHolds {
+export function placeHolds(bounds: readonly HoldBound[], opts: { readonly end: number; readonly still?: readonly (readonly [number, number])[]; readonly slow?: readonly HoldSpan[] }): PlacedHolds {
   const still = opts.still ?? [];
+  const slow = opts.slow ?? [];
   const end = Math.max(opts.end, ...bounds.map((b) => b.b));
   const build = (list: readonly HoldBound[]) => {
-    const times = [...new Set([0, end, ...list.flatMap((c) => [c.a, c.b]), ...still.flat().filter((t) => t > 0 && t < end)])].sort((x, y) => x - y);
+    const times = [...new Set([0, end, ...list.flatMap((c) => [c.a, c.b]), ...[...still, ...slow.map((s) => [s.a, s.b] as const)].flat().filter((t) => t > 0 && t < end)])].sort((x, y) => x - y);
     const idx = new Map(times.map((t, i) => [t, i]));
     const edges: Edge[] = [];
     for (let i = 0; i + 1 < times.length; i++) {
       const [a, b] = [times[i] as number, times[i + 1] as number];
       const held = still.some(([x, y]) => x <= a && b <= y);
+      // Inside a still span, P may still rise inside a slow span (its rate: the most hold per ms there).
+      const rate = held ? Math.max(0, ...slow.filter((s) => s.a <= a && b <= s.b).map((s) => s.rate)) : 1;
       edges.push({ u: i + 1, v: i, w: 0 });
-      edges.push({ u: i, v: i + 1, w: held ? 0 : b - a });
+      edges.push({ u: i, v: i + 1, w: rate * (b - a) });
     }
     for (const c of list) {
       const [a, b] = [idx.get(c.a) as number, idx.get(c.b) as number];

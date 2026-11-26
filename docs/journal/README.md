@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-26: The enemy's clock: combos hold every clock more than their stops; no pause while the enemy is away](2026-11-26-01-the-enemy-s-clock-combos-hold-every-clock-more-than-their.md)
 - [2026-11-25: Holds and placement: a freeze holds no Arts reaction status](2026-11-25-03-holds-and-placement-a-freeze-holds-no-arts-reaction-status.md)
 - [2026-11-25: Improvement round 12: decisions kept with their reasons](2026-11-25-02-improvement-round-12-decisions-kept-with-their-reasons.md)
 - [2026-11-25: The remaining leads: the Empyrean's end on its frame, ultimates in turn, the touch after a reaction](2026-11-25-01-the-remaining-leads-the-empyrean-s-end-on-its-frame.md)

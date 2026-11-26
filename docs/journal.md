@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 146 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 147 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: The enemy's clock: combos hold every clock more than their stops; no pause while the enemy is away
+
+**Goal:** the holds-and-placement round's leads, in order: db87's enemy-clock delay in a Stagger (its Corrosion 0.58 s
+past the replay's end, Combustion ticks 1.5 s apart), a burst's delay as a hold bound (9a80 35.05 s), 4d60's unlogged
+holds (a boss-phase pause?), d4fb 97.05 s; if time, freezes on Electrification / Solidification and a placement pass
+by quiet stretches.
+
+**Done** (open-problems "The enemy's clock", new; the four leads' paragraphs):
+- **Found: across a combo's stop every clock runs late** by a fifth to a half of what the stop list holds, across an
+  ultimate's on time (scripts/probes/combo-hold/): the enemy's tick chains in a Stagger 3.43 s over 87 pairs with a
+  combo against 0.02 s over 30 without; an operator's cast across a teammate's combo +263 ms median (112 casts);
+  bursts +181 ms (45); buff runs 0.45 × the combo-held time. db87's four tick pairs each span one combo.
+- **Ruled out:** Arcane's Imprisonment slowing the enemy's clock (SealAction's curve, over 1 s or its 6.6 s: the
+  ticks after a seal are on time; in-game test 37's Arcane part decided from the logs); a Stagger or the enemy's
+  actions (Staggered chains without combos run on their period); a longer ComboSkill curve (flat: verified 78.0 →
+  73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; a middle curve worse too; docs/tried/2026-11-26-combo-curve-flat.diff);
+  a burst's delay as a hold bound (placed holds don't hold bursts: 012a, 458b, 489c, 7910 on time across 0.10–0.42 s
+  of them); a pause of the operators' timers while the enemy is away (Xiranflow's 25 s layers on Zhuang Fangyi run on
+  time across 4d60's and d774's away windows); for d4fb 97.05 s a cooldown shared by the set's two wearers and one
+  restarted by every Physical status.
+- **Registered, not the default:** engine assumption `stagger-holds` (`combos`: the hidden holds may rise inside a
+  Stagger within a combo's stop, up to half its hold; holds.ts comboHoldSpans, placeHolds `slow`): development plain
+  69.0 → 69.2%, hold-out 79.0 → 79.2%, verified 78.0 → 77.5% (0eef), db87 −6.0 → −5.9% only.
+
+**Scoreboard:** no default changed, no verdict moved (`npm run snapshots:update`). No engine timing change (no smoke,
+no team-ab).
+
+**Decisions:** `stagger-holds` stays off with a verified log worse and db87 barely moved: the placement's least
+total takes the Stagger's 0.44 s from holds placed earlier, and nothing bounds the unlisted Corrosion past the
+replay's end. The burst bound wasn't built: its mechanism (dodges holding the operators' clocks) isn't what the bursts
+show. Not reached: Electrification / Solidification across a freeze (no listed run across one found in a first look,
+7910's Solidification unlisted), the quiet-stretch placement pass.
+
+**Problems:** the ComboSkill curve's measures waited behind another worktree's measures in the lock's queue (about
+10 min each); the probes' first cut (per tick pair) split a stop's time between neighbouring pairs, so only chain
+sums with whole stops inside are evidence.
 
 ## 2026-11-25: Holds and placement: a freeze holds no Arts reaction status
 
@@ -335,36 +372,3 @@ to 5 s for the running step before the cleanups, so snapshots puts its files bac
 .sh wrappers use `exec` so a signal reaches node. The unread-option check warns (stderr, after the output) rather
 than refuses: a spread of the values counts as reading all, so it can miss one but never names a wrong one. Round 9's
 backlog points 2 and 3 parked after their second carry; the rest is the backlog's seven points.
-
-## 2026-11-24: Misprediction statistics across the logs; Zhuang Fangyi's Empyrean combo key
-
-**Goal:** the owner's ask: one statistical pass over every log's mispredictions (not one log or operator at a time),
-ranking candidate causes that could each explain a large share; analysis, not fixes, but for a certain one.
-
-**Done:** scripts/probes/stats/: build.ts (every development log's hits with the check's verdicts, readings, zones,
-differences, features, and counterfactual readings: each listing difference taken the log's way, the crit flipped,
-boundary kit buffs on and off; one-sided landings; fights), analyze.py (first explanations, ratio clusters, buffs by
-mechanism, features with fight bootstraps and within-fight shuffles, a tree and lasso held out by fight group,
-one-sided kinds, fight-level features), bands.py, holdout-aggregates.ts (aggregates only). The write-up:
-docs/analysis/2026-11-24-misprediction-stats.md; open-problems "Misprediction statistics".
-- Stage logs aside, the off hits' error is one kit buff the replay has wrong at the hit (the listing right) 20.4%,
-  alternatives or the listing with alternatives 30.2%, Corrosion 8.5%, unexplained 35.1% (in known fight-operators).
-- **Fixed:** Zhuang Fangyi's Empyrean combo is logged under the base combo's key (Stagger origin combo_skill_ult):
-  21 hits ×1.500 = 5.4 / 3.6, 4.3% of the error, the largest single cause. The kit's Empyrean combo hit carries the
-  base key now.
-- Leads: two weapons' "ready" buffs on ultimates (2.8%, 6 fights), the rest of the ×1.5 band (Liino's ultimate
-  windows, Alesh's ultimate; 6.9% of the hold-outs' error), boundary effects as a marker of state changes (off 42.8%
-  against 24.2%, explaining 1.8% themselves), a weak drift with time (34 of 57 fights), Liino's factors in 7910, af7b.
-
-**Scoreboard** (`npm run snapshots:update`, the kit fix): development plain 67.1%, mismatch 11.7 → 11.6%, mean
-|damage error| 7.3 → 7.2%; hold-out 77.6%, 6.2%, 8.2 → 8.0% (1 better); earlier pending plain 63.6 → 63.7%, mismatch
-14.5 → 14.3%, 4.3 → 4.5%, within 5% 19 → 18 (3aa6, 4bfc better; d774 +3.8 → +7.2% and c6d8 mixed, per hit closer:
-the combos' ×1.5 hid d774's replay-only Empyrean strikes); all but the hold-outs 5.6 → 5.7%. Teams (team-ab against
-e5f22ef): every team's fight the same.
-
-**Decisions:** the analysis at e5f22ef's code (the tables built in an at-commit tree), the hold-out confirmation after
-the fix; grading a crit-less hit on the nearer of its two crits, a capped hit on its uncapped value; the off rate
-beside the error share, since the error favours big hits; the stage logs left out of the attribution.
-
-**Dead ends:** the error-weighted feature shares alone (Stagger, ultimates, the fight's last tenth) looked like
-causes and were mostly hit size; the tree screen finds nothing that generalizes across fight groups.
