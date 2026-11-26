@@ -463,7 +463,15 @@ detail):
   log flushes in steps of about 100 ms and at a stop's end, so a residual
   under ~0.2 s, or one at a ms many hits share, isn't timing evidence;
   "uneven batches" of a periodic hit may be the log's, not the game's.
-  World time between two moments: `efsim zmdlogs worldtime`.
+  World time between two moments: `efsim zmdlogs worldtime`. The spacing
+  at one moment (the gap to the moments before and after it): `zmdlogs
+  lanes` beside each end, `zmdlogs ends` per moment (round 16).
+- **The Stagger bar** (`LogHit.poise.bar`, round 16; 2026-11-26, a stop's
+  batched landings): the bar *this hit leaves*, so the bar before it is
+  `bar + dealt` (replaysteps.ts `loggedPoiseBars`). It falls in the game's
+  order inside a batched ms, the log's only record of that order
+  (castassembly.ts `batchOrder`): read as rising, c4f3's bars at 7.05 s
+  put the wrong combo first.
 - **A hit's Stagger origin** (`LogHit.poise.origin`, imports and refreshes
   since 2026-11-16; 2026-11-23, Si's strokes): the skill whose cast the
   hit's Stagger is credited to, the skill id the hit's own skill inherits

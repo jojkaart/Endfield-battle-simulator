@@ -29,6 +29,24 @@ doesn't hide a kit error; its fit goes into the fixture's
 and dropped keeps its diff in [docs/tried/](tried/README.md), named here
 with its measure, so it can be measured again later.
 
+A candidate about the log's listing ("the log lists X five times, the
+engine has two") names the neighbour hit that would rule it out, and is
+checked against it first (round 16, the arcane-will report: the combo
+slash 0.19 s before e82d's final listed the same five lines and read
+plain with two): `efsim zmdlogs hits <fixture> --same-listing <s>` gives
+the nearest hits with the very same listing and their verdicts, `hits
+--all --event <regex> --listed <regex>` one key's listings across logs. A
+listing difference that reads plain next door is no cause. An early end:
+`efsim zmdlogs ends <fixture> --at <s>` says whether it ended alone or
+with everything else listed there, and the moment spacing (an end within
+one grain of an event has no order against it).
+
+**A fixed item** (round 16, the batched-landings report point 4) shrinks
+to one line naming the journal entry that fixed it ("Fixed: … —
+docs/journal/<file>.md"); its points still open move to its round's
+"Still possible" list, so no fixed history sits under a "not fixed"
+heading.
+
 Operators are named here by display name; their ids (an internal name:
 Arcane is `chr_0032_lizhiyan`, Gilberta `chr_0013_aglina`) come from `efsim
 find --operators`, or `operatorId(data, "Arcane")` (@efsim/data) in a
