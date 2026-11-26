@@ -1,7 +1,8 @@
 // The replay's own decisions as lines (improvement round 14; combo-hold report point 1): what it skipped and why, the
 // casts it ended early (TAILCUT), couldn't make (FAILED), added (MISSED), made from the listing (INFER) or as another
-// skill than the placement's (MADE), and those it made against the kit (FORCED, INSIDE, CUTS), each from BuffReplay's
-// records. `zmdlogs replay` prints them among its landings; `zmdlogs decisions` prints those that differ between the
+// skill than the placement's (MADE), the kit jumps its logged landings contradicted (JUMPDROP: drivers.ts replayCast
+// `dropped`), and those it made against the kit (FORCED, INSIDE, CUTS), each from BuffReplay's records. `zmdlogs
+// replay` prints them among its landings; `zmdlogs decisions` prints those that differ between the
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
 
@@ -18,13 +19,13 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "FORCED" | "INSIDE" | "CUTS";
+  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "JUMPDROP" | "FORCED" | "INSIDE" | "CUTS";
   readonly operator: string;
   readonly text: string;
 }
 
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "FORCED", "INSIDE", "CUTS"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "JUMPDROP", "FORCED", "INSIDE", "CUTS"];
 
 /** The replay's decisions (BuffReplay.skipped, tailCuts, failed, missed, made, castFlags), in time order. */
 export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLine[] {
@@ -38,6 +39,11 @@ export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLin
     if (m.cast.missed) continue;
     if (m.inferred !== undefined) out.push({ t: msOf(m.frame), kind: "INFER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (logged at ${s(m.cast.start)}): a hitless press made from the listing (hitless-presses inferred): ${m.inferred}` });
     else if (m.skillId !== m.cast.skillId) out.push({ t: msOf(m.frame), kind: "MADE", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.cast.skillId)} (placed at ${s(m.cast.start)}) made as ${shortSkill(m.skillId)}` });
+    // A kit jump the logged landings contradicted (drivers.ts replayCast `dropped`): the path the cast took is the log's.
+    for (const j of m.dropped ?? []) {
+      const at = j.landings.map((l) => `${l.hitId}@${s(msOf(l.frame))}`).join(", ");
+      out.push({ t: msOf(j.frame), kind: "JUMPDROP", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): its jump ${j.from} → ${j.to} dropped, the logged landing(s) ${at} in the part it skips (a shared key's other path, or its condition read otherwise in the game)` });
+    }
   }
   for (const x of replay.castFlags) {
     const kind = x.kind === "cuts" ? "CUTS" : x.kind === "forced" ? "FORCED" : "INSIDE";
@@ -111,7 +117,7 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
   const reading = Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ");
   const head = under
     ? `The replay's decisions that differ under ${reading} (decisionsview.ts; - only under the defaults, + only under the reading), ${changed} of ${logs.length} log(s):`
-    : `The replay's decisions (decisionsview.ts: SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, FORCED, INSIDE, CUTS), ${logs.length} log(s):`;
+    : `The replay's decisions (decisionsview.ts: SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, JUMPDROP, FORCED, INSIDE, CUTS), ${logs.length} log(s):`;
   const summary = DECISION_KINDS.filter((k) => counts.has(k)).map((k) => {
     const c = counts.get(k) as { minus: number; plus: number; logs: Set<string> };
     return `  ${k.padEnd(7)} ${under ? `-${c.minus} +${c.plus}` : String(c.plus)} in ${c.logs.size} log(s)`;

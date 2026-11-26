@@ -170,7 +170,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
       if (j.end || !ofCast(j, operator, index)) return false;
       const target = j.frame + (j.to - j.from);
       const skipped = [...moved.keys()].filter((h) => h.frame >= j.frame && h.frame < target);
-      return skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
+      const drop = skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
+      // Record only (the log check's JUMPDROP lines): which jump went, and the logged landings it would have skipped.
+      if (drop && opts.dropped) opts.dropped({ frame: j.frame, from: j.from, to: j.to }, skipped.map((h) => ({ hitId: h.hitId, frame: (moved.get(h) as { frame: number }).frame })));
+      return drop;
     });
     const jumpedTo = new Set(contradicted.flatMap((j) => [...own.values()].flat().filter((h) => !moved.has(h) && h.frame >= j.frame + (j.to - j.from))));
     const taken = eventJumps(ctx, st, operator, skillId, index, frame, moved);
@@ -266,6 +269,13 @@ export interface ReplayCastOptions {
    * the cast's landings after its last logged one is in the log, the enemy there). What is detached by then goes on.
    */
   readonly endsAt?: number;
+  /**
+   * Told of each kit jump the cast's logged landings contradicted, which the replay drops (above: the jump's frame, its
+   * from and to on the cast's timeline, and the pinned landings in the part it would have skipped, at their logged
+   * frames). Record only: nothing the cast does depends on it (0c14-and-operator-curve report point 2: a shared key's
+   * path read off an operator's odd ratio, the jump's drop silent).
+   */
+  readonly dropped?: (jump: { readonly frame: number; readonly from: number; readonly to: number }, landings: readonly { readonly hitId: string; readonly frame: number }[]) => void;
 }
 
 /** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */

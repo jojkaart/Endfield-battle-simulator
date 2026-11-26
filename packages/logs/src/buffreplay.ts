@@ -32,7 +32,8 @@ import { comboHoldSpans, placeHolds, statusBounds, statusLanes, tickBounds, type
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCastStops, replayedCasts } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedTickFrames, loggedTickLandings, msOfFrame, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, critTriggers, layerCrits, shownCrits, undecidedBuff, valueCrits } from "./replaycrits.ts";
-import { type CastFlag, type ConsumedBuffs, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
+import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
+import { NO_LANDING } from "./replaykeys.ts";
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
 const NEAR_FRAMES = 16;
@@ -203,6 +204,8 @@ export interface MadeCast {
   readonly index: number;
   /** A hitless press made from the listing (hitless-presses `inferred`): why. */
   readonly inferred?: string;
+  /** The kit jumps its logged landings contradicted, which the engine dropped (JUMPDROP lines). */
+  readonly dropped?: readonly JumpDrop[];
 }
 
 /** A fact the replay knows, or why it doesn't (the log check then tries alternatives, labelled with the reason). */
@@ -461,7 +464,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       const [a, b] = [Math.max(0, m.f - edge), m.f + edge];
       let link: Fact<number> = { value: m.link };
       let consumed: Fact<ConsumedBuffs> = { value: m.consumed };
-      if (main.brokenAt !== null && b >= main.brokenAt) [link, consumed] = [{ unknown: "after the replay stopped" }, { unknown: "after the replay stopped" }];
+      if (main.brokenAt !== null && b >= main.brokenAt) [link, consumed] = [{ unknown: NO_LANDING.afterStop }, { unknown: NO_LANDING.afterStop }];
       else {
         // What the cast found is the same REPLAY_EDGE_MS either side of it on the timeline without it (its own time
         // stop would hold back a teammate's delayed grant: 4e5e1390085e, Camille's Link 23 ms after Rossi's ultimate),
@@ -490,14 +493,14 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const broken = (ms: number) => brokenAt !== null && frameOf(ms) >= brokenAt - edge;
   const replayedCast = (c: Pick<LoggedCast, "operator" | "skillId" | "start">) => casts.find((d) => !d.missed && d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000);
   const castFacts = (c: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { unknown: string } => {
-    if (kits.length === 0) return { unknown: "no kit to replay" };
+    if (kits.length === 0) return { unknown: NO_LANDING.noKit };
     // A trigger's hits (a placed group of kind null) belong to no cast in the timeline: no Link, no consumed buffs.
     if (c.kind === null) return TRIGGERED;
     const d = replayedCast(c);
-    if (!d) return { unknown: "a cast the replay doesn't make" };
-    if (failedCasts.has(d)) return { unknown: "a cast the replay couldn't make" };
-    if (broken(d.start)) return { unknown: "after the replay stopped" };
-    return facts.get(d) ?? { unknown: "a cast the replay didn't reach" };
+    if (!d) return { unknown: NO_LANDING.notMade };
+    if (failedCasts.has(d)) return { unknown: NO_LANDING.couldNotMake };
+    if (broken(d.start)) return { unknown: NO_LANDING.afterStop };
+    return facts.get(d) ?? { unknown: NO_LANDING.notReached };
   };
   /** A run's instances of a game buff at an operator at a frame, or null near one of its changes. */
   const countIn = (r: NonNullable<typeof main>, key: string, f: number): number | null => {
@@ -544,7 +547,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     skipped: main?.skipped ?? [],
     tailCuts: [...cuts].map(([cast, frame]) => ({ cast, frame })),
     inferred: new Map((main?.made ?? []).flatMap((m) => (m.inferred !== undefined ? [[m.index, m.inferred] as const] : []))),
-    made: (main?.made ?? []).map((m) => ({ cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}) })),
+    made: (main?.made ?? []).map((m) => ({ cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}) })),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
       if (i === undefined || landed.has(String(i)) || !main) return null;
@@ -572,9 +575,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     statusLanding(hit) {
       const found = statusLanded.get(hit);
       if (found) return found;
-      if (kits.length === 0) return { unknown: "no kit to replay" };
-      if (broken(hit.t)) return { unknown: "after the replay stopped" };
-      return { unknown: "a status the replay didn't deal near the logged hit" };
+      if (kits.length === 0) return { unknown: NO_LANDING.noKit };
+      if (broken(hit.t)) return { unknown: NO_LANDING.afterStop };
+      return { unknown: NO_LANDING.noStatus };
     },
     kitBuffNearChange(hit, kitBuff) {
       if (!main) return false;
@@ -614,16 +617,16 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     landing(hit) {
       const found = landed.get(String(hitIndex.get(hit)));
       if (found) return found;
-      if (kits.length === 0) return { unknown: "no kit to replay" };
-      if (broken(hit.t)) return { unknown: "after the replay stopped" };
+      if (kits.length === 0) return { unknown: NO_LANDING.noKit };
+      if (broken(hit.t)) return { unknown: NO_LANDING.afterStop };
       const p = placement.hits.get(hit);
-      if (!p) return { unknown: "a hit the placement doesn't place" };
+      if (!p) return { unknown: NO_LANDING.notPlaced };
       const shared = p.sameAs ? landed.get(String(hitIndex.get(p.sameAs))) : undefined;
       if (shared) return shared;
       const c = castFacts(p.cast);
       if ("unknown" in c) return c;
-      if (p.frame === undefined) return { unknown: "a landing whose order the kit doesn't give" };
-      return { unknown: "a landing the replay didn't land" };
+      if (p.frame === undefined) return { unknown: NO_LANDING.noOrder };
+      return { unknown: NO_LANDING.notLanded };
     },
   };
 }

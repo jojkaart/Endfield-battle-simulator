@@ -29,6 +29,12 @@ describe("the replay's decisions", () => {
     expect(text).toMatch(/111\.23 {2}EVENT {2}Liino normal_skill .*but the replay made the press from the listing/);
     expect(text).toMatch(/111\.23 {2}INFER {2}Liino normal_skill/);
   });
+
+  it("489c's Rossi sequence 2 at 18.77 s: the late path's jump dropped for the perfect landing the log shows (JUMPDROP)", () => {
+    const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-489c0be3e162.json"));
+    const drops = replayDecisions(data, logBuffReplay(data, fx).replay).filter((x) => x.kind === "JUMPDROP" && x.t < 20000);
+    expect(drops.map((x) => x.text)).toEqual([expect.stringMatching(/^Rossi combo_3_skill \(made at 18\.77\): its jump 0 → 212 dropped, the logged landing\(s\) perfect@19\.73/)]);
+  });
 });
 
 describe("hits --against and --operator", () => {

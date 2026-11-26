@@ -586,7 +586,19 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
  * REPLAY_EDGE_MS either side of it.
  */
 /** A logged cast as one replay made it (replayOnce): its frame, skill, the states either side, and what it found. */
-type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string };
+type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string; dropped?: readonly JumpDrop[] };
+
+/**
+ * A kit jump of a replayed cast that its logged landings contradicted, which the engine dropped (drivers.ts replayCast
+ * `dropped`): the jump (its frame, from and to on the cast's timeline) and the pinned landings in the part it would have
+ * skipped. JUMPDROP lines (`zmdlogs replay`, `zmdlogs decisions`).
+ */
+export interface JumpDrop {
+  readonly frame: number;
+  readonly from: number;
+  readonly to: number;
+  readonly landings: readonly { readonly hitId: string; readonly frame: number }[];
+}
 /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */
 type Need = { c: ReplayedCast; f: number };
 
@@ -610,8 +622,9 @@ export function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCa
   if (skillId === null) return { st, skillId, pre, windowCount, ...(chosen.why !== undefined ? { why: chosen.why } : {}) };
   const flag = castFlag(ctx, st, c, skillId, f);
   // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
-  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}) });
-  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(inferred ? { inferred: inferred.why } : {}) };
+  const dropped: JumpDrop[] = [];
+  st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}), dropped: (j, landings) => dropped.push({ ...j, landings }) });
+  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(inferred ? { inferred: inferred.why } : {}), ...(dropped.length ? { dropped } : {}) };
 }
 
 /** What every replay of a fight (replayOnce) reads that its passes share: the fight, the options, the log's Stagger steps and crits. */
@@ -751,7 +764,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
         const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
         const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
-        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}) });
+        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}), ...("dropped" in r && r.dropped ? { dropped: r.dropped } : {}) });
       } catch (e) {
         castErrors.push({ cast: c, error: e instanceof Error ? e.message : String(e) });
       }

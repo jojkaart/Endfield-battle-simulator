@@ -9,8 +9,11 @@
 //   node scripts/friction.ts carry <backlog.md> <n,…> [--start <k>] [--label "<this backlog's name>"]
 //     the backlog's points n,… renumbered from k (default 1), each `**From:**` line extended with where it was
 //     carried from ("<label> point n"; default the backlog's file name), printed for the next backlog
+//   node scripts/friction.ts check <report.md…>
+//     the numbered points without a `**Files:**` line (a backlog's: `**Needs:**`), which the lead splits a round by
+//     (round 13's own report point 1); exit 1 when any. tests/friction.test.ts runs it over docs/friction/.
 //
-// Both print to stdout and write nothing.
+// All print to stdout and write nothing.
 
 import { readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
@@ -97,6 +100,11 @@ export function carry(text: string, wanted: readonly number[], start: number, la
   return out.join("\n");
 }
 
+/** The numbered points of a report with no `- **Files:**` line (nor a backlog's `- **Needs:**`): their numbers. */
+export function missingFiles(text: string): number[] {
+  return points(text).filter((p) => !p.body.some((l) => /^- \*\*(Files|Needs):\*\* \S/.test(l))).map((p) => p.n);
+}
+
 function main(argv: readonly string[]): number {
   const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, options: { round: { type: "string" }, start: { type: "string" }, label: { type: "string" }, backlog: { type: "string" } } });
   const [cmd, ...rest] = positionals;
@@ -116,7 +124,16 @@ function main(argv: readonly string[]): number {
     process.stdout.write(carry(readFileSync(file, "utf8"), wanted, Number(values.start ?? 1), values.label ?? basename(file)));
     return 0;
   }
-  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] [--backlog <new backlog.md>] | carry <backlog.md> <n,…> [--start k] [--label text]\n");
+  if (cmd === "check" && rest.length) {
+    let bad = 0;
+    for (const f of rest) {
+      const missing = missingFiles(readFileSync(f, "utf8"));
+      if (missing.length) bad++;
+      process.stdout.write(`${f}: ${missing.length ? `point(s) ${missing.join(", ")} without a **Files:** line (the files its suggestion touches: docs/friction/README.md)` : "every point names its files"}\n`);
+    }
+    return bad ? 1 : 0;
+  }
+  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] [--backlog <new backlog.md>] | carry <backlog.md> <n,…> [--start k] [--label text] | check <report.md…>\n");
   return 2;
 }
 
