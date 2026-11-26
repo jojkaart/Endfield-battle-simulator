@@ -75,3 +75,10 @@ after ultimates played in turn, the 20 unsettled casts (settleCheck), the 14 ove
 - holds --verbose's "conflicting with" lists named the four agreeing clocks against the one wrong bound.
 - `measure --variant` measured two readings against the same code in one run; docs/tried/ made dropping two changes
   cheap and keeps them re-measurable.
+
+## Outcome (round 13)
+
+- 1 (inTurnStart doesn't say why it left a pair overlapping): carried (2026-11-26-backlog-after-round-13.md point 1), joined with `casts --why` (both a record of the placement's choices in logcasts.ts, the accuracy agent's this round)
+- 2 (A view's --assume is missing where the question needs it): done (56de13b): every subcommand that replays takes `--assume` (stops, ramp, bursts, stagger, differences, groups, offsets, timing, fit-build and the new clocks and holds --dropped joined hits, check, replay, totals, clock, holds); packages/cli/src/commands/zmdlogs.ts parses it once (REPLAYING / NOT_REPLAYING; the others refuse it, naming those that take it), and tests/zmdlogs-cli.test.ts keeps every subcommand of the usage in exactly one set
+- 3 (Measure output per variant doesn't name the changed hits): done (b68f663): `measure --variant … --hits` lists each variant's own changed hits against the plain tree (summary and hits.txt); `--hits` already listed the hits against the reference; a patch's own hits (`--patch --base HEAD --hits`, or cli-ab `--patch -- zmdlogs hits`) are in docs/design/tests.md "Measuring a change"
+- 4 (A burst isn't a hold clock): closed, not carried: the enemy-clock round ruled the burst bound out (placed holds don't hold bursts: 012a, 458b, 489c, 7910 on time across 0.10–0.42 s of them); the burst's recorded cause it waited on is carried (2026-11-26-backlog-after-round-13.md point 2)

@@ -595,6 +595,12 @@ in the logs):
   shown by basic hits that deal Stagger (`efsim zmdlogs control`).
 - **Not listed at all**: Haste, shields, heals, Whirlpools; Vulnerable
   without stack counts. A missing listing proves nothing there.
+- **A layered buff of one timer is listed once** (stackingType 10: one
+  instance whose layers add up, Ember's Pay the Ferric Price): one entry of
+  one layer's value whatever its layers, so the listing can't say how many
+  (04d4's hits under it read ×1.023 / ×1.085 / ×1.147, equal steps).
+  `zmdlogs differences --clusters --operator <op>` prints a group's ratio
+  clusters (the damage-factors round, 2026-11-26).
 - **A buff the hit itself creates isn't listed on it**, even where its
   damage has it: Perlica's combo creates its forced Electrification
   before its damage, and the buffs that triggers (her P3 ATK, Pulser
@@ -683,6 +689,11 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
 | Which casts a placement change moved | `npm run measure -- --changed placement` |
 | Ultimates whose stops still overlap after the placement; casts a third pass would move | `efsim zmdlogs placement <fixture…\|--all>` (OVERLAP, SETTLE: logcasts.ts `ultimateOverlaps`, `settleCheck`) |
+| How late each clock runs across each kind of stop (enemy tick chains, a cast's landings against its kit frames, bursts against their delay), in and out of the log's Stagger, per combo operator | `efsim zmdlogs clocks <fixture…\|--all> [--clock tick,cast,burst] [--by operator] [--rows]` (clocksview.ts `logClocks` in a script; the log's Stagger spans: query.ts `loggedStaggerSpans`, never rebuilt by hand) |
+| Where the hold placement drops bounds across logs: by kind and what covers their span (the log's Stagger, combo or ultimate stops), against how many it kept | `efsim zmdlogs holds --dropped <fixture…\|--all> [--verbose]` (views.ts `droppedView`) |
+| Equal steps in a group's ratios (a layered buff the log lists once) | `efsim zmdlogs differences <fixture…\|--all> --clusters [--operator <op>]` ("clusters: ×1.023 n=26, ×1.085 n=21, …") |
+| A view under another reading (right after a measure names one) | every subcommand that replays takes `--assume <id>=<reading>` (packages/cli/src/commands/zmdlogs.ts `REPLAYING`; the others refuse it) |
+| Which hits a variant itself moved | `npm run measure -- --variant <id>=<r> --hits`: "Variant n's own hits, against the plain tree" (the same code without it) |
 | Why a logged hit's landing didn't land, why a logged cast wasn't made | `efsim zmdlogs replay <fixture>`: NOLAND lines carry the step that dropped the pinned landing (another alternative of its branch, its `if`, the next cast, its cast's end) or why it was never pinned; SKIP lines each cast not made and why (a tick, the slot's variant, earliestStart's error: "needs 160 ultimate energy") (BuffReplay.droppedLanding, `skipped`) |
 | A kit trigger's firings and its cooldown's shifts | `efsim zmdlogs replay <fixture> --trace-trigger owner:id` (or the id alone); the game's mechanism behind each cooldown: `efsim kit <operator \| wpn_… \| suit_…>`, counts in `efsim kit-census` |
 | Why a hidden-hold unit sits where it does; which bounds a change made conflict | `efsim zmdlogs holds <fixture> --verbose` (each unit's "earliest held back by" / "latest forced by", each dropped bound's "conflicting with"); between two commits `node scripts/cli-ab.ts <ref> --patch <view diff> --holds <fixture>` |

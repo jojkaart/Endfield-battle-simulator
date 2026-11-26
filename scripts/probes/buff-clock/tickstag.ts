@@ -4,25 +4,18 @@
 // (and its 0.512 s world slow-down) can't happen then. Free tick pairs (no placed stop between): residual over 1 s,
 // whether the pair lies inside the log's Stagger (hits listing buff_common_poise_break_damage_taken_scale).
 import { loadGameData } from "@efsim/data";
-import { castTimeStops, devFixtures, placeHits } from "@efsim/logs";
+import { castTimeStops, devFixtures, loggedStaggerSpans, placeHits } from "@efsim/logs";
 
 const data = loadGameData();
 const TICK = /^(buff_chr_0028_wulfa_normal_bleed|buff_common_burning_status)$/;
-const STAG = "buff_common_poise_break_damage_taken_scale";
 const tally = { stag: { hold: 0, none: 0 }, free: { hold: 0, none: 0 } };
 const holds: string[] = [];
 for (const { short, fx } of devFixtures({ dirs: ["verified", "pending", "multi"] })) {
   if (!fx.hits.some((h) => TICK.test(h.event))) continue;
   const stops = castTimeStops(data, placeHits(data, fx).casts);
-  // Stagger intervals: runs of hits listing it, merged when under 1.5 s apart.
-  const st = [...new Set(fx.hits.filter((h) => [...h.effects, ...h.boundaryEffects].some((e) => e.buff === STAG)).map((h) => h.t))].sort((a, b) => a - b);
-  const spans: [number, number][] = [];
-  for (const t of st) {
-    const last = spans.at(-1);
-    if (last && t - last[1] < 1500) last[1] = t;
-    else spans.push([t, t]);
-  }
-  const inStag = (a: number, b: number) => spans.some(([x, y]) => x <= a && b <= y);
+  // Stagger intervals: runs of hits listing it, merged when under 1.5 s apart (query.ts loggedStaggerSpans, round 13).
+  const spans = loggedStaggerSpans(fx);
+  const inStag = (a: number, b: number) => spans.some((x) => x.from <= a && b <= x.to);
   const by = new Map<string, number[]>();
   for (const h of fx.hits) if (TICK.test(h.event)) by.set(`${h.operator}|${h.event}|${h.target ?? ""}`, [...(by.get(`${h.operator}|${h.event}|${h.target ?? ""}`) ?? []), h.t]);
   for (const ts0 of by.values()) {

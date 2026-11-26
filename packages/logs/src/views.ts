@@ -18,10 +18,10 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
-import { holdPins, statusLanes, type ClockWhy, type PlacedHolds } from "./holds.ts";
+import { holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
 import { distinctCasts, placeHits, settleCheck, ultimateOverlaps } from "./logcasts.ts";
-import { castEventPlace, eventPlaceText, replayTimeStops, tickReadNote } from "./query.ts";
+import { castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import type { TotalsComparison, TotalsShares } from "./enginecheck.ts";
@@ -33,6 +33,9 @@ export interface ViewFilter {
   readonly to?: number;
   readonly operators?: readonly string[];
 }
+
+/** A view's readings of open assumptions (`--assume`), as logBuffReplay takes them: none when empty, so the default replay is the very same call. */
+export const underReadings = (assume?: Readonly<Record<string, string>>): { readonly assume?: Readonly<Record<string, string>> } => (assume && Object.keys(assume).length ? { assume } : {});
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 const s = (ms: number) => (ms / 1000).toFixed(2);
@@ -181,13 +184,13 @@ export function placementView(data: GameData, logs: readonly { readonly short: s
  * that aren't "as listed" or "covered", then a count per kind over the logs (stop-lists report point 1: a loop of
  * `replay --stops` over 80 fixtures took 6 minutes a run, mostly the CLI's start-up).
  */
-export function stopsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly differ?: boolean; readonly operators?: readonly string[]; readonly progress?: (line: string) => void } = {}): string {
+export function stopsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly differ?: boolean; readonly operators?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void } = {}): string {
   const total = new Map<StopKind, number>();
   const logsWith = new Map<StopKind, Set<string>>();
   const out = [`The slow-downs each replay's timeline applied (BuffReplay.appliedStops) against the log tools' stop list of its casts (replayTimeStops), as \`zmdlogs replay --stops\` gives them${opts.differ ? "; only those that differ (not as listed, not covered)" : ""}; times in s.`];
   for (const { short, fx } of logs) {
     opts.progress?.(`stops ${short}`);
-    const { replay } = logBuffReplay(data, fx);
+    const { replay } = logBuffReplay(data, fx, undefined, underReadings(opts.assume));
     const lines = stopLines(data, fx, replay, { operators: opts.operators ?? [] }).sort((a, b) => a.t - b.t);
     for (const l of lines) {
       total.set(l.kind, (total.get(l.kind) ?? 0) + 1);
@@ -423,8 +426,8 @@ export function staggerRuns(data: GameData, fx: LogFixture, opts: { readonly ass
 }
 
 /** `zmdlogs stagger`: a fight's Stagger runs, the log's against the replay's. */
-export function staggerView(data: GameData, fx: LogFixture): string {
-  const runs = staggerRuns(data, fx);
+export function staggerView(data: GameData, fx: LogFixture, opts: { readonly assume?: Readonly<Record<string, string>> } = {}): string {
+  const runs = staggerRuns(data, fx, underReadings(opts.assume));
   const input = attackInputKeys(data, fx);
   const hits = [...fx.hits].sort((a, b) => a.t - b.t);
   const lines = runs.map((r) => {
@@ -492,7 +495,34 @@ const ratioOf = (r: HitRecord) => (r.predicted ? r.value / r.predicted : null);
  * Stagger) says the replay is wrong, one at ×1.000 that the log's listing is. Hits without a difference are the
  * baseline row.
  */
-export function differencesReport(records: readonly HitRecord[], opts: { readonly what?: RegExp; readonly hits?: boolean; readonly fixtureLabel?: (fixture: string) => string } = {}): string {
+/** How far apart (relative) two neighbouring ratios may be and be one cluster (ratioClusters). */
+const CLUSTER_GAP = 0.005;
+
+/**
+ * Ratios in clusters (sorted; a gap over CLUSTER_GAP relative starts a new one), each with its median and size: equal
+ * steps between clusters are a layered buff the listing shows once (damage-factors report point 4: Ember's Pay the
+ * Ferric Price, ×1.023 / ×1.085 / ×1.147 on 04d4's hits, found by four jq passes).
+ */
+export function ratioClusters(ratios: readonly number[], gap = CLUSTER_GAP): { readonly ratio: number; readonly n: number }[] {
+  const v = [...ratios].sort((a, b) => a - b);
+  const out: number[][] = [];
+  for (const x of v) {
+    const c = out.at(-1);
+    if (c && x / (c.at(-1) as number) - 1 <= gap) c.push(x);
+    else out.push([x]);
+  }
+  return out.map((c) => ({ ratio: c[Math.floor((c.length - 1) / 2)] as number, n: c.length }));
+}
+
+/** A group's clusters in one line: those of two or more hits, by ratio, and how many hits are alone. */
+function clusterText(ratios: readonly number[]): string {
+  const cs = ratioClusters(ratios);
+  const big = cs.filter((c) => c.n >= 2);
+  const alone = cs.length - big.length;
+  return `    clusters: ${big.map((c) => `×${c.ratio.toFixed(3)} n=${c.n}`).join(", ") || "none of two or more"}${alone ? `; ${alone} alone` : ""}`;
+}
+
+export function differencesReport(records: readonly HitRecord[], opts: { readonly what?: RegExp; readonly hits?: boolean; readonly clusters?: boolean; readonly fixtureLabel?: (fixture: string) => string } = {}): string {
   const groups = new Map<string, { n: number; mismatch: number; ratios: number[]; hits: string[] }>();
   const add = (key: string, r: HitRecord, detail: string) => {
     const g = groups.get(key) ?? { n: 0, mismatch: 0, ratios: [], hits: [] };
@@ -519,6 +549,7 @@ export function differencesReport(records: readonly HitRecord[], opts: { readonl
   const w = Math.min(70, Math.max(10, ...rows.map(([k]) => k.length)));
   for (const [k, g] of rows) {
     out.push(`  ${k.padEnd(w)}  ${String(g.n).padStart(5)} hits  ${String(g.mismatch).padStart(5)} mismatches  ratio ${quartiles(g.ratios)}`);
+    if (opts.clusters && g.ratios.length) out.push(clusterText(g.ratios));
     out.push(...g.hits);
   }
   return out.join("\n");
@@ -683,6 +714,66 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   return lines.join("\n");
 }
 
+/** What covers a hold bound's span (droppedView): the log's Stagger, and which kinds of the replay's casts' stops lie in it. */
+export function boundCover(b: Pick<HoldBound, "a" | "b">, stagger: readonly { readonly from: number; readonly to: number }[], stops: readonly { readonly start: number; readonly scales: readonly number[]; readonly kind?: string | null }[]): { readonly stagger: "inside" | "partly" | "outside"; readonly stops: string } {
+  const len = Math.max(1, b.b - b.a);
+  const inStagger = stagger.reduce((t, x) => t + Math.max(0, Math.min(b.b, x.to) - Math.max(b.a, x.from)), 0);
+  const [fa, fb] = [Math.round((b.a * FPS) / 1000), Math.round((b.b * FPS) / 1000)];
+  const kinds = new Set(stops.filter((st) => st.start < fb && st.start + st.scales.length > fa && st.scales.some((x) => x < 1)).map((st) => st.kind ?? "other"));
+  const order = ["ultimate", "combo", "battle", "basic", "other"];
+  return { stagger: inStagger >= len - 1 ? "inside" : inStagger > 0 ? "partly" : "outside", stops: [...kinds].sort((x, y) => order.indexOf(x) - order.indexOf(y)).join("+") || "no stop" };
+}
+
+/**
+ * `zmdlogs holds --all --dropped` (enemy-clock report point 3: "never while the enemy is Staggered" rested on 1 of 92
+ * tick pairs, and the combo-sized lateness in Staggers was dropped as conflicts log by log, with no count saying where):
+ * the hold placement's dropped bounds over the logs, grouped by bound kind and by what covers their span (the log's
+ * Stagger: query.ts loggedStaggerSpans; the kinds of the replay's casts' stops inside), each group with its count, the
+ * logs it is in, its asks (quartiles, s) and how many bounds of the same group were kept, so a group dropped far more
+ * often than kept, across many logs, stands out. `verbose`: each dropped bound.
+ */
+export function droppedView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly assume?: Readonly<Record<string, string>>; readonly verbose?: boolean; readonly progress?: (line: string) => void } = {}): string {
+  const groups = new Map<string, { dropped: number; kept: number; logs: Set<string>; asks: number[] }>();
+  const each: string[] = [];
+  let none = 0;
+  for (const { short, fx } of logs) {
+    opts.progress?.(`holds ${short}`);
+    const placement = placeHits(data, fx);
+    const r = logBuffReplay(data, fx, placement, { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
+    const h = r.hiddenHolds;
+    if (!h) {
+      none++;
+      continue;
+    }
+    const stagger = loggedStaggerSpans(fx);
+    const stops = replayTimeStops(data, fx, placement, r);
+    const key = (b: HoldBound) => {
+      const c = boundCover(b, stagger, stops);
+      return `${b.kind.padEnd(6)} ${`Stagger ${c.stagger}`.padEnd(15)} ${c.stops}`;
+    };
+    for (const [list, dropped] of [[h.dropped, true], [h.kept, false]] as const) {
+      for (const b of list) {
+        const k = key(b);
+        const g = groups.get(k) ?? { dropped: 0, kept: 0, logs: new Set<string>(), asks: [] };
+        if (dropped) {
+          g.dropped++;
+          g.logs.add(short);
+          g.asks.push(b.ex);
+          if (opts.verbose) each.push(`  ${short} ${k.replace(/ +/g, " ")}: ${b.tag} (asks ${b.ex.toFixed(2)} s)`);
+        } else g.kept++;
+        groups.set(k, g);
+      }
+    }
+  }
+  const rows = [...groups].filter(([, g]) => g.dropped > 0).sort((x, y) => y[1].dropped - x[1].dropped || y[1].logs.size - x[1].logs.size);
+  const total = rows.reduce((t, [, g]) => t + g.dropped, 0);
+  return [
+    `The hold placement's dropped bounds over ${logs.length - none} logs${none ? ` (${none} with no holds placed)` : ""}${opts.assume && Object.keys(opts.assume).length ? ` under ${Object.entries(opts.assume).map(([k, v]) => `${k}=${v}`).join(", ")}` : ""}: ${total} dropped, by bound kind, the log's Stagger over its span (query.ts loggedStaggerSpans) and the kinds of the replay's casts' stops inside; kept: the bounds of the same group the placement kept; asks: the hold each asks (quartiles, s)`,
+    ...rows.map(([k, g]) => `  ${k.padEnd(48)} ${String(g.dropped).padStart(4)} dropped in ${String(g.logs.size).padStart(2)} logs, ${String(g.kept).padStart(5)} kept; asks ${quartiles(g.asks, 2)}`),
+    ...(opts.verbose && each.length ? ["", "Each dropped bound:", ...each] : []),
+  ].join("\n");
+}
+
 /**
  * `zmdlogs holds --why <re>`: each replayed instance of the kit buffs (`owner:id`) and enemy statuses (`status:<name>`)
  * matching, from the replay without holds, with the log's run it was paired with and why it is a clock of the
@@ -723,9 +814,9 @@ function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h
  * replay placed. A hit outside its range says the placed holds miss the ramp there (`!`). `verbose`: every hit, not only
  * those where the log's step differs from the replay's or the placed hold falls outside.
  */
-export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: boolean } = {}): string {
+export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: boolean; readonly assume?: Readonly<Record<string, string>> } = {}): string {
   const placement = placeHits(data, fx);
-  const { replay } = logBuffReplay(data, fx, placement);
+  const { replay } = logBuffReplay(data, fx, placement, underReadings(opts.assume));
   const steps = corrosionRamp(data, fx, placement, replay);
   const h = replay.hiddenHolds;
   if (steps.length === 0) return `${fx.id}: no hit under the log's Corrosion reads a step (none listed, no landing with the replay's Corrosion, or no step fits)`;

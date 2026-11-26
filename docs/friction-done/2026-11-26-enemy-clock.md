@@ -56,3 +56,9 @@ placement (9a80), test a boss-phase pause for 4d60, and d4fb 97.05 s's Swordmanc
   the hold-out aggregates made "verified worse" visible immediately.
 - `--trace-trigger suit_phy01.proc` showed d4fb's cooldown shifts frame by frame; with jq on the fixture's procs the
   shared-cooldown and restart readings were ruled out without a script.
+
+## Outcome (round 13)
+
+- 1 (No view says how a clock runs across one kind of stop): done (56de13b): `efsim zmdlogs clocks <fixture…|--all> [--clock tick,cast,burst] [--by operator] [--rows]` (clocksview.ts): the enemy's tick chains (cut at the log's Stagger's edges), a cast's landings against its kit frames, bursts against their delay; per clock kind and what holds it, rows whose span a stop straddles left out (the split-stop artefact); query.ts `loggedStaggerSpans`, used by the views, tickstag.ts and tick-chains.ts. Over the 61 development logs it reproduces the round's finding in one run (tick chains across combos 0.23 × the held time late, casts 0.40, bursts 0.33; across an ultimate −0.00). Buff runs aren't a clock of it yet (they need the replay's instances; `zmdlogs clock --kit-buff` per buff)
+- 2 (A ComboSkill-curve measure needs a data patch in another agent's directory): carried (2026-11-26-backlog-after-round-13.md point 4); the data compiler and the engine were the accuracy agent's
+- 3 (The hold placement's `still` rule was an untested claim with a strong name): done (56de13b): `efsim zmdlogs holds --dropped --all` groups the dropped bounds over the logs by kind, the log's Stagger over their span and the stops inside, against the kept ones of each group; its first line is the round's pattern: tick bounds inside a Stagger with a combo's stop, 47 dropped in 9 logs against 35 kept

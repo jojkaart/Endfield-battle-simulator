@@ -48,9 +48,29 @@ export function atCommit(ref: string, dir: string, patch?: string): string {
     mkdirSync(dirname(dir), { recursive: true });
     git(["worktree", "add", "--detach", dir, commit]);
   }
-  if (patch) git(["apply", "--whitespace=nowarn", resolve(patch)], dir);
+  if (patch) applyPatch(patch, dir, ref, commit);
   setupWorktree(dir);
   return commit;
+}
+
+/**
+ * `git apply` of a patch in a commit's worktree, with a message that names the hunks that failed and the files the diff
+ * touches (round 12 friction point 1: a view's diff on an old commit fails where the view moved since; the old side only
+ * needs the view's own files). git apply is all or nothing, so a failure leaves the tree as the commit has it.
+ */
+export function applyPatch(patch: string, dir: string, ref: string, commit: string): void {
+  const r = spawnSync("git", ["apply", "--whitespace=nowarn", resolve(patch)], { cwd: dir, encoding: "utf8" });
+  if (r.status === 0) return;
+  const err = (r.stderr || r.stdout).trim();
+  const hunks = [...err.matchAll(/patch failed: (\S+?):(\d+)/g)].map((m) => `${m[1]} at line ${m[2]}`);
+  const missing = [...err.matchAll(/(\S+): No such file or directory|(\S+): does not exist in index/g)].map((m) => m[1] ?? m[2]);
+  const files = [...new Set([...readFileSync(resolve(patch), "utf8").matchAll(/^\+\+\+ b\/(\S+)/gm)].map((m) => m[1] as string))];
+  throw new Error(
+    [
+      `--patch ${patch} doesn't apply on ${ref} (${commit.slice(0, 9)})${hunks.length ? `: the hunk(s) at ${hunks.join(", ")} failed (that code changed since the diff's base)` : ""}${missing.length ? `; not in that commit: ${missing.join(", ")}` : ""}.`,
+      `The diff touches ${files.join(", ") || "no file"}. A new view on old code needs only the view's files: git diff <its base> -- <the view files> > scratch/view.diff (where the view itself moved since, port it by hand); git's own words: ${err.split("\n").slice(0, 4).join(" / ")}`,
+    ].join(" "),
+  );
 }
 
 /**

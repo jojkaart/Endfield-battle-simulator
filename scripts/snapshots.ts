@@ -30,6 +30,7 @@ import { fileURLToPath } from "node:url";
 import { changedLogs, readSnapshots, snapshotsAt } from "./accuracy.ts";
 import { doneJob, type Runner } from "./done-line.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SNAPSHOTS = join(ROOT, "tests", "snapshots");
@@ -136,4 +137,7 @@ async function main(argv: string[]): Promise<number> {
   return doneJob("snapshots", `against ${ref}`, (run, onKill) => regenerate(costs, ref, run, onKill));
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2), import.meta.url)) process.exit(0);
+  void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+}

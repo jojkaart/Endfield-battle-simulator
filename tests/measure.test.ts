@@ -7,7 +7,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, holdChanges, interactLines, kindLines, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { hitChanges, holdChanges, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { headerUsage, wantsHelp } from "../scripts/usage.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
 const holdouts = new Set(["zmdlogs-cccc11112222"]);
@@ -145,8 +146,8 @@ describe("measure's negative control", () => {
 
 describe("measure --changed placement", () => {
   it("names the casts placed only before and only now", () => {
-    const lines = movedCasts(["a.json", "b.json"], new Map([["a.json", ["1.00 s op skill", "2.00 s op combo"]], ["b.json", ["1.00 s op skill"]]]), new Map([["a.json", ["1.00 s op skill", "2.10 s op combo"]], ["b.json", ["1.00 s op skill"]]]));
-    expect(lines).toEqual(["  a.json: 1 cast(s) only before, 1 only now", "    - 2.00 s op combo", "    + 2.10 s op combo", "  b.json: the same casts; some hits moved between them"]);
+    const lines = movedCasts(["a.json", "b.json"], new Map([["a.json", ["1.00 s op skill", "2.00 s op combo", "9.00 s op ult"]], ["b.json", ["1.00 s op skill"]]]), new Map([["a.json", ["1.00 s op skill", "2.10 s op combo", "20.00 s op ult"]], ["b.json", ["1.00 s op skill"]]]));
+    expect(lines).toEqual(["  a.json: 1 cast(s) moved, 1 only before, 1 only now", "    ~ 2.00 s op combo → 2.10 s", "    - 9.00 s op ult", "    + 20.00 s op ult", "  b.json: the same casts; some hits moved between them"]);
   });
 });
 
@@ -230,5 +231,30 @@ describe("measures that moved the same logs (interactLines; cooldown-clock repor
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe("measure's options before the queue (round 13, damage-factors report point 2)", () => {
+  it("refuses an unknown option, a bad value or a missing patch without the code or git", () => {
+    expect(() => measureOptions(["--bogus"])).toThrow(/Unknown option '--bogus'/);
+    expect(() => measureOptions(["--workers", "0"])).toThrow(/--workers/);
+    expect(() => measureOptions(["--split", "kits"])).toThrow(/--split takes files or commits/);
+    expect(() => measureOptions(["--assume", "no-equals"])).toThrow(/<id>=<reading>/);
+    expect(() => measureOptions(["--patch", "scratch/no-such.diff"])).toThrow(/no such file/);
+    expect(measureOptions(["--logs", "db87", "--hits"]).values.hits).toBe(true);
+  });
+
+  it("checks the readings against the registered assumptions", async () => {
+    expect(await readingsProblem({ assume: ["stagger-holds=combos"], variant: ["hidden-holds=none,enemy-away=counted"] })).toBeNull();
+    expect(await readingsProblem({ assume: ["no-such=x"], variant: [] })).toMatch(/no assumption no-such/);
+    expect(await readingsProblem({ assume: [], variant: ["stagger-holds=nope"] })).toMatch(/stagger-holds has no reading nope \(none, combos/);
+  });
+
+  it("prints the header's usage for --help", () => {
+    expect(wantsHelp(["--logs", "x", "-h"])).toBe(true);
+    const usage = headerUsage(join(import.meta.dirname, "../scripts/measure.ts"));
+    expect(usage).toMatch(/^Usage: node scripts\/measure\.ts \[options\]/);
+    expect(usage).toMatch(/--help, -h/);
+    expect(headerUsage(join(import.meta.dirname, "../scripts/snapshots.ts"))).toMatch(/^Usage: node scripts\/snapshots\.ts/);
   });
 });

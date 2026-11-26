@@ -254,6 +254,29 @@ export function buffLanes(fx: LogFixture, buff?: RegExp): BuffLane[] {
     .sort((a, b) => (a.since ?? a.firstListed) - (b.since ?? b.firstListed) || a.buff.localeCompare(b.buff));
 }
 
+/** The log's Stagger listing (each hit's, inside or at its boundary). */
+export const STAGGER_LISTED = "buff_common_poise_break_damage_taken_scale";
+
+/** How far apart (ms) two hits listing Stagger may be and still be one span (loggedStaggerSpans). */
+export const STAGGER_SPAN_GAP_MS = 1500;
+
+/**
+ * The log's Stagger as spans of time (ms): the hits listing it (STAGGER_LISTED, as an effect or at their boundary),
+ * first to last listed, merged where under STAGGER_SPAN_GAP_MS apart. The probes' and the views' one definition (the
+ * enemy-clock report point 1: tickstag.ts, its probes and the replay's loggedStagger each rebuilt it); a hit inside a
+ * span is in the log's Stagger, one between spans isn't (the replay's own steps are replaysteps.ts loggedStaggerSteps).
+ */
+export function loggedStaggerSpans(fx: Pick<LogFixture, "hits">): { readonly from: number; readonly to: number }[] {
+  const ts = [...new Set(fx.hits.filter((h) => [...h.effects, ...h.boundaryEffects].some((e) => e.buff === STAGGER_LISTED)).map((h) => h.t))].sort((a, b) => a - b);
+  const spans: { from: number; to: number }[] = [];
+  for (const t of ts) {
+    const last = spans.at(-1);
+    if (last && t - last.to < STAGGER_SPAN_GAP_MS) last.to = t;
+    else spans.push({ from: t, to: t });
+  }
+  return spans;
+}
+
 /** `zmdlogs lanes`: a fight's runs of the listed buffs matching `buff`; with `world`, each run's length in world time too. */
 export function lanesView(data: GameData, fx: LogFixture, buff?: RegExp, opts: { readonly world?: boolean } = {}): string {
   const lanes = buffLanes(fx, buff);
