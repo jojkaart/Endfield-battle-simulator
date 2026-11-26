@@ -186,7 +186,10 @@ const SECONDS_PER_LOG = 8;
  * (scratch/hits-cache/<code key>/, hitsCodeKey) where the code and the fixture are unchanged, the rest checked on
  * `workers` threads and cached (`cache` false: neither read nor written).
  */
-async function collectRecords(data: () => GameData, files: readonly string[], workersOpt: string | undefined, filter: RecordFilter, progress?: (line: string) => void, cache = true, assume: Readonly<Record<string, string>> = {}): Promise<HitRecord[]> {
+async function collectRecords(data: () => GameData, files: readonly string[], workersOpt: string | undefined, filter: RecordFilter, progress?: (line: string) => void, cacheAsked = true, assume: Readonly<Record<string, string>> = {}): Promise<HitRecord[]> {
+  // The cache is keyed by code and fixture only: under other readings it's neither read nor written, decided here for
+  // every records view (round 13's own report point 2: each caller had to remember it).
+  const cache = cacheAsked && !Object.keys(assume).length;
   const workers = workersOpt === undefined ? 1 : Number(workersOpt);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const byFile = new Map<string, HitRecord[]>();

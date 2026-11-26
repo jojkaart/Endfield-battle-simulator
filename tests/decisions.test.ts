@@ -4,6 +4,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
+import { withCurveReading } from "@efsim/engine";
 import { decisionsDiff, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type DecisionLine, type HitRecord } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
@@ -60,5 +61,18 @@ describe("totals --by crit", () => {
     expect(text).toMatch(/Rossi: matched [\d,]+ vs [\d,]+/);
     expect(text).toMatch(/ {6}exact +\d+ {2}([\d,]+) vs \1 \(\+0\.0%/);
     expect(text).toMatch(/ {6}expected +\d+ /);
+  });
+});
+
+describe("logBuffReplay's options (round 14)", () => {
+  const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-0c14fb3ce77d.json"));
+
+  it("refuses a combo-curve reading on data not under it (the placement and the replay would read two curves)", () => {
+    expect(() => logBuffReplay(data, fx, { assume: { "combo-curve": "flat" } })).toThrow(/game data is under another of its readings/);
+    expect(() => logBuffReplay(withCurveReading(data, { "combo-curve": "flat" }), fx)).toThrow(/combo-curve \(the default\)/);
+  });
+
+  it("refuses its options given twice (as the third argument and the fourth)", () => {
+    expect(() => logBuffReplay(data, fx, { assume: {} }, { assume: {} })).toThrow(/options given twice/);
   });
 });

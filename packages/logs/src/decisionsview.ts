@@ -6,7 +6,7 @@
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
 
-import { FPS, type GameData } from "@efsim/engine";
+import { FPS, withCurveReading, type GameData } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import type { LogFixture } from "./zmdlogs.ts";
@@ -90,7 +90,9 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
   let changed = 0;
   for (const [i, { short, fx }] of logs.entries()) {
     opts.progress?.(`decisions: ${short} (${i + 1}/${logs.length})`);
-    const base = replayDecisions(data, logBuffReplay(data, fx).replay).filter(mine);
+    // Each side's data under its own readings (combo-curve is a reading of the data: logBuffReplay refuses a mix).
+    const plain = withCurveReading(data, {});
+    const base = replayDecisions(plain, logBuffReplay(plain, fx).replay).filter(mine);
     if (!under) {
       if (base.length) lines.push(`${short}:`, ...base.map((d) => `  ${s(d.t).padStart(7)}  ${decisionText(d)}`));
       for (const d of base) {
@@ -101,7 +103,8 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
       }
       continue;
     }
-    const other = replayDecisions(data, logBuffReplay(data, fx, undefined, { assume }).replay).filter(mine);
+    const readData = withCurveReading(data, assume);
+    const other = replayDecisions(readData, logBuffReplay(readData, fx, { assume }).replay).filter(mine);
     const diff = decisionsDiff(base, other);
     if (!diff.length) continue;
     changed++;
