@@ -27,6 +27,10 @@ presses round) by general rules: the replay's enemy away (engine assumption enem
 inferred from the listing (`hitless-presses` `inferred`), the totals' leaving frame and a kill read from the last
 life's damage ([open-problems.md](../open-problems.md), "The damage factors"). Their diffs are deleted.
 
+- [2026-11-26-boundary-ends-before.diff](2026-11-26-boundary-ends-before.diff): a buff run whose lane ends at a hit's
+  ms taken as ending before that hit (engine assumption `boundary-ends` `before`), for the hidden holds' bounds and
+  the log's ends; c4f3's Wolven Blood finals right (plain 223 → 233), but development |damage error| 6.3 → 6.4% (4360,
+  9555 worse): only where the end-boundary hit's value decides it.
 - [2026-11-26-chance-path-buffs-decided.diff](2026-11-26-chance-path-buffs-decided.diff): Alesh's P3 (a buff only a
   chance path gives) judged by the replay where the listing decided every cast's path; 0c14 mismatch 12 → 9, one
   hold-out log −47 plain (hold-out 81.0 → 80.2%): P3 stays the log's.

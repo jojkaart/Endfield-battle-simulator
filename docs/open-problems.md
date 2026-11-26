@@ -89,9 +89,31 @@ inference reads (57 of Rossi's).
   Fervent Morale layers than the log lists). d4fb 24–34 s: the log lists Thermite Cutter on the Endministrator's hits
   that read plain without it; 60–72 s it is needed (×1.0195): not decided.
 - **Estella's set and Susceptibility on Chen in c4f3** (`log only`, 29 and 16 hits, ×1.15–1.33): the replay lacks them.
+  **Found (2026-11-26, not fixed): they are one batch's order at 7.05 s.** Every one of these hits is in 8.25–22.4 s,
+  from the runs the log starts at 7.05 s (buff_common_affixes_vulnerable_physical and buff_equipsuit_usp_02_AddAttack
+  from Estella, `zmdlogs lanes`). At 7.05 s the log batches seven hits: Chen's combo and its Lifts, Estella's ultimate,
+  her combo (12416) and a Shatter credited to her combo (buff_common_cryst_triggered_physical_break, poise origin
+  whiten_combo_skill). The replay (`zmdlogs replay`, 7.03 s) lands Chen's combo first, shatters the Solidification
+  with it (a replay-only Chen Shatter, 11202) and so takes Estella's combo as its `not_solidified` variant (4345 against
+  the logged 12416, ×2.86), which gives neither the Susceptibility nor the set's trigger; the log's NOLANDs there are
+  Estella's Shatter and two Lifts. **Next:** the order of the landings batched at a stop's end, or which hit of the
+  batch consumes the Solidification (castassembly.ts / the engine's landing order, another agent's files this round);
+  the log's Stagger bars (Chen's group at 224, Estella's ultimate 234, her combo 264) put Chen's combo first, so the
+  question is why it didn't shatter in the game (its Lift's physical on a Solidified enemy).
 - **Rossi's `unlogged own combo_crit`** (108 fallbacks with the listing): her combo's crit buff on hits where the
   engine reading also misses a Wolven Blood layer or a teammate's buff; not grouped further.
-- **Chen's Wolven Blood final's end** (c4f3 99.1 s in the log, 104.5 s in the replay): a clock question, the buff's
+- **Chen's Wolven Blood final's end** (c4f3 99.1 s in the log, 104.5 s in the replay). **Found 2026-11-26: a layer
+  short from 50 s, not the final's clock.** The second final starts at 72.30 s in the check's replay against the log's
+  69.62 s (`zmdlogs clock --kit-buff chr_0005_chen:wpn_sword_0022.final`): the replay is one Wolven Blood layer behind
+  the listing on every hit from 50.08 s (scratch count of the listed layers against the replay's modifiers). The first
+  final's lane ends at 49958 ms, her crit attack3's ms; that hit reads with neither the final nor its 16 layers
+  (`hits --json` counterfactuals: `boundary off`), and the layer it adds (49958–98995 ms, `zmdlogs raw --buffs
+  sword_0022`) outlives the clear. The replay's final ends at 50.00 s (the placement's bound is the last listed hit,
+  49958 ms, the boundary counted as listed) and clears that layer. A rule taking every end-boundary hit as past the run
+  (engine assumption `boundary-ends` `before`) fixes c4f3's finals (69.63 → 99.53 s, 114.90 → 149.37 s; plain 223 →
+  233) but measured mixed (tried: docs/tried/2026-11-26-boundary-ends-before.diff: development |damage error| 6.3 →
+  6.4%, 4360 and 9555 worse). **Next:** a bound only where the end-boundary hit's own value decides it (the check's
+  `boundary` reading of that hit). The earlier note:
   run of 20 s over the hidden holds.
 
 ## Misprediction statistics: candidates across the logs (2026-11-24)
@@ -781,7 +803,8 @@ takeAtkSnapshot false).
 - **9c6e −12.6%:** two targets (Typhoeus log-only −31%, replay-only +17%): a multi-target import.
 - **d4fb +9.6%:** Chen's ultimate matched +6.0% (28 hits); her hits ×1.11 the replay's elsewhere, 0 clean hits to fit.
   Chen's readings mismatch in most logs (35% overall): a Chen kit question first.
-- **e82d −8.9%:** one hit, Si's combo final (above). **1cd1 −7.2%** (Typhoeus matched −7.0%), **7910 −5.8%** (Tangtang
+- **e82d −8.9%:** one hit, Si's combo final (above; 2026-11-26: Arcane's doubles Susceptibility gone by the hit, round 5
+  below). **1cd1 −7.2%** (Typhoeus matched −7.0%), **7910 −5.8%** (Tangtang
   matched −7.5%, replay-only +6.2%), **db87 −4.5%** (Laevatain −9.0 / +4.9): not looked into.
 - **Over:** c83c +7.9% (Si's combo final at 56.73 s replay-only, 384k: the log has no final there), fc63 +6.8% (her
   95.1 and 96.5 s shots plain in the log, power shots with bursts in the replay: the replay's Hunting Arrows after her
@@ -956,6 +979,23 @@ Stagger is on the 42–46 s ones and the log's ×1.3 is on top); 7910's ×1.099 
 - **The stage logs** (8915, 7b54, 6339, c6d8): unchanged; 6339's largest one-sided landings are Si's combo final at
   11.30 s (16.5%, at the start of the 11.3–14.6 s gap with no hit by anyone: the slug's number shield?) and
   Laevatain's finisher hit_2 at 21.60 s (14.3%).
+- **e82d's Si combo final (2026-11-26): not the WILL lines, Arcane's doubles Susceptibility ended before it.** Ruled
+  out, the five lines: the game counts one of each (both buffs stackingType 1 by priority, as the engine has them). The
+  combo slash at 8.93 s lists the same five lines and reads plain with two (46417 exactly), and Si's finals with ×3–×4
+  will_dmg and ×2–×3 will_atk listed read plain with one each (79cc 32.22 and 52.35 s, 9c0b 36.79 s, b6aa 39.08 and
+  45.05 s, f978 52.03 s; scratch tables from `hits --all --operator Si --event combo_skill_abilityrange --json`). Found:
+  Arcane's combo Susceptibility (doubles_susceptibility, logged as buff_common_affixes_vulnerable_* 0.179399 from 8.56 s)
+  is listed to the slash at 8.93 s and gone at the final at 9.12 s (`zmdlogs raw --buffs vulnerable`: lane 8561–8925
+  ms); the final read as a crit without it is the logged value to 0.01% (11.25 = 8.625 × 1.5 / 1.15). The replay keeps
+  it to the fight's end (`zmdlogs clock --kit-buff chr_0032_lizhiyan:doubles_susceptibility`: the latest of 110
+  instances, −6.3 s). 6339 shows the same: its doubles listed to Si's last combo slash at 29.38 s, none at her final at
+  29.57 s. Ruled out as the cause: Si's and Arcane's combos cast together (207f ×2, 3f78 ×2, 4a64 ×2, 489c 15.21 s do
+  that and their finals list it), the time since its start (489c's final 0.59 s after it lists it), a Stagger break at
+  the final (none). **Still possible:** the second seal replacing the first (buff_chr_0032_lizhiyan_combo_skill_seal,
+  maxStackCnt 1; its seal_listener's abilityEvent 204 casts seal_again per bunshin), a SealAction ended by another
+  control (finishByAction; Si's Initial Stroke pressed at 8.73 s in e82d, none in 6339), a stage rule in 6339 (both its
+  instances end early). **Next:** the seal chain's data (seal_listener 204, seal_again's frames, the bunshin's end) and
+  6339's other instance (6.23 s, listed to 10.35 s, own expiry 13.67 s).
 - **9c6e** (two targets) and **e82d** −8.9% (Si's combo final ×1.205: the log lists Arcane's weapon WILL lines five
   times, will_dmg ×3 and will_atk ×2 at 0.168, the engine has two; five would be ×1.26: not exact, Arcane's weapon's
   stacking, not looked into further).

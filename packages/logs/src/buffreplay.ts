@@ -336,9 +336,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const holdClocks: ClockWhy[] = [];
   const noEnds = (): LoggedLaneEnds => ({ runs: new Map(), hits: [], decided: new Map(), why: new Map() });
   // Placing, the first replay keeps no buff to the log's end: its expiries are the clocks' (runBounds).
-  const boundaryEnds = (opts.assume?.["boundary-ends"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "boundary-ends")?.default) === "before" ? "before" : "listed";
-  let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx, boundaryEnds) : noEnds();
-  const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx, boundaryEnds) : laneEnds;
+  let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx) : noEnds();
+  const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx) : laneEnds;
   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
   const held = (st: TimelineState, frame: number) => heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
@@ -393,7 +392,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       ...(comboShare > 0 ? { slow: comboHoldSpans(stops, comboShare) } : {}),
     });
     worldHolds = placedHolds.holds;
-    if (hiddenHolds) laneEnds = loggedLaneEnds(fx, boundaryEnds);
+    if (hiddenHolds) laneEnds = loggedLaneEnds(fx);
     if (worldHolds.length || hiddenHolds) main = run("never");
   }
   // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the

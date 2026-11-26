@@ -83,7 +83,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   (db87's Link), tail cuts take detached hits (c83c, hold-out 8.4 → 7.4%), a carried Corrosion above its cap unclamped
   (7910 −6.1 → 0.0%)): next Pogranichnik's SP-driven team buffs (Chen, Lifeng, the Endministrator), slots by value
   within a cast (9c0b's Hunter Pursuit and its Link, 7910's rogue wave), other whole-game pauses outside a Stagger,
-  0c14's Stagger at its breaking hit, a chance path from the values.
+  0c14's Stagger at its breaking hit, a chance path from the values; Arcane's doubles Susceptibility ending before
+  Si's combo final (e82d, 6339; the WILL lines ruled out 2026-11-26), a hold bound from an end-boundary hit's value
+  (c4f3's Wolven Blood), the order of a stop's batched landings (c4f3's Estella at 7.05 s).
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

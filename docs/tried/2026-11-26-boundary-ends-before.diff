@@ -1,0 +1,95 @@
+A buff run whose lane ends at a logged hit's ms ends before that hit (engine assumption `boundary-ends`, reading
+`before`): the hit is the run's first without it, for the hidden holds' bounds (runBounds) and the log's ends
+(heldToLoggedEnds). The c4f3 case it was for: Chen Qianyu's first Wolven Blood final ends at 49958 ms, her crit
+attack3's ms; that hit reads with neither the final nor its layers, and its new layer (49958–98995 ms) outlives the
+clear. With `listed` (the code) the replay's final ends at 50.00 s, wipes that layer, and her second final comes at
+72.30 s against the log's 69.62 s (ending 104.13 s against 99.1 s); with `before` 69.63 → 99.53 s and the third
+114.90 → 149.37 s (the log 114.53 → 149.34–150.28 s).
+
+Measured 2026-11-26 (`measure --variant boundary-ends=before`, against 8832cdd): development plain 72.7 → 72.8%, mean
+|damage error| 6.3 → 6.4% (10 better, 7 worse, 4 mixed); hold-out plain 82.1 → 82.2%, |error| 7.4% (4 better, 2
+worse, 4 mixed); earlier pending 3.5 → 3.4%. c4f3 plain 223 → 233, total −2.9 → −3.2% (per hit 7.79 → 6.63%); 489c
++16, 9090 +10, 0c14 +9; worse 4360 −9 plain (Gilberta's Susceptibility instances: 0.39 → 0.33 at 118–119 s), 9555
+−16 (Arcane's doubles Susceptibility ending early at 87–90 s), f879 −5. Excluding an end-boundary where a run of the
+same buff and source starts at that ms (a reapplication) didn't change 4360 or 9555 (not measured further).
+
+Dropped: as a rule for every buff it moves as many runs the wrong way; the lane's end at a hit's ms isn't one side of
+the hit in general. What would work: the hit's own reading as the evidence (c4f3's 49958 ms hit fits only with the
+final off, the check's `boundary` assumption), i.e. a bound only where the end-boundary hit's value decides it.
+
+diff --git a/packages/engine/src/timeline/assumptions.ts b/packages/engine/src/timeline/assumptions.ts
+index 11f6d16..31db486 100644
+--- a/packages/engine/src/timeline/assumptions.ts
++++ b/packages/engine/src/timeline/assumptions.ts
+@@ -130,6 +130,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
+       none: "the replay's own expiry: holds only by the casts it places (the replay until 2026-11-22)",
+     },
+   },
++  {
++    id: "boundary-ends",
++    question: "Where does a listed buff's run end whose lane (ZMDLogs actualEndMsFromStart) ends at a logged hit's ms: did that hit still have it, or did the buff end before it in the same batched ms? Read only by the log check's replay, for the hidden holds' bounds and the log's ends (packages/logs holdinputs.ts loggedLaneEnds), not for the hit's own reading (the check's `boundary` assumption).",
++    default: "listed",
++    readings: {
++      listed: "with the hit: it is the run's last listed hit (the replay until 2026-11-26)",
++      before: "before the hit: it is the run's first hit without the buff. pending/zmdlogs-c4f307cd039a.json: Chen Qianyu's first Wolven Blood final (buff_wpn_sword_0022_final) and its 16 layers end at 49958 ms, her crit attack3's ms; that hit reads with neither, and the layer it adds (49958–98995 ms) outlives the clear. Listed, the replay's final ended at 50.00 s, cleared that layer and stayed a layer short until its second final, reached at 72.30 s against the log's 69.62 s",
++    },
++  },
+   {
+     id: "stagger-holds",
+     question: "May the hidden holds (hidden-holds `placed`) rise while the enemy is Staggered? No dodge is possible then (a Staggered enemy doesn't attack), but the enemy's tick chains inside the log's Stagger come late by about a fifth of what the combos' stops hold where a combo falls (3.43 s over 15.36 s held, 87 pairs), on time where none does (30 pairs, 0.02 s): a combo slow-down holds more than its stop list says (docs/open-problems.md \"The enemy's clock\"). Read only by the log check's replay (packages/logs holds.ts comboHoldSpans).",
+diff --git a/packages/logs/src/buffreplay.ts b/packages/logs/src/buffreplay.ts
+index 821663b..bd04357 100644
+--- a/packages/logs/src/buffreplay.ts
++++ b/packages/logs/src/buffreplay.ts
+@@ -336,8 +336,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
+   const holdClocks: ClockWhy[] = [];
+   const noEnds = (): LoggedLaneEnds => ({ runs: new Map(), hits: [], decided: new Map(), why: new Map() });
+   // Placing, the first replay keeps no buff to the log's end: its expiries are the clocks' (runBounds).
+-  let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx) : noEnds();
+-  const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx) : laneEnds;
++  const boundaryEnds = (opts.assume?.["boundary-ends"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "boundary-ends")?.default) === "before" ? "before" : "listed";
++  let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx, boundaryEnds) : noEnds();
++  const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx, boundaryEnds) : laneEnds;
+   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
+   const held = (st: TimelineState, frame: number) => heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs);
+   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
+@@ -392,7 +393,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
+       ...(comboShare > 0 ? { slow: comboHoldSpans(stops, comboShare) } : {}),
+     });
+     worldHolds = placedHolds.holds;
+-    if (hiddenHolds) laneEnds = loggedLaneEnds(fx);
++    if (hiddenHolds) laneEnds = loggedLaneEnds(fx, boundaryEnds);
+     if (worldHolds.length || hiddenHolds) main = run("never");
+   }
+   // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the
+diff --git a/packages/logs/src/holdinputs.ts b/packages/logs/src/holdinputs.ts
+index 268d372..5dc58b1 100644
+--- a/packages/logs/src/holdinputs.ts
++++ b/packages/logs/src/holdinputs.ts
+@@ -194,13 +194,22 @@ export interface LoggedLaneEnds {
+   readonly why: Map<string, string>;
+ }
+ 
++/**
++ * Where a run whose lane ends at a hit's ms ends (engine assumption `boundary-ends`): `listed`, with that hit, its last
++ * listed hit; `before`, before it, that hit the first without it.
++ */
++export type BoundaryEnds = "listed" | "before";
++
+ /** The log's runs of its listed buffs and what each hit lists (LoggedLaneEnds), nothing decided yet. */
+-export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
++export function loggedLaneEnds(fx: Pick<LogFixture, "hits">, boundaryEnds: BoundaryEnds = "listed"): LoggedLaneEnds {
+   const runs = new Map<string, { buff: string; source: string; since: number; holder: string; lastListed: number }>();
+-  const hits = [...fx.hits].sort((a, b) => a.t - b.t).map((h) => ({ t: h.t, operator: h.operator, listed: new Set([...h.effects, ...h.boundaryEffects].flatMap((e) => (e.source === undefined ? [] : [`${e.buff}|${e.source}`]))) }));
++  // A boundary effect not at its own start is at its lane's end (zmdlogs.ts zmdlogsHits).
++  const ending = (h: LogFixture["hits"][number]) => (boundaryEnds === "listed" ? h.boundaryEffects : h.boundaryEffects.filter((e) => e.since === h.t));
++  const hits = [...fx.hits].sort((a, b) => a.t - b.t).map((h) => ({ t: h.t, operator: h.operator, listed: new Set([...h.effects, ...ending(h)].flatMap((e) => (e.source === undefined ? [] : [`${e.buff}|${e.source}`]))) }));
+   for (const h of fx.hits) {
+-    // A boundary effect at the lane's start says nothing of its end; one at its end is the end itself.
+-    for (const e of [...h.effects, ...h.boundaryEffects.filter((x) => x.since !== h.t)]) {
++    // A boundary effect at the lane's start says nothing of its end; one at its end is the end itself (`listed`), or
++    // the first hit past it (`before`).
++    for (const e of [...h.effects, ...(boundaryEnds === "listed" ? h.boundaryEffects.filter((x) => x.since !== h.t) : [])]) {
+       if (e.since === undefined || e.source === undefined) continue;
+       const holder = TARGET_SIDE_ZONES.has(e.zone) ? "enemy" : h.operator;
+       const key = `${e.buff}|${e.source}|${e.since}|${holder}`;

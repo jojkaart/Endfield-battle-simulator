@@ -131,15 +131,6 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
-    id: "boundary-ends",
-    question: "Where does a listed buff's run end whose lane (ZMDLogs actualEndMsFromStart) ends at a logged hit's ms: did that hit still have it, or did the buff end before it in the same batched ms? Read only by the log check's replay, for the hidden holds' bounds and the log's ends (packages/logs holdinputs.ts loggedLaneEnds), not for the hit's own reading (the check's `boundary` assumption).",
-    default: "listed",
-    readings: {
-      listed: "with the hit: it is the run's last listed hit (the replay until 2026-11-26)",
-      before: "before the hit: it is the run's first hit without the buff. pending/zmdlogs-c4f307cd039a.json: Chen Qianyu's first Wolven Blood final (buff_wpn_sword_0022_final) and its 16 layers end at 49958 ms, her crit attack3's ms; that hit reads with neither, and the layer it adds (49958–98995 ms) outlives the clear. Listed, the replay's final ended at 50.00 s, cleared that layer and stayed a layer short until its second final, reached at 72.30 s against the log's 69.62 s",
-    },
-  },
-  {
     id: "stagger-holds",
     question: "May the hidden holds (hidden-holds `placed`) rise while the enemy is Staggered? No dodge is possible then (a Staggered enemy doesn't attack), but the enemy's tick chains inside the log's Stagger come late by about a fifth of what the combos' stops hold where a combo falls (3.43 s over 15.36 s held, 87 pairs), on time where none does (30 pairs, 0.02 s): a combo slow-down holds more than its stop list says (docs/open-problems.md \"The enemy's clock\"). Read only by the log check's replay (packages/logs holds.ts comboHoldSpans).",
     default: "none",

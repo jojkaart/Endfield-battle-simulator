@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-26: Arcane's WILL lines and Chen's late Wolven Blood final](2026-11-26-12-arcane-s-will-lines-and-chen-s-late-wolven-blood-final.md)
 - [2026-11-26: Improvement round 15: one rule for each fact, records the views carry](2026-11-26-11-improvement-round-15-one-rule-for-each-fact-records-the.md)
 - [2026-11-26: Low plain, low mismatch: the replay's read crits and a status's crit](2026-11-26-10-low-plain-low-mismatch-the-replay-s-read-crits-and-a-status.md)
 - [2026-11-26: Fights outside 5%: a variant's cast event, detached tails, a carried Corrosion](2026-11-26-10-fights-outside-5-a-variant-s-cast-event-detached-tails-a.md)
