@@ -23,12 +23,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   variant's own hits; one cast pairing; `lead-files.ts` for the lead's
   split; the hold-out output rules in docs/design/tests.md); the backlog
   ([2026-11-26-backlog-after-round-13.md](friction/2026-11-26-backlog-after-round-13.md),
-  6 live points, each in a file an accuracy agent held: the placement's
+  6 points, each in a file an accuracy agent held: the placement's
   `--why` record, the bursts' recorded cause, one check composition, the
   slow-down curves as a reading, reason strings as keys, the
-  buffreplay.ts split) joins the next round once about five new reports
-  have collected; points 1, 4 and 6 suit the next agent holding the
-  replay and placement between accuracy tasks.
+  buffreplay.ts split; 1 and 4 closed 2026-11-26 by the combo hold and
+  replay round: `casts` / `placement --choices`, `combo-curve`) joins the
+  next round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's
@@ -68,9 +68,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   decided), no pause while the enemy is away, `stagger-holds` registered off; away and presses 2026-11-26: the replay's
   enemy away (`enemy-away` `absent`), a hitless press inferred from the listing (`hitless-presses` `inferred`), a
   life's end and a kill from the last life's damage, layered unjudged buffs at each count; the held-back diffs
-  superseded; one per-edge delay ruled out for the combos): next where in a combo the operators' extra hold sits (its
-  end?), 0c14's Rossi replay-only landings, Snowshine's ×0.9624, d4fb 97.05 s, 4d60's Perlica and Will burst
-  refreshes, test 33's reaction case.
+  superseded; one per-edge delay ruled out for the combos; combo hold and replay 2026-11-26: a cast's unlogged tail
+  ends it (`unlogged-tails` `cut`: 0c14's Rossi, plain 293 → 336), the operators' combo excess in the stop's first
+  half (a uniform extra hold `combo-operator-hold` measured worse), the ComboSkill curve a reading (`combo-curve`),
+  a9d7's edge a hidden hold): next 0c14's Rossi and Si under-prediction (−3.2% now), an operators-only combo curve,
+  Snowshine's ×0.9624 (a gear line or nodes), d4fb 97.05 s, 4d60's Perlica and Will burst refreshes, test 33's
+  reaction case.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

@@ -391,7 +391,23 @@ shares of the off error at that code):**
     Across the development logs it makes two presses: 0c14's Si at 153.99 s and 891566c224f8's Liino at 111.23 s
     (her stance's ATK from 111.65 s). Alesh's 12.5 s combo ("0c14" below) has no cast event: not made, open. With
     both, 0c14 plain 172 → 293 as hard-coded, its total −3.4 → +2.7%: the hits that now fit raise it onto what the
-    replay over-predicts elsewhere (Rossi's 58 replay-only landings, 0.30M). Also fixed on the way: a recorded burst
+    replay over-predicts elsewhere (Rossi's 58 replay-only landings, 0.30M). **Found (2026-11-26, combo hold and
+    replay): most of those 58 were one cast's tail.** Rossi's battle skill at 35.40 s lands its two charge hits (35.94,
+    36.06 s, logged) and then nothing the log has: no Lift at frame 35 (36.57 s), no wolves (37.13 s), none of the 16
+    bleed ticks they start (to 52.83 s), and no Endministrator combo shatter (36.57 s) that Lift sets off, while Si's
+    attack4 hits around them are logged (the enemy there). Without that Lift the Vulnerable stack it adds is missing,
+    so her 52.04 s battle skill takes no follow-up: the log has its Lift's hit (53.55 s, exactly the replay's value
+    once the first cast ends) but neither the Lift status nor the wolves. Built as engine assumption `unlogged-tails`
+    `cut` (the new default; buffreplay.ts tailCuts, ReplayCastOptions.endsAt): a battle skill, combo or ultimate whose
+    landings after its last logged one are none of them in the log ends there; not where the log has a hit of its
+    operator's casts no other cast holds in that span (a follow-up's, a tick's, a variant's: 3f78's Rossi combo_2
+    whose combo_3 the log has), where a decided game buff the tail starts is listed as a new run (db87's Camille
+    ultimate: her gear set's and weapon's buffs on Laevatain after its unlogged hits), in an away stretch or in the
+    fight's last 1.5 s (2fd9's killing Crush); the earliest first, the replay made again after each. 0c14 plain 293 →
+    336 (43.5–60.2 s plain: the Endministrator's Essence Disintegration ATK and Razor Clawmark no longer there), the
+    replay-only landings 58 → 14 (0.30M → 0.07M); its total +2.7 → −3.2%: its Rossi landings that stand for logged
+    hits are ×0.943 (−5.7%) and Si's ×0.964 below the log, which the tail had covered. **Next:** 0c14's Rossi and Si
+    under-prediction (−5.7%, −3.6% on matched landings). Also fixed on the way: a recorded burst
     whose record's applier isn't logged (recordedburst.ts: the latest logged applier more than twice the buff's life
     before the burst) is unread, not read over 73 s of every hit (0c14's 181.42 s burst had shifted Si +0.18M).
   - **04d4 Catcher ×0.470: his weapon at level 3** (fixed: fixture buildOverrides). fit-build threw on him (his P1
@@ -399,7 +415,11 @@ shares of the off error at that code):**
     level 3 alone fits 188 of 248, 160 of 167 clean. 04d4 plain 185 → 376, mismatch 833 → 616, per-hit 17.9 → 6.5%
     (its total +2.1 → −3.0%: the over-prediction had hidden a deficit; Snowshine's ×0.962 is one part). Not checked
     against the weapon's skill levels (3, 2, 3): the breakthrough table isn't in the data sources.
-  - **04d4 Snowshine ×0.9624: still open, narrowed.** The ratio is one constant on every hit kind, reactions included
+  - **04d4 Snowshine ×0.9624: still open, narrowed.** (2026-11-26, combo hold and replay: **ruled out** her
+    operator level, potential, weapon skill levels 1 and 2 and each pairing of them, scratch scan on computeStats: levels
+    74 and 75 bracket it at ×0.9596 and ×0.9656, P0–P3 ×0.988, the weapon's skill 1 at levels 1–3 ×0.971–0.990 in steps
+    of 0.0096, none of 336 pairings within 0.001; one gear piece fewer moves 2.5–16.6%, so a piece's variant line, its
+    artifice or a node subset are what's left.) The ratio is one constant on every hit kind, reactions included
     (0.9621–0.9629 at damage bonuses 1.00, 1.16, 1.22, no ATK buffs on her), so it's ATK; exactly her attribute bonus
     3.325 → 3.200 (Str −25 or Will −62.5) with base ATK unchanged. **Ruled out:** a weapon level, an attribute-node
     count, or both (scratch scan of every pair: nearest nodes 3 + weapon 84 ×0.9606, nodes 2 + weapon 88 ×0.9646);
@@ -442,6 +462,20 @@ shares of the off error at that code):**
     `kill`), so the kill rule leaves out the 71.47 s extra. 4a64 +2.9 → +0.7%. Neither touches 0c14's logged extra
     (a matched landing counts). **Still open:** 207f's 42.85 s: a fight's last hit with no kill the log shows (5.760
     × Max HP of hdg027, the other two hdg027 logs' kills 5.280).
+  - **a9d7 Chen Qianyu's Slashing Edge to 169.40 s (2026-11-26, combo hold and replay): a hidden hold, not a landing.**
+    Her ultimate's six slashes are logged to 158.59 s, the stretch's last hit (away 158.59–166.21 s); its final, a
+    ~0.4M hit at 159.33 s in the replay, isn't in the log, while the same ultimate's final is logged at 45.12 and
+    235.94 s. The edge (buff_chr_0005_chen_talent_0, abilityEvent 13: a landing that deals damage; 10 s) refreshed by
+    the last slash at 158.60 s runs to 169.03 s in the replay with its 0.43 s of placed holds; the log lists it at
+    169.07 and 169.40 s and not at 169.87 s. A final that landed would end it at 169.76 s (in range), but a landing
+    that refreshes it deals damage and the log records every damage (no zero-value hit in any development log), so
+    it didn't land; and the weapon's crit layers (wpn_sword_0022) stay at 22 across the stretch, as they would. A
+    hold of 0.37–0.84 s between 158.60 and 169.40 s fits: the placement's unit at 153.30 s may go anywhere in
+    151.05–166.84 s, and the edge isn't one of its clocks (a layered buff: "not a clock: the kit buff has maxStacks").
+    **Not changed:** the away rule's edge (a hit 0.74 s into the stretch landing would contradict d774's unlogged
+    strikes 0.23 and 0.27 s in and the totals' rule). **Still possible:** a layered buff whose every layer the replay
+    refreshes at pinned landings as a hold clock (its last layer's start to the log's run end), which would place
+    a9d7's unit after 158.60 s; it needs the replay's refreshes to be complete, which a missed refresh breaks.
   - **Rossi's bleed ticks and combo_3's over-hold: not reached past the views.** The bleed's unlanded logged ticks
     (489c 44.66, 45.66, 52.18, 72.81, 102.55 s; d572 64.16, 128.21 s: "a landing whose order the kit doesn't give")
     and combo_2 / combo_3's 0.15–0.2 s over-hold (3f78 5.77–8.43 s: the replay's stops are as listed, combo_3 on its
@@ -521,6 +555,25 @@ operators' own clock resuming later than the world's at a combo's end (their ani
 (`stagger-holds` stays off). **Next check:** whether the operators' excess sits at the combo's end (their first
 landing after it late, their last before it on time) against its start, from casts.ts --rows split by where the
 stop falls in the cast.
+**2026-11-26 (combo hold and replay): neither at its end nor before its start; inside its first half**
+(scripts/probes/combo-hold/edges.ts, 301 isolated combo stops, within one placed cast against its first landing):
+the landings 0–200 ms before a stop's listed start are on time (39, residual 9–22 ms median), so the hold doesn't
+begin early; the teammates' landings come at full density from the listed end on (no frozen frames after it), and
+those 0–100 ms after it are already 186 ms late (39), 200–400 ms after 240 ms (51): so it doesn't resume late either;
+inside the stop the landings at 0.5–0.6 of it are already 294 ms late (the plateau of the guessed curve is 0.4 of it),
+at 0.7–1.0 about 200 ms. Arcane's 9-frame combo the same (176 ms after its end). So the operators' clock is held
+about 4–6 frames more than the guessed curve within the stop's first half (a longer or deeper plateau for them),
+while the enemy's ticks and the buffs follow the guess (the flat curve measured worse). The teammates' landing
+density thins out 5 frames before the listed start (7 for Arcane's combos), but combos open on events (a finisher,
+a status), so that dip is the windows' selection, not a hold: the on-time landings there say so. **Built and
+measured, not the default:** engine assumption `combo-operator-hold` (timeline/clock.ts slowDown: a combo's
+slow-down holds each operator it holds N frames more, their bursts included, the world's clock as its scales):
+`3f` verified plain 78.0 → 77.4%, earlier pending 67.3 → 66.4%; `4f` 77.1%, 66.4% (9a80 +4, 9c0b +3, c6d8 +13 plain,
+4bfc −92, 3aa6 −33); `6f` 76.4%, 66.3%; development and hold-out within 0.1. A uniform extra hold on every operator
+at every combo isn't it. **Also a reading now:** the curve itself (`combo-curve`: `guess`, `flat`, `middle`, round
+13's backlog point 4), so a curve for the operators alone could be tried next. **Still possible:** the operators'
+own animation pause in a combo's cut-in that only some combos have (4bfc's and 3aa6's Xaihi and Zhuang Fangyi got
+worse with it), the caster's layer-1 dilation on its targets.
 
 ## Fight totals: what moves them (2026-11-23)
 
@@ -2901,6 +2954,13 @@ now −3.4%.
 **Found (2026-11-26, damage factors):** the Endministrator's Crush ×2.2 at 182.30 s and Si's log-only inkmove_2 at
 181.42 s are one cause, Si's battle-skill presses at 139.68 s (in the away stretch) and 153.99 s ("The damage factors"
 under "Misprediction statistics"; built in general 2026-11-26: plain 172 → 293, the total −3.4 → +2.7%).
+
+**Found (2026-11-26, combo hold and replay):** Rossi's 58 replay-only landings (0.30M, the +2.7% total) were
+mostly her 35.40 s battle skill's tail (Lift, wolves, 16 bleed ticks, the Endministrator's combo shatter it sets
+off) and, from its missing Vulnerable stack, her 52.04 s battle skill's follow-up: engine assumption `unlogged-tails`
+`cut` ("The damage factors" under "Misprediction statistics"); plain 293 → 336, replay-only 58 → 14, the total
++2.7 → −3.2% (her matched landings ×0.943, Si's ×0.964). Alesh's eventless 12.5 s combo and the remaining
+under-prediction: next.
 
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window (2026-11-22: the max-stack bonus's length is the open
