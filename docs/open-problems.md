@@ -302,7 +302,7 @@ shares of the off error at that code):**
   and Chen's ultimate hits and the Endministrator's attacks under the same nine-instance listing match plain (`zmdlogs
   hits 7e19… --json`): two act. The ×1.096 is Ember's own, on four hits of three kinds (knockdown, combo, both
   finisher hits) from 28.60 s; her 25.81 s knockdown (×1.182) is her weapon's layers (another reading fits it).
-  Still possible: her gear set (suit_poise01: the replay's +0.08 ×4 and +0.16 the log never lists, its
+  **2026-11-26: the check and her talent's layers** ("The damage factors" above). Before: still possible: her gear set (suit_poise01: the replay's +0.08 ×4 and +0.16 the log never lists, its
   poisedmg_01_attackbuff listed only on the finisher), Pogranichnik's talent 1 at two layers from 28.60 s.
 - **Trigger cooldowns: the clock from the data (2026-11-24, the cooldown-clock round; KitTrigger.cooldownClock, engine
   assumption `trigger-cooldowns` `kit`).** The game has two mechanisms (cooldownTimers in packages/data skillData.ts):
@@ -337,10 +337,78 @@ shares of the off error at that code):**
   (86.50–109.93 s is Staggered: held, the 106.13 s proc couldn't come either); an unplaced cast's stop (the log has no
   cast event there; Lifeng's only slow-down is at 96.93 s). Open.
 - **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
-  unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6%. 4e36:
+  unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6% (the
+  last two one cause, found 2026-11-26: "The damage factors" below). 4e36:
   small replay-only basic-attack tails (Si's attack4, Ardelia's attack3 projectiles) and +1.6% matched. de6a: the
   Swordmancer procs (above, fixed) and Pogranichnik's combo hit_3 / ultimate harass replay-only against his log-only
   combo hits at 132–134 s (a placement of his combo: open).
+- **The damage factors (2026-11-26, damage-factors round; largest first).**
+  - **Crush ×2.2 (0c14) and ×1.90 (2fd9): one cause, not Crush.** Every development Crush hit (`zmdlogs hits --kind
+    crush`: 0c14 133.1 and 182.3 s, 2fd9 22.3, 47.9 and the killing 70.0 s, 7e19 33.7 s) reads exactly with the data's
+    multiplier (CRUSH 300–750% by the Vulnerable stacks consumed), the physical level coefficient and Arts Intensity:
+    **ruled out** the formula, its stack scaling and its modifiers. Both misses were stacks: Rossi's perfect combo
+    (combo_3 frame 29) consumes an infliction for a Lift **and** one more Vulnerable stack, so one infliction the
+    replay lacks costs the Crusher two stacks. 2fd9's was fixed by round 4 (Snowshine's counter bash supplies the
+    infliction at 14.56 s: 22.3 and 47.9 s now plain at 4 stacks). 0c14 182.30 s: the replay consumes 2, the log 4
+    (172,059 = the log's listing read at 7.5, exactly); the missing infliction is Si's Cryo from a battle-skill press
+    at 153.99 s the log shows no hit of, which the replay skips because it made her 139.68 s press inside the away
+    stretch (134.97–152.91 s) as her battle skill, whose Artful Intent then ran on to 162.10 s (so the 153.99 s press
+    read as Initial Stroke). The game's away press landed nothing: no Artful Intent burst at its end (the replay's
+    163.13 s burst_mark is replay-only), no Jade Vessel on the 152.9–154.2 s hits (×0.92 with it); and the 153.99 s
+    press was her battle skill: Jade Vessel's enemy_vul (only its Immobilization gives it) is listed from 155.79 s,
+    the next logged hit after its landing, and its Artful Intent ends at the log's 181.00 s with the inkmove_2 burst at
+    181.42 s. With both presses so (hard-coded, docs/tried/2026-11-26-0c14-si-away-press.diff): Rossi's 165.49 s
+    Lift, the crystal shatter and the Endministrator's Essence Disintegration team ATK (165.49–186.28 s) appear, the
+    Crush and Si's 167 s combo slashes read plain; 0c14 plain 172 → 293, −4.9 → +1.2%. **Open, not mine to build**
+    (buffreplay.ts): a press in an away stretch applies nothing to the enemy; a hitless press is made where the log
+    lists, from its landing to the next logged hit, a buff only its hit gives (Alesh's 12.5 s combo, "0c14" below, is
+    the other case).
+  - **04d4 Catcher ×0.470: his weapon at level 3** (fixed: fixture buildOverrides). fit-build threw on him (his P1
+    hits scale with DEF and a DEF food's % is in an unknown formula slot: such candidates are now unscored): weapon
+    level 3 alone fits 188 of 248, 160 of 167 clean. 04d4 plain 185 → 376, mismatch 833 → 616, per-hit 17.9 → 6.5%
+    (its total +2.1 → −3.0%: the over-prediction had hidden a deficit; Snowshine's ×0.962 is one part). Not checked
+    against the weapon's skill levels (3, 2, 3): the breakthrough table isn't in the data sources.
+  - **04d4 Snowshine ×0.9624: still open, narrowed.** The ratio is one constant on every hit kind, reactions included
+    (0.9621–0.9629 at damage bonuses 1.00, 1.16, 1.22, no ATK buffs on her), so it's ATK; exactly her attribute bonus
+    3.325 → 3.200 (Str −25 or Will −62.5) with base ATK unchanged. **Ruled out:** a weapon level, an attribute-node
+    count, or both (scratch scan of every pair: nearest nodes 3 + weapon 84 ×0.9606, nodes 2 + weapon 88 ×0.9646);
+    her nodes give Str 10, 15, 15 (and 20 at promotion 4), so no count drops 25. fit-build's two-input fits (a level
+    and a food, 86 of 148 clean) are coincidences of that kind. **Still possible:** a gear line (one piece's variant:
+    her gauntlets' Str 43, an edc's Will 41), Former Finery's skill-1 level (Will 68 at level 4), her potential's Will
+    (+20 at P4), a subset of nodes (the engine takes the first n).
+  - **7e19 Ember ×1.096: half the check, half her talent's layers.** (1) The check dropped her listed Pay the Ferric
+    Price (+0.09 ATK, talent 2, on `attacked`, so its state is the log's) as if it were one of Pogranichnik's two
+    Thermite Cutter layers (+0.09 ATK each): loggedEntries matches an unjudged buff's entry against any engine
+    modifier of the same zone and value. Matched against its own game buff only
+    (docs/tried/2026-11-26-log-entries-own-buff.diff, held back: the check is another agent's), her 25.81 s slam fits
+    with Fervent Morale at its boundary (+0.17 ATK%), and the hold-outs go 79.0 → 80.4% plain (3 better, 0 worse).
+    (2) Left ×1.0457 at 28.6–30.9 s and ×1.0957 at 33.15 s: one and two more +0.09 ATK layers. Ferric Price stacks to
+    3 (stackingType 10, one timer each layer refreshes), and the log lists one entry whatever its layers: 04d4's Ember
+    hits under its listing read ×1.023 (her build offset), ×1.085 and ×1.147, steps of exactly one layer
+    (`zmdlogs hits 04d4 --operator Ember --json`), 99fb ×1.08. So 7e19's second layer came at about 26.2 s and ran to
+    about 33.2 s (the lane's 24.85–31.85 s is the first layer's). **Ruled out** for the ×1.096: Pogranichnik's weapon
+    layers (all four operators list the same nine instances, the others plain with two), Fervent Morale (one
+    instance on her), her gear set (the replay's Æthertech lines the log doesn't list would lower, not raise, the
+    reading). **Next:** an unjudged layered buff listed once read at 1 … maxStacks layers (an alternative in the
+    check, or the replay's state from the damage).
+  - **Rossi's ultimate ×1.090 (9a80) and ×1.081 (2fd9): fixed earlier.** Every stab of both fits within ±1 now (27 and
+    27 hits, `zmdlogs hits 9a80 2fd9 --operator Rossi --event 'ultimate_skill$'`; plain or crit-assumed).
+  - **Rossi's slash2 extras: not the bleed clock.** Of the 13 slash2s on an enemy listing her bleed, the 3 without a
+    Seething Blood extra (207f 42.85 s, 4a64 29.15, 71.46 s) are each the last logged hit of the fight or of Si's first
+    life (no hit by anyone within 3 s; scripts/probes/rossi/slash2.py); the other 10 have theirs at the slash's ms and
+    bleed ticks after. The enemy dies or leaves at the slash. Neither fight reads as a kill (no capped last hit), so
+    the totals count the extras; a rule taking every unlogged landing of a fight's last frame
+    (docs/tried/2026-11-26-life-end-landings.diff) is mixed (4a64 +2.9 → +2.0%, 207f −2.9 → −3.5%) and too broad
+    (0c14's same-frame extra before another hit's kill is logged).
+  - **Rossi's bleed ticks and combo_3's over-hold: not reached past the views.** The bleed's unlanded logged ticks
+    (489c 44.66, 45.66, 52.18, 72.81, 102.55 s; d572 64.16, 128.21 s: "a landing whose order the kit doesn't give")
+    and combo_2 / combo_3's 0.15–0.2 s over-hold (3f78 5.77–8.43 s: the replay's stops are as listed, combo_3 on its
+    perfect path as logged) are the hold placement's and the clock's (holds.ts, timeline/), not a kit value: for
+    that code's owner.
+  - **Cast tails (item 5): no kit cause among the largest.** `zmdlogs totals --all --kinds`: Typhoeus's floating
+    attack bursts (9c6e, two targets; fc63), Laevatain's finisher hit_2 (6339, a stage log), Si's combo final (7b54, a
+    stage log; c83c), Zhuang Fangyi's Empyrean strikes (d774: the team's hits thin out); basic attacks 1.33% over 32
+    fights in small pieces.
 - **Moments of change:** hits with a boundary effect are off at 42.8% against 24.2% (hold-outs 29.9 / 9.0%) in every
   skill kind, yet a boundary kit buff taken the other way fits only 1.8%: a marker of a state change, not its own cause.
 - **Drift with time:** off rate 12.5% in the first 10 s, 38% at 120–200 s; per fight higher in the second half in 34 of
@@ -429,7 +497,8 @@ takeAtkSnapshot false).
 **Still possible / left (largest first; `zmdlogs totals --all`):**
 - **The stage logs** (8915 +62%, 7b54 +49%, c6d8 +42%, 6339 +38%): the stages' shields and phase factors (×0.1–0.7 on
   every hit; "Arcane's mismatches", "Hard 33's slug"), not the totals' to fix.
-- **2fd9 −15.6%:** Mi Fu's Crush ×1.90 low at 2 Vulnerable stacks (22.3, 47.9 s), while her killing Crush at 3 stacks
+- **2fd9 −15.6%** (fixed by round 4, item 14: Rossi's perfect combo's Lift and Vulnerable stack on Snowshine's
+  counter-bash infliction; both Crushes plain at 4 stacks, "The damage factors" above)**:** Mi Fu's Crush ×1.90 low at 2 Vulnerable stacks (22.3, 47.9 s), while her killing Crush at 3 stacks
   is ×1.02 uncapped: the stack count the replay consumes (4.5 against 7.5 would be ×1.67), or her weapon's and set's
   DMG lines the log doesn't list; not checked further.
 - **9c6e −12.6%:** two targets (Typhoeus log-only −31%, replay-only +17%): a multi-target import.
@@ -560,7 +629,8 @@ reaction at its ms (logged in fights with and without the extra).
 - **The hold-outs' log-only physical status hits** (2.08% of a fight, unchanged): a physical status the replay never
   makes, of a kind the development logs barely have; measure can split them by status kind (Lift, Knock Down,
   Crush, Breach, Shatter) as a next step, the kinds the hold-outs' operators apply.
-- **Rossi's slash2 extras** (4a64 29.15, 71.46 s, 207f 42.85 s replay-only): a crit (slash2 ÷ slash1 ×3.0, as where
+- **Rossi's slash2 extras** (2026-11-26: the fight's or a life's last hit, not the bleed: "The damage factors"
+  above) (4a64 29.15, 71.46 s, 207f 42.85 s replay-only): a crit (slash2 ÷ slash1 ×3.0, as where
   both crit) on an enemy listing her bleed, yet no extra in the log, where the other nine slash2 crits have one; in
   all three the bleed's last logged tick is at or before it (4a64 28.61 s and 71.458 s at the hit's ms, 207f 42.83 s)
   and later ticks follow in the nine: the bleed ending as the slash lands (its listing lags), the replay's bleed
@@ -820,6 +890,9 @@ stop in their windows (which stop's placement or hold moves them), in
 489c and d572.
 
 ## Rossi's ultimate ×1.090 (9a80) and ×1.081 (2fd9)
+
+**Closed 2026-11-26:** every stab of both logs fits within ±1 (`zmdlogs hits 9a80 2fd9 --operator Rossi --event
+'ultimate_skill$'`, 27 and 27 hits). The rest of this entry is the history.
 
 **Shows:** every ultimate hit low by one factor, crits and non-crits alike
 (9a80: 16058 logged vs 14727, crits 46567 vs 42708). Matches in 4e5e,
@@ -2721,6 +2794,10 @@ case.
 as seven ultimates the log doesn't have (19.5% of the fight) and Si's bursts in her two phases ("Fight totals" above):
 now −3.4%.
 
+**Found (2026-11-26, damage factors):** the Endministrator's Crush ×2.2 at 182.30 s and Si's log-only inkmove_2 at
+181.42 s are one cause, Si's battle-skill presses at 139.68 s (in the away stretch) and 153.99 s ("The damage factors"
+under "Misprediction statistics"; docs/tried/2026-11-26-0c14-si-away-press.diff).
+
 **Next check:** Rossi's Wolven Blood layers against the log's listing,
 window by window (2026-11-22: the max-stack bonus's length is the open
 part, "Rossi: her bleed" above).
@@ -2891,7 +2968,7 @@ logs outrank Zero Sanity's older in-game values.
 
 - Da Pan's only log (multi-target 10df): ×1.25 on half his hits and on
   Pogranichnik's in the same fight.
-- 04d4: Catcher's weapon fits level ~1 (×1.0265 left), Ember ×1.0226 (as
+- 04d4: Catcher's weapon at level 3 (fitted 2026-11-26, buildOverrides), Ember ×1.0226 (as
   in 146d); Ember ×1.0444 in Hard 27's pair, none in 7e19.
 - c3c7: Xaihi's hits all ×0.337.
 

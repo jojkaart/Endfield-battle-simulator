@@ -17,8 +17,8 @@
   "chr_0009_azrila": {"plain":0,"assumed":0,"fallback":0,"mismatch":312,"unvalued":0,"unquantified":12,"uncovered":0},
   "chr_0014_aurora": {"plain":0,"assumed":0,"fallback":0,"mismatch":222,"unvalued":0,"unquantified":3,"uncovered":0},
   "chr_0038_purrche": {"plain":185,"assumed":9,"fallback":9,"mismatch":47,"unvalued":0,"unquantified":1,"uncovered":0},
-  "chr_0020_meurs": {"plain":0,"assumed":0,"fallback":0,"mismatch":252,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":2.1,"operator chr_0020_meurs":96.3,"operator chr_0009_azrila":-3.4,"operator chr_0038_purrche":-7.3,"operator chr_0014_aurora":4.3,"kind basic":2.6,"kind battle":-1,"kind combo":27.8,"kind none":-2.2,"kind status":0.5,"kind ultimate":10.1,"kind uncovered":-100,"hits":3.1,"status hits":1.7,"staggered hits":3.2,"last hit":0,"time to kill":-2,"crit share (points)":0,"share matched":2.2,"share replay-only":3.2,"share log-only":-3.3}
+  "chr_0020_meurs": {"plain":191,"assumed":6,"fallback":18,"mismatch":35,"unvalued":0,"unquantified":2,"uncovered":0},
+  "totals": {"damage":-3,"operator chr_0020_meurs":-0.9,"operator chr_0009_azrila":-3.4,"operator chr_0038_purrche":-7.3,"operator chr_0014_aurora":4.3,"kind basic":-2.9,"kind battle":-1,"kind combo":11.5,"kind none":-6.5,"kind status":-0.5,"kind ultimate":-6.7,"kind uncovered":-100,"hits":3.1,"status hits":1.7,"staggered hits":3.2,"last hit":0,"time to kill":null,"crit share (points)":0,"share matched":-2.9,"share replay-only":3.2,"share log-only":-3.3}
  },
  "pending/zmdlogs-0c14fb3ce77d.json": {
   "chr_0028_wulfa": {"plain":43,"assumed":21,"fallback":188,"mismatch":16,"unvalued":0,"unquantified":0,"uncovered":0},

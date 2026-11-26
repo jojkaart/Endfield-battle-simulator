@@ -1,0 +1,35 @@
+0c14: Si's battle-skill press at 139.68 s (inside the away stretch 134.97–152.91 s) not made, and her press at
+153.99 s made though the log shows no hit of it. A MEASUREMENT, hard-coded to the two presses (buffreplay.ts, the
+replay's press rule): it sizes the mechanism below; the general rule is the lead's / the replay owner's to build.
+
+The mechanism (damage-factors round, 2026-11-26): the replay made the 139.68 s press as her base battle skill
+(`unseen`: no hit could land), so its Artful Intent record, Cryo infliction and Jade Vessel run (enemy-side effects)
+went on while the enemy was away, and the 153.99 s press was then Initial Stroke and skipped. In the game the away
+press landed on nothing: no Artful Intent burst at its end (the replay's 163.13 s burst_mark is replay-only), no Jade
+Vessel on the 152.9–154.2 s hits (the replay's +0.09 DMG taken there reads ×0.92). The 153.99 s press was the base
+battle skill: the log lists Jade Vessel's enemy_vul from 155.79 s (the next logged hit after its frame-15 landing),
+which only its Immobilization gives, and Artful Intent then ends at the log's 181.00 s (ReplayedCast.expires) with the
+burst at 181.42 s. Its Cryo is what Rossi's perfect combo at 165.49 s consumed (a Lift and one more Vulnerable stack:
+the log's Airborne and the Endministrator's crystal shatter there, then his Essence Disintegration ATK on the team
+165.49–186.28 s), so his Crush at 182.30 s consumed 4 stacks (172,059 = the log's listing at 7.5, exactly), not 2.
+
+Measured (2026-11-26, `--at HEAD --patch <this> --hits`, at c509b8f): only 0c14 moves (earlier pending, mixed):
+plain 172 → 293, mismatch 19 → 21, damage −4.9 → +1.2%, mean |per-hit error| 25.9 → 21.0%; the Crush plain, Si's
+combo slashes at 167 s plain (4,616), the 165.49 s Airborne and shatter landed. What a general rule needs: (1) a
+press whose hits fall in an away stretch applies nothing to the enemy (or isn't made, when its effects are all
+enemy-side); (2) a press the log shows no hit of is made when the log lists, from its landing to the next logged
+hit, a buff only its hit gives (a cast inferred from a listed buff: Alesh's 12.5 s combo in 0c14 is the other case).
+
+diff --git a/packages/logs/src/buffreplay.ts b/packages/logs/src/buffreplay.ts
+index 1c43110..4d35f94 100644
+--- a/packages/logs/src/buffreplay.ts
++++ b/packages/logs/src/buffreplay.ts
+@@ -1886,6 +1886,8 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
+     // replay; the log lists her ultimate's Amp on the team from 13.27 to 21.4 s). Later presses keep the energy check
+     // (every unseen ultimate made: 1cd1657bc305 −7.2 → −19.5%, Typhoeus's shots at 41.3 s lost).
+     if (!c.leadsTo) {
++      if (c.operator === "chr_0036_jsspsi" && Math.abs(c.start - 139677) < 300) return skip("hack: no enemy");
++      if (!c.unseen && c.operator === "chr_0036_jsspsi" && Math.abs(c.start - 153991) < 300) return made(c.skillId);
+       if (!c.unseen) return skip("a press the log shows nothing of (no hit of its own): the slot held a variant, or the press did nothing");
+       if (!skillAvailable(ctx, st, c.operator, c.skillId, f)) return skip(`a press whose hits had no one to land on: ${c.skillId} isn't available by its kit's state then`);
+       if (c.beforeHits === true && c.kind === "ultimate") return made(c.skillId);

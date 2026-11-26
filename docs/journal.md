@@ -4,9 +4,45 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 146 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 147 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Damage factors: Catcher's weapon, the Crush's stacks from Si's away press, Ember's listed layers
+
+**Goal:** the damage factors the misprediction statistics left, largest first: the Crush ×2.2 (0c14) and ×1.90 (2fd9),
+04d4's Catcher ×2.1 and Snowshine ×0.962, Ember's ×1.096 (7e19), Rossi's ultimate ×1.09 / ×1.08, bleed clock, slash2
+extras and combo_3 over-hold, then the cast tails; another agent held the replay, holds and check files.
+
+**Done** (open-problems "Misprediction statistics", The damage factors):
+- **The Crush is right; its misses were Vulnerable stacks.** Every logged Crush reads exactly with the data's
+  multiplier by stacks consumed. Rossi's perfect combo gives a Lift and one more stack per consumed infliction, so one
+  infliction the replay lacks costs two stacks: 2fd9's (fixed by round 4's counter bash), and 0c14's at 182.30 s (2 →
+  4: 172,059 exactly). 0c14's cause: Si's battle-skill press in the away stretch (139.68 s), made by the replay, landed
+  nothing in the game, and her hitless 153.99 s press was her battle skill (Jade Vessel's Immobilization debuff listed
+  from the next hit, her Artful Intent ending at the log's 181.00 s). Hard-coded as a measurement:
+  docs/tried/2026-11-26-0c14-si-away-press.diff (0c14 plain 172 → 293, −4.9 → +1.2%); the rule is the replay's.
+- **04d4's Catcher: weapon level 3** (fixture buildOverrides). fit-build threw on his DEF-scaled hits under a DEF food
+  candidate; such a candidate is now unscored (buildfit.ts, tests/buildfit-fit.test.ts). 04d4 plain 185 → 376.
+- **Ember's ×1.096:** the check's loggedEntries dropped her listed talent ATK (+0.09) as one of Thermite Cutter's
+  layers (fix held back: docs/tried/2026-11-26-log-entries-own-buff.diff, hold-out plain 79.0 → 80.4%, 3 better, 0
+  worse), and her talent's layers aren't listed (one entry at 1–3 layers: 04d4's steps ×1.023 / 1.085 / 1.147).
+- **Rossi:** her ultimate's ×1.09 / ×1.08 fit now (closed); the slash2s without an extra are a fight's or a life's last
+  hit (scripts/probes/rossi/slash2.py; the totals rule is mixed and too broad, docs/tried/2026-11-26-life-end-landings.diff);
+  the bleed's unlanded ticks and combo_3's over-hold left to the holds' owner.
+- Snowshine narrowed (her attribute bonus 3.325 → 3.200 exactly; no weapon level or node count reaches it); the cast
+  tails' largest are stage, two-target and placement cases, no kit cause.
+
+**Scoreboard** (`npm run snapshots:update`): verified unchanged; development plain 69.0%, mismatch 11.4%, mean |damage
+error| 7.0% (unchanged); hold-out 79.0%, 5.9%, 8.5% (unchanged); earlier pending plain 64.7 → 66.3%, mismatch 13.9 →
+12.0%, mean |damage error| 4.1 → 4.2% (04d4 mixed: per hit 17.9 → 6.5%, its total +2.1 → −3.0%, the over-prediction had
+hidden the rest of its deficit). No kit or engine change: team-ab not needed.
+
+**Decisions:** fixes in files another agent held were measured with `--patch` and kept as docs/tried diffs marked held
+back (README paragraph), not applied; Catcher's level-3 weapon taken though the weapon's skill levels (3, 2, 3) can't be
+checked against a breakthrough table the data sources lack.
+
+**Problems:** `measure -- --help` queued 5 min for the lock before rejecting the option (friction report).
 
 ## 2026-11-25: Holds and placement: a freeze holds no Arts reaction status
 
@@ -335,36 +371,3 @@ to 5 s for the running step before the cleanups, so snapshots puts its files bac
 .sh wrappers use `exec` so a signal reaches node. The unread-option check warns (stderr, after the output) rather
 than refuses: a spread of the values counts as reading all, so it can miss one but never names a wrong one. Round 9's
 backlog points 2 and 3 parked after their second carry; the rest is the backlog's seven points.
-
-## 2026-11-24: Misprediction statistics across the logs; Zhuang Fangyi's Empyrean combo key
-
-**Goal:** the owner's ask: one statistical pass over every log's mispredictions (not one log or operator at a time),
-ranking candidate causes that could each explain a large share; analysis, not fixes, but for a certain one.
-
-**Done:** scripts/probes/stats/: build.ts (every development log's hits with the check's verdicts, readings, zones,
-differences, features, and counterfactual readings: each listing difference taken the log's way, the crit flipped,
-boundary kit buffs on and off; one-sided landings; fights), analyze.py (first explanations, ratio clusters, buffs by
-mechanism, features with fight bootstraps and within-fight shuffles, a tree and lasso held out by fight group,
-one-sided kinds, fight-level features), bands.py, holdout-aggregates.ts (aggregates only). The write-up:
-docs/analysis/2026-11-24-misprediction-stats.md; open-problems "Misprediction statistics".
-- Stage logs aside, the off hits' error is one kit buff the replay has wrong at the hit (the listing right) 20.4%,
-  alternatives or the listing with alternatives 30.2%, Corrosion 8.5%, unexplained 35.1% (in known fight-operators).
-- **Fixed:** Zhuang Fangyi's Empyrean combo is logged under the base combo's key (Stagger origin combo_skill_ult):
-  21 hits ×1.500 = 5.4 / 3.6, 4.3% of the error, the largest single cause. The kit's Empyrean combo hit carries the
-  base key now.
-- Leads: two weapons' "ready" buffs on ultimates (2.8%, 6 fights), the rest of the ×1.5 band (Liino's ultimate
-  windows, Alesh's ultimate; 6.9% of the hold-outs' error), boundary effects as a marker of state changes (off 42.8%
-  against 24.2%, explaining 1.8% themselves), a weak drift with time (34 of 57 fights), Liino's factors in 7910, af7b.
-
-**Scoreboard** (`npm run snapshots:update`, the kit fix): development plain 67.1%, mismatch 11.7 → 11.6%, mean
-|damage error| 7.3 → 7.2%; hold-out 77.6%, 6.2%, 8.2 → 8.0% (1 better); earlier pending plain 63.6 → 63.7%, mismatch
-14.5 → 14.3%, 4.3 → 4.5%, within 5% 19 → 18 (3aa6, 4bfc better; d774 +3.8 → +7.2% and c6d8 mixed, per hit closer:
-the combos' ×1.5 hid d774's replay-only Empyrean strikes); all but the hold-outs 5.6 → 5.7%. Teams (team-ab against
-e5f22ef): every team's fight the same.
-
-**Decisions:** the analysis at e5f22ef's code (the tables built in an at-commit tree), the hold-out confirmation after
-the fix; grading a crit-less hit on the nearer of its two crits, a capped hit on its uncapped value; the off rate
-beside the error share, since the error favours big hits; the stage logs left out of the attribution.
-
-**Dead ends:** the error-weighted feature shares alone (Stagger, ultimates, the fight's last tenth) looked like
-causes and were mostly hit size; the tree screen finds nothing that generalizes across fight groups.

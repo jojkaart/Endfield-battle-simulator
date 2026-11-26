@@ -108,6 +108,9 @@ export function fitBuild(data: GameData, fx: LogFixture, operator: string, opts:
     } catch {
       return { fits: -1, cleanFits: -1, median: NaN };
     }
+    // A line with a part in an unknown formula slot (a food's DEF %: StatLine.unmodelled) can't be read by a kit value
+    // that needs it (04d4's Catcher: his P1 hits scale with DEF), so such a candidate isn't scored.
+    if (Object.values(panels.fed.attrs).some((l) => l?.unmodelled?.length)) return { fits: -1, cleanFits: -1, median: NaN };
     let fits = 0;
     let cleanFits = 0;
     const ratios: number[] = [];

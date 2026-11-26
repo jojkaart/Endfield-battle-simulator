@@ -26,8 +26,8 @@ commit, and how many logs got better or worse.
 | Verified (fixtures/) | 6 | 804 | 78.0% | 99.3% | 0.0% | 2.0% | 6 |
 | Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 69.0% | 85.3% | 11.4% | 7.0% | 24 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 79.0% | 92.3% | 5.9% | 8.5% | 9 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 64.7% | 85.9% | 13.9% | 4.1% | 19 |
-| All but the hold-outs | 61 | 29035 | 67.5% | 85.9% | 12.1% | 5.5% | 49 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 66.3% | 87.7% | 12.0% | 4.2% | 19 |
+| All but the hold-outs | 61 | 29035 | 68.1% | 86.6% | 11.4% | 5.5% | 49 |
 
 ## Where the total's error lives
 
@@ -62,7 +62,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | chr_0016_laevat | 13 | 1497 | 78.6% | 5.4% | 14.6% |
 | chr_0017_yvonne | 2 | 323 | 31.9% | 0.3% | 3.4% |
 | chr_0019_karin | 2 | 202 | 94.1% | 0.0% | 0.6% |
-| chr_0020_meurs | 1 | 252 | 0.0% | 100.0% | 96.3% |
+| chr_0020_meurs | 1 | 252 | 75.8% | 13.9% | 0.9% |
 | chr_0021_whiten | 5 | 289 | 53.3% | 3.1% | 5.1% |
 | chr_0022_bounda | 1 | 56 | 89.3% | 0.0% | 4.3% |
 | chr_0024_deepfin | 4 | 169 | 36.7% | 20.1% | 6.4% |
