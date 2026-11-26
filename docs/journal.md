@@ -4,9 +4,54 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 150 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 151 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Away and presses: the enemy away in the replay, hitless presses from the listing, layers
+
+**Goal:** build as general rules what the damage-factors round hard-coded or held back: the enemy away from the fight
+in the replay (0c14's Si press at 139.68 s), a press with no logged hit inferred from a buff only its hit gives (her
+153.99 s press), Rossi's slash2 extras at a life's or fight's end, an untracked layered buff's layers (Ember, 7e19);
+then whether a fixed delay per stop edge explains the combos' extra hold.
+
+**Done** (open-problems "The damage factors", "The enemy's clock"):
+- **The replay's enemy away** (engine assumption enemy-away `absent`, the new default; TimelineScenario.enemyAway,
+  landing.ts): a hit from the frame after a stretch's last logged hit to the frame before the next applies nothing to
+  the enemy (damage, applications, Stagger, enemy-side buffs, hit events); the operators' own buffs from it still come
+  (d774's and 9c6e's Liino presses there put her stance's ATK on the team, as the log lists after). The totals leave out
+  every unmatched landing from the stretch's first frame on (the enemy leaves with its last logged hit). An Arts Burst
+  still lands: holding it back lost 4a64's Arcane weapon debuff the log lists (6 plain), so only its damage is left out.
+- **Hitless presses** (`hitless-presses` `inferred`, the new default; buffreplay.ts inferredPress): made only with the
+  log's own cast event, the enemy there, the next hit within 1.5 s listing a new run of a decided buff that the replay
+  gives with the press and not without; the press after it is then the variant it pulls; its own landings aren't
+  counted. Two presses across the logs: 0c14's Si (153.99 s) and 8915's Liino (111.23 s). Alesh's eventless 0c14 combo
+  stays open. A recorded burst whose applier is unlogged is now unread (more than twice the buff's life away), not
+  read over 73 s of hits.
+- **Life ends and kills:** a fight of several lives ends in a kill when its last life dealt one Max HP (lastLifeKilled,
+  read by the totals and enemy-hp `kill`). With the leaving frame it covers 4a64's both slash2s (+2.9 → +0.8%); 207f's
+  stays (no kill the log shows). Both held-back diffs deleted (docs/tried/README.md).
+- **Layers:** the check reads an unjudged kit buff on one timer (stackingType 8/10) listed once at each count to its
+  maximum (enginecheck.ts unjudgedLayered): 7e19 mismatch 4 → 1, 04d4 616 → 614, 99fb 116 → 111; 7e19's 33.15 s
+  ×1.096 is left (no listing then). Negative control holds.
+- **Item 5:** one constant per combo fits as well as a share (probes combo-hold/edge-casts.ts, edge-ticks.ts), but
+  57 ms a combo for the enemy's ticks against 140 ms for the operators' casts: one delay on the world's clock is ruled
+  out. Next: where in the combo the operators' excess sits.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 69.0%, mismatch 11.4%, mean |damage error| 7.0%
+(unchanged; 4a64 better; 891566, 9c6e, a9d7 slightly worse); hold-out plain 80.4 → 80.6%, mismatch 5.6%, mean |damage
+error| 8.4% (1 better, 1 mixed: +12 plain, its total further); earlier pending plain 66.3 → 67.3%, mismatch 12.0 →
+11.9%, mean |damage error| 4.1 → 4.0% (0c14 plain 172 → 293, −3.4 → +2.7%). team-ab: unchanged (simulations never set
+enemyAway). Smoke passed.
+
+**Decisions:** both readings default, with the others kept (`away`, `absent-edge`, `skipped`): `absent` against
+`absent-edge` because the logs record every landing (d774's unlogged strikes 0.23 and 0.27 s into its stretches).
+The hold-out mixed log's total getting further fits 0c14's pattern: the readings that now fit raise the total onto an
+over-prediction elsewhere. a9d7's Chen (an ultimate final 0.74 s into a stretch no longer refreshing a buff the log
+lists later) is reported, not fixed.
+
+**Problems:** the replay view's EVENT line called the inferred Liino press a tick; kill and life detection live in two
+places; a burst's unbounded record start was silent (friction report).
 
 ## 2026-11-26: Improvement round 13: clocks, dropped bounds, --assume everywhere, options before the queue
 
@@ -311,43 +356,3 @@ the backlog (point 13).
 
 **Problems:** the loggedAs screen finds no pair in the development logs now (the candidates' fixes took them), so its
 test is on a real listing with a made-up kit modifier; the pending suite guards the rest.
-
-## 2026-11-24: Placement leads: ultimates from their cast events, Chen's stew, trigger cooldowns on the world's clock
-
-**Goal:** the misprediction rounds' placement and timing leads: Liino's ultimate windows (1cd1, af7b; 1d91, 9c6e),
-7e19's Chen ×1.15 and Ember −21.5%, what 0c14 / 4e36 / de6a have left, then the one-sided landings' largest kinds.
-
-**Done** (open-problems "Misprediction statistics"; roadmap-details "The placement leads"):
-- **Liino's windows were her travelling projectiles.** Pyrotechnics (frame 76, `detached`) land 0.1–0.8 s of the
-  world's time after their frame, so the cast placed from them came late: its stop over teammates' logged hits, its
-  Amp (frame 77) after hits the log has under it. An ultimate's cast event sits at an edge of its stop, the end for
-  most operators (scripts/probes/placement/ult-events.ts: Si 26 of 35, Liino 13 of 21, Laevatain 11 of 16). logcasts.ts
-  eventStopStart: an ultimate whose first landing is on its way (detached, or Ardelia's sheep's random count) and whose
-  frame-placed stop covers a teammate's logged hit starts from such an event (1cd1 −7.5 → −3.5%, af7b, 1d91, 9c6e,
-  5082, 7910's Ardelia, 3aa6's Arclight).
-- **7e19's Chen: Ginseng Meat Stew** (buildOverrides; fit-build 17 of 19), after ruling out P1 (×1.15 from 99.9% HP in
-  a Max-HP fight; P1 would be ×1.185) and listing differences; the Endministrator has the same stew by hand. Ember's
-  −21.5% is her finisher's second hit with the Staggered parts after the log's Stagger ended: open.
-- **Swordmancer's cooldown is on the world's clock** (engine assumption `trigger-cooldowns`, reading `world`; the
-  default stays `raw`): its replay-only procs are the largest "no cast" kind (scripts/probes/cooldowns/physuit.ts:
-  every miss under 15 s of world time, every proc past it); Mi Fu's P3 in 2fd9 too. `world` for every trigger moved
-  four kit tests' fights (Glorious Memory's 0.5 s layers, Xaihi's crystal, Sundering Steel, chen-solo) and two
-  hold-outs' totals for the worse: not every trigger cooldown is a CD timer. Next a kit field for the clock.
-- **The hold placement** leaves out cast events the replay read as ticks (the kit-buff round's Empyrean end in 4d60).
-
-**Scoreboard** (`npm run snapshots:update`, against main at ca5b566): development plain 67.7 → 67.8%, matched 83.8 →
-83.9%, mismatch 11.6 → 11.5%, mean |damage error| 7.0 → 6.9%, within 5% 25 → 26; hold-out plain 78.4 → 78.5%,
-mismatch 5.9%, mean |damage error| 8.5% (1 better, 1 worse by one plain hit now assumed, 1 other); earlier pending
-plain 64.4 → 64.6%, mismatch 14.1 → 13.9%, 4.4 → 4.3%, within 5% 18 → 19; all but the hold-outs 5.5 → 5.4%. Better:
-1cd1 −7.5 → −3.5%, af7b plain 588 → 599, 5082 +2.3 → −0.1%, 8915, 7e19 plain 66 → 85 (−6.6 → −4.9%); mixed, per hit
-closer: 1d91, 9c6e; worse: 7910 (−5.8 → −6.1%: Corrosion readings ±2% as the placed holds moved with Ardelia's stop,
-whose press at 55.12 s the log shows), 9090 (Perlica's Electrification 0.1 s short at 64.40 s), 3aa6 (one plain).
-Teams (team-ab against c6f1874): every team's fight the same.
-
-**Decisions:** the event rule only where the frame's stop contradicts the log (Si's ability-entity slashes placed well
-from their frames: b6aa's ready-buff order says the event there was the press), at least 150 ms earlier, a first song
-beat within that keeping its start (d9e5: a frame's move shifted Corrosion's ramp); the cooldown clock left at `raw`
-(smoke failed under `world`: kit tests encode other triggers' raw cooldowns).
-
-**Dead ends:** the event rule for every detached ultimate (Si's moved 1.6–2.1 s in 4a64 and b6aa, worse); P1 on
-Chen's own HP (d4fb switches at 0.499 of the enemy's).
