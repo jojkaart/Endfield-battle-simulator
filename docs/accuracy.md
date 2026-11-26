@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 78.0% | 99.3% | 0.0% | 1.5% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 69.0% | 85.3% | 11.4% | 6.9% | 25 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 69.6% | 85.5% | 11.2% | 6.8% | 25 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 80.8% | 92.6% | 5.6% | 8.4% | 9 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 68.0% | 87.8% | 11.9% | 3.6% | 21 |
-| All but the hold-outs | 61 | 29035 | 68.8% | 86.7% | 11.3% | 5.1% | 52 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 68.1% | 87.8% | 11.9% | 3.6% | 21 |
+| All but the hold-outs | 61 | 29035 | 69.3% | 86.8% | 11.2% | 5.1% | 52 |
 
 ## Where the total's error lives
 
@@ -39,7 +39,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | Logs | Fights | \|Matched\| | Replay-only | Log-only | One-sided |
 |---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 1.5% | 0.5% | 0.1% | 2 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 4.8% | 5.8% | 3.6% | 24 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 4.7% | 5.8% | 3.4% | 24 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 2.0% | 5.1% | 5.1% | 12 |
 | Earlier pending (imported before the hold-out split) | 23 | 3.3% | 1.6% | 1.0% | 15 |
 
@@ -49,8 +49,8 @@ over |matched|, so the error is in what lands, not in its scale.
 |---|---|---|---|---|---|
 | chr_0002_endminm | 1 | 310 | 52.6% | 2.9% | 2.1% |
 | chr_0003_endminf | 2 | 162 | 72.8% | 0.6% | 1.1% |
-| chr_0004_pelica | 11 | 1076 | 78.3% | 12.3% | 17.3% |
-| chr_0005_chen | 6 | 810 | 30.2% | 7.9% | 1.6% |
+| chr_0004_pelica | 11 | 1076 | 79.5% | 11.2% | 17.3% |
+| chr_0005_chen | 6 | 810 | 30.2% | 7.9% | 1.4% |
 | chr_0006_wolfgd | 7 | 808 | 79.6% | 12.6% | 15.0% |
 | chr_0007_ikut | 2 | 257 | 93.4% | 1.9% | 13.2% |
 | chr_0009_azrila | 4 | 388 | 13.1% | 80.2% | 2.5% |
@@ -71,11 +71,11 @@ over |matched|, so the error is in what lands, not in its scale.
 | chr_0027_tangtang | 2 | 265 | 56.6% | 21.5% | 5.4% |
 | chr_0028_wulfa | 10 | 2305 | 50.0% | 5.5% | 1.8% |
 | chr_0029_pograni | 5 | 649 | 44.1% | 0.6% | 4.9% |
-| chr_0030_zhuangfy | 5 | 1392 | 59.8% | 18.0% | 9.5% |
+| chr_0030_zhuangfy | 5 | 1392 | 65.3% | 16.2% | 9.0% |
 | chr_0031_mifu | 5 | 471 | 78.6% | 0.8% | 1.2% |
-| chr_0032_lizhiyan | 40 | 5688 | 75.8% | 12.7% | 12.6% |
+| chr_0032_lizhiyan | 40 | 5688 | 76.0% | 12.7% | 12.6% |
 | chr_0033_camille | 10 | 1004 | 90.0% | 4.2% | 16.2% |
 | chr_0034_typhoea | 12 | 2081 | 78.8% | 8.6% | 2.3% |
-| chr_0035_liino | 19 | 1469 | 67.9% | 17.4% | 17.3% |
+| chr_0035_liino | 19 | 1469 | 69.0% | 17.4% | 17.1% |
 | chr_0036_jsspsi | 29 | 3060 | 70.9% | 7.8% | 4.9% |
 | chr_0038_purrche | 3 | 290 | 63.8% | 29.7% | 25.4% |

@@ -282,6 +282,14 @@ landing at its cast's previous one's ms as a second enemy's fixed it and broke 4
 batches at one ms: dropped), de6a's hit_3 falls in a 2.3 s gap with no hit by anyone. Next: a chance jump's path from the values (Alesh's Rare Fin: 0c14, 4e36,
 a9d7), a combo made from the listing, Snowshine's ×0.9846 after her node 5.
 
+**Bursts and cooldowns (2026-11-26, [journal](journal/2026-11-26-08-bursts-and-cooldowns-4d60-s-runs-a-whole-game-pause-in-a.md)):**
+4d60's Perlica weapon and Will burst runs weren't a missed refresh: a whole-game pause (117.22–124.45 s, no hit by
+anyone) inside a Stagger, where the hold placement allowed none (engine assumption `pause-holds` `away`: 696 → 806
+plain). The replay's Stagger window record started a log-held Stagger 10 s early (d4fb), fixed. d4fb's 97.05 s miss
+is a Lift that breaks the bar (one case, not built); Snowshine's offset and test 33's reaction case can't be decided
+from the logs. Next: whole-game pauses outside a Stagger (9c0b's 7.5 s after Laevatain's ultimate: does the placement
+already take it?), the world-time view without tick-read stops (query.ts replayTimeStops), Alesh's combo paths.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

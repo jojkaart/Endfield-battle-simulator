@@ -113,6 +113,22 @@ shares of the off error at that code):**
   56.79 s (26.62–27.20 s of world time across the 24 s away window). Its layers aren't one of the placement's clocks
   (`maxStacks`), so `zmdlogs holds` doesn't show them; `zmdlogs lanes <fx> --buff expend`, `zmdlogs worldtime`. What
   asks 3.6–6.1 s in 4d60 is Perlica's weapon and Arcane's Will burst runs: a refresh the replay misses, still open.
+  **Fixed 2026-11-26 (bursts and cooldowns): not a refresh, a whole-game pause in a Stagger.** The ruling-out above
+  doesn't hold for 4d60: Xiranflow's 108.12 s layers can't show a pause, a later consumption replaces them (3 layers at
+  most; Zhuang Fangyi consumes again at 124.94 and 137.49 s, and the layer is gone by 137.88 s); and the counts above
+  took Zhuang Fangyi's Empyrean end at 106.47 s as a 78-frame stop (query.ts replayTimeStops still does: 28 frames of
+  it inside the window), so its world time is 25.3–26.7 s. d774's away window (Si's phase) does run on: Perlica's
+  weapon from 17.05 s is unlisted at 54.59 s. In 4d60 (eny_0120_klbear_tower015) every clock across 117.22–124.45 s
+  runs about 6–7 s long: the log's Stagger 115.75–133.34 s (the engine's own 12 s; `zmdlogs stagger`), Perlica's Wild
+  Wanderer (15 s; 21.3 s of world time to its end), her Qingbo layer (15 s; listed through 18.8 s of world time with no
+  combo of hers to refresh it), Arcane's two Solemn Phalanx debuffs on the enemy (5.5–5.8 s past the replay's, whose
+  other runs end 1.4–2.6 s before it), Liino's beats (10.5 s between two, else 2.7–4.3 s). The placement couldn't
+  place it: the Stagger was a still span. Engine assumption `pause-holds`, new default `away` (holds.ts withoutGaps:
+  the away stretches cut out of the Stagger's still span): 5.4 s placed in 117.50–124.18 s, 13 clocks spanning each
+  unit, earliest and latest within 0.4 s; 4d60 plain 696 → 806, −4.1 → −1.5%, no other log moved, hold-outs
+  unchanged. Also on the way: the replay's Stagger window record took its start as its end less the Stagger's length,
+  so a Stagger the log's listing holds read 10 s early (d4fb 97.26 → 86.50 s, 41.41 → 30.70 s), and the placement
+  took that as still (replayrecord.ts: no earlier than the last sample; c4f3 −3.0 → −2.5%, c6d8 plain 112 → 125).
   The hold placement's stop list (buffreplay.ts, before replayedCastStops) leaves out an event the replay read as a
   tick since 2026-11-24 (placement leads); query.ts replayTimeStops (the views' world time) still counts it.
   **4bfc 179.51 s (2026-11-24, the lead's question): Empyrean's end, not a cast**, but the replay makes a cast there
@@ -353,6 +369,16 @@ shares of the off error at that code):**
   d4fb; Chen's proc at 196.89 s comes 7.5 s after Lifeng's at 189.37 s); a cooldown restarted by every Physical status
   in it, proc or not (106.13 s procs 9 s after the 97.05 s Lift). The combos' extra hold ("The enemy's clock", below)
   gives at most 0.2 s a combo, 0.6–0.8 s over the three between 78.33 and 97.05 s, not 2.18 s. Open.
+  **2026-11-26 (bursts and cooldowns):** the "Staggered 86.50–109.93 s" above was the replay's window record, not
+  its state: the log's Stagger begins at 97.05 s, **the Lift itself is the breaking hit** (bar 3.56 → 0, the next
+  hit lists Stagger), and the replay's enemy isn't Staggered before 97.26 s (its hits there plain); the record read
+  its start as its end less the Stagger's length (fixed, above). Across every wearer (scripts/probes/cooldowns/lifts.ts,
+  each status with the cooldown clear): no other breaking Lift with the cooldown clear; 0c14's 182.30 s Crush breaks
+  the bar and procs (a Crush isn't a control). So "a Lift that breaks the bar applies no status (the break's own
+  control replaces it) though its damage is dealt" fits, on one case. The other combo-Lift misses are cascades:
+  3.37 s (the fight's first, no proc before, bar 296: unexplained; the replay's proc there takes 9.38 s's, which the
+  game made) and 126.13 s (14.16 s of world time after 106.13 s, which the replay misses because of 97.05 s). No
+  listed buff tells the procs from the misses (Vulnerable, Fracture, Stagger alike). Not built: one case each.
 - **0c14 (−4.9%), 4e36 (+2.2%), de6a:** not placements. 0c14: Rossi's ultimate stabs −2.5% of the total (crits
   unlogged: "Rossi" below), Si's log-only inkmove_2 at 181.42 s −1.5%, the Endministrator's Crush ×2.2 −1.6% (the
   last two one cause, found 2026-11-26: "The damage factors" below). 4e36:
@@ -445,6 +471,14 @@ shares of the off error at that code):**
     15, 15, 20, break stages 1–4; nodes 5 and 7 need favorability 300 (fc63, 0c14's Si), so at promotion 3 two nodes,
     1 and 3, give ×0.9774 of the ×0.9624; the rest, ×0.9846, is attribute bonus −0.05: Str −10 or Will −25, which no
     node gives alone. Still a gear line or the weapon's skill 1 with the two nodes: fit-build's pairs next.)
+    (2026-11-26, bursts and cooldowns: **the logs can't decide it.** Her nodes' favorability in CharGrowthTable is 60,
+    150, 300, 300, so no favorability gives the ×0.9624 alone (two nodes ×0.9774, one ×0.955). On top of the two
+    nodes, every single change and every pair of 97 (potential, each weapon skill 1–9, operator and weapon levels,
+    each piece swapped for another of the set's eleven or left out; scripts/probes/stats/snowshine-builds.ts): no
+    single change within 0.001, 46 pairs within it (her weapon's skill 1 at 5 with one edc fewer ×0.9624, the body
+    and an edc swapped ×0.9621, …). One constant on every hit is one number: any of them fits, and the multi-target
+    146d is the same build. What no log records (her gear's lines, favorability) is the player's screen, not the
+    owner's: leave it as the fixture's offset.)
   - **7e19 Ember ×1.096: half the check, half her talent's layers.** (1) The check dropped her listed Pay the Ferric
     Price (+0.09 ATK, talent 2, on `attacked`, so its state is the log's) as if it were one of Pogranichnik's two
     Thermite Cutter layers (+0.09 ATK each): loggedEntries matches an unjudged buff's entry against any engine
@@ -1199,6 +1233,17 @@ the order of same-ms events (Typhoeus's arrow and Arcane's array at 84.129 s).
 
 **Next check:** in-game test 33 (latest opener against first, and the
 consumed element).
+
+**2026-11-26 (bursts and cooldowns): the reaction kind doesn't tell them apart.** 9a80's touches at 2.17 and 24.97 s
+follow the same kind of opener as fc63's 81.47 s: Arcane's own battle skill's Nature onto another infliction
+(Corrosion; Si's Cryst at 1.83 s, Perlica's Pulse at 80.40 s). Under `applied` 9a80's touch puts Nature where
+`consumed` puts Cryst, and Si's combo at 34.94 s then reads its P2 ATK at 0.14 instead of the log's 0.17 (10 hits
+plain → mismatch: `zmdlogs hits 9a80 --against window-reaction=applied`); fc63 fits `applied` (Typhoeus's shot
+consuming a Nature stack at 84.13 s). The touch's switch (buff_chr_0032_lizhiyan_combo_skill_seal_total, frame 6,
+EntityBB_consumed_type) has all four elements, so the Pulse case isn't a default. Still possible: the blackboard set
+by the latest infliction event of any kind, not the opener's reaction (fc63's touch lands at the ms of Typhoeus's
+first combo arrow, Nature, which the kit applies no infliction with); the game's order of same-ms events. A log
+can't show which: test 33's simpler case (an icon) stays.
 
 ## Arcane's mismatches as one group (2026-11-18)
 

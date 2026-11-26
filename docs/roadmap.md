@@ -72,9 +72,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   a9d7's edge a hidden hold; 0c14 and the operator curve 2026-11-26: the totals read a crit-unknown hit's crit from
   its value (`totals-crits` `read`: 0c14 −3.2 → −1.3%), a teammate's attack on its not-controlled path (Rossi's
   attack 4: 2fd9 +25 plain, 99fb +12); 9c6e's cut is the placement's two-enemy split (a rule for it broke 40d9); the operators'
-  own combo curve measured worse in every shape; the tail cuts reviewed, none against the log): next Alesh's combo
-  paths (the Rare Fin chance jump read from the values; 0c14's 12.5 s combo from the listing), Snowshine's ×0.9846
-  left after her node 5, d4fb 97.05 s, 4d60's Perlica and Will burst refreshes, test 33's reaction case.
+  own combo curve measured worse in every shape; the tail cuts reviewed, none against the log; bursts and cooldowns
+  2026-11-26: 4d60's Perlica and Will runs a whole-game pause inside a Stagger, `pause-holds` `away`, 696 → 806 plain;
+  the replay's Stagger windows start where they began; d4fb 97.05 s a Lift that breaks the bar, one case, not built;
+  Snowshine's ×0.9846 and test 33's reaction case undecidable by the logs): next Alesh's combo paths (the Rare Fin
+  chance jump read from the values; 0c14's 12.5 s combo from the listing), other whole-game pauses outside a Stagger.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
