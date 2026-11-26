@@ -387,6 +387,14 @@ export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): Read
   // (With part of a repeated buff's instances last: several crits at one instant start several layers.)
   const boundary = [...boundarySubsets(own.boundary), ...boundarySubsets(own.boundary, true)].filter((b) => b.label !== null);
   if (boundary.length) groups.push([NONE, ...boundary.map((b): Alternative => ({ assumption: { kind: "boundary", label: b.label as string, buffs: [...new Set(b.effects.map((e) => e.buff))] }, apply: (o) => replaceMods(o, (mods) => [...mods, ...logModifiers(b.effects, category, c.caps)]) }))]);
+  // A layered kit buff the replay can't judge, whose layers the log lists as one entry: at each count up to its maximum.
+  for (const g of unjudgedLayered(c, hit, unjudgedNames)) {
+    const source = `log buff ${g.buff}`;
+    groups.push([NONE, ...Array.from({ length: g.max - 1 }, (_, i): Alternative => ({
+      assumption: { kind: "layers", label: `${g.buff} ×${i + 2} layers (the log lists one entry whatever its layers; the replay can't judge ${g.kitBuff})`, buffs: [g.buff], n: i + 2 },
+      apply: (o) => replaceMods(o, (mods) => mods.map((m) => (m.source === source ? { ...m, value: m.value * (i + 2) } : m))),
+    }))]);
+  }
 
   const logReading = (): Reading => {
     const nonKit = judged.filter((m) => m.kitBuff === undefined);
@@ -394,6 +402,30 @@ export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): Read
     return { inputs, options: { ...primary.options, modifiers: [...nonKit, ...logMods(own.effects, category), ...loggedEntries(c, withoutOwnFood(c.data, c.fx, hit).effects, allNames, nonKit, category)] } };
   };
   return { landing, primary, groups, edgeToggles, judged, category, logReading };
+}
+
+/**
+ * The game buffs at a hit of kit buffs the replay can't judge (their state is the log's: unjudgedKitBuffs) whose layers
+ * run on one timer (BuffData stackingType 8, or 10: each new layer refreshes it), which ZMDLogs lists as one entry at
+ * one layer's value whatever the layers: each listed once at the hit, with its most layers (the kit's maxStacks, else
+ * the file's). Ember's Pay the Ferric Price (stackingType 10, 3 layers): pending/zmdlogs-04d4…'s hits under its one
+ * entry read ×1.023 (her build offset), ×1.085 and ×1.147, a layer's steps; 7e19's finisher ×1.046 and ×1.096.
+ */
+function unjudgedLayered(c: EngineCheck, hit: LogHit, unjudgedNames: ReadonlySet<string>): { readonly buff: string; readonly kitBuff: string; readonly max: number }[] {
+  const out: { buff: string; kitBuff: string; max: number }[] = [];
+  const counts = new Map<string, number>();
+  for (const e of hit.effects) counts.set(`${e.buff}|${e.zone}|${e.element}`, (counts.get(`${e.buff}|${e.zone}|${e.element}`) ?? 0) + 1);
+  for (const buff of new Set(hit.effects.map((e) => e.buff))) {
+    if (!unjudgedNames.has(buff) || [...counts].some(([k, n]) => k.startsWith(`${buff}|`) && n !== 1)) continue;
+    const st = buffFile(buff)?.stacking;
+    if (st?.type !== 8 && st?.type !== 10) continue;
+    const kitBuff = (c.names.byGameBuff.get(buff) ?? []).find((k) => c.replay.unjudgedKitBuffs.has(k));
+    if (kitBuff === undefined) continue;
+    const own = c.names.defs.get(kitBuff)?.maxStacks;
+    const max = typeof own === "number" ? own : (st.maxStacks ?? (st.maxStackCnt > 1 ? st.maxStackCnt : null));
+    if (max !== null && max > 1) out.push({ buff, kitBuff, max });
+  }
+  return out;
 }
 
 function castFact<K extends "link" | "windowCount" | "consumed">(facts: ReplayCastFacts | { readonly unknown: string }, key: K): ReplayCastFacts[K] | { readonly unknown: string } {
@@ -647,7 +679,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // the data's HP: tower016 ×5.5, tower015 ×7.6, Si's phases ×2; 4360's four returning lances after the kill counted,
   // +6.5% of the fight, while the last hit was capped), the log's total then being the HP.
   const lastCapped = fx.hits.some((h) => h.t === logged.last && h.uncapped !== undefined && h.uncapped > h.value);
-  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : lastCapped ? logged.damage : null;
+  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : lastCapped || lastLifeKilled(data, fx) ? logged.damage : null;
   let simKill: number | null = null;
   // Landings the log can't have (the fixture's `absent`, judged by hand): each the nearest of its operator's skill and hit.
   const absent = new Set<LandedHit>();
@@ -664,6 +696,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
   const away = awayLeftOutOfTotals(engineReadingOf(c.replay.assume, "enemy-away")) ? awayWindows(fx) : [];
   const isAway = (frame: number) => away.some((w) => (frame * 1000) / 30 > w.from + AWAY_EDGE_MS && (frame * 1000) / 30 < w.to - AWAY_EDGE_MS);
+  // With the replay's enemy away too (enemy-away `absent`), the frames the enemy leaves at: each stretch's first hit's.
+  const leaving = new Set(engineReadingOf(c.replay.assume, "enemy-away") === "absent" ? away.map((w) => Math.round((w.from * 30) / 1000)) : []);
   let awayLeftOut = 0;
   // The killing blow's frame: the log's, or the replay's landing of a killing hit if sooner (4360: the battle skill's
   // twelve returning lances land in one frame at 119.20 s, the log's eight before the kill end at 119.235 s).
@@ -687,7 +721,20 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
       uncounted.set(l, absent.has(l) ? "absent" : "past the log's end");
       continue;
     }
+    // A press the log shows no hit of, made from its listing (BuffReplay.inferred): its own landings dealt nothing.
+    if (!m && !capped && l.cast !== undefined && c.replay.inferred.has(l.cast)) {
+      uncounted.set(l, "absent");
+      continue;
+    }
     if (!m && !capped && isAway(l.frame)) {
+      awayLeftOut++;
+      uncounted.set(l, "away");
+      continue;
+    }
+    // The enemy leaves with an away stretch's first logged hit (its last before the stretch): a landing no logged hit
+    // stands for at that hit's frame found no one, as one after a kill (pending/zmdlogs-4a64e58e75ad.json 29.15 s, Si's
+    // first life's end: Rossi's ultimate slash2, whose Seething Blood extra at the slash's ms every other slash2 has).
+    if (!m && !capped && !fixedHit.has(l) && leaving.has(l.frame)) {
       awayLeftOut++;
       uncounted.set(l, "away");
       continue;
@@ -757,6 +804,30 @@ export function enemyAwaySpans(fx: LogFixture, reading: string | undefined): { r
     const to = Math.min(Math.round(((w.to - edge) * 30) / 1000), Math.round((w.to * 30) / 1000) - 1);
     return to >= from ? [{ from, to }] : [];
   });
+}
+
+/**
+ * Whether a fight of several lives (an enemy that goes away as the damage reaches a multiple of its Max HP: Si,
+ * eny_0134_jsspsi) ends in a kill its last hit's cap doesn't show: the damage after the last such stretch is one Max HP
+ * (within 0.5%). pending/zmdlogs-4a64e58e75ad.json: 1.074 Max HP dealt before 29.15 s, exactly 1.000 after it, its last
+ * hit (Rossi's ultimate slash2, without the Seething Blood extra every other slash2 has at its ms) carrying no uncapped
+ * value.
+ */
+export function lastLifeKilled(data: GameData, fx: LogFixture): boolean {
+  const max = data.enemies[fx.enemy.id]?.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
+  if (!max) return false;
+  const total = fx.hits.reduce((s, h) => s + h.value, 0);
+  let dealt = 0;
+  let lastLife = -1;
+  const hits = [...fx.hits].sort((a, b) => a.t - b.t);
+  let i = 0;
+  for (const w of awayWindows(fx)) {
+    while (i < hits.length && (hits[i] as LogHit).t <= w.from) dealt += (hits[i++] as LogHit).value;
+    // A life's end: the damage so far a whole number of Max HPs or up to 10% more (the hits that land as it goes).
+    const lives = Math.floor(dealt / max + 1e-3);
+    if (lives >= 1 && dealt - lives * max < 0.1 * max) lastLife = dealt;
+  }
+  return lastLife >= 0 && Math.abs(total - lastLife - max) <= 0.005 * max;
 }
 
 /** Whether a reading of engine assumption enemy-away leaves the away stretches' landings out of the totals. */

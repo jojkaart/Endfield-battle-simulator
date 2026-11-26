@@ -16,7 +16,7 @@ import {
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile } from "@efsim/data";
 import { TARGET_SIDE_ZONES, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
-import { awayWindows, enemyAwaySpans, loggedNames } from "./enginecheck.ts";
+import { awayWindows, enemyAwaySpans, lastLifeKilled, loggedNames } from "./enginecheck.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
 import { castFrames, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import { loggedStagger, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
@@ -355,6 +355,12 @@ export interface BuffReplay {
   /** The logged casts the replay didn't make, and why (a tick, a slot's variant, its energy or state, …): SKIP lines. */
   readonly skipped: readonly SkippedCast[];
   /**
+   * Presses the log shows no hit of that the replay made from the listing (engine assumption hitless-presses
+   * `inferred`: inferredPress), by their index in the timeline's casts, and why: their own landings stand for no damage
+   * the game dealt (the log would show it), so the totals leave them out.
+   */
+  readonly inferred: ReadonlyMap<number, string>;
+  /**
    * Where the crit the replay gave a logged hit's landing comes from (CritSource): the log's flag, or, where the log
    * gives none, which inference made it a logged crit (shownCrits, layerCrits, valueCrits), else none (the landing
    * doesn't crit in the replay the check reads).
@@ -537,7 +543,7 @@ function loggedEnemyHp(data: GameData, fx: LogFixture, reading: string): Timelin
   const total = hits.reduce((s, h) => s + h.value, 0);
   const last = (hits.at(-1) as LogHit).t;
   const capped = hits.some((h) => h.t === last && h.uncapped !== undefined && h.uncapped > h.value);
-  if (Math.abs(total / max - 1) > 1e-3 && (reading !== "kill" || !capped)) return undefined;
+  if (Math.abs(total / max - 1) > 1e-3 && (reading !== "kill" || !(capped || lastLifeKilled(data, fx)))) return undefined;
   // Each life's first dealt damage (as a sum of the hits before it): an away stretch that starts once the damage has
   // reached j × Max HP, within the fight's excess over its whole lives (under 10% of Max HP).
   const lives = Math.floor(total / max + 1e-3);
@@ -2734,6 +2740,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerCuts: main?.staggerCuts ?? [],
     castFlags: main?.flags ?? [],
     skipped: main?.skipped ?? [],
+    inferred: new Map((main?.made ?? []).flatMap((m) => (m.inferred !== undefined ? [[m.index, m.inferred] as const] : []))),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
       if (i === undefined || landed.has(String(i)) || !main) return null;

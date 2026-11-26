@@ -2122,6 +2122,20 @@ describe("enemy HP from the scenario", () => {
   });
 });
 
+describe("the enemy away (TimelineScenario.enemyAway)", () => {
+  const rotation = [{ operator: op, skill: L + "normal_skill", at: 0 }];
+  it("a hit landing while it's away lands on nothing: no damage, no infliction; outside the span it lands", () => {
+    const here = simulate(data, scenario(rotation));
+    expect(here.hits.length).toBeGreaterThan(0);
+    const ctx = createContext(data, { ...scenario(rotation), enemyAway: [{ from: 0, to: 300 }] });
+    const st = advance(ctx, replayCast(ctx, init(ctx), op, L + "normal_skill", 0), 300);
+    expect(st.hits).toEqual([]);
+    expect(st.enemy).toEqual(advance(ctx, init(ctx), 300).enemy);
+    const later = createContext(data, { ...scenario(rotation), enemyAway: [{ from: 600, to: 900 }] });
+    expect(advance(later, replayCast(later, init(later), op, L + "normal_skill", 0), 300).hits.length).toBe(here.hits.filter((h) => h.frame <= 300).length);
+  });
+});
+
 describe("timeline: failures are loud (design principle 7)", () => {
   it("an error that isn't the engine's (a bug, broken data) isn't turned into 'not legal'", () => {
     // SkillData without its level rows: reading them is a TypeError, not a reason the skill can't start.
