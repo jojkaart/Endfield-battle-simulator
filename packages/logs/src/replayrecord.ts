@@ -182,6 +182,7 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
   const closeKit = (rec: OpenKit, end: number, expired: boolean) =>
     kitInstances.set(rec.key, [...(kitInstances.get(rec.key) ?? []), { start: rec.start, end, expired, ...(rec.replaces !== undefined ? { replaces: rec.replaces } : {}) }]);
   let staggerOpen: { start: number; until: number } | null = null;
+  let lastSample = 0;
   const traced = new Set(o.trace.filter((x) => !x.startsWith("status:") && !x.startsWith("trigger:")));
   const tracedStatuses = new Set(o.trace.filter((x) => x.startsWith("status:")).map((x) => x.slice("status:".length)));
   const tracedTriggers = o.trace.filter((x) => x.startsWith("trigger:")).map((x) => x.slice("trigger:".length));
@@ -246,7 +247,10 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         staggerOpen = null;
       }
       if (until !== null && staggerOpen) staggerOpen.until = until;
-      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, until - o.staggerFrames()), until };
+      // Its start: its end less its length, but not before the last sample, which had none (a Stagger the log's listing
+      // held, holdStagger, ends at the listing's next moment: pending/zmdlogs-d4fb69b036fe.json's from 97.26 s read 86.50 s).
+      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, lastSample, until - o.staggerFrames()), until };
+      lastSample = frame;
       for (const [k, rec] of open) {
         if (seen.has(k)) continue;
         // Gone: it ran out, or ended early (used up, or replaced by a new instance at its start: the replacement's start is its end).
