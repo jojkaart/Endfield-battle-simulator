@@ -3,7 +3,7 @@
 // call this, so a measurement can't drift from the snapshots (round 3's own report: the composition lived in three
 // places that had to agree byte for byte).
 
-import type { GameData } from "@efsim/engine";
+import { withCurveReading, type GameData } from "@efsim/engine";
 import type { ReplayOptions } from "./buffreplay.ts";
 import { checkLog, engineHits, engineReport, logBuffReplay, verdictCounts, type EngineHits, type HitVerdict, type LogBuffReplay } from "./logcheck.ts";
 import type { LogFixture } from "./zmdlogs.ts";
@@ -36,7 +36,9 @@ export interface SnapshotEntry {
 }
 
 /** A log's snapshot entry: the replay of its casts (under `assume`'s readings), the engine's readings, the check's verdicts, their counts and the totals' errors. */
-export function snapshotEntry(data: GameData, fx: LogFixture, opts: Pick<ReplayOptions, "assume"> = {}): SnapshotEntry {
+export function snapshotEntry(raw: GameData, fx: LogFixture, opts: Pick<ReplayOptions, "assume"> = {}): SnapshotEntry {
+  // Engine assumption combo-curve: the log tools' stop lists and the replay's timeline on the same resampled curve.
+  const data = withCurveReading(raw, opts.assume);
   const replay = opts.assume && Object.keys(opts.assume).length ? logBuffReplay(data, fx, undefined, { assume: opts.assume }) : logBuffReplay(data, fx);
   const byHit = engineHits(data, fx, replay);
   const verdicts = checkLog(data, fx, { replay, engineHits: byHit });

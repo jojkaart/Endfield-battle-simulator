@@ -20,7 +20,7 @@ import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
-import { distinctCasts, placeHits, settleCheck, ultimateOverlaps } from "./logcasts.ts";
+import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast } from "./logcasts.ts";
 import { castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -69,14 +69,14 @@ function batchMark(fx: LogFixture): (t: number) => string {
 }
 
 /** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
-export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): string {
+export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): string {
   const placement = placeHits(data, fx);
   const lines: Line[] = [];
   const batched = batchMark(fx);
   for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ t: c.t, order: 0, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
   for (const c of distinctCasts(placement)) {
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
-    lines.push({ t: c.start, order: 1, text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}` });
+    lines.push({ t: c.start, order: 1, text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}` });
   }
   // The stops the replay holds (query.ts replayTimeStops, the views' one list): a cast placed from its cast event alone
   // (an ultimate at its logged stop's end: db87's Laevatain at 16.60 s) is marked.
@@ -100,7 +100,27 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter = {}): s
     const credited = origin !== undefined && origin !== h.event && !h.event.startsWith(origin) && origin !== p?.cast.skillId ? ` (origin ${shortSkill(origin)})` : "";
     lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}` });
   }
-  return [`${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)`, render(lines)].join("\n");
+  return [`${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)${f.rules ? "; [the rule that chose the skill among those sharing its key: logcasts.ts choose, LoggedCast.chosen]" : ""}`, render(lines)].join("\n");
+}
+
+/** A cast's choice (LoggedCast.chosen) in words: the rule, what decided it and the candidates. */
+function choiceWords(c: CastChoice): string {
+  const of = `of ${c.candidates.map(shortSkill).join(", ")}`;
+  switch (c.rule) {
+    case "anchor": return `anchor: its anchor's start ${s(c.ref ?? 0)} s, ${c.d ?? 0} ms off, ${of}`;
+    case "alike": return `alike: nearest the windows of ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)} (${c.d ?? 0} ms outside), ${of}`;
+    case "window": return `window: the chain step after ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)}, ${of}`;
+    case "restart": return `restart: ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)} lists none of them, the first, ${of}`;
+    case "late": return `late: a later landing of an opened cast, ${of}`;
+    case "first": return `first in kit order, nothing else deciding, ${of}`;
+  }
+}
+
+/** An in-turn record (Placement.inTurn) in words: the verdict and, for a tried start, its checks. */
+function inTurnWords(r: InTurnRecord): string {
+  const c = r.checks;
+  const checks = c ? `: early ${c.early ? "yes" : "no"}, reach ${c.reach ? "yes" : "no"} (${s(c.reachMs)} s), free ${c.free ? "yes" : "no"}, quiet ${c.quiet ? "yes" : `no (${c.hitsInside} hits inside)`}` : "";
+  return `${r.verdict}${r.candidate !== undefined ? ` at ${s(r.candidate)}` : ""}${checks}`;
 }
 
 /**
@@ -161,17 +181,26 @@ export function stopLines(data: GameData, fx: LogFixture, replay: BuffReplay, f:
  * of pass 2 would move (settleCheck: the placement isn't a fixed point there, so a rule reading other casts' stops
  * cascades through them); then the counts.
  */
-export function placementView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly progress?: (line: string) => void } = {}): string {
-  const out = ["The placement's passes (logcasts.ts placeHits): OVERLAP ultimates whose time stops still overlap after the in-turn rule; SETTLE casts a third pass would move (now → third; - none). Times in s."];
+export function placementView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly progress?: (line: string) => void; readonly rules?: boolean } = {}): string {
+  const out = [`The placement's passes (logcasts.ts placeHits): OVERLAP ultimates whose time stops still overlap after the in-turn rule; SETTLE casts a third pass would move (now → third; - none)${opts.rules ? "; under each OVERLAP what the in-turn rule decided for both (Placement.inTurn: moved, event, beforeStop, held, no-overlap, refused and the checks of the start it tried)" : ""}. Times in s.`];
   let [overlaps, unsettled] = [0, 0];
   for (const { short, fx } of logs) {
     opts.progress?.(`placement ${short}`);
     const p = placeHits(data, fx);
     const lines: string[] = [];
-    for (const o of ultimateOverlaps(data, p)) lines.push(`  OVERLAP ${label(data, o.a.operator)} ${shortSkill(o.a.skillId)}@${s(o.a.start)} / ${label(data, o.b.operator)} ${shortSkill(o.b.skillId)}@${s(o.b.start)}: ${o.frames} frames${o.anchored ? " (both from the log's events)" : ""}${o.chain ? " (a chain of three)" : ""}`);
+    const record = (c: LoggedCast) => p.inTurn?.find((r) => r.cast === c);
+    let shown = 0;
+    for (const o of ultimateOverlaps(data, p)) {
+      shown++;
+      lines.push(`  OVERLAP ${label(data, o.a.operator)} ${shortSkill(o.a.skillId)}@${s(o.a.start)} / ${label(data, o.b.operator)} ${shortSkill(o.b.skillId)}@${s(o.b.start)}: ${o.frames} frames${o.anchored ? " (both from the log's events)" : ""}${o.chain ? " (a chain of three)" : ""}`);
+      if (opts.rules) for (const c of [o.a, o.b]) {
+        const r = record(c);
+        lines.push(`    ${label(data, c.operator)} ${shortSkill(c.skillId)}@${s(c.start)}: ${r ? inTurnWords(r) : "not looked at (no opening landing of its key)"}`);
+      }
+    }
     const settle = settleCheck(data, fx, p);
     for (const x of settle) lines.push(`  SETTLE  ${label(data, x.operator)} ${shortSkill(x.skillId)}: ${x.now === null ? "-" : s(x.now)} → ${x.third === null ? "-" : s(x.third)}`);
-    overlaps += lines.length - settle.length;
+    overlaps += shown;
     unsettled += settle.length;
     if (lines.length) out.push(`${short}:`, ...lines);
   }
@@ -246,6 +275,11 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   for (const x of replay.skipped) {
     const t = msOf(x.frame);
     if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `SKIP   ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
+  }
+  // The casts ended after their last logged landing (BuffReplay.tailCuts, engine assumption unlogged-tails).
+  for (const x of replay.tailCuts) {
+    const t = msOf(x.frame);
+    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `TAILCUT ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): ended after its last logged landing, none of its later ones in the log (unlogged-tails)` });
   }
   for (const x of replay.failed) if (inWindow(f, x.cast.start) && mine(f, x.cast.operator)) lines.push({ t: x.cast.start, order: 1, text: `FAILED ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) if (inWindow(f, m.start) && mine(f, m.operator)) lines.push({ t: m.start, order: 1, text: `MISSED ${label(data, m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });

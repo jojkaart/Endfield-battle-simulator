@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-26: Combo hold and the replay's tails: Rossi's cut battle skill, the combo's excess in its first half, the curve a reading](2026-11-26-05-combo-hold-and-the-replay-s-tails-rossi-s-cut-battle-skill.md)
 - [2026-11-26: Away and presses: the enemy away in the replay, hitless presses from the listing, layers](2026-11-26-04-away-and-presses-the-enemy-away-in-the-replay-hitless.md)
 - [2026-11-26: Improvement round 13: clocks, dropped bounds, --assume everywhere, options before the queue](2026-11-26-03-improvement-round-13-clocks-dropped-bounds-assume-everywhere.md)
 - [2026-11-26: The lead: the check's own-buff fix adopted, the two accuracy rounds merged](2026-11-26-02-the-lead-the-check-s-own-buff-fix-adopted-the-two-accuracy.md)

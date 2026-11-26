@@ -25,14 +25,14 @@
   "chr_0024_deepfin": {"plain":34,"assumed":7,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0003_endminf": {"plain":82,"assumed":5,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0005_chen": {"plain":69,"assumed":2,"fallback":1,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-0.8,"operator chr_0021_whiten":0.1,"operator chr_0005_chen":-1.5,"operator chr_0003_endminf":-1.8,"operator chr_0024_deepfin":6.6,"kind basic":4.8,"kind battle":4.4,"kind combo":66.8,"kind none":-10,"kind status":-4.7,"kind ultimate":-14.5,"hits":9.1,"status hits":-5.3,"staggered hits":4.3,"last hit":-0.7,"time to kill":null,"crit share (points)":-0.3,"share matched":-0.5,"share replay-only":1.8,"share log-only":-2.1}
+  "totals": {"damage":-1.1,"operator chr_0021_whiten":0.1,"operator chr_0005_chen":-1.5,"operator chr_0003_endminf":-1.8,"operator chr_0024_deepfin":3.3,"kind basic":4.7,"kind battle":4.4,"kind combo":63.4,"kind none":-10,"kind status":-4.7,"kind ultimate":-14.5,"hits":8.7,"status hits":-5.3,"staggered hits":4.3,"last hit":-0.7,"time to kill":null,"crit share (points)":-0.3,"share matched":-0.5,"share replay-only":1.5,"share log-only":-2.1}
  },
  "holdout/zmdlogs-13b9974a0450.json": {
   "chr_0021_whiten": {"plain":18,"assumed":1,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0024_deepfin": {"plain":10,"assumed":5,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0003_endminf": {"plain":25,"assumed":1,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0005_chen": {"plain":0,"assumed":0,"fallback":4,"mismatch":12,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-36,"operator chr_0021_whiten":-14.1,"operator chr_0024_deepfin":-1.5,"operator chr_0003_endminf":-47,"operator chr_0005_chen":-7.9,"kind basic":2,"kind battle":-2.2,"kind combo":33.9,"kind none":-30.3,"kind status":-55.6,"kind ultimate":-69.9,"hits":3.8,"status hits":-22.2,"staggered hits":-25,"last hit":-1.5,"time to kill":null,"crit share (points)":-1.2,"share matched":-1.9,"share replay-only":1.2,"share log-only":-35.3}
+  "totals": {"damage":-36.7,"operator chr_0021_whiten":-14.1,"operator chr_0024_deepfin":-11.1,"operator chr_0003_endminf":-47.1,"operator chr_0005_chen":-7.9,"kind basic":1.9,"kind battle":-2.2,"kind combo":26.7,"kind none":-30.3,"kind status":-55.6,"kind ultimate":-69.9,"hits":2.5,"status hits":-22.2,"staggered hits":-25,"last hit":-1.5,"time to kill":null,"crit share (points)":-1.2,"share matched":-1.9,"share replay-only":0.6,"share log-only":-35.3}
  },
  "holdout/zmdlogs-14a91e99b8d7.json": {
   "chr_0016_laevat": {"plain":155,"assumed":9,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
@@ -88,6 +88,6 @@
   "chr_0036_jsspsi": {"plain":12,"assumed":17,"fallback":21,"mismatch":14,"unvalued":0,"unquantified":3,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":20,"assumed":17,"fallback":51,"mismatch":9,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0006_wolfgd": {"plain":0,"assumed":0,"fallback":0,"mismatch":68,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":18.3,"operator chr_0006_wolfgd":72.9,"operator chr_0016_laevat":16.4,"operator chr_0036_jsspsi":19.9,"operator chr_0032_lizhiyan":13.2,"kind basic":18.4,"kind battle":14.3,"kind combo":3.7,"kind status":167.4,"kind ultimate":36.9,"hits":7.8,"status hits":95,"staggered hits":0,"last hit":0,"time to kill":-6.5,"crit share (points)":0.4,"share matched":4.5,"share replay-only":20.6,"share log-only":-6.9}
+  "totals": {"damage":16.1,"operator chr_0006_wolfgd":72.9,"operator chr_0016_laevat":13.4,"operator chr_0036_jsspsi":18.8,"operator chr_0032_lizhiyan":13.2,"kind basic":18.4,"kind battle":7.5,"kind combo":3.7,"kind status":167.4,"kind ultimate":36.9,"hits":7.5,"status hits":95,"staggered hits":0,"last hit":0,"time to kill":-6.3,"crit share (points)":0.4,"share matched":4.5,"share replay-only":18.4,"share log-only":-6.9}
  }
 }

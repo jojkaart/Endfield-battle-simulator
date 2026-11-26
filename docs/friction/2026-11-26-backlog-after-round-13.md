@@ -34,6 +34,16 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   one view answers it per cast, and a rule extension is judged from the list before a measure.
 - **Needs:** packages/logs/src/logcasts.ts (the accuracy agent's this round).
 - **From:** docs/friction-done/2026-11-24-stats-candidates.md point 4; docs/friction-done/2026-11-24-backlog-after-round-11.md point 8; docs/friction-done/2026-11-25-backlog-after-round-12.md point 1; docs/friction-done/2026-11-25-holds-and-placement.md point 1; docs/friction-done/2026-11-25-round-12-friction.md point 2 (its settleCheck half).
+- Closed by worktree-agent-aab5ad7209df6114a, 22bcd58: logcasts.ts keeps `choose`'s rule on each new cast whose key
+  several groups share (LoggedCast.chosen: anchor with its start and distance, alike / window / restart with the cast
+  whose windows decided, first, late) and the in-turn rule's verdict on each ultimate of the final pass
+  (Placement.inTurn: moved, event, beforeStop, held, no-overlap, refused, with early / reach / free / quiet /
+  hitsInside for the start it tried; settleCheck's third pass keeps its own, unread). `zmdlogs casts --choices` prints
+  the first on each CAST line, `zmdlogs placement --choices` the second under each OVERLAP (named `--choices`: `--why`
+  takes a regex in `holds` and `--rules` a file in `gear`, and the CLI's options are one set). settleCheck pairs
+  through castpairs.ts pairCasts (its own copy dropped; it now pairs by operator and skill, not also by key).
+  Not done: the probe scripts/probes/placement/ult-overlap.ts still recomputes its quiet count (it can read
+  Placement.inTurn's checks now).
 
 ## 2. The burst view's causes are a heuristic, and the enemy's inflictions before a burst aren't shown
 
@@ -91,6 +101,15 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   is the reading's first measure.
 - **Needs:** packages/data (skillData.ts), packages/engine (timeline/), packages/logs/src/logcasts.ts.
 - **From:** docs/friction-done/2026-11-26-enemy-clock.md point 2.
+- Closed by worktree-agent-aab5ad7209df6114a, 22bcd58: engine assumption `combo-curve` (`guess` the default, `flat`,
+  `middle`). The compiler keeps the curve's name on each slow-down it samples (SkillTiming.slowdowns `curve`; the
+  guess itself now lives in the engine, timeline/curves.ts COMBO_CURVES, which skillData.ts NAMED_CURVES reads), and
+  withCurveReading(data, assume) resamples every ComboSkill slow-down under the reading: createContext applies it to
+  the timeline, snapshotEntry, hitRecords and the zmdlogs CLI's data to the log tools' stop lists, so placement and
+  replay agree. Memoised per data and reading; the default returns the data itself. Not as suggested: one data-level
+  copy per reading instead of a function both clock.ts and skillStops call, since the log tools take `data` without
+  the readings in twenty places. `measure --variant combo-curve=flat` is one run (numbers in the journal entry of
+  2026-11-26, combo hold and replay).
 
 ## 5. Which strings are keys, and which are only text
 
@@ -121,6 +140,9 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
 - **Why it helps:** the replay's decisions, the most-edited code of the accuracy rounds, are findable by file name.
 - **Needs:** packages/logs/src/buffreplay.ts.
 - **From:** docs/friction-done/2026-11-25-round-12-friction.md point 5.
+- Not done by worktree-agent-aab5ad7209df6114a (2026-11-26, combo hold and replay): the round's replay work (the tail
+  cuts beside the hitless presses, about 120 lines) went in without needing it, by grep; a move of 3,100 lines with
+  its proof (snapshots:update "No log's verdicts moved") didn't fit beside the accuracy items. Still live.
 
 ## Parked
 
@@ -212,7 +234,9 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
 - **Combos hold every clock more than their stops** (the enemy-clock round; engine assumption `stagger-holds`,
   registered, off): `zmdlogs clocks --all --by operator` (round 13) gives the lateness per clock kind and combo
   operator in one run: Σ residual ≈ 0.23 × held for tick chains across combos, 0.40 for casts, 0.33 for bursts;
-  ultimates on time (−0.00). Backlog point 4 makes the curve a reading.
+  ultimates on time (−0.00). Backlog point 4 makes the curve a reading (done 2026-11-26: `combo-curve`). The combo
+  hold and replay round placed the operators' excess in the stop's first half and measured a uniform extra hold on
+  the operators (`combo-operator-hold`, worse): docs/open-problems.md "The enemy's clock".
 - **The placement isn't a fixed point for 21 casts** (round 12's settleCheck, `efsim zmdlogs placement --all`): the
   holds-and-placement round measured a third pass and dropped it (docs/tried/); the 14 overlapping ultimate pairs
   left are pinned in tests/logcasts-stops.test.ts.

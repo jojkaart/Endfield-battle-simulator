@@ -3,7 +3,7 @@
 // says.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, allAssumptions, apply, createContext, ENGINE_ASSUMPTIONS, engineReading, init, kitAssumptions, TEAMMATE_PAUSE_FRAMES, type Build, type TimelineScenario } from "@efsim/engine";
+import { advance, allAssumptions, apply, COMBO_CURVE, COMBO_CURVES, createContext, curveScales, ENGINE_ASSUMPTIONS, engineReading, init, kitAssumptions, TEAMMATE_PAUSE_FRAMES, withCurveReading, type Build, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { parseAssume } from "../packages/cli/src/assume.ts";
 
@@ -76,5 +76,29 @@ describe("the engine's assumptions", () => {
     expect(() => createContext(data, scenario({ "no-such-thing": "x" }))).toThrow(/no kit or engine rule has an assumption no-such-thing/);
     expect(() => createContext(data, scenario({ "control-immunity": "sometimes" }))).toThrow(/has no reading sometimes/);
     expect(parseAssume(data, ["control-immunity=bosses"])).toEqual({ "control-immunity": "bosses" });
+  });
+});
+
+describe("combo-curve: the ComboSkill slow-down's guessed curve as a reading (timeline/curves.ts)", () => {
+  const combo = "chr_0032_lizhiyan_combo_skill";
+  const slowdown = (d: typeof data) => d.skills[combo]?.timing?.slowdowns.find((x) => x.curve === COMBO_CURVE);
+  it("the compiler keeps the curve's name and samples the guess; the default reading is the data itself", () => {
+    const s = slowdown(data);
+    expect(s).toBeDefined();
+    expect(s?.scales).toEqual(curveScales(COMBO_CURVES["guess"] as (t: number) => number, s?.scales.length ?? 0));
+    expect(withCurveReading(data, {})).toBe(data);
+    expect(withCurveReading(data, { "combo-curve": "guess" })).toBe(data);
+  });
+
+  it("another reading resamples every ComboSkill slow-down (memoised, idempotent) and leaves the rest", () => {
+    const flat = withCurveReading(data, { "combo-curve": "flat" });
+    expect(flat).not.toBe(data);
+    expect(withCurveReading(data, { "combo-curve": "flat" })).toBe(flat);
+    expect(withCurveReading(flat, { "combo-curve": "flat" })).toBe(flat);
+    expect(withCurveReading(flat, {})).toBe(data);
+    expect(new Set(slowdown(flat)?.scales)).toEqual(new Set([0.01]));
+    expect(slowdown(flat)?.scales.length).toBe(slowdown(data)?.scales.length);
+    const ult = "chr_0032_lizhiyan_ultimate_skill";
+    expect(flat.skills[ult]).toBe(data.skills[ult]);
   });
 });

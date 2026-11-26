@@ -110,9 +110,10 @@ export interface SkillTiming {
    * `n`: which of the skill file's time-dilation actions it is (their index
    * in the file, RawSkillFile.dilations' `n`; absent in a hand-made timing):
    * its identity, so two at one frame (Rossi's combo_3, Pogranichnik's combo)
-   * pair exactly (round 8's friction point 2).
+   * pair exactly (round 8's friction point 2). `curve`: the named curve its scales sample (the data names it, its
+   * asset isn't in the data: ComboSkill), which a reading resamples (timeline/curves.ts withCurveReading).
    */
-  readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[]; readonly priority?: number; readonly n?: number }[];
+  readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[]; readonly priority?: number; readonly n?: number; readonly curve?: string }[];
   /**
    * Global dilations back to scale 1 (TimeDilationAction, curve RESETto1) at frame `at`: every running slow-down of
    * the same priority ends there, the skill's own too (Arcane's combo at its frame 9; engine assumption combo-reset,

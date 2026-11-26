@@ -10,7 +10,7 @@
 // primary with one disagreement taken the log's way (hitCounterfactuals).
 
 import { basename } from "node:path";
-import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
+import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, withCurveReading, type GameData, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { engineCheck, logDifferences, loggedEntries, readingBasis, type EngineCheck, type LogDifference, type ReadingBasis } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
@@ -110,7 +110,9 @@ export interface HitRecord {
 }
 
 /** Every logged hit of a fixture as a record (the multi-target fixtures aren't checked: single-target engine). */
-export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.id, assume: Readonly<Record<string, string>> = {}): HitRecord[] {
+export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.id, assume: Readonly<Record<string, string>> = {}): HitRecord[] {
+  // Engine assumption combo-curve: the placement's stop lists on the reading's curve, as the replay's timeline.
+  const data = withCurveReading(raw, assume);
   const placement = placeHits(data, fx);
   // Under other readings of open assumptions (`zmdlogs hits --assume`; round 6: it ignored the option and printed the
   // defaults' verdicts), as measure and the check replay them (snapshotentry.ts).

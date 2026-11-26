@@ -4,9 +4,56 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 151 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 152 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Combo hold and the replay's tails: Rossi's cut battle skill, the combo's excess in its first half, the curve a reading
+
+**Goal:** 0c14's Rossi replay-only landings (58, 0.30M), a9d7's Slashing Edge across an away stretch, where in a
+combo the operators' extra hold sits, smaller leads (Alesh's eventless combo, 207f, Snowshine's ×0.9624), and round
+13's backlog points 1, 4 and 6.
+
+**Done** (open-problems "The damage factors", "The enemy's clock", "0c14"):
+- **0c14's Rossi: one battle skill's tail.** Her 35.40 s battle skill lands its two charge hits and then nothing the
+  log has (no Lift, wolves, 16 bleed ticks, nor the Endministrator's combo shatter the Lift sets off), the enemy
+  there; without that Lift's Vulnerable stack her 52.04 s battle skill takes no follow-up (its Lift hit logged, no
+  Lift status, no wolves). Engine assumption `unlogged-tails` `cut`, the new default (buffreplay.ts tailCuts,
+  ReplayCastOptions.endsAt, TAILCUT lines in `zmdlogs replay`): a battle skill, combo or ultimate whose later
+  landings are none of them logged ends after its last logged one, the earliest first, the replay made again after
+  each. Guards found by three measures: not where the log has another hit of the operator's casts no cast holds
+  (3f78's combo_3), where a decided buff the tail starts is listed as a new run (db87's Camille), in the fight's
+  last 1.5 s (2fd9's kill) or an away stretch. 0c14 plain 293 → 336, replay-only 58 → 14.
+- **a9d7's edge: a hidden hold.** Chen's ~0.4M ultimate final isn't logged where her other finals are, and the edge
+  refreshes on a landing that deals damage, which the log would show; a hold of 0.37–0.84 s after 158.60 s fits the
+  placement's free unit. The away rule's edge unchanged.
+- **The combos' operator excess sits in the stop's first half** (scripts/probes/combo-hold/edges.ts): landings
+  0–200 ms before a listed start on time, landings right after the listed end at full density and already 186 ms
+  late, at 0.5–0.6 of the stop 294 ms. A uniform extra hold on the operators (`combo-operator-hold` `3f`/`4f`/`6f`,
+  registered, off) measured worse: verified plain 78.0 → 77.4 / 77.1 / 76.4%, earlier pending −0.9.
+- **Backlog point 4:** `combo-curve` (`guess`, `flat`, `middle`; timeline/curves.ts withCurveReading, applied by
+  createContext and the log tools' entries). `measure --variant combo-curve=flat` reproduces the patch measure of the
+  enemy-clock round: verified 78.0 → 73.0%, development 69.0 → 68.0%; `middle` 75.6%, 68.6%.
+- **Backlog point 1:** `zmdlogs casts --choices` (choose's rule per cast, LoggedCast.chosen) and `zmdlogs placement
+  --choices` (the in-turn rule's verdict and checks per overlapping ultimate, Placement.inTurn); settleCheck pairs
+  through pairCasts.
+- Snowshine narrowed (level, potential and weapon skill levels ruled out); Alesh's eventless combo and 207f not reached.
+
+**Scoreboard** (`npm run snapshots:update`): verified unchanged; development plain 69.0%, mismatch 11.4%, mean |damage
+error| 7.0% (unchanged; 9c6e −13.2 → −13.5%: Liino's unlogged combo hit2 out of an under-predicted total); hold-out
+plain 80.6%, mismatch 5.6%, mean |damage error| 8.4 → 8.3% (1 better, 2 worse, totals only); earlier pending plain
+67.3 → 67.7%, mismatch 11.9%, mean |damage error| 4.0% (0c14 mixed: plain 293 → 336, its total +2.7 → −3.2%, its
+matched Rossi ×0.943 and Si ×0.964 below the log; de6a −0.4 → −0.8%, Pogranichnik's unlogged combo hit_3). team-ab:
+unchanged (the defaults change no simulated fight). Smoke passed.
+
+**Decisions:** `cut` the default and `cut-all` (basic attacks too: totals mixed, 8 logs closer, 6 further) kept as a
+reading. `combo-operator-hold` kept registered though worse, as the measured record of the obvious mechanism. Backlog
+point 6 (the buffreplay.ts split) not done: the tail cuts went in by grep, and a 3,100-line move with its proof
+didn't fit beside the accuracy items.
+
+**Problems:** the tail rule's false cuts showed only per measure (friction report: a decisions view across logs);
+`--why` and `--rules` were taken CLI option names (the views' option is `--choices`); an unescaped quote in an
+assumption's text broke smoke's and team-ab's first runs (typecheck would have caught it: run it after text edits).
 
 ## 2026-11-26: Away and presses: the enemy away in the replay, hitless presses from the listing, layers
 
@@ -322,37 +369,3 @@ source (refused where the data says it); `burst-stops` `ultimates` measured and 
 hold bursts: e82d, c6d8, four hold-outs worse).
 
 **Dead ends:** the travelling field alone as the event rule (above).
-
-## 2026-11-24: Improvement round 11: measure --split, zmdlogs bursts, the views' stops without the replay's ticks
-
-**Goal:** the owner's friction workflow, round 11: the five open reports (round 10's backlog and own report, the
-misprediction candidates, the kit buff leads, the placement leads), tools only, beside an accuracy agent in the kit
-compiler, kits, engine, placement, replay and check core; no verdict may move.
-
-**Done** (docs/friction-done/2026-11-24-round-11.md has the list by cause; the backlog,
-docs/friction/2026-11-24-backlog-after-round-11.md, the rest):
-- `npm run measure -- --split files [--group a,b]` / `--split commits --base <ref>`: each part of a change measured on
-  the logs the whole moved; the summary's reference line; `--variant` also against the plain tree. On the placement
-  leads' range: 1cd1 and af7b by 00876b1, 4d60 by the merge that brought the Empyrean's end in.
-- `efsim zmdlogs bursts` (each Arts Burst logged against replayed, each side's likely cause, the stops between).
-- query.ts castEventPlace in `instances` and `replay`'s EVENT lines (at its press, at its stop's end, …; the log time
-  beside the world time); docs/design/data.md's paragraph.
-- replayTimeStops `tickRead`: with the replay, the views leave out a hitless event the replay read as a buff's tick,
-  as the hold placement does (`zmdlogs stops --all --differ` list only 2 → 0, nothing else moved); the EVENT line
-  says when the replay made a cast its key reads as a tick (3aa6).
-- The likely-loggedAs screen (loggedas.ts: `zmdlogs differences`, the pending suite); HitRecord.counterfactuals (build.ts
-  calls it); analyze.py in numpy (6+ min → 67 s), its buffs section's top-fight and top-hit shares, equipment names,
-  NOT_KIT fights, `analyze.py buff`.
-- `friction.ts outcomes --backlog`, edit.ts's marker messages, CLAUDE.md and docs/design/tests.md notes.
-
-**Scoreboard:** unchanged (`npm run snapshots:update`: "No log's verdicts moved"); no engine or kit change, so no
-team-ab.
-
-**Decisions:** the views' tick filter takes the replay's applied stops rather than every hitless event of a tick skill:
-the first version, without the replay, dropped 3aa6's seven real Zhuang Fangyi ultimates (cli-ab showed eleven new
-"timeline only" lines); the exact list from the replay itself is buffreplay.ts's (backlog point 6). The bursts' causes
-are a search (the replay records neither inflictions nor a burst's source): said in the view's header, the record in
-the backlog (point 13).
-
-**Problems:** the loggedAs screen finds no pair in the development logs now (the candidates' fixes took them), so its
-test is on a real listing with a made-up kit modifier; the pending suite guards the rest.

@@ -50,6 +50,7 @@ import {
   totalsView,
 } from "@efsim/logs";
 import { readFileSync } from "node:fs";
+import { withCurveReading } from "@efsim/engine";
 import { parseAssume } from "../assume.ts";
 import { command } from "../command.ts";
 import { formatLogList, logDirs } from "../logtools.ts";
@@ -130,6 +131,8 @@ export default command({
   efsim zmdlogs placement <fixture…|--all> What the placement's passes leave: ultimates whose time stops still
                                           overlap after the in-turn rule, and the casts a third pass would move
                                           (the placement isn't a fixed point there: logcasts.ts placeHits)
+                [--choices]               Under each overlap, what the in-turn rule decided for both casts and the
+                                          checks of the start it tried (Placement.inTurn)
   efsim zmdlogs bursts <fixture…|--all>   Each Arts Burst, logged against the check's replay (paired as the check
                                           pairs them, the offset; log only with the reason; replay only), each
                                           side's likely cause (the operator's latest inflicting hit at least the
@@ -158,6 +161,8 @@ export default command({
   efsim zmdlogs casts <fixture>           The placement in time order: each logged hit with the cast, slot and
                                           frame it was placed at, the log's cast events, the placed casts and their
                                           time stops
+                [--choices]               On each CAST line, the rule that chose its skill among those sharing its
+                                          key (logcasts.ts choose: anchor, alike, window, restart, first, late)
                 [--from s] [--to s]       Only this window (seconds); --operator: only these operators' hits, casts
   efsim zmdlogs replay <fixture>          The replay in time order: its landings with the logged hit each stands for
                                           (or "replay only"), logged hits without a landing and why, casts it
@@ -333,15 +338,18 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     kinds: { type: "boolean", default: false },
     clock: { type: "string" },
     rows: { type: "boolean", default: false },
+    choices: { type: "boolean", default: false },
     dropped: { type: "boolean", default: false },
     clusters: { type: "boolean", default: false },
   },
   run: async (ctx) => {
-    const { values, args, data } = ctx;
+    const { values, args } = ctx;
     const [sub, arg, op] = args;
     if (sub !== undefined && values.assume.length && !REPLAYING.has(sub)) throw new Error(`zmdlogs ${sub} doesn't replay the kits, so --assume changes nothing there; the subcommands that do: ${[...REPLAYING].join(", ")}`);
     // The readings every replaying view runs under (none: the default replay, the very same call).
-    const assume = values.assume.length ? parseAssume(data(), values.assume) : {};
+    const assume = values.assume.length ? parseAssume(ctx.data(), values.assume) : {};
+    // Engine assumption combo-curve: every view's stop lists on the reading's curve, as its replay's timeline.
+    const data = () => withCurveReading(ctx.data(), assume);
     if (sub === "list") {
       if (args.length !== 1) throw new Error("zmdlogs list takes no argument (--with <operator>, --dir <dir>, --json, --ids)");
       const dirs = logDirs(values.dir);
@@ -459,7 +467,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, filter) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume, stops: values.stops });
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`)], assume, stops: values.stops });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
@@ -480,7 +488,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const named = args.slice(1);
       if (!named.length && !values.all) throw new Error("zmdlogs placement takes fixtures (ids such as 0c14) or --all (every verified and pending development log)");
       if (named.length && values.all) throw new Error("zmdlogs placement: fixtures or --all, not both");
-      return placementView(data(), devFixtures(named.length ? { ids: named } : {}), { progress });
+      return placementView(data(), devFixtures(named.length ? { ids: named } : {}), { progress, rules: values.choices });
     }
     if (sub === "bursts") {
       const named = args.slice(1);

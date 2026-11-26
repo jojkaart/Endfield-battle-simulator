@@ -7,6 +7,7 @@
 
 import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
+import { pairCasts } from "./castpairs.ts";
 
 /**
  * A logged cast whose next landing comes later than the key's landings span
@@ -291,31 +292,69 @@ const IN_TURN_SLACK_FRAMES = 1;
  * Liino's (her event at 64.22 s): the log has no hit in 62.23–64.01 s. scripts/probes/placement/ult-overlap.ts lists
  * the logs' overlapping pairs and the quiet stretch where the first one's stop was.
  */
-function inTurnStart(timing: SkillTiming | null | undefined, t: number, frame: number, stops: readonly TimeStop[], hits: readonly LogHit[]): number | null {
+function inTurnStart(timing: SkillTiming | null | undefined, t: number, frame: number, stops: readonly TimeStop[], hits: readonly LogHit[]): { readonly start: number | null; readonly why: Pick<InTurnRecord, "verdict" | "checks" | "candidate"> } {
   const n = fullStopFrames(timing);
-  if (n === null || frame <= 0) return null;
+  if (n === null || frame <= 0) return { start: null, why: { verdict: "no-overlap" } };
   const ults = stops.filter((s) => s.kind === "ultimate" && s.scales.some((x) => x <= OWN_STOP_SCALE));
   const overlaps = (start: number) => ults.some((s) => start < s.start + s.scales.length - IN_TURN_SLACK_FRAMES && s.start < start + n - IN_TURN_SLACK_FRAMES);
   const plain = Math.round(((t - msOf(frame)) * FPS) / 1000);
   const overlapped = ults.filter((s) => plain < s.start + s.scales.length - IN_TURN_SLACK_FRAMES && s.start < plain + n - IN_TURN_SLACK_FRAMES);
-  if (overlapped.length === 0) return null;
+  if (overlapped.length === 0) return { start: null, why: { verdict: "no-overlap" } };
   // The log says the world stood still there: no logged hit inside the moved stop.
-  const quiet = (start: number) => !hits.some((h) => h.t > start + STOP_EDGE_MS && h.t < start + msOf(n) - STOP_EDGE_MS);
+  const inside = (start: number) => hits.filter((h) => h.t > start + STOP_EDGE_MS && h.t < start + msOf(n) - STOP_EDGE_MS).length;
+  const quiet = (start: number) => inside(start) === 0;
   // In turn, it moves by no more than the stops it overlapped (9c6e97486a9d: Arcane's ultimate_skill2 held 4.3 s
   // through Liino's stop and Ardelia's combo, which moved Liino's in turn: two targets' landings).
   const reach = overlapped.reduce((a, s) => a + s.scales.length, 0) + IN_TURN_SLACK_FRAMES;
-  const fits = (start: number) => start <= t - msOf(frame) - MIN_MOVE_MS && t - msOf(frame) - start <= msOf(reach) && !overlaps(Math.round((start * FPS) / 1000)) && quiet(start);
+  const checks = (start: number): InTurnChecks => ({
+    early: start <= t - msOf(frame) - MIN_MOVE_MS,
+    reach: t - msOf(frame) - start <= msOf(reach),
+    reachMs: Math.round(msOf(reach)),
+    free: !overlaps(Math.round((start * FPS) / 1000)),
+    quiet: quiet(start),
+    hitsInside: inside(start),
+  });
+  const fits = (start: number) => { const c = checks(start); return c.early && c.reach && c.free && c.quiet; };
   const held = heldStart(t, frame, stops);
+  const verdict = (start: number | null, candidate: number) => ({ start, why: { verdict: start === null ? ("refused" as const) : ("moved" as const), checks: checks(start ?? candidate), candidate: Math.round(start ?? candidate) } });
   // A landing logged at the end of the stop it overlapped is batched there (it came due anywhere in that stop): its
   // stop ended between where the landing's world frames put it (heldStart) and where that stop begins, the latest
   // start the log leaves quiet (40d9a3c1da37: Gilberta's ultimate, frame 60, at Si's stop end 12.95 s, the log quiet
   // 9.33–11.00 s; 00ae0a364ad4: hers at Perlica's stop end 60.10 s, hits at 58.20 s between the two stops).
   const batched = overlapped.find((s) => Math.abs(t - msOf(s.start + s.scales.length)) <= STOP_EDGE_MS);
   if (batched) {
-    for (let f = batched.start - n; f >= Math.round((held * FPS) / 1000); f--) if (fits(msOf(f))) return msOf(f);
-    return null;
+    for (let f = batched.start - n; f >= Math.round((held * FPS) / 1000); f--) if (fits(msOf(f))) return verdict(msOf(f), msOf(f));
+    return verdict(null, msOf(batched.start - n));
   }
-  return fits(held) ? held : null;
+  return verdict(fits(held) ? held : null, held);
+}
+
+/** inTurnStart's checks of a candidate start (InTurnRecord.checks): each must hold for the move. */
+export interface InTurnChecks {
+  /** At least MIN_MOVE_MS before where its landing's frame puts it. */
+  readonly early: boolean;
+  /** No farther than the stops it overlapped hold (reachMs). */
+  readonly reach: boolean;
+  readonly reachMs: number;
+  /** Its moved stop overlaps no other ultimate's. */
+  readonly free: boolean;
+  /** No logged hit inside its moved stop (hitsInside of them). */
+  readonly quiet: boolean;
+  readonly hitsInside: number;
+}
+
+/**
+ * What the in-turn rule (inTurn) decided for an ultimate it looked at in the placement's last pass (Placement.inTurn,
+ * round 13's backlog point 1): `moved` (to `candidate`), `event` (placed from its cast event: fromEvent), `beforeStop`
+ * (at another stop's end), `held` (its start held to its event, not its landing's frame: castStart), `no-overlap`
+ * (its stop overlaps no other ultimate's), `refused` (a check failed for `candidate`, the start it tried; `checks`).
+ */
+export interface InTurnRecord {
+  readonly cast: LoggedCast;
+  readonly verdict: "moved" | "event" | "beforeStop" | "held" | "no-overlap" | "refused";
+  readonly checks?: InTurnChecks;
+  /** The start tried (ms): the move's, or the refused one's. */
+  readonly candidate?: number;
 }
 
 /**
@@ -335,23 +374,35 @@ function inTurn(data: GameData, fx: LogFixture, placement: Placement): Placement
   const frames = castFrames(placement);
   let casts = [...placement.casts];
   const moved = new Map<LoggedCast, LoggedCast>();
-  for (const c of casts.filter((x) => x.kind === "ultimate" && !x.fromEvent && x.beforeStop === undefined).sort((a, b) => a.start - b.start)) {
+  const records: InTurnRecord[] = [];
+  for (const c of casts.filter((x) => x.kind === "ultimate").sort((a, b) => a.start - b.start)) {
+    if (c.fromEvent || c.beforeStop !== undefined) {
+      records.push({ cast: c, verdict: c.fromEvent ? "event" : "beforeStop" });
+      continue;
+    }
     const o = opening.get(c);
     if (!o || o.p.frame === undefined) continue;
     const timing = data.skills[c.skillId]?.timing;
     const frame = ownStopLoggedFrame(timing, o.p.hits, o.p.frame);
     // Only a cast its landing's frame placed (not one held to its event: castStart).
-    if (Math.abs(c.start - (o.h.t - msOf(frame))) > msOf(1)) continue;
+    if (Math.abs(c.start - (o.h.t - msOf(frame))) > msOf(1)) {
+      records.push({ cast: c, verdict: "held" });
+      continue;
+    }
     const stops = castTimeStops(data, casts, frames).filter((s) => s.operator !== c.operator);
-    const held = inTurnStart(timing, o.h.t, frame, stops, sorted);
-    if (held === null) continue;
-    const next: LoggedCast = { ...c, start: Math.round(held) };
+    const r = inTurnStart(timing, o.h.t, frame, stops, sorted);
+    if (r.start === null) {
+      records.push({ cast: c, ...r.why });
+      continue;
+    }
+    const next: LoggedCast = { ...c, start: Math.round(r.start) };
     casts = casts.map((x) => (x === c ? next : x));
     frames.set(next, frames.get(c) ?? []);
     moved.set(c, next);
+    records.push({ cast: next, ...r.why });
   }
-  if (moved.size === 0) return placement;
-  return { ...placement, casts, hits: new Map([...placement.hits].map(([h, p]) => [h, moved.has(p.cast) ? { ...p, cast: moved.get(p.cast) as LoggedCast } : p])) };
+  if (moved.size === 0) return { ...placement, inTurn: records };
+  return { ...placement, casts, inTurn: records, hits: new Map([...placement.hits].map(([h, p]) => [h, moved.has(p.cast) ? { ...p, cast: moved.get(p.cast) as LoggedCast } : p])) };
 }
 
 /** A new cast's start (castStart), or its event's with the landings the stop's end batched (beforeStopStart, LoggedCast.beforeStop). */
@@ -416,6 +467,28 @@ export interface LoggedCast {
   readonly beforeStop?: number;
   /** Placed from its cast event at an edge of its stop (eventStopStart), not from its landing's frame. */
   readonly fromEvent?: true;
+  /** Which rule chose its skill among the several its first key's candidates were (choose; `zmdlogs casts --choices`). */
+  readonly chosen?: CastChoice;
+}
+
+/**
+ * How choose picked a new cast's skill among the groups sharing its key (round 13's backlog point 1): `anchor` the one
+ * whose anchor's start (the skill's own cast from another key, or the skill a trigger fires on plus its delay) was
+ * nearest (`ref` its ms, `d` how far); `alike` the step whose window of the latest cast (`by`) lies nearest (`d` ms
+ * outside it); `window` the chain step after `by` whose windows list it; `restart` basic steps alike after a cast whose
+ * windows list none of them (the chain restarted: the first in kit order); `first` the kit's order, nothing else
+ * deciding; `late` a landing of a cast already opened (the latest it fits).
+ */
+export interface CastChoice {
+  readonly rule: "anchor" | "alike" | "window" | "restart" | "first" | "late";
+  /** The groups it chose among (kit order). */
+  readonly candidates: readonly string[];
+  /** The cast whose windows decided (alike, window, restart). */
+  readonly by?: { readonly skillId: string; readonly start: number };
+  /** The anchor's start (ms; anchor). */
+  readonly ref?: number;
+  /** How far (ms): from the anchor, or outside the window. */
+  readonly d?: number;
 }
 
 export interface PlacedHit {
@@ -437,6 +510,8 @@ export interface Placement {
   readonly casts: readonly LoggedCast[];
   /** Per skill, how close casts of it placed from different keys are one cast, in ms (mergeMs; absent: CAST_MERGE_MS). */
   readonly merge?: ReadonlyMap<string, number>;
+  /** What the in-turn rule decided for each ultimate it looked at (inTurn; its last run's: `zmdlogs placement --choices`). */
+  readonly inTurn?: readonly InTurnRecord[];
 }
 
 function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture): Group[] {
@@ -640,31 +715,15 @@ function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[
  */
 export function settleCheck(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): { readonly operator: string; readonly skillId: string; readonly now: number | null; readonly third: number | null }[] {
   const third = inTurn(data, fx, placeWith(data, fx, passStops(data, fx, placement)));
-  const out: { operator: string; skillId: string; now: number | null; third: number | null }[] = [];
-  const key = (c: LoggedCast) => `${c.operator}|${c.skillId}|${c.key}`;
-  const near = (list: readonly LoggedCast[], c: LoggedCast) => list.filter((x) => key(x) === key(c)).sort((a, b) => Math.abs(a.start - c.start) - Math.abs(b.start - c.start))[0];
-  const used = new Set<LoggedCast>();
-  // The casts that stay first (a cast that moved doesn't take another's place), then the moved ones by nearest.
-  const moved = placement.casts.filter((c) => {
-    const d = near(third.casts.filter((x) => !used.has(x)), c);
-    if (!d || Math.abs(d.start - c.start) > SETTLE_MS) return true;
-    used.add(d);
-    return false;
-  });
-  for (const c of moved) {
-    const d = near(third.casts.filter((x) => !used.has(x)), c);
-    const paired = d && Math.abs(d.start - c.start) <= SETTLE_FAR_MS ? d : undefined;
-    if (paired) used.add(paired);
-    out.push({ operator: c.operator, skillId: c.skillId, now: c.start, third: paired ? paired.start : null });
-  }
-  for (const d of third.casts) if (!used.has(d)) out.push({ operator: d.operator, skillId: d.skillId, now: null, third: d.start });
+  // One pairing (castpairs.ts, round 13's backlog point 1): the casts that stay first, then the moved ones by nearest.
+  const pairs = pairCasts(placement.casts, third.casts);
+  const out: { operator: string; skillId: string; now: number | null; third: number | null }[] = [
+    ...pairs.moved.map(([c, d]) => ({ operator: c.operator, skillId: c.skillId, now: c.start, third: d.start })),
+    ...pairs.gone.map((c) => ({ operator: c.operator, skillId: c.skillId, now: c.start, third: null })),
+    ...pairs.added.map((d) => ({ operator: d.operator, skillId: d.skillId, now: null, third: d.start })),
+  ];
   return out.sort((a, b) => (a.now ?? a.third ?? 0) - (b.now ?? b.third ?? 0));
 }
-
-/** A cast's start moving by more than this between the placement and a third pass is unsettled (ms: a frame and its rounding). */
-const SETTLE_MS = 40;
-/** The farthest the same cast's start may move between the passes and still be paired (ms); farther, it's gone and new. */
-const SETTLE_FAR_MS = 5000;
 
 /**
  * Ultimates of different operators whose placed time stops (down to OWN_STOP_SCALE) overlap by more than
@@ -841,7 +900,9 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           return !(opened.get(g.id) ?? []).some((c) => c.start > since);
         };
         const eligible = candidates.filter(anchorFree);
-        const g: Group = late?.g ?? choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
+        const choice = late ? null : choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
+        const g: Group = late?.g ?? (choice as { g: Group }).g;
+        const chosen: CastChoice | null = candidates.length < 2 ? null : late ? { rule: "late", candidates: candidates.map((x) => x.id) } : (choice as { why: CastChoice }).why;
         const s = slots(g, h.event);
         const first = s?.[0];
         // An ultimate whose first landing is on its way places it from its cast event at an edge of its stop
@@ -850,7 +911,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           const fromEvent = g.kind === "ultimate" && first && first.hits.every((x) => x.travels || x.detached || x.landedCount !== undefined) ? eventStopStart(data.skills[g.skillId]?.timing, build.operator, h.t, first.frame, others, eventsOf(g), sorted, !first.hits.every((x) => x.travels)) : null;
           return fromEvent !== null ? { start: fromEvent, fromEvent: true } : newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g));
         };
-        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...startOf(), ...(g.anchor ? { anchor: g.anchor } : {}) };
+        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...startOf(), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
@@ -1054,18 +1115,20 @@ const ANCHOR_MS = 1500;
  * hover attacks): the replay casts the step the engine allows
  * (buffreplay.ts chainStepFor).
  */
-function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prevs: readonly { cast: LoggedCast; timing: SkillTiming | null | undefined }[], stops: readonly TimeStop[]): Group {
-  if (candidates.length === 1 || !starts) return candidates[0] as Group;
-  let best: { g: Group; d: number } | null = null;
+function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prevs: readonly { cast: LoggedCast; timing: SkillTiming | null | undefined }[], stops: readonly TimeStop[]): { readonly g: Group; readonly why: CastChoice } {
+  const ids = candidates.map((g) => g.id);
+  const pick = (g: Group, why: Omit<CastChoice, "candidates">) => ({ g, why: { ...why, candidates: ids } });
+  if (candidates.length === 1 || !starts) return pick(candidates[0] as Group, { rule: "first" });
+  let best: { g: Group; d: number; r: number } | null = null;
   for (const g of candidates) {
     const start = h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
     const refs = g.anchor ? g.anchor.skills.flatMap((s) => (starts.get(s) ?? []).map((t) => t + msOf((g.anchor as { delay: number }).delay))) : (g.firedAt ?? starts.get(g.id) ?? []);
     for (const r of refs) {
       const d = Math.abs(start - r);
-      if (d <= ANCHOR_MS && (!best || d < best.d)) best = { g, d };
+      if (d <= ANCHOR_MS && (!best || d < best.d)) best = { g, d, r };
     }
   }
-  if (best) return best.g;
+  if (best) return pick(best.g, { rule: "anchor", ref: Math.round(best.r), d: Math.round(best.d) });
   const start = (g: Group) => h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
   // The latest first. Within a cast's action in the world's time: other casts' time stops hold it (489c0be3e162:
   // Wulfgard's combo 2 at 103625 ms, its ticks after Li Zhiyan's ultimate, an attack 3 at 103925 ms, then combo 3's
@@ -1096,17 +1159,17 @@ function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<str
           if (!near || d < near.d) near = { g, d };
         }
       }
-      if (near) return near.g;
+      if (near) return pick(near.g, { rule: "alike", by: { skillId: prev.cast.skillId, start: prev.cast.start }, d: Math.round(near.d) });
       continue;
     }
     const listed = new Set(timing.windows.flatMap((w) => w.skills));
     const next = candidates.find((g) => g.kind !== null && listed.has(g.skillId) && start(g) >= prev.cast.start && worldMs(prev.cast.start, start(g), held) <= msOf(timing.durationFrames) + CAST_SLACK_MS);
-    if (next) return next;
+    if (next) return pick(next, { rule: "window", by: { skillId: prev.cast.skillId, start: prev.cast.start } });
     // Basic-attack steps sharing a key: only the latest cast that doesn't keep the chain says the step; one whose
     // windows list none of them restarted the chain (Ardelia's attacks 1 and 2, both keyed attack1_projhit, attack 1's
     // value ×1.5 attack 2's per projectile: af7b7f865906's 7785 ms, after her attack 3 and combo, was placed as attack 2
     // from attack 1's window 5 s before; f879, 79cc, c3c7, f978 alike).
-    if (candidates.every((g) => g.kind === "basic") && !timing.keepsChain) return candidates[0] as Group;
+    if (candidates.every((g) => g.kind === "basic") && !timing.keepsChain) return pick(candidates[0] as Group, { rule: "restart", by: { skillId: prev.cast.skillId, start: prev.cast.start } });
   }
-  return candidates[0] as Group;
+  return pick(candidates[0] as Group, { rule: "first" });
 }

@@ -257,6 +257,19 @@ against its start, casts.ts --rows by where the stop falls), 0c14's Rossi (58 re
 last slash2 (no kill the log shows), a9d7's Slashing Edge refresh from Chen's ultimate final inside its stretch (a hit
 that landed, or a hold), Alesh's eventless 0c14 combo.
 
+**Combo hold and replay, 2026-11-26** (journal: the combo-hold-and-replay entry of 2026-11-26; open-problems "The
+damage factors", "The enemy's clock", "0c14"): 0c14's Rossi replay-only landings were one battle skill's tail the log
+doesn't have (no Lift, wolves or bleed after its two charge hits) and, from the Vulnerable stack it didn't add, her
+next battle skill's follow-up: engine assumption `unlogged-tails` `cut` (the default; buffreplay.ts tailCuts,
+ReplayCastOptions.endsAt), guarded by the operator's other logged hits, the listing's new runs, the away stretches
+and the fight's end; 0c14 plain 293 → 336, its total +2.7 → −3.2% (its matched Rossi ×0.943, Si ×0.964). a9d7's
+Slashing Edge past Chen's unlogged ultimate final is a hidden hold, not a landing (the away edge unchanged). The
+operators' combo excess sits inside the stop's first half (landings before its start on time, right after its end
+already late at full density: scripts/probes/combo-hold/edges.ts); a uniform extra hold on the operators
+(`combo-operator-hold`) measured worse. The ComboSkill curve is a reading (`combo-curve`); `zmdlogs casts --choices`
+and `placement --choices` show the placement's rules. Next: 0c14's Rossi and Si under-prediction, an operators-only
+curve, Snowshine's ×0.9624 (level, potential and weapon skill levels ruled out), Alesh's eventless combo, 207f.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

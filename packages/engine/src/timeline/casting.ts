@@ -372,7 +372,7 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   const spent = rebaseCooldowns(ctx, { ...cast, buffs: s.buffs }, cast, frame);
   // A cast with no hits to come (and the one it ended) leaves nothing for the buffs it used up to wait for.
   const settled = settleCastBuffs(spent, frame);
-  return { state: slowDown(ctx, settled, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
+  return { state: slowDown(ctx, settled, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame, costs.kind), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
 }
 
 /**

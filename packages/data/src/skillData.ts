@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
 import { parseJsonExact } from "./json.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
-import type { SkillTiming, SpKind } from "@efsim/engine/core";
+import { COMBO_CURVE, COMBO_CURVES, type SkillTiming, type SpKind } from "@efsim/engine/core";
 
 export interface RawSkillFile {
   /** When the skill lets its operator act again (engine SkillTiming). */
@@ -88,12 +88,13 @@ function curveAt(keys: readonly CurveKey[], t: number): number {
 
 /**
  * Named time-scale curves (their assets aren't in the data submodules).
- * ComboSkill: 0.01 for the first 40% of the duration, then up to 1 at 93%
- * (shape from the research of 2026-10-18 on Endaxis's catalog; the ramp is
- * taken as linear). RESETto1 is 1 throughout. Others are unknown.
+ * ComboSkill: the engine's guess (timeline/curves.ts COMBO_CURVES: 0.01 for
+ * the first 40% of the duration, then up to 1 at 93%; shape from the research
+ * of 2026-10-18 on Endaxis's catalog, the ramp taken as linear), which engine
+ * assumption combo-curve resamples. RESETto1 is 1 throughout. Others are unknown.
  */
 const NAMED_CURVES: Readonly<Record<string, (t: number) => number>> = {
-  ComboSkill: (t) => (t <= 0.4 ? 0.01 : t >= 0.93 ? 1 : 0.01 + ((t - 0.4) / 0.53) * 0.99),
+  [COMBO_CURVE]: COMBO_CURVES["guess"] as (t: number) => number,
   RESETto1: () => 1,
 };
 
@@ -230,7 +231,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     if (o["isEnable"] !== false && type.includes("TimeDilationAction") && o["layer"] === 0) {
       const d = slowdownOf(o, to - from);
       const priority = dilationPriority(o);
-      if (d) slowdowns.push({ from, scales: d, ...(priority !== null ? { priority } : {}), n: dilations.length - 1 });
+      if (d) slowdowns.push({ from, scales: d, ...(priority !== null ? { priority } : {}), n: dilations.length - 1, ...(o["useCurveKey"] === true && o["curveKey"] === COMBO_CURVE ? { curve: COMBO_CURVE } : {}) });
       // A global dilation back to scale 1 (curve RESETto1): it takes the place of the running ones of its priority
       // (SkillTiming.resets).
       else if (o["useCurveKey"] === true && o["curveKey"] === "RESETto1" && priority !== null) resets.push({ at: from, priority });

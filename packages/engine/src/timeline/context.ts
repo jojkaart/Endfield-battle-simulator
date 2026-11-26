@@ -13,6 +13,7 @@ import { FPS } from "../units.ts";
 import type { EnemyAction, TimelineContext, TimelineScenario } from "./state.ts";
 import { DIVE, DODGE, JUMP } from "./rules.ts";
 import { ENGINE_ASSUMPTIONS } from "./assumptions.ts";
+import { withCurveReading } from "./curves.ts";
 
 /** Operator attributes the timeline reads from the panel, whose default (GameData.attributeDefaults) holds when no line sets them. */
 const TIMELINE_ATTRS: readonly AttrType[] = [
@@ -62,9 +63,11 @@ function underReadings(data: GameData, kit: OperatorKit, assume: Readonly<Record
   return { ...kit, triggers: kit.triggers.filter((t) => !t.reading || chosen(t.reading.assumption) === t.reading.reading) };
 }
 
-export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
+export function createContext(raw: GameData, scenario: TimelineScenario): TimelineContext {
   if (scenario.team.length === 0 || scenario.team.length > 4) throw new EngineError("a team has 1–4 operators");
-  checkReadings(data, scenario.options.assume);
+  checkReadings(raw, scenario.options.assume);
+  // Engine assumption combo-curve: the combos' slow-downs resampled under the scenario's reading (the data itself by default).
+  const data = withCurveReading(raw, scenario.options.assume);
   const builds = new Map(scenario.team.map((b) => [b.operator, b]));
   if (builds.size !== scenario.team.length) throw new EngineError("an operator appears twice in the team");
   const panels = new Map(scenario.team.map((b) => [b.operator, computeStats(data, b)]));

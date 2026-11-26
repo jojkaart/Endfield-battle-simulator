@@ -175,6 +175,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const taken = eventJumps(ctx, st, operator, skillId, index, frame, moved);
     st = { ...st, scheduled: [...st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }), ...taken] };
   }
+  if (opts.endsAt !== undefined && opts.endsAt > frame) {
+    const end: PendingJump = { kind: "jump", frame: opts.endsAt, clock: { operator }, cast: { operator, index }, operator, from: opts.endsAt - frame, to: opts.endsAt - frame, end: true, pinned: true };
+    st = schedule(st, [end]);
+  }
   return runTriggers(ctx, st, r.events, r.origin);
 }
 
@@ -220,6 +224,12 @@ export interface ReplayCastOptions {
    * cli buffreplay.ts missedCasts): its own hits are dropped as it's cast.
    */
   readonly missed?: boolean;
+  /**
+   * The cast ends at this frame (pinned: no stop or jump moves it), if it's still its operator's current action then:
+   * a cut the log shows and no input does (the log check's unlogged tails, packages/logs buffreplay.ts tailCuts: none of
+   * the cast's landings after its last logged one is in the log, the enemy there). What is detached by then goes on.
+   */
+  readonly endsAt?: number;
 }
 
 /** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */
