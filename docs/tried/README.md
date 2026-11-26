@@ -18,6 +18,18 @@ worked, found by reading 80 lines of prose).
 
 ## Files
 
+Three of 2026-11-26 (damage-factors round) are held back, not dropped: changes in files another agent held, measured,
+for the lead to apply or build in general (each header says which).
+
+- [2026-11-26-log-entries-own-buff.diff](2026-11-26-log-entries-own-buff.diff): ready. An unjudged kit buff's listed
+  entry is matched only against the engine's modifiers of its own game buff (Ember's Pay the Ferric Price had been
+  dropped as one of Thermite Cutter's +0.09 layers); hold-out plain 79.0 → 80.4%, 3 better, 0 worse.
+- [2026-11-26-0c14-si-away-press.diff](2026-11-26-0c14-si-away-press.diff): a measurement hard-coded to two presses
+  (Si's away-stretch press makes nothing; her next, hitless, is her battle skill by Jade Vessel's listing); 0c14 plain
+  172 → 293, −4.9 → +1.2%, the Endministrator's Crush exact. The general rule is to build.
+- [2026-11-26-life-end-landings.diff](2026-11-26-life-end-landings.diff): mixed. Landings no logged hit stands for at
+  the fight's last frame or an away stretch's first are uncounted (Rossi's slash2 extras); 4a64 better, 207f worse,
+  and too broad (0c14's same-frame extra before another hit's kill is logged).
 - [2026-11-25-third-placement-pass.diff](2026-11-25-third-placement-pass.diff): pass 2 and the in-turn rule run once
   more (settleCheck's third pass as the placement); 2-cycles, not a fixed point: development plain 68.1 → 67.8%
   (9090 −42, 4a64 −10, fc63 +10).

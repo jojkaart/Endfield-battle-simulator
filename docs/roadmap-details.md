@@ -216,6 +216,21 @@ world-time delay from its infliction as a hold bound (9a80 35.05 s: a dodge-size
 log is quiet), db87's slow Combustion ticks in a Stagger (50.7–53.8 s, ~0.6 s), d4fb 97.05 s (2.18 s short; not the
 Stagger), a placement pass that moves a cast only where the quiet stretches favour it.
 
+**Damage factors, 2026-11-26** (journal
+[2026-11-26-01](journal/2026-11-26-01-damage-factors-catcher-s-weapon-the-crush-s-stacks-from-si-s.md); open-problems
+"Misprediction statistics", The damage factors): the Crush's formula is right on every logged Crush; both misses were
+Vulnerable stacks from Rossi's perfect combo (a Lift and one more stack per consumed infliction): 2fd9's fixed in round
+4, 0c14's from Si's battle-skill press in the away stretch (the replay makes it; the game's lands nothing) and her
+next, hitless one that Jade Vessel's listing proves. 04d4's Catcher fitted (weapon level 3, fit-build no longer throws
+on a DEF food): plain 185 → 376. Ember's ×1.096: the check's loggedEntries dropped her talent's listed ATK as one of
+Thermite Cutter's layers, and the listing hides her talent's layers (stackingType 10). Three diffs held back for the
+lead (docs/tried/2026-11-26-*): the loggedEntries fix (hold-out plain 79.0 → 80.4%, none worse), the 0c14 presses
+(hard-coded: 0c14 plain 172 → 293) and a fight's-last-frame rule (mixed). Next: those three as general rules in the
+replay and the check (an enemy-absent state for the away stretches; a hitless press inferred from a buff only it
+gives; an unjudged layered buff read at 1 … maxStacks), Snowshine's ×0.9624 (her attribute bonus 3.325 → 3.200: a gear
+line, a weapon skill level or the node subset), Rossi's unlanded bleed ticks and combo_3's over-hold (the holds' and
+the clock's).
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**
