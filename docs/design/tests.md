@@ -99,6 +99,15 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   code's, `--assume <id>=<reading>` an open reading (the kits' or the
   engine's). On a clean tree it ends "The log verdict snapshots would stay
   as they are (byte for byte)".
+- **Its default reference** (round 15, alesh-rare-fin report point 1: the
+  first measure of a task compared against snapshots 51 code files older
+  than main's code, so main's unmeasured merges read as the task's
+  change): with none of `--base`, `--against` and `--at` named, the
+  snapshots at HEAD are the reference only when they are the code's own,
+  or the code's own at the merge base with main (the branch's commits are
+  then the change measured); otherwise the merge base's code is measured
+  as `--base` (its CPU doubles), and the first line of the summary says
+  which (`--against-snapshots` compares with the snapshots anyway).
 - **What kind of field moved** (round 9): a log whose direction is
   "other" (neither plain, mismatch nor |damage error| moved) says which
   fields did: the verdict classes' net change ("assumed −2, fallback +2"),

@@ -43,7 +43,8 @@ none appear here.
 **Shows:** at 36e3bc8 Rossi 51.9% plain (2305 hits), Chen 30.2% (810), Yvonne 31.9% (323), Lifeng 43.5% (260),
 Pogranichnik 44.1% (649), the male Endministrator 52.6% (310), each with a mismatch share under 8%: most of their hits
 match only under an assumption or by the log-listing fallback. Grouped by what the first fitting reading assumes
-(scripts/probes/assumed/kinds.ts `<operator>`: the check's own composition, per kind, kind set, event and label).
+(`efsim zmdlogs assumed --operator <op>`, round 15, from that round's probe: the check's own composition, per kind,
+kind set, event and label).
 
 **Found and fixed:**
 1. **The crit the replay already read (Rossi, Yvonne).** 418 of Rossi's 1109 non-plain matches and 150 of Yvonne's
