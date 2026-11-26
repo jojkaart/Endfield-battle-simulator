@@ -160,6 +160,31 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     expect([slash(245394), slash(736182)]).toEqual([122, 131]);
   });
 
+  it("a cast's landings fewer than its slots take the slots their values fit, the first slot free (9c0b: Camille's Hunter Pursuit at 13.37 s is hits 2–4, ×5.3 the last, its cast 0.43 s earlier; db87: her ultimate's two logged hits are hit_2 and hit_3; a27b: Mi Fu's attack 3 hit_2)", () => {
+    const pursuit = readLogFixture(new URL("../fixtures/pending/zmdlogs-9c0bb09daff2.json", import.meta.url).pathname);
+    const p = placeHits(data, pursuit);
+    const at = (fx: typeof pursuit, pl: typeof p, t: number, key: string) => pl.hits.get(fx.hits.find((h) => h.t === t && h.event === key) as LogHit);
+    const hp = "chr_0033_camille_combo_skill_2";
+    expect([13371, 13850, 14568].map((t) => at(pursuit, p, t, hp)?.frame)).toEqual([33, 49, 70]);
+    expect(at(pursuit, p, 13371, hp)?.cast.start).toBeCloseTo(13371 - (33 * 1000) / 30, 0);
+    const db = readLogFixture(new URL("../fixtures/pending/zmdlogs-db8711232de9.json", import.meta.url).pathname);
+    const q = placeHits(data, db);
+    expect([10108, 10651].map((t) => at(db, q, t, "chr_0033_camille_ultimate_skill")?.frame)).toEqual([104, 120]);
+    const mifu = readLogFixture(new URL("../fixtures/pending/zmdlogs-a27bc3527682.json", import.meta.url).pathname);
+    expect(at(mifu, placeHits(data, mifu), 60839, "chr_0031_mifu_attack3")?.frame).toBe(30);
+  });
+
+  it("a landing at its cast's last landing's ms whose value is that landing's, not the next slot's, is the same landing on a second enemy (9c6e: Liino's combo hit 1 at 47.72 s on both, 6368 and 6035; her 48.49 s hit 2 the same cast's)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9c6e97486a9d.json", import.meta.url).pathname);
+    const p = placeHits(data, fx);
+    const key = "chr_0035_liino_combo_skill";
+    const at = (t: number, v: number) => p.hits.get(fx.hits.find((h) => h.t === t && h.event === key && h.value === v) as LogHit);
+    expect(at(47720, 6035)?.sameAs).toBeDefined();
+    expect(at(47720, 6035)?.frame).toBe(9);
+    expect(at(48489, 10743)?.frame).toBe(33);
+    expect(at(48489, 10743)?.cast).toBe(at(47720, 6368)?.cast);
+  });
+
   it("Typhoeus's shots: an off-field hit isn't placed while the log shows her controlled, and a burst's cast isn't joined by the next shot's arrow (fc63 88–93 s: her 4th shot was placed as the 5th, every burst a shot early)", () => {
     const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-fc63a2001251.json", import.meta.url).pathname);
     const p = placeHits(data, fx);

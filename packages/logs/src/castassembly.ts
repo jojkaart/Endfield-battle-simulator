@@ -5,10 +5,10 @@
 // controlled (controlledFromLog, controlSwaps), each logged cast event's fate (loggedCastFates) and the stops the
 // replay's casts hold (replayedCastStops). Split from buffreplay.ts (improvement round 14).
 
-import { allActions, applyBuff, chanceJumpsOf, pathTwin, skippedHits, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
+import { allActions, applyBuff, chanceJumpsOf, hitLandingFrames, pathTwin, skippedHits, takenPathLandings, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
-import { buttonVariants, castFrames, excludes, neededBuffs, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { buttonVariants, castFrames, excludes, neededBuffs, nominalScale, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /** The game buffs the log lists with values somewhere (effects or boundary effects). */
 export function listedWithValues(fx: LogFixture): Set<string> {
@@ -85,6 +85,8 @@ export interface ReplayedCast extends LoggedCast {
    * the path of a cast made from the listing (castsFromHitBuffs).
    */
   readonly chanceJumps?: Readonly<Record<string, boolean>>;
+  /** The kit's jumps on its state that its logged landings' values decide (valuePaths; replayCast kitJumps). */
+  readonly kitJumps?: readonly { readonly at: number; readonly to: number; readonly taken: boolean }[];
   /**
    * A cast the log shows only by a buff one of its hits alone gives (castsFromHitBuffs, engine assumption listed-casts
    * `inferred`): the game buff and the `since` (ms) of the run it starts. Its own landings stand for no damage the log
@@ -178,6 +180,71 @@ export function listedPaths(data: GameData, kits: readonly OperatorKit[], fx: Pi
     return Object.keys(out).length ? { ...c, chanceJumps: out } : c;
   });
 }
+
+/**
+ * The kit's jumps on a cast's state (KitSkill.jumps, not on control) that its logged landings' values decide
+ * (ReplayedCast.kitJumps): of the paths from a jump's frame (none taken, or one), the only one under which the cast's
+ * landings' values (crits and hits of unknown crit aside) fit their kit hits' multipliers (logcasts.ts nominalScale)
+ * under one scale within PATH_VALUE_TOLERANCE, every other leaving a landing off it. On a jump's path a landing in its
+ * skipped part is the hit landing to − at frames later (engine paths.ts takenPathLandings); a path that leaves one there
+ * can't be the cast's. Undecided, the replay's state takes them. Pogranichnik's combo (frame 0 to 200, 400, 600 by the
+ * Vulnerable stacks his trigger consumed: four, three, two, one): its third slash 2.97 on the 4-stack path, 1.49 on
+ * the 3-stack one. c4f307cd039a 13.67 s: the slashes ×1, ×1.28, ×3.13 (the 4-stack path's 0.95, 1.22, 2.97), the
+ * replay's Breach at 13.07 s having consumed three stacks; the 3-stack slashes' SP went into his Living Banner's bank
+ * with the 4-stack ones', his first Fervent Morale at 15.97 s against the log's 34.04 s.
+ */
+export function valuePaths(data: GameData, kits: readonly OperatorKit[], fx: Pick<LogFixture, "hits" | "team">, casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const tolerance = Math.log(PATH_VALUE_TOLERANCE);
+  return casts.map((c) => {
+    if (c.kitJumps || c.landings.length < 2) return c;
+    const kit = kits.find((k) => k.operator === c.operator);
+    const build = fx.team.find((b) => b.operator === c.operator);
+    const skill = kit?.skills.find((s) => s.skillId === c.skillId);
+    const onState = (skill?.jumps ?? []).flatMap((k) => (k.to !== undefined && !JSON.stringify(k.if ?? null).includes('"controlled"') ? [{ at: k.at, to: k.to }] : []));
+    if (!kit || !build || !skill || onState.length === 0) return c;
+    const panel = computeStats(data, build);
+    const scaleOf = new Map(skill.hits.map((h) => [h.id, nominalScale(data, build, panel, c.skillId, h)]));
+    const values = c.landings.map((l) => {
+      const h = fx.hits[Number(l.ref)];
+      return h && h.crit === false ? (h.uncapped ?? h.value) : null;
+    });
+    const kitFrame = (l: { hitId: string; nth: number }) => {
+      const h = skill.hits.find((x) => x.id === l.hitId);
+      return h ? hitLandingFrames(h)[l.nth] : undefined;
+    };
+    // The landings off one scale under a path (the fewest over every comparable landing as the reference); null when
+    // fewer than two landings compare, Infinity when a landing can't be on the path.
+    const off = (p: { at: number; to: number } | null): number | null => {
+      const ls = p ? takenPathLandings(skill, [p], c.landings) : c.landings;
+      if (p && ls.some((l) => {
+        const f = kitFrame(l);
+        return f !== undefined && f >= p.at && f < p.to;
+      })) return Infinity;
+      const u = ls.map((l, i) => {
+        const v = values[i];
+        const m = scaleOf.get(l.hitId);
+        return v === null || v === undefined || v <= 0 || m === null || m === undefined ? null : v / m;
+      }).filter((x): x is number => x !== null);
+      if (u.length < 2) return null;
+      return Math.min(...u.map((r) => u.filter((x) => Math.abs(Math.log(x / r)) > tolerance).length));
+    };
+    const out: { at: number; to: number; taken: boolean }[] = [];
+    for (const at of new Set(onState.map((k) => k.at))) {
+      const from = onState.filter((k) => k.at === at);
+      const paths = [null, ...from];
+      const fits = paths.map(off);
+      if (fits.some((x) => x === null)) continue;
+      const fit = paths.filter((_p, i) => fits[i] === 0);
+      if (fit.length !== 1) continue;
+      const chosen = fit[0];
+      for (const k of from) out.push({ at: k.at, to: k.to, taken: k === chosen });
+    }
+    return out.length ? { ...c, kitJumps: out } : c;
+  });
+}
+
+/** How far (×, either way) a cast's landings' values may stray from one scale and fit their path's hits (valuePaths). */
+const PATH_VALUE_TOLERANCE = 1.5;
 
 /** The shortest duration (ms) of a kit hit's own buffs with game buffs, or null (none, or one that needs a fight). */
 function hitBuffMs(data: GameData, build: LogFixture["team"][number], kit: OperatorKit, hit: KitHit, skillId: string): number | null {
@@ -823,7 +890,7 @@ export function assembleCasts(data: GameData, fx: LogFixture, placement: Placeme
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
   // Engine assumption listed-casts: with `inferred`, the casts the log shows only by a buff one of their hits alone gives.
   const listedCasts = (assume["listed-casts"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "listed-casts")?.default) === "inferred";
-  const paths = listedPaths(data, kits, fx, castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement))))))))));
+  const paths = valuePaths(data, kits, fx, listedPaths(data, kits, fx, castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement)))))))))));
   return listedCasts ? castsFromHitBuffs(kits, fx, paths) : paths;
 }
 

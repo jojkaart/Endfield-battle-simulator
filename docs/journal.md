@@ -4,9 +4,45 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 160 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 161 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Slots and paths by value: Hunter Pursuit, Pogranichnik's combo and his bank
+
+**Goal:** a cast's logged hits paired to its kit hits by value where time and keys don't decide (9c0b's Hunter Pursuit,
+7910's rogue wave); Pogranichnik's SP-driven team buffs (Thermite Cutter, Fervent Morale) behind Chen's, Lifeng's,
+Pogranichnik's and the Endministrator's fallbacks; if time, 9c6e's Liino combo on two enemies (open-problems "Fight
+totals" round 5, "Low plain, low mismatch").
+
+**Done:**
+- **Slots by value** (logcasts.ts realignByValue): a cast's landings of a key fewer than its slots, the slots'
+  multipliers apart by more than ×2, take the slots their values fit under one scale, then by world time; the first
+  slot moves only for a key that is its cast's only one, by values or by the landings no other stop separates (by time
+  alone it moved 7910's stares across Liino's stops). 9c0b's Hunter Pursuit is hits 2–4 (its Link before Arcane's
+  ultimate), db87's Camille ultimate hit_2 / hit_3, a27b's Mi Fu, 00ae's Arcane lasers.
+- **Neither of Pogranichnik's buffs reads the team's SP.** Thermite Cutter was right: its `other values` are the
+  listing (once per application), the hits' values fit the replay's two layers. Fervent Morale's bank was double-fed:
+  his combo's slashes, pinned to the 4-stack path's frames by kit order, landed beside the 3-stack path the replay took.
+  Now a landing in a taken state jump's skipped part goes onto the jumped-to path (engine paths.ts takenPathLandings),
+  and the values choose the path where they alone fit (castassembly.ts valuePaths, replayCast kitJumps; PATH lines).
+  c4f3's first layer 15.97 → 34.03 s (log 34.04 s).
+- **A Breach's Arts Intensity after its hit's before-damage triggers** (landing.ts): the data's SP comes before the
+  FractureAction, so the layer the SP makes counts for the Breach (alone: d4fb plain 516 → 837 on the old bank).
+- **A second enemy's landing by value** (logcasts.ts sameByValue): 9c6e's Liino combo at 47.72 s; 40d9 unchanged.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 72.7 → 73.8%, mismatch 10.6 → 10.5%, mean |damage
+error| 6.3 → 6.1%; hold-out unchanged; earlier pending plain 73.0%, 3.5%. Pogranichnik 41.9 → 52.1% plain (total error
+5.0 → 2.8%), Chen 38.8 → 43.0%. Better 9c0b, db87, a27b, 7b54; mixed 9c6e (plain 175 → 202, −13.5 → −13.9%), a9d7 (177 →
+265, −2.2 → −3.3%: the doubled slashes had hidden Chen's −3.2% and Estella's −7.0%), c4f3 (223 → 275, −2.9 → −3.4%),
+d4fb (−0.4%: 86.67 s, the bank 0.3 s late in the replay); worse 7910 0.0 → −0.2% (its 352,792 is the early rogue
+wave by value, ×17.5 a stare, with no dive logged: matched to the plain wave now). team-ab: unchanged.
+
+**Decisions:** none of it an assumption: the values' ratios are ×2–17 apart where they decide, and each rule acts only
+where they do. landing.ts is outside the brief's file list (not status.ts or the buffs): named for the lead.
+
+**Left:** the Vulnerable stacks a Breach consumed read from the next combo's path (c4f3 13.07 s: three in the replay,
+four in the game), the harasses' Fervent Morale on whom (c4f3 68.83 s), 7910's early wave.
 
 ## 2026-11-26: Arcane's WILL lines and Chen's late Wolven Blood final
 
@@ -344,48 +380,3 @@ didn't fit beside the accuracy items.
 **Problems:** the tail rule's false cuts showed only per measure (friction report: a decisions view across logs);
 `--why` and `--rules` were taken CLI option names (the views' option is `--choices`); an unescaped quote in an
 assumption's text broke smoke's and team-ab's first runs (typecheck would have caught it: run it after text edits).
-
-## 2026-11-26: Away and presses: the enemy away in the replay, hitless presses from the listing, layers
-
-**Goal:** build as general rules what the damage-factors round hard-coded or held back: the enemy away from the fight
-in the replay (0c14's Si press at 139.68 s), a press with no logged hit inferred from a buff only its hit gives (her
-153.99 s press), Rossi's slash2 extras at a life's or fight's end, an untracked layered buff's layers (Ember, 7e19);
-then whether a fixed delay per stop edge explains the combos' extra hold.
-
-**Done** (open-problems "The damage factors", "The enemy's clock"):
-- **The replay's enemy away** (engine assumption enemy-away `absent`, the new default; TimelineScenario.enemyAway,
-  landing.ts): a hit from the frame after a stretch's last logged hit to the frame before the next applies nothing to
-  the enemy (damage, applications, Stagger, enemy-side buffs, hit events); the operators' own buffs from it still come
-  (d774's and 9c6e's Liino presses there put her stance's ATK on the team, as the log lists after). The totals leave out
-  every unmatched landing from the stretch's first frame on (the enemy leaves with its last logged hit). An Arts Burst
-  still lands: holding it back lost 4a64's Arcane weapon debuff the log lists (6 plain), so only its damage is left out.
-- **Hitless presses** (`hitless-presses` `inferred`, the new default; buffreplay.ts inferredPress): made only with the
-  log's own cast event, the enemy there, the next hit within 1.5 s listing a new run of a decided buff that the replay
-  gives with the press and not without; the press after it is then the variant it pulls; its own landings aren't
-  counted. Two presses across the logs: 0c14's Si (153.99 s) and 8915's Liino (111.23 s). Alesh's eventless 0c14 combo
-  stays open. A recorded burst whose applier is unlogged is now unread (more than twice the buff's life away), not
-  read over 73 s of hits.
-- **Life ends and kills:** a fight of several lives ends in a kill when its last life dealt one Max HP (lastLifeKilled,
-  read by the totals and enemy-hp `kill`). With the leaving frame it covers 4a64's both slash2s (+2.9 → +0.8%); 207f's
-  stays (no kill the log shows). Both held-back diffs deleted (docs/tried/README.md).
-- **Layers:** the check reads an unjudged kit buff on one timer (stackingType 8/10) listed once at each count to its
-  maximum (enginecheck.ts unjudgedLayered): 7e19 mismatch 4 → 1, 04d4 616 → 614, 99fb 116 → 111; 7e19's 33.15 s
-  ×1.096 is left (no listing then). Negative control holds.
-- **Item 5:** one constant per combo fits as well as a share (probes combo-hold/edge-casts.ts, edge-ticks.ts), but
-  57 ms a combo for the enemy's ticks against 140 ms for the operators' casts: one delay on the world's clock is ruled
-  out. Next: where in the combo the operators' excess sits.
-
-**Scoreboard** (`npm run snapshots:update`): development plain 69.0%, mismatch 11.4%, mean |damage error| 7.0%
-(unchanged; 4a64 better; 891566, 9c6e, a9d7 slightly worse); hold-out plain 80.4 → 80.6%, mismatch 5.6%, mean |damage
-error| 8.4% (1 better, 1 mixed: +12 plain, its total further); earlier pending plain 66.3 → 67.3%, mismatch 12.0 →
-11.9%, mean |damage error| 4.1 → 4.0% (0c14 plain 172 → 293, −3.4 → +2.7%). team-ab: unchanged (simulations never set
-enemyAway). Smoke passed.
-
-**Decisions:** both readings default, with the others kept (`away`, `absent-edge`, `skipped`): `absent` against
-`absent-edge` because the logs record every landing (d774's unlogged strikes 0.23 and 0.27 s into its stretches).
-The hold-out mixed log's total getting further fits 0c14's pattern: the readings that now fit raise the total onto an
-over-prediction elsewhere. a9d7's Chen (an ultimate final 0.74 s into a stretch no longer refreshing a buff the log
-lists later) is reported, not fixed.
-
-**Problems:** the replay view's EVENT line called the inferred Liino press a tick; kill and life detection live in two
-places; a burst's unbounded record start was silent (friction report).

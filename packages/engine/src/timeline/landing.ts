@@ -410,6 +410,15 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     st = runTriggers(ctx, st, own, { operator: hit.operator, kind }, (t) => t.beforeDamage === true && onInfliction(t), false);
     beforeTriggers = st;
     st = runTriggers(ctx, st, own, { operator: hit.operator, kind }, (t) => t.beforeDamage === true && !onInfliction(t), false);
+    // A Breach the hit applied has its applier's Arts Intensity after those triggers: what they stand for comes before
+    // the data's FractureAction (Pogranichnik's battle skill: the SP of the Vulnerable stacks consumed, then the Breach;
+    // the SP fills his Living Banner's bank, whose Fervent Morale layer adds Arts Intensity +8: c4f307cd039a's 34.04 s
+    // Breach reads ×1.008 without the layer that SP made, as do the hits under it).
+    if (statusEvents.some((e) => e.kind === "physical" && e.status === "breach")) {
+      const ai = artsIntensity(ctx, st, hit.operator, hit.frame);
+      const physical = st.enemy.physical.map((x) => (x.status === "breach" && x.operator === hit.operator && x.appliedAt === hit.frame && x.artsIntensity < ai ? { ...x, artsIntensity: ai } : x));
+      if (physical.some((x, i) => x !== st.enemy.physical[i])) st = { ...st, enemy: { ...st.enemy, physical } };
+    }
   }
   let stacksChanged: string[] = [];
   const events: BattleEvent[] = [];

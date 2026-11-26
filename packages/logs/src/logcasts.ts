@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
 
@@ -461,6 +461,8 @@ interface Group {
    */
   readonly firedAt?: readonly number[];
   readonly hits: readonly KitHit[];
+  /** Each hit's multiplier from its skill's values (nominalScale), where it has one: what its landing's value is in proportion to. */
+  readonly scales: ReadonlyMap<KitHit, number>;
 }
 
 /** One landing slot of a key: the kit hits it can be (alternatives at one frame), the likeliest first. */
@@ -545,8 +547,19 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
   const kit = effectiveKit(data, build);
   if (!kit) return [];
   const available = (skillId: string) => (h: KitHit) => hitAvailable(data, build, panel, skillId, h, { team });
+  const scales = (skillId: string, hits: readonly KitHit[]) => {
+    const out = new Map<KitHit, number>();
+    for (const h of hits) {
+      const v = nominalScale(data, build, panel, skillId, h);
+      if (v !== null) out.set(h, v);
+    }
+    return out;
+  };
   return [
-    ...kit.skills.map((s): Group => ({ id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits: s.hits.filter(available(s.skillId)) })),
+    ...kit.skills.map((s): Group => {
+      const hits = s.hits.filter(available(s.skillId));
+      return { id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits, scales: scales(s.skillId, hits) };
+    }),
     ...kit.triggers.flatMap((t): Group[] => {
       const skillId = triggerSkillId(kit.operator, t);
       const hits = allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits : [])).filter(available(skillId));
@@ -554,9 +567,21 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
       const anchor = t.on.event === "cast" && t.on.skills?.length ? { skills: t.on.skills, delay: t.delay ?? 0 } : null;
       const fired = t.on.event === "hit" && t.on.decorations?.length ? decoratedHits(data, fx, t.on.decorations, t.by === "self" ? build.operator : null) : t.on.event === "physicalStatus" ? statusHits(fx, t.on.statuses, t.by, build.operator) : undefined;
       const firedAt = fired?.map((h) => h.t + msOf(t.delay ?? 0));
-      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits }];
+      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits, scales: scales(skillId, hits) }];
     }),
   ];
+}
+
+/**
+ * A kit hit's multiplier from its skill's values alone (the product of its `scale` keys and its literal factor): its
+ * landings' values are in that proportion to another hit's of the cast, up to the buffs between them. Null for a hit
+ * whose damage isn't a plain multiple of it (a reaction's, a status's, fixed damage, a value or extra scale judged at
+ * the landing).
+ */
+export function nominalScale(data: GameData, build: Build, panel: StatPanel, skillId: string, h: KitHit): number | null {
+  if (h.reaction || h.status || h.fixedDamage !== undefined || h.scaleValue !== undefined || h.extraScale?.length || h.scale.length === 0) return null;
+  const v = h.scale.reduce((a, key) => a * skillValue(data, panel, build, skillId, key), h.factor ?? 1);
+  return Number.isFinite(v) && v > 0 ? v : null;
 }
 
 /**
@@ -844,10 +869,17 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       return kit !== null && kit !== undefined && a !== undefined && b !== undefined && eventSkill !== g.skillId && !shown(eventSkill) && shown(g.skillId) && buttonVariants(kit, a, b);
     };
     const eventsOf = (g: Group) => (g.kind === null ? [] : events.filter((e) => castEventOf(e.skill, g.skillId, kitSkills) || variantEvent(e.skill, g)).map((e) => e.t));
+    // Where a new cast of a group starts whose first logged landing `h` is at slot `first`.
+    // An ultimate whose first landing is on its way places it from its cast event at an edge of its stop
+    // (eventStopStart): a travelling one always, another detached one where its frame's stop contradicts the log.
+    const startFor = (g: Group, h: LogHit, first: Slot | undefined): Pick<LoggedCast, "start" | "beforeStop" | "fromEvent"> => {
+      const fromEvent = g.kind === "ultimate" && first && first.hits.every((x) => x.travels || x.detached || x.landedCount !== undefined) ? eventStopStart(data.skills[g.skillId]?.timing, build.operator, h.t, first.frame, others, eventsOf(g), sorted, !first.hits.every((x) => x.travels)) : null;
+      return fromEvent !== null ? { start: fromEvent, fromEvent: true } : newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g));
+    };
     /** One pass over the operator's logged hits; `starts` (by skill) picks among groups sharing a key. */
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {
       const placed = new Map<LogHit, PlacedHit>();
-      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean }>();
+      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean; scales: ReadonlyMap<KitHit, number> }>();
       // Casts placed so far, per group: a key's first landing within an earlier cast's reach is that cast's (joinable).
       const opened = new Map<string, LoggedCast[]>();
       // The operator's casts of skills so far, for a key several chain steps share (choose: the step after the latest
@@ -880,8 +912,11 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
         // Its landings all logged, another at its last one's time is that landing on a second enemy (9c6e97486a9d: two
-        // targets, two hits per Typhoeus shot, were two shots each, which ended her hovers early): the same slot.
-        if (cur && used && h.t === cur.last.t) {
+        // targets, two hits per Typhoeus shot, were two shots each, which ended her hovers early): the same slot. So is one
+        // at its last one's time whose value is that landing's and not the next slot's (sameByValue: 9c6e's Liino combo
+        // at 47.72 s, hit 1 on both enemies, 6368 and 6035, took the second for hit 2 and her 48.49 s hit 2 for a new
+        // combo's hit 1; 40d9a3c1da37's Si combo slashes, which the log batches at one ms, are alike in value, undecided).
+        if (cur && (used || sameByValue(cur, h)) && h.t === cur.last.t) {
           const slot = cur.slots?.[cur.index];
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last });
           continue;
@@ -943,18 +978,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const chosen: CastChoice | null = candidates.length < 2 ? null : late ? { rule: "late", candidates: candidates.map((x) => x.id) } : (choice as { why: CastChoice }).why;
         const s = slots(g, h.event);
         const first = s?.[0];
-        // An ultimate whose first landing is on its way places it from its cast event at an edge of its stop
-        // (eventStopStart): a travelling one always, another detached one where its frame's stop contradicts the log.
-        const startOf = (): Pick<LoggedCast, "start" | "beforeStop" | "fromEvent"> => {
-          const fromEvent = g.kind === "ultimate" && first && first.hits.every((x) => x.travels || x.detached || x.landedCount !== undefined) ? eventStopStart(data.skills[g.skillId]?.timing, build.operator, h.t, first.frame, others, eventsOf(g), sorted, !first.hits.every((x) => x.travels)) : null;
-          return fromEvent !== null ? { start: fromEvent, fromEvent: true } : newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g));
-        };
-        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...startOf(), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}) };
+        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...startFor(g, h, first), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
-        current.set(h.event, { cast, first: h.t, last: h, index: 0, span, longest, slots: s, exact: exactSlots(g, h.event) });
+        current.set(h.event, { cast, first: h.t, last: h, index: 0, span, longest, slots: s, exact: exactSlots(g, h.event), scales: g.scales });
         placed.set(h, { cast, index: 0, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}) });
       }
       return placed;
@@ -963,10 +992,16 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     const starts = new Map<string, number[]>();
     for (const p of new Set([...first.values()].map((x) => x.cast))) starts.set(p.group, [...(starts.get(p.group) ?? []), p.start]);
     const placed = pass(starts);
-    realignUltimates(placed, (c, key) => {
+    const exactSlotsOf = (c: LoggedCast, key: string) => {
       const g = groups.find((x) => x.id === c.group);
       return g && exactSlots(g, key) ? slots(g, key) : null;
-    }, others);
+    };
+    realignUltimates(placed, exactSlotsOf, others);
+    realignByValue(placed, exactSlotsOf, (c) => groups.find((x) => x.id === c.group)?.scales ?? new Map(), others, (c, h, slot) => {
+      const g = groups.find((x) => x.id === c.group);
+      const { beforeStop: _b, fromEvent: _f, ...rest } = c;
+      return g ? { ...rest, ...startFor(g, h, slot) } : null;
+    });
     for (const [h, p] of placed) hits.set(h, p);
     casts.push(...new Set([...placed.values()].map((p) => p.cast)));
   }
@@ -1053,8 +1088,156 @@ function realignUltimates(placed: Map<LogHit, PlacedHit>, slotsOf: (c: LoggedCas
   }
 }
 
+/**
+ * Whether a landing logged at its cast's last landing's ms is that landing on a second enemy by its value (placeWith):
+ * within SAME_VALUE_TOLERANCE of the last one's, and not within it of what the next slot's multiplier would make it
+ * (nominalScale); crits and hits of unknown crit aside, and where a slot's multiplier is unknown, undecided (false).
+ */
+function sameByValue(cur: { readonly last: LogHit; readonly index: number; readonly slots: readonly Slot[] | null; readonly scales: ReadonlyMap<KitHit, number> }, h: LogHit): boolean {
+  const here = cur.slots?.[cur.index];
+  const next = cur.slots?.[cur.index + 1];
+  if (h.t !== cur.last.t || h.crit !== false || cur.last.crit !== false || !here || !next) return false;
+  const a = here.hits.map((k) => cur.scales.get(k));
+  const b = next.hits.map((k) => cur.scales.get(k));
+  if ([...a, ...b].some((m) => m === undefined)) return false;
+  const r = Math.log((h.uncapped ?? h.value) / (cur.last.uncapped ?? cur.last.value));
+  const tolerance = Math.log(SAME_VALUE_TOLERANCE);
+  if (!Number.isFinite(r) || Math.abs(r) > tolerance) return false;
+  return !(b as number[]).some((y) => (a as number[]).some((x) => Math.abs(r - Math.log(y / x)) <= tolerance));
+}
+
+/** How close (×, either way) a second enemy's landing's value is to the first's (sameByValue): the enemies' own debuffs differ a little (9c6e ×0.95). */
+const SAME_VALUE_TOLERANCE = 1.25;
+
 /** How much better (ms, summed over the landings) a realigned ultimate's slots must fit than the turn order (realignUltimates). */
 const REALIGN_MS = 150;
+
+/**
+ * A cast's landings of a key fewer than its slots, where the slots' kit hits differ in multiplier (nominalScale) by more
+ * than VALUE_TOLERANCE: the landings take the slots whose multipliers their logged values fit (one scale for the cast,
+ * within VALUE_TOLERANCE; crits and hits of unknown crit aside), and among those the slots their world time from the
+ * first landing fits best. Applied only where it leaves fewer landings off their slot's value than the placement did.
+ * The first landing keeps its slot unless the key is the cast's only one and a later first slot fits the landings' times
+ * better by REALIGN_MS or their values better; the cast then starts from it (startFor). 9c0bb09daff2: Camille's Hunter
+ * Pursuit at 13.37 s, its first hit unlogged: the logged 3556, 4302 and 22946 are hits 2–4 by their gaps (479 and 718 ms
+ * against the kit's 433 and 700) and the last's value (×5.3, hit 4's 3.2 against 0.6); placed as hits 1–3, the cast
+ * started 0.47 s late and its frame-70 Link came after Arcane's ultimate press. 791020039384: Tangtang's rogue wave
+ * (352,792 at 54.34 s, ×10 a stare's multiplier) placed on her eighth stare's slot by time, the wave replay-only.
+ */
+function realignByValue(
+  placed: Map<LogHit, PlacedHit>,
+  slotsOf: (c: LoggedCast, key: string) => readonly Slot[] | null,
+  scalesOf: (c: LoggedCast) => ReadonlyMap<KitHit, number>,
+  stops: readonly TimeStop[],
+  restart: (c: LoggedCast, h: LogHit, slot: Slot) => LoggedCast | null,
+): void {
+  const byCast = new Map<LoggedCast, Map<string, LogHit[]>>();
+  for (const [h, p] of placed) {
+    if (p.sameAs) continue;
+    const keys = byCast.get(p.cast) ?? new Map<string, LogHit[]>();
+    keys.set(h.event, [...(keys.get(h.event) ?? []), h]);
+    byCast.set(p.cast, keys);
+  }
+  const tolerance = Math.log(VALUE_TOLERANCE);
+  for (const [cast, keys] of byCast) {
+    for (const [key, hits] of keys) {
+      const s = slotsOf(cast, key);
+      const n = hits.length;
+      if (!s || n < 2 || n >= s.length || s.some((x) => x.hits.some((k) => k.landedCount !== undefined))) continue;
+      const scales = scalesOf(cast);
+      // Each slot's multipliers (its alternatives'); a slot with a hit of none leaves the values undecided.
+      const slotScales = s.map((x) => x.hits.map((k) => scales.get(k)));
+      if (slotScales.some((v) => v.some((m) => m === undefined))) continue;
+      const ms = slotScales as number[][];
+      const all = [...new Set(ms.flat())];
+      if (Math.max(...all) / Math.min(...all) <= VALUE_TOLERANCE) continue; // the values can't tell the slots apart
+      const list = [...hits].sort((a, b) => a.t - b.t);
+      const now = list.map((h) => (placed.get(h) as PlacedHit).index);
+      if (now.some((j, i) => j >= s.length || (i > 0 && j <= (now[i - 1] as number)))) continue;
+      // A crit's value, or a hit's whose crit the log doesn't say, isn't compared.
+      const value = (h: LogHit) => (h.crit === false ? (h.uncapped ?? h.value) : null);
+      const refs = list.flatMap((h) => {
+        const v = value(h);
+        return v !== null && v > 0 ? all.map((m) => v / m) : [];
+      });
+      if (refs.length === 0) continue;
+      const off = (i: number, j: number, ref: number) => {
+        const v = value(list[i] as LogHit);
+        return v === null || v <= 0 || (ms[j] as number[]).some((m) => Math.abs(Math.log(v / (m * ref))) <= tolerance) ? 0 : 1;
+      };
+      const offOf = (at: readonly number[]) => Math.min(...refs.map((r) => at.reduce((a, j, i) => a + off(i, j, r), 0)));
+      const before = offOf(now);
+      if (before === 0) continue;
+      const w = list.map((h) => worldMs((list[0] as LogHit).t, h.t, stops));
+      // The least (values off, time off) assignment with the first landing at slot j0, under one scale `ref`.
+      const fit = (j0: number, ref: number): { at: number[]; off: number; cost: number } | null => {
+        const base = (s[j0] as Slot).frame;
+        const cost = (i: number, j: number) => Math.abs((w[i] as number) - msOf((s[j] as Slot).frame - base));
+        const score = (o: number, c: number) => o * 1e9 + c;
+        const best: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(Infinity));
+        const from: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(-1));
+        (best[0] as number[])[j0] = score(off(0, j0, ref), 0);
+        for (let i = 1; i < n; i++)
+          for (let j = j0 + i; j <= s.length - (n - i); j++)
+            for (let k = j0 + i - 1; k < j; k++) {
+              const c = ((best[i - 1] as number[])[k] as number) + score(off(i, j, ref), cost(i, j));
+              // Ties keep the earlier slot.
+              if (c < ((best[i] as number[])[j] as number) - 1e-9) {
+                (best[i] as number[])[j] = c;
+                (from[i] as number[])[j] = k;
+              }
+            }
+        const last = best[n - 1] as number[];
+        let jEnd = -1;
+        for (let j = 0; j < s.length; j++) if (Number.isFinite(last[j] as number) && (jEnd < 0 || (last[j] as number) < (last[jEnd] as number) - 1e-9)) jEnd = j;
+        if (jEnd < 0) return null;
+        const at = new Array<number>(n);
+        for (let i = n - 1, j = jEnd; i >= 0; j = (from[i] as number[])[j] as number, i--) at[i] = j;
+        const o = Math.min(...refs.map((r) => at.reduce((a, j, i) => a + off(i, j, r), 0)));
+        return { at, off: o, cost: at.reduce((a, j, i) => a + cost(i, j), 0) };
+      };
+      const better = (a: { off: number; cost: number } | null, b: { off: number; cost: number } | null) => a !== null && (b === null || a.off < b.off || (a.off === b.off && a.cost < b.cost - 1e-9));
+      const bestOf = (j0s: readonly number[]) => {
+        let out: ReturnType<typeof fit> = null;
+        for (const j0 of j0s) for (const r of refs) {
+          const f = fit(j0, r);
+          if (better(f, out)) out = f;
+        }
+        return out;
+      };
+      const kept = bestOf([now[0] as number]);
+      const free = keys.size === 1 ? bestOf(Array.from({ length: s.length - n + 1 }, (_x, j) => j).filter((j) => j !== now[0])) : null;
+      // A start moved by time alone is judged by the landings no other cast's stop separates from the first: a stop's
+      // hold the log's clock doesn't follow isn't a reason to move it (791020039384: Tangtang's stares at 15-frame steps
+      // up to Liino's combo stop at 50.23 s, which fit her first logged stare at its frame 76 as well as at 91).
+      const clean = list.filter((h) => !stops.some((x) => msOf(x.start) < h.t && msOf(x.start + x.scales.length) > (list[0] as LogHit).t)).length;
+      const cleanCost = (f: { at: readonly number[] }) => f.at.slice(0, clean).reduce((a, j, i) => a + Math.abs((w[i] as number) - msOf((s[j] as Slot).frame - (s[f.at[0] as number] as Slot).frame)), 0);
+      const chosen = free !== null && (kept === null || free.off < kept.off || (free.off === kept.off && cleanCost(free) < cleanCost(kept) - REALIGN_MS)) ? free : kept;
+      if (chosen === null || chosen.off >= before) continue;
+      const first = chosen.at[0] as number;
+      const moved = first !== now[0] ? restart(cast, list[0] as LogHit, s[first] as Slot) : cast;
+      if (moved === null) continue;
+      list.forEach((h, i) => {
+        const p = placed.get(h) as PlacedHit;
+        const slot = s[chosen.at[i] as number] as Slot;
+        const { at: _at, ...rest } = p;
+        placed.set(h, { ...rest, cast: moved, index: chosen.at[i] as number, hits: slot.hits, frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) });
+      });
+      // Another enemy's landing of a realigned one (sameAs) takes its slot.
+      for (const [h, p] of placed) {
+        const q = p.sameAs && p.cast === cast ? placed.get(p.sameAs) : undefined;
+        if (q) placed.set(h, { ...q, sameAs: p.sameAs as LogHit });
+      }
+    }
+  }
+}
+
+/**
+ * How far a cast's landings' values may stray from one scale (×, either way) and still fit their slots' multipliers
+ * (realignByValue): the buffs that change within a cast (a Stagger's ×1.3, a susceptibility, an amp: 7910's stares
+ * 13,050 → 20,160, ×1.54) stay inside it, a final's or a wave's ×5–10 doesn't.
+ */
+const VALUE_TOLERANCE = 2;
 
 /**
  * The cast of the same skill, placed from another key, that a key's first logged landing belongs to: the latest that
