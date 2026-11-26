@@ -1,7 +1,7 @@
 // `zmdlogs clock` (packages/logs/src/clockview.ts): a kit buff's own clock in the replay against the log's run.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { clockView, devFixtures, kitBuffClock } from "@efsim/logs";
+import { CHECK_PAIR_MS, clockView, devFixtures, kitBuffClock, pairInstances } from "@efsim/logs";
 
 const data = loadGameData();
 const AMP = "chr_0036_jsspsi:ultimate_amp";
@@ -27,5 +27,15 @@ describe("a kit buff's clock (zmdlogs clock)", () => {
   it("prints a row per instance and refuses a kit buff the team lacks", () => {
     expect(clockView(data, logs, AMP)).toMatch(/c779: 1 instance\(s\)\n\s+16\.\d\d {2}first .* own .* ended .* ran out; check .*; log since/);
     expect(() => kitBuffClock(data, fx, "chr_0036_jsspsi:no_such_buff")).toThrow(/no kit buff/);
+  });
+
+  it("pairs the check's instances with the own clock's by the nearest start, not the same frame (round 15: c4f3's 68.50 s against 72.30 s)", () => {
+    const at = (start: number) => ({ start, first: null, own: null, ended: { at: null, how: "fight's end" } });
+    const [a, b, c] = [at(68500), at(110970), at(153700)];
+    const [x, y] = [at(72300), at(120770)];
+    const { paired, unpaired } = pairInstances([a, b, c], [x, y]);
+    expect(paired).toEqual([x, null, null]);
+    expect(unpaired).toEqual([y]);
+    expect(CHECK_PAIR_MS).toBe(5000);
   });
 });

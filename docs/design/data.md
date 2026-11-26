@@ -386,6 +386,40 @@ point, `zmdlogs check --simulate` (`simulateLog`), compares each logged
 hit with its landing's damage, with only crits, enemy HP and effects no
 kit models from the log: a diagnostic (journal 2026-10-25).
 
+**Each assumption kind's fact** (round 15, low-plain-low-mismatch report
+point 2: the replay read crits from the log that the check's primary
+reading never took, so 418 of Rossi's matches were "assumed: crit"). Per
+kind of assumption a reading can carry: the fact, where the replay decides
+it, what the primary reading takes, and when the check tries the others.
+The code is packages/logs/src/assumptions.ts `ASSUMPTION_FACTS` (a row per
+kind, so a new kind needs one); tests/assumption-facts.test.ts holds this
+table to it and checks, on a log's hit records, that an alternative of a
+fact the replay decides comes only with the replay's reason for not
+deciding it there (`zmdlogs assumed --operator <op>` folds them by kind).
+"Candidate" marks a fact the replay decides that the check still tries
+both ways: where the next "assumed, but the replay knew" is likeliest.
+
+| Kind | The fact | Decided by the replay | The primary reading takes | Alternatives tried |
+|---|---|---|---|---|
+| `crit` | whether a hit the log gives no crit flag crit | replaycrits.ts shownCrits, layerCrits, valueCrits (BuffReplay.critSource) | the replay's read crit, else none (engine assumption check-crits `replay`) | a crit where the replay read none; both ways in the log-listing fallback's readings (logcheck.ts candidates: candidate, a fallback stays one) |
+| `noCrit` | as crit | as crit | as crit | no crit where the replay read one |
+| `boundary` | whether a buff starting or ending at the hit applied | its kit buffs (BuffReplay.kitBuffNearChange: unsure within 500 ms); none for log-only buffs | the replay's kit buffs; log-only buffs inside the hit | a kit buff changing near the hit as listed or off; the log-only boundary buffs' subsets |
+| `corrosion` | Corrosion's level where the log lists it without a value | its own Corrosion at the landing (ramp, cap) | the replay's level | levels 1–4 where the replay has none at the hit |
+| `stacks` | a reaction status hit's level | its arts state, replayed again with the levels the log shows (logcheck.ts loggedReactionLevels) | the replay's level | every other level of a non-burst reaction, even where the log decided it (candidate) |
+| `kitHit` | which of the event's kit hits the logged hit is | the placement's landing on the path the replay took (logcasts.ts placeHits; engine paths.ts pathLandings) | the replay's landed hit | the event's other kit hits, always (a player's timing chooses some: Rossi's perfect combo); zmdlogs groups rows a cast matched only so |
+| `situational` | the enemy's side of a kit hit's condition (KitHit.if, extraScale) | its enemy state at the landing, not checked against the log's reactions | the replay's situation, its enemy side left open | taken as met and as not met (candidate: the replay's inflictions) |
+| `eventCount` | a combo's window count behind a value | the window it opened (ReplayCastFacts.windowCount) | the replay's count | counts 1–4 where the replay can't say |
+| `value` | what a value reads that only a fight knows (hitvalues.ts: consumed stacks, the enemy's stacks) | the operator's side from the landing's facts; the enemy's side not taken | the landing's facts | over the value's range where the facts don't say (candidate: the enemy's side) |
+| `unloggedCastBuff` | buffs the hit's cast consumed that the log doesn't list | the buffs its cast consumed (ReplayCastFacts.consumed) | the replay's | 0 up to the most layers where the replay can't say |
+| `unloggedOwnBuff` | the hitter's own kit buffs (or their crit parts) the log doesn't list | nothing | none | with them (logcheck.ts unloggedOwnBuffs), the old check's reading |
+| `link` | the Link stacks a battle skill or ultimate used | Cast.link (ReplayCastFacts.link) | the replay's | Link 0–4 where the replay can't say |
+| `enemyAura` | an enemy-side team aura the log doesn't list | nothing | none | with it (logcheck.ts unloggedEnemyAuras) |
+| `layers` | a layered buff's layers where the log lists it once | a kit buff it judges (its layers); none for one it can't judge | the replay's layers; one layer for an unjudged one | each count up to its maximum for an unjudged kit buff (enginecheck.ts unjudgedLayered) or a log-only one |
+| `unquantifiedFromKit` | the value of a buff the log lists without one | nothing | none | valued from the kit that names it (logcheck.ts unquantifiedFromKit) |
+| `stagger` | whether the enemy was Staggered at the hit | its Stagger, held to the log's listing (loggedStaggerSteps, holdStagger) | the replay's | the other way where the replay's Stagger changes within 500 ms |
+| `logListing` | every buff as the log lists it, where no engine reading fits | nothing | the engine's reading (a fallback match is the log's) | the log's listing, the fallback (LOG_LISTING) |
+| `recordEnd` | when a recording buff's record stopped before its burst | the recorded burst's record (recordedburst.ts) | the replay's record | the record's end shifted where the replay's burst value doesn't fit |
+
 **What the replay takes from the log** (round 3, 2026-11-18: one list of
 the "follow the log" mechanisms that grew one at a time in
 packages/logs/src/buffreplay.ts and logcheck.ts). Each row is something the

@@ -933,13 +933,28 @@ export function holdChanges(logs: readonly string[], before: ReadonlyMap<string,
     for (let i = 0; i < Math.max(a.length, b.length); i++) {
       const [x, y] = [a[i], b[i]];
       if (x && y && Math.abs(x.mid - y.mid) <= tolMs && Math.abs(x.early - y.early) <= tolMs && Math.abs(x.late - y.late) <= tolMs) continue;
-      moved.push(`unit ${i + 1}: ${x ? unit(x) : "-"} → ${y ? unit(y) : "-"} s`);
+      moved.push(`unit ${i + 1}: ${x ? unit(x) : "-"} → ${y ? unit(y) : "-"} s${pinChange(x, y)}`);
     }
     const head = `  ${k}: hidden holds ${a.length} → ${b.length} units (${s(a.length * 512)} → ${s(b.length * 512)} s), ${moved.length ? `${moved.length} placed elsewhere or new or gone` : "placed as before"}`;
     summary.push(head, ...moved.slice(0, examples).map((m) => `    ${m}`), ...(moved.length > examples ? [`    … ${moved.length - examples} more (hits.txt)`] : []));
     if (moved.length) full.push(`${k}:`, ...moved.map((m) => `  ${m}`));
   }
-  return { summary: summary.length ? ["Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s):", ...summary] : [], full };
+  return { summary: summary.length ? ["Hidden holds of the logs whose entry moved (--hits; zmdlogs holds' units: placed (earliest–latest), s; the bounds that set a moved unit's earliest or latest, where they changed: holds --verbose's pins):", ...summary] : [], full };
+}
+
+/**
+ * The clocks behind a moved hold unit (round 15, low-plain-low-mismatch report point 3: c4f3's units 10–21 moved 30 s
+ * and no line said which clock moved them): per side (earliest, latest), the bounds pinning it now that didn't before
+ * and those that no longer do (HoldUnit.earlyBy / lateBy; nothing where either side's code lacks them or they agree).
+ */
+export function pinChange(x: HoldUnit | undefined, y: HoldUnit | undefined): string {
+  const side = (name: string, was: readonly string[] | undefined, now: readonly string[] | undefined): string[] => {
+    if (!was || !now) return [];
+    const [added, gone] = [now.filter((t) => !was.includes(t)), was.filter((t) => !now.includes(t))];
+    return added.length || gone.length ? [`${name} ${[...added.map((t) => `+${t}`), ...gone.map((t) => `−${t}`)].join(", ")}`] : [];
+  };
+  const parts = [...side("earliest held back by", x?.earlyBy, y?.earlyBy), ...side("latest forced by", x?.lateBy, y?.lateBy)];
+  return parts.length ? `; ${parts.join("; ")}` : "";
 }
 
 /**

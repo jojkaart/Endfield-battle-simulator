@@ -41,6 +41,13 @@ export interface HoldUnit {
   readonly mid: number;
   readonly early: number;
   readonly late: number;
+  /**
+   * The bounds that set its earliest and latest time (holds.ts holdPins: the clocks a unit's move comes from; tags as
+   * `zmdlogs holds --verbose` prints them), where the commit's code has them (round 15, low-plain report point 3: a
+   * cascade through the placement took three views to trace to the clock that moved it).
+   */
+  readonly earlyBy?: readonly string[];
+  readonly lateBy?: readonly string[];
 }
 /** A log's per-hit fit: over every logged hit with a primary reading, how many and the mean |logged ÷ primary − 1|. */
 export interface PerHit {
@@ -140,8 +147,18 @@ function holdUnits(h: any): HoldUnit[] | undefined {
     const [t0, t1, p0, p1] = [h.times[i - 1], h.times[i], P[i - 1] as number, P[i] as number];
     return p1 === p0 ? t1 : t0 + ((m - p0) / (p1 - p0)) * (t1 - t0);
   };
+  // The bounds pinning each unit, as holdsView's --verbose (the node before the one the earliest reaches it at; the one the latest does).
+  const pins = (node: number, side: "early" | "late"): string[] | undefined => {
+    if (typeof logs.holdPins !== "function" || node < 0 || !Array.isArray(h.earlyFrom)) return undefined;
+    const p = logs.holdPins(h, node, side);
+    return [...(p.total ? ["the least total"] : []), ...p.bounds.map((b: any) => String(b.tag))];
+  };
   const out: HoldUnit[] = [];
-  for (let m = 256; m < h.total; m += 512) out.push({ mid: reaches(h.mid, m), early: reaches(h.early, m), late: reaches(h.late, m) });
+  for (let m = 256; m < h.total; m += 512) {
+    const [i, j] = [(h.early as number[]).findIndex((x) => x >= m - 1e-6), (h.late as number[]).findIndex((x) => x >= m - 1e-6)];
+    const [earlyBy, lateBy] = [pins(i - 1, "early"), pins(j, "late")];
+    out.push({ mid: reaches(h.mid, m), early: reaches(h.early, m), late: reaches(h.late, m), ...(earlyBy ? { earlyBy } : {}), ...(lateBy ? { lateBy } : {}) });
+  }
   return out;
 }
 
