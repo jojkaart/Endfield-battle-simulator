@@ -19,13 +19,13 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "FORCED" | "INSIDE" | "CUTS";
+  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
   readonly operator: string;
   readonly text: string;
 }
 
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "FORCED", "INSIDE", "CUTS"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "LINK", "FORCED", "INSIDE", "CUTS"];
 
 /** The replay's decisions (BuffReplay.skipped, tailCuts, failed, missed, made, castFlags), in time order. */
 export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLine[] {
@@ -42,6 +42,13 @@ export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLin
     if (m.inferred !== undefined && m.cast.listed) out.push({ t: msOf(m.frame), kind: "INFER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (no logged hit or cast event): ${m.inferred}` });
     else if (m.inferred !== undefined) out.push({ t: msOf(m.frame), kind: "INFER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (logged at ${s(m.cast.start)}): a hitless press made from the listing (hitless-presses inferred): ${m.inferred}` });
     else if (m.skillId !== m.cast.skillId) out.push({ t: msOf(m.frame), kind: "MADE", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.cast.skillId)} (placed at ${s(m.cast.start)}) made as ${shortSkill(m.skillId)}` });
+    // Two casts of one operator at one frame (totals-off report point 1: db87's forced normal_skill beside the placed
+    // normal_skill_during_ult, one press, the phantom taking the Link): each says so.
+    const beside = replay.made.filter((o) => o !== m && !o.cast.missed && o.cast.operator === m.cast.operator && Math.abs(o.frame - m.frame) <= 1);
+    if (beside.length) out.push({ t: msOf(m.frame), kind: "MADE", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (${m.cast.landings.length ? "placed" : "logged"} at ${s(m.cast.start)}) made at the frame of ${beside.map((o) => `${shortSkill(o.skillId)} (${o.cast.landings.length ? "placed" : "logged"} at ${s(o.cast.start)})`).join(", ")} too: two casts for one press?` });
+    // Link: the stacks the team gained in its step (by expiry less LINK_FRAMES), and those the cast took (Cast.link).
+    for (const g of m.linkGained ?? []) out.push({ t: msOf(g.frame), kind: "LINK", operator: m.cast.operator, text: `+${g.n} Link stack(s) for the team at ${s(msOf(g.frame))}, in the step of ${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))})` });
+    if (m.link) out.push({ t: msOf(m.frame), kind: "LINK", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}) took ${m.link} Link stack(s)` });
     // A kit jump the logged landings contradicted (drivers.ts replayCast `dropped`): the path the cast took is the log's.
     for (const j of m.dropped ?? []) {
       const at = j.landings.map((l) => `${l.hitId}@${s(msOf(l.frame))}`).join(", ");

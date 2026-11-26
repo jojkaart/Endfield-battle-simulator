@@ -20,7 +20,7 @@
 // file is the one named here.
 
 import {
-  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
+  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
   type GameData, type KitHit, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -207,6 +207,26 @@ export interface MadeCast {
   readonly inferred?: string;
   /** The kit jumps its logged landings contradicted, which the engine dropped (JUMPDROP lines). */
   readonly dropped?: readonly JumpDrop[];
+  /** The Link stacks it used (Cast.link; absent: none): LINK lines. */
+  readonly link?: number;
+  /**
+   * The team's Link stacks gained from its frame to the next cast's (TimelineState.link's new expiries, each at its
+   * expiry less LINK_FRAMES): where a stack came from, beside the cast that took it (totals-off report point 1: db87's
+   * Link went to a phantom normal_skill, found by a scratch script over the replay's landings).
+   */
+  readonly linkGained?: readonly { readonly frame: number; readonly n: number }[];
+}
+
+/** The Link stacks gained between two states (new expiries in TimelineState.link, by the frame each was gained). */
+export function linkGains(before: Pick<TimelineState, "link">, after: Pick<TimelineState, "link">): { frame: number; n: number }[] {
+  const left = [...before.link];
+  const gained = new Map<number, number>();
+  for (const f of after.link) {
+    const i = left.indexOf(f);
+    if (i >= 0) left.splice(i, 1);
+    else gained.set(f - LINK_FRAMES, (gained.get(f - LINK_FRAMES) ?? 0) + 1);
+  }
+  return [...gained].sort((a, b) => a[0] - b[0]).map(([frame, n]) => ({ frame, n }));
 }
 
 /** A fact the replay knows, or why it doesn't (the log check then tries alternatives, labelled with the reason). */
@@ -548,7 +568,12 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     skipped: main?.skipped ?? [],
     tailCuts: [...cuts].map(([cast, frame]) => ({ cast, frame })),
     inferred: new Map((main?.made ?? []).flatMap((m) => (m.inferred !== undefined ? [[m.index, m.inferred] as const] : []))),
-    made: (main?.made ?? []).map((m) => ({ cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}) })),
+    made: (main?.made ?? []).map((m, k, all) => {
+      // Gained at the cast and in the advance to the next one (the last one's: to its post state).
+      const next = all[k + 1];
+      const gained = [...linkGains(m.pre, m.post), ...(next ? linkGains(m.post, next.pre) : [])];
+      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
+    }),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
       if (i === undefined || landed.has(String(i)) || !main) return null;
