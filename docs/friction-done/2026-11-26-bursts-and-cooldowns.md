@@ -71,3 +71,10 @@ factor in 04d4 and test 33's reaction case, beside a parallel agent on the infer
 - `zmdlogs holds --verbose` showing each dropped bound's conflict partners, and `holds --why`'s per-instance verdicts:
   the "dropped as conflicting" with Stagger-bound partners pointed straight at the still span.
 - `zmdlogs lanes --buff` across a fight made the 6–7 s pattern visible across unrelated buffs.
+
+## Outcome (round 15)
+
+- 1 (Two views disagree on what a "stop" is, and one of them misled an earlier round): done (cfdfb68): castassembly.ts replayStops, the one list the hold placement and query.ts replayTimeStops read, by the replay's made casts (BuffReplay.made): a hitless event of a tick skill the replay didn't make is no stop; `zmdlogs worldtime` replays (it takes --assume now) and prints such an event as a line without frames (4d60 106.47 s, tests/query.test.ts); no log moved
+- 2 (The replay's Stagger windows were wrong by 10 s and nothing said so): the flag done (678f743): `zmdlogs stagger` flags a replay window starting over a second from the log's first Staggered hit (views.ts staggerLine, STAGGER_START_FLAG_MS); the recorded `since` on TimelineState.stagger carried (2026-11-26-backlog-after-round-15.md point 4)
+- 3 (File ownership by "the other replay modules" is ambiguous): done (678f743): `node scripts/lead-files.ts --family <replay|placement|check|holds|views|timeline>` prints a family's files for a brief (FAMILIES, each file checked to exist by tests/lead-files.test.ts); the CLAUDE.md line ("a brief lists files, never a family") proposed in the round summary's "For the lead"
+- 4 (No probe for "which build changes give this factor"): carried (2026-11-26-backlog-after-round-15.md point 2)

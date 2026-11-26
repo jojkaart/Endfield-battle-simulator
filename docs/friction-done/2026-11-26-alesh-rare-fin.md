@@ -61,3 +61,10 @@ the worktree agent-a767e0777534906f8 from main 4569c99.
 - `node scripts/cli-ab.ts 4569c99 -- zmdlogs totals <fixture>` explained a9d7's slightly further total (the replay-only
   Rare Fin landings gone, 56k → 16k) in one command.
 - The probes' scratch template and `devFixtures({ ids })` made one-off checks of the listing a few lines each.
+
+## Outcome (round 15)
+
+- 1 (A measure against snapshots another commit's code wrote): done (cfdfb68): with none of --base, --against and --at named and the snapshots at HEAD not the code's own up to the merge base with main, measure measures that merge base's code as --base and its first line and heading say so (measure.ts defaultReference; `--against-snapshots` keeps the snapshots); docs/design/tests.md "Its default reference"
+- 2 (Two paths' hits paired by their keys alone): done (93d0f8a): engine timeline/paths.ts pathTwin (same keys, the frames nearest the hit's moved by the jump, as many first), skippedHits and pathLandings, which the control path, the chance path and castassembly.ts chancePathHits read; controlPathLandings and chancePathLandings gone; no log moved (measure --base 32dfacd), team-ab unchanged
+- 3 (A buff's decidability is computed before the casts exist): done (03ac29d), the structural half: replaycrits.ts buffDecidability, one reason per kit buff asked once, which buffreplay.ts's two loops read; a per-log reason goes there. Not moved after assembleCasts: the per-log reason the report built (P3 decided where every cast's path came from the listing) isn't in main, where chancePathBuff still leaves P3 undecided in every log (the check reads the log's listing for it); buffDecidability is where that reason would go, with the casts as a parameter
+- 4 (The worktree guard refusing a plain sed with an inserted line): done (678f743): bash-guard refuses a `sed -i '<n>a\'` insertion first, naming the Edit tool and scripts/edit.ts

@@ -127,6 +127,9 @@ export function damagedText(text: string): DamagedLine[] {
     [/\S {2,}\S/, "two spaces between words", "prose"],
     [/(^|[^\w\]])\(\s*\)/, '"()" with nothing in it', "prose"],
     [/\w [,.)](\s|$)/, "a space before a comma, full stop or parenthesis", "prose"],
+    // A merge's conflict markers left in (round 15: docs/roadmap.md carried a `>>>>>>> 9e1904d` and two halves of one
+    // item from a merge until this round found it).
+    [/^(<<<<<<<|>>>>>>>)( \S+)?$/, "a merge's conflict marker", "raw"],
   ];
   prose.forEach((p, i) => {
     if (/^\s*\|/.test(p) || /^\s*<!--/.test(p)) return;

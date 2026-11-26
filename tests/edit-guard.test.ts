@@ -75,6 +75,9 @@ describe("a shell substitution's damage in a doc", () => {
     ]);
     expect(damagedText("a `` ` `` double span\n```\nfenced  block\n```\n| a  table |\n| row  |")).toEqual([]);
     expect(damagedText("a span `over\ntwo  lines` is code")).toEqual([]);
+    // A merge's conflict markers (round 15: docs/roadmap.md had one).
+    expect(damagedText("text\n>>>>>>> 9e1904d\nmore").map((d) => d.why)).toEqual(["a merge's conflict marker"]);
+    expect(damagedText("<<<<<<< HEAD").map((d) => d.why)).toEqual(["a merge's conflict marker"]);
   });
 
   it("no doc in the repository has any (scripts/check-links.ts prints them)", () => {
