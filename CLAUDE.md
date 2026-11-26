@@ -270,7 +270,11 @@ another agent's file goes back as a measured diff in docs/tried/, "held
 back", for the lead to apply after the merge), and
 merge with `npm run merge -- <branch>…` (one or a batch; rebuilds the
 journal, runs the tests related to code both sides changed, says when
-snapshots need `npm run snapshots:update`: once per batch).
+snapshots need `npm run snapshots:update`: once per batch). Once a
+branch's merge is committed and tested (its premerge passed, the merge's
+related tests passed, pushed), remove its worktree and the `scratch/at/`
+copies inside it (`git worktree remove`; the branch stays), so finished
+worktrees don't fill the disk (the owner, 2026-11-26: 66 of them, 28 GB).
 
 ## Friction reports
 
