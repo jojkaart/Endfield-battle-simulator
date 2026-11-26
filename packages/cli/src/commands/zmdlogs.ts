@@ -93,6 +93,13 @@ export default command({
                                           of --assume) changes, both sides and the modifiers only one has, then a
                                           count per change (measure --hits for these logs, no lock; repeatable)
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
+                [--same-listing s]        Instead (one fixture): the hit at that moment and the nearest hits with the
+                                          very same listing (buff, source, value), with their verdicts and a count by
+                                          class: a listing difference that reads plain next door is no cause
+                                          (--operator, --event, --kind pick the hit at the moment)
+                [--listed <regex>]        Only hits listing a matching buff (effects or boundary); text lines end with
+                                          those entries' sources, sinces and values (--all --event: one hit key's
+                                          listings across logs)
                 [--reading log]           Text lines also give the log's reading and its error: off under both is the
                                           build or a kit value, off only under the primary the replay's timing
                 [--zones]                 Text lines also give the primary reading's zones, the replay's crit and
@@ -350,6 +357,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     assume: { type: "string", multiple: true, default: [] },
     against: { type: "string", multiple: true, default: [] },
     "no-foods": { type: "boolean", default: false },
+    "same-listing": { type: "string" },
+    listed: { type: "string" },
     all: { type: "boolean", default: false },
     event: { type: "string" },
     "fixtures-from": { type: "string" },
@@ -513,7 +522,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const window = { ...seconds(values.from, "from"), ...seconds(values.to, "to") };
       const against = values.against.length ? parseAssume(ctx.data(), values.against) : {};
       if (values.against.length && values.json) throw new Error("zmdlogs hits --against prints the changed hits as text lines (no --json)");
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, progress });
+      const sameAt = values["same-listing"] !== undefined ? Number(values["same-listing"]) * 1000 : undefined;
+      if (sameAt !== undefined && !Number.isFinite(sameAt)) throw new Error("zmdlogs hits --same-listing takes seconds");
+      if (sameAt !== undefined && (values.against.length || values.json || values.listed !== undefined)) throw new Error("zmdlogs hits --same-listing prints text lines alone (no --against, --json or --listed)");
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });

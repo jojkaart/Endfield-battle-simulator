@@ -20,6 +20,7 @@ import { fitBuild, type BuildCandidate } from "./buildfit.ts";
 import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
 import { assumedView } from "./assumedview.ts";
+import { hitOfRecord, listedEntryWords, sameListingLines } from "./listingview.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -86,17 +87,45 @@ export interface RecordFilter {
  * `efsim zmdlogs hits`: the per-hit records of the selected logs (never a hold-out); on worker threads when `workers`
  * (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called); from the per-fixture cache when
  * the code and the fixture are unchanged (hitsCacheKey). `reading` "log": the text lines also give the log's reading.
+ * `sameListing` (ms, one fixture): the hit there and its nearest neighbours with the same listing (listingview.ts);
+ * `listed`: only the hits listing a matching buff (effects or boundary), each text line with those entries' sources,
+ * sinces and values (round 16, arcane-will report point 1).
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly listed?: RegExp; readonly progress: (line: string) => void }): Promise<string> {
   // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
   const assume = opts.assume ?? {};
   const under = Object.keys(assume).length > 0;
   const files = withOperatorsOnly(selectedFiles(sel, "hits"), opts.operators, opts.progress);
+  if (opts.sameListing !== undefined) {
+    const [file] = files;
+    if (files.length !== 1 || file === undefined) throw new Error("zmdlogs hits --same-listing <s> takes one fixture (--operator, --event, --kind pick the hit at that moment)");
+    // Every hit of the fight is a neighbour: the filter picks the hit at the moment only.
+    const all = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !under, assume);
+    const pick = (r: HitRecord) => filterRecords([r], { ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.event ? { event: opts.event } : {}) }).length > 0;
+    return sameListingLines(all, readLogFixture(file), opts.sameListing, pick).join("\n");
+  }
   const records = await collectRecords(data, files, opts.workers, opts, opts.progress, (opts.cache ?? true) && !under, assume);
   // --against: the hits another reading (on top of --assume) changes, paired with these (recordChanges).
   if (opts.against && Object.keys(opts.against).length) {
     const other = await collectRecords(data, files, opts.workers, opts, opts.progress, false, { ...assume, ...opts.against });
     return recordChanges(records, other).join("\n");
+  }
+  const listed = opts.listed;
+  if (listed) {
+    const hitOf = new Map<string, ReturnType<typeof hitOfRecord>>();
+    const of = (r: HitRecord) => {
+      let f = hitOf.get(r.fixture);
+      if (!f) hitOf.set(r.fixture, (f = hitOfRecord(readLogFixture(r.fixture))));
+      return f(r);
+    };
+    return records
+      .flatMap((r) => {
+        const h = of(r);
+        const words = h ? listedEntryWords(h, listed) : [];
+        if (!words.length) return [];
+        return [opts.json ? formatRecord(r, true) : `${formatRecord(r, false, opts.reading, opts.zones === true)}  listed: ${words.join("; ")}`];
+      })
+      .join("\n");
   }
   return records.map((r) => formatRecord(r, opts.json, opts.reading, opts.zones === true)).join("\n");
 }

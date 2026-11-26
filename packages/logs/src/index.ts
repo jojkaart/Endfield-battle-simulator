@@ -38,6 +38,7 @@ export * from "./views.ts";
 export * from "./query.ts";
 export * from "./clockview.ts";
 export * from "./endsview.ts";
+export * from "./listingview.ts";
 export * from "./burstsview.ts";
 export * from "./clocksview.ts";
 export * from "./castpairs.ts";
