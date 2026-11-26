@@ -853,6 +853,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     const groupsWith = (key: string, t?: number) =>
       groups.filter((g) => g.hits.some((h) => h.events.includes(key) && !(t !== undefined && offField(h) && controlled(build.operator, t))));
     const kitSkills = new Set(groups.filter((g) => g.kind !== null).map((g) => g.skillId));
+    const basicSkills = new Set(groups.filter((g) => g.kind === "basic").map((g) => g.skillId));
     // Not one logged at another operator's time-stopping cast's event: pressed during its stop, the log has it at the
     // stop's end (5082ceaffad1: Yvonne's and Ardelia's combos at Seraph's ultimate's 33.71 s; e82d45c46040: Li Zhiyan's at
     // 3.90 s, her seal at 7.02 s at frame 15 only after Jsspsi's and her own ultimates).
@@ -908,7 +909,13 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const next = cur?.slots?.[cur.index + 1];
         const head = cur?.slots?.[0];
         const onTime = cur !== undefined && next !== undefined && head !== undefined && Math.abs(elapsed - msOf(next.frame - head.frame)) <= ON_TIME_MS;
-        const superseded = cur !== undefined && next !== undefined && !onTime && !next.hits.some((x) => x.detached || x.launch !== undefined) &&
+        // A launched entity's next landing is on its way only near its frame: not 7 s later (3aa6ab93bad4: Zhuang
+        // Fangyi's attack 4 at 98.59 s, cut after two range ticks, took attack 2's at 106.11 s, past her combo, battle
+        // skill and attack 1; attack 4 lasts 170 frames).
+        // Every stop holds it but its own cast's (joinable).
+        const launched = cur !== undefined && next !== undefined && head !== undefined && next.hits.some((x) => x.launch !== undefined) &&
+          worldMs(cur.first, h.t, stops.filter((s) => s.operator !== build.operator || s.skillId !== cur.cast.skillId)) <= msOf(next.frame - head.frame) + CAST_SLACK_MS;
+        const superseded = cur !== undefined && next !== undefined && !onTime && !next.hits.some((x) => x.detached && x.launch === undefined) && !launched &&
           [...opened.values()].flat().some((c) => c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t);
         const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
         // A variant's slot may never come (variantOrder): a logged press of a skill of the cast's kind since its first
@@ -980,7 +987,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           return !(opened.get(g.id) ?? []).some((c) => c.start > since);
         };
         const eligible = candidates.filter(anchorFree);
-        const choice = late ? null : choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops, (id) => data.skills[id]?.timing);
+        const choice = late ? null : choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops, (id) => (basicSkills.has(id) ? data.skills[id]?.timing : undefined));
         const g: Group = late?.g ?? (choice as { g: Group }).g;
         const chosen: CastChoice | null = candidates.length < 2 ? null : late ? { rule: "late", candidates: candidates.map((x) => x.id) } : (choice as { why: CastChoice }).why;
         const s = slots(g, h.event);
@@ -1343,7 +1350,7 @@ const ANCHOR_MS = 1500;
  * hover attacks): the replay casts the step the engine allows
  * (replayrun.ts replayedSkill).
  */
-function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prevs: readonly { cast: LoggedCast; timing: SkillTiming | null | undefined }[], stops: readonly TimeStop[], timingOf: (skillId: string) => SkillTiming | null | undefined): { readonly g: Group; readonly why: CastChoice } {
+function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prevs: readonly { cast: LoggedCast; timing: SkillTiming | null | undefined }[], stops: readonly TimeStop[], basicTiming: (skillId: string) => SkillTiming | null | undefined): { readonly g: Group; readonly why: CastChoice } {
   const ids = candidates.map((g) => g.id);
   const pick = (g: Group, why: Omit<CastChoice, "candidates">) => ({ g, why: { ...why, candidates: ids } });
   if (candidates.length === 1 || !starts) return pick(candidates[0] as Group, { rule: "first" });
@@ -1401,13 +1408,17 @@ function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<str
     if (next) return pick(next, { rule: "window", by: { skillId: prev.cast.skillId, start: prev.cast.start } });
     // A basic-attack step between whose keys the log lacks (its hits missed): a candidate its windows list, within both
     // actions, is the chain going on, not a restart (4d60e7fe92c2 148.72 s, 4bfc6f3e84b8 136.59 s: Zhuang Fangyi's attack
-    // 4 after an attack 2, no attack 3 swords logged, ×3.125 attack 2's range hit, her attack 5 after it).
-    if (candidates.every((g) => g.kind === "basic") && !timing.keepsChain) {
+    // 4 after an attack 2, no attack 3 swords logged, ×3.125 attack 2's range hit, her attack 5 after it). Only basic
+    // steps, the candidate's start within the two windows' sum plus CAST_SLACK_MS.
+    if (prev.cast.kind === "basic" && candidates.every((g) => g.kind === "basic") && !timing.keepsChain) {
       for (const via of listed) {
-        const t2 = timingOf(via);
+        const t2 = basicTiming(via);
         if (!t2 || candidates.some((g) => g.skillId === via)) continue;
-        const listed2 = new Set(t2.windows.flatMap((w) => w.skills));
-        const step = candidates.find((g) => listed2.has(g.skillId) && start(g) >= prev.cast.start && worldMs(prev.cast.start, start(g), held) <= msOf(timing.durationFrames + t2.durationFrames) + CAST_SLACK_MS);
+        const step = candidates.find((g) => {
+          if (start(g) < prev.cast.start) return false;
+          const at = worldMs(prev.cast.start, start(g), held);
+          return timing.windows.some((w1) => w1.skills.includes(via) && t2.windows.some((w2) => w2.skills.includes(g.skillId) && Math.max(0, msOf(w1.from + w2.from) - at, at - msOf(w1.to + w2.to)) <= CAST_SLACK_MS));
+        });
         if (step) return pick(step, { rule: "window", by: { skillId: prev.cast.skillId, start: prev.cast.start }, via });
       }
     }
