@@ -81,9 +81,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   2026-11-26: the replay's read crits are the primary reading's, `check-crits`, a status's crit counts for triggers on
   crits, Rossi 51.9 → 73% plain; the fights outside ±5% 2026-11-26: a cast event logged as its button's other variant
   (db87's Link), tail cuts take detached hits (c83c, hold-out 8.4 → 7.4%), a carried Corrosion above its cap unclamped
-  (7910 −6.1 → 0.0%)): next Pogranichnik's SP-driven team buffs (Chen, Lifeng, the Endministrator), slots by value
-  within a cast (9c0b's Hunter Pursuit and its Link, 7910's rogue wave), other whole-game pauses outside a Stagger,
-  0c14's Stagger at its breaking hit, a chance path from the values.
+  (7910 −6.1 → 0.0%); slots and paths by value 2026-11-26: a cast's slots by its landings' values (9c0b's Hunter
+  Pursuit), Pogranichnik's combo path by its slashes' values and once (his bank's Fervent Morale on time), a Breach's
+  Arts Intensity after its hit's before-damage triggers, a second enemy's landing by value (9c6e)): next the Vulnerable
+  stacks a Breach consumed read from the next combo's path (c4f3 13.07 s), 7910's early rogue wave with no logged
+  dive, other whole-game pauses outside a Stagger, 0c14's Stagger at its breaking hit.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

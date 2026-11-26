@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 78.1% | 99.3% | 0.0% | 1.5% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 72.7% | 86.5% | 10.6% | 6.3% | 28 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 73.8% | 86.6% | 10.5% | 6.1% | 28 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.1% | 92.7% | 5.6% | 7.4% | 9 |
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 73.0% | 88.0% | 11.7% | 3.5% | 21 |
-| All but the hold-outs | 61 | 29035 | 72.9% | 87.4% | 10.8% | 4.8% | 55 |
+| All but the hold-outs | 61 | 29035 | 73.6% | 87.5% | 10.7% | 4.7% | 55 |
 
 ## Where the total's error lives
 
@@ -39,7 +39,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | Logs | Fights | \|Matched\| | Replay-only | Log-only | One-sided |
 |---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 1.5% | 0.5% | 0.1% | 2 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 4.2% | 5.5% | 3.4% | 25 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 4.0% | 5.3% | 3.4% | 25 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 1.9% | 4.1% | 5.2% | 12 |
 | Earlier pending (imported before the hold-out split) | 23 | 3.2% | 1.6% | 1.0% | 16 |
 
@@ -47,10 +47,10 @@ over |matched|, so the error is in what lands, not in its scale.
 
 | Operator | Fights | Hits | Plain | Mismatch | Mean \|damage error\| |
 |---|---|---|---|---|---|
-| chr_0002_endminm | 1 | 310 | 52.6% | 2.9% | 2.1% |
+| chr_0002_endminm | 1 | 310 | 52.9% | 2.6% | 2.1% |
 | chr_0003_endminf | 2 | 162 | 90.7% | 0.0% | 1.2% |
 | chr_0004_pelica | 11 | 1076 | 79.7% | 11.0% | 17.3% |
-| chr_0005_chen | 6 | 810 | 38.8% | 8.0% | 1.4% |
+| chr_0005_chen | 6 | 810 | 43.0% | 7.9% | 1.4% |
 | chr_0006_wolfgd | 7 | 808 | 81.8% | 11.9% | 14.8% |
 | chr_0007_ikut | 2 | 257 | 93.4% | 1.9% | 4.8% |
 | chr_0009_azrila | 4 | 388 | 13.1% | 80.2% | 2.5% |
@@ -59,23 +59,23 @@ over |matched|, so the error is in what lands, not in its scale.
 | chr_0013_aglina | 15 | 1174 | 84.5% | 7.8% | 3.2% |
 | chr_0014_aurora | 2 | 250 | 9.6% | 88.8% | 4.2% |
 | chr_0015_lifeng | 2 | 260 | 43.5% | 1.9% | 0.9% |
-| chr_0016_laevat | 13 | 1497 | 79.3% | 5.0% | 14.0% |
+| chr_0016_laevat | 13 | 1497 | 79.7% | 4.8% | 12.8% |
 | chr_0017_yvonne | 2 | 323 | 71.2% | 0.3% | 2.5% |
 | chr_0019_karin | 2 | 202 | 94.1% | 0.0% | 0.7% |
 | chr_0020_meurs | 1 | 252 | 75.8% | 13.9% | 0.9% |
-| chr_0021_whiten | 5 | 289 | 53.3% | 3.1% | 5.1% |
+| chr_0021_whiten | 5 | 289 | 59.9% | 3.1% | 5.1% |
 | chr_0022_bounda | 1 | 56 | 89.3% | 0.0% | 4.3% |
-| chr_0024_deepfin | 4 | 169 | 55.0% | 20.1% | 4.1% |
-| chr_0025_ardelia | 11 | 1470 | 82.2% | 10.2% | 3.0% |
+| chr_0024_deepfin | 4 | 169 | 66.9% | 20.1% | 4.1% |
+| chr_0025_ardelia | 11 | 1470 | 83.2% | 9.7% | 3.0% |
 | chr_0026_lastrite | 4 | 156 | 67.3% | 0.6% | 1.6% |
-| chr_0027_tangtang | 2 | 265 | 70.2% | 5.7% | 3.5% |
+| chr_0027_tangtang | 2 | 265 | 70.2% | 5.7% | 3.6% |
 | chr_0028_wulfa | 10 | 2305 | 73.2% | 5.1% | 1.7% |
-| chr_0029_pograni | 5 | 649 | 41.9% | 0.6% | 5.0% |
+| chr_0029_pograni | 5 | 649 | 52.1% | 0.6% | 2.8% |
 | chr_0030_zhuangfy | 5 | 1392 | 65.4% | 16.2% | 9.0% |
-| chr_0031_mifu | 5 | 471 | 78.6% | 0.8% | 1.2% |
-| chr_0032_lizhiyan | 40 | 5688 | 76.7% | 12.5% | 12.5% |
-| chr_0033_camille | 10 | 1004 | 90.0% | 4.2% | 16.2% |
-| chr_0034_typhoea | 12 | 2081 | 78.8% | 8.6% | 2.3% |
-| chr_0035_liino | 19 | 1469 | 71.1% | 15.5% | 16.6% |
-| chr_0036_jsspsi | 29 | 3060 | 74.8% | 7.7% | 4.4% |
+| chr_0031_mifu | 5 | 471 | 78.8% | 0.8% | 1.2% |
+| chr_0032_lizhiyan | 40 | 5688 | 76.9% | 12.4% | 12.6% |
+| chr_0033_camille | 10 | 1004 | 90.4% | 4.2% | 13.4% |
+| chr_0034_typhoea | 12 | 2081 | 78.9% | 8.4% | 2.3% |
+| chr_0035_liino | 19 | 1469 | 71.1% | 15.5% | 16.7% |
+| chr_0036_jsspsi | 29 | 3060 | 74.9% | 7.7% | 4.3% |
 | chr_0038_purrche | 3 | 290 | 63.8% | 29.7% | 25.4% |

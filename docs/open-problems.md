@@ -96,7 +96,10 @@ inference reads (57 of Rossi's).
   `valuePaths`, replayCast `kitJumps`; PATH lines in `zmdlogs decisions`): the third slash ×3.13 the first is the
   4-stack path's 2.97, ×1.36–1.85 the 3-stack path's 1.49 (25 combos, all as the values say). c4f3's first Fervent
   Morale 15.97 → 34.03 s (the log's 34.04 s Breach), d4fb's 194.43 s layer (none in the log) gone, 174.50 s (log
-  174.03 s). **Still open:** c4f3 13.07 s's Breach consumed three stacks in the replay, four in the game (its combo's
+  174.03 s). A Breach now takes its applier's Arts Intensity after its hit's before-damage triggers (timeline
+  landing.ts: the data's SP before its FractureAction, so the bank's layer counts). Pogranichnik plain 41.9 → 52.1%,
+  Chen 38.8 → 43.0% (docs/accuracy.md). **Still open:** d4fb 86.67 s (the bank reaches 80 at a harass 0.3 s later in
+  the replay: its Breach and hit ×1.074 without the layer); c4f3 13.07 s's Breach consumed three stacks in the replay, four in the game (its combo's
   path says so; the battle skill's SP is atb3 where the game's was atb4); the harasses' layers on whom (c4f3 68.83 s
   on Pogranichnik in the log, the replay's at 71.17 s twice); a9d7 197.07 s (a layer the log lists from 205.06 s).
   de6a 26–61 s ×1.004 on every Pogranichnik hit and the ×1.003 on the Endministrator's d4fb fallbacks: a small

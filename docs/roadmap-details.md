@@ -307,6 +307,18 @@ crits: events.ts statusCritMatches). Next: Pogranichnik's Thermite Cutter and Fe
 doesn't record ("Team SP"), behind most of Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's
 Wolven Blood final ending 5 s late (a clock).
 
+**Slots and paths by value (2026-11-26, [journal](journal/2026-11-26-12-slots-and-paths-by-value-hunter-pursuit-pogranichnik-s-combo.md)):**
+a cast's landings fewer than its slots take the slots their values fit (logcasts.ts realignByValue: 9c0b's Hunter
+Pursuit hits 2–4, db87's Camille ultimate, a27b's Mi Fu, 00ae's Arcane lasers); neither of Pogranichnik's buffs reads
+the team's SP: Thermite Cutter was right (its `other values` the listing's, once per application), Fervent Morale's
+bank was fed twice by combos landed on both paths (now the landings go onto the path the cast took, and the values
+choose the path where they decide: castassembly.ts valuePaths); a Breach's Arts Intensity after its hit's
+before-damage triggers; a second enemy's landing by value (9c6e's Liino combo). Development plain 72.7 → 73.8%,
+6.3 → 6.1%, hold-out unchanged; Pogranichnik 41.9 → 52.1% plain, Chen 38.8 → 43.0%. Next:
+the Vulnerable stacks a Breach consumed from the next combo's path (c4f3 13.07 s: three in the replay, four in the
+game; the battle skill's SP and the Crush/Breach gear set's layers follow it), d4fb 86.67 s (the bank 0.3 s late),
+7910's early rogue wave without a logged dive.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**
