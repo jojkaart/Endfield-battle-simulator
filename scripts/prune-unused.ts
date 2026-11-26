@@ -60,15 +60,15 @@ const FORMAT: ts.FormatCodeSettings = {
   semicolons: ts.SemicolonPreference.Insert,
 };
 
-/** Prunes the files in place; returns how many changed. */
-export function pruneUnused(files: readonly string[]): number {
+/** Prunes the files in place; returns how many changed. `importsOnly`: unused imports only, every declaration kept (a split: scripts/split-module.ts). */
+export function pruneUnused(files: readonly string[], opts: { readonly importsOnly?: boolean } = {}): number {
   const abs = files.map((f) => resolve(f));
   const { ls, text } = service(abs);
   let changed = 0;
   for (const f of abs) {
     const before = text.get(f) as string;
     // Unused declarations first (deleting a helper can leave its imports unused), a few rounds.
-    for (let round = 0; round < 3; round++) {
+    for (let round = 0; round < (opts.importsOnly ? 0 : 3); round++) {
       const fix = ls.getCombinedCodeFix({ type: "file", fileName: f }, "unusedIdentifier_delete", {}, {});
       const edits = fix.changes.filter((c) => c.fileName === f).flatMap((c) => c.textChanges);
       if (!edits.length) break;
