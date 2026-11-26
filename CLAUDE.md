@@ -50,6 +50,9 @@ After that milestone, a `dev` branch takes over the role `main` has now.
 - `docs/design.md`: the principles and an index; each subsystem is in
   `docs/design/<topic>.md`. `node scripts/check-links.ts` (a test runs it)
   checks that relative doc links resolve.
+- A module split is a move: `node scripts/split-module.ts <file.ts> --to
+  <new.ts>=<name>,… [--dry-run]`, then `npm run measure -- --base HEAD`
+  (no log moves).
 
 ## Correctness
 
@@ -102,10 +105,13 @@ own: `--base HEAD` is then this tree's change alone),
 measured and dropped keeps its diff in [docs/tried/](docs/tried/README.md)),
 and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards); `npm run measure -- --help` lists its
-options, checked before it queues. Diagnosis views: `efsim zmdlogs
+options, checked before it queues; with no reference named and stale
+snapshots it measures against the merge base with main (`--against-snapshots`
+keeps the snapshots). Diagnosis views: `efsim zmdlogs
 groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
 (each clock's lateness by stop kind), `holds --dropped --all`; every view
-that replays takes `--assume`; what a reading changes: `zmdlogs decisions
+that replays takes `--assume`; what an operator's non-plain matches
+assume: `zmdlogs assumed --operator <op>`; what a reading changes: `zmdlogs decisions
 <fixture…|--all> --assume <id>=<r>` (the replay's decisions) and `hits
 <fixture> --against <id>=<r>` (the hits); one command at two
 commits' code, the lines that differ: `node scripts/cli-ab.ts <ref> --
@@ -213,7 +219,10 @@ complex to verify"):
   with the job's own name (snapshots, premerge, measure, verify-at end with
   `EFSIM-DONE <job> pass|fail|killed` on stdout, with-lock `EFSIM-DONE
   <--name> exit <n>` on stderr, so a redirected stdout keeps only the
-  command's output; a foreground `sleep` is refused). Every job that takes the
+  command's output; a foreground `sleep` is refused; a plain command's own
+  completion notice is enough, Monitor only for a job with an EFSIM-DONE
+  line; never `| tail` a background test run, give it
+  `--reporter=./scripts/vitest-progress.ts` and a file). Every job that takes the
   test lock (measure too) runs this way from the start, with the 2 h limit:
   the queue's wait counts against it ([limits](docs/design/tests.md#measuring-a-change)).
   measure and team-ab fix the code when queued: keep editing meanwhile. Minutes of CPU (seed
@@ -254,7 +263,9 @@ the files each parallel agent is expected to edit (`node scripts/runstate.ts
 --touching` lists what other worktrees' branches changed so far; `node
 scripts/lead-files.ts <fixture id|operator|word>…` the code files earlier
 commits naming a lead changed, so a split by files sees where the causes
-tend to live; where the cause is unknown, split by question; a fix in
+tend to live; a brief lists files, never a family of them ("the replay
+modules": `node scripts/lead-files.ts --family <name>` prints one); where
+the cause is unknown, split by question; a fix in
 another agent's file goes back as a measured diff in docs/tried/, "held
 back", for the lead to apply after the merge), and
 merge with `npm run merge -- <branch>…` (one or a batch; rebuilds the
