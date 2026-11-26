@@ -219,7 +219,7 @@ export function loggedLaneEnds(fx: Pick<LogFixture, "hits">): LoggedLaneEnds {
   return { runs: out, hits, decided: new Map(), why: new Map() };
 }
 
-/** The fewest of the team's runs on the enemy that end at one logged moment for the log to show a purge (loggedPurges). */
+/** The fewest of the team's debuffs on the enemy that end at one logged moment for the log to show a purge (loggedPurges). */
 export const PURGE_MIN_RUNS = 3;
 
 /** The longest wait (ms) from a purge's moment to the log's next one (loggedPurges): a longer gap is an away stretch. */
@@ -228,9 +228,11 @@ export const PURGE_GAP_MS = 1500;
 /**
  * The frames at which the log shows the enemy's debuffs cleared at once (engine assumption logged-purges, reading
  * `log`): a logged moment after which none of the team's runs on the enemy (game buffs in an enemy-side zone,
- * TARGET_SIDE_ZONES, one run per buff, source and since) listed there is ever listed again, at least PURGE_MIN_RUNS of
- * them from at least two operators, with the next logged moment within PURGE_GAP_MS. Its frame is the one after the
- * moment's. Hard 33's slug (eny_0129_slwood_hdg033) does it at its phase changes: pending/zmdlogs-63398339803e.json
+ * TARGET_SIDE_ZONES, one run per buff, source and since) listed there is ever listed again, at least PURGE_MIN_RUNS
+ * debuffs (a debuff's per-element affixes count once) from at least two operators, with the next logged moment within
+ * PURGE_GAP_MS. Its frame is the one after the moment's. Not pending/zmdlogs-3aa6ab93bad4.json at 25.42 s (Arcane's
+ * Doubles Susceptibility, both affixes, and Perlica's Electrification: two debuffs ending together, the replay's own
+ * statuses running on as the log's hits after it say). Hard 33's slug (eny_0129_slwood_hdg033) does it at its phase changes: pending/zmdlogs-63398339803e.json
  * at 10.35 s (Jade Vessel, Arcane's Tactical Doubles Susceptibility and her weapon's two lines, none listed from 10.91
  * s; every hit after 11.27 s reads exactly with the log's listing and ×1.40 low with the replay's) and at 29.38 s
  * (Camille's Susceptibility, Arcane's: her Doubles one gone before Si's combo final at 29.57 s). No kit's rule ends
@@ -238,14 +240,17 @@ export const PURGE_GAP_MS = 1500;
  */
 export function loggedPurges(fx: Pick<LogFixture, "hits" | "team">): number[] {
   const team = new Set(fx.team.map((b) => b.operator));
-  const runs = new Map<string, { source: string; first: number; last: number }>();
+  const runs = new Map<string, { source: string; debuff: string; first: number; last: number }>();
   for (const h of fx.hits) {
     // A boundary effect at the run's start says nothing of its end; one at its end is the end itself (loggedLaneEnds).
     for (const e of [...h.effects, ...h.boundaryEffects.filter((x) => x.since !== h.t)]) {
       if (e.source === undefined || !team.has(e.source) || !TARGET_SIDE_ZONES.has(e.zone)) continue;
       const key = `${e.buff}|${e.source}|${e.since ?? ""}`;
+      // One debuff's per-element affixes (buff_common_affixes_vulnerable_crystal and _natural from one source and
+      // since: Arcane's Doubles Susceptibility) count once.
+      const debuff = `${e.buff.replace(/^(buff_common_affixes_[a-z]+)_[a-z]+$/, "$1")}|${e.source}|${e.since ?? ""}`;
       const r = runs.get(key);
-      runs.set(key, r ? { ...r, first: Math.min(r.first, h.t), last: Math.max(r.last, h.t) } : { source: e.source, first: h.t, last: h.t });
+      runs.set(key, r ? { ...r, first: Math.min(r.first, h.t), last: Math.max(r.last, h.t) } : { source: e.source, debuff, first: h.t, last: h.t });
     }
   }
   const moments = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
@@ -254,7 +259,7 @@ export function loggedPurges(fx: Pick<LogFixture, "hits" | "team">): number[] {
     const next = moments[i + 1];
     if (next === undefined || next - t > PURGE_GAP_MS) continue;
     const listed = [...runs.values()].filter((r) => r.first <= t && r.last >= t);
-    if (listed.length < PURGE_MIN_RUNS || listed.some((r) => r.last > t) || new Set(listed.map((r) => r.source)).size < 2) continue;
+    if (new Set(listed.map((r) => r.debuff)).size < PURGE_MIN_RUNS || listed.some((r) => r.last > t) || new Set(listed.map((r) => r.source)).size < 2) continue;
     out.push(frameOf(t) + 1);
   }
   return out;
