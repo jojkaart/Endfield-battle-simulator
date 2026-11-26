@@ -17,7 +17,7 @@
 
 import { effectiveKit, FPS, type GameData, type SkillType } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
-import { assembleCasts, controlSwaps, replayedCastStops } from "./castassembly.ts";
+import { assembleCasts, controlSwaps, replayStops, type ReplayTimeStop } from "./castassembly.ts";
 import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
 import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
@@ -31,13 +31,7 @@ export function operatorLabel(data: GameData, op: string): string {
 }
 const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 
-/** A time stop of a cast the replay makes, and whether the placement has that cast from its hits. */
-export interface ReplayTimeStop extends TimeStop {
-  /** False for a cast the replay makes without placed hits: from a cast event (an ultimate at its stop: withLoggedCasts), or inferred. */
-  readonly placed: boolean;
-  /** A hitless cast event of a skill a kit buff of its operator ticks as (KitBuff.ticksLoggedAs): the buff's tick unless the replay made the cast (replayTimeStops). */
-  readonly tickRead?: true;
-}
+export type { ReplayTimeStop } from "./castassembly.ts";
 
 /**
  * The time stops of the casts the replay assembles (assembleCasts: the placed casts, the log's hitless cast events at
@@ -49,23 +43,22 @@ export interface ReplayTimeStop extends TimeStop {
  * Round 11 (kit-buff leads report point 2): a hitless cast event of a skill a kit buff of its operator ticks as
  * (KitBuff.ticksLoggedAs) is the buff's tick where the replay didn't make the cast (its buff was on: 4d60e7fe92c2's
  * late ultimate_skill events, Zhuang Fangyi's Empyrean ending), and a real cast where it did (3aa6ab93bad4's seven
- * ultimates, whose hits the placement doesn't place). Such a stop is `tickRead`. With `replay`, those the replay read
- * as the buff's tick are left out, by its own decision (BuffReplay.skipped, round 12: in place of "a stop the timeline
- * never applied"), as the hold placement leaves them out (buffreplay.ts, "Not a logged event the replay read as a
- * buff's tick"); without one they stay, marked (`casts`, `worldtime` say so).
+ * ultimates, whose hits the placement doesn't place). With `replay`, those the replay didn't make are left out, by
+ * its own record (BuffReplay.made) and the rule the hold placement reads (castassembly.ts replayStops, round 15: one
+ * list; until then the views read BuffReplay.skipped's reasons, the placement the made casts); without one they stay,
+ * `tickRead` (`casts`, `worldtime` without the replay say so). replayTimeStopsWithTicks also returns those casts.
  */
-export function replayTimeStops(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), replay?: Pick<BuffReplay, "skipped">): ReplayTimeStop[] {
+export function replayTimeStops(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), replay?: Pick<BuffReplay, "made">): ReplayTimeStop[] {
+  return replayTimeStopsWithTicks(data, fx, placement, replay).stops;
+}
+
+/** replayTimeStops and, with the replay, the hitless events it read as a buff's tick (replayStops `ticks`: no stop). */
+export function replayTimeStopsWithTicks(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), replay?: Pick<BuffReplay, "made">): ReturnType<typeof replayStops> {
   const kits = fx.team.flatMap((b) => {
     const k = effectiveKit(data, b);
     return k ? [k] : [];
   });
-  const tickSkills = new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
-  const stops: ReplayTimeStop[] = replayedCastStops(data, assembleCasts(data, fx, placement, kits)).map((st) => (!st.placed && tickSkills.has(`${st.operator}|${st.skillId}`) ? { ...st, tickRead: true as const } : st));
-  if (!replay) return stops;
-  // A skipped cast's stops start at its frame or later (a slow-down's own frame in the skill).
-  const ticks = replay.skipped.filter((x) => x.why.startsWith("a tick of a kit buff")).map((x) => ({ operator: x.cast.operator, skillId: x.cast.skillId, frame: Math.round((x.cast.start * FPS) / 1000) }));
-  const ticked = (st: ReplayTimeStop) => ticks.some((x) => x.operator === st.operator && x.skillId === st.skillId && st.start >= x.frame && st.start <= x.frame + (data.skills[x.skillId]?.timing?.durationFrames ?? 0));
-  return stops.filter((st) => !st.tickRead || !ticked(st));
+  return replayStops(data, kits, assembleCasts(data, fx, placement, kits), replay?.made.map((m) => m.cast));
 }
 
 /** A tickRead stop's mark in a view without the replay (`casts`, `worldtime`). */
@@ -299,18 +292,24 @@ export function lanesView(data: GameData, fx: LogFixture, buff?: RegExp, opts: {
  * replay makes (replayTimeStops, worldMs), and the stops between with their frames and lowest scale. The first number of every "lasts
  * longer than its duration" question (round 5: three agents wrote it as a scratch script).
  */
-export function worldTimeView(data: GameData, fx: LogFixture, from: number, to: number): string {
+export function worldTimeView(data: GameData, fx: LogFixture, from: number, to: number, replay?: Pick<BuffReplay, "made">, placement: Placement = placeHits(data, fx)): string {
   if (!(to > from)) throw new Error("zmdlogs worldtime takes <from s> <to s> with to after from");
-  const stops = replayTimeStops(data, fx);
+  // With the replay (the CLI's), the hold placement's own list: an event the replay read as a buff's tick holds nothing
+  // and gets a line without frames (round 15, bursts-and-cooldowns report point 1).
+  const { stops, ticks } = replayTimeStopsWithTicks(data, fx, placement, replay);
   const [a, b] = [Math.round((from * FPS) / 1000), Math.round((to * FPS) / 1000)];
   const between = stops.filter((st) => st.start < b && st.start + st.scales.length > a).sort((x, y) => x.start - y.start);
+  const ticked = ticks.filter((c) => c.start >= from && c.start <= to);
   const world = worldMs(from, to, stops);
   return [
     `${fx.id}: ${s(from)}–${s(to)} s: real ${s(to - from)} s, world ${s(world)} s (held ${s(to - from - world)} s by ${between.length} time stop(s) of the replay's casts; times in s, a stop's frames at 30 a second)`,
-    ...between.map((st) => {
-      const inside = Math.min(b, st.start + st.scales.length) - Math.max(a, st.start);
-      return `  ${s(msOf(st.start)).padStart(7)}  ${operatorLabel(data, st.operator)} ${shortSkill(st.skillId)}${st.kind ? ` (${st.kind})` : ""}: ${st.scales.length} frame(s), lowest scale ${Math.min(...st.scales)}, ${inside} frame(s) inside the window${notPlaced(st)}${tickReadNote(st)}`;
-    }),
+    ...[
+      ...between.map((st) => {
+        const inside = Math.min(b, st.start + st.scales.length) - Math.max(a, st.start);
+        return { t: msOf(st.start), text: `  ${s(msOf(st.start)).padStart(7)}  ${operatorLabel(data, st.operator)} ${shortSkill(st.skillId)}${st.kind ? ` (${st.kind})` : ""}: ${st.scales.length} frame(s), lowest scale ${Math.min(...st.scales)}, ${inside} frame(s) inside the window${notPlaced(st)}${tickReadNote(st)}` };
+      }),
+      ...ticked.map((c) => ({ t: c.start, text: `  ${s(c.start).padStart(7)}  ${operatorLabel(data, c.operator)} ${shortSkill(c.skillId)}${c.kind ? ` (${c.kind})` : ""}: no stop (a hitless event of a skill a kit buff ticks as, which the replay read as the buff's tick and didn't make; the hold placement leaves it out too)` })),
+    ].sort((x, y) => x.t - y.t).map((x) => x.text),
     "Overlapping stops count once per frame, at the lowest scale then; the log's ms are batched (docs/design/data.md \"What the log records\"), so a difference under ~0.2 s isn't timing evidence.",
   ].join("\n");
 }

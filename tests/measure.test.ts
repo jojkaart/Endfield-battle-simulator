@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { hitChanges, holdChanges, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { defaultReference, hitChanges, holdChanges, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 import { headerUsage, wantsHelp } from "../scripts/usage.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
@@ -218,6 +218,22 @@ describe("measure --split (round 11: which part of a change moved a log)", () =>
   it("says first when the snapshots compared against weren't written by that commit's code", () => {
     expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 0 })).toEqual([]);
     expect(referenceNote("HEAD", { commit: "c6f1874aaaaaaa", changed: 3 })[0]).toMatch(/^Reference: the snapshots at HEAD were written by c6f1874aa's code, and 3 code file\(s\) changed since.*`--base HEAD`/);
+  });
+
+  it("measures the merge base with main as --base when the snapshots aren't its code's own (round 15)", () => {
+    const writer = { commit: "c6f1874aaaaaaa", changed: 51 };
+    expect(defaultReference("HEAD", { ...writer, changed: 0 }, null)).toEqual({ lines: [] });
+    // The branch's own commits since the snapshots: they are the change measured.
+    const own = defaultReference("HEAD", writer, { commit: "4569c99bbbbbbb", changedFromWriter: 0 });
+    expect(own.base).toBeUndefined();
+    expect(own.lines[0]).toMatch(/code's own at the merge base with main \(4569c99bb/);
+    // Main's unmeasured merges: the merge base's code is the reference.
+    const stale = defaultReference("HEAD", writer, { commit: "4569c99bbbbbbb", changedFromWriter: 51 });
+    expect(stale.base).toBe("4569c99bbbbbbb");
+    expect(stale.lines[0]).toMatch(/51 code file\(s\) changed from it to the merge base with main.*--against-snapshots/);
+    // No main branch: the note alone.
+    expect(defaultReference("HEAD", writer, null).lines[0]).toMatch(/^Reference: the snapshots at HEAD were written by/);
+    expect(measureOptions(["--against-snapshots"]).values["against-snapshots"]).toBe(true);
   });
 });
 

@@ -24,6 +24,7 @@ import {
   worldMs,
   castTimeStops,
   replayTimeStops,
+  replayTimeStopsWithTicks,
   worldTimeView,
   castEventPlace,
   logBuffReplay,
@@ -205,6 +206,13 @@ describe("the views' stops and the replay's ticks (round 11, kit-buff leads repo
       expect(replay.appliedStops.some((x) => x.operator === st.operator && x.start === st.start)).toBe(false);
     }
     expect(kept.length).toBe(all.length - gone.length);
+    // One list (round 15, bursts-and-cooldowns report point 1): worldtime with the replay says the event holds nothing,
+    // as the hold placement (castassembly.ts replayStops) has it.
+    const { ticks } = replayTimeStopsWithTicks(data, fx, placement, replay);
+    expect(ticks.some((c) => c.operator === "chr_0030_zhuangfy" && Math.abs(c.start - 106470) < 100)).toBe(true);
+    const text = worldTimeView(data, fx, 104000, 110000, replay, placement);
+    expect(text).toMatch(/106\.\d\d {2}Zhuang Fangyi ultimate_skill.*: no stop \(a hitless event/);
+    expect(worldTimeView(data, fx, 104000, 110000, undefined, placement)).toMatch(/106\.\d\d {2}Zhuang Fangyi ultimate_skill.*frame\(s\).*a kit buff ticks as/);
   });
 
   it("says on the EVENT line when the replay made a cast whose key a buff ticks as (3aa6: Zhuang Fangyi's real ultimates)", () => {

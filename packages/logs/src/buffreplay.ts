@@ -29,7 +29,7 @@ import type { LoggedCast, Placement } from "./logcasts.ts";
 import { loggedStagger } from "./replaysteps.ts";
 import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
 import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
-import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCastStops, replayedCasts } from "./castassembly.ts";
+import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedTickFrames, loggedTickLandings, msOfFrame, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, critTriggers, layerCrits, shownCrits, undecidedBuff, valueCrits } from "./replaycrits.ts";
 import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
@@ -374,14 +374,11 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   }
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
-    // On the replay's own casts' stops (replayedCastStops): the placed casts' miss an ultimate placed from its cast event.
-    // Not a logged event the replay read as a buff's tick (KitBuff.ticksLoggedAs; no cast made): 4d60e7fe92c2's late
-    // ultimate_skill events, the end of Zhuang Fangyi's Empyrean 30–35 s after her ultimate, held the world 78 frames
-    // each in the hold placement.
-    const made = new Set(main.made.map((m) => `${m.c.operator}|${m.c.skillId}|${m.c.start}`));
-    const tickSkills = new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
-    const ticked = (c: ReplayedCast) => c.landings.length === 0 && tickSkills.has(`${c.operator}|${c.skillId}`) && !made.has(`${c.operator}|${c.skillId}|${c.start}`);
-    const stops = replayedCastStops(data, assembled.filter((c) => !ticked(c)));
+    // On the replay's own casts' stops, the views' list too (castassembly.ts replayStops): the placed casts' miss an
+    // ultimate placed from its cast event. Not a logged event the replay read as a buff's tick (KitBuff.ticksLoggedAs;
+    // no cast made): 4d60e7fe92c2's late ultimate_skill events, the end of Zhuang Fangyi's Empyrean 30–35 s after her
+    // ultimate, held the world 78 frames each in the hold placement.
+    const { stops } = replayStops(data, kits, assembled, main.made.map((m) => m.c));
     const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks);
     // Engine assumption stagger-holds: inside the Stagger, holds only at the combos' stops (holds.ts comboHoldSpans).
     const staggerHolds = opts.assume?.["stagger-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "stagger-holds")?.default;

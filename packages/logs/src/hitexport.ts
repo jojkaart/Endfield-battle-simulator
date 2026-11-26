@@ -15,6 +15,7 @@ import type { LogFixture } from "./zmdlogs.ts";
 import { logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
 import { verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
+import type { Assumption } from "./assumptions.ts";
 import { unknownFacts } from "./buffreplay.ts";
 import { composeCheck } from "./snapshotentry.ts";
 import type { CritSource } from "./replaycrits.ts";
@@ -35,6 +36,12 @@ export interface HitRecord {
   readonly verdict: HitVerdict["kind"];
   /** The verdict's count class (plain, assumed, fallback, mismatch, …), as the snapshots count it. */
   readonly class: VerdictCount;
+  /**
+   * A non-plain match's assumptions (the verdict's first fitting reading: kind, label, buffs, n), which `zmdlogs
+   * assumed` folds and `zmdlogs groups` reads for the casts matched only as another kit hit (round 15: the low-plain
+   * round needed a probe over composeCheck for them, and the 0c14 round a ratio hunt). Absent for every other hit.
+   */
+  readonly assumptions?: readonly Assumption[];
   /**
    * The engine's primary reading of the replay's landing (engineHits), rounded; null without a landing or when no
    * reading applies. Not always the number the verdict rests on: a fallback match is the log listing's reading, and the
@@ -98,6 +105,8 @@ export interface HitRecord {
   readonly counterfactuals?: readonly Counterfactual[];
   readonly landing?: {
     readonly frame: number;
+    /** The replay's cast it belongs to (LandedHit.cast: an index into its timeline's casts), when a cast made it. */
+    readonly cast?: number;
     readonly operator: string;
     readonly skillId: string;
     readonly hitId: string;
@@ -139,6 +148,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       crit: hit.crit,
       verdict: v.kind,
       class: verdictCount(v),
+      ...(v.kind === "match" && v.assumptions.length ? { assumptions: v.assumptions } : {}),
       ...verdictReadingOf(v),
       listed: listedBuffs(hit.effects),
       critSource: replay.replay.critSource(hit),
@@ -182,6 +192,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       logError: logReading ? hit.value / logReading - 1 : null,
       landing: {
         frame: landing.frame,
+        ...(landing.cast !== undefined ? { cast: landing.cast } : {}),
         operator: inputs.operator,
         skillId: d.skillId,
         hitId: d.hitId,

@@ -692,12 +692,38 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
     "",
     ...fallbackGroups(records.filter((r) => r.operator === operator)),
+    ...otherKitHitCasts(records.filter((r) => r.operator === operator), fxLabel),
   ];
   if (opts.verbose) {
     out.push("", "Each own mismatch:");
     for (const { r, q } of own) out.push(`  ${fxLabel(r.fixture)} ${s(r.t)} ${r.event} logged ${r.value} predicted ${r.predicted ?? "-"} ×${q?.toFixed(4) ?? "-"}${r.differences?.length ? `  ${r.differences.map((d) => `${d.kind}:${d.what}`).join("; ")}` : ""}`);
   }
   return out.join("\n");
+}
+
+/**
+ * `zmdlogs groups`' rows of the replay's casts every one of whose logged landings matched only as the event's other
+ * kit hit (a `kitHit` assumption on each: HitRecord.assumptions, landing.cast): the shape of a path the replay didn't
+ * take where the log's key is shared (Rossi's attack 4 under a teammate, ×2.5 in 2fd9; Alesh's Rare Fin combos,
+ * ×1.5–1.6 in 0c14, 4e36, a9d7), each found as an operator's odd ratio before (backlog after round 14 point 2). A row:
+ * the log, the cast's first landing, its skill, how many landings, the kit hits they matched as for the ones landed,
+ * and the median logged ÷ predicted (the replay's path).
+ */
+export function otherKitHitCasts(records: readonly HitRecord[], fxLabel: (fixture: string) => string = (x) => x): string[] {
+  const casts = new Map<string, HitRecord[]>();
+  for (const r of records) if (r.landing?.cast !== undefined) casts.set(`${r.fixture}|${r.landing.cast}`, [...(casts.get(`${r.fixture}|${r.landing.cast}`) ?? []), r]);
+  const rows: { t: number; text: string }[] = [];
+  for (const rs of casts.values()) {
+    const kit = (r: HitRecord) => r.assumptions?.filter((a) => a.kind === "kitHit") ?? [];
+    if (!rs.every((r) => (r.class === "assumed" || r.class === "fallback") && kit(r).length > 0)) continue;
+    const first = rs.reduce((a, b) => (b.t < a.t ? b : a));
+    const pairs = [...new Set(rs.map((r) => `${kit(r)[0]?.buffs?.[0] ?? "?"} for ${r.landing?.hitId ?? "?"}`))];
+    const ratios = rs.flatMap((r) => (r.predicted ? [r.value / r.predicted] : [])).sort((a, b) => a - b);
+    const median = ratios.length ? `×${(ratios[Math.floor((ratios.length - 1) / 2)] as number).toFixed(3)}` : "-";
+    rows.push({ t: first.t, text: `  ${fxLabel(first.fixture)} ${s(first.t)} s ${first.landing?.skillId.replace(/^chr_\d+_[a-z0-9]+_/, "") ?? "?"}: ${rs.length} landing(s), matched as ${pairs.join(", ")}; logged ÷ the replay's path ${median}` });
+  }
+  if (!rows.length) return [];
+  return ["", "Casts whose every landing matched only as the event's other kit hit (a path the replay didn't take, the log's key shared by both: the kit's jumps, a chance or control path; zmdlogs decisions has the replay's PATH and JUMPDROP lines):", ...rows.sort((a, b) => a.t - b.t).map((x) => x.text)];
 }
 
 /** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */

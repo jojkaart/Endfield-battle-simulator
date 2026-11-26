@@ -19,6 +19,7 @@ import type { LogFixture } from "./zmdlogs.ts";
 import { fitBuild, type BuildCandidate } from "./buildfit.ts";
 import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
+import { assumedView } from "./assumedview.ts";
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
@@ -291,6 +292,19 @@ export async function groupsCliReport(data: () => GameData, operator: string, se
   const assume = opts.assume ?? {};
   const records = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
   return groupsReport(records, id, { verbose: opts.verbose, fixtureLabel });
+}
+
+/**
+ * `efsim zmdlogs assumed --operator <op> [fixture…|--all]`: what the operator's non-plain matches assume (assumedview.ts),
+ * from the cached hit records (default: every verified and pending development log with the operator).
+ */
+export async function assumedCliReport(data: () => GameData, operator: string, sel: LogSelection, opts: { readonly workers: string | undefined; readonly kind?: string; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+  const id = operatorNamed(data(), operator);
+  const named = resolveFixtures(sel.named, sel.fixturesFrom);
+  const files = named.length ? named : listLogs({ dirs: ["verified", "pending"], withOperators: [id] }).map((l) => join(REPO_ROOT, l.file));
+  const assume = opts.assume ?? {};
+  const records = await collectRecords(data, files, opts.workers, { operators: [id] }, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
+  return assumedView(records, id, { fixtureLabel, ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
 }
 
 /**

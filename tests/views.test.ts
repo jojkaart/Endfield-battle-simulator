@@ -3,7 +3,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { castsView, differencesReport, fallbackGroups, groupsReport, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerSummary, staggerView, totalsAllView, type HitRecord, type StaggerRun } from "@efsim/logs";
+import { assumedView, castsView, differencesReport, fallbackGroups, foldLabel, groupsReport, kindSet, otherKitHitCasts, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerSummary, staggerView, totalsAllView, type HitRecord, type StaggerRun } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -134,6 +134,33 @@ describe("hit records grouped by cause", () => {
     const lines = fallbackGroups(fb);
     expect(lines[0]).toMatch(/^Matches only by the log's listing .*3 by skill event/);
     expect(lines[1]).toMatch(/3 {2}combo_skill {2}median logged ÷ primary ×1\.500/);
+  });
+
+  // Round 15 (backlog after round 14 point 2, low-plain report point 1): the verdict's assumptions on the records.
+  const kitHit = (other: string, landed: string) => ({ kind: "kitHit" as const, label: `kit hit ${other} (the replay landed ${landed})`, buffs: [other] });
+  const path = [
+    record({ operator: "r", t: 5000, value: 250, predicted: 100, class: "assumed", verdict: "match", assumptions: [kitHit("hit_ai", "hit")], landing: { frame: 150, cast: 7, operator: "r", skillId: "chr_0028_wulfa_attack4", hitId: "hit", exact: 100, scaleParts: [], zones: {} as never, modifiers: [] } }),
+    record({ operator: "r", t: 5100, value: 250, predicted: 100, class: "assumed", verdict: "match", assumptions: [kitHit("hit_ai", "hit"), { kind: "crit", label: "crit" }], landing: { frame: 153, cast: 7, operator: "r", skillId: "chr_0028_wulfa_attack4", hitId: "hit", exact: 100, scaleParts: [], zones: {} as never, modifiers: [] } }),
+    // Another cast with one plain landing: not a row.
+    record({ operator: "r", t: 9000, value: 250, predicted: 100, class: "assumed", verdict: "match", assumptions: [kitHit("hit_ai", "hit")], landing: { frame: 270, cast: 9, operator: "r", skillId: "chr_0028_wulfa_attack4", hitId: "hit", exact: 100, scaleParts: [], zones: {} as never, modifiers: [] } }),
+    record({ operator: "r", t: 9100, value: 100, predicted: 100, class: "plain", landing: { frame: 273, cast: 9, operator: "r", skillId: "chr_0028_wulfa_attack4", hitId: "hit", exact: 100, scaleParts: [], zones: {} as never, modifiers: [] } }),
+  ];
+
+  it("rows the casts whose every landing matched only as the event's other kit hit", () => {
+    const lines = otherKitHitCasts(path);
+    expect(lines[1]).toMatch(/^Casts whose every landing matched only as the event's other kit hit/);
+    expect(lines.slice(2)).toEqual([expect.stringMatching(/5\.00 s attack4: 2 landing\(s\), matched as hit_ai for hit; logged ÷ the replay's path ×2\.500$/)]);
+    expect(groupsReport(path, "r")).toContain("matched as hit_ai for hit");
+  });
+
+  it("folds what the non-plain matches assume (zmdlogs assumed)", () => {
+    const text = assumedView(path, "r", { kind: "crit+kitHit" });
+    expect(text).toMatch(/^r: 4 hits in 1 logs, 1 plain, 3 matched under an assumption/);
+    expect(text).toMatch(/By kind \(a hit counted once per kind\):\n +3 {2}kitHit\n +1 {2}crit/);
+    expect(text).toMatch(/By kind set .*\n +2 {2}kitHit\n +1 {2}crit\+kitHit/);
+    expect(text).toMatch(/The hits of kind set crit\+kitHit \(1\):\n .* 5\.10 s attack1 logged 250/);
+    expect(foldLabel("Link (3) and 1234 ×1.25")).toBe("Link (n) and N ×n");
+    expect(kindSet({ class: "plain" })).toBeNull();
   });
 });
 

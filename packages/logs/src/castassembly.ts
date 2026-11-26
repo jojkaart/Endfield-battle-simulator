@@ -786,6 +786,39 @@ export function replayedCastStops(data: GameData, casts: readonly ReplayedCast[]
   );
 }
 
+/** A time stop of a cast the replay makes, and whether the placement has that cast from its hits. */
+export interface ReplayTimeStop extends TimeStop {
+  /** False for a cast the replay makes without placed hits: from a cast event (an ultimate at its stop: withLoggedCasts), or inferred. */
+  readonly placed: boolean;
+  /** A hitless cast event of a skill a kit buff of its operator ticks as (KitBuff.ticksLoggedAs), listed without a replay to say whether it was made (replayStops). */
+  readonly tickRead?: true;
+}
+
+/** The skills a kit buff of their operator ticks as (KitBuff.ticksLoggedAs), as `operator|skillId`. */
+export function tickSkills(kits: readonly OperatorKit[]): Set<string> {
+  return new Set(kits.flatMap((k) => k.buffs.flatMap((d) => (d.ticksLoggedAs !== undefined ? [`${k.operator}|${d.ticksLoggedAs}`] : []))));
+}
+
+/** A cast's key for "the replay made it": its operator, skill and start (a made-cast record's `c` / `cast`). */
+export const madeKey = (c: Pick<ReplayedCast, "operator" | "skillId" | "start">) => `${c.operator}|${c.skillId}|${c.start}`;
+
+/**
+ * The replay's stops: the one list of them, which the hidden-hold placement (buffreplay.ts replayKitBuffs) and the
+ * world-time views (query.ts replayTimeStops) both read (bursts-and-cooldowns report point 1: the views counted a
+ * hitless event the replay read as a buff's tick, Zhuang Fangyi's Empyrean end in 4d60e7fe92c2 at 106.47 s, as a
+ * 78-frame stop the placement left out, and a ruling-out rested on the 2.6 s). With `made` (the casts a replay made:
+ * BuffReplay.made, a run's made), a hitless cast of a skill a kit buff ticks as (KitBuff.ticksLoggedAs) that the replay
+ * didn't make is that buff's tick, never a stop: it is left out before the resets cut the list, and `ticks` names it.
+ * Without, it stays, its stops marked `tickRead` (a view without the replay says so).
+ */
+export function replayStops(data: GameData, kits: readonly OperatorKit[], casts: readonly ReplayedCast[], made?: readonly Pick<ReplayedCast, "operator" | "skillId" | "start">[]): { readonly stops: ReplayTimeStop[]; readonly ticks: readonly ReplayedCast[] } {
+  const ticksAs = tickSkills(kits);
+  if (!made) return { stops: replayedCastStops(data, casts).map((st) => (!st.placed && ticksAs.has(`${st.operator}|${st.skillId}`) ? { ...st, tickRead: true as const } : st)), ticks: [] };
+  const done = new Set(made.map(madeKey));
+  const ticked = (c: ReplayedCast) => c.landings.length === 0 && ticksAs.has(`${c.operator}|${c.skillId}`) && !done.has(madeKey(c));
+  return { stops: replayedCastStops(data, casts.filter((c) => !ticked(c))), ticks: casts.filter(ticked) };
+}
+
 /**
  * The casts the replay makes, before control and the casts that hit nothing: the placed casts (not follow-up-only
  * skills), the log's hitless cast events it lacks (withLoggedCasts), and the casts inferred from buff lanes, trigger
