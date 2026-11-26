@@ -66,11 +66,12 @@ stage logs; 9c6e, c83c, 7910, db87, e82d), split by operator and landing kind, f
   +11.35 points for everyone) after Ardelia's forced level-1 Corrosion replaced Arcane's level 4: the data's tick
   adds and clamps only below the cap (reactions.ts corrosionShred; combat-mechanics §3.5).
 
-**Scoreboard** (measure against 36e3bc8, then `npm run snapshots:update` before the merge of 9e1904d): development
-mean |damage error| 6.8 → 6.3%, within 5% 25 → 28, plain 69.7 → 70.5%, mismatch 11.2 → 10.6%; hold-out 8.4 →
-7.4% (4 better, 1 mixed: plain −1, assumed +1), plain 81.0%; earlier pending unchanged (3.5%; 4bfc −0.8 → −1.0%,
-3aa6 mixed, d4fb better). Worse: 79cc 0.0 → −0.1%, 4bfc: replay-only tail landings removed from fights the replay
-under-predicts. The numbers after the merge: the friction report's hand-back.
+**Scoreboard** (`measure --base 9e1904d` after merging main, then `npm run snapshots:update`): development mean
+|damage error| 6.8 → 6.3%, within 5% 25 → 28, plain 71.8 → 72.7%, mismatch 11.2 → 10.6%; hold-out 8.4 → 7.4% (4
+better, 1 mixed: plain −1, assumed +1), plain 82.1%; earlier pending plain 72.9 → 73.0%, 3.4 → 3.5% (4bfc −0.8 →
+−1.0%, 3aa6 mixed: plain +6, total 0.2 → 0.6%, d4fb better). Worse: 79cc 0.0 → −0.1%, 4bfc: replay-only tail
+landings removed from fights the replay under-predicts. team-ab (against 36e3bc8): only estella-si-akekuri-arcane
+(zero energy)'s 60 s timeline moved, +0.83% (the Corrosion rule); sustained DPS unchanged.
 
 **Decisions:** the Corrosion rule isn't an assumption (the data's gate is explicit and 7910's 143 hits fit it); the
 variant rule needs complementary availability, not the same kind alone (04d4 and 99fb lost 91 and 30 plain with
