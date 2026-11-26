@@ -34,8 +34,9 @@
 //   --split files|commits  after the whole change against --base (default HEAD: the working tree's change), the
 //                       share of each part (round 11: "which change moved this log" took three more measures): files,
 //                       each changed file's diff alone on --base (`--group a,b` puts the files under these path
-//                       prefixes into one part; repeatable); commits, each commit of --base..the code against its
-//                       parent (the working tree's own changes the last). Each part is measured only on the logs the
+//                       prefixes into one part; repeatable; `--only a,b` instead: those files one part and every
+//                       other file one more, two parts for "did these move it"); commits, each commit of --base..the
+//                       code against its parent (the working tree's own changes the last). Each part is measured only on the logs the
 //                       whole change moved, so a split costs about one measure of those per part. Not with --variant,
 //                       --patch or --live
 //   --patch <file>      measure the code with this diff applied on top (git apply; the code at --at, else the tree
@@ -255,6 +256,7 @@ export function measureOptions(argv: readonly string[]) {
       plain: { type: "boolean", default: true },
       split: { type: "string" },
       group: { type: "string", multiple: true, default: [] },
+      only: { type: "string" },
     },
     allowNegative: true,
   });
@@ -267,6 +269,8 @@ export function measureOptions(argv: readonly string[]) {
     values.base ??= "HEAD";
   }
   if (values.group.length && values.split !== "files") throw new Error("--group goes with --split files");
+  if (values.only !== undefined && values.split !== "files") throw new Error("--only goes with --split files");
+  if (values.only !== undefined && values.group.length) throw new Error("--split files: --only or --group, not both");
   const workers = Number(values.workers);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   if (values.patch !== undefined && values.live) throw new Error("--patch applies to a commit (--at, or the tree as queued): not with --live");
@@ -503,7 +507,7 @@ async function main(argv: string[]): Promise<number> {
     }
   }
   if (values.split !== undefined && baseTree && before && whole) {
-    const lines = await splitParts(values.split as "files" | "commits", { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
+    const lines = await splitParts(values.split as "files" | "commits", { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, ...(values.only !== undefined ? { only: values.only } : {}), keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
     writeFileSync(join(out, "summary.txt"), [...allLines, "", ...lines].join("\n") + "\n");
     allLines.push("", ...lines);
   }
@@ -628,10 +632,20 @@ const NOT_CODE = (f: string) => f.startsWith("docs/") || f.endsWith(".md") || f.
 /**
  * --split files: the changed files in parts: each `--group` value (comma-separated path prefixes) one part of the
  * files under them, every other file a part of its own; files that change no measured code (NOT_CODE) left out.
- * Hold-out fixtures are one part, named by their count only.
+ * Hold-out fixtures are one part, named by their count only. With `only` (--only a,b: comma-separated path prefixes),
+ * two parts: the files under them and every other code file (0c14-and-operator-curve report point 4: which of two files
+ * moved 9c6e took five parts, 35 minutes).
  */
-export function splitGroups(files: readonly string[], groups: readonly string[]): { readonly label: string; readonly files: readonly string[] }[] {
+export function splitGroups(files: readonly string[], groups: readonly string[], only?: string): { readonly label: string; readonly files: readonly string[] }[] {
   const code = files.filter((f) => !NOT_CODE(f));
+  if (only !== undefined) {
+    const ps = only.split(",").map((p) => p.trim()).filter(Boolean);
+    const named = code.filter((f) => ps.some((p) => f === p || f.startsWith(p)));
+    const rest = code.filter((f) => !named.includes(f));
+    if (!named.length) throw new Error(`--only ${only}: no changed code file under it (changed: ${code.filter((f) => !f.startsWith("fixtures/holdout/")).join(", ") || "none"})`);
+    const restLabel = rest.some((f) => f.startsWith("fixtures/holdout/")) ? `the rest (${rest.filter((f) => !f.startsWith("fixtures/holdout/")).length} file(s), hold-out fixtures among them)` : `the rest (${rest.length} file(s))`;
+    return [{ label: ps.join(", "), files: named }, ...(rest.length ? [{ label: restLabel, files: rest }] : [])];
+  }
   const prefixes = groups.map((g) => g.split(",").map((p) => p.trim()).filter(Boolean));
   const out: { label: string; files: string[] }[] = prefixes.map((ps) => ({ label: ps.join(", "), files: [] }));
   const hold: string[] = [];
@@ -685,6 +699,7 @@ interface SplitRun {
   /** The measured code's commit (--at, or the snapshot of the working tree taken at queue time). */
   readonly code: string;
   readonly groups: readonly string[];
+  readonly only?: string;
   readonly keys: readonly string[];
   readonly before: Snapshots;
   readonly whole: Snapshots;
@@ -709,7 +724,7 @@ async function splitParts(how: "files" | "commits", r: SplitRun): Promise<string
   const notes: string[] = [];
   if (how === "files") {
     const files = git(["diff", "--name-only", r.base, r.code]).split("\n").filter(Boolean);
-    const groups = splitGroups(files, r.groups);
+    const groups = splitGroups(files, r.groups, r.only);
     const left = files.filter(NOT_CODE).length;
     if (!groups.length) return [head, `  nothing to split: no code file changed (${left} doc or test file(s) left out)`];
     const patches = join(ROOT, "scratch/measure/patches");

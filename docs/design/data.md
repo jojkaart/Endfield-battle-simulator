@@ -154,11 +154,15 @@ the hit that forms the Corrosion, not on its own: 3f78, 4a64).
 **Kit buffs in the log check** (2026-10-22, owner: the engine activates
 buffs from the events that trigger them, not from the log's listing).
 `efsim zmdlogs check` replays the logged casts on the timeline
-(`packages/logs/src/buffreplay.ts`, engine `replayCast`; since round 8 one
-pass is `replayOnce(input, pass)` there, its steps and their order in
-replaysteps.ts and what it records for the views, the kit windows, traces
-and applied slow-downs, in replayrecord.ts: a view's new output is an
-edit there, a rule's in buffreplay.ts): each placed cast
+(`packages/logs/src/buffreplay.ts` replayKitBuffs, engine `replayCast`;
+since round 14 in parts: castassembly.ts the casts it makes, replayrun.ts
+one pass, `replayOnce(input, pass)`, and makeCast, holdinputs.ts what
+holds its timers to the log, replaycrits.ts the crits the log leaves out,
+replayedhits.ts what it makes of the logged hits; its steps and their
+order in replaysteps.ts and what it records for the views, the kit
+windows, traces and applied slow-downs, in replayrecord.ts: a view's new
+output is an edit there, a rule's in the part it belongs to; the reason
+strings the snapshots' kinds group by are replaykeys.ts's constants): each placed cast
 (logcasts.ts) starts at its logged frame without a rotation's checks, its
 logged landings land at their logged frames (pinned: later time stops
 don't move them, the log's time has them in), an operator's earlier cast
@@ -452,7 +456,7 @@ detail):
   tick series, Corrosion's ramp steps read from the hits' damage;
   packages/logs holds.ts, rampsteps.ts) and holds the world's clock there for every timer, then keeps
   a listed buff on to the log's end (engine assumption `hidden-holds`,
-  default `placed`; buffreplay.ts `heldToLoggedEnds`). Where they fall:
+  default `placed`; holdinputs.ts `heldToLoggedEnds`). Where they fall:
   `efsim zmdlogs holds <fixture>`.
 - **Cast events** (`LogFixture.casts`: the detail's skill events without a
   damage value) are presses as the log has them, not the kit's frame 0:
@@ -615,7 +619,7 @@ in the logs):
 - **A hit's crit is often not logged** (`crit: null`): every log gives
   Rossi's ultimate stabs none, and some hits around them. The replay
   counts as crits those a trigger on crits shows by its own logged hits
-  at the same ms (buffreplay.ts shownCrits: her Seething Blood extras);
+  at the same ms (replaycrits.ts shownCrits: her Seething Blood extras);
   the rest the check tries both ways ("assumed").
 - **`isEnable false` in game data means the action never runs**
   (`efsim gamedata tree` prints DISABLED on its line).
@@ -684,7 +688,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Which operators are off by one factor all fight, over every log (a missing food, a node, a weapon level) | `efsim zmdlogs offsets --all --workers 3` (a tight median of logged ÷ primary off by 3% or more: `*`, with the fit-build command; the log suites fail on one no buildOverride or OFFSETS_EXPLAINED entry accounts for) |
 | An operator's mismatches by cause | `efsim zmdlogs groups --operator <op>` |
 | Does a change help | `npm run measure [-- --with <op>]`; one half of it, or a log tool's old rule, without editing the tree: `-- --patch <diff> [--base HEAD]`; the summary's first line says when the snapshots compared against aren't that commit's code (`--base HEAD` then measures the tree's change alone) |
-| Which part of a batch moved which log | `npm run measure -- --split files [--group a,b]` (each changed file's diff alone on HEAD, or `--base <ref>`) or `--split commits --base <ref>` (each commit against the one before), measured on the logs the whole change moved |
+| Which part of a batch moved which log | `npm run measure -- --split files [--group a,b \| --only a,b]` (each changed file's diff alone on HEAD, or `--base <ref>`; `--only`: those files one part, the rest another) or `--split commits --base <ref>` (each commit against the one before), measured on the logs the whole change moved |
 | An idea on top of the tree, as a reading | `npm run measure -- --variant <id>=<r>`: each variant against the snapshots and against the same code without it (the plain run; `--no-plain` skips it) |
 | Which hits a change moved | `npm run measure -- --hits [--logs <id>]` (summary and scratch/measure/…/hits.txt) |
 | Which casts a placement change moved | `npm run measure -- --changed placement` |
@@ -698,6 +702,12 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | A kit trigger's firings and its cooldown's shifts | `efsim zmdlogs replay <fixture> --trace-trigger owner:id` (or the id alone); the game's mechanism behind each cooldown: `efsim kit <operator \| wpn_… \| suit_…>`, counts in `efsim kit-census` |
 | Why a hidden-hold unit sits where it does; which bounds a change made conflict | `efsim zmdlogs holds <fixture> --verbose` (each unit's "earliest held back by" / "latest forced by", each dropped bound's "conflicting with"); between two commits `node scripts/cli-ab.ts <ref> --patch <view diff> --holds <fixture>` |
 | A hit whose kit reads a fact the replay doesn't know | `zmdlogs check` (a line under the operator), `zmdlogs differences` (a section), `hits --json` `unknownFacts` ("enemy HP unknown": buffreplay.ts unknownFacts) |
+| What a new replay rule or reading decides differently, across the logs, before its first measure | `efsim zmdlogs decisions <fixture…\|--all> --assume <id>=<r>` (decisionsview.ts: the SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, JUMPDROP, FORCED, INSIDE, CUTS lines only one side has, a count per kind; without `--assume` every decision; `replayDecisions` over BuffReplay's records in a script) |
+| Which hits of one log a reading changes, without the lock | `efsim zmdlogs hits <fixture…> --against <id>=<r>` (class and primary before and after, the modifiers only one side has; hitexport.ts `recordChanges`) |
+| A press the replay made from the listing, a cast made as another skill, a kit jump the logged landings contradicted | `efsim zmdlogs replay <fixture>`: INFER, MADE, JUMPDROP lines (BuffReplay.made; the EVENT line names the replay's own fate of its cast) |
+| Is a total's miss the model or the fight's crit luck | `efsim zmdlogs totals <fixture> --by crit` (matched parts per operator by how the totals took each crit: known, exact, read from the value, expected); per hit `hits --json` `totalsPredicted`, `totalsCrit` |
+| A burst's cause | `efsim zmdlogs bursts`: the replay's infliction that set it off (StatusEvent `inflictedAt`) and the logged hit standing for it; "nearest" where neither is known |
+| Does a scratch script call the packages right | `node scripts/typecheck-scratch.ts scratch/x.ts` (the repository's compiler options; scratch/ isn't in `npm run typecheck`) |
 
 `zmdlogs hits --json` records (packages/logs/src/hitexport.ts `HitRecord`):
 `value`, `verdict` (`match` for every match class) and `class`,

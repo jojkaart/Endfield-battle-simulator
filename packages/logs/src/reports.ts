@@ -7,9 +7,9 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import { basename, dirname, join, resolve } from "node:path";
 import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
-import { exportHits, exportHitsParallel, filterRecords, formatRecord, type HitRecord } from "./hitexport.ts";
+import { exportHits, exportHitsParallel, filterRecords, formatRecord, recordChanges, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
-import { gameDataCacheKey, mainCheckoutOf, REPO_ROOT } from "@efsim/data";
+import { gameDataCacheKey, mainCheckoutOf, operatorId, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
 import type { TotalsShares } from "./enginecheck.ts";
@@ -86,12 +86,30 @@ export interface RecordFilter {
  * (--workers, default 1) > 1 (each loads the game data itself, so `data` isn't called); from the per-fixture cache when
  * the code and the fixture are unchanged (hitsCacheKey). `reading` "log": the text lines also give the log's reading.
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
   // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
   const assume = opts.assume ?? {};
   const under = Object.keys(assume).length > 0;
-  const records = await collectRecords(data, selectedFiles(sel, "hits"), opts.workers, opts, opts.progress, (opts.cache ?? true) && !under, assume);
+  const files = withOperatorsOnly(selectedFiles(sel, "hits"), opts.operators, opts.progress);
+  const records = await collectRecords(data, files, opts.workers, opts, opts.progress, (opts.cache ?? true) && !under, assume);
+  // --against: the hits another reading (on top of --assume) changes, paired with these (recordChanges).
+  if (opts.against && Object.keys(opts.against).length) {
+    const other = await collectRecords(data, files, opts.workers, opts, opts.progress, false, { ...assume, ...opts.against });
+    return recordChanges(records, other).join("\n");
+  }
   return records.map((r) => formatRecord(r, opts.json, opts.reading, opts.zones === true)).join("\n");
+}
+
+/**
+ * With `--operator`, only the logs whose team has one of them (0c14-and-operator-curve report point 3: `hits --all
+ * --operator Rossi` after an engine edit computed all 74 logs to keep one operator's hits): a log without one has
+ * none of its hits, so the records are the same. Reads each fixture's team (a second for every log).
+ */
+export function withOperatorsOnly(files: readonly string[], operators: readonly string[] | undefined, progress?: (line: string) => void): string[] {
+  if (!operators?.length) return [...files];
+  const kept = files.filter((f) => readLogFixture(f).team.some((b) => operators.includes(b.operator)));
+  if (kept.length < files.length) progress?.(`hits: ${kept.length} of ${files.length} logs have ${operators.join(" or ")} in the team; only those are read`);
+  return kept;
 }
 
 /**
@@ -158,12 +176,20 @@ function writeHitsCache(file: string, records: readonly HitRecord[]): void {
   for (const v of versions.slice(HITS_CACHE_KEEP)) rmSync(join(dir, v.d), { recursive: true, force: true });
 }
 
+/** More logs to check than this: collectRecords says how long it will take. */
+const UNCACHED_WARN = 8;
+/** About how long a log's records take on one worker (s; the 0c14 round: `hits --all --json`, ~10 min for 74 logs). */
+const SECONDS_PER_LOG = 8;
+
 /**
  * The hit records of some development logs (never a hold-out), filtered: from the per-fixture cache
  * (scratch/hits-cache/<code key>/, hitsCodeKey) where the code and the fixture are unchanged, the rest checked on
  * `workers` threads and cached (`cache` false: neither read nor written).
  */
-async function collectRecords(data: () => GameData, files: readonly string[], workersOpt: string | undefined, filter: RecordFilter, progress?: (line: string) => void, cache = true, assume: Readonly<Record<string, string>> = {}): Promise<HitRecord[]> {
+async function collectRecords(data: () => GameData, files: readonly string[], workersOpt: string | undefined, filter: RecordFilter, progress?: (line: string) => void, cacheAsked = true, assume: Readonly<Record<string, string>> = {}): Promise<HitRecord[]> {
+  // The cache is keyed by code and fixture only: under other readings it's neither read nor written, decided here for
+  // every records view (round 13's own report point 2: each caller had to remember it).
+  const cache = cacheAsked && !Object.keys(assume).length;
   const workers = workersOpt === undefined ? 1 : Number(workersOpt);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const byFile = new Map<string, HitRecord[]>();
@@ -175,6 +201,8 @@ async function collectRecords(data: () => GameData, files: readonly string[], wo
     else todo.push(f);
   }
   if (cache && files.length > 1) progress?.(`hits: ${files.length - todo.length} of ${files.length} logs from the cache (${HITS_CACHE}), ${todo.length} to check`);
+  // Many logs to check: how long, so a foreground run is moved to the background before the Bash tool's 2-minute limit.
+  if (todo.length > UNCACHED_WARN) progress?.(`hits: ${todo.length} logs to check, about ${Math.ceil((todo.length * SECONDS_PER_LOG) / workers / 60)} min on ${workers} worker(s): over a minute or two, run it in the background (an engine or log-tool edit recomputes every log)`);
   if (todo.length) {
     const got = new Map<string, HitRecord[]>(todo.map((f) => [f, []]));
     const out = (r: HitRecord) => got.get(r.fixture)?.push(r);
@@ -218,7 +246,7 @@ export function staggerReport(data: GameData, named: readonly string[], progress
 /** `efsim zmdlogs differences`: where the log's listing and the replay disagree, grouped, with the damage's ratio per group. */
 export async function differencesCliReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly what?: string; readonly hits: boolean; readonly clusters?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress: (line: string) => void }): Promise<string> {
   const assume = opts.assume ?? {};
-  const records = await collectRecords(data, selectedFiles(sel, "differences"), opts.workers, opts, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
+  const records = await collectRecords(data, withOperatorsOnly(selectedFiles(sel, "differences"), opts.operators, opts.progress), opts.workers, opts, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
   // The likely-loggedAs pairs from the same records (loggedas.ts: a kit buff and an unmapped listed buff with one effect).
   const byFixture = new Map<string, HitRecord[]>();
   for (const r of records) byFixture.set(r.fixture, [...(byFixture.get(r.fixture) ?? []), r]);
@@ -410,11 +438,17 @@ export function findScalesReport(data: GameData, fx: LogFixture, operator: strin
   return lines.join("\n");
 }
 
-/** The operator id an --operator names: an id, its name or part of the id. */
+/**
+ * The operator id an --operator names: an id, its name, or a unique part of the name or the id, in any case (@efsim/data
+ * operatorId, as scripts and `zmdlogs list --with` take them; away-and-presses report point 4: "Chen" for Chen Qianyu
+ * failed, the name matched only whole). An ambiguous part is refused with the operators it names.
+ */
 export function operatorNamed(data: GameData, operator: string): string {
-  const id = data.operators[operator] ? operator : Object.keys(data.operators).find((op) => data.operators[op]?.name?.toLowerCase() === operator.toLowerCase() || op.includes(operator));
-  if (!id) throw new Error(`--operator ${operator}: no such operator (an id, its name or part of the id)`);
-  return id;
+  try {
+    return operatorId(data, operator);
+  } catch (e) {
+    throw new Error(`--operator ${operator}: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+  }
 }
 
 /** `efsim zmdlogs fit-build`: an operator's attribute nodes, weapon level and food fitted to its clean hits (buildfit.ts). */

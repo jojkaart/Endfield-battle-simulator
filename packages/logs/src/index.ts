@@ -1,7 +1,7 @@
 // @efsim/logs: the log tooling. ZMDLogs battle logs turned into fixtures (zmdlogs.ts, logs.ts: import, refresh, the
 // development / hold-out split; zmdraw.ts: raw details), and the log check that predicts every logged hit through the
 // engine (logcheck.ts the orchestration and verdicts, enginecheck.ts the engine's readings, buffreplay.ts the replay of
-// the logged casts, logcasts.ts, logeffects.ts, reactioncheck.ts, recordedburst.ts, hitvalues.ts), the per-hit export
+// the logged casts with castassembly.ts, replayrun.ts, holdinputs.ts, replaycrits.ts and replayedhits.ts, logcasts.ts, logeffects.ts, reactioncheck.ts, recordedburst.ts, hitvalues.ts), the per-hit export
 // (hitexport.ts) and the buff timing report (bufftiming.ts). The CLI's `efsim zmdlogs` commands are thin wrappers
 // (packages/cli/src/commands/zmdlogs.ts); @efsim/cli re-exports this package for older imports. Every module is
 // re-exported whole, so exported names are one namespace across the package: a view's types carry the view's name
@@ -17,7 +17,13 @@ export * from "./holds.ts";
 export * from "./rampsteps.ts";
 export * from "./replaysteps.ts";
 export * from "./replayrecord.ts";
+export * from "./replaycrits.ts";
+export * from "./castassembly.ts";
+export * from "./holdinputs.ts";
+export * from "./replayrun.ts";
+export * from "./replaykeys.ts";
 export * from "./buffreplay.ts";
+export * from "./replayedhits.ts";
 export * from "./recordedburst.ts";
 export * from "./reactioncheck.ts";
 export * from "./enginecheck.ts";
@@ -36,3 +42,4 @@ export * from "./clocksview.ts";
 export * from "./castpairs.ts";
 export * from "./loggedas.ts";
 export * from "./snapshotentry.ts";
+export * from "./decisionsview.ts";

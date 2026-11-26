@@ -1,4 +1,4 @@
-// The enemy's HP in the log check's replay (buffreplay.ts loggedEnemyHp, engine assumption enemy-hp): a kill's logged
+// The enemy's HP in the log check's replay (replayrun.ts loggedEnemyHp, engine assumption enemy-hp): a kill's logged
 // total, in lives split where the enemy went away (misprediction statistics, 2026-11-24). Alesh's P5 ultimate reads
 // it: ×1.5 (atk_up) while the enemy's HP is below half. Also the fight's start: an ultimate pressed before the log's
 // first hit (replayedSkill, ReplayedCast.beforeHits).

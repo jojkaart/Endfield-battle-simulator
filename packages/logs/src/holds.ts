@@ -25,7 +25,7 @@ export interface ClockWhy {
 
 /**
  * The kit fields that make a buff no clock of the holds (its end follows something other than its own timer, or the log
- * shows its instances merged), for runBounds and for buffreplay.ts loggedEndOf (`every`: a ticking buff, runBounds only;
+ * shows its instances merged), for runBounds and for holdinputs.ts loggedEndOf (`every`: a ticking buff, runBounds only;
  * loggedEndOf reads it off the active buff).
  */
 const NOT_A_CLOCK = ["consumedBy", "link", "endsWithCast", "maxStacks", "sharedTimer", "ticksShownByHits", "ticksLoggedAs", "endFollowsTick", "childOf"] as const;
@@ -40,7 +40,7 @@ export function notAClock(def: KitBuff, opts: { readonly every?: boolean } = {})
 /**
  * Whether the log shows run `r` refreshed: another run of the same lane (`same`) starts inside it and `r` isn't listed
  * past that start by more than REFRESH_OVERLAP_MS (runs listed side by side longer are two instances). The one rule for
- * buff runs (buffreplay.ts loggedLaneEnds) and the enemy's statuses (statusLanes).
+ * buff runs (holdinputs.ts loggedLaneEnds) and the enemy's statuses (statusLanes).
  */
 export function refreshedIn<T extends { readonly since: number; readonly lastListed: number }>(r: T, all: readonly T[], same: (a: T, b: T) => boolean): boolean {
   return all.some((o) => o !== r && same(o, r) && o.since > r.since && o.since <= r.lastListed && r.lastListed - o.since <= REFRESH_OVERLAP_MS);
@@ -74,7 +74,7 @@ export const RUN_START_MS = 3000;
 
 /**
  * How long (ms) a run may still be listed past another's start and be refreshed by it: the refreshing hit's batch.
- * Runs listed side by side longer are two instances (buffreplay.ts loggedLaneEnds; statusLanes for the enemy's statuses).
+ * Runs listed side by side longer are two instances (holdinputs.ts loggedLaneEnds; statusLanes for the enemy's statuses).
  */
 export const REFRESH_OVERLAP_MS = 200;
 
@@ -152,7 +152,7 @@ export function statusLanes(fx: Pick<LogFixture, "hits">): StatusLanes {
 }
 
 /**
- * The bounds the replay's enemy statuses give the hidden holds (as buffreplay.ts runBounds does for buffs): each instance
+ * The bounds the replay's enemy statuses give the hidden holds (as holdinputs.ts runBounds does for buffs): each instance
  * that ran out in the replay without the holds, against the log's run of it (the same status from the same applier,
  * starting within RUN_START_MS of the application, not refreshed): its last listed hit at least its lateness over the
  * replay's expiry (world time past the expiry: the placed stops after it hold it once it lasts), and the next hit that

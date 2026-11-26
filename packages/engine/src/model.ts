@@ -752,14 +752,14 @@ export interface KitBuff {
   readonly ticksLoggedAs?: string;
   /**
    * A battle log shows each tick by the hits a trigger on it (`buffTick`) fires (Liino's volleys): the log check's replay
-   * holds or brings its ticks to those logged casts' starts (cli buffreplay.ts loggedTickLandings). The engine doesn't
+   * holds or brings its ticks to those logged casts' starts (cli holdinputs.ts loggedTickLandings). The engine doesn't
    * read it.
    */
   readonly ticksShownByHits?: boolean;
   /**
    * Its end is a fixed time after its tick: one game timer gives both (Arcane's Imprisonment, whose one tick at
    * trigger_time = duration − 0.5 s casts its explosion). Where the log check's replay moves a tick to the log's
-   * (ticksLoggedAs, ticksShownByHits), its end moves as far (cli buffreplay.ts loggedTick, heldTicks). The engine
+   * (ticksLoggedAs, ticksShownByHits), its end moves as far (cli holdinputs.ts loggedTick, heldTicks). The engine
    * doesn't read it.
    */
   readonly endFollowsTick?: boolean;
@@ -772,7 +772,7 @@ export interface KitBuff {
   /**
    * A child of another buff of the kit (CreateBuffAction asChildBuff in the parent's game buff): applied with it for the
    * same time. Where the log check's replay moves the parent's end (endFollowsTick), an instance that ended with it
-   * moves too (cli buffreplay.ts movedTick). The engine doesn't read it: the kit gives both the same duration.
+   * moves too (cli holdinputs.ts movedTick). The engine doesn't read it: the kit gives both the same duration.
    */
   readonly childOf?: string;
   /**

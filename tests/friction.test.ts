@@ -1,6 +1,8 @@
 // scripts/friction.ts: an improvement round's outcome skeletons and carried backlog points.
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { carriedFrom, carry, outcomeSkeleton, points } from "../scripts/friction.ts";
+import { carriedFrom, carry, missingFiles, outcomeSkeleton, points } from "../scripts/friction.ts";
 
 const report = ["# A report (2026-11-23)", "", "Task: x.", "", "## 1. First thing.", "", "- **What happened:** a.", "- **From:** round 4.", "", "## 2. Second", "- **What happened:** b.", "", "## What worked well", "", "Fine."].join("\n");
 
@@ -45,5 +47,23 @@ describe("friction.ts outcomes --backlog (round 10's own report point 2)", () =>
     expect([...carried].sort((a, b) => a[0] - b[0])).toEqual([[1, [1]], [2, [2]], [3, [1]]]);
     const r = ["## 1. One", "## 2. Two", "## 3. Three", "## 4. Four"].join("\n");
     expect(outcomeSkeleton(r, 11, { name: "backlog.md", carried })).toBe("## Outcome (round 11)\n\n- 1 (One): carried (backlog.md point 1)\n- 2 (Two): carried (backlog.md point 2)\n- 3 (Three): carried (backlog.md point 1)\n- 4 (Four): ");
+  });
+});
+
+describe("the open friction reports name their files (round 14)", () => {
+  it("missingFiles: a point without a **Files:** (or a backlog's **Needs:**) line", () => {
+    expect(missingFiles(report)).toEqual([1, 2]);
+    expect(missingFiles(["## 1. A", "- **Files:** scripts/x.ts.", "## 2. B", "- **Needs:** packages/logs.", "## 3. C", "- **Files:**"].join("\n"))).toEqual([3]);
+  });
+
+  it("every point of every report in docs/friction/ has one: the lead splits a round by them (round 13's report point 1)", () => {
+    const dir = join(import.meta.dirname, "../docs/friction");
+    const bad = readdirSync(dir)
+      .filter((f) => f.endsWith(".md") && f !== "README.md")
+      .flatMap((f) => {
+        const missing = missingFiles(readFileSync(join(dir, f), "utf8"));
+        return missing.length ? [`${f}: point(s) ${missing.join(", ")}`] : [];
+      });
+    expect(bad, "add a **Files:** line to each point (the files its suggestion touches; docs/friction/README.md); node scripts/friction.ts check <file> lists them").toEqual([]);
   });
 });

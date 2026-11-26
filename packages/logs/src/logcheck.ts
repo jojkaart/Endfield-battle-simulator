@@ -5,6 +5,7 @@
 
 import {
   applyBuff,
+  withCurveReading,
   computeHit,
   computeStats,
   computeReaction,
@@ -49,7 +50,9 @@ import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
 import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
 import { REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK } from "./replayrecord.ts";
-import { atLayers, disagreementRuns, replayedHits, replayKitBuffs, unknownFacts, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits, type ReplayOptions } from "./buffreplay.ts";
+import { replayKitBuffs, unknownFacts, type BuffReplay, type Fact, type ReplayCastFacts, type ReplayOptions } from "./buffreplay.ts";
+import { atLayers, disagreementRuns, replayedHits, type DisagreementRun, type ReplayedHits } from "./replayedhits.ts";
+import type { ConsumedBuffs } from "./replayrun.ts";
 
 export type { Assumption, AssumptionKind } from "./assumptions.ts";
 import type { Assumption } from "./assumptions.ts";
@@ -375,7 +378,7 @@ export function layerVariants(hit: LogHit, cap: StackCap = () => null, decided: 
   let out: Variant[] = [NO_VARIANT];
   for (const buff of new Set(all.map((e) => e.buff))) {
     const st = buffFile(buff)?.stacking;
-    // A buff the kit-buff replay decides comes with its layers already (buffreplay.ts replayedHits).
+    // A buff the kit-buff replay decides comes with its layers already (replayedhits.ts replayedHits).
     if (decided.has(buff)) continue;
     if (st?.type !== 8 || [...counts].some(([k, n]) => k.startsWith(`${buff}|`) && n !== 1)) continue;
     const max = st.maxStacks ?? (st.maxStacksKey ? (cap(buff, st.maxStacksKey) ?? (st.maxStackCnt > 1 ? st.maxStackCnt : null)) : null);
@@ -649,7 +652,20 @@ export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: 
   return out;
 }
 
-export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), opts: Pick<ReplayOptions, "assume" | "trace"> = {}): LogBuffReplay {
+export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: Placement | LogReplayOptions, opts: Pick<ReplayOptions, "assume" | "trace"> = {}): LogBuffReplay {
+  // Either form (away-and-presses report point 5: `logBuffReplay(data, fx, { assume })` passed the readings as the
+  // placement, and the replay ran on the defaults without a word): an options object as the third argument is taken
+  // as such; with a placement, the options come fourth, as before.
+  if (placementOrOpts !== undefined && !isPlacement(placementOrOpts)) {
+    if (Object.keys(opts).length) throw new Error("logBuffReplay: options given twice (as the third argument and the fourth)");
+    const { placement: given, ...rest } = placementOrOpts;
+    return logBuffReplay(data, fx, given ?? placeHits(data, fx), rest);
+  }
+  // A reading of the data itself (engine assumption combo-curve): the placement's stop lists and the replay's timeline
+  // must read the same curve, so the data must already be under it (combo-hold report point 3: a call with the raw data
+  // mixed the two silently; the views, snapshotEntry and hitRecords wrap it at their entry).
+  if (withCurveReading(data, opts.assume) !== data) throw new Error(`logBuffReplay under combo-curve ${opts.assume?.["combo-curve"] ?? "(the default)"}: the game data is under another of its readings, so the placement and the replay would read two curves; pass withCurveReading(data, assume) (@efsim/engine), and a placement made from it`);
+  const placement = placementOrOpts ?? placeHits(data, fx);
   let replay = replayKitBuffs(data, fx, placement, opts);
   // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
   const levels = new Map<string, ReactionLevel>();
@@ -669,6 +685,13 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placeme
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed) };
 }
+
+/** logBuffReplay's options in one object (its third argument): the placement (default placeHits), the readings and the traces. */
+export interface LogReplayOptions extends Pick<ReplayOptions, "assume" | "trace"> {
+  readonly placement?: Placement;
+}
+
+const isPlacement = (x: Placement | LogReplayOptions): x is Placement => "hits" in x && "casts" in x && x.hits instanceof Map;
 
 /** Corrosion's ramp as the logged hits read it at the replay's landings (rampsteps.ts rampSteps; `zmdlogs ramp`). */
 export function corrosionRamp(data: GameData, fx: LogFixture, placement: Placement, replay: BuffReplay): RampStep[] {

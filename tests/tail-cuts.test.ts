@@ -1,4 +1,4 @@
-// The replay's unlogged tails (engine assumption unlogged-tails `cut`: packages/logs buffreplay.ts tailCuts): a cast
+// The replay's unlogged tails (engine assumption unlogged-tails `cut`: packages/logs replayrun.ts tailCuts): a cast
 // whose landings after its last logged one are none of them in the log, the enemy there, ends after it.
 // pending/zmdlogs-0c14fb3ce77d.json: Rossi's battle skill at 35.40 s lands its two charge hits (35.94, 36.06 s) and
 // then neither her Lift (frame 35) nor the wolves and their bleed; her 52.04 s battle skill, with no Vulnerable stack

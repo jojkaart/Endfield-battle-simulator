@@ -68,3 +68,10 @@ extra hold sits, smaller leads, and round 13's backlog points 1, 4 and 6 (branch
 --trace-buff status:vulnerable` showed the Vulnerable stack the cut cast would have added, which tied the 52 s cast's
 missing follow-up to the 35 s one. `measure --variant` ran two readings in one queue slot each time. scripts/edit.ts
 made the long text edits (assumption texts, docs) safe in one call.
+
+## Outcome (round 14)
+
+- 1 (A replay rule's decisions were visible only through a whole measure): done (ef86905, e0cec23, 126cf94): `efsim zmdlogs decisions <fixture…|--all> --assume <id>=<r>` (decisionsview.ts): the SKIP, TAILCUT, FAILED, MISSED, INFER, MADE, JUMPDROP, FORCED, INSIDE, CUTS lines only one side has, per log, a count per kind; two replays per log, each on its own data (0c14 `unlogged-tails=kept`: the two tail cuts, in 9 s)
+- 2 (One log's verdict changes under a reading needed a scratch diff): done (ef86905): `zmdlogs hits <fixture…> --against <id>=<r>` (hitexport.ts recordChanges): each hit whose class or primary reading moved, both sides, the modifiers only one has, a count per change
+- 3 (A reading of the game data has no single entry point in the log tools): its guard done (126cf94: logBuffReplay refuses data not under its combo-curve reading; it caught `zmdlogs decisions` mixing the two at once); the log context carried (2026-11-26-backlog-after-round-14.md point 1)
+- 4 (The CLI's option names are one set across commands, checked only at start-up): done (ef86905): cli.ts finds the command and parses with its own options and the global ones (command.ts commandOptions, commandName); an option another command declares is free to take another type; an unknown option names the command that has it

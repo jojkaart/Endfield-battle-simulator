@@ -251,7 +251,9 @@ export function delayBursts(ctx: TimelineContext, st: TimelineState, events: rea
   const holds = (op: string) => (x: TimelineState["slowdowns"][number]) => (reading === "ultimates" ? x.ultimate === true : x.exempt !== op || (reading === "all" && x.ultimate === true));
   const later = events.flatMap((e): PendingBurst[] => {
     if (e.kind !== "burst" || delay(e) === 0) return [];
-    const { frame: _at, ...event } = e;
+    const { frame: at, ...rest } = e;
+    // The infliction's frame on the burst's record (record only: backlog after round 13 point 2, the bursts view's cause).
+    const event = { ...rest, inflictedAt: at };
     return [{ kind: "burst", frame: operatorClockDue(st, e.operator, e.frame, delay(e), holds(e.operator)), clock: { operator: e.operator }, event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}) }];
   });
   return { state: schedule(st, later), now };

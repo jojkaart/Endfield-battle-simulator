@@ -19,7 +19,7 @@ describe("efsim kit", () => {
     expect(text).toContain(`frames ${(landingFrames(hit as NonNullable<typeof hit>) ?? []).join(",")}`);
     expect(text).not.toMatch(/^Buffs:/m);
     expect(kitView(data, "chr_0036_jsspsi")).toMatch(/^Buffs:\n {2}\S+ "/m);
-    expect(() => kitView(data, "nobody-at-all")).toThrow(/no such operator/);
+    expect(() => kitView(data, "nobody-at-all")).toThrow(/no operator is called or has an id with "nobody-at-all"/);
   });
 });
 

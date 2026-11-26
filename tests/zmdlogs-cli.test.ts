@@ -4,6 +4,8 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { loadGameData } from "@efsim/data";
+import { operatorNamed } from "@efsim/logs";
 import zmdlogs, { NOT_REPLAYING, REPLAYING } from "../packages/cli/src/commands/zmdlogs.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -21,5 +23,16 @@ describe("zmdlogs --assume", () => {
     const r = spawnSync(process.execPath, [join(ROOT, "packages/cli/src/main.ts"), "zmdlogs", "casts", "db87", "--assume", "hidden-holds=none"], { cwd: ROOT, encoding: "utf8" });
     expect(r.status).not.toBe(0);
     expect(r.stderr).toMatch(/zmdlogs casts doesn't replay the kits, so --assume changes nothing there; the subcommands that do: hits, check/);
+  });
+});
+
+describe("zmdlogs --operator", () => {
+  it("takes an id, a name, or a unique part of either in any case (round 14: Chen for Chen Qianyu), refusing an ambiguous part", () => {
+    const data = loadGameData();
+    expect(operatorNamed(data, "Chen")).toBe("chr_0005_chen");
+    expect(operatorNamed(data, "chr_0005_chen")).toBe("chr_0005_chen");
+    expect(operatorNamed(data, "wulfa")).toBe("chr_0028_wulfa");
+    expect(() => operatorNamed(data, "nobody-at-all")).toThrow(/--operator nobody-at-all: no operator/);
+    expect(() => operatorNamed(data, "chr_00")).toThrow(/names \d+ operators/);
   });
 });

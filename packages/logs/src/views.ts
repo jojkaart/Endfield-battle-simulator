@@ -16,7 +16,8 @@
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
-import { loggedCastFates, type BuffReplay } from "./buffreplay.ts";
+import type { BuffReplay } from "./buffreplay.ts";
+import { loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
@@ -24,8 +25,9 @@ import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoic
 import { castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import type { TotalsComparison, TotalsShares } from "./enginecheck.ts";
+import type { TotalsComparison, TotalsCrit, TotalsShares } from "./enginecheck.ts";
 import { kindsAggregate, type KindShare } from "./onesided.ts";
+import { decisionText, replayDecisions } from "./decisionsview.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -271,18 +273,10 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const drop = replay.droppedLanding(h);
     lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}${drop ? `: ${drop}` : ""}` });
   }
-  // The logged casts the replay didn't make, and why (BuffReplay.skipped).
-  for (const x of replay.skipped) {
-    const t = msOf(x.frame);
-    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `SKIP   ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
-  }
-  // The casts ended after their last logged landing (BuffReplay.tailCuts, engine assumption unlogged-tails).
-  for (const x of replay.tailCuts) {
-    const t = msOf(x.frame);
-    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: `TAILCUT ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): ended after its last logged landing, none of its later ones in the log (unlogged-tails)` });
-  }
-  for (const x of replay.failed) if (inWindow(f, x.cast.start) && mine(f, x.cast.operator)) lines.push({ t: x.cast.start, order: 1, text: `FAILED ${label(data, x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
-  for (const m of replay.missed) if (inWindow(f, m.start) && mine(f, m.operator)) lines.push({ t: m.start, order: 1, text: `MISSED ${label(data, m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
+  // The replay's own decisions (decisionsview.ts replayDecisions, from BuffReplay's records): SKIP the logged casts it
+  // didn't make and why, TAILCUT those it ended after their last logged landing, FAILED / MISSED, INFER the hitless
+  // presses it made from the listing, MADE a cast made as another skill than the placement's, FORCED / INSIDE / CUTS.
+  for (const d of replayDecisions(data, replay)) if (inWindow(f, d.t) && mine(f, d.operator)) lines.push({ t: d.t, order: 1, text: decisionText(d) });
   // The log's cast events and what the cast assembly made of each (loggedCastFates), with where the event sits in its
   // skill's stop (castEventPlace; placement leads report point 1: "0.02 s of world time apart" hid 1.76 s of log time).
   const hitTimes = fx.hits.map((h) => h.t).sort((a, b) => a - b);
@@ -291,10 +285,29 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   // it made where the buff isn't on (3aa6ab93bad4: Zhuang Fangyi's real ultimates, read as Empyrean ticks by their
   // key), with the buff's last end and the event in frames: an end on the event's own frame is a whole lead's worth
   // (remaining-leads report point 4: 4bfc 179.51 s took instrumenting loggedTick).
-  const tickOrCast = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly buff?: string }) => {
+  const ofEvent = (e: { readonly t: number; readonly operator: string; readonly skill: string }) => {
     const length = msOf(data.skills[e.skill]?.timing?.durationFrames ?? 0);
-    const mine = (c: { readonly operator: string; readonly skillId: string; readonly start: number }) => c.operator === e.operator && c.skillId === e.skill && c.start <= e.t + 100 && c.start >= e.t - length - 100;
+    return (c: { readonly operator: string; readonly skillId: string; readonly start: number }) => c.operator === e.operator && c.skillId === e.skill && c.start <= e.t + 100 && c.start >= e.t - length - 100;
+  };
+  // What the replay itself did with the event's cast (BuffReplay.made, skipped, failed: away-and-presses report point 2,
+  // 8915 111.23 s read as a tick while the replay had made the press from the listing): its own record, not a match.
+  // A placed cast made as itself says nothing new: only its other fates are added.
+  const replayFate = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly fate: string }) => {
+    const mine = ofEvent(e);
+    const made = replay.made.find((m) => !m.cast.missed && mine(m.cast));
+    if (made?.inferred !== undefined) return `the replay made it at ${s(msOf(made.frame))} as ${shortSkill(made.skillId)}, a hitless press from the listing (INFER)`;
+    if (made && made.skillId !== made.cast.skillId) return `the replay made it at ${s(msOf(made.frame))} as ${shortSkill(made.skillId)} (MADE)`;
+    if (made) return e.fate === "placed" ? null : `the replay made it at ${s(msOf(made.frame))}`;
+    const skip = replay.skipped.find((x) => mine(x.cast));
+    if (skip) return `the replay skipped it (SKIP)`;
+    if (replay.failed.some((x) => mine(x.cast))) return "the replay couldn't make it (FAILED)";
+    return null;
+  };
+  const tickOrCast = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly buff?: string }) => {
+    const mine = ofEvent(e);
     const ef = Math.round((e.t * FPS) / 1000);
+    const inferred = replay.made.find((m) => m.inferred !== undefined && mine(m.cast));
+    if (inferred) return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the press from the listing (hitless-presses inferred: ${inferred.inferred})`;
     // The buff's last instance that ended by the event (one the cast itself creates starts after it).
     const last = replay.kitWindows(`${e.operator}:${e.buff}`, e.operator).filter((w) => Number.isFinite(w.end) && w.end <= e.t + 100).at(-1);
     const lastText = last ? `its last instance ${s(last.start)}–${s(last.end)} ended at frame ${Math.round((last.end * FPS) / 1000)}, the event's frame ${ef}` : "no instance ended before it";
@@ -324,11 +337,8 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
               : e.fate === "follow-up"
                 ? "a follow-up-only skill: left to the engine"
                 : "no kit skill of that id: ignored";
-    lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}${place ? `; ${eventPlaceText(place)}` : ""}` });
-  }
-  for (const x of replay.castFlags) {
-    const t = msOf(x.frame);
-    if (inWindow(f, t) && mine(f, x.cast.operator)) lines.push({ t, order: 1, text: x.kind === "cuts" ? `CUTS   ${label(data, x.cast.operator)} ${shortSkill(x.skillId)}: ${x.why}` : `${x.kind === "forced" ? "FORCED" : "INSIDE"} ${label(data, x.cast.operator)} ${shortSkill(x.skillId)} made against its kit: ${x.why}` });
+    const fate = e.fate === "tick" ? null : replayFate(e);
+    lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}${fate ? `; ${fate}` : ""}${place ? `; ${eventPlaceText(place)}` : ""}` });
   }
   for (const x of replay.traces) {
     const t = msOf(x.frame);
@@ -401,7 +411,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, or a kit trigger's firings and ready frame) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses it made from the listing, MADE casts made as another skill than placed, TAILCUT casts it ended early${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, or a kit trigger's firings and ready frame) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines)].join("\n");
 }
 
@@ -902,11 +912,12 @@ export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbos
  * Intent). A total that moves while the per-hit views improve is a compensating error: its other side shows here
  * (round 8: 458b's Laevatain, 9.0 → 11.3% from two replay-only finisher landings, found by hand from a replay dump).
  */
-export function totalsView(data: GameData, fx: LogFixture, f: { readonly operators?: readonly string[]; readonly top?: number; readonly assume?: Readonly<Record<string, string>>; readonly byEvent?: boolean; readonly kinds?: boolean } = {}): string {
+export function totalsView(data: GameData, fx: LogFixture, f: { readonly operators?: readonly string[]; readonly top?: number; readonly assume?: Readonly<Record<string, string>>; readonly byEvent?: boolean; readonly byCrit?: boolean; readonly kinds?: boolean } = {}): string {
   const replay = f.assume && Object.keys(f.assume).length ? logBuffReplay(data, fx, undefined, { assume: f.assume }) : logBuffReplay(data, fx);
   const byHit = engineHits(data, fx, replay);
   const t = engineReport(data, fx, replay, byHit, checkLog(data, fx, { replay, engineHits: byHit })).totals;
   if (f.byEvent) return totalsByEvent(data, fx, t, f);
+  if (f.byCrit) return totalsByCrit(data, fx, t, (h) => byHit.get(h)?.totalsCrit ?? "known", f);
   if (f.kinds) return totalsOneSided(data, fx, t, f);
   const top = f.top ?? 10;
   const pct = (sim: number, log: number) => (log === 0 ? "n/a" : `${sim / log - 1 > 0 ? "+" : ""}${(100 * (sim / log - 1)).toFixed(1)}%`);
@@ -934,6 +945,41 @@ export function totalsView(data: GameData, fx: LogFixture, f: { readonly operato
     if (only.length > top) out.push(`      … and ${only.length - top} more replay-only landing(s), ${n(sum(only.slice(top)))}`);
     for (const h of [...logOnly].sort((a, b) => b.value - a.value).slice(0, top)) out.push(`      log only    ${s(h.t)} s  ${shortSkill(h.event)}  ${n(h.value)}`);
     if (logOnly.length > top) out.push(`      … and ${logOnly.length - top} more logged hit(s) without a counted landing`);
+  }
+  return out.join("\n");
+}
+
+/**
+ * `zmdlogs totals --by crit`: the matched parts per operator by how the totals took each hit's crit (TotalsCrit: the
+ * log's, the value's exact reading, read from the value, expected crits), each kind's sums and its share of the
+ * operator's error: is a total's miss the model or the fight's crit luck (0c14-and-operator-curve report point 1)?
+ */
+function totalsByCrit(data: GameData, fx: LogFixture, t: TotalsComparison, critOf: (h: LogHit) => TotalsCrit, f: { readonly operators?: readonly string[] }): string {
+  const L = t.logged.damage;
+  const n = (x: number) => Math.round(x).toLocaleString("en-US");
+  const pc = (x: number, of: number) => (of === 0 ? "n/a" : `${x >= 0 ? "+" : ""}${((100 * x) / of).toFixed(1)}%`);
+  const KINDS: readonly TotalsCrit[] = ["known", "exact", "read", "expected"];
+  const rows = new Map<string, Map<TotalsCrit, { n: number; sim: number; log: number }>>();
+  for (const p of t.parts) {
+    if (!p.logged || (f.operators?.length && !f.operators.includes(p.operator))) continue;
+    const byKind = rows.get(p.operator) ?? rows.set(p.operator, new Map()).get(p.operator) as Map<TotalsCrit, { n: number; sim: number; log: number }>;
+    const k = critOf(p.logged);
+    const r = byKind.get(k) ?? { n: 0, sim: 0, log: 0 };
+    r.n++;
+    r.sim += p.damage;
+    r.log += p.logged.value;
+    byKind.set(k, r);
+  }
+  const out = [
+    `${fx.id}: the matched landings by how the totals take each hit's crit (enginecheck.ts TotalsCrit; engine assumption totals-crits): known the log gives it, exact the value is one of its two readings, read near one of them only, expected neither (expected crits: that kind's error is partly the fight's crit luck). Per kind: landings, simulated vs logged, its error, and its share of the fight's logged total.`,
+  ];
+  for (const [op, byKind] of rows) {
+    const all = [...byKind.values()].reduce((a, r) => ({ n: a.n + r.n, sim: a.sim + r.sim, log: a.log + r.log }), { n: 0, sim: 0, log: 0 });
+    out.push(`  ${label(data, op)}: matched ${n(all.sim)} vs ${n(all.log)} (${pc(all.sim - all.log, all.log)}, ${all.n} landing(s))`);
+    for (const k of KINDS) {
+      const r = byKind.get(k);
+      if (r) out.push(`      ${k.padEnd(8)} ${String(r.n).padStart(4)}  ${n(r.sim)} vs ${n(r.log)} (${pc(r.sim - r.log, r.log)}; ${pc(r.sim - r.log, L)} of the fight)`);
+    }
   }
   return out.join("\n");
 }

@@ -10,6 +10,7 @@
 import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
+import { ONE_SIDED } from "./replaykeys.ts";
 
 /** How near (ms) a replay-only landing and a log-only hit of one operator pair as twins: one hit, keyed or placed apart. */
 export const TWIN_MS = 1500;
@@ -151,7 +152,7 @@ export function oneSidedLandings(
     if (x.side !== "log" || !x.hit) continue;
     const l = parseReactionEvent(x.hit.event) ? replay.statusLanding(x.hit) : replay.landing(x.hit);
     if ("unknown" in l) {
-      x.context = `no landing: ${l.unknown}`;
+      x.context = `${ONE_SIDED.noLandingPrefix}${l.unknown}`;
       // A status the replay didn't deal near the hit: whether it dealt it later or sooner (its operator's, within
       // STATUS_NEAR_MS), by another operator near the hit, or not at all.
       const r = parseReactionEvent(x.hit.event);
@@ -164,21 +165,21 @@ export function oneSidedLandings(
     }
     const part = byLanding.get(l);
     if (part && !part.logged) {
-      x.context = "unread";
+      x.context = ONE_SIDED.unread;
       const r = items.find((y) => y.side === "replay" && y.landing === l);
       if (r) {
-        r.context = "unread";
+        r.context = ONE_SIDED.unread;
         r.twin = { t: x.t, key: x.key, damage: x.damage };
         x.twin = { t: r.t, key: r.key, damage: r.damage };
       }
-    } else x.context = part ? "landing a teammate's hit's" : `landed, not counted${uncounted.has(l) ? ` (${uncounted.get(l)})` : ""}`;
+    } else x.context = part ? ONE_SIDED.teammate : `landed, not counted${uncounted.has(l) ? ` (${uncounted.get(l)})` : ""}`;
   }
   // Twins: one to one, like values first, then nearest.
   const pairs: { r: (typeof items)[number]; h: (typeof items)[number]; like: boolean; dt: number }[] = [];
   for (const r of items)
-    if (r.side === "replay" && r.context !== "unread")
+    if (r.side === "replay" && r.context !== ONE_SIDED.unread)
       for (const h of items)
-        if (h.side === "log" && h.context !== "unread" && h.operator === r.operator && Math.abs(h.t - r.t) <= TWIN_MS) {
+        if (h.side === "log" && h.context !== ONE_SIDED.unread && h.operator === r.operator && Math.abs(h.t - r.t) <= TWIN_MS) {
           const ratio = r.damage / -h.damage;
           if (ratio > TWIN_MAX || ratio < 1 / TWIN_MAX) continue;
           pairs.push({ r, h, like: ratio <= TWIN_LIKE && ratio >= 1 / TWIN_LIKE, dt: Math.abs(h.t - r.t) });
@@ -189,7 +190,7 @@ export function oneSidedLandings(
     if (paired.has(p.r) || paired.has(p.h)) continue;
     paired.add(p.r);
     paired.add(p.h);
-    const ctx = p.like ? "twin like" : "twin other";
+    const ctx = p.like ? ONE_SIDED.twinLike : ONE_SIDED.twinOther;
     p.r.context = ctx;
     p.h.context = ctx;
     p.r.twin = { t: p.h.t, key: p.h.key, damage: p.h.damage };
@@ -200,7 +201,7 @@ export function oneSidedLandings(
   const spare = [...uncounted].filter(([l]) => l.exact > 0);
   const usedSpare = new Set<LandedHit>();
   for (const h of items) {
-    if (h.side !== "log" || h.context === "unread" || h.context?.startsWith("twin") || h.context?.startsWith("landed")) continue;
+    if (h.side !== "log" || h.context === ONE_SIDED.unread || h.context?.startsWith("twin") || h.context?.startsWith("landed")) continue;
     let best: [LandedHit, string] | undefined;
     for (const [l, why] of spare) {
       if (usedSpare.has(l) || l.operator !== h.operator || Math.abs(msOf(l.frame) - h.t) > TWIN_MS) continue;
@@ -216,16 +217,16 @@ export function oneSidedLandings(
   for (const x of items) {
     if (x.t >= lastLogged - END_MS) x.flags.push("end");
     if (away.some((w) => Math.abs(x.t - w.from) <= AWAY_EDGE_MS || Math.abs(x.t - w.to) <= AWAY_EDGE_MS || (x.t > w.from && x.t < w.to))) x.flags.push("away");
-    if (x.context === "unread" || x.context?.startsWith("twin")) continue;
+    if (x.context === ONE_SIDED.unread || x.context?.startsWith("twin")) continue;
     if (x.side === "replay" && x.landing) {
       const l = x.landing;
       const logged = l.cast !== undefined ? (castLogged.get(l.cast) ?? []) : [];
       x.context =
-        l.cast === undefined ? "no cast"
-        : logged.length === 0 ? "cast unlogged"
-        : logged.every((f) => f < l.frame) ? "cast tail"
-        : logged.every((f) => f > l.frame) ? "cast head"
-        : "cast gap";
+        l.cast === undefined ? ONE_SIDED.noCast
+        : logged.length === 0 ? ONE_SIDED.castUnlogged
+        : logged.every((f) => f < l.frame) ? ONE_SIDED.castTail
+        : logged.every((f) => f > l.frame) ? ONE_SIDED.castHead
+        : ONE_SIDED.castGap;
     }
   }
   return items.map(({ landing: _l, hit: _h, context, twin, ...x }) => ({ ...x, context: context ?? "?", ...(twin ? { twin } : {}) }));

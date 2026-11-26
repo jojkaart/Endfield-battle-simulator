@@ -1,11 +1,11 @@
-// The replay's steps (buffreplay.ts replayOnce): what the log says of the enemy's Stagger (its recoveries, its bar
+// The replay's steps (replayrun.ts replayOnce): what the log says of the enemy's Stagger (its recoveries, its bar
 // before each group of hits, its Stagger listing), the placed hidden holds, the casts and the sample frames, in the
 // order the replay takes them at one frame (stepRank). Its own module (improvement round 8, round 5's parked point 12):
 // a new kind of step is an edit here and one branch in replayOnce.
 
 import { FPS } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import type { ReplayedCast } from "./buffreplay.ts";
+import type { ReplayedCast } from "./castassembly.ts";
 
 const frameOf = (ms: number) => Math.round((ms * FPS) / 1000);
 

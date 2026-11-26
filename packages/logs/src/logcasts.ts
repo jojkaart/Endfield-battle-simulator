@@ -91,7 +91,7 @@ export function withResets<T extends TimeStop>(parts: readonly { readonly stops:
  *   must match it (withLoggedCasts, loggedCastFates, the reaction check's enemy clock).
  * - the placement's second pass: castTimeStops and the log's unplaced cast events' stops, those uncut (placeHits: an
  *   event's time is the press, no time to cut at).
- * - buffreplay.ts replayedCastStops / query.ts replayTimeStops: what the replay holds (its casts, an ultimate placed
+ * - castassembly.ts replayedCastStops / query.ts replayTimeStops: what the replay holds (its casts, an ultimate placed
  *   from its cast event included); for every hold bound, world-time view and diagnosis text.
  * Every list is built by skillStops and cut by withResets; nothing else in packages/logs reads SkillTiming.slowdowns or
  * resets for a list (tests/stops-source.test.ts).
@@ -938,7 +938,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
 /**
  * Whether the log shows an operator controlled at a time (ms), from the log alone: the logged hit with Stagger nearest
  * that time among the kit hits whose Stagger only the controlled operator deals (poiseControlledOnly: basic attacks,
- * as buffreplay.ts controlSwaps reads them) is the operator's, within CONTROL_EVIDENCE_MS. False without such a hit
+ * as castassembly.ts controlSwaps reads them) is the operator's, within CONTROL_EVIDENCE_MS. False without such a hit
  * (unknown).
  */
 function controlEvidence(fx: LogFixture, groups: ReadonlyMap<string, readonly Group[]>): (operator: string, t: number) => boolean {

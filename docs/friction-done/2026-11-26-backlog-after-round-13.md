@@ -65,6 +65,11 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   with "what did the enemy have", in one view; `clocks --clock burst` then measures the right span.
 - **Needs:** packages/engine (landing.ts), the replay's record (replayrecord.ts).
 - **From:** this round's own work (docs/friction/2026-11-24-round-11-friction.md); docs/friction-done/2026-11-24-backlog-after-round-11.md point 13; docs/friction-done/2026-11-25-remaining-leads.md point 3 (its second half); docs/friction-done/2026-11-25-backlog-after-round-12.md point 2.
+- Closed by worktree-agent-a5e4ed1a5c0c50ba9, 6959fe6: engine landing.ts delayBursts keeps the infliction's frame on
+  the burst it schedules (StatusEvent `inflictedAt`, record only; team-ab identity unchanged); burstsview.ts takes the
+  replay's cause from it and the log's from the logged hit standing for that landing, the search only where neither
+  exists (marked "nearest"); `clocks --clock burst` measures from it. Not done: the infliction stacks and appliers
+  printed before each burst (`--trace-buff status:infliction` still answers it).
 
 ## 3. Two compositions of one fight's check: the snapshot check's and the hit records'
 
@@ -82,6 +87,10 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   logcheck.ts), and its proof is a snapshots:update on both sides; a refactor under a parallel change of the same
   calls is a merge conflict at best.
 - **From:** docs/friction-done/2026-11-24-round-11-friction.md point 4; docs/friction-done/2026-11-25-backlog-after-round-12.md point 3.
+- Closed by worktree-agent-a5e4ed1a5c0c50ba9, 1b04e66: snapshotentry.ts composeCheck (placement, replay, engine
+  readings, verdicts, the engine check and a memoised readingBasis per hit), which snapshotEntry and hitRecords both
+  build on; `zmdlogs hits 0c14 8915 489c 0eef --json --no-cache` identical against the commit before by cli-ab (2,353
+  records), snapshots:update "No log's verdicts moved".
 
 ## 4. The guessed slow-down curves can't be tried as a reading
 
@@ -124,6 +133,9 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
 - **Why it helps:** a view change can't move a snapshot by accident, and an agent sees at the constant what it keys.
 - **Needs:** packages/logs/src/buffreplay.ts (where the strings are made) and onesided.ts.
 - **From:** docs/friction-done/2026-11-25-round-12-friction.md point 3.
+- Closed by worktree-agent-a5e4ed1a5c0c50ba9, e0cec23: packages/logs/src/replaykeys.ts NO_LANDING (the replay's
+  reasons for no landing or facts) and ONE_SIDED (the one-sided contexts), with the comment that a change moves the
+  snapshots' kinds; buffreplay.ts and onesided.ts use them.
 
 ## 6. buffreplay.ts is one 2,900-line file
 
@@ -145,6 +157,10 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   its proof (snapshots:update "No log's verdicts moved") didn't fit beside the accuracy items. Still live.
 - Not done by worktree-agent-a732e41da13b26399 (2026-11-26, 0c14 and the operator curve): no time left after the
   accuracy items (the round's replay change went into the engine's replayCast, not buffreplay.ts). Still live.
+- Closed by worktree-agent-a5e4ed1a5c0c50ba9, 80253f4: six modules by statement (castassembly.ts, replayrun.ts,
+  holdinputs.ts, replaycrits.ts, replayedhits.ts; buffreplay.ts keeps replayKitBuffs and BuffReplay), the 130
+  top-level statements the original's (checked by AST), importers and the prose citations "buffreplay.ts <name>"
+  following the names; measure against 0b094c3 "No log's verdicts moved", snapshots:update unchanged.
 
 ## Parked
 
@@ -283,3 +299,12 @@ The reports named their episodes (db87's tick chains, 489c's Corrosion, the 14 p
 minutes, Ember's steps in 04d4), so each new view was tried on its episode: `holds --dropped --all` put the enemy-clock
 round's finding (combos in a Stagger) on its first line, and `clocks --all` reproduced its five probes' numbers in one
 run.
+
+## Outcome (round 14)
+
+- 1 (Which rule decided a cast: `zmdlogs casts --why` and `zmdlogs placement --why`): closed before this round (22bcd58, `--choices`); its leftover (scripts/probes/placement/ult-overlap.ts still recomputes its quiet count) not done: a probe, not a tool
+- 2 (The burst view's causes are a heuristic, and the enemy's inflictions before a burst aren't shown): done (6959fe6): the burst's record keeps its infliction's frame (StatusEvent `inflictedAt`), burstRows reads it on both sides; the stacks before each burst not printed (`--trace-buff status:infliction`)
+- 3 (Two compositions of one fight's check: the snapshot check's and the hit records'): done (1b04e66): composeCheck, which snapshotEntry and hitRecords share; identical records by cli-ab
+- 4 (The guessed slow-down curves can't be tried as a reading): closed before this round (22bcd58, `combo-curve`); round 14 added the guard that the data is under the call's reading (126cf94)
+- 5 (Which strings are keys, and which are only text): done (e0cec23): replaykeys.ts NO_LANDING and ONE_SIDED
+- 6 (buffreplay.ts is one 2,900-line file): done (80253f4): six modules, a move only (no verdict moved: measure and snapshots:update)

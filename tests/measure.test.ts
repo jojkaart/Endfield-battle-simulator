@@ -194,6 +194,14 @@ describe("measure --split (round 11: which part of a change moved a log)", () =>
     expect(parts.map((p) => p.label).join(" ")).not.toMatch(/cccc/);
   });
 
+  it("with --only, two parts: the named files and every other code file (hold-outs named by count only)", () => {
+    const files = ["packages/logs/src/logcasts.ts", "packages/logs/src/buffreplay.ts", "packages/data/kits/x.json", "docs/journal.md", "fixtures/holdout/zmdlogs-cccc11112222.json"];
+    const parts = splitGroups(files, [], "packages/logs/src/logcasts.ts");
+    expect(parts.map((p) => p.files)).toEqual([["packages/logs/src/logcasts.ts"], ["packages/logs/src/buffreplay.ts", "packages/data/kits/x.json", "fixtures/holdout/zmdlogs-cccc11112222.json"]]);
+    expect(parts.map((p) => p.label).join(" ")).not.toMatch(/cccc/);
+    expect(() => splitGroups(files, [], "scripts/")).toThrow(/--only scripts\/: no changed code file under it/);
+  });
+
   it("gives each part's moves, then the logs no part moved alone, hold-outs only counted", () => {
     const whole = overlay(base, new Map([[dev, entry(8, 2)], [dev2, entry(6, 4)], [hold, entry(4, 2)]]));
     const partA = overlay(base, new Map([[dev, entry(8, 2)]]));

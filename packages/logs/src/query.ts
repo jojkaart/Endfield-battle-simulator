@@ -12,11 +12,12 @@
 //   loggedAs and their affixes: teamBuffNames), with whose hits list it.
 // - census: counts of a selection (casts, hit groups or lanes) per log, optionally with the nearest item of another
 //   selection; its first lines record the selection and the command that reruns it, so a claim cites it.
-// - controlSpans: who the log shows controlled when (buffreplay.ts controlledFromLog's evidence), with each cast.
+// - controlSpans: who the log shows controlled when (castassembly.ts controlledFromLog's evidence), with each cast.
 // - cadence: one event key's hit groups across logs with the world-time gaps between them (time stops taken out).
 
 import { effectiveKit, FPS, type GameData, type SkillType } from "@efsim/engine";
-import { assembleCasts, controlSwaps, replayedCastStops, type BuffReplay } from "./buffreplay.ts";
+import type { BuffReplay } from "./buffreplay.ts";
+import { assembleCasts, controlSwaps, replayedCastStops } from "./castassembly.ts";
 import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
 import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
@@ -486,7 +487,7 @@ export interface ControlSpan {
 }
 
 /**
- * The control spans of a fight as the replay reads them (buffreplay.ts controlledFromLog: a basic hit with Stagger is
+ * The control spans of a fight as the replay reads them (castassembly.ts controlledFromLog: a basic hit with Stagger is
  * the controlled operator's; a swap is at the start of the run of basic casts that ends with the next such hit of
  * another operator). Empty when no hit names anyone.
  */
@@ -514,7 +515,7 @@ export function controlView(data: GameData, fx: LogFixture, opts: { readonly ope
     lines.push({ t: i.start, text: `  CAST  ${operatorLabel(data, i.operator)} ${shortSkill(i.skillId)}${i.kind ? ` (${i.kind})` : ""}: ${how}; controlled then: ${who ? operatorLabel(data, who) : "?"}${who && who !== i.operator && i.kind === "basic" ? " (a teammate's own attack)" : ""}` });
   }
   const head = spans.length
-    ? `${fx.id}: who the log shows controlled (a basic hit with Stagger is the controlled operator's: buffreplay.ts controlledFromLog), and every cast (times in s)`
+    ? `${fx.id}: who the log shows controlled (a basic hit with Stagger is the controlled operator's: castassembly.ts controlledFromLog), and every cast (times in s)`
     : `${fx.id}: no basic hit with Stagger names the controlled operator (the replay takes each basic cast's operator as controlled)`;
   return [head, ...lines.sort((a, b) => a.t - b.t).map((l) => `${s(l.t).padStart(7)}  ${l.text}`)].join("\n");
 }

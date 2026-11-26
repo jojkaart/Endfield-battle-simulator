@@ -965,7 +965,7 @@ shot leaves no trace. What one does, from the data:
   (chain_N at frame 22/22/23, so the hover goes on: floating_end 27 frames
   after the loop, landing 8 later) and the 5th shot's hover end.
 
-The log check's replay adds such shots (buffreplay.ts `missedCasts`, replayCast
+The log check's replay adds such shots (replayrun.ts `missedCasts`, replayCast
 `missed`: the cast's own hits dropped) only before a logged shot the kit
 allows none of her shots for (her hover idled out, or the attempt index is
 short), when the log shows no shot of hers from the first frame another could

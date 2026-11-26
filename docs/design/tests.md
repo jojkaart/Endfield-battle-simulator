@@ -140,7 +140,9 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   `--split files [--group a,b]` measures the whole change against
   `--base` (default HEAD: the working tree's change), then each changed
   file's diff alone on the base (`--group` puts the files under those path
-  prefixes into one part, for parts that don't build alone; docs and
+  prefixes into one part, for parts that don't build alone; `--only a,b`
+  instead makes two parts, those files and the rest: "did these move it"
+  for the price of two, round 14; docs and
   tests are left out), and `--split commits --base <ref>` each first-parent
   commit of `<ref>..` the code against the one before (the working tree's
   own changes last). Each part is measured only on the logs the whole
