@@ -1213,7 +1213,7 @@ That's about one earlier Arcane combo per second ultimate.
   11.7 s, too close to 11.4 s; the Arcane part separates that one.)
   Without the ultimate first: 19 s.
 
-### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Arcane, Last Rite or Tangtang; the Si part is not testable by hand)
+### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Last Rite or Tangtang; the Arcane part decided from the logs; the Si part is not testable by hand)
 
 (Since 2026-10-31 the engine assumes Bosses ignore these freezes: test
 104; since 2026-11-13 a freeze on a Boss still holds the freezing
@@ -1231,6 +1231,9 @@ Imprisonment (6.6 s) slows the enemy's clock instead; if statuses follow
 it, each combo adds about 2.5 s to every status on the enemy (Corrosion's
 ramp and duration, Electrification, teammates' Susceptibility). The
 engine doesn't do that yet. This may also explain part of test 4.
+**The Arcane part is decided from the logs (2026-11-26): no.** The enemy's
+Combustion and bleed ticks after her Imprisonment come on their period
+(docs/open-problems.md "The enemy's clock"); don't run it.
 **How:**
 - Arcane: a teammate applies a timed status to a dummy (Electrification,
   or her own Corrosion), then Arcane's WILL combo: does the status run out

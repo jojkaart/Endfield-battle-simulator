@@ -3,7 +3,7 @@
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
 import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
-import { holdPins, notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
+import { comboHoldSpans, holdPins, notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -30,6 +30,34 @@ describe("placeHolds", () => {
       expect(h.frame).toBeGreaterThanOrEqual(Math.floor((4000 * FPS) / 1000));
       expect(h.frame).toBeLessThan(Math.ceil((6000 * FPS) / 1000));
     }
+  });
+
+  it("lets the holds rise inside a still span only at a slow span's rate (stagger-holds `combos`: a combo's stop)", () => {
+    // A run asking 0.3 s over 6–12 s, all Staggered: with no slow span the bound can't be met and is dropped; a combo's
+    // stop at 8–9 s at rate 0.5 allows 0.5 s there, so the 0.3 s sits inside it.
+    const ask = run(6000, 12000, 300, 400);
+    expect(placeHolds([ask], { end: 12000, still: [[5000, 12000]] }).total).toBe(0);
+    const p = placeHolds([ask], { end: 12000, still: [[5000, 12000]], slow: [{ a: 8000, b: 9000, rate: 0.5 }] });
+    expect(p.total).toBeCloseTo(300, 6);
+    expect(p.dropped).toEqual([]);
+    for (const h of p.holds) {
+      expect(h.frame).toBeGreaterThanOrEqual(Math.floor((8000 * FPS) / 1000));
+      expect(h.frame).toBeLessThan(Math.ceil((9000 * FPS) / 1000));
+    }
+    // A slow span outside every still span changes nothing (P already rises at real time there).
+    expect(placeHolds([run(0, 4000, 200, 300)], { end: 5000, slow: [{ a: 1000, b: 1100, rate: 0.1 }] }).total).toBeCloseTo(200, 6);
+  });
+
+  it("comboHoldSpans: a combo stop's span at `share` of its own hold per ms, other stops none", () => {
+    const stops = [
+      { start: 30, scales: [0.01, 0.01, 0.01], operator: "a", skillId: "x", kind: "combo" as const },
+      { start: 90, scales: [0, 0], operator: "b", skillId: "y", kind: "ultimate" as const },
+    ];
+    const spans = comboHoldSpans(stops, 0.5);
+    expect(spans).toHaveLength(1);
+    expect(spans[0]?.a).toBeCloseTo(1000, 6);
+    expect(spans[0]?.b).toBeCloseTo(1100, 6);
+    expect(spans[0]?.rate).toBeCloseTo(0.495, 6);
   });
 
   it("drops a bound that conflicts with the rest, the largest ask first", () => {

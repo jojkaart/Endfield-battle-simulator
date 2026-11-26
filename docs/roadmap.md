@@ -61,11 +61,13 @@ below ([review-2026-10.md](review-2026-10.md)).
   `window-reaction`; holds and placement 2026-11-25: a freeze holds no Arts reaction status, `freeze-ramp`
   `statuses`, 489c 488 → 632 plain; a third placement pass and the in-turn chains tried and dropped; the damage factors
   2026-11-26: 04d4's Catcher at weapon level 3, the Crush's misses Rossi's stacks from an infliction the replay lacks
-  (0c14: Si's away press), Ember's listed talent dropped by the check; three diffs held back for the lead): next the
-  held-back diffs as general rules (an enemy-absent away state, a hitless press from a listed buff, layered unjudged
-  buffs), Snowshine's ×0.9624, a burst's
-  delay from its infliction as a hold bound (9a80 35.05 s), db87's slow Combustion ticks in a Stagger, d4fb 97.05 s,
-  4d60's unlogged holds (a boss-phase pause?), test 33's reaction case.
+  (0c14: Si's away press), Ember's listed talent dropped by the check; three diffs held back for the lead; the enemy's
+  clock 2026-11-26: across a combo's stop every clock runs late by a fifth to a half of its hold (db87's ticks, casts,
+  bursts), not the curve (a flat ComboSkill curve measured worse), not Arcane's Imprisonment (test 37's Arcane part
+  decided), no pause while the enemy is away, `stagger-holds` registered off): next the held-back diffs as general
+  rules (an enemy-absent away state, a hitless press from a listed buff, layered unjudged buffs), what holds the clocks
+  across a combo (a per-edge delay?), Snowshine's ×0.9624, d4fb 97.05 s, 4d60's Perlica and Will burst refreshes,
+  test 33's reaction case.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
