@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-26: Low plain, low mismatch: the replay's read crits and a status's crit](2026-11-26-10-low-plain-low-mismatch-the-replay-s-read-crits-and-a-status.md)
 - [2026-11-26: Fights outside 5%: a variant's cast event, detached tails, a carried Corrosion](2026-11-26-10-fights-outside-5-a-variant-s-cast-event-detached-tails-a.md)
 - [2026-11-26: Alesh's Rare Fin: chance paths and a cast from the listing](2026-11-26-09-alesh-s-rare-fin-chance-paths-and-a-cast-from-the-listing.md)
 - [2026-11-26: Bursts and cooldowns: 4d60's runs a whole-game pause in a Stagger, the replay's Stagger starts](2026-11-26-08-bursts-and-cooldowns-4d60-s-runs-a-whole-game-pause-in-a.md)

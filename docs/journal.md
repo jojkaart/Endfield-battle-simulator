@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 157 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 158 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-26: Low plain, low mismatch: the replay's read crits and a status's crit
+
+**Goal:** why most of Rossi's hits (and Chen Qianyu's, Yvonne's, Lifeng's, Pogranichnik's, the male Endministrator's)
+match only under an assumption or the log-listing fallback; make the readings with a mechanism the default, and say
+which are only the check's tolerance (open-problems "Low plain, low mismatch").
+
+**Done:**
+- **Grouped the non-plain matches by what they assume** (scripts/probes/assumed/kinds.ts): Rossi's 1109 were 418
+  `crit` alone (her ultimate stabs and Seething Blood extras), 165 boundary, 181 fallbacks; Yvonne's 150 `crit`; Chen's,
+  Lifeng's, Pogranichnik's and the Endministrator's nearly all fallbacks.
+- **The crit the replay read is the primary reading's** (engine assumption `check-crits`, default `replay`;
+  enginecheck.ts readingBasis, primaryCritRead): the replay had read those crits from the log (replaycrits.ts:
+  Seething Blood extras at the stab's ms, Wolven Blood layers, values) but the check took none and assumed the crit.
+- **A status's damage that crits fires triggers on crits** (engine events.ts statusCritMatches, landing.ts recordStatus
+  `crits`, asEvents; a replayed status's hit takes its logged crit, reactions.ts reactionEventKeys): Chen's Wolven
+  Blood layers in a9d7 gain one at each crit Lift and fell a layer further behind at each (×1.013 → ×1.044 by 69 s);
+  Lupine Scarlet and MI Security are both on abilityEvent 44 (any crit). Seething Blood and the pistol's kind-filtered
+  triggers don't see it.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 69.7 → 71.8%, mismatch 11.2%, mean |damage error|
+6.8%; hold-out plain 81.0 → 82.1% (one log mixed: plain +65, totals); earlier pending plain 70.2 → 72.9%, mean |damage
+error| 3.5 → 3.4%; verified 78.0 → 78.1%. By operator: Rossi 51.9 → 73.2%, Yvonne 31.9 → 71.2%, Chen 30.2 → 38.8%,
+Pogranichnik 44.1 → 41.9%, Lifeng and the Endministrator unchanged. Better: 0c14, 2fd9, 99fb, abfd, d572, a9d7 (101 →
+177 plain), 3f78, 489c, 5082, 4e5e; mixed 207f, 4a64, 9a80 (totals +0.1–0.4%); worse c4f3 (243 → 223, −2.5 → −2.9%):
+Chen's layers now right, her second Wolven Blood final ends 5 s late in the replay and the hidden-hold placement, which
+reads it as a clock, moves its later units, so the third final and Pogranichnik's hits at 116–146 s read ×1.04 off.
+team-ab: both teams' fights unchanged; examples.json: Rossi's example +0.46% (her Lifts' crits add layers).
+
+**Decisions:** `check-crits` registered as an engine reading so the old classification stays one `--assume` away (the
+value inference is cross-validated at 0.90, not proof); the status crit isn't an assumption (the log shows the layer at
+every crit Lift and none at the others). Status damage counts only for triggers on crits: nothing in the logs says
+whether it counts as a hit for other hit triggers. Left as the check's tolerance: boundary buffs at the hit's ms,
+kit buffs changing within 500 ms, Link the replay can't say, crits no inference reads.
+
+**Next / open:** Pogranichnik's Thermite Cutter and Fervent Morale, both on SP the log doesn't record, behind most of
+Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's Wolven Blood final end (a clock).
 
 ## 2026-11-26: Fights outside 5%: a variant's cast event, detached tails, a carried Corrosion
 
@@ -332,40 +369,3 @@ type name clash across `export *` (ClockRow) at the first typecheck.
 - **Still held back:** the 0c14 diff (Si's away press, hard-coded) and the life-end landings diff (mixed). Both need
   general rules in the replay: an enemy-absent away state, and a hitless press inferred from a buff only its hit gives.
   They are next steps, not adoptions.
-
-## 2026-11-26: The enemy's clock: combos hold every clock more than their stops; no pause while the enemy is away
-
-**Goal:** the holds-and-placement round's leads, in order: db87's enemy-clock delay in a Stagger (its Corrosion 0.58 s
-past the replay's end, Combustion ticks 1.5 s apart), a burst's delay as a hold bound (9a80 35.05 s), 4d60's unlogged
-holds (a boss-phase pause?), d4fb 97.05 s; if time, freezes on Electrification / Solidification and a placement pass
-by quiet stretches.
-
-**Done** (open-problems "The enemy's clock", new; the four leads' paragraphs):
-- **Found: across a combo's stop every clock runs late** by a fifth to a half of what the stop list holds, across an
-  ultimate's on time (scripts/probes/combo-hold/): the enemy's tick chains in a Stagger 3.43 s over 87 pairs with a
-  combo against 0.02 s over 30 without; an operator's cast across a teammate's combo +263 ms median (112 casts);
-  bursts +181 ms (45); buff runs 0.45 × the combo-held time. db87's four tick pairs each span one combo.
-- **Ruled out:** Arcane's Imprisonment slowing the enemy's clock (SealAction's curve, over 1 s or its 6.6 s: the
-  ticks after a seal are on time; in-game test 37's Arcane part decided from the logs); a Stagger or the enemy's
-  actions (Staggered chains without combos run on their period); a longer ComboSkill curve (flat: verified 78.0 →
-  73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; a middle curve worse too; docs/tried/2026-11-26-combo-curve-flat.diff);
-  a burst's delay as a hold bound (placed holds don't hold bursts: 012a, 458b, 489c, 7910 on time across 0.10–0.42 s
-  of them); a pause of the operators' timers while the enemy is away (Xiranflow's 25 s layers on Zhuang Fangyi run on
-  time across 4d60's and d774's away windows); for d4fb 97.05 s a cooldown shared by the set's two wearers and one
-  restarted by every Physical status.
-- **Registered, not the default:** engine assumption `stagger-holds` (`combos`: the hidden holds may rise inside a
-  Stagger within a combo's stop, up to half its hold; holds.ts comboHoldSpans, placeHolds `slow`): development plain
-  69.0 → 69.2%, hold-out 79.0 → 79.2%, verified 78.0 → 77.5% (0eef), db87 −6.0 → −5.9% only.
-
-**Scoreboard:** no default changed, no verdict moved (`npm run snapshots:update`). No engine timing change (no smoke,
-no team-ab).
-
-**Decisions:** `stagger-holds` stays off with a verified log worse and db87 barely moved: the placement's least
-total takes the Stagger's 0.44 s from holds placed earlier, and nothing bounds the unlisted Corrosion past the
-replay's end. The burst bound wasn't built: its mechanism (dodges holding the operators' clocks) isn't what the bursts
-show. Not reached: Electrification / Solidification across a freeze (no listed run across one found in a first look,
-7910's Solidification unlisted), the quiet-stretch placement pass.
-
-**Problems:** the ComboSkill curve's measures waited behind another worktree's measures in the lock's queue (about
-10 min each); the probes' first cut (per tick pair) split a stop's time between neighbouring pairs, so only chain
-sums with whole stops inside are evidence.

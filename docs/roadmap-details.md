@@ -298,6 +298,15 @@ one of its hits alone gives (engine assumption `listed-casts` `inferred`: 0c14's
 lost 47 plain: docs/tried/). Next: 0c14's 80.48 s Stagger at its breaking hit (four combo cases, more evidence
 first), a path the listing can't decide read from the hits' values (ad7f still rolls), one model of a fight's lives.
 
+**Low plain, low mismatch (2026-11-26, [journal](journal/2026-11-26-10-low-plain-low-mismatch-the-replay-s-read-crits-and-a-status.md)):**
+Rossi, Chen, Yvonne, Lifeng, Pogranichnik and the Endministrator matched mostly under assumptions
+([open-problems](open-problems.md#low-plain-low-mismatch-rossi-chen-qianyu-yvonne-lifeng-pogranichnik-the-endministrator-2026-11-26)).
+Rossi's and Yvonne's were the crit the replay had read from the log and the check assumed (engine assumption
+`check-crits` `replay`); Chen's Wolven Blood layers missed her Lifts' crits (a status's crit now fires triggers on
+crits: events.ts statusCritMatches). Next: Pogranichnik's Thermite Cutter and Fervent Morale, both on SP the log
+doesn't record ("Team SP"), behind most of Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's
+Wolven Blood final ending 5 s late (a clock).
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

@@ -42,7 +42,11 @@ export type BattleEvent =
    */
   | { readonly type: "cast"; readonly frame: number; readonly operator: string; readonly skillId: string; readonly kind: SkillType; readonly finisher: boolean; readonly controlled: boolean; readonly cast?: number; readonly count?: number; readonly followUp?: boolean; readonly beside?: boolean; readonly unseenByKind?: true }
   /** Something the enemy's arts state did (status.ts); `fromKind`: the kind of the hit that caused it (`none` for a trigger's or a tick's). */
-  | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number }
+  /**
+   * `crit`: the event's own damage (a physical status's, a reaction's or burst's hit, a Shatter) crit, in `element`;
+   * triggers on crits with no filter a status's damage can't pass see it as a crit (eventMatches, statusCritMatches).
+   */
+  | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number; readonly crit?: { readonly element: Element } }
   /**
    * `operator` applied one of its kit buffs; `categories`: what the buff is (BuffCategory), `reach`: per category the
    * elements its modifiers of that category reach (every element for one without an element, and for weakness,
@@ -426,10 +430,28 @@ export function triggerSkillId(owner: string, t: Pick<KitTrigger, "id" | "skill"
 }
 
 /** Whether an event is one a trigger listens to (not who caused it, nor its `if`). */
+/**
+ * Whether a status event whose own damage crit (its `crit`) counts for a trigger on hits: only a trigger on crits
+ * (`crit: true`) none of whose filters a status's damage fails (it is of kind `none`, a reaction's, of no skill, no Final
+ * Strike, no decoration). The game's abilityEvent 44 (the wielder deals Critical DMG) with its damage mask disabled
+ * fires on any crit: pending/zmdlogs-a9d7fcb089c5.json, Chen Qianyu's Wolven Blood (Lupine Scarlet) layers, one per
+ * crit, gain one at each of her Lift hits that crit (12.04, 25.86, 40.46, 61.52 s) and none at those that don't (23.91,
+ * 38.76 s), the replay without it a layer short more each time (×1.013 → ×1.044 under the log by 69 s); Rossi's in
+ * pending/zmdlogs-d5720d9ceb94.json gain two at 5.50 s (her combo's crit and its Lift's). Only on crits: a status's
+ * damage as a hit for other hit triggers isn't in any log.
+ */
+function statusCritMatches(on: Extract<TriggerOn, { event: "hit" }>, e: Extract<BattleEvent, { type: "status" }>): boolean {
+  if (!e.crit || on.crit !== true) return false;
+  if (on.kinds && !on.kinds.includes("none")) return false;
+  if (on.elements && !on.elements.includes(e.crit.element)) return false;
+  return !on.skills && on.finalStrike !== true && !on.decorations && on.reaction !== false;
+}
+
 export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownStacks: Readonly<Record<string, number>>): boolean {
   const has = <T>(list: readonly T[] | undefined, x: T) => !list || list.includes(x);
   switch (on.event) {
     case "hit":
+      if (e.type === "status") return statusCritMatches(on, e);
       return (
         e.type === "hit" && has(on.kinds, e.kind) && has(on.elements, e.element) && has(on.skills, e.skillId) && (on.finalStrike === undefined || on.finalStrike === e.finalStrike) &&
         (!on.decorations || on.decorations.some((d) => (d === "finisher" ? e.finisher : d === "dive" ? e.dive === true : e.finalStrike))) && (on.reaction === undefined || on.reaction === (e.reaction ?? false)) &&

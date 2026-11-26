@@ -419,17 +419,17 @@
   ]
  },
  "rossi-gilberta.scenario.json": {
-  "total": 928582.324,
+  "total": 932819.345,
   "hits": 171,
   "casts": 38,
   "perOperator": {
-   "chr_0028_wulfa": 887794.247,
+   "chr_0028_wulfa": 892031.268,
    "chr_0013_aglina": 40788.077
   },
-  "digest": "9fd2d9ae573e",
+  "digest": "2bbbb50f8017",
   "windows": [
-   "860e09976ab7",
-   "5b188f39f8ed",
+   "08a9e2fad192",
+   "25efd0ce7dce",
    "72430cc4b020",
    "72fcc6374f35"
   ]
