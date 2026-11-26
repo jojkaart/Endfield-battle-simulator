@@ -71,9 +71,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   superseded; one per-edge delay ruled out for the combos; combo hold and replay 2026-11-26: a cast's unlogged tail
   ends it (`unlogged-tails` `cut`: 0c14's Rossi, plain 293 → 336), the operators' combo excess in the stop's first
   half (a uniform extra hold `combo-operator-hold` measured worse), the ComboSkill curve a reading (`combo-curve`),
-  a9d7's edge a hidden hold): next 0c14's Rossi and Si under-prediction (−3.2% now), an operators-only combo curve,
-  Snowshine's ×0.9624 (a gear line or nodes), d4fb 97.05 s, 4d60's Perlica and Will burst refreshes, test 33's
-  reaction case.
+  a9d7's edge a hidden hold; 0c14 and the operator curve 2026-11-26: the totals read a crit-unknown hit's crit from
+  its value (`totals-crits` `read`: 0c14 −3.2 → −1.3%), a teammate's attack on its not-controlled path (Rossi's
+  attack 4: 2fd9 +25 plain, 99fb +12); 9c6e's cut is the placement's two-enemy split (a rule for it broke 40d9); the operators'
+  own combo curve measured worse in every shape; the tail cuts reviewed, none against the log): next Alesh's combo
+  paths (the Rare Fin chance jump read from the values; 0c14's 12.5 s combo from the listing), Snowshine's ×0.9846
+  left after her node 5, d4fb 97.05 s, 4d60's Perlica and Will burst refreshes, test 33's reaction case.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

@@ -270,6 +270,18 @@ already late at full density: scripts/probes/combo-hold/edges.ts); a uniform ext
 and `placement --choices` show the placement's rules. Next: 0c14's Rossi and Si under-prediction, an operators-only
 curve, Snowshine's ×0.9624 (level, potential and weapon skill levels ruled out), Alesh's eventless combo, 207f.
 
+**0c14 and the operator curve (2026-11-26, [journal](journal/2026-11-26-06-0c14-and-the-operator-curve-a-teammate-s-attack-on-its-own.md)):**
+half of 0c14's Rossi deficit was the totals counting crit-unknown hits at expected crits where their values show the
+crit (engine assumption `totals-crits` `read`, enginecheck.ts critFromValue); Rossi's attack 4 as a teammate takes
+the kit's not-controlled path (drivers.ts controlPathLandings; 2fd9, 99fb, 0c14). The rest of 0c14 is
+Alesh's: her 12.5 s Rare Fin combo the log shows only by its buffs, and her 59.56 s combo's Rare Fin path; and a
+Stagger at its breaking hit (80.48 s). The operators' own combo curve (`combo-operator-hold` `plateau-0.5/0.6/0.7`,
+`flat`) measured worse on the verified logs in every shape: stopped. The 16 tail cuts over the development logs
+(scripts/probes/tails/cuts.ts) are none against the log; 9c6e's was the placement's two-enemy split (a rule taking a
+landing at its cast's previous one's ms as a second enemy's fixed it and broke 40d9's Si, whose combo slashes the log
+batches at one ms: dropped), de6a's hit_3 falls in a 2.3 s gap with no hit by anyone. Next: a chance jump's path from the values (Alesh's Rare Fin: 0c14, 4e36,
+a9d7), a combo made from the listing, Snowshine's ×0.9846 after her node 5.
+
 ## Engine accuracy
 
 **Fight totals (2026-11-23, [journal](journal/2026-11-23-10-fight-totals-the-enemy-away-the-endministrator-s-shatters.md)):**

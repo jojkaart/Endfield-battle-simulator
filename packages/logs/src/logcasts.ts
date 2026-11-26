@@ -20,9 +20,6 @@ export const CAST_SLACK_MS = 1000;
 /** A cast's next landing of a key logged this close to its slot's frame (from the key's first landing) is that landing (ms). */
 const ON_TIME_MS = 150;
 
-/** A cast's landing logged at its previous one's ms is that landing on another enemy when its next slot is this many frames later or more (placeHits). */
-const SAME_MS_FRAMES = 3;
-
 /** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
 export interface TimeStop {
   /** A frame (30 a second), not ms as the log's times; it lasts `scales.length` frames. */
@@ -846,15 +843,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
         // Its landings all logged, another at its last one's time is that landing on a second enemy (9c6e97486a9d: two
         // targets, two hits per Typhoeus shot, were two shots each, which ended her hovers early): the same slot.
-        // So is one at its last one's ms while the cast's next slot is SAME_MS_FRAMES or more later and no other
-        // operator's time stop ends there (a stop's end batches the landings it held at one ms): 9c6e97486a9d's Liino
-        // combo at 47.72 s, hit 1 on both enemies (6,368 and 6,035), hit 2 24 frames later at 48.49 s (10,743), had
-        // made the second enemy's hit 1 its hit 2 and the hit 2 a combo of its own, whose own hit 2 the tail rule cut.
-        const nextSlot = cur?.slots?.[cur.index + 1];
-        const curSlot = cur?.slots?.[cur.index];
-        const at = Math.round((h.t * FPS) / 1000);
-        const secondEnemy = cur !== undefined && !used && h.t === cur.last.t && nextSlot !== undefined && curSlot !== undefined && nextSlot.frame - curSlot.frame >= SAME_MS_FRAMES && !others.some((s) => s.start <= at && s.start + s.scales.length + 2 >= at);
-        if (cur && (used || secondEnemy) && h.t === cur.last.t) {
+        if (cur && used && h.t === cur.last.t) {
           const slot = cur.slots?.[cur.index];
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last });
           continue;

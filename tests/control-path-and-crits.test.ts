@@ -1,15 +1,13 @@
-// Three readings of the 0c14 round (2026-11-26):
+// Two readings of the 0c14 round (2026-11-26):
 // - a teammate's attack on its kit's not-controlled path (engine drivers.ts controlPathLandings): Rossi's attack 4
 //   jumps 0 → 189 to hit_ai (× 0.5 a hit, the controlled path × 0.2) when she isn't controlled, as the log shows at
 //   0c14's 154.09 s (Si controlled) and 2fd9's 8.71 s (Mi Fu); with her controlled (0c14's 44.39 s), the controlled
 //   path (d572's 9.89 s stays hit_ai: the placement put 7 landings in one cast of 5 hits, so they aren't moved);
 // - a crit-unknown hit's crit read from its value in the totals (engine assumption totals-crits `read`): 0c14's Rossi
-//   ultimate final at 27.74 s, 326,856 = her crit reading ×1.032, counted at it, not at expected crits;
-// - a landing at its cast's previous landing's ms on a second enemy (logcasts.ts placeHits): 9c6e's Liino combo at
-//   47.72 s, hit 1 on both enemies, its hit 2 at 48.49 s, one cast.
+//   ultimate final at 27.74 s, 326,856 = her crit reading ×1.032, counted at it, not at expected crits.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { checkLog, devFixtures, engineHits, engineReport, logBuffReplay, placeHits } from "@efsim/logs";
+import { checkLog, devFixtures, engineHits, engineReport, logBuffReplay } from "@efsim/logs";
 
 const data = loadGameData();
 const ROSSI = "chr_0028_wulfa";
@@ -48,16 +46,3 @@ describe("totals-crits", () => {
   });
 });
 
-describe("a landing on a second enemy at its cast's previous landing's ms", () => {
-  it("is that landing's (sameAs), not the cast's next slot", () => {
-    const fx = fixture("9c6e");
-    const placement = placeHits(data, fx);
-    const LIINO = "chr_0035_liino";
-    const combo = fx.hits.filter((h) => h.operator === LIINO && h.event === `${LIINO}_combo_skill` && h.t >= 47000 && h.t <= 49000);
-    expect(combo.map((h) => h.t)).toEqual([47720, 47720, 48489]);
-    const [a, b, c] = combo.map((h) => placement.hits.get(h));
-    expect(b?.sameAs).toBeDefined();
-    expect(a?.cast).toBe(c?.cast);
-    expect(c?.hits[0]?.id).toBe("hit2");
-  });
-});
