@@ -15,7 +15,7 @@ export const STATUS_NEAR_FRAMES = 16;
 /**
  * How far (frames) a status landing whose value fits the logged hit's may be from it: a burst a stop held (0.55–0.85
  * s), or several (c3c7 22.32 s, c83c 32.31 s: 1.5–1.6 s, 79cc 24.23 s and 3aa6 12.31 s 1.8–2.1 s, the same value
- * each). Measured 2026-11-27 against 30 frames (1 s): 7 logs better, none worse (docs/journal/2026-11-27-07-*.md).
+ * each). Measured 2026-11-27 against 30 frames (1 s): 7 logs better, none worse (docs/journal/2026-11-27-07-status-landings-paired-by-value-two-target-fights-marked.md).
  */
 export const STATUS_WIDE_FRAMES = 60;
 /**

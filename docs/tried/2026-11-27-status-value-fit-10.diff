@@ -1,0 +1,22 @@
+Tried 2026-11-27 (status pairing round): the status pairing's value fit (statuspairs.ts STATUS_VALUE_FIT) at 10%
+instead of 1%, so a replay burst whose own value is off by a buff it landed before or after (1d91 50.47 / 51.02 s
+×1.095, 7b54 46.70 / 47.39 s, e989 86.65 / 88.70 s) still pairs beyond the 16-frame window. Measured with --patch
+against the round's code with a 30-frame window: development plain 82.5% unchanged, 1 better (891566c224f8 79.13 s,
+Wulfgard's burst fallback → plain), 2 worse (9c0bb09daff2 28.59 s, af7b7f865906 70.03 s: plain → assumed, the
+wider fit taking another landing), 1 mixed (f8793bc8aea2: three Combustion ticks reshuffled), hold-outs one "other".
+Dropped: mixed, and the ticks of one Combustion share a value, so a loose fit lets them trade places. To try again:
+the fit judged by the check's own reading of the pair (the log's listed buffs) instead of the replay's value.
+
+diff --git a/packages/logs/src/statuspairs.ts b/packages/logs/src/statuspairs.ts
+index 1d7de27..1fd3d5d 100644
+--- a/packages/logs/src/statuspairs.ts
++++ b/packages/logs/src/statuspairs.ts
+@@ -22,7 +22,7 @@ export const STATUS_WIDE_FRAMES = 60;
+  * A value fits within this share of the logged one (the replay's landing under the log's crit flag and the fixture's
+  * stage factor). 10% tried and dropped (docs/tried/2026-11-27-status-value-fit-10.diff).
+  */
+-export const STATUS_VALUE_FIT = 0.01;
++export const STATUS_VALUE_FIT = 0.1;
+
+ /** A logged status hit to pair: the hit, its frame on the replay's clock, and the landings' key it pairs within (operator, kind, element). */
+ export interface StatusQuery {
