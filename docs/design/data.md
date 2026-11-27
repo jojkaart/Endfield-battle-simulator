@@ -874,7 +874,10 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 |---|---|
 | The casts of an operator, as the log means them | `efsim zmdlogs instances <fixture> [--operator]` (for a skill that stops the world, where its first cast event sits: at its press, at its stop's end, …; its log-time distance to the placed start) |
 | An operator's Arts Bursts, logged against replayed, each side's likely cause and the stops between | `efsim zmdlogs bursts <fixture…\|--all> [--operator <op>] [--from s --to s]` (`burstRows` in a script) |
-| The replay's enemy statuses: each burst, reaction, consumption and tick, on which target, what it dealt, the statuses after it; the deaths | `efsim zmdlogs statuses <fixture> [--target n] [--operator <op>] [--from s --to s]` (views.ts statusesView) |
+| The replay's enemy statuses: each burst, reaction, consumption and tick, on which target, what it dealt, the statuses after it; the deaths | `efsim zmdlogs statuses <fixture> [--target n] [--operator <op>] [--from s --to s] [--inflictions]` (views.ts statusesView; `--inflictions`: each target's element × stacks where a frame of kit landings changed it, with those landings) |
+| Whether the check reads a hit on the target the replay landed it on | `efsim zmdlogs hits <fixture>` (`≠ landing T<m>` on a line; `--json`: `target.landing`, the landing's targets; hitexport.ts targetMismatches) |
+| A layered kit buff's layers: the log's count, the replay's, the value's | `efsim zmdlogs hits <fixture…> --layers <owner:id>` (per hit the game buff's listed entries and their lane starts, the reading's layers, the layers the logged value implies; then by the log's count) |
+| What a kept tail stands for in the log | `efsim zmdlogs decisions <fixture> --why-kept` (per TAILKEPT line, the replay with that tail cut: the logged hits whose landing, class or primary reading moved; counterfactual.ts) |
 | How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window=a,b] [--list]` (the window in ms; `=` for a negative start, as the `rerun:` line prints it) |
 | What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
@@ -895,7 +898,8 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | The pair the check judges a hit by (for statistics across logs) | `zmdlogs hits --json`: `graded` (the uncapped logged value against the verdict's reading) |
 | Which single disagreement, taken the log's way, makes an off hit fit | `zmdlogs hits --json`: `counterfactuals` (each difference, the crit flipped, a boundary kit buff on / off, Stagger), against `graded` |
 | Every one-sided landing across fights, for a question of your own | `efsim zmdlogs totals --all --json` (a JSON line each, cached; then `jq`) |
-| Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
+| Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`; an action a disabled parent switches off says so, `--enabled` leaves it out) |
+| Every listener of one event across kits (a target's death, damage taken) | `efsim gamedata handlers abilityEvent <n>` (or `buffEvent <n>`: each handler, the action types that run and those switched off, ALL DISABLED where nothing runs) |
 | Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
 | How long after its event each of a kit trigger's own landings (an entity's follow-ups, harasses, lasers) lands, in the replay and in the log; the follow-ups one side has | `efsim zmdlogs followups <fixture…\|--all> --operator <op> [--trigger <re>]` (LandedHit.fired, a replay's record; takes `--kit`, `--assume`; round 19) |
 | What an ability entity (`abilityentity_…`, no file of its own in the export) does: the actions that spawn it and the skill it runs | `efsim gamedata tree <entity id>` (round 19) |

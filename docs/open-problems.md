@@ -1491,7 +1491,7 @@ hit 2.2%, twin like 2.3%, no cast 2.3% (no cast · Fixed DMG 1.0%: Si's bursts),
     (through the Inksoul, inkmove_2; as the mark, inkmark_projhit), the same damage (the record) either way; a log of
     one path didn't take the replay's landing of the other (c779 60.37 s: the log's through an Inksoul the replay
     lacked: its Final Stroke there is FORCED), and the replay's record can end 0.9 s from the game's (4e36). Now a
-    trigger's hits actions under complementary conditions share their events (buffreplay.ts `alternativeEvents`: Si's
+    trigger's hits actions under complementary conditions share their events (landingpairs.ts `alternativeEvents`: Si's
     burst, Typhoeus's arrow rain sub1 / sub2, Last Rite's phantom), and a recorded burst looks 60 frames either way.
     The hold-outs 9.1 → 8.2% (1 better, 1 mixed; their "no cast · Fixed DMG" 1.0% gone).
 12. **Typhoeus's Barrage Array tick as a combo** (fc63). Her combo's field ticks 18 times every 1/3 s while the enemy
@@ -2412,7 +2412,10 @@ since, its `if` needs Combustion or Corrosion on its slug: a status from a landi
 shielded at 24.02 s, the empowered hit's explosion reaching it for 0); a twin's second target missing a status its
 applier's unlogged landing gave (9c6e 74.47 s: Liino's ultimate on T6 without the log's Electrification; 53.98 s
 Ardelia's attack 3 ×1.011 on a Corrosion ramp of another age); 7b54's 36.08–36.84 s Laevatain battle skill over
-×1.2–1.3 under per-target (Scorching Heart on from 31.03 s, Melting Flame 4 from her absorption then).
+×1.2–1.3 under per-target (Scorching Heart on from 31.03 s, Melting Flame 4 from her absorption then); 7b54's
+second assignment numbering its targets otherwise than the replay's landings (round 21's `zmdlogs hits` `≠ landing`:
+147 of 210 hits with both, 6339 none, 9c6e one), so a candidate read at the replay's target of its id may be another
+slug's statuses: the ids mapped onto the replay's (the backlog's accuracy list).
 
 **Still possible / left:** the other
 listeners on a target's death (BuffData abilityEvent 1 on a buff on the target): Arcane's

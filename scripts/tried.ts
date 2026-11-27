@@ -13,6 +13,11 @@
 //     writes docs/tried/<today>-<slug>.diff from `git diff -- <path…>` (the working tree against the index), under a
 //     header skeleton to fill in (what it does, the measure's lines, why it was dropped, what would make it work);
 //     refuses a name that exists (the overwrite of round 19's tail-own-landing.diff) and an empty diff.
+//   node scripts/tried.ts refresh <docs/tried/x.diff> [--at <ref>]
+//     the diff made again on <ref>'s code (default HEAD): applied with `git apply -3` in a scratch worktree, the
+//     result written back under the same header, or the files whose hunks conflict named and nothing written (round
+//     21, the tail-cut report point 2: a tried diff's context goes stale as its function changes, and `measure
+//     --patch` or `cli-ab --patch` then refuse it).
 //
 // tests/tried.test.ts checks that every diff there has a header before its first `diff --git` line (a `git diff >`
 // over an existing file loses it) and a line in docs/tried/README.md.
@@ -120,6 +125,41 @@ export function headerSkeleton(slug: string, date: string): string {
   ].join("\n");
 }
 
+/** A tried diff's header (the text before its first `diff --git` line) and its diff. */
+export function splitTried(text: string): { readonly header: string; readonly diff: string } {
+  const i = text.search(/^diff --git /m);
+  return i < 0 ? { header: text, diff: "" } : { header: text.slice(0, i), diff: text.slice(i) };
+}
+
+/**
+ * A tried diff made again on a ref's code (tried.ts refresh): `git apply -3` in a detached worktree of the ref under
+ * scratch/, then `git diff` there; the worktree removed after. `conflicts`: the files whose hunks don't merge (none
+ * written then).
+ */
+export function refreshTried(file: string, ref = "HEAD", root = ROOT): { readonly text: string | null; readonly conflicts: readonly string[]; readonly note: string } {
+  const { header, diff } = splitTried(readFileSync(file, "utf8"));
+  if (!diff) throw new Error(`${file}: no diff after its header`);
+  const dir = join(root, "scratch", `tried-refresh-${process.pid}`);
+  const git = (args: readonly string[], cwd = root) => spawnSync("git", args, { cwd, encoding: "utf8", input: undefined });
+  const add = git(["worktree", "add", "--detach", "--quiet", dir, ref]);
+  if (add.status !== 0) throw new Error(`git worktree add ${ref}: ${add.stderr.trim()}`);
+  try {
+    const patch = join(dir, ".tried-refresh.diff");
+    writeFileSync(patch, diff);
+    let apply = git(["apply", "-3", "--whitespace=nowarn", patch], dir);
+    const unmerged = git(["diff", "--name-only", "--diff-filter=U"], dir).stdout.split("\n").filter(Boolean);
+    // Without the preimage's blobs (a diff of a working tree never committed), the hunks by one line of context.
+    if (apply.status !== 0 && !unmerged.length) apply = git(["apply", "--index", "--recount", "-C1", "--whitespace=nowarn", patch], dir);
+    if (apply.status !== 0 && !unmerged.length) return { text: null, conflicts: [], note: apply.stderr.trim().split("\n").slice(0, 2).join("; ") || "git apply failed" };
+    if (unmerged.length) return { text: null, conflicts: unmerged, note: "hunks that don't merge: refresh them by hand" };
+    // The applied change against the ref (git apply -3 stages what it merged), the patch file itself left out.
+    const out = git(["diff", "HEAD", "--", ".", ":!.tried-refresh.diff"], dir).stdout;
+    return { text: header + out, conflicts: [], note: out === diff ? "unchanged: it applies as it is" : "refreshed" };
+  } finally {
+    git(["worktree", "remove", "--force", dir]);
+  }
+}
+
 function main(argv: readonly string[]): number {
   if (argv.includes("--help") || argv.includes("-h") || !argv.length) {
     process.stdout.write(`${headerUsage(import.meta.url)}\n`);
@@ -142,6 +182,20 @@ function main(argv: readonly string[]): number {
     if (!r.stdout.trim()) throw new Error(`git diff -- ${paths.join(" ")} is empty: nothing to keep`);
     writeFileSync(file, headerSkeleton(slug, date) + r.stdout, { flag: "wx" });
     process.stdout.write(`wrote docs/tried/${date}-${slug}.diff: fill in its header, add its line to docs/tried/README.md, name it in its open-problems.md paragraph\n`);
+    return 0;
+  }
+  if (argv[0] === "refresh") {
+    const file = argv[1];
+    const at = argv.indexOf("--at");
+    if (!file || file.startsWith("-")) throw new Error("usage: node scripts/tried.ts refresh <docs/tried/x.diff> [--at <ref>]");
+    const ref = at >= 0 ? (argv[at + 1] ?? "HEAD") : "HEAD";
+    const r = refreshTried(resolve(file), ref);
+    if (r.text === null) {
+      process.stdout.write(`tried refresh: ${file} not written: ${r.note}${r.conflicts.length ? ` (${r.conflicts.join(", ")})` : ""}\n`);
+      return 1;
+    }
+    writeFileSync(resolve(file), r.text);
+    process.stdout.write(`tried refresh: ${file} ${r.note} on ${ref}\n`);
     return 0;
   }
   const queries: string[] = [];

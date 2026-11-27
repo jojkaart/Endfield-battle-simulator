@@ -15,7 +15,7 @@
 //   whether a teammate mismatches at the same ratio nearby (team-wide, so not this operator's kit).
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
-import { effectiveKit, expireStatus, FPS, kitHitEntries, parseReactionEvent, targetEnemy, type EnemyStatus, type GameData, type ReactionRecord } from "@efsim/engine";
+import { effectiveKit, everyTarget, expireStatus, FPS, kitHitEntries, parseReactionEvent, targetEnemy, type EnemyStatus, type GameData, type ReactionRecord } from "@efsim/engine";
 import { NO_LANDING } from "./replaykeys.ts";
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
@@ -23,7 +23,8 @@ import type { HitRecord } from "./hitexport.ts";
 import { FACTOR_STRETCH, factorStretches } from "./buildoffsets.ts";
 import { clockAt, clockReaches, holdPins, loggedBreaks, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, KitWindow, TracedStatus, TriggerTrace } from "./replayrecord.ts";
-import { CAST_SLACK_MS, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast, type PlacedJoin, type PlacedTwin } from "./logcasts.ts";
+import { CAST_SLACK_MS, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type LoggedCast, type PlacedJoin, type PlacedTwin } from "./logcasts.ts";
+import { choiceWords, inTurnWords, joinWords, lateJoin, pastChannelWords, pathsWords, twinWords } from "./placementwords.ts";
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote, type BuffLane } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -118,11 +119,9 @@ export function castsRecords(data: GameData, fx: LogFixture, f: ViewFilter & { r
   for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ kind: "EVENT", t: c.t, order: 0, operator: c.operator, name: label(data, c.operator), skill: c.skill, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
   for (const c of distinctCasts(placement)) {
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
-    // The first landing's other paths (LoggedCast.paths): each start it would give and whether the previous cast allows it.
-    const paths = f.rules && c.paths?.length ? `  [paths: ${c.paths.map((p) => `${p.hitId}@${p.frame}${p.jump ? ` on ${p.jump.at}→${p.jump.to}` : " (no jump)"}: start ${s(p.start)}${p.allowed ? ", allowed" : ", not allowed"}${Math.abs(p.start - c.start) < 1 ? " (taken)" : ""}`).join("; ")}]` : "";
-    // Opened past the channel's end of the cast before (LoggedCast.pastChannel: logcasts.ts placeWith).
-    const pc = c.pastChannel;
-    const channel = f.rules && pc ? `  [past channel: ${s(pc.elapsed)} s after ${shortSkill(c.group)}@${s(pc.cast)}'s first landing, its channel's end at ${s(pc.end)} s (${pc.by === "slack" ? "past the slack" : "a press between"})]` : "";
+    // The first landing's other paths (LoggedCast.paths) and a past-channel opening (LoggedCast.pastChannel): placementwords.ts.
+    const paths = f.rules && c.paths?.length ? `  [${pathsWords(c)}]` : "";
+    const channel = f.rules && c.pastChannel ? `  [${pastChannelWords(c)}]` : "";
     lines.push({ kind: "CAST", t: c.start, order: 1, operator: c.operator, name: label(data, c.operator), skill: c.group, castKind: c.kind, key: c.key, rule: c.chosen?.rule ?? "-", text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}${channel}` });
   }
   // What the realignment by value decided for a cast's key (Placement.realign, round 18): moved, or left and why.
@@ -172,43 +171,8 @@ export function castsJson(data: GameData, fx: LogFixture, f: ViewFilter & { read
   return castsRecords(data, fx, f).records.map((r) => JSON.stringify({ log: fx.id, ...r })).join("\n");
 }
 
-/** Whether a join came later than its slot's frame by more than CAST_SLACK_MS (where the slot's frame is unknown: than the slack itself). */
-export const lateJoin = (j: PlacedJoin) => j.elapsed > (j.due ?? 0) + CAST_SLACK_MS;
-
-/** The rule that made a hit another target's landing of its slot (PlacedHit.twin), in words. */
-function twinWords(t: PlacedTwin): string {
-  if (t.rule === "batch") return `twin: batch, ${t.targets} targets per landing of the ${t.batch} alike hits at this ms (by ${t.by}: targets.ts batchTargets)`;
-  if (t.rule === "later") return "twin: later, the used-up cast's last landing on another target, one flush after it";
-  if (t.rule === "used") return "twin: used, the cast's landings of its key all logged";
-  return "twin: value, its value the slot's again, not the next slot's";
-}
-
-/** A late join (PlacedHit.joined) in words: the rule and the times. */
-function joinWords(j: PlacedJoin): string {
-  const from = j.by === "delayed" || j.by === "reach" ? "its cast's start" : "the cast's first landing";
-  const rule = j.by === "span" ? "within the cast's landings' span" : j.by === "to come" ? "slots to come within the skill's action" : j.by === "paced" ? "a detached series at its pace" : j.by === "same ultimate" ? "within the ultimate's action" : j.by === "delayed" ? "a delayed hit's landing (joinDelayed)" : "within an earlier cast's reach (joinable)";
-  return `joined: ${j.by}, ${rule}: ${s(j.elapsed)} s after ${from}${j.due !== undefined ? `, its slot's frame at ${s(j.due)} s` : ""}`;
-}
-
-/** A cast's choice (LoggedCast.chosen) in words: the rule, what decided it and the candidates. */
-function choiceWords(c: CastChoice): string {
-  const of = `of ${c.candidates.map(shortSkill).join(", ")}`;
-  switch (c.rule) {
-    case "anchor": return `anchor: its anchor's start ${s(c.ref ?? 0)} s, ${c.d ?? 0} ms off, ${of}`;
-    case "alike": return `alike: nearest the windows of ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)} (${c.d ?? 0} ms outside), ${of}`;
-    case "window": return `window: the chain step after ${c.via ? `${shortSkill(c.via)} (unlogged) after ` : ""}${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)}, ${of}`;
-    case "restart": return `restart: ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)} lists none of them, the first, ${of}`;
-    case "late": return `late: a later landing of an opened cast, ${of}`;
-    case "first": return `first in kit order, nothing else deciding, ${of}`;
-  }
-}
-
-/** An in-turn record (Placement.inTurn) in words: the verdict and, for a tried start, its checks. */
-function inTurnWords(r: InTurnRecord): string {
-  const c = r.checks;
-  const checks = c ? `: early ${c.early ? "yes" : "no"}, reach ${c.reach ? "yes" : "no"} (${s(c.reachMs)} s), free ${c.free ? "yes" : "no"}, quiet ${c.quiet ? "yes" : `no (${c.hitsInside} hits inside)`}` : "";
-  return `${r.verdict}${r.candidate !== undefined ? ` at ${s(r.candidate)}` : ""}${checks}`;
-}
+// The placement's records in words (lateJoin, twinWords, joinWords, choiceWords, inTurnWords, pathsWords,
+// pastChannelWords): placementwords.ts, a placement round's own file (round 21).
 
 /**
  * The slow-downs a replay's timeline applied (BuffReplay.appliedStops) paired with the log tools' stop list of its casts
@@ -725,7 +689,7 @@ function enemyWords(e: EnemyStatus | null, frame: number): string {
  * it; the replay's deaths (BuffReplay.deaths) between. The target-statuses report point 1: a burst too many or a
  * reaction a kit hit's `if` needs, answered without a probe.
  */
-export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly assume?: Readonly<Record<string, string>>; readonly targets?: readonly number[] } = {}): string {
+export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly assume?: Readonly<Record<string, string>>; readonly targets?: readonly number[]; readonly inflictions?: boolean } = {}): string {
   const { replay } = logBuffReplay(data, fx, underReadings(f.assume));
   const perTarget = replay.targets !== undefined;
   const lines: { t: number; text: string }[] = [];
@@ -739,6 +703,31 @@ export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { r
     const st = replay.stateAt(e.frame);
     const after = st ? (e.target !== undefined ? targetEnemy(st, e.target) : st.enemy) : null;
     lines.push({ t, text: `${s(t).padStart(7)}  ${e.target !== undefined ? `T${e.target}`.padEnd(4) : "    "}${label(data, e.operator).padEnd(12)} ${statusEventWords(e)}${d !== undefined ? `: ${Math.round(d)}` : ""}  → ${enemyWords(after, e.frame)}` });
+  }
+  // With inflictions (round 21, the target-statuses report point 1: a stack's arrival wasn't in any view): at each frame
+  // a kit landing landed, each target whose infliction (element × stacks) differs from the frame before, the landings
+  // there. From the replay's states (stateAt), no record of the engine's.
+  if (f.inflictions) {
+    const byFrame = new Map<number, typeof replay.hits>();
+    for (const l of replay.hits) if (!l.skillId.startsWith("reaction:") && inWindow(f, msOf(l.frame))) byFrame.set(l.frame, [...(byFrame.get(l.frame) ?? []), l]);
+    const inf = (e: EnemyStatus, frame: number) => {
+      const x = expireStatus(e, frame).infliction;
+      return x ? `${x.element}×${x.stacks}` : "none";
+    };
+    for (const [frame, ls] of [...byFrame].sort((a, b) => a[0] - b[0])) {
+      const [was, now] = [replay.stateAt(Math.max(0, frame - 1)), replay.stateAt(frame)];
+      if (!was || !now) continue;
+      const ids = perTarget ? [...new Set([...everyTarget(was), ...everyTarget(now)].map((x) => x.target as number))] : [undefined];
+      for (const id of ids) {
+        if (!shown(id)) continue;
+        const [a, b] = id === undefined ? [inf(was.enemy, frame - 1), inf(now.enemy, frame)] : [inf(targetEnemy(was, id), frame - 1), inf(targetEnemy(now, id), frame)];
+        if (a === b) continue;
+        const mine = ls.filter((l) => (id === undefined || l.target === id || (l.otherTargets ?? []).some((o) => o.target === id)) && (!f.operators?.length || f.operators.includes(l.operator)));
+        if (!mine.length && f.operators?.length) continue;
+        const t = msOf(frame);
+        lines.push({ t, text: `${s(t).padStart(7)}  ${id !== undefined ? `T${id}`.padEnd(4) : "    "}infliction ${a} → ${b}  (landings: ${(mine.length ? mine : ls).map((l) => `${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId}`).join(", ")})` });
+      }
+    }
   }
   for (const d of replay.deaths) {
     const t = msOf(d.frame);

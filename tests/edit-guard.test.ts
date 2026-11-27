@@ -67,6 +67,13 @@ describe("scripts/edit.ts", () => {
     expect(f?.blocks).toEqual([{ mode: "end", old: "", new: "y\nz", line: 2 }]);
     expect(parseEdits("@@@ a.md\n<<<<<<< end\n=======\ny\nz\n>>>>>>>")[0]?.blocks).toEqual(f?.blocks);
   });
+
+  it("closes an end block at the next \"@@@\" line or the file's end (round 21, round 20's own report point 2)", () => {
+    const files = parseEdits("@@@ a.md\n<<<<<<< end\ny\n\n@@@ b.md\n<<<<<<< end\nz\n\n");
+    expect(files.map((f) => [f.path, f.blocks.map((b) => b.new)])).toEqual([["a.md", ["y"]], ["b.md", ["z"]]]);
+    // A replacing block still needs its closer.
+    expect(() => parseEdits("@@@ a.md\n<<<<<<<\nx\n=======\ny\n@@@ b.md")).toThrow(/inside the block/);
+  });
 });
 
 describe("a shell substitution's damage in a doc", () => {

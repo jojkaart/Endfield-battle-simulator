@@ -4,7 +4,7 @@ import { command } from "../command.ts";
 import { isSkillFileListed, readSkillFile } from "@efsim/data";
 import type { GameData } from "@efsim/engine";
 import { enemyView } from "../enemyview.ts";
-import { findActions, formatFound, formatMentions, gamedataTree, heldFrames, whoMentions } from "../gamedata.ts";
+import { eventHandlers, findActions, formatFound, formatHandlers, formatMentions, gamedataTree, heldFrames, whoMentions } from "../gamedata.ts";
 
 /** `gamedata dilations`: each skill's time-dilation actions and what the compiler made of them (RawSkillFile.dilations). */
 function dilationsView(data: GameData, re: RegExp | undefined, dropped: boolean): string {
@@ -54,7 +54,13 @@ export default command({
   efsim gamedata find <type>              Every action of a type (regex on the short $type: HitStop, TimeDilation,
                                           Slow|Seal) in the BuffData / SkillData files: file, buff / ability event
                                           or frame, its own fields (no selectors), JSON path
-                [--file <regex>] [--folder BuffData|SkillData] [--enabled]  Only these files; not switched off
+                [--file <regex>] [--folder BuffData|SkillData] [--enabled]  Only these files; not switched off (by
+                                          its own isEnable false or a disabled action above it, which a line says)
+  efsim gamedata handlers <abilityEvent|buffEvent> <n>  Every handler of that event in the BuffData / SkillData
+                                          files (an object whose abilityEvent or buffEvent is n: 1 a target's death),
+                                          the action types under it that run and those switched off, ALL DISABLED
+                                          where nothing runs: a mechanism's listeners across kits in one list
+                [--file <regex>] [--folder BuffData|SkillData]  Only these files
                 [--fields a,b] [--count <field>]  Only these fields; or the counts of one field's values
   efsim gamedata dilations [<skill regex>]  The time-dilation actions (ultimate stops, TimeDilationAction) of
                                           every compiled skill's SkillData file and what the compiler made of each:
@@ -69,6 +75,12 @@ export default command({
     const { values, args } = ctx;
     const [sub, id] = args;
     if (sub === "dilations") return dilationsView(ctx.data(), id === undefined ? undefined : new RegExp(id), values.dropped);
+    if (sub === "handlers") {
+      const n = Number(args[2]);
+      if ((id !== "abilityEvent" && id !== "buffEvent") || args.length !== 3 || !Number.isInteger(n)) throw new Error("gamedata handlers takes abilityEvent <n> or buffEvent <n> (1: a target's death; docs/game-data-format.md names the events)");
+      if (values.folder !== undefined && values.folder !== "BuffData" && values.folder !== "SkillData") throw new Error("--folder takes BuffData or SkillData");
+      return formatHandlers(id, n, eventHandlers(id, n, { ...(values.file !== undefined ? { file: values.file } : {}), ...(values.folder !== undefined ? { folder: values.folder } : {}) }));
+    }
     if (args.length !== 2 || !id || (sub !== "tree" && sub !== "who" && sub !== "find" && sub !== "enemy")) throw new Error(`gamedata takes tree <id>, who <id>, find <type>, enemy <enemy id|fixture> or dilations [<skill regex>]\n\n${ctx.usage}`);
     if (sub === "enemy") return enemyView(ctx.data(), id);
     if (sub === "find") {

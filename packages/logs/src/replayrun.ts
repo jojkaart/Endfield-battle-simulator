@@ -16,7 +16,7 @@ import { buttonVariants, loggedFrames, type Placement } from "./logcasts.ts";
 import { deathEvent, replaySteps, runEventStep, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
-import { type ReplayedCast, frameOf } from "./castassembly.ts";
+import { type ReplayedCast, frameOf, keptPrevious } from "./castassembly.ts";
 import { endedWithTick, loggedTick } from "./holdinputs.ts";
 import { breakHoldStarts } from "./holds.ts";
 
@@ -362,7 +362,7 @@ const TAIL_END_MS = 500;
 const TAIL_EFFECT_FRAMES = 1;
 /**
  * How far (frames) a logged hit may lie from one of a tail's landings, or from a status landing the tail set off, to
- * stand for it (tailCuts' `landed` and `status` guards): the free match's reach (buffreplay.ts NEAR_FRAMES, the
+ * stand for it (tailCuts' `landed` and `status` guards): the free match's reach (landingpairs.ts LANDING_NEAR_FRAMES, the
  * landings the replay pairs with logged hits it didn't pin).
  */
 const TAIL_LANDED_FRAMES = 16;
@@ -645,7 +645,7 @@ export function missedCasts(r: MissedSearch, need: { c: ReplayedCast; f: number 
   const between = r.steps.slice(i + 1, j).flatMap((s) => (s.cast ? [{ frame: s.frame, cast: s.cast }] : []));
   const shot = (t: number): ReplayedCast => {
     const start = (t * 1000) / FPS;
-    return { operator: op, key: "", group: "", skillId: need.c.skillId, kind: "basic", start, lastHit: start, keepPrevious: prev.c.lastHit > start, landings: [], missed: { skill: need.c.skillId, at: need.c.start } };
+    return keptPrevious({ operator: op, key: "", group: "", skillId: need.c.skillId, kind: "basic", start, lastHit: start, keepPrevious: false, landings: [], missed: { skill: need.c.skillId, at: need.c.start } }, prev.c);
   };
   /** The casts from the previous one's state with these shots, to `until`: the skills the shots were made as (null: not every shot was), and the state then. */
   const tried = new Map<string, { skills: string[] | null; st: TimelineState }>();
@@ -771,6 +771,8 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
   if (landed <= f + 1) return undefined;
   const index = cur.cast ?? st.casts.findLastIndex((x) => x.operator === c.operator);
   const pending = st.scheduled.filter((x) => x.kind === "hit" && x.cast?.operator === c.operator && x.cast.index === index && x.frame > f).length;
+  // A cast that keeps its previous cast's hits (ReplayedCast.keepPrevious) cuts none of them (round 21: the line said "cuts").
+  if (c.keepPrevious) return { cast: c, skillId, frame: f, kind: "cuts", why: `interrupts ${cur.skill} and keeps its ${pending} pending hit(s) (its own hits due until ${sec(landed)} s): keepPrevious, ${c.keepPreviousWhy ?? "set by the cast's assembly"}` };
   return { cast: c, skillId, frame: f, kind: "cuts", why: `cuts ${pending} pending hit(s) of ${cur.skill} (its own hits due until ${sec(landed)} s): an interrupt the kit allows` };
 }
 

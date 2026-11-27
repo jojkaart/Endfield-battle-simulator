@@ -8,7 +8,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Snapshots } from "../scripts/accuracy.ts";
-import { applySets, combinedPatch, decisionLines, diffHunks, hunkParts, isSetEntry, measureOptions, MAX_HUNK_PARTS, overlay, parseSet, replacementDiff, setsProblem, splitLines } from "../scripts/measure.ts";
+import { codeErrors, threwNote } from "../scripts/code-errors.ts";
+import { applySets, combinedPatch, crossHunkNames, decisionLines, diffHunks, hunkParts, isSetEntry, measureOptions, MAX_HUNK_PARTS, overlay, parseSet, pinRefs, replacementDiff, setsProblem, splitLines } from "../scripts/measure.ts";
 
 const SOURCE = ["// a module", "import x from \"y\";", "", "/** The window. */", "export const WIDE = 60;", "const NARROW: number = 16; // frames", "", "export function f() {", "  return WIDE + NARROW;", "}", ""].join("\n");
 
@@ -146,5 +147,35 @@ describe("the hold-outs in a split's parts and the replay's decisions (round 18)
 
   it("takes --several-targets (round 20, the twins report point 2)", () => {
     expect(measureOptions(["--several-targets"]).values["several-targets"]).toBe(true);
+  });
+});
+
+describe("a split part that throws, and the refs fixed at queue time (round 21, the interrupted-casts report points 1 and 2)", () => {
+  it("tells the code's own errors from the replay's refusals, the stop's prefix dropped", () => {
+    expect(codeErrors(["pastChannel is not defined", "operator x can't cast: no SP", "the replay stops at 1200 ms: Cannot read properties of undefined (reading 'end')", "pastChannel is not defined"])).toEqual(["pastChannel is not defined", "Cannot read properties of undefined (reading 'end')"]);
+    expect(threwNote(new Map(), 4)).toBeNull();
+    expect(threwNote(new Map([["a.json", ["turned is not defined"]]]), 4)).toBe("the replay threw in 1 of the 4 log(s) measured: turned is not defined");
+  });
+
+  it("pins --at, --base and --against to commits, and gives --split HEAD's as its base", () => {
+    const refs: Record<string, string> = { HEAD: "a".repeat(40), main: "b".repeat(40) };
+    const r = pinRefs(["--at", "HEAD", "--against=main", "--split", "hunks"], (x) => refs[x] ?? null);
+    expect(r.argv).toEqual(["--at", "a".repeat(40), `--against=${"b".repeat(40)}`, "--split", "hunks", "--base", "a".repeat(40)]);
+    expect(r.said).toEqual(["--at HEAD is aaaaaaaaa", "--against main is bbbbbbbbb", "--split's base HEAD is aaaaaaaaa"]);
+    // A full hash stays; a ref that doesn't resolve stays for main to refuse.
+    expect(pinRefs(["--base", "a".repeat(40), "--at", "nope"], (x) => refs[x] ?? null).argv).toEqual(["--base", "a".repeat(40), "--at", "nope"]);
+  });
+
+  it("names a hunk that uses a name only another hunk declares", () => {
+    const patch = (file: string, ...lines: string[]) => [`diff --git a/${file} b/${file}`, "--- a/x", "+++ b/x", "@@ -1 +1 @@", ...lines.map((l) => `+${l}`)].join("\n");
+    const parts = [
+      { label: "logcasts.ts:10", patch: patch("logcasts.ts", "const pastChannel = (c) => c.end > 3;") },
+      { label: "drivers.ts:40", patch: patch("drivers.ts", "if (pastChannel(c) && turned) skip(\"pastChannel\"); // pastChannel"), },
+      { label: "drivers.ts:90", patch: patch("drivers.ts", "let turned = true;") },
+    ];
+    const base = (f: string) => (f === "drivers.ts" ? "function skip() {}\n" : "");
+    expect(crossHunkNames(parts, base)).toEqual(["  drivers.ts:40 uses pastChannel (declared in logcasts.ts:10), turned (declared in drivers.ts:90): it can't run alone; mark it and those hunks with one `split:<name>` comment"]);
+    // A name the base already has isn't the other hunk's.
+    expect(crossHunkNames(parts, () => "let turned; const pastChannel = 1;")).toEqual([]);
   });
 });

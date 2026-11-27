@@ -7,6 +7,7 @@ import { advance, allAssumptions, apply, COMBO_CURVE, COMBO_CURVES, createContex
 import { loadGameData } from "@efsim/data";
 import { parseAssume } from "../packages/cli/src/assume.ts";
 import { assumptionNotes } from "../packages/cli/src/commands/assumptions.ts";
+import { registryChecks } from "../scripts/lint-changed.ts";
 
 const data = loadGameData();
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../examples/${f}`, import.meta.url), "utf8")) as Build;
@@ -51,6 +52,14 @@ describe("the engine's assumptions", () => {
     // A reading's evidence belongs in the notes: the registry keeps a sentence (the longest at the split: 300 characters).
     const long = ENGINE_ASSUMPTIONS.flatMap((a) => Object.entries(a.readings).filter(([, t]) => t.length > 320).map(([r]) => `${a.id} ${r}`));
     expect(long).toEqual([]);
+  });
+
+  // Round 21 (the tail-cut report point 5): lint:changed runs the two tests above when a registry file changed.
+  it("are checked by lint:changed when a registry changes, by these tests' names", () => {
+    const [c] = registryChecks(["packages/engine/src/replay-assumptions.ts", "README.md"]);
+    expect(c?.test).toBe("tests/engine-assumptions.test.ts");
+    for (const name of ["have IDs no kit assumption uses, and defaults among their readings", "have their evidence in docs/design/assumptions.md under their own ids and readings, the registry one sentence each"]) expect(new RegExp(c?.names ?? "^$").test(name)).toBe(true);
+    expect(registryChecks(["packages/logs/src/views.ts"])).toEqual([]);
   });
 
   it("run under their defaults unless a scenario chooses", () => {

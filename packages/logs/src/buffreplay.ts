@@ -16,15 +16,16 @@
 // makeCast, replayedSkill, inferredPress, missedCasts, tailCuts, landingWatch, loggedEnemyHp), holdinputs.ts what
 // holds its timers to the log (loggedTick, heldTicks, loggedLaneEnds, heldToLoggedEnds, runBounds), replaycrits.ts the
 // crits the log leaves out (shownCrits, layerCrits, valueCrits), replayedhits.ts what it makes of the logged hits
-// (replayedHits, disagreementRuns). A doc citing "buffreplay.ts <function>" from before the split: the function's
+// (replayedHits, disagreementRuns), landingpairs.ts the kit landings paired with the logged hits (pairKitLandings,
+// round 21), counterfactual.ts a replay with casts cut (ReplayOptions.cutCasts). A doc citing "buffreplay.ts <function>" from before the split: the function's
 // file is the one named here.
 
 import {
-  activeAt, advance, allActions, readingOf, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
-  type EventLanding, type GameData, type KitHit, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TargetDeathOptions, type TimelineScenario, type TimelineState,
+  activeAt, advance, readingOf, LINK_FRAMES, skillCosts, spAt, spCostAt, parseReactionEvent, effectiveKit, FPS, reaches,
+  type EventLanding, type GameData, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TargetDeathOptions, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { isRecordedBurst } from "./recordedburst.ts";
+
 import type { LoggedCast, Placement } from "./logcasts.ts";
 import { loggedStagger } from "./replaysteps.ts";
 import type { ReplayTargets } from "./targets.ts";
@@ -37,44 +38,9 @@ import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type M
 import { NO_LANDING } from "./replaykeys.ts";
 import { type CheckSide, awayWindows, checkSide, killPurges, loggedNames, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
+import { LANDING_NEAR_FRAMES, pairKitLandings } from "./landingpairs.ts";
 
-/** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
-const NEAR_FRAMES = 16;
-/** The same for a recorded burst (Si's Artful Intent: one per record, at most one in 20 s), whose record's end can be the replay's own. */
-const RECORDED_NEAR_FRAMES = 60;
 
-/** Whether two conditions are each other's complement: X and {not: X}, or a stack's `atLeast a` and `below a`. */
-function complementary(a: unknown, b: unknown): boolean {
-  const j = (x: unknown) => JSON.stringify(x);
-  const not = (x: unknown) => (typeof x === "object" && x !== null && "not" in x ? (x as { not: unknown }).not : undefined);
-  if (a === undefined || b === undefined) return false;
-  if (j(not(a)) === j(b) || j(not(b)) === j(a)) return true;
-  const range = (x: unknown) => (typeof x === "object" && x !== null && "stack" in x ? (x as { stack: unknown; atLeast?: unknown; below?: unknown }) : null);
-  const [x, y] = [range(a), range(b)];
-  if (!x || !y || x.stack !== y.stack || Object.keys(x).length !== 2 || Object.keys(y).length !== 2) return false;
-  return (x.atLeast !== undefined && x.atLeast === y.below) || (y.atLeast !== undefined && y.atLeast === x.below);
-}
-
-/**
- * A trigger's hits whose actions are alternatives (two `hits` actions of one trigger under complementary conditions:
- * Si's Artful Intent burst through the Inksoul or as the mark, Typhoeus's arrow rain's sub1 / sub2, Last Rite's
- * phantom controlled or not), each with the events of both: one landing, by one path or the other, so a logged hit of
- * one path takes the replay's landing of the other (c779 60.37 s: the log's burst through an Inksoul the replay
- * hadn't, which landed the mark's; the damage is the record's either way).
- */
-function alternativeEvents(kit: OperatorKit): ReadonlyMap<KitHit, readonly string[]> {
-  const out = new Map<KitHit, readonly string[]>();
-  for (const t of kit.triggers) {
-    const actions = allActions(t.do).filter((a): a is Extract<typeof a, { kind: "hits" }> => a.kind === "hits");
-    for (const a of actions)
-      for (const b of actions) {
-        if (a === b || !complementary((a as { if?: unknown }).if, (b as { if?: unknown }).if)) continue;
-        const events = [...new Set([...a.hits, ...b.hits].flatMap((h) => h.events))];
-        for (const h of a.hits) out.set(h, [...new Set([...(out.get(h) ?? h.events), ...events])]);
-      }
-  }
-  return out;
-}
 
 export interface BuffReplay {
   /** The readings of open assumptions it replayed under (ReplayOptions.assume; none: every default). */
@@ -90,6 +56,12 @@ export interface BuffReplay {
    * its start in ms, and the logged cast that needs it.
    */
   readonly missed: readonly MissedCast[];
+  /**
+   * The logged casts the kit allows only after casts that hit nothing that missedCasts never looked at: its
+   * MISSED_ROUNDS were used (round 21, the tail-cut report point 3: a limit that bites shows as MISSED `rounds` lines,
+   * not as a missing line). Absent where none.
+   */
+  readonly missedUnsearched?: readonly { readonly operator: string; readonly skillId: string; readonly start: number }[];
   /**
    * Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null where the
    * replay doesn't answer: near a change (REPLAY_EDGE_MS), after the replay broke, where a crit the log doesn't give
@@ -144,7 +116,7 @@ export interface BuffReplay {
   /**
    * A logged status hit's landing (a burst, reaction, physical status or Combustion tick): the replay's status damage of
    * its operator, kind and element paired with it (statuspairs.ts pairStatusLandings: one assignment over the fight,
-   * within NEAR_FRAMES, or STATUS_WIDE_FRAMES where the value fits; each landing once), or why there is none.
+   * within LANDING_NEAR_FRAMES, or STATUS_WIDE_FRAMES where the value fits; each landing once), or why there is none.
    */
   statusLanding(hit: LogHit): LandedHit | { readonly unknown: string };
   /**
@@ -346,6 +318,13 @@ export interface ReplayOptions {
    */
   readonly holdBounds?: readonly HoldBound[];
   /**
+   * A counterfactual (round 21, the tail-cut report point 2): these made casts ended after their last logged landing on
+   * top of the replay's own tail cuts, the replay made again with them (TAILCUT lines name them), so a view can ask what
+   * the log loses without a tail (counterfactual.ts, `zmdlogs decisions --why-kept`). A cast by its operator, skill and
+   * start (ms, ±1). Absent: the replay's own cuts only.
+   */
+  readonly cutCasts?: readonly { readonly operator: string; readonly skillId: string; readonly start: number }[];
+  /**
    * The statuses per target (target-statuses `per-target`): each logged landing's targets and each kill's, from the
    * first replay's assignment (logcheck.ts logBuffReplay's second pass; enginecheck.ts replayTargets). Absent: one enemy.
    */
@@ -437,7 +416,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // What the replay knows of each cast and logged landing (the log check reads them: castFacts, landing).
   const facts = new Map<ReplayedCast, ReplayCastFacts>();
   const failedCasts = new Set<ReplayedCast>();
-  const landed = new Map<string, LandedHit>();
+  // Each logged hit's kit landing, by its index in fx.hits (landingpairs.ts pairKitLandings).
+  let landed = new Map<number, LandedHit>();
   const kitIds = [...decided].flatMap(([g, defs]) => defs.map((d) => ({ g, owner: d.split(":", 2)[0] as string, id: d.split(":", 2)[1] as string })));
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
@@ -493,6 +473,21 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   let cuts = new Map<ReplayedCast, number>();
   let tailsKept: TailKept[] = [];
   if (main) ({ main, casts, cuts, kept: tailsKept } = cutTails(main, casts, (list) => run("never", list), fx, placement, tailsReading));
+  // The counterfactual's cuts (ReplayOptions.cutCasts), each at its cast's last logged landing as tailCuts would.
+  if (main && opts.cutCasts?.length) {
+    const wanted = (c: ReplayedCast) => opts.cutCasts?.some((x) => x.operator === c.operator && x.skillId === c.skillId && Math.abs(x.start - c.start) <= 1);
+    let changed = false;
+    casts = casts.map((c) => {
+      if (c.cutAt !== undefined || !c.landings.length || !wanted(c)) return c;
+      const frame = Math.max(...c.landings.map((l) => l.frame));
+      const cut = { ...c, cutAt: frame };
+      cuts.set(cut, frame);
+      tailsKept = tailsKept.filter((k) => k.cast !== c);
+      changed = true;
+      return cut;
+    });
+    if (changed) main = run("never");
+  }
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops, the views' list too (castassembly.ts replayStops): the placed casts' miss an
@@ -521,7 +516,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the
   // replay made again with its casts, until no need is left that such casts meet.
   const tried = new Set<ReplayedCast>();
-  for (let added = 0; main && added < MISSED_ROUNDS; ) {
+  let added = 0;
+  for (; main && added < MISSED_ROUNDS; ) {
     const r = main;
     const need = r.needs.find((n) => !tried.has(n.c));
     if (!need) break;
@@ -532,6 +528,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     main = run("never");
     added++;
   }
+  // The needs the round limit left unsearched (BuffReplay.missedUnsearched).
+  const missedUnsearched = main && added >= MISSED_ROUNDS ? main.needs.filter((n) => !tried.has(n.c)).map((n) => ({ operator: n.c.operator, skillId: n.c.skillId, start: n.c.start })) : [];
   // The bound for buffs a trigger on crits is behind: only needed where some landing's crit isn't logged.
   // …and for every kit buff a trigger on crits is behind (BuffReplay.kitBuffNearChange: the log check's engine readings).
   const anyCritTrigger = kits.some((k) => k.triggers.some((t) => t.on.event === "hit" && t.on.crit !== undefined));
@@ -543,33 +541,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       failed.push(e);
       if (!e.error.startsWith("the replay stops")) failedCasts.add(e.cast);
     }
-    for (const h of st.hits) if (h.ref !== undefined) landed.set(h.ref, h);
-    // Landings a trigger made (not pinned): each logged hit without a pinned landing takes the nearest of its operator's
-    // with its event, within NEAR_FRAMES, in time order (each landing once).
-    // A trigger's hit takes its alternatives' events too (alternativeEvents: one landing by one path or the other).
-    const eventsOf = new Map(kits.flatMap((k) => {
-      const alternatives = alternativeEvents(k);
-      return kitHitEntries(k).map((e): [string, readonly string[]] => [`${k.operator}|${e.skillId}|${e.hit.id}`, alternatives.get(e.hit) ?? e.hit.events]);
-    }));
-    // A recorded burst (Si's Artful Intent) is one landing per record, whatever its path: the replay's record may end
-    // later or sooner than the game's (4e36: the log's burst 0.9 s after the replay's), so it looks further.
-    const recorded = new Set<string>(kits.flatMap((k) => kitHitEntries(k).filter((e) => isRecordedBurst(e.hit)).map((e) => `${k.operator}|${e.skillId}|${e.hit.id}`)));
-    const free = st.hits.filter((h) => h.ref === undefined && (h.facts || recorded.has(`${h.operator}|${h.skillId}|${h.hitId}`)));
-    const taken = new Set<LandedHit>();
-    for (const [i, h] of [...fx.hits.entries()].sort((a, b) => a[1].t - b[1].t)) {
-      if (landed.has(String(i))) continue;
-      const f = batchedFrame(casts, h) ?? frameOf(h.t);
-      let best: LandedHit | null = null;
-      for (const x of free) {
-        const k = `${x.operator}|${x.skillId}|${x.hitId}`;
-        if (taken.has(x) || x.operator !== h.operator || Math.abs(x.frame - f) > (recorded.has(k) ? RECORDED_NEAR_FRAMES : NEAR_FRAMES) || !eventsOf.get(k)?.includes(h.event)) continue;
-        if (!best || Math.abs(x.frame - f) < Math.abs(best.frame - f)) best = x;
-      }
-      if (best) {
-        taken.add(best);
-        landed.set(String(i), best);
-      }
-    }
+    // Pinned landings by ref, then each logged hit without one takes the nearest free landing of its operator's with
+    // its event (landingpairs.ts: one home for the rule, which a counterfactual replay reads too).
+    landed = pairKitLandings(st.hits, fx, kits, casts);
     /** The replay's state at a frame (runStateAt). */
     const stateAt = (frame: number): TimelineState => runStateAt({ ctx, checkpoints }, frame);
     const linkLive = (x: TimelineState, op: string, frame: number) =>
@@ -675,7 +649,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // The inputs of a pair that fits only at the logged hit's frame (rereadAt): the check reads it there
     // (BuffReplay.statusInputs), the landing kept as the replay made it.
     const rereadOf = new Map<LogHit, Map<LandedHit, LandingInputs>>();
-    statusLanded = pairStatusLandings(queries, free, { reading, near: NEAR_FRAMES, keyOf: (x) => `${x.operator}|${x.skillId}|${x.element}`, fits });
+    statusLanded = pairStatusLandings(queries, free, { reading, near: LANDING_NEAR_FRAMES, keyOf: (x) => `${x.operator}|${x.skillId}|${x.element}`, fits });
     for (const [h, x] of statusLanded) {
       const inputs = rereadOf.get(h)?.get(x);
       if (inputs) statusRead.set(h, inputs);
@@ -706,6 +680,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     failed,
     unjudgedKitBuffs,
     missed: (main?.made ?? []).flatMap((m) => (m.c.missed ? [{ operator: m.c.operator, skillId: m.skillId, start: m.c.start, need: { skillId: m.c.missed.skill, start: m.c.missed.at } }] : [])),
+    ...(missedUnsearched.length ? { missedUnsearched } : {}),
     hits: main?.st.hits ?? [],
     reactions: main?.st.reactions ?? [],
     staggers: main ? main.staggerWindows.map((w) => w.start) : [],
@@ -725,12 +700,12 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     }),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
-      if (i === undefined || landed.has(String(i)) || !main) return null;
+      if (i === undefined || landed.has(i) || !main) return null;
       const own = main.dropped.get(String(i));
       if (own !== undefined) return own;
       if (!unpinned) replayedCasts(placement, fx, (unpinned = new Map()));
       const why = unpinned.get(String(i));
-      return why === undefined ? null : `${why}, and none of the replay's unpinned landings of its event lies within ${NEAR_FRAMES} frames`;
+      return why === undefined ? null : `${why}, and none of the replay's unpinned landings of its event lies within ${LANDING_NEAR_FRAMES} frames`;
     },
     traces: main?.traces ?? [],
     statusTraces: main?.statusTraces ?? [],
@@ -793,13 +768,13 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return shownByHits.has(i) ? "shown" : byLayers.has(i) ? "layers" : byValues.has(i) ? "values" : "none";
     },
     landing(hit) {
-      const found = landed.get(String(hitIndex.get(hit)));
+      const found = landed.get(hitIndex.get(hit) as number);
       if (found) return found;
       if (kits.length === 0) return { unknown: NO_LANDING.noKit };
       if (broken(hit.t)) return { unknown: NO_LANDING.afterStop };
       const p = placement.hits.get(hit);
       if (!p) return { unknown: NO_LANDING.notPlaced };
-      const shared = p.sameAs ? landed.get(String(hitIndex.get(p.sameAs))) : undefined;
+      const shared = p.sameAs ? landed.get(hitIndex.get(p.sameAs) as number) : undefined;
       if (shared) return shared;
       const c = castFacts(p.cast);
       if ("unknown" in c) return c;

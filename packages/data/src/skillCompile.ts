@@ -343,6 +343,13 @@ interface Ctx {
   readonly othersOnly?: true;
   /** In a buff's start event: whom the buff is on (a CreateBuff there on the context's target goes to it). */
   readonly holder?: BuffTarget;
+  /**
+   * Inside a channel's tick body (ticks): its token, so the ticks' own landings are told from what the ticks create
+   * (round 21, the interrupted-casts report point 4: Rossi's combo afterhits, a buff a tick creates, were marked with
+   * the channel's end by "added while the body ran"). Cleared where a sequence leaves the skill's own timeline (enter:
+   * a created buff, a spawned entity, a projectile, a helper skill).
+   */
+  readonly channel?: number;
 }
 
 interface Sequence {
@@ -403,6 +410,9 @@ function groupKind(finder: Obj | null): GroupKind {
 
 class Compiler {
   readonly landings: CompiledLanding[] = [];
+  /** A landing's channel (Ctx.channel), by its index in `landings`: the ticks' own landings. */
+  private readonly landingChannel = new Map<number, number>();
+  private channelCount = 0;
   readonly effects: CompiledEffect[] = [];
   readonly costs: CompiledCost[] = [];
   readonly blocks: EnergyBlock[] = [];
@@ -1017,6 +1027,7 @@ class Compiler {
       const kind = (Object.entries(DECORATE_BITS) as [string, number][]).find(([k, bit]) => k !== "finalStrike" && (mask & bit) !== 0)?.[0] as ActionKind | undefined;
       const damageType = typeof u["damageType"] === "number" ? u["damageType"] : -1;
       this.landingOrder.set(this.landings.length, this.ticket++);
+      if (ctx.channel !== undefined) this.landingChannel.set(this.landings.length, ctx.channel);
       this.landings.push({
         ...this.place(ctx, frame),
         scale,
@@ -1088,7 +1099,7 @@ class Compiler {
       return null;
     }
     if (!this.files.includes(file)) this.files.push(file);
-    const { holder: _holder, ...rest } = ctx;
+    const { holder: _holder, channel: _channel, ...rest } = ctx;
     return { ...rest, file, detached: true, via: [...ctx.via, `${how} → ${file}`], stack: [...ctx.stack, file], groups: new Map() };
   }
 
@@ -1318,13 +1329,16 @@ class Compiler {
     const body = (a["actionOnTick"] ?? a["actionOnExecuting"] ?? a["action"]) as Sequence | undefined;
     const perTarget = typeof a["maxCountPerTarget"] === "number" && a["maxCountPerTarget"] > 0 ? a["maxCountPerTarget"] : Infinity;
     const before = this.landings.length;
+    // The body's landings carry this channel's token (Ctx.channel) unless they leave the skill's timeline.
+    const channel = this.channelCount++;
+    const inBody: Ctx = { ...ctx, channel };
     let n = 0;
     for (let k = 0; n < perTarget && n < 600; k++) {
       const f = start + (interval > 0 ? toFrame(k * interval) : k);
       // A TickIntervalAction counts its ticks on unrounded time (Tangtang's dive: 4 ticks, not 5).
       const past = t === "TickIntervalAction" && interval > 0 ? k * interval * FPS > end - start + 1e-6 : f > end;
       if (past || (k > 0 && interval <= 0 && a["executeEachFrame"] !== true)) break;
-      this.execSeq(body, f, f, ctx);
+      this.execSeq(body, f, f, inBody);
       n++;
     }
     // Capped before the channel's end: a target that comes into reach late takes its ticks later, up to the end. split:channel-end
@@ -1333,7 +1347,9 @@ class Compiler {
       // The ticks' own landings: not what a buff or entity they create deals later (Rossi's combo afterhits). split:channel-end
       for (let i = before; i < this.landings.length; i++) {
         const l = this.landings[i] as CompiledLanding;
-        if (!l.detached && l.frame <= end) this.landings[i] = { ...l, latest: end };
+        // A channel inside a detached file (a buff's, an entity's own) gets no end yet: as before the token (round 21),
+        // nine kit hits; marking them moves verdicts (the backlog's accuracy list).
+        if (this.landingChannel.get(i) === channel && !l.detached && l.frame <= end) this.landings[i] = { ...l, latest: end };
       }
     }
     if (this.landings.length > before) this.notes.add(`${ctx.file}@${start}: ${t} ticks from frame ${start} every ${fmt(interval)} s to ${end}${Number.isFinite(perTarget) ? `, at most ${perTarget} per target` : ""} (first tick assumed at the start)`);

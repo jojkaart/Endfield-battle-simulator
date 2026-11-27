@@ -10,7 +10,7 @@
 // primary with one disagreement taken the log's way (hitCounterfactuals).
 
 import { basename } from "node:path";
-import { activeAt, FPS, landingDamage, parseReactionEvent, readingDoesNotApply, reaches, roundDamage, type ActiveBuff, type AttrType, type GameData, type KitHit, type LandingInputs, type Situation, type StatPanel, type Zones } from "@efsim/engine";
+import { activeAt, FPS, landingDamage, parseReactionEvent, readingDoesNotApply, reaches, roundDamage, type ActiveBuff, type AttrType, type GameData, type KitHit, type LandedHit, type LandingInputs, type Situation, type StatPanel, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fightTargets, logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
@@ -87,8 +87,12 @@ export interface HitRecord {
    * In a fight read per target (fixture severalTargets, several-targets `targets`: enginecheck.ts fightTargets), the
    * hit's target: its index (in order of first hit), how it was chosen (targets.ts HitTarget.how), the enemy-side units
    * its reading leaves out (`drop`: `owner:buff`, `status:corrosion`, …) and whether it killed it. Text lines: `T<n>`.
+   * `landing`: the targets the replay's landing was on (LandedHit.target, then its otherTargets: a landing logged on
+   * several; target-statuses `per-target`, the second replay's ids from the first assignment), where it has them; the
+   * text line flags a hit whose target isn't among them (`≠ landing T<m>`: the check read the hit at another target's
+   * statuses than the replay landed it on; round 21, the statuses-per-target report point 2).
    */
-  readonly target?: { readonly index: number; readonly how: string; readonly drop: readonly string[]; readonly kills: boolean };
+  readonly target?: { readonly index: number; readonly how: string; readonly drop: readonly string[]; readonly kills: boolean; readonly landing?: readonly number[] };
   /** The crit the replay's landing took (LandedHit.crit; null where the hit can't crit), with a landing. */
   readonly replayCrit?: boolean | null;
   /** Where that crit comes from (replaycrits.ts CritSource: the log, an inference from the log, or none). */
@@ -225,7 +229,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       ...listedSincesOf(hit.effects),
       critSource: replay.replay.critSource(hit),
       ...(facts.get(hit.operator) ? { unknownFacts: facts.get(hit.operator) as readonly string[] } : {}),
-      ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills } } : {}),
+      ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills, ...landingTarget(byHit.get(hit)?.landing) } } : {}),
     };
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;
@@ -423,7 +427,7 @@ export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "
   const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
   const log = reading === "log" ? `  log reading ${r.logReading ?? "-"}  ${pct(r.logError)}` : "";
   const z = zones && r.landing ? `  ${zoneWords(r)}` : "";
-  const target = r.target ? `  T${r.target.index}${r.target.how === "fits" ? "" : ` (${r.target.how})`}${r.target.drop.length ? ` without ${r.target.drop.join(", ")}` : ""}${r.target.kills ? " killed" : ""}` : "";
+  const target = r.target ? `  T${r.target.index}${r.target.how === "fits" ? "" : ` (${r.target.how})`}${r.target.landing !== undefined && !r.target.landing.includes(r.target.index) ? ` ≠ landing ${r.target.landing.map((t) => `T${t}`).join("+")}` : ""}${r.target.drop.length ? ` without ${r.target.drop.join(", ")}` : ""}${r.target.kills ? " killed" : ""}` : "";
   return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}${target}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}${z}`;
 }
 
@@ -460,7 +464,10 @@ export function recordChanges(before: readonly HitRecord[], after: readonly HitR
       const added = [...my].filter((m) => !mx.has(m));
       const diff = gone.length || added.length ? `; modifiers ${[...added.map((m) => `+${m}`), ...gone.map((m) => `-${m}`)].join(", ")}` : "";
       const why = y.unknown && y.unknown !== x.unknown ? `; now: ${y.unknown}` : "";
-      out.push(`${name}  t=${x.t}  ${x.operator}  ${x.event}  logged ${x.value}: ${x.class} ${x.predicted ?? "-"} (${pct(x.error)}) → ${y.class} ${y.predicted ?? "-"} (${pct(y.error)})${diff}${why}`);
+      // In a fight read per target, its target on each side (round 21, the statuses-per-target report point 3).
+      const [tx, ty] = [x.target ? `T${x.target.index}` : "", y.target ? `T${y.target.index}` : ""];
+      const tg = tx || ty ? `  ${tx === ty ? tx : `${tx || "-"} → ${ty || "-"}`}` : "";
+      out.push(`${name}  t=${x.t}${tg}  ${x.operator}  ${x.event}  logged ${x.value}: ${x.class} ${x.predicted ?? "-"} (${pct(x.error)}) → ${y.class} ${y.predicted ?? "-"} (${pct(y.error)})${diff}${why}`);
       const k = `${x.class} → ${y.class}`;
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
@@ -556,4 +563,88 @@ export async function exportHitsParallel(files: readonly string[], workers: numb
     });
   await Promise.all(Array.from({ length: Math.max(1, Math.min(workers, files.length)) }, one));
   return n;
+}
+
+/** The targets a hit's landing was on (LandedHit.target, otherTargets), as HitRecord.target's `landing`; none without one. */
+function landingTarget(landing: LandedHit | { readonly unknown: string } | undefined): { landing?: readonly number[] } {
+  return landing && !("unknown" in landing) && landing.target !== undefined ? { landing: [landing.target, ...(landing.otherTargets ?? []).map((o) => o.target)] } : {};
+}
+
+/** The hits whose check target isn't among their landing's targets (HitRecord.target `landing`), of those with both. */
+export function targetMismatches(records: readonly HitRecord[]): { readonly both: number; readonly differ: readonly HitRecord[] } {
+  const both = records.filter((r) => r.target?.landing !== undefined);
+  return { both: both.length, differ: both.filter((r) => !(r.target?.landing ?? []).includes(r.target?.index ?? -1)) };
+}
+
+/** The zones a layer of a kit buff adds its value to whole (the zone is 1 + Σ), besides ATK (base ATK × Σ). */
+const ADDITIVE_ZONES = new Set(["damageBonus", "amp", "susceptibility", "damageTaken"]);
+
+/** One hit's layers of a kit buff (layerRows): the log's entries of its game buff, the replay's and the value's. */
+export interface LayerRow {
+  readonly record: HitRecord;
+  /** The log's entries of the game buff at the hit (HitRecord.listed), and their lane starts where listed more than once. */
+  readonly listed: number;
+  readonly sinces: readonly (number | null)[];
+  /** The kit buff's modifiers in the primary reading (one per layer). */
+  readonly replay: number;
+  /**
+   * The layers the logged value implies with every other input as the primary reading has them: the replay's plus (logged
+   * ÷ reading − 1) × the zone ÷ one layer's part of it (ATK: base ATK × its value, flat ATK ignored; an additive zone:
+   * its value). Null: no reading, a zone that isn't additive, or no layer's value known in the fight.
+   */
+  readonly implied: number | null;
+}
+
+/**
+ * `zmdlogs hits --layers <owner:id>` (round 21, backlog after round 20 point 3; round 8's parked layers point; the Liino
+ * report's probe, scripts/probes/kits/liino-medicant-layers.ts, made general): per hit where the log lists the kit
+ * buff's game buff or the reading has a layer, the log's count, the replay's and the one the value implies.
+ */
+export function layerRows(records: readonly HitRecord[], kitBuff: string, gameBuff: string | null): LayerRow[] {
+  const count = (r: HitRecord) => {
+    if (gameBuff === null) return 0;
+    const e = r.listed.find((x) => x === gameBuff || x.startsWith(`${gameBuff} ×`));
+    return e === undefined ? 0 : e === gameBuff ? 1 : Number(e.slice(gameBuff.length + 2));
+  };
+  // A layer's zone and value: the hit's own modifier, else the fight's first.
+  const layerOf = new Map<string, { zone: string; value: number }>();
+  for (const r of records) {
+    const m = r.landing?.modifiers.find((x) => x.kitBuff === kitBuff);
+    if (m && !layerOf.has(r.fixture)) layerOf.set(r.fixture, { zone: m.zone, value: m.value });
+  }
+  const out: LayerRow[] = [];
+  for (const r of records) {
+    const mods = r.landing?.modifiers.filter((x) => x.kitBuff === kitBuff) ?? [];
+    const listed = count(r);
+    if (!listed && !mods.length) continue;
+    const layer = mods[0] ? { zone: mods[0].zone, value: mods[0].value } : layerOf.get(r.fixture);
+    let implied: number | null = null;
+    if (r.landing && r.predicted && layer && layer.value !== 0) {
+      const zones = r.landing.zones as unknown as Record<string, number>;
+      const zone = zones[layer.zone];
+      const pct = r.landing.modifiers.filter((x) => x.zone === "atk").reduce((s, x) => s + x.value, 0);
+      const part = layer.zone === "atk" ? (zone ?? 0) / (1 + pct) * layer.value : ADDITIVE_ZONES.has(layer.zone) ? layer.value : null;
+      if (zone !== undefined && part) implied = mods.length + ((r.value / r.predicted - 1) * zone) / part;
+    }
+    out.push({ record: r, listed, sinces: gameBuff ? (r.listedSinces?.[gameBuff] ?? []) : [], replay: mods.length, implied });
+  }
+  return out;
+}
+
+/** layerRows as lines: one per hit, then per listed count the hits, the replay's layers and the implied ones (rounded, ×hits). */
+export function layerLines(rows: readonly LayerRow[], kitBuff: string, gameBuff: string | null): string[] {
+  const n = (x: number | null) => (x === null ? "-" : x.toFixed(2));
+  const lines = rows.map(({ record: r, listed, sinces, replay, implied }) => {
+    const since = sinces.length ? ` (since ${sinces.map((x) => (x === null ? "?" : (x / 1000).toFixed(1))).join(", ")})` : "";
+    return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  listed ${listed}${since}  replay ${replay}  implied ${n(implied)}`;
+  });
+  const by = new Map<number, LayerRow[]>();
+  for (const x of rows) by.set(x.listed, [...(by.get(x.listed) ?? []), x]);
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
+  const summary = [...by].sort((a, b) => a[0] - b[0]).map(([k, xs]) => {
+    const hist = new Map<number, number>();
+    for (const x of xs) if (x.implied !== null && Number.isFinite(x.implied)) hist.set(Math.round(x.implied), (hist.get(Math.round(x.implied)) ?? 0) + 1);
+    return `  listed ${String(k).padStart(2)}: ${String(xs.length).padStart(5)} hit(s), the replay's layers median ${median(xs.map((x) => x.replay))}, implied ${[...hist].sort((a, b) => a[0] - b[0]).map(([v, c]) => `${v}:${c}`).join(" ") || "-"}`;
+  });
+  return [`${kitBuff}${gameBuff ? ` (the log's ${gameBuff})` : " (no game buff: the log's count is 0)"}: per hit the log's entries, the replay's layers (its modifiers in the primary reading) and the layers the logged value implies with the rest as read`, ...lines, `By the log's count:`, ...summary];
 }

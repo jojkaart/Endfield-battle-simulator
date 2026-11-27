@@ -22,6 +22,7 @@ import {
   cadenceView,
   census,
   decisionsView,
+  whyKeptView,
   clockView,
   endsView,
   controlView,
@@ -101,6 +102,9 @@ export default command({
                                           of --assume) changes, both sides and the modifiers only one has, then a
                                           count per change (measure --hits for these logs, no lock; repeatable)
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
+                [--layers <owner:id>]     Instead: a layered kit buff per hit, the log's entries of its game buff
+                                          (their lane starts), the replay's layers (its modifiers in the primary
+                                          reading) and the layers the logged value implies, then by the log's count
                 [--same-listing s]        Instead (one fixture): the hit at that moment and the nearest hits with the
                                           very same listing (buff, source, value), with their verdicts and a count by
                                           class: a listing difference that reads plain next door is no cause
@@ -165,6 +169,8 @@ export default command({
                                           read per target), its damage and the target's statuses after it; the
                                           replay's deaths between
                 [--target n] [--operator <op>] [--from s] [--to s]  Only these targets (repeatable), operators, window
+                [--inflictions]           Also each target's infliction (element×stacks) where a frame of kit
+                                          landings changed it, with those landings (a stack's arrival)
   efsim zmdlogs bursts <fixture…|--all>   Each Arts Burst, logged against the check's replay (paired as the check
                                           pairs them, the offset; log only with the reason; replay only), each
                                           side's likely cause (the operator's latest inflicting hit at least the
@@ -238,7 +244,11 @@ export default command({
                                           them) that differ between the default readings (-) and the given one (+), per log,
                                           then a count per kind: a replay rule's false positives before a measure
                                           (two replays per log, seconds each); without --assume every decision;
-                                          --operator: only these operators'
+                                          --operator: only these operators'; --all takes about 3 min, past the
+                                          2-minute foreground limit: run it in the background, output to a file
+                [--why-kept]              Instead (one fixture): per TAILKEPT line, the replay with that tail cut and
+                                          the logged hits whose landing, class or primary reading moved, a count per
+                                          class change: what the kept tail stands for (one check per kept tail)
   efsim zmdlogs stops <fixture…|--all>    replay --stops' STOP lines over several logs (default: every verified and
                                           pending development log with --all), then a count per kind (as listed,
                                           covered, length, timeline only, list only) and how many logs have each
@@ -426,6 +436,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "same-listing": { type: "string" },
     "against-hit": { type: "string" },
     "against-lanes": { type: "boolean", default: false },
+    "why-kept": { type: "boolean", default: false },
+    inflictions: { type: "boolean", default: false },
+    layers: { type: "string" },
     pairs: { type: "boolean", default: false },
     listed: { type: "string" },
     all: { type: "boolean", default: false },
@@ -634,7 +647,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const againstHit = values["against-hit"] !== undefined ? Number(values["against-hit"]) * 1000 : undefined;
       if (againstHit !== undefined && !Number.isFinite(againstHit)) throw new Error("zmdlogs hits --against-hit takes seconds");
       if (againstHit !== undefined && (sameAt !== undefined || values.against.length || values.json || values.listed !== undefined)) throw new Error("zmdlogs hits --against-hit prints text lines alone (no --same-listing, --against, --json or --listed)");
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
+      // --layers: an owner given by its name ("Liino:wpn_lance_0014.atk"): its id (clockview.ts kitBuffKey).
+      const layers = values.layers !== undefined ? { layers: kitBuffKey(data(), values.layers) } : {};
+      if (values.layers !== undefined && (values.json || values.against.length || sameAt !== undefined || againstHit !== undefined)) throw new Error("zmdlogs hits --layers prints text lines alone (no --json, --against, --same-listing or --against-hit)");
+      return hitsReport(data, selection, { ...layers, workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });
@@ -666,10 +682,17 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     }
     if (sub === "decisions") {
       const named = args.slice(1);
+      // Round 21 (the tail-cut report point 2): the counterfactual per kept tail.
+      if (values["why-kept"]) {
+        if (named.length !== 1 || values.all) throw new Error("zmdlogs decisions --why-kept takes one fixture (an id such as 6339; --assume id=reading, --operator op)");
+        return whyKeptView(data(), readDevFixture(named[0] as string), { ...(Object.keys(assume).length ? { assume } : {}), operators, progress });
+      }
       if (!named.length && !values.all) throw new Error("zmdlogs decisions takes fixtures (ids such as 0c14) or --all (every verified and pending development log), with --assume <id>=<reading> (without it: every decision)");
       if (named.length && values.all) throw new Error("zmdlogs decisions: fixtures or --all, not both");
       // With --operator, only the logs whose team has one of them.
       const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
+      // Round 21 (the tail-cut report point 4): a run past the foreground limit loses what was piped after it.
+      if (values.all) process.stderr.write(`zmdlogs decisions --all: ${logs.length} logs, about 3 s each: run it in the background with its output to a file\n`);
       return decisionsView(data(), logs, { assume, operators, progress });
     }
     if (sub === "placement") {
@@ -685,7 +708,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
         if (!Number.isInteger(n) || n < 0) throw new Error(`zmdlogs statuses --target ${x}: a target number (0, 1, …: the T<n> of its lines)`);
         return n;
       });
-      return statusesView(data(), readDevFixture(arg), { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators, assume, targets });
+      return statusesView(data(), readDevFixture(arg), { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators, assume, targets, inflictions: values.inflictions });
     }
     if (sub === "bursts") {
       const named = args.slice(1);

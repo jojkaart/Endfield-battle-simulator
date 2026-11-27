@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parentPort, workerData } from "node:worker_threads";
+import { codeErrors } from "./code-errors.ts";
 
 export interface MeasureJob {
   readonly key: string;
@@ -72,6 +73,11 @@ export type MeasureAnswer =
        * net changes summed over the moved hold-outs (round 18, the placement-cases report point 2). Kinds and counts only.
        */
       readonly decisions?: Readonly<Record<string, number>>;
+      /**
+       * The replay's cast errors that are code errors (scripts/code-errors.ts: a ReferenceError, a TypeError), absent
+       * where none: a split part that threw is "not measured alone", not a −100% (round 21). Identifiers only.
+       */
+      readonly threw?: readonly string[];
       readonly seconds: number;
     }
   | { readonly key: string; readonly placement: string; readonly casts?: readonly string[]; readonly seconds: number }
@@ -139,7 +145,8 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
   const perHit = { n: errors.length, meanAbs: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : 0 };
   const shares = sharesOf(fx, own, replay, byHit, verdicts);
   const decisions = decisionsOf(fx, replay);
-  const extra = { ...(shares ? { shares } : {}), ...(decisions ? { decisions } : {}) };
+  const threw = codeErrors(((replay?.replay?.failed ?? []) as { error?: unknown }[]).map((f) => String(f.error ?? "")));
+  const extra = { ...(shares ? { shares } : {}), ...(decisions ? { decisions } : {}), ...(threw.length ? { threw } : {}) };
   if (!withHits) return { entry: { ...counts, totals }, perHit, ...extra };
   // The primary reading's modifiers at each landing, where the commit's code has the calls (round 3 on).
   const modsOf = modifiersAt(fx, replay);

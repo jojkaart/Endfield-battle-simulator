@@ -293,3 +293,14 @@ Each report's episode was a ready test: 6339's 21.60 s Laevatain tail for TAILKE
 tail-own-landing diff for `tried.ts --touching`, 04d4's Ember for fit-build's weapon skill singles and Catcher's P1
 strikes for a base's parts, 7b54's 15.60 s Si combo for the twin on LAND and its 5.27 / 10.99 s Laevatain attack 1
 for the same-listing VALUE flag, 6339's Si inkmove for a trigger group's NOLAND.
+
+## Outcome (round 21)
+
+- 1 (A hold that isn't a cast's stop has no clock view): parked (carried twice without a new report; the Parked list
+  of docs/friction/2026-11-27-backlog-after-round-21.md).
+- 2 (snapshots:update reads the tree when its turn comes): done (ab04180), by the second suggestion: snapshots.ts
+  codeKey at queue time, checked when the lock comes and after the suites; a code edit meanwhile fails the run with
+  its files put back and the paths named.
+- 3 (A layered buff's layers against the log's listing and value): done (d51f4d3) but round 8's other parts:
+  `zmdlogs hits <fixture…> --layers <owner:id>` (hitexport.ts layerRows); `logReading` as an object and `zmdlogs
+  consumed` are parked again (the new backlog's Parked list).

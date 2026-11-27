@@ -82,7 +82,7 @@ const NOT_PRINTERS: Record<string, string> = {
   diffHunks: "a diff", hunkParts: "a diff", readingsProblem: "an assumption's problem", defaultReference: "a commit", referenceNote: "a commit",
   splitGroups: "files", exportedNames: "names", importedNames: "names", importLinks: "files", negativeControl: "the verified logs' counts",
   mixedPerHit: "the development logs its caller passes", movedCasts: "the development logs its caller passes", hitChanges: "the development logs its caller passes",
-  holdChanges: "the development logs its caller passes", pinChange: "one unit", modifierChange: "one hit", patchProblem: "a patch's problem",
+  holdChanges: "the development logs its caller passes", pinChange: "one unit", modifierChange: "one hit", patchProblem: "a patch's problem", pinRefs: "refs", crossHunkNames: "the parts its caller passes (the hold-out fixtures part left out)",
 };
 
 describe("the hold-outs' blindness over every printing function (accuracy.ts, measure.ts)", () => {

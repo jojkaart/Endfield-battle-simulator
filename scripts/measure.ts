@@ -123,6 +123,7 @@ import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
 import { allLogs, compare, direction, GROUPS, groupOf, holdoutEntry, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
+import { threwNote } from "./code-errors.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 type DecisionCounts = Readonly<Record<string, number>>;
 import { endRun, startRun } from "./runstate.ts";
@@ -436,6 +437,8 @@ async function main(argv: string[]): Promise<number> {
   const holdRows = new Map<string, Map<string, readonly HoldUnit[]>>();
   const sharesBy = new Map<string, Map<string, Shares>>();
   const decisionsBy = new Map<string, Map<string, DecisionCounts>>();
+  // The logs whose replay threw a code error (MeasureAnswer.threw), per slot: a split part's means "not measured alone".
+  const threwBy = new Map<string, Map<string, readonly string[]>>();
   // Per tree and readings (`slot`: a --variant's measurements of the same tree apart).
   const measureTree = async (t: string, label: string, which: readonly string[] = order, readings: Readonly<Record<string, string>> = t === tree ? assume : {}, slot = t) => {
     const got = new Map<string, Entry>();
@@ -449,6 +452,8 @@ async function main(argv: string[]): Promise<number> {
     sharesBy.set(slot, shares);
     const decided = decisionsBy.get(slot) ?? new Map<string, DecisionCounts>();
     decisionsBy.set(slot, decided);
+    const threw = threwBy.get(slot) ?? new Map<string, readonly string[]>();
+    threwBy.set(slot, threw);
     const start = performance.now();
     // A log new since that commit (an import on this branch): its code reads the measured tree's copy of the fixture.
     const fresh = new Set(t === tree ? [] : which.filter((k) => !existsSync(join(t, "fixtures", k))));
@@ -469,6 +474,7 @@ async function main(argv: string[]): Promise<number> {
       if (a.holds) holds.set(a.key, a.holds);
       if (a.shares) shares.set(a.key, a.shares);
       if (a.decisions) decided.set(a.key, a.decisions);
+      if (a.threw?.length) threw.set(a.key, a.threw);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
     }, readings);
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
@@ -586,6 +592,8 @@ async function main(argv: string[]): Promise<number> {
     writeFileSync(join(dir, "accuracy.md"), render(after, await operatorNames()));
     const lines = [
       ...(vi === 0 ? referenceLine : []),
+      // A code error caught per cast reads as lost landings (round 21): said before the numbers it makes.
+      ...((n) => (n ? [`The replay threw a code error, caught per cast, so these numbers are no measurement: ${n}`] : []))(threwNote(threwBy.get(`${tree}#${vi}`) ?? new Map(), keys.length)),
       // The tree's own change first, when variants are measured beside it (round 20: it was measured, not printed).
       ...(vi === 0 && plain ? [`The plain tree (${what}, no variant) against the reference:`, ...compare(before, plain).map((l) => `  ${l}`), ""] : []),
       `Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
@@ -624,7 +632,13 @@ async function main(argv: string[]): Promise<number> {
     }
   }
   if (values.split !== undefined && baseTree && before && whole) {
-    const lines = await splitParts(values.split as "files" | "commits" | "hunks", { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, ...(values.only !== undefined ? { only: values.only } : {}), keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
+    const lines = await splitParts(values.split as "files" | "commits" | "hunks", { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, ...(values.only !== undefined ? { only: values.only } : {}), keys: order, before, whole, split, measure: async (t, label, which) => {
+      const got = await measureTree(t, label, which, assume, `${t}#split`);
+      // A part whose replay threw (a name only another hunk declares) is no measurement: "not measured alone" (round 21).
+      const note = threwNote(threwBy.get(`${t}#split`) ?? new Map(), which.length);
+      if (note) throw new Error(note);
+      return got;
+    } });
     writeFileSync(join(out, "summary.txt"), [...allLines, "", ...lines].join("\n") + "\n");
     allLines.push("", ...lines);
   }
@@ -1144,9 +1158,10 @@ async function splitParts(how: "files" | "commits" | "hunks", r: SplitRun): Prom
     const [a, b] = [allLogs(r.before).get(lk), allLogs(r.whole).get(lk)];
     return !a || !b || direction(a.entry, b.entry) !== "same";
   });
-  const head = `Split by ${how} against ${r.base} (each part measured on the ${moved.length} log(s) the whole change moved; the rest as the base has them):`;
-  if (!moved.length) return [head, "  nothing to split: the whole change moved no log's verdicts"];
   const shortRef = (ref: string) => git(["rev-parse", "--short=9", ref]);
+  // The refs as the queue pinned them (pinRefs): the split's diff is the whole change's, whatever was committed since.
+  const head = `Split by ${how} against ${shortRef(r.base)}, the code at ${shortRef(r.code)} (each part measured on the ${moved.length} log(s) the whole change moved; the rest as the base has them):`;
+  if (!moved.length) return [head, "  nothing to split: the whole change moved no log's verdicts"];
   const parts: { label: string; from: Snapshots; to: Snapshots }[] = [];
   const notes: string[] = [];
   if (how === "files") {
@@ -1425,6 +1440,76 @@ export function patchProblem(argv: readonly string[], root = ROOT): string | nul
   return `measure: --patch ${file} doesn't apply to the working tree (git apply --check): without --at it goes on top of the tree as queued; name the commit it was made against with --at <ref>`;
 }
 
+/**
+ * The refs a queued run names (--at, --base, --against), pinned to their commits at queue time (round 21, the
+ * interrupted-casts report point 2: `--at HEAD --split hunks` measured the whole change at the queued HEAD but split a
+ * commit made during the wait). A --split without --base gets HEAD's commit as its base. A ref that doesn't resolve is
+ * left as it is (main says so). Returns the new argv and a line per pinned ref.
+ */
+export function pinRefs(argv: readonly string[], resolveRef: (ref: string) => string | null): { argv: string[]; said: string[] } {
+  const out = [...argv];
+  const said: string[] = [];
+  for (const name of ["at", "base", "against"]) {
+    for (let i = 0; i < out.length; i++) {
+      const a = out[i] as string;
+      const eq = a.startsWith(`--${name}=`);
+      if (a !== `--${name}` && !eq) continue;
+      const ref = eq ? a.slice(name.length + 3) : out[i + 1];
+      if (ref === undefined) continue;
+      const commit = resolveRef(ref);
+      if (!commit || commit.startsWith(ref)) continue;
+      if (eq) out[i] = `--${name}=${commit}`;
+      else out[i + 1] = commit;
+      said.push(`--${name} ${ref} is ${commit.slice(0, 9)}`);
+    }
+  }
+  if (out.some((a) => a === "--split" || a.startsWith("--split=")) && !out.some((a) => a === "--base" || a.startsWith("--base="))) {
+    const head = resolveRef("HEAD");
+    if (head) {
+      out.push("--base", head);
+      said.push(`--split's base HEAD is ${head.slice(0, 9)}`);
+    }
+  }
+  return { argv: out, said };
+}
+
+/** A TypeScript name a line declares (const, let, var, function, class, interface, type, enum). */
+const DECLARED = /\b(?:const|let|var|function\*?|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g;
+
+/**
+ * --split hunks, at queue time (round 21, the interrupted-casts report point 1): the parts whose added lines use a name
+ * that only another part's added lines declare (not the base's text of the files touched), so the part can't run
+ * alone. One line per such part: mark the hunks with one `split:<name>` comment.
+ */
+export function crossHunkNames(parts: readonly { readonly label: string; readonly patch: string }[], baseText: (file: string) => string): string[] {
+  const added = (patch: string) => patch.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++")).map((l) => l.slice(1));
+  const filesOf = (patch: string) => [...patch.matchAll(/^diff --git a\/(.+?) b\//gm)].map((m) => m[1] as string);
+  const info = parts.map((p) => {
+    const lines = added(p.patch).filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l));
+    const declares = new Set(lines.flatMap((l) => [...l.matchAll(DECLARED)].map((m) => m[1] as string)));
+    // Identifiers outside strings and comments, roughly: a line's text before a `//`, string literals dropped.
+    const uses = new Set(lines.flatMap((l) => [...l.replace(/\/\/.*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").matchAll(/(?<![\w$.])[A-Za-z_$][\w$]*/g)].map((m) => m[0])));
+    return { label: p.label, declares, uses, files: filesOf(p.patch) };
+  });
+  const out: string[] = [];
+  const base = new Map<string, string>();
+  const known = (file: string, name: string) => {
+    if (!base.has(file)) base.set(file, baseText(file));
+    return new RegExp(`(?<![\\w$])${name.replace(/\$/g, "\\$")}(?![\\w$])`).test(base.get(file) as string);
+  };
+  for (const p of info) {
+    const missing = new Map<string, string>();
+    for (const n of p.uses) {
+      if (p.declares.has(n)) continue;
+      const other = info.find((q) => q !== p && q.declares.has(n));
+      if (!other || p.files.some((f) => known(f, n)) || other.files.some((f) => known(f, n))) continue;
+      missing.set(n, other.label);
+    }
+    if (missing.size) out.push(`  ${p.label} uses ${[...missing].map(([n, o]) => `${n} (declared in ${o})`).join(", ")}: it can't run alone; mark it and those hunks with one \`split:<name>\` comment`);
+  }
+  return out;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
   // The options before anything else: --help prints the header's usage, a bad option fails in a second, not after the
@@ -1455,7 +1540,14 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       process.stdout.write("EFSIM-DONE measure fail\n");
       process.exit(2);
     }
-    const args = [...argv];
+    const resolveRef = (ref: string) => {
+      const r = spawnSync("git", ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`], { cwd: ROOT, encoding: "utf8" });
+      return r.status === 0 ? r.stdout.trim() : null;
+    };
+    // The refs as they are now (pinRefs): a commit made during the wait doesn't reach the run, its split included.
+    const pinned = pinRefs(argv, resolveRef);
+    if (pinned.said.length) process.stderr.write(`measure: pinned at queue time: ${pinned.said.join(", ")}\n`);
+    const args = pinned.argv;
     // A --patch file as it is now (edits during the wait don't reach the run), under scratch/measure/patches/.
     const pi = args.findIndex((a) => a === "--patch");
     if (pi >= 0 && args[pi + 1] !== undefined) {
@@ -1470,6 +1562,25 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       const snap = snapshotCommit(ROOT);
       args.push("--snapshot", snap.commit.slice(0, 12), "--snapshot-head", snap.head.slice(0, 12));
       process.stderr.write(`measure: the code is fixed at queue time (${snap.dirty ? `a snapshot of the working tree, ${snap.commit.slice(0, 9)}` : `HEAD ${snap.head.slice(0, 9)}, the tree is clean`}): keep editing while it waits (--live reads the tree when the run starts)\n`);
+    }
+    // --split hunks: a part that can't run alone, said now rather than as a "not measured alone" after the wait.
+    const opt = (name: string) => {
+      const i = args.findIndex((a) => a === `--${name}` || a.startsWith(`--${name}=`));
+      return i < 0 ? undefined : (args[i] as string).includes("=") ? (args[i] as string).split("=").slice(1).join("=") : args[i + 1];
+    };
+    if (opt("split") === "hunks") {
+      const [base, code] = [opt("base"), opt("at") ?? opt("snapshot")];
+      if (base && code) {
+        try {
+          const files = git(["diff", "--name-only", base, code]).split("\n").filter((f) => f && !NOT_CODE(f));
+          const parts = hunkParts(diffHunks(execFileSync("git", ["diff", base, code, "--", ...files], { cwd: ROOT, encoding: "utf8", maxBuffer: 256 << 20 })), opt("only"));
+          const show = (f: string) => spawnSync("git", ["show", `${base}:${f}`], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 }).stdout ?? "";
+          const warn = crossHunkNames(parts.filter((p) => !p.label.startsWith("fixtures/holdout/")), show);
+          if (warn.length) process.stderr.write(`measure: --split hunks: parts that use a name only another part declares (measured anyway; each will read "not measured alone"):\n${warn.join("\n")}\n`);
+        } catch (e) {
+          process.stderr.write(`measure: --split hunks: the parts weren't checked at queue time (${e instanceof Error ? e.message.split("\n")[0] : String(e)})\n`);
+        }
+      }
     }
     void runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...args], { kind: "short", who: "measure", done: "measure" }).then((c) => (process.exitCode = c));
   } else {

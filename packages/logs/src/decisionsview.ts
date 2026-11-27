@@ -10,6 +10,7 @@ import { FPS, parseReactionEvent, withCurveReading, type GameData, type LandedHi
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder } from "./castassembly.ts";
 import { logBuffReplay } from "./logcheck.ts";
+import { MISSED_ROUNDS } from "./replayrun.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
 
@@ -111,7 +112,9 @@ export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixt
   // A tail the cut's guards kept (replayrun.ts tailCuts' `kept`): which guard, and what it found.
   for (const x of replay.tailsKept ?? []) out.push({ t: msOf(x.frame), kind: "TAILKEPT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): its unlogged tail kept [${x.guard}]: ${x.why}`, detail: x.guard });
   for (const x of replay.failed) out.push({ t: x.cast.start, kind: "FAILED", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
-  for (const m of replay.missed) out.push({ t: m.start, kind: "MISSED", operator: m.operator, text: `${who(m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
+  for (const m of replay.missed) out.push({ t: m.start, kind: "MISSED", operator: m.operator, text: `${who(m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)`, detail: "made" });
+  // A need the search's round limit left alone (BuffReplay.missedUnsearched; round 21).
+  for (const m of replay.missedUnsearched ?? []) out.push({ t: m.start, kind: "MISSED", operator: m.operator, text: `${who(m.operator)} ${shortSkill(m.skillId)} (logged at ${s(m.start)}): the kit allows it only after casts that hit nothing, not searched: the ${MISSED_ROUNDS} rounds (MISSED_ROUNDS, one replay each) were used`, detail: "rounds" });
   for (const m of replay.made) {
     if (m.cast.missed) continue;
     // A chance jump the listing decided (castassembly.ts listedPaths, castsFromHitBuffs: ReplayedCast.chanceJumps).

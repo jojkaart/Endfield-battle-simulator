@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, engineHits, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
-import { baseBreakdown, filterRecords, formatRecord, hitRecords, listedSincesOf, zoneDifference, type HitRecord } from "../packages/logs/src/hitexport.ts";
+import { baseBreakdown, filterRecords, formatRecord, hitRecords, layerLines, layerRows, listedSincesOf, zoneDifference, type HitRecord } from "../packages/logs/src/hitexport.ts";
 import type { ActiveBuff, KitHit, LandingInputs } from "@efsim/engine";
 import { devFixtures, readDevFixture, resolveFixture, shortId } from "../packages/logs/src/logs.ts";
 import { ROOT } from "./logverdicts.ts";
@@ -187,5 +187,21 @@ describe("zmdlogs hits --against-hit (round 17, the exposed-totals report point 
     expect(zoneDifference(record(1.183, 18.27, false), record(1.202, 20.23, true))).toBe("resistance 1.183 vs 1.202; crit no vs yes; Corrosion level 2:ignoreResistance 18.27 vs 20.23");
     expect(zoneDifference(record(1.2, 20, true), record(1.2, 20, true))).toBe("same zones and modifiers");
     expect(zoneDifference({ landing: undefined } as unknown as HitRecord, record(1, 1, true))).toBe("no landing");
+  });
+});
+
+// Round 21 (backlog after round 20 point 3): a layered kit buff's layers, the log's count against the replay's and the
+// value's (`zmdlogs hits --layers`).
+describe("layerRows", () => {
+  const record = (value: number, predicted: number, layers: number, listed: string[]): HitRecord => ({
+    fixture: "fixtures/pending/zmdlogs-0eef2474a26f.json", t: 1000, operator: "a", event: "a_attack1", kind: "skill", value, crit: false, verdict: "match", class: "plain", listed, predicted, error: value / predicted - 1,
+    landing: { frame: 30, operator: "a", skillId: "a_attack1", hitId: "h", exact: predicted, scaleParts: [], zones: { atk: 1000 * (1 + 0.05 * layers), scale: 1 } as never, modifiers: Array.from({ length: layers }, () => ({ source: "w", zone: "atk", value: 0.05, kitBuff: "o:w" })) },
+  }) as unknown as HitRecord;
+  it("counts the log's entries, the reading's layers and the layers the value implies (ATK: base × a layer's value)", () => {
+    // 4 layers read, the value 5% of base ATK over the reading: 5 layers' worth (1000 × 1.25 / 1.20 … implied 5).
+    const rows = layerRows([record(1250, 1200, 4, ["g ×9"]), record(1200, 1200, 4, ["g ×9"]), record(100, 100, 0, [])], "o:w", "g");
+    expect(rows.map((r) => [r.listed, r.replay, r.implied === null ? null : Number(r.implied.toFixed(2))])).toEqual([[9, 4, 5], [9, 4, 4]]);
+    const lines = layerLines(rows, "o:w", "g");
+    expect(lines.at(-1)).toBe("  listed  9:     2 hit(s), the replay's layers median 4, implied 4:1 5:1");
   });
 });

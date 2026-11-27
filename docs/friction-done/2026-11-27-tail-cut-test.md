@@ -79,3 +79,20 @@ guard stands for, measure it, and judge it by every group; branch worktree-agent
 `cli-ab --hits-zones` named the 78 moved hits of c4f3 and the modifiers each lost (Fervent Morale, the weapon's team
 ATK, the Breach), which pointed straight at the one cast; TAILKEPT's guard names made the before/after count a grep;
 `measure --variant <file>:<CONST>=<value>` measured the fight's-end and round limits beside the plain tree in one run.
+
+## Outcome (round 21)
+
+- 1 (The replay's landing-to-logged-hit pairing lives only inside replayKitBuffs): done (22debb5) but cutTails'
+  `needed` on it: packages/logs/src/landingpairs.ts pairKitLandings (with alternativeEvents and the reach constants),
+  which replayKitBuffs calls; `needed` reading it in place of loggedShown moves verdicts (abfd): on the backlog's
+  accuracy list.
+- 2 (A counterfactual "replay without X, what does the log lose" has no harness): done (5cef03e, 8a4e3c7):
+  ReplayOptions.cutCasts through logBuffReplay and composeCheck, counterfactual.ts, `zmdlogs decisions --why-kept
+  <fixture>` (9847: the 75.44 s Liino battle skill's cut loses 22 landings); `node scripts/tried.ts refresh <diff>`.
+- 3 (TAIL_CUT_ROUNDS stopped cuts silently): done (9ba1d99): BuffReplay.missedUnsearched, MISSED `rounds` lines
+  where MISSED_ROUNDS left needs unsearched (MISSED lines counted by `made` / `rounds`).
+- 4 (`zmdlogs decisions --all` outlasts the foreground limit): done (9ba1d99): its usage says so and `--all` says it
+  on stderr when it starts.
+- 5 (A merge from main mid-task cost a premerge): done (9ba1d99): lint:changed runs the registry tests
+  (scripts/lint-changed.ts REGISTRY_CHECKS: tests/engine-assumptions.test.ts's two, by name) when an assumption
+  registry or docs/design/assumptions.md changed.
