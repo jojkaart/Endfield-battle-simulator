@@ -117,6 +117,85 @@ export function placementLogs(text: string): Map<string, string> {
   return new Map([...out].map(([k, ls]) => [k, ls.join("\n").replace(/\n+$/, "")]));
 }
 
+/** One record of scripts/placement-lines.ts's JSON output (packages/logs views.ts CastsRecord, its `log`; HEADER: the view's header). */
+interface PlacementRecord {
+  readonly log: string;
+  readonly kind: string;
+  readonly t?: number;
+  readonly name?: string;
+  readonly skill?: string;
+  readonly castKind?: string | null;
+  readonly key?: string;
+  readonly rule?: string;
+  readonly value?: number;
+  readonly cast?: { readonly skill: string; readonly start: number; readonly index: number; readonly frame?: number; readonly sameAs?: boolean };
+  readonly text: string;
+}
+
+const short = (id: string) => id.replace(/^chr_\d+_[a-z]+_/, "");
+const timeText = (ms: number) => (ms / 1000).toFixed(2).padStart(7);
+
+/** A placement-lines output's records, or null where it is the view's text (a commit before castsRecords). */
+function parseRecords(output: string): PlacementRecord[] | null {
+  const lines = output.split("\n").filter((l) => l.trim());
+  if (!lines.length || !lines[0]?.startsWith("{")) return null;
+  return lines.map((l) => JSON.parse(l) as PlacementRecord);
+}
+
+/**
+ * Records as the text placementDiff pairs (round 18, round 17's own report point 2): a CAST and a HIT line each built
+ * from the record's fields, never from the view's wording, so a new note on a line (a HIT's [joined: …]) or a changed
+ * word moves nothing; `display` maps each built line back to the view's own text for printing.
+ */
+export function recordsAsLines(records: readonly PlacementRecord[]): { readonly text: string; readonly display: ReadonlyMap<string, string> } {
+  const out: string[] = [];
+  const display = new Map<string, string>();
+  for (const r of records) {
+    if (r.kind === "HEADER") {
+      out.push(`${r.log}: placement`);
+      continue;
+    }
+    if (r.t === undefined) continue;
+    let line: string | undefined;
+    if (r.kind === "CAST") line = `${timeText(r.t)}  CAST   ${r.name} ${short(r.skill ?? "")} (${r.castKind ?? "none"}) key ${short(r.key ?? "")}  [${r.rule ?? "-"}]`;
+    else if (r.kind === "HIT") {
+      const c = r.cast;
+      line = `${timeText(r.t)}  HIT    ${r.name} ${short(r.skill ?? "")} ${r.value} → ${c ? `${short(c.skill)}@${(c.start / 1000).toFixed(2)} #${c.index}${c.frame !== undefined ? ` frame ${c.frame}` : ""}${c.sameAs ? " (same landing)" : ""}` : "unplaced"}`;
+    }
+    if (line === undefined) continue;
+    out.push(line);
+    display.set(line, `${timeText(r.t)}  ${r.text}`);
+  }
+  return { text: out.join("\n"), display };
+}
+
+/**
+ * Records as the view prints them (header, then each line with its time): the text pairing's input when the other side
+ * is text. A HIT's [joined: …] note (round 18) is left out, as the older side's view has none.
+ */
+export function recordsAsView(records: readonly PlacementRecord[]): string {
+  return records.map((r) => (r.kind === "HEADER" ? r.text : `${timeText(r.t ?? 0)}  ${r.kind === "HIT" ? r.text.replace(/ {2}\[joined: [^\]]*\]$/, "") : r.text}`)).join("\n");
+}
+
+/**
+ * placementDiff over two placement-lines outputs: by the records' fields where both are records (the built lines,
+ * printed as the view's text), else by the text (a side before castsRecords: the records side as the view prints it).
+ */
+export function placementOutputsDiff(was: string, now: string, opts: { readonly summary?: boolean; readonly operator?: string } = {}): string[] {
+  const [a, b] = [parseRecords(was), parseRecords(now)];
+  if (!a || !b) return placementDiff(a ? recordsAsView(a) : was, b ? recordsAsView(b) : now, opts);
+  const [x, y] = [recordsAsLines(a), recordsAsLines(b)];
+  // A diff line's text as the view has it: `~` / `+` / `now:` from this tree's records, `-` / `was:` from the ref's.
+  return placementDiff(x.text, y.text, opts).map((l) => {
+    const m = /^(~ |\+ |- | {4}was: | {4}now: )(.*)$/.exec(l);
+    if (!m) return l;
+    const [prefix, rest] = [m[1] as string, m[2] as string];
+    const map = prefix === "- " || prefix.trim() === "was:" ? x.display : y.display;
+    const shown = map.get(rest) ?? map.get(`   ${rest.trimStart()}`) ?? [...map].find(([k]) => k.trim() === rest.trim())?.[1];
+    return shown !== undefined ? `${prefix}${prefix === "~ " ? shown.trim() : shown}` : l;
+  });
+}
+
 /** A CAST line's rule ("anchor", "window", …: the bracket logcasts.ts choose writes), operator and skill. */
 function castFacts(line: string): { readonly rule: string; readonly operator: string; readonly skill: string } | null {
   const m = /^\s*[0-9.]+\s+CAST\s+(.+?) (\S+) \([a-z]+\).*?(?:\[(\w+)[:\]]|$)/.exec(line);
@@ -150,7 +229,8 @@ export function placementDiff(was: string, now: string, opts: { readonly summary
     const groups: string[][] = [];
     for (const l of lines) if (/^ {4}(was|now): /.test(l)) groups.at(-1)?.push(l);
     else groups.push([l]);
-    const kept = groups.filter((g) => /\b(CAST|HIT)\b/.test(g.join(" ")) && (!opts.operator || g.join(" ").includes(` ${opts.operator} `)));
+    // Not a log's header line (its wording names CAST and HIT lines too: round 18's header changed so).
+    const kept = groups.filter((g) => !/^[-+~] zmdlogs-[0-9a-f]+: placement/.test(g[0] ?? "") && /\b(CAST|HIT)\b/.test(g.join(" ")) && (!opts.operator || g.join(" ").includes(` ${opts.operator} `)));
     if (!kept.length) continue;
     lines = kept.flat();
     let hits = 0;
@@ -232,9 +312,10 @@ function main(argv: string[]): number {
     const now = spawnSync(process.execPath, [script, ...ids], { cwd: ROOT, encoding: "utf8", maxBuffer: 256 << 20 });
     if (now.status !== 0) throw new Error(`cli-ab: placement-lines failed in this tree: ${(now.stderr || now.stdout).trim().split("\n").slice(-5).join("\n")}`);
     const was = outputInTree(tree, script, ids);
-    process.stdout.write(`cli-ab --placement: zmdlogs casts --choices for ${ids.length ? ids.join(", ") : "every development log"}: ${ref} (${short.stdout.trim()}, -) against this tree (+), lines paired by a HIT's logged hit and a CAST's start and operator (~)\n`);
+    const fields = parseRecords(was) !== null && parseRecords(now.stdout) !== null;
+    process.stdout.write(`cli-ab --placement: zmdlogs casts --choices for ${ids.length ? ids.join(", ") : "every development log"}: ${ref} (${short.stdout.trim()}, -) against this tree (+), lines paired by a HIT's logged hit and a CAST's start and operator (~)${fields ? ", compared by their records' fields (a cast's skill, kind, key and rule; a hit's cast and slot)" : ", compared by their text (a side's code is older than castsRecords)"}\n`);
     const operator = opt("--operator");
-    for (const l of placementDiff(was, now.stdout, { summary: own.includes("--summary"), ...(operator !== undefined ? { operator } : {}) })) process.stdout.write(l + "\n");
+    for (const l of placementOutputsDiff(was, now.stdout, { summary: own.includes("--summary"), ...(operator !== undefined ? { operator } : {}) })) process.stdout.write(l + "\n");
     return 0;
   }
   const run = (root: string) => {

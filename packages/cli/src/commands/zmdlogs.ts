@@ -5,6 +5,7 @@
 
 import {
   kitBuffKey,
+  castsJson,
   awayView,
   battleIdOf,
   buffsView,
@@ -187,7 +188,12 @@ export default command({
                                           frame it was placed at, the log's cast events, the placed casts and their
                                           time stops
                 [--choices]               On each CAST line, the rule that chose its skill among those sharing its
-                                          key (logcasts.ts choose: anchor, alike, window, restart, first, late)
+                                          key (logcasts.ts choose: anchor, alike, window, restart, first, late);
+                                          on a HIT that joined its cast over 1 s past its slot's frame, the join's
+                                          rule and times (span, to come, paced, same ultimate, delayed, reach);
+                                          REALIGN lines: what the realignment by value did with a cast's key
+                [--json]                  Instead: a JSON line per line (castsRecords: kind, t, operator, skill,
+                                          key, rule, the hit's cast and slot, its join, the text)
                 [--from s] [--to s]       Only this window (seconds); --operator: only these operators' hits, casts
   efsim zmdlogs replay <fixture>          The replay in time order: its landings with the logged hit each stands for
                                           (or "replay only"), logged hits without a landing and why, casts it
@@ -583,6 +589,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const fx = readDevFixture(arg);
       // An owner given by its name ("Zhuang Fangyi:suit_expend_spell01.spell_dmg"): its id (clockview.ts kitBuffKey).
       const keyed = (xs: readonly string[]) => xs.map((x) => kitBuffKey(data(), x));
+      if (sub === "casts" && values.json) return castsJson(data(), fx, { ...filter, rules: values.choices });
       return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
