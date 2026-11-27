@@ -66,6 +66,57 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Log-only landings: what the log shows and the replay never makes (2026-11-27)
+
+**Shows** (`zmdlogs totals --all --kinds`, `--json`): development log-only 3.2% of a fight's logged total (mean), of
+which 9c6e (−37.8%: two targets, a multi-target log under one enemy id) and 6339 (−25.6%: Hard 33's slug, "Hard 33's
+slug" below) carry 2.0 points; over the other 54 development, earlier-pending and verified fights the mean is −1.0%, no
+key above −0.1% of the mean (Zhuang Fangyi's strikes, Arcane's INT lasers, Typhoeus's 4th-shot burst the largest). By
+cause:
+- **A counted resource one short (kit side; fixed).** Typhoeus's Signs (1d91: a combo cast with 7, its 4th shot a
+  plain one, no burst; kit assumption `typhoeus-sign-cooldown`) and Zhuang Fangyi's Sunderblades (d774 70.46 s: 5
+  blades, the log's 8; the 3 s floor at each battle skill's frames 0–3) — docs/journal/2026-11-27-05-log-only-landings-typhoeus-s-signs-zhuang-fangyi-s.md.
+  In the simulation, the Sign reading moves Typhoeus's team's zero-energy bot (one deterministic 300 s run) by −4.0%:
+  at 136.43 / 136.57 s Arcane's and her bursts both give a Sign, her combo is cast one shot sooner (137.17 s, rule 3),
+  and the drifted run ends without Liino's 276.97 s ultimate (240–300 s −14%; the same to 120 s). A consequence of the
+  mechanism on one path, not a sign the reading is wrong: the 32-seed means move +0.44% (zero) and −0.38% (full),
+  within one sd; under `shared` the bot is the base's exactly (the journal entry has the trace).
+- **Arts Bursts and Combustion ticks 0.55–0.85 s later in the game than in the replay** (twin like: 15 bursts, 6
+  ticks): a stop starting 0–300 ms after the replay's burst is due holds the game's about half the time, both ways at
+  the same offsets (scripts/probes/bursts/burst-before-stop.ts: 13 held, 16 not, 11 unclear; Wulfgard's combo at
+  +200–300 ms held Arcane's in c779 and c83c, Camille's at +167–267 ms didn't in 40d9 and 012a). Ties at +0 ms (an
+  ultimate's stop at the burst's frame: 7910 28.27, c3c7 20.83, c83c 30.73 s) go both ways too (8915 81.80 s not held).
+  The pairing (BuffReplay.statusLanding, buffreplay.ts: nearest within 16 frames, in time order) then leaves both sides
+  one-sided, and once pairs them crosswise (c779: logged 9.68 s takes the replay's 10.03 s, so 9.27 and 10.08 s stay
+  unpaired).
+- **The placement and the cast assembly** (the replay-only agent's files, not changed here): fc63 87.87 s Typhoeus's
+  burst landed 0.48 s early, inside the 0.2 s Sign cooldown of the one before, so her 101.87 s combo has 7 Signs;
+  f879 95.10 s Laevatain's battle skill made before her 92.50 s Heat absorption (no empowered hit, −2.1%); 5082
+  45.06 s Yvonne's ultimate step made as ult_attack1_1 (five shots dropped, −1.8%); 9a80 34.94 s Si's combo final
+  paired with a slash at one batched ms (twin like −4.6% / +6.6%); 3aa6 125.65 s Zhuang Fangyi's battle-skill press
+  skipped (one Sunderblade short at 146 s, −2.7%); Pogranichnik's harasses 0.2–2 s off in five logs; Rossi's bleed ticks
+  in 99fb placed as a battle skill's hits ("a landing whose order the kit doesn't give").
+- **Arcane's INT lasers (seal_finisher_wisd; 8915, 00ae, a7a7, about −2.4% each):** started from the logged combo
+  event (ticksLoggedAs); 00ae's at 66.32 s run 0.29 s longer to the second laser than frames 2 → 5 with no stop listed
+  (a hold no clock places), so the replay's last two land before her ultimate's stop and the game's after it; a7a7's
+  48.89 s event comes 14 frames before the first laser (0–4 in the kit note's cases).
+- **Hold-outs** (aggregates only): log-only 5.1%, its largest kind "a status the replay didn't deal near the logged hit
+  (none within 5 s) · physical" 2.08%. In development every logged physical status but 5 of 335 has a landing (Lift,
+  Knockdown, Breach, Crush, Shatter of 11 operators: `zmdlogs hits --all --json`, `landing` set), so it is an operator
+  or situation the development logs don't have.
+
+**Ruled out:** a burst that never fires: every logged burst but two (af7b 92.68 s, 9c6e 58.90 s) has a replay burst of
+its operator and element within 5 s; a missing physical-status trigger in the development logs (above); for 1d91, the
+shots' consumption Signs (the replay's two match the Nature it had).
+
+**Still possible:** the bursts: the replay's timing against a stop's start at about its precision (±0.2 s), the
+enemy's clock running late across combos ("The enemy's clock" below) on bursts due near a stop; a pairing of status
+landings by value and an assignment over the whole fight instead of the time-ordered nearest. Arcane's lasers: a hold
+on the world's clock that only her lasers show, or the lasers' start not at the logged event.
+
+**Next check:** the pairing of status landings as an assignment (buffreplay.ts statusLanding), measured; then the
+INT lasers' start against the logged combo event across every INT log (`zmdlogs casts --operator Arcane`).
+
 ## The totals that rose once hits read right (2026-11-27)
 
 The fights whose totals rose in the attack-4 round (207f, 3aa6, d774, 9847, a9d7) and 3f78's Rossi combo 3. No

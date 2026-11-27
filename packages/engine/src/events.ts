@@ -251,8 +251,12 @@ export type TriggerActionKind =
    * battle skill); not applied while the owner isn't in a skill or past it.
    */
   | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject"; readonly layers?: ValueExpr; readonly duration?: ValueExpr; readonly untilFrame?: number }
-  /** Add seconds to the remaining time of one of the owner's active kit buffs (all its layers), e.g. a state a skill pauses. */
-  | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
+  /**
+   * Add seconds to the remaining time of one of the owner's active kit buffs (all its layers), e.g. a state a skill
+   * pauses; `atLeast`: instead each layer with less than `seconds` left gets `seconds` left (SetAbilityEntityDuration
+   * after CheckAbilityEntityCurDuration: Zhuang Fangyi's battle skills keep every Sunderblade at least 3 s).
+   */
+  | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr; readonly atLeast?: boolean }
   /** Heal (an event for heal triggers; amounts aren't modelled); `healKind`: the skill kind its heal tag names (HealAction healTags), default none. */
   | { readonly kind: "heal"; readonly target: HealTarget; readonly healKind?: SkillType }
   /**

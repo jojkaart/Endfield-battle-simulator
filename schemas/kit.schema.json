@@ -1539,6 +1539,10 @@
                       "$ref": "#/$defs/valueExpr",
                       "description": "Added to the remaining time of every active layer (a state a skill pauses)."
                     },
+                    "atLeast": {
+                      "type": "boolean",
+                      "description": "Instead: each active layer with less than `seconds` left gets `seconds` left (SetAbilityEntityDuration after CheckAbilityEntityCurDuration)."
+                    },
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
