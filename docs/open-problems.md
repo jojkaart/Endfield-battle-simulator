@@ -463,8 +463,9 @@ ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
 - Rossi's combo 3 in 3f78 and 207f's total: fixed — docs/journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
 - **1d91 (the coordinator's lead):** Arcane's strings fall ×0.965 per step from 53.2 s (−3.5, −7.1, −10.6% at 53, 56.5,
   60.3 s) with constant modifiers in the replay: her Medicant layers (wpn_lance_0014, 20 s each) from Liino's beats at
-  31.8, 35.0, 38.1, 41.4 s expiring one by one, the beats from 44.9 s giving her none in the game. Still possible: a
-  beat's heal triggering Medicant only when it heals (Arcane at full HP: no log records HP), or only in range.
+  31.8, 35.0, 38.1, 41.4 s expiring one by one, the beats from 44.9 s giving her none in the game. Still possible:
+  only in range (the soundwave's reach). Ruled out 2026-11-27: only when it heals (overheals give layers: "Liino's
+  weapon" below).
 - **8915 7.07–8.90 s (the coordinator's lead):** a Corrosion ramp step and Hot Work's end early after Liino's and Si's
   combos pressed together (stops 7.07–8.00 and 8.10–8.90 s, Si's cast event at 7.94 s). The amounts are at the log's
   grain: Corrosion applied at 6.795 s (a batch of three hits; Arcane's battle skill event at 6.06 s puts its frame-20
@@ -2429,6 +2430,28 @@ cap 2) are listed up to 12 times too: a log habit.
 **Ruled out:** the listed count in the damage; the buff's own default cap
 (2); a cap of 4 per heal source.
 
+**Re-checked by value (2026-11-27, the Liino round):** 19 Liino logs, 6,500
+teammates' hits listing 1–13 entries (scripts/probes/kits/liino-medicant-layers.ts over `zmdlogs hits --json`:
+logged ÷ the primary reading, which reads min(entries, 4), turned into layers
+with the hit's ATK zone): every count reads as min(entries, 4), about 90%
+within 0.3% at each (entries 9: 369 of 412 imply 4, 2 imply 9; entries
+5–13: 3,097 of 3,434 imply exactly 4). Entries whose `since` is 20–35 s
+before the hit still count (60 of 71 hits whose only entry is that old imply
+one layer): the buff clock's holds, not a 20 s life from `since`. The listing
+under-counts too: 9847's Avywenna at 57.64, 63.04 and 64.75 s lists 0, 2, 3
+entries where the damage has 2, 3 and 4 (the replay's 4 gives 64.75 s's 11
+lance-back hits exactly, 115,108; the ×1.033 the 2026-11-27 build round saw);
+65.63 s lists 4, plain. So no kit change: 4 per recipient stands.
+**Overheals give a layer (2026-11-27; in-game test 25 decided):** Liino's
+stance heals before a fight's first logged hit, when nobody has been hit
+(1cd1 three by 11.0 s: Typhoeus and Arcane a layer at each, 3 on Typhoeus's
+hits from 11.95 s by value; 9c6e Typhoeus 2 by 8.5 s, by value; 9847, c6d8,
+8318, multi-target 4bfe listed). A teammate a heal misses there misses it at
+full HP as well (1cd1's Ardelia 1 of 3, 4bfe's Arcane 1 of 4 listed, 9847's
+Gilberta none to 20 s and c6d8's Arcane none to 25 s by value): the
+soundwave's reach (its projectiles: the data's tables don't give their
+targeting; positions aren't logged), not HP (scripts/probes/kits/liino-opening-layers.ts).
+
 **Still possible (not the weapon):** 1cd1's team-wide step at 24.0–24.6 s
 (×0.936 → ×0.820 for Ardelia, Arcane, Typhoeus alike) and Typhoeus ×0.820
 → ×0.917 at 39.0 s; the engine giving Typhoeus's ultimate hits no layers
@@ -2452,7 +2475,12 @@ pattern follows the layers, not a factor).
 **Still possible (1d91's Ardelia):** the stance's heal being the
 soundwave projectile's area (normal_skill_soundwave_projhit, an AOE
 HealAction): teammates out of its reach get no heal and no layer (not
-modelled: positions); a heal on a teammate at full HP giving none.
+modelled: positions). **Ruled out (2026-11-27):** a heal on a teammate at
+full HP giving none (heals before the fight's first hit give layers; the
+paragraph above). The reach is the one left, and the logs show it in
+other fights too (9847's Gilberta, c6d8's Arcane): a simulation that gives
+every teammate a layer at every heal over-counts for those out of reach,
+which no log input can predict.
 
 **Next check:** 1cd1's step at 24 s (sonnet); the log check's fallback
 should not trust stackingType-11 listings' counts; whether other logs
