@@ -289,6 +289,10 @@ tree against `one` as variants), the several-targets row only, every other row a
 - `targets-gaps-away`: 6339 plain 116, −12.6% against `targets`' 115, −10.3% (Camille's 14.09 s landing on a
   shielded slug, unlogged: with the enemy there it gives the next slug her Vesperwings, as the log lists from 14.089 s,
   and her weapon's Heat DMG, which the log doesn't: a shielded slug takes no infliction); 7b54 and 9c6e unchanged
+- `targets-ungated`: (2026-11-27, with the placement's twins on several targets, logcasts.ts placeWith `batch` /
+  `later`) every twin on another target counted, fitting or not: the row's mean |damage error| 8.3 → 13.1% (7b54
+  −3.3 → +21.5%: its 47.2–48.1 s combo reads ×1.26 high on every slug, so each copy adds the error once more; 9c6e
+  −11.3 → +7.4%), plain unchanged; not the default
 
 ## hitless-presses
 
