@@ -1,4 +1,4 @@
-channel decision line (2026-11-27): held back, not dropped: the casts view's line for a cast the channel-end rule opened.
+channel decision line (2026-11-27): held back, then applied by the lead after the merge (e93f971): the casts view's line for a cast the channel-end rule opened.
 
 What it does: views.ts castsRecords prints LoggedCast.pastChannel (logcasts.ts placeWith `pastChannel`) on the CAST
 line of `zmdlogs casts --choices`: "[past channel: 1.81 s after attack4@61.79's first landing, its channel's end at

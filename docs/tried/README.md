@@ -93,6 +93,6 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
 - [2026-11-24-unseen-ultimates-without-energy.diff](2026-11-24-unseen-ultimates-without-energy.diff): every unseen
   ultimate press made whatever the replay's energy (not only before the log's first hit); 1cd1 −7.2 → −19.5%,
   hold-out mean |damage error| 8.5 → 9.2%.
-- [2026-11-27-channel-decision-line.diff](2026-11-27-channel-decision-line.diff): held back for the lead, not dropped:
+- [2026-11-27-channel-decision-line.diff](2026-11-27-channel-decision-line.diff): held back for the lead, applied after the merge (e93f971):
   `zmdlogs casts --choices` prints the channel-end rule's new casts (LoggedCast.pastChannel) on their CAST line
   (views.ts was another agent's file in round 22).

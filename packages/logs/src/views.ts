@@ -120,7 +120,10 @@ export function castsRecords(data: GameData, fx: LogFixture, f: ViewFilter & { r
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
     // The first landing's other paths (LoggedCast.paths): each start it would give and whether the previous cast allows it.
     const paths = f.rules && c.paths?.length ? `  [paths: ${c.paths.map((p) => `${p.hitId}@${p.frame}${p.jump ? ` on ${p.jump.at}→${p.jump.to}` : " (no jump)"}: start ${s(p.start)}${p.allowed ? ", allowed" : ", not allowed"}${Math.abs(p.start - c.start) < 1 ? " (taken)" : ""}`).join("; ")}]` : "";
-    lines.push({ kind: "CAST", t: c.start, order: 1, operator: c.operator, name: label(data, c.operator), skill: c.group, castKind: c.kind, key: c.key, rule: c.chosen?.rule ?? "-", text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}` });
+    // Opened past the channel's end of the cast before (LoggedCast.pastChannel: logcasts.ts placeWith).
+    const pc = c.pastChannel;
+    const channel = f.rules && pc ? `  [past channel: ${s(pc.elapsed)} s after ${shortSkill(c.group)}@${s(pc.cast)}'s first landing, its channel's end at ${s(pc.end)} s (${pc.by === "slack" ? "past the slack" : "a press between"})]` : "";
+    lines.push({ kind: "CAST", t: c.start, order: 1, operator: c.operator, name: label(data, c.operator), skill: c.group, castKind: c.kind, key: c.key, rule: c.chosen?.rule ?? "-", text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}${channel}` });
   }
   // What the realignment by value decided for a cast's key (Placement.realign, round 18): moved, or left and why.
   if (f.rules)
