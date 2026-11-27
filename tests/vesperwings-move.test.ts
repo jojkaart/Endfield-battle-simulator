@@ -4,9 +4,8 @@
 // next target: the battle skill's damage, Heat infliction and the debuff with the time it had left (keepEnd).
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { advance, createContext, init, replayCast, targetDies, type TimelineScenario } from "@efsim/engine";
+import { advance, createContext, effectiveKit, init, replayCast, targetDies, type OperatorKit, type TimelineScenario } from "@efsim/engine";
 import { deathMoves, devFixtures, logBuffReplay, loggedCastFates, moveEvent, type LogFixture } from "@efsim/logs";
-import { effectiveKit, type OperatorKit } from "@efsim/engine";
 
 const data = loadGameData();
 const fixture = (id: string) => (devFixtures({ ids: [id] })[0] as { fx: LogFixture }).fx;
@@ -40,6 +39,17 @@ describe("engine targetDies: Camille's Vesperwings move", () => {
       return i?.element === "fire" ? i.stacks : 0;
     };
     expect(stacks(303)).toBe(stacks(302) + 1);
+  });
+
+  it("is a battle-skill cast for the team's cast triggers (vesperwings-move-cast battle): Si's Yinglung's Edge", () => {
+    const team = fx.team.filter((b) => b.operator === CAMILLE || b.operator === "chr_0036_jsspsi");
+    const layers = (assume: Record<string, string>) => {
+      const c = createContext(data, { ...sc, team, options: { crit: "never", assume } });
+      const st = advance(c, targetDies(c, advance(c, replayCast(c, init(c), CAMILLE, BATTLE, 0), 60), 300), 310);
+      return st.buffs.filter((b) => b.owner === "chr_0036_jsspsi" && b.id === "suit_atk02.edge").length;
+    };
+    expect(layers({})).toBe(2);
+    expect(layers({ "vesperwings-move-cast": "none" })).toBe(1);
   });
 
   it("pins the landing at a logged frame, and does nothing without the debuff", () => {

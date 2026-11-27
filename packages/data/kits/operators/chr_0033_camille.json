@@ -20,10 +20,10 @@
     {
       "id": "vesperwings-move-cast",
       "question": "Is the Vesperwings' move to the next target (trigger vesperwings_move) a battle-skill cast for the team's triggers on casts? The entity's projectile casts chr_0033_camille_normal_skill_projhit_sub on reaching the next target (castSkillOnHit; skillSpecification 3, switchToBuffConfig asSkillCast), which casts abilityrange; ZMDLogs logs a normal_skill event at four of the six logged moves (6339 19.68, 24.55, 29.67 s; 7b54 16.59 s). Whether ability event 30's CheckSkillType (Yinglung's Edge) sees such a cast isn't in the data. Read only where a target dies: the log check's replay.",
-      "default": "none",
+      "default": "battle",
       "readings": {
-        "none": "it isn't: no cast event (the triggers on battle-skill casts don't see it)",
-        "battle": "it is: a battle-skill cast event beside Camille's action at the death (castEvent), which the team's cast triggers see (Si's Yinglung's Edge: 6339's 28.39 s combo slashes read with 3 layers, which the replay has only with a move counted)"
+        "none": "it isn't: no cast event (the triggers on battle-skill casts don't see it). Measured 2026-11-27 against battle: 6339 plain 120 → 109 (Si's 28.39–29.57 s combo slashes, 11 hits, read with 2 Yinglung's Edge layers ×1.06 low: the log's values need 3), −6.3 → −7.0%; 7b54 −1.2 → −1.4%",
+        "battle": "it is: a battle-skill cast event beside Camille's action at the death (castEvent), which the team's cast triggers see (Si's Yinglung's Edge: 6339's 28.39 s combo slashes read with 3 layers, which the replay has only with a move counted; until 2026-11-27 the presses the replay made at the move's events stood in for it). Measured 2026-11-27 with the move (against the round's base e4a1e36): the several-targets row plain 70.6 → 71.3%, mean |damage error| 8.3 → 6.3%; 6339 plain 115 → 120, −10.3 → −6.3%; 7b54 −3.3 → −1.2%; nothing else moves"
       }
     }
   ],
