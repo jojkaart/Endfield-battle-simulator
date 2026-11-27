@@ -20,8 +20,8 @@
 // file is the one named here.
 
 import {
-  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
-  type GameData, type KitHit, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
+  activeAt, advance, allActions, damageOptions, ENGINE_ASSUMPTIONS, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
+  type GameData, type KitHit, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
@@ -34,7 +34,7 @@ import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatus
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
 import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
-import { awayWindows } from "./enginecheck.ts";
+import { type CheckSide, awayWindows, checkSide, killPurges, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
@@ -132,6 +132,12 @@ export interface BuffReplay {
    * within NEAR_FRAMES, or STATUS_WIDE_FRAMES where the value fits; each landing once), or why there is none.
    */
   statusLanding(hit: LogHit): LandedHit | { readonly unknown: string };
+  /**
+   * The inputs the check reads a logged status hit's landing with where they aren't the landing's own (engine
+   * assumption status-pairing `check`): the replay's modifiers at the logged hit's frame, for a pair that fits only
+   * there (a burst the replay landed on the other side of a buff's edge than the game's). Null: the landing's own.
+   */
+  statusInputs?(hit: LogHit): LandingInputs | null;
   /**
    * Whether the replay's instances of a kit buff (`owner:id`, every kit buff of the team, KitBuff.gameBuff or not)
    * reaching a logged hit's operator change near the hit (REPLAY_EDGE_MS, and an expiry's REPLAY_EXPIRY_SLACK of its
@@ -347,8 +353,11 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   let laneEnds: LoggedLaneEnds = hiddenHolds && !placing ? loggedLaneEnds(fx) : noEnds();
   const clockEnds: LoggedLaneEnds = placing ? loggedLaneEnds(fx) : laneEnds;
   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
-  // Engine assumption logged-purges: with `log`, the enemy-side kit buffs end where the log shows the enemy shedding the team's debuffs (purgedByLog).
-  const purges = (opts.assume?.["logged-purges"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "logged-purges")?.default) === "log" ? loggedPurges(fx) : [];
+  // Engine assumption logged-purges: with `log`, the enemy-side kit buffs end where the log shows the enemy shedding
+  // the team's debuffs (purgedByLog); with `log-kills`, also at each logged kill of a fight against several targets
+  // under one id (killPurges).
+  const purgeReading = opts.assume?.["logged-purges"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "logged-purges")?.default;
+  const purges = purgeReading === "log" || purgeReading === "log-kills" ? [...new Set([...loggedPurges(fx), ...(purgeReading === "log-kills" ? killPurges(fx) : [])])].sort((a, b) => a - b) : [];
   const held = (st: TimelineState, frame: number) => purgedByLog(heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs), frame, purges);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
   const shownByHits = shownCrits(kits, fx, placement);
@@ -526,14 +535,62 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Status landings matched to the log's status hits: its operator's status damage of its kind and element, paired as
   // one assignment by value and time (statuspairs.ts; engine assumption status-pairing).
   let statusLanded = new Map<LogHit, LandedHit>();
+  const statusRead = new Map<LogHit, LandingInputs>();
   if (main) {
     const queries = fx.hits.flatMap((h) => {
       const r = parseReactionEvent(h.event);
       return r ? [{ hit: h, frame: batchedFrame(casts, h) ?? frameOf(h.t), key: `${h.operator}|reaction:${r.kind}|${r.element}` }] : [];
     });
     const free = main.st.hits.filter((h) => h.skillId.startsWith("reaction:"));
-    const reading = (opts.assume?.["status-pairing"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "status-pairing")?.default) === "nearest" ? "nearest" : "assignment";
-    statusLanded = pairStatusLandings(queries, free, { reading, near: NEAR_FRAMES, keyOf: (x) => `${x.operator}|${x.skillId}|${x.element}`, fits: (h, x) => statusValueFits(data, fx, h, x) });
+    const pairing = opts.assume?.["status-pairing"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "status-pairing")?.default;
+    const reading = pairing === "nearest" ? "nearest" : "assignment";
+    const { ctx, checkpoints } = main;
+    const stateAt = (frame: number): TimelineState => {
+      let cp = checkpoints[0] as TimelineState;
+      for (const x of checkpoints) if (x.frame <= frame) cp = x;
+      return cp.frame === frame ? cp : advance(ctx, cp, frame);
+    };
+    const queryFrame = new Map(queries.map((q) => [q.hit, q.frame]));
+    // Under `check`, a landing of a burst or a status the replay made on the other side of a buff's edge than the
+    // game's (a stop held one and not the other) fits as well with its damage again from the replay's modifiers at the
+    // logged hit's frame (rereadAt). A Combustion tick keeps its snapshot: never re-read.
+    const rereadAt = (h: LogHit, x: LandedHit): LandedHit | null => {
+      const inputs = x.inputs;
+      const f = queryFrame.get(h) ?? frameOf(h.t);
+      if (!inputs || inputs.kind !== "status" || inputs.reaction.kind === "combustionTick" || f === x.frame) return null;
+      const st = stateAt(f);
+      const o = damageOptions(ctx, st, x.operator, st.enemy, f);
+      return { ...x, inputs: { ...inputs, options: { ...inputs.options, staggered: o.staggered, situation: o.situation, modifiers: o.modifiers } } };
+    };
+    let sideMemo: CheckSide | undefined;
+    const side = () => (sideMemo ??= checkSide(data, fx));
+    // The assignment asks a pair's fit many times: once each.
+    const fitMemo = new Map<LogHit, Map<LandedHit, boolean>>();
+    const fits = (h: LogHit, x: LandedHit): boolean => {
+      const memo = fitMemo.get(h) ?? new Map<LandedHit, boolean>();
+      fitMemo.set(h, memo);
+      const known = memo.get(x);
+      if (known !== undefined) return known;
+      // The check's primary reading of the pair (enginecheck.ts primaryParts: kit buffs the replay can't judge as the
+      // hit lists them, its log-only buffs), at the landing's frame and at the logged hit's.
+      const asChecked = (y: LandedHit | null) => y !== null && y.inputs !== undefined && statusValueFits(data, fx, h, y, undefined, primaryParts(side(), unjudgedKitBuffs, h, y.inputs).modifiers);
+      let out = statusValueFits(data, fx, h, x) || (pairing === "check" && asChecked(x));
+      if (!out && pairing === "check") {
+        const r = rereadAt(h, x);
+        out = asChecked(r);
+        if (out && r?.inputs) rereadOf.set(h, new Map([...(rereadOf.get(h) ?? []), [x, r.inputs]]));
+      }
+      memo.set(x, out);
+      return out;
+    };
+    // The inputs of a pair that fits only at the logged hit's frame (rereadAt): the check reads it there
+    // (BuffReplay.statusInputs), the landing kept as the replay made it.
+    const rereadOf = new Map<LogHit, Map<LandedHit, LandingInputs>>();
+    statusLanded = pairStatusLandings(queries, free, { reading, near: NEAR_FRAMES, keyOf: (x) => `${x.operator}|${x.skillId}|${x.element}`, fits });
+    for (const [h, x] of statusLanded) {
+      const inputs = rereadOf.get(h)?.get(x);
+      if (inputs) statusRead.set(h, inputs);
+    }
   }
   const nearIn = (changes: ReadonlyMap<string, readonly Change[]>, key: string, f: number) => (changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack);
   // Why a placed hit has no pinned landing (replayedCasts), made on the first question (droppedLanding).
@@ -587,6 +644,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return lack > 1e-6 ? [{ frame: m.f, operator: m.c.operator, skillId: m.skillId, sp: lack }] : [];
     }) : [],
     brokenAt,
+    statusInputs(hit) {
+      return statusRead.get(hit) ?? null;
+    },
     statusLanding(hit) {
       const found = statusLanded.get(hit);
       if (found) return found;

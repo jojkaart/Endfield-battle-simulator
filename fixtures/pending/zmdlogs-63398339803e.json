@@ -25,6 +25,9 @@
   "id": "eny_0129_slwood_hdg033",
   "level": 90
  },
+ "severalTargets": {
+  "why": "Hard 33's Woodcraft Slugs, eight under the one id (scripts/probes/targets/slugs.ts, 2026-11-27): the logged total is 9.600 Max HP (the data's 110,060), eight slugs of 1.2, and its eight kills (hits capped at the HP left) fall at 1.00, 3.00 (11.31 s: two at one ms from one uncapped 121,248), 4.46, 5.00, 6.00, 7.00 and 8.00 slugs of damage; Si's battle-skill ink hit logged twice at 19.91 s (60,940 each). The stage's text (indie_hard033's dungeonDesc: \"They are legion\"; a slug restores its shield stacks by burrowing, one random slug loses them for good and its death unshields another) and the data's number shield (buff_common_eny_numshield: −9999 in the product zone, a shielded slug's hits deal 0 and aren't logged). ZMDLogs lists every slug's debuffs under the one id, so the listing can't say which a hit's slug had (the purges at 10.35 and 29.38 s are kills). The check runs it as one target: its log-only −25.6% (a second slug's hit at one ms, 19.91 s) and replay-only +23.9% (hits on shielded slugs) are where one target stands for eight."
+ },
  "team": [
   {
    "operator": "chr_0016_laevat",

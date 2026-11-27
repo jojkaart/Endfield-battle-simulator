@@ -18,7 +18,7 @@ describe("twin bursts (withBurstTwins)", () => {
     expect(burstLine(data, rows[0] as BurstRow)).toMatch(/LOG ONLY .*; twin: the REPLAY ONLY burst at 9\.90 \(630 ms apart, outside the pairing\)$/);
   });
   it("names the pairing's rule in the header", () => {
-    expect(burstsView(data, [])).toMatch(/one assignment, the most pairs, then the closest in value and time, a landing within 16 frames whatever its value, up to 60 where its value fits within 1%/);
+    expect(burstsView(data, [])).toMatch(/one assignment, the most pairs, then the closest in value and time, a landing within 16 frames whatever its value, up to 90 where its value fits within 1%/);
   });
 });
 

@@ -45,4 +45,4 @@ export { ofKind } from "./timeline/schedule.ts";
 export { LINK_FRAMES } from "./timeline/rules.ts";
 export { attrTotal } from "./timeline/context.ts";
 export { addBuff } from "./timeline/actions.ts";
-export { situationAt } from "./timeline/situation.ts";
+export { damageOptions, situationAt } from "./timeline/situation.ts";

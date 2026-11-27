@@ -8,7 +8,7 @@
 // replacing them: where they differ is reported (logDifferences). docs/design/data.md, "The log check's rule".
 
 import {
-  ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, ENGINE_ASSUMPTIONS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
+  ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, ENGINE_ASSUMPTIONS, FPS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
 import { affixesAsChild } from "@efsim/data";
@@ -226,7 +226,7 @@ function categoryOf(inputs: LandingInputs, hit?: KitHit): HitCategory {
  * accounts for (same zone, element and value: a log name several kit buffs share, e.g. one affix for two operators'
  * Susceptibility), as modifiers for the hit's category.
  */
-export function loggedEntries(c: EngineCheck, effects: readonly LogEffect[], gameBuffs: ReadonlySet<string>, kept: readonly Modifier[], category: HitCategory): Modifier[] {
+export function loggedEntries(c: Pick<EngineCheck, "names" | "caps">, effects: readonly LogEffect[], gameBuffs: ReadonlySet<string>, kept: readonly Modifier[], category: HitCategory): Modifier[] {
   const pool = [...kept];
   const out: LogEffect[] = [];
   for (const e of effects) {
@@ -341,14 +341,24 @@ export interface ReadingBasis {
   readonly logReading: () => Reading;
 }
 
-export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): ReadingBasis | { readonly landing: { readonly unknown: string } } {
-  const landing = landingOf(c, hit);
-  if ("unknown" in landing) return { landing };
-  const inputs = landing.inputs;
-  const op = hit.operator;
+/** What the primary reading needs besides the replay: the check's names and caps (EngineCheck without its replay, which BuffReplay builds the pairing of before there is one). */
+export type CheckSide = Pick<EngineCheck, "data" | "fx" | "names" | "caps">;
+
+export function checkSide(data: GameData, fx: LogFixture): CheckSide {
+  return { data, fx, names: teamBuffNames(data, fx), caps: kitStackCaps(data, teamPanels(data, fx).panels) };
+}
+
+/**
+ * The primary reading's parts of a landing at a logged hit (readingBasis): the engine's modifiers (kit buffs,
+ * statuses, Link, the finisher) and the stage's factor at the hit, those of kit buffs the replay can't judge
+ * (`unjudgedKitBuffs`) left out, their state the log's instead, with the log-only buffs the hit lists (a Combustion
+ * tick's attacker side from `snapshotOf`'s). The status pairing reads a pair's fit with them (BuffReplay.statusLanding:
+ * statuspairs.ts statusValueFits) before the check has a replay to ask.
+ */
+export function primaryParts(c: CheckSide, unjudgedKitBuffs: ReadonlyMap<string, string>, hit: LogHit, inputs: LandingInputs, snapshotOf: LogHit | null = null) {
   const category = categoryOf(inputs);
   const own = logOnly(c.data, c.fx, c.names, hit);
-  const snapshotOwn = place.snapshotOf ? logOnly(c.data, c.fx, c.names, place.snapshotOf) : null;
+  const snapshotOwn = snapshotOf ? logOnly(c.data, c.fx, c.names, snapshotOf) : null;
   const logMods = (effects: readonly LogEffect[], cat: HitCategory) =>
     snapshotOwn
       ? [...logModifiers(effects, cat, c.caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotOwn.effects, cat, c.caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]
@@ -356,10 +366,20 @@ export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): Read
   // The engine's modifiers (kit buffs, statuses, Link, the finisher), without kit buffs the replay can't judge: their
   // state is the log's; and the stage's factor at the hit (LogFixture.stageFactors), in every reading.
   const engine = [...(inputs.options.modifiers?.filter((m) => !isLog(m)) ?? []), ...stageModifiers(c.fx, hit.t)];
-  const unjudged = (m: Modifier) => m.kitBuff !== undefined && c.replay.unjudgedKitBuffs.has(`${m.kitBuff.owner}:${m.kitBuff.id}`);
+  const unjudged = (m: Modifier) => m.kitBuff !== undefined && unjudgedKitBuffs.has(`${m.kitBuff.owner}:${m.kitBuff.id}`);
   const judged = engine.filter((m) => !unjudged(m));
-  const unjudgedNames = new Set([...c.replay.unjudgedKitBuffs.keys()].flatMap((k) => c.names.ofKitBuff.get(k) ?? []));
+  const unjudgedNames = new Set([...unjudgedKitBuffs.keys()].flatMap((k) => c.names.ofKitBuff.get(k) ?? []));
   const withLog = (mods: readonly Modifier[], cat: HitCategory) => [...mods, ...logMods(own.effects, cat), ...loggedEntries(c, withoutOwnFood(c.data, c.fx, hit).effects, unjudgedNames, judged, cat)];
+  return { category, own, logMods, engine, judged, unjudgedNames, withLog, modifiers: withLog(judged, category) };
+}
+
+export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): ReadingBasis | { readonly landing: { readonly unknown: string } } {
+  const landing = landingOf(c, hit);
+  if ("unknown" in landing) return { landing };
+  // A status pair that fits only at the logged hit's frame is read there (BuffReplay.statusInputs).
+  const inputs = (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs;
+  const op = hit.operator;
+  const { category, own, logMods, engine, judged, unjudgedNames, withLog } = primaryParts(c, c.replay.unjudgedKitBuffs, hit, inputs, place.snapshotOf);
   // Where the log doesn't give the crit: the crit the replay read from the log (engine assumption check-crits `replay`:
   // replaycrits.ts, BuffReplay.critSource), else none; the other reading is the assumption.
   const readCrit = hit.crit === null && primaryCritRead(c, hit);
@@ -900,6 +920,21 @@ export function killGaps(fx: LogFixture): { readonly from: number; readonly to: 
   const out: { from: number; to: number }[] = [];
   for (let i = 0; i + 1 < ts.length; i++) if (caps.has(ts[i] as number)) out.push({ from: ts[i] as number, to: ts[i + 1] as number });
   return out;
+}
+
+/**
+ * The frames after each logged kill (killGaps) of a fight against several targets under one id (the fixture's
+ * severalTargets), where the replay's one enemy sheds the team's debuffs (engine assumption logged-purges, reading
+ * `log-kills`; holdinputs.ts purgedByLog): the killed target's debuffs go with it, and the hits after it land on
+ * another, read as one the team hasn't touched. Hard 33's Woodcraft Slugs (pending/zmdlogs-7b54dc249bcd.json,
+ * pending/zmdlogs-63398339803e.json): ZMDLogs lists the debuffs of every slug under the one id, so the listing can't
+ * say which a hit's slug had; 7b54's hits after its kills at 16.36, 19.59, 32.94 s read ×1.10–1.45 low with the
+ * replay's debuffs on. A target that had been hit before (6339 after 20.37 s: Jade Vessel on the next slug) reads
+ * low by what it had.
+ */
+export function killPurges(fx: LogFixture): number[] {
+  if (!fx.severalTargets) return [];
+  return [...new Set(killGaps(fx).map((k) => Math.round((k.from * FPS) / 1000) + 1))];
 }
 
 /**

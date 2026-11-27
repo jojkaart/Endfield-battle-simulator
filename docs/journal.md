@@ -4,9 +4,58 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 174 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 175 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Hard 33's eight slugs; status pairs read by the check
+
+**Goal:** two leads on main at a6c425f: Hard 33's slug (7b54 +40.4%, the largest development error; 6339 −12.6%), its
+mechanics from the game data and the logs; the status pairs whose replay value a buff's edge put off (1d91, 7b54,
+a7a7, e989, 7910, abfd), beside an agent on holds and Rossi's bleed (its files untouched).
+
+**Found:**
+- **The slug is eight slugs** (docs/open-problems.md "Hard 33's Woodcraft Slugs"; scripts/probes/targets/slugs.ts):
+  both totals are 9.600 Max HP (eight of 1.2), the kills fall at whole slugs of damage (6339: 1.00, 3.00 with two at
+  one ms, 4.46, 5.00, 6.00, 7.00, 8.00), one key at one ms at several values (7b54 17 times), and the stage's own text
+  says "They are legion" (one slug unshielded at a time, its death unshielding another). The data's number shield
+  zeroes a shielded slug's hits (−9999 in the product zone): no log has a zero hit. ZMDLogs lists every slug's debuffs
+  under the one id (7b54's attack 1 at 5.27 / 10.99 s: one listing, ×1.198 apart = Jade Vessel × Camille's 0.07), so
+  "debuffs that don't act", the partial purges and the non-round factors were other slugs' debuffs, and the purges
+  kills. The slugs' own buffs and AI aren't in the data.
+- **The status pairs, case by case:** 1d91 (the game's burst after Arcane's combo touch, its listing has Doubles) and
+  7910 (held by Arcane's own ultimate stop at +0 ms) on the other side of a buff's edge; abfd held 2.55 s (76 frames);
+  a7a7 not an edge: Liino's Medicant ×4, an unjudged kit buff the burst's listing lacks; e989 not an edge: the replay
+  keeps Camille's Firefang Weakness 69.19–89.32 s (open); 7b54 the slugs.
+
+**Done:**
+- 6339 and 7b54 marked `severalTargets` with that evidence (their own row with 9c6e: a reclassification).
+- **`logged-purges` `log-kills`** (default; enginecheck.ts killPurges): in a several-targets fight the replay's enemy
+  sheds the team's debuffs at each logged kill.
+- **`status-pairing` `check`** (default): a pair fits too by the check's primary reading of it (enginecheck.ts
+  primaryParts, now shared with readingBasis), with the landing's modifiers or the replay's at the logged hit's frame,
+  and a pair that fits only there is read there by the check (BuffReplay.statusInputs); STATUS_WIDE_FRAMES 60 → 90.
+- tests/slug-targets.test.ts, tests/status-pairing-check.test.ts; damageOptions exported from the engine's barrel.
+
+**Scoreboard** (`npm run snapshots:update` against a6c425f): development (29 fights) plain 82.7 → 83.9%, mismatch 5.8 →
+4.8%, mean |damage error| 2.9 → 1.2%, |matched| 2.16 → 1.35%, replay-only 2.83 → 1.12%, log-only 1.60 → 0.57%; of it the
+reclassification alone (measure's plain tree) plain 83.8%, 4.8%, 1.2%, the readings +0.1 plain. Hold-out plain 82.7 →
+82.9%, mismatch 5.4%, |damage error| 6.3%, replay-only 2.69 → 2.62%, log-only 4.79 → 4.70%: 3 better, 1 mixed (plain +3,
+its total moved), none worse. Earlier pending plain 81.8 → 81.9%; verified 78.4 → 78.5% (b7b3). Several targets (3
+fights) 48.1% plain / 20.6% for 9c6e alone → 54.1% / 20.0%. Better: 1d91, 4360, 7910, 79cc, 8915, 9847, 9c0b, c83c, e989,
+012a, 9555, a7a7, b6aa, c6d8, d774, e82d, b7b3, 7b54 (plain 1 → 65, +40.4 → +15.7%); mixed (plain up, a total 0.1–0.3
+points further): c779, f978, 3aa6, abfd, c3c7, 9c6e (plain 200 → 244, −20.6 → −24.5%: the second target's log-only no
+longer cancelled); worse: af7b (total 0.7 → 0.8%, a burst now paired at a slightly other value), 6339 (plain 114 → 108,
+−12.6 → −19.7%: the slug after its 20.37 s kill had Camille's Susceptibility). No simulation reads either assumption
+(log check only): no team-ab.
+
+**Decisions:** a fixture mark and a kill purge, not a shield model: which slug a hit lands on is in no log, and the
+listing can't say a slug's debuffs; a kill is the one moment the log says the target changed. `check` reads a pair at
+the logged frame only where the landing's own frame doesn't fit and the logged one does (the assumed → plain bursts of
+b7b3, c779, c6d8: Arcane's WILL burst line a frame off): the log's time is the burst's.
+
+**Left:** e989's Camille Firefang Weakness (replay-only run 69–89 s); per-target state for several-targets fights;
+the slugs' replay-only landings (hits on shielded slugs).
 
 ## 2026-11-27: Improvement round 18: records of rules that decline, one run for several answers
 
@@ -400,40 +449,3 @@ which the linger had covered). team-ab (Typhoeus's team, the linger): sustained 
 **Left** (docs/open-problems.md "Zhuang Fangyi's and Liino's mismatches (2026-11-27)"): 4d60 43–60 s, Zhuang Fangyi's
 Sunderblades (Electrification lost across the enemy-away stretch 27.4–37.0 s); Liino's stance on the beats' clock; her
 Medicant layers on Arcane in 1d91; Rossi's combo 3 Vulnerable; 8915's clock lead (not looked at).
-
-## 2026-11-26: Arcane's mismatches: a stage's damage factor from the fixture
-
-**Goal:** the by-operator table's largest pool of mismatches, chr_0032_lizhiyan (5688 hits in 40 fights, 12.3%
-mismatch, share-weighted |damage error| 13.0%), grouped by cause and fixed. The brief called her Akekuri; the numbers
-and the file are Arcane's (Akekuri is chr_0019_karin: 202 hits in 2 fights, no mismatch), so Arcane was the work.
-
-**Done:**
-- **Grouped** (`zmdlogs groups --operator Arcane`): 697 mismatches, 492 of them 8915's (292) and c6d8's (200), the two
-  stage logs whose every hit sits at one round factor. scripts/probes/stage/stage-factors.ts (runs of hits at one
-  team-wide logged ÷ reading over every log): 8915 ×0.500 to 37.71 s (228 of 261), ×0.050 at 38.45–39.72 s (15 of 15),
-  ×0.200 at 41.01–85.93 s (274 of 285), all four operators; c6d8 ×0.100 from 15.75 s to the boss's Stagger break at
-  75.59 s (334 of 413). Nothing else in any development log is a round factor (the other runs are buffs: 1d91, fc63,
-  4d60, 7b54's slug).
-- **A fixture's `stageFactors`** (zmdlogs.ts StageFactor, schemas/log-fixture.schema.json; hand-written windows with
-  their evidence, as buildOverrides are): enginecheck.ts `stageModifiers` puts the factor into the multiplicative zone of
-  every reading of a hit logged in the window (readingBasis), of the log-listing readings (logcheck.ts) and of the
-  replay-only landings in the fight's totals; the `replay` view's LAND lines show the staged damage beside the replay's
-  own. tests/stage-factors.test.ts. c6d8's OFFSETS_EXPLAINED entry (Perlica ×0.1) dropped: no offset left.
-- Arcane's mismatches 697 → 233.
-
-**Scoreboard** (`npm run snapshots:update`): development plain 76.2 → 79.2%, mismatch 10.2 → 6.9%, mean |damage
-error| 4.9 → 3.1%; earlier pending plain 77.7 → 80.6%, mismatch 11.3 → 7.7%, 3.4 → 1.5%; verified and hold-out
-unchanged (no fixture there has the field). Better: 8915 (plain 157 → 651, mismatch 614 → 67, +62.3 → +6.8%), c6d8
-(125 → 467, 436 → 14, +43.9 → +0.5%); no log worse. Arcane's row: plain 77.8 → 85.1%, mismatch 12.3 → 4.1%,
-mean |damage error| 9.2 → 4.2%, share-weighted 13.0 → 2.8%. No kit or engine rule changed: no team-ab.
-
-**Decisions:** a fixture field, not a rule the check infers: the factor comes from the hits' values, which the check
-grades, so it is written once, reviewable, from all operators' hits at once and at round values (×0.5, ×0.05, ×0.2,
-×0.1), and never fitted per hit or per operator. Hold-outs get none (they aren't opened); their stage logs, if any,
-stay uncheckable, which keeps their row honest. A window runs to the next window's first hit; c6d8's ends at the
-break (roadmap-details had "the Abyss boss's ×0.1 until its Stagger"). Not simulated: no data gives the shields.
-
-**Left** (docs/open-problems.md "Arcane's mismatches after the stage factors"): 1d91's ×0.965 / ×0.929 / ×0.894
-steps (Liino's lane: her buffs unlisted there), fc63's Corrosion 89–110 s (`window-reaction`, test 33), 7b54's slug,
-9c6e's two targets; new in 8915 now that it reads: a Corrosion ramp step and Hot Work's Nature end 0.1–0.3 s earlier
-in the game than in the replay after Liino's and Si's combos pressed together (7.07–8.90 s).

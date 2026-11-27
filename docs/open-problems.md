@@ -172,7 +172,8 @@ a gap's length alone).
 - 6339 and 7b54 (the slug): Laevatain's finisher hit_2 at 21.60 s (10.2%) after the 20.37 s cap with a logged hit at
   20.60 s between; Laevatain's 38.2 s combo and 6339's 32.97 s battle skill, made from their events, no hit of either
   logged; 7b54's overlapping Si combos (two finals at 16.36 s, eleven landings for eleven slots, so no realignment);
-  Combustion ticks. Shield-blocked hits (open below, "Hard 33's slug") fit all of them; no log lists the shield.
+  Combustion ticks. Since 2026-11-27 both are eight slugs under one id, marked `severalTargets` ("Hard 33's Woodcraft
+  Slugs" below): hits on a shielded slug (0, unlogged) fit all of them; no log lists the shield.
 - 9c6e's second target (Typhoeus's bursts as twins of a teammate's hit). Marked 2026-11-27 (fixture `severalTargets`,
   scripts/probes/targets/two-targets.ts: Typhoeus's Nature burst twice within a frame nine times, 79.85 s two capped
   values from one uncapped 412,733, eight kills); a reclassification, not a fix: the engine has no second target. No
@@ -188,8 +189,8 @@ a gap's length alone).
 
 **Shows** (`zmdlogs totals --all --kinds`, `--json`): development log-only 3.2% of a fight's logged total (mean), of
 which 9c6e (−37.8%: two targets, a multi-target log under one enemy id; since 2026-11-27 the fixture's
-`severalTargets`, its own scoreboard row, out of the development mean) and 6339 (−25.6%: Hard 33's slug, "Hard 33's
-slug" below) carry 2.0 points; over the other 54 development, earlier-pending and verified fights the mean is −1.0%, no
+`severalTargets`, its own scoreboard row, out of the development mean) and 6339 (−25.6%: Hard 33's eight slugs, "Hard
+33's Woodcraft Slugs" below, marked `severalTargets` since 2026-11-27 too) carry 2.0 points; over the other 54 development, earlier-pending and verified fights the mean is −1.0%, no
 key above −0.1% of the mean (Zhuang Fangyi's strikes, Arcane's INT lasers, Typhoeus's 4th-shot burst the largest). By
 cause:
 - **A counted resource one short (kit side; fixed).** Typhoeus's Signs (1d91: a combo cast with 7, its 4th shot a
@@ -211,11 +212,21 @@ cause:
   docs/journal/2026-11-27-07-status-landings-paired-by-value-two-target-fights-marked.md): one assignment per operator,
   kind and element, the most pairs and then the closest, a landing 16–60 frames away only where its value fits within
   1%. One-sided bursts in `zmdlogs bursts --all` 31 log-only / 40 replay-only → 19 / 28 (30 frames), and c3c7 22.32,
-  c83c 32.31, 79cc 24.23, 3aa6 12.31 s (1.5–2.1 s late, equal values) at 60 frames. Left: pairs whose replay value is
-  off by a buff the replay's burst landed before or after (1d91 50.47 / 51.02 s ×1.095, 7b54 46.70 / 47.39 s, a7a7
-  39.27 / 40.87 s, e989 86.65 / 88.70 s, 7910 28.27 / 29.85 s, abfd 100.93 / 103.48 s): a 10% fit was mixed
-  (docs/tried/2026-11-27-status-value-fit-10.diff); the fit judged by the check's reading of the pair (the log's
-  listed buffs) is untried.
+  c83c 32.31, 79cc 24.23, 3aa6 12.31 s (1.5–2.1 s late, equal values) at 60 frames. **The pairs a buff's edge put off
+  (2026-11-27, `status-pairing` `check`, docs/journal/2026-11-27-09-hard-33-s-eight-slugs-status-pairs-read-by-the-check.md):**
+  a pair fits too where the check's primary reading of it does (enginecheck.ts primaryParts: the unjudged kit buffs as
+  the logged hit lists them), with the landing's modifiers or the replay's at the logged hit's frame (then read
+  there: BuffReplay.statusInputs); the window 60 → 90 frames. By case, what the log decides: 1d91 50.47 / 51.02 s, the
+  game's burst after Arcane's combo touch (its listing has Tactical Doubles since 50.50 s; the replay's lands 0.13 s
+  before the touch): paired, plain; 7910 28.27 / 29.85 s, held by Arcane's own ultimate stop starting at the burst's
+  frame (+0 ms, the tie the burst-before-stop probe can't order), the value the replay has after it: paired, plain;
+  a7a7 39.27 / 40.87 s, not an edge: Liino's Medicant ×4 on Wulfgard in the replay's burst, an unjudged kit buff the
+  logged burst lists none of: paired by the check's reading, plain; abfd 100.93 / 103.48 s, held past Fluorite's combo
+  and Xaihi's ultimate (2.55 s, 76 frames; ×1.30, the replay's value at the logged frame): paired at 90 frames, plain. Not an edge:
+  e989 86.65 / 88.70 s, the replay keeps Camille's Firefang Weakness (fire Susceptibility 0.12) on 69.19–89.32 s where
+  the log lists none (her next run starts at 89.32 s; Laevatain's 70.43 and 85.87 s hits read −10.7% too): a Camille
+  buff run, open; 7b54 46.70 / 47.39 s: the slugs (below). A 10% fit was mixed
+  (docs/tried/2026-11-27-status-value-fit-10.diff).
 - **The placement and the cast assembly** (the replay-only agent's files, not changed here): fc63 87.87 s Typhoeus's
   burst landed 0.48 s early, inside the 0.2 s Sign cooldown of the one before, so her 101.87 s combo has 7 Signs;
   f879 95.10 s Laevatain's battle skill made before her 92.50 s Heat absorption (no empowered hit, −2.1%); 5082
@@ -242,7 +253,8 @@ depends on it where the values fit); the pairs a buff's edge puts off in value (
 world's clock that only her lasers show, or the lasers' start not at the logged event.
 
 **Next check:** the INT lasers' start against the logged combo event across every INT log (`zmdlogs casts --operator
-Arcane`); the status pairing's value fit by the check's reading.
+Arcane`); e989's Camille Firefang Weakness on 69.19–89.32 s in the replay alone (`zmdlogs replay e989 --kit-buff
+chr_0033_camille:vesperwings`).
 
 ## The totals that rose once hits read right (2026-11-27)
 
@@ -382,8 +394,9 @@ now the fixtures' `stageFactors`: 233 left. The brief named the operator Akekuri
   level 2 from 90.17 s, the log lists no Corrosion anywhere in this export); under `window-reaction=applied` 37 turn
   plain and 45 assumed (`zmdlogs hits fc63 --against window-reaction=applied`), but 101–106 s stays ×0.92: the
   touch's element after a reaction (test 33), not built.
-- **7b54 28:** Hard 33's slug, its partial purges and factors ×0.90 / ×0.91 / ×0.835 at 11–29 s that aren't one
-  round factor (the probe's runs): not a stage factor.
+- **7b54 28:** Hard 33's slugs, its partial purges and factors ×0.90 / ×0.91 / ×0.835 at 11–29 s that aren't one
+  round factor (the probe's runs): not a stage factor; 2026-11-27, eight slugs whose debuffs the log lists together
+  ("Hard 33's Woodcraft Slugs").
 - **8915 26 (newly checkable):** a ×1.012–1.015 team-wide step at 8.8–19.1 and 93–99.5 s, one Corrosion ramp step
   (resistance ×1.0132 a second) that the game reaches 0.1–0.3 s before the replay (8.78, 9.85, 11.93, 15.90, 19.0 s);
   Hot Work's Nature buff 6.80–18.07 s in the replay, gone from the listing by 18.02 s. Both after Liino's and Si's
@@ -1201,7 +1214,7 @@ takeAtkSnapshot false).
 **Still possible / left (largest first; `zmdlogs totals --all`):**
 - **The stage logs** (8915 and c6d8 fixed 2026-11-26: their round factors are the fixtures' stageFactors, 8915 +62.3 →
   +6.8%, c6d8 +43.9 → +0.5%; 7b54 +49%, 6339 +38% left): the stages' shields and phase factors (×0.1–0.7 on
-  every hit; "Arcane's mismatches", "Hard 33's slug"), not the totals' to fix.
+  every hit; "Arcane's mismatches", "Hard 33's Woodcraft Slugs"), not the totals' to fix.
 - **2fd9 −15.6%** (fixed by round 4, item 14: Rossi's perfect combo's Lift and Vulnerable stack on Snowshine's
   counter-bash infliction; both Crushes plain at 4 stacks, "The damage factors" above)**:** Mi Fu's Crush ×1.90 low at 2 Vulnerable stacks (22.3, 47.9 s), while her killing Crush at 3 stacks
   is ×1.02 uncapped: the stack count the replay consumes (4.5 against 7.5 would be ×1.67), or her weapon's and set's
@@ -1404,7 +1417,7 @@ Stagger is on the 42–46 s ones and the log's ×1.3 is on top); 7910's ×1.099 
   and 7b54 at 47.48 s are the slug's, not Arcane's**: the team's other debuffs on the enemy end at the same logged
   moment (6339: Jade Vessel, Camille's Susceptibility, Arcane's weapon lines, none listed on; 7b54: Camille's and
   Arcane's six, six others listed on). 6339's two are now read from the log (engine assumption `logged-purges`,
-  "Hard 33's slug" below); 7b54's partial one isn't (it doesn't qualify). **e82d's is the only one left, and the only
+  "Hard 33's Woodcraft Slugs" below: kills); 7b54's partial one isn't (it doesn't qualify). **e82d's is the only one left, and the only
   second touch while her seal lasts in any log** (multi-target included: the first combo's touch 7.02 s, the second's
   8.73 s, 1.1 s of world time apart). Only the Doubles Susceptibility goes (her ultimate's Susceptibility, Jade Vessel
   and her weapon lines are listed on to the end); the first run's listing ends at 8.56 s where the second's begins (one
@@ -2061,61 +2074,40 @@ hits ×1.18 → plain in 207f. Left in 2fd9: Mi Fu's Crush hits ×1.90 low ("Fig
 
 **Next check:** a Hard 27 log with Electric hits (Electric 35 or 11).
 
-## Hard 33's slug: debuffs the engine keeps don't act (7b54, 6339)
+## Hard 33's Woodcraft Slugs: eight targets under one id (7b54, 6339)
 
-**Found (2026-11-26, round 6): 6339's are purges.** At 10.35 and 29.38 s every debuff of the team on the slug ends
-at one logged moment (Jade Vessel, Camille's and Arcane's Susceptibilities, Arcane's weapon lines), and every hit
-after 11.27 s read exactly with the log's listing, the replay's 1.40 times the logged. The log check's replay now ends
-the enemy-side kit buffs, statuses, inflictions, Vulnerable stacks and controls there, and an Arts Burst on its way
-(engine assumption `logged-purges`, reading `log`: holdinputs.ts loggedPurges, purgedByLog; the burst at 29.40 s, a
-replay-only landing, had put Arcane's Solemn Phalanx line on every hit after it). Measured against `none`: 6339 plain
-28 → 112 of 140, damage +40.8 → −8.0% (the over-prediction that cancelled Si's low combo-final slots at 11.31 s gone),
-development plain 73.8 → 74.3%, mean |damage error| 6.1 → 5.1%, nothing else moved. A debuff's per-element affixes
-count once: without that, 3aa6 at 25.42 s (Arcane's Doubles pair and Perlica's Electrification) read as one and lost
-26 plain. 7b54's ends at 16.48, 19.59 and 47.48 s are partial (others listed on): not purges by the rule, still open,
-as 6339's Laevatain hits 14.6–19.2 s (the replay ×1.28, Scorching Heart and Camille's lines: not a purge).
+**Found (2026-11-27): the "slug" is eight slugs.** The logged total of both fights is 9.600 Max HP (the data's
+110,060 at level 90), eight slugs of 1.2 each, and the kills (hits capped at the HP left) fall at whole slugs of
+damage: 6339 at 1.00 (10.35 s), 3.00 (11.31 s: two at one ms from one uncapped 121,248), 4.46, 5.00, 6.00, 7.00 and
+8.00; 7b54 at 2.07 (16.36 s: two at one ms), 3.03, 4.01, 6.57 and 8.00 (48.06 s: two at one ms), one death without a
+capped hit (scripts/probes/targets/slugs.ts). One event key at one ms with differing values: 5 times in 6339, 17 in
+7b54 (Si's combo slashes 6040 / 6569 / 9853 at 15.60 s). The stage's own text (I18nTextTable_EN, indie_hard033's
+dungeonDesc): "They are legion"; a slug burrows and restores its shield stacks, one random slug loses them for good
+and its death unshields another. The data's number shield (buff_common_eny_numshield) adds −9999 in the product zone
+(a shielded slug's hit deals 0, and the log has no zero hit), zero (buff_common_enemy_numshield_zero) gives 20 SP and
+ends the shield buffs by id; the slugs' own buffs (buff_eny_0129_slwood_numshield, its AI aiconf_eny_0129_slwood_hdg033)
+aren't in the data. ZMDLogs lists every slug's debuffs under the one id: 7b54's Laevatain attack 1 at 5.27 and
+10.99 s, one listing (Jade Vessel 0.12, Camille's fire Susceptibility 0.07), 1,927 and 1,608 (×1.198 = 1.12 × 1.07:
+the second slug had neither). So "debuffs the engine keeps don't act" and the partial purges were other slugs'
+debuffs, and 6339's purges at 10.35 and 29.38 s are kills.
 
-**Shows:** hits low by the engine's damage-taken and susceptibility
-entries, which the log lists but the damage ignores (Jade Vessel's 0.12,
-Arcane's 0.096 stacks, the affixes), in windows (7b54 12–20 s; 6339 from
-10.5 s); a Laevatain power-attack hit_2 missing (6339; the pair is in
-0206 and 3440); Combustion ticks the log doesn't have.
+**Done:** both fixtures carry `severalTargets` with that evidence (their own scoreboard row with 9c6e, out of the
+development means: a reclassification, not a fix); engine assumption `logged-purges` reading `log-kills`
+(enginecheck.ts killPurges): in a several-targets fight the replay's enemy sheds the team's debuffs at each kill too.
+Measured against `log` (the row's three fights): plain 40.9 → 54.0%, mismatch 34.9 → 27.6%, mean |damage error|
+24.5 → 20.0%; 7b54 plain 1 → 65, mismatch 174 → 116, +40.4 → +15.7%; 9c6e plain 200 → 244, per hit 10.3 → 7.9%,
+total −20.6 → −24.5% (its second target's log-only share left uncancelled); 6339 plain 114 → 107, −12.6 → −19.8%
+(after the 20.37 s kill the next slug had Camille's Susceptibility, 0.12: Laevatain's hits at 23.04–23.64 s read
+×1.12 low without it).
 
-**Ruled out:** the slug's template (DEF 100, resistances 0, no born
-buffs, no attribute modifiers); a damage-scaling shield (the number shield
-zeroes whole hits); Stagger (the bar isn't empty when the buffs stop
-acting); an additive damage-taken reduction (1 + 0.12 − r doesn't fit;
-1 + 0.096k does).
+**Ruled out:** one enemy with lives or phases (two kills at one ms, a hit's key at two values at one ms); a
+damage-scaling shield (the number shield zeroes whole hits); the debuffs' end by the shield or by tag (round 5).
 
-Round 5, the slug's data (from extracted BuffData): the number shield
-(numshield_hdg033: 1, set to 3 on a signal buff, one less per qualifying
-hit) blocks hits through buff_common_eny_numshield (−9999 in the product
-zone: a blocked hit deals 0); at 0, numshield_zero ends the shield buffs
-by id. Its two FinishBuffAdvanced end numshield_destory (on itself) and
-the stage's poison on the team. Every finish names buffs by id; no tag
-query. Jade Vessel's enemyvul and Arcane's funnel stacks carry no tags.
-Neither log has a zero-value hit or lists a shield or Stagger buff. In
-6339 Jade Vessel's entry drops out of the hits' lists at 10913 ms (last
-at 10349); in 7b54 it's listed to 35.5 s.
-
-**Ruled out:** the shield (or its end) ending the debuffs, by id or by
-tag; Stagger at 10.5 s (6339: bar 22 → 45, rising) or at 12 s (7b54).
-
-**Still possible:**
-- Jade Vessel's replacement by priority key (stacking type 11,
-  `dmg_taken_up`, max 1) keeping another instance than the engine's.
-- The hits' effects lists being sparse in these logs (entries vanish and
-  return), so "listed but not acting" reads presence wrongly.
-- Shield-blocked hits hidden in a gap (6339: none from 11.3 to 14.6 s).
-- A Stagger in 7b54 from ~19–20 s (bar 7 at 19.0 s, no sample to 29.5 s).
-- buff_common_mini_poise_break_slwood and numshield_destory carrying an
-  effect (the latter unread; the former an interrupt with 4 s
-  immobilization, read in round 1).
-- Hits zeroed by the shield explaining 6339's missing hit_2 and
-  Combustion.
-
-**Next check:** none planned: such logs are to be avoided. If one is
-needed, the priority-key replacement of Jade Vessel's buff.
+**Still possible / left:** which slug each hit lands on (the log can't say; an engine with several targets could
+carry each one's debuffs); the replay-only landings (7b54 +24.0%: Si's burst mark at 26.47 s in 21.06–26.98 s, her
+overlapping combos at 16.6–17.7 s, Laevatain's combo at 38.20 s; 6339 +19.0%: Laevatain's hit_2 at 21.60 s, her
+32.97 s battle skill) as hits on shielded slugs (0, unlogged) or on a slug the shield hid; 6339's log-only (35.70 s
+final −9.6%, Si's 19.91 s ink hit twice). Not a kit or timing question: such logs are to be avoided.
 
 ## Liino's battle-skill presses during Vocalist Stance (every Liino log)
 
@@ -3975,7 +3967,7 @@ one exactly: B6); the engine counting a stack group's instances in the
 damage (buffModifiers takes one per group).
 
 **Still possible (separate problems):**
-- 7b54 / 6339: the "Hard 33's slug" entry above (7b54 18999 ms: 722 /
+- 7b54 / 6339: the "Hard 33's Woodcraft Slugs" entry above (7b54 18999 ms: 722 /
   (1.312 × 1.1105) = 496, the log's value, with Jade Vessel's, both
   funnel_0016 debuffs and Doubles not acting).
 - c3c7 56.7–80.1 s: the engine gives Si Xaihi's crystal Amp (0.18) that
