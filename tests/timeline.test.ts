@@ -939,8 +939,8 @@ describe("timeline: stagger and finishers", () => {
   it("enough stagger staggers the enemy for its stagger time; meanwhile hits take ×1.3", () => {
     const { end } = at([{ operator: op, skill: L + "attack1" }], 7);
     // PoiseRecTime 10 s, plus the 2 s recovery (engine assumption stagger-recovery, test 110), and the break's own hold
-    // on the enemy's clock (break-hold, 16 frames); the data alone under `none` for both.
-    expect(end.stagger).toEqual({ poise: 0, until: 6 + 300 + 60 + 16, finisherUsed: false });
+    // on the enemy's clock (break-hold, 14 frames); the data alone under `none` for both.
+    expect(end.stagger).toEqual({ poise: 0, until: 6 + 300 + 60 + 14, finisherUsed: false });
     const dataOnly = createContext(d, { ...scenario([{ operator: op, skill: L + "attack1" }]), options: { ...scenario([]).options, assume: { "stagger-recovery": "none", "break-hold": "none" } } });
     expect(advance(dataOnly, apply(dataOnly, init(dataOnly), { operator: op, skill: L + "attack1" }), 7).stagger.until).toBe(6 + 300);
     const r = simulate(d, scenario([{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "attack2" }]));
@@ -965,22 +965,22 @@ describe("timeline: stagger and finishers", () => {
     expect(low).toBeLessThan(280);
     expect(run(data, sc({}), chain, 900).stagger.poise).toBe(low);
     expect(run(data, sc({ enemyActions: [{ kind: "recover", at: [200] }] }), chain, 201).stagger).toEqual({ poise: 280, until: null, finisherUsed: false });
-    // Staggered from frame 6 (attack1 deals 300 here): a recover at 100 ends it, at 116 once the break's hold (16
+    // Staggered from frame 6 (attack1 deals 300 here): a recover at 100 ends it, at 114 once the break's hold (14
     // frames on the enemy's clock, engine assumption break-hold) has held it.
-    const s = run(d, sc({ enemyActions: [{ kind: "recover", at: [100] }] }), [{ operator: op, skill: L + "attack1" }], 117);
+    const s = run(d, sc({ enemyActions: [{ kind: "recover", at: [100] }] }), [{ operator: op, skill: L + "attack1" }], 115);
     expect(s.stagger).toEqual({ poise: 280, until: null, finisherUsed: false });
-    expect(run(d, sc({ enemyActions: [{ kind: "recover", at: [100] }] }), [{ operator: op, skill: L + "attack1" }], 115).stagger.until).not.toBeNull();
+    expect(run(d, sc({ enemyActions: [{ kind: "recover", at: [100] }] }), [{ operator: op, skill: L + "attack1" }], 113).stagger.until).not.toBeNull();
   });
 
-  it("a break holds every clock its 16 frames, the breaker's too (engine assumption break-hold), not inside an ultimate's stop", () => {
-    // attack2's first hit (300 Stagger here) breaks the bar; its second, still to come on her clock, lands 16 frames
+  it("a break holds every clock its 14 frames, the breaker's too (engine assumption break-hold), not inside an ultimate's stop", () => {
+    // attack2's first hit (300 Stagger here) breaks the bar; its second, still to come on her clock, lands 14 frames
     // later than without, and the enemy's Stagger ends 16 frames later (its clock).
     const a2: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "attack2" ? { ...s, hits: s.hits.map((h) => ({ ...h, poise: 300 })) } : s)) } } } };
     const rotation = [{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "attack2" }];
     const frames = (assume: Record<string, string>) => simulate(a2, { ...scenario(rotation), options: { crit: "never", assume } }).hits.filter((h) => h.skillId === L + "attack2").map((h) => h.frame);
     const none = frames({ "break-hold": "none" });
     expect(none.length).toBe(2);
-    expect(frames({})).toEqual([none[0], (none[1] as number) + 16]);
+    expect(frames({})).toEqual([none[0], (none[1] as number) + 14]);
     expect(frames({ "break-hold": "12f" })).toEqual([none[0], (none[1] as number) + 12]);
     // Inside an ultimate's time stop: no hold (4d60 56.29 s, 9a80 34.94 s); under `16f-all` one all the same.
     const inStop = (assume: Record<string, string>) => {

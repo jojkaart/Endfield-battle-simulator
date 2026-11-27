@@ -100,7 +100,7 @@ export function breakHoldFrames(assume?: Readonly<Record<string, string>>): numb
 /**
  * The hold at a Stagger break (engine assumption break-hold; docs/open-problems.md "The hold at a Stagger break"): the
  * hit that empties the bar stops every clock, the world's (the enemy's statuses and ticks, every buff, combo windows)
- * and every operator's, the breaker's too, for breakHoldFrames frames (the data's damage units carry
+ * and every operator's, the breaker's too, for breakHoldFrames frames (14 by default; the data's damage units carry
  * enablePoiseBreakTimeDilation, true on all 1514, with no length: the length is the logs'). Not inside an ultimate's
  * time stop (4d60 56.29 s, 9a80 34.94 s: hits 0.08–0.23 s after the break, as without one), unless the reading says so
  * (`<n>f-all`). As a slow-down at scale 0 that holds no one less (no caster), the lowest scale counting where it
