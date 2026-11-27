@@ -100,7 +100,8 @@ describe("ultimates pressed together play their time stops in turn (logcasts.ts 
       "4a64 chr_0036_jsspsi@23.1 chr_0013_aglina@24.9",
       "4a64 chr_0036_jsspsi@67.1 chr_0028_wulfa@67.3",
       "4a64 chr_0032_lizhiyan@62.0 chr_0013_aglina@63.5",
-      "7910 chr_0025_ardelia@55.1 chr_0035_liino@55.2",
+      // 7910's Liino@55.2 is gone (2026-11-27, the placement-cases round's logcasts.ts rules): her finale at 59.03 s, frame 116, is her
+      // 51.65 s ultimate's, its projectiles logged to 58.81 s across Ardelia's stop, not a second ultimate of its own.
       "9c6e chr_0035_liino@71.2 chr_0032_lizhiyan@71.9",
       "a7a7 chr_0036_jsspsi@45.9 chr_0035_liino@46.9",
       "b6aa chr_0032_lizhiyan@35.4 chr_0036_jsspsi@35.5",
