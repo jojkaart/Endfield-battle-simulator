@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-27: Casts across a Stagger break: the hold from the moments, break-held-starts](2026-11-27-15-casts-across-a-stagger-break-the-hold-from-the-moments-break.md)
 - [2026-11-27: Several targets read per target](2026-11-27-14-several-targets-read-per-target.md)
 - [2026-11-27: Friction round 19: one reader of a reading, the follow-ups view, an enemy's stage text](2026-11-27-13-friction-round-19-one-reader-of-a-reading-the-follow-ups.md)
 - [2026-11-27: The break's open points: the hold's place, combos, the Stagger end](2026-11-27-12-the-break-s-open-points-the-hold-s-place-combos-the-stagger.md)

@@ -37,10 +37,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   on the new lists, a cheaper worth for timeline-moving stats.
 - **Stagger breaks:** done 2026-11-27: every clock held 14 frames at a
   break (`break-hold`; owner's team −0.9%); the hold's start from the
-  log's moments measured flat (`break-hold-place`, kept `ms`), combos
-  hold, the recovery stays 2 s
-  (the logs don't choose); next the hold-outs' INSIDE (an action held
-  past the next press).
+  log's moments the default (`break-hold-place` `moments`, 4d60's
+  INSIDE gone), a start held by the breaks it ran through a reading
+  (`break-held-starts` `held`: fc63, 3aa6; one hold-out −6, not the
+  default), the recovery stays 2 s; next the hold-outs' INSIDE, breaks
+  inside a combo's slow-down, 458b 87.47 s, 7b54's same-ms twins on
+  several slugs.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast; Liino's
   Medicant layers on Arcane in 1d91 (beats from 44.9 s give none); Zhuang
