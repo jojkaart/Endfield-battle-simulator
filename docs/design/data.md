@@ -165,7 +165,10 @@ output is an edit there, a rule's in the part it belongs to; the reason
 strings the snapshots' kinds group by are replaykeys.ts's constants): each placed cast
 (logcasts.ts) starts at its logged frame without a rotation's checks, its
 logged landings land at their logged frames (pinned: later time stops
-don't move them, the log's time has them in), an operator's earlier cast
+don't move them, the log's time has them in; a stop or hold still moves an
+action's end, the landings nothing pinned, triggers' delayed hits and the
+world's timers; `zmdlogs replay` marks the pinned LAND lines `[pinned]`,
+round 19), an operator's earlier cast
 keeps its hits when the log shows them after the next cast started, and a
 jump of the cast that would skip a pinned landing of a hit only the
 skipped part has isn't taken, nor the path it jumps to (2026-11-22:

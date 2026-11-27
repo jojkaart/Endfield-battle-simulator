@@ -89,8 +89,15 @@ export interface BuffReplay {
    * its start in ms, and the logged cast that needs it.
    */
   readonly missed: readonly MissedCast[];
-  /** Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null near a change (REPLAY_EDGE_MS). */
+  /**
+   * Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null where the
+   * replay doesn't answer: near a change (REPLAY_EDGE_MS), after the replay broke, where a crit the log doesn't give
+   * decides it, and for a game buff the replay doesn't decide (BuffReplay.undecided; a kit buff's windows: kitWindows).
+   * instancesWhy says which.
+   */
   instances(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | null;
+  /** As instances, with why there is no answer in place of null (round 19, the Camille report point 3: a test read null at every hit of an undecided buff). */
+  instancesWhy(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | { readonly unknown: string };
   /** What the replay knows of a logged cast (placed: logcasts.ts), or why it knows nothing. */
   castFacts(cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { readonly unknown: string };
   /** A logged hit's landing in the replay (its damage, modifiers and LandingFacts), or why there is none. */
@@ -668,6 +675,21 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const nearIn = (changes: ReadonlyMap<string, readonly Change[]>, key: string, f: number) => (changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack);
   // Why a placed hit has no pinned landing (replayedCasts), made on the first question (droppedLanding).
   let unpinned: Map<string, string> | undefined;
+  const instancesWhy = (hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | { readonly unknown: string } => {
+    if (!main) return { unknown: "no replay" };
+    if (!decided.has(gameBuff)) {
+      const why = undecided.get(gameBuff);
+      return { unknown: why !== undefined ? `${gameBuff} isn't decided by the replay: ${why}` : `${gameBuff} isn't a game buff the replay decides (no kit buff of the team stands for one the log lists; a kit buff's windows: kitWindows)` };
+    }
+    const f = frameOf(hit.t);
+    if (brokenAt !== null && f >= brokenAt - edge) return { unknown: `the replay broke at frame ${brokenAt}` };
+    const key = `${gameBuff}|${hit.operator}`;
+    const n = countIn(main, key, f);
+    if (n === null) return { unknown: `within ${REPLAY_EDGE_MS} ms of one of its changes` };
+    // A buff a trigger on crits is behind: decided only where the landings whose crit the log doesn't give don't matter.
+    if (bound && critDependent.has(gameBuff) && countIn(bound, key, f) !== n) return { unknown: "a trigger on crits is behind it, and the crits the log doesn't give decide it here" };
+    return n;
+  };
   return {
     assume: opts.assume ?? {},
     decided,
@@ -747,15 +769,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return main.staggerWindows.some((w) => Math.abs(w.start - f) <= edge || (Number.isFinite(w.end) && Math.abs(w.end - f) <= edge));
     },
     instances(hit, gameBuff) {
-      if (!decided.has(gameBuff) || !main) return null;
-      const f = frameOf(hit.t);
-      if (brokenAt !== null && f >= brokenAt - edge) return null;
-      const key = `${gameBuff}|${hit.operator}`;
-      const n = countIn(main, key, f);
-      // A buff a trigger on crits is behind: decided only where the landings whose crit the log doesn't give don't matter.
-      if (n !== null && bound && critDependent.has(gameBuff) && countIn(bound, key, f) !== n) return null;
-      return n;
+      const n = instancesWhy(hit, gameBuff);
+      return typeof n === "number" ? n : null;
     },
+    instancesWhy,
     castFacts,
     critSource(hit) {
       if (hit.crit !== null) return "log";

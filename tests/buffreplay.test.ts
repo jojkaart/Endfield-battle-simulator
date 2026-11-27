@@ -77,6 +77,10 @@ describe("kit buffs from the replay of the logged casts", () => {
     // (0.5 s + 10% of its 10 s life either side), undecided.
     expect(fx.hits.map((x) => r.replay.instances(x, GAME_BUFF))).toEqual([null, 1, 1, 0]);
     expect([23400, 23600, 26400, 26600].map((t) => r.replay.instances({ t, operator: op }, GAME_BUFF))).toEqual([1, null, null, 0]);
+    // Round 19 (the Camille report point 3): instancesWhy says why there's no answer, a buff the replay doesn't decide too.
+    expect(r.replay.instancesWhy({ t: 23600, operator: op }, GAME_BUFF)).toEqual({ unknown: expect.stringMatching(/of one of its changes/) as unknown as string });
+    expect(r.replay.instancesWhy({ t: 15000, operator: op }, GAME_BUFF)).toBe(1);
+    expect(r.replay.instancesWhy({ t: 15000, operator: op }, "buff_no_such")).toEqual({ unknown: expect.stringMatching(/isn't a game buff the replay decides .*kitWindows/) as unknown as string });
   });
 
   it("reports where the replay and the log disagree, with times", () => {

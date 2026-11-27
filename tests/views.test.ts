@@ -36,6 +36,8 @@ describe("the placement and replay views", () => {
   it("marks each replay landing with the logged hit it stands for or as the replay's own", () => {
     const text = replayView(data, fx, { from: 3000, to: 5000 });
     expect(text).toMatch(/LAND .* = logged \S+ \d+ at \d+\.\d\d/);
+    // Round 19 (the break follow-ups report point 2): a landing pinned to its logged frame says so; a stop can't move it.
+    expect(text).toMatch(/LAND .* \[pinned\] = logged /);
     const op = fx.team[0]?.operator as string;
     const only = replayView(data, fx, { operators: [op] });
     expect(only.split("\n").slice(1).every((l) => l.includes(data.operators[op]?.name ?? op) || /STAGGER/.test(l))).toBe(true);
