@@ -65,3 +65,20 @@ engine's triggers and statuses, the kits and enginecheck.ts, beside another agen
 - `--kit <file>` for a what-if kit, then `--assume` once the reading was registered: the Sign-cooldown idea was
   checked on its log in seconds before any measure.
 - `measure --variant … --hits` gave the reading's own effect and the moved hits in one run.
+
+## Outcome (round 18)
+
+- 1 (One-sided landings have no share field, and no view ranks them per key outside chosen fights): done:
+  `zmdlogs totals --all --json` gives each line its `share` of the fight's logged total and the fight's `logged`,
+  `fightError`, `stage`, `severalTargets` (reports.ts oneSidedJson); `--skip <id|stage|several>,…` leaves fights out
+  of the table, `--kinds` and `--json` (skipFights).
+- 2 (Which fixture is really two targets is only in prose): done by the status-pairing round (9c6e's
+  `severalTargets`, its scoreboard row); round 18 gave the totals views the same group (`targets`, out of the combined
+  rows and the by-key ranking) and `--skip several`.
+- 3 (A kit stack's value at a cast needs a grep of the trace): done: `efsim zmdlogs stack <owner:stack>
+  <fixture…|--all> [--at-cast <regex>]` (stackview.ts: the value before each cast and just before its owner's next
+  one, the changes between, a count per skill and value).
+- 4 (The burst pairing's window and order are invisible from the views): done: the bursts header names the pairing's
+  rule (statuspairs.ts' windows and value fit; the status-pairing round had replaced the nearest-in-order pairing), and
+  a LOG ONLY and a REPLAY ONLY burst of one operator and element within 1.5 s are marked twins (withBurstTwins),
+  counted per operator.

@@ -110,7 +110,11 @@ window gains 3 frames of the 15 the log shows (not measured).
   restarted (five shots unlanded). Still possible: a hold at the Stagger break (the data's damage units carry
   enablePoiseBreakTimeDilation; no table gives its length) of the operators' timelines; the chain window measured
   from the cast's own logged landings. Next check: the lateness of every operator's landings right after a logged
-  break, over every development log (a probe), then a rule for one of the two.
+  break, over every development log (a probe), then a rule for one of the two. That check is now `efsim zmdlogs
+  clocks --all --clock cast` (round 18: rows with a logged Stagger break inside summed apart, `--rows` marks them):
+  at 2efdd3a 40 cast clocks hold a break, residual median +186 ms (16 of them 0.4 s or more off), against 4,785
+  without at +10 ms; 5082's Yvonne +0.51 s. Ruled out by it: a lateness only Yvonne's; still possible: a break
+  dilation of every operator's timeline (its length unknown), or the cast clocks' placement across a break.
 - **Arcane's INT lasers** (8915, 00ae, a7a7): a7a7 48.89 s, the lasers logged at 49.37 (×2), 49.79 (×2) and 50.01 s,
   each at a ms that batches every hit then, around Wulfgard's 49.50–50.10 s stop; the replay's at 48.97–49.47 s from
   the event. The log's grain can't place the start better (as the 2026-11-22 entry found); 00ae's 0.29 s with no stop

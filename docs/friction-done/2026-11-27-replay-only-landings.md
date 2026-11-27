@@ -62,3 +62,20 @@ across the logs and fixed by mechanisms; branch worktree-agent-a1794bee0401ceb8c
   kill-gap edges and `cut-all` in one run each.
 - `zmdlogs replay --from --to --operator` and `casts` made each case readable in one screen (fc63's burst, d774's
   strikes, 6339's capped final).
+
+## Outcome (round 18)
+
+- 1 (Which of a branch's rules moved a hold-out needs one measure per rule): done but the stable hold-out label:
+  `measure --split hunks` (each hunk alone, `split:<name>` markers, `--only`), with per part the moved hold-outs it
+  moves as the whole did (counts). A label per hold-out stable across runs isn't built: with `--with <operator>`
+  choosing the hold-outs measured, it would say which hold-outs have which operator (docs/design/tests.md). Found on
+  the way: splitLines named a hold-out moved by the whole change and by no part, and splitParts counted every
+  hold-out as moved (allLogs keys hold-outs under pending/); both fixed.
+- 2 (`totals --all --json` has no fight total, so shares need the text table): done: each line's `share`, the
+  fight's `logged` and `fightError` (as the log-only report's point 1).
+- 3 (A rule that declines to act leaves no record): done: TAILKEPT decisions (replayrun.ts tailCuts' kept tails with
+  the guard; d774's "new buff run" guard now reads as one line), a landing's join on the casts view (PlacedHit.joined:
+  `delayed` for joinDelayed, `reach` for joinable), REALIGN lines (Placement.realign: realigned, or left and why: a
+  slot without a multiplier, no landing of known non-crit value, no better fit, a restart refused).
+- 4 (Capped hits are easy to miss as kills): done: the one-sided `kill` flag (inside a logged kill's gap), and
+  `zmdlogs away` lists each log's kills before the fight's end.

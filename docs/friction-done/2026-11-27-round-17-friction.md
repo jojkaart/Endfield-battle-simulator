@@ -59,3 +59,13 @@ aren't repeated.
 - `scripts/check-links.ts`'s stale-citation warning caught data.md's "views.ts batchDisagreements" after the move.
 - snapshots:update's "keys added only" line and a 30-line row-by-row comparison of docs/accuracy.md against the base
   answered "nothing moved" in two steps.
+
+## Outcome (round 18)
+
+- 1 (A stale scratch/msg.txt committed under the previous commit's message): done: scripts/bash-guard.ts refuses
+  `git commit -F <file>` while the file holds HEAD's message (commitMessageFile, staleMessage; the hook reads the
+  call's cwd).
+- 2 (cli-ab --placement parses the casts view's text): done: views.ts castsRecords (`zmdlogs casts --json`),
+  scripts/placement-lines.ts prints them where the code has them, and cli-ab compares records by their fields (a new
+  note on a line, round 18's [joined: …], moves nothing); against an older commit, the text as before.
+- 3 (A description in an engine source makes a text edit an engine change): carried (2026-11-27-backlog-after-round-18.md point 2)

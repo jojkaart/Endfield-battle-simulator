@@ -219,3 +219,7 @@ The reports' episodes made each tool testable on arrival: 4d60's pause is `zmdlo
 combo 3 at 49.59 s is the CAST line's `[paths: …]`, 207f's ×5.7600 is `zmdlogs totals`' team line, Liino's linger is
 kit-census's dead-effect section, and the Zhuang Fangyi attack-4 shift is cli-ab --placement's rule count against
 7e6c12f.
+
+## Outcome (round 18)
+
+- 1 (A layered buff's layers have no clock view): carried (2026-11-27-backlog-after-round-18.md point 1)
