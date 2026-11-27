@@ -103,6 +103,27 @@ function stageStatus(e: LogEffect): boolean {
   return (e.source === undefined || e.source === null) && /_triggered_do$|_corrupt_do$/.test(e.buff);
 }
 
+/**
+ * The stage enemies (an enemy id per stage: `_hdg<n>` is a Hard stage's) whose fights carry a stage-wide effect no kit
+ * makes and the fixture doesn't hold as stageFactors yet: Hard 33's slug (eny_0129_slwood_hdg033: its shield and phase
+ * factors, buildoffsets.ts OFFSETS_EXPLAINED 6339 and 7b54). The other stage logs are found by what they hold
+ * (stageFight).
+ */
+export const STAGE_ENEMIES: Readonly<Record<string, string>> = {
+  eny_0129_slwood_hdg033: "the stage's shield and phase factors (not in the fixtures' stageFactors)",
+};
+
+/**
+ * Why a fight is a stage fight (a stage-wide effect on every operator's hits, no kit's: backlog after round 16 point
+ * 2, the scoreboard's `stage` key), or null: the fixture's stageFactors (8915, c6d8), a stage status the log lists
+ * without a giver (Hard 27's Electrification: 207f, 2fd9, 99fb), or a STAGE_ENEMIES enemy.
+ */
+export function stageFight(fx: LogFixture): string | null {
+  if (fx.stageFactors?.length) return "stage factors (the fixture's stageFactors)";
+  if (listsGivers(fx) && fx.hits.some((h) => h.effects.some(stageStatus))) return "a stage status (listed without a giver)";
+  return STAGE_ENEMIES[fx.enemy.id] ?? null;
+}
+
 const giversListed = new WeakMap<LogFixture, boolean>();
 
 /** Whether a fixture's effects name their givers (imports and refreshes since 2026-11-16). */

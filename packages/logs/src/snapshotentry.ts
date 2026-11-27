@@ -10,7 +10,7 @@ import type { ReplayOptions } from "./buffreplay.ts";
 import { checkLog, engineHits, engineReport, hitPlace, logBuffReplay, verdictCounts, type EngineHits, type HitVerdict, type LogBuffReplay } from "./logcheck.ts";
 import { placeHits, type Placement } from "./logcasts.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { engineCheck, readingBasis, totalsShares, type EngineCheck, type TotalsComparison, type TotalsShares } from "./enginecheck.ts";
+import { engineCheck, readingBasis, stageFight, totalsShares, type EngineCheck, type TotalsComparison, type TotalsShares } from "./enginecheck.ts";
 
 /** One fight's check, composed once (composeCheck): what the snapshots and the hit records both read. */
 export interface CheckComposition {
@@ -70,6 +70,25 @@ export const SHARE_KEYS = { matched: "share matched", replayOnly: "share replay-
  */
 export const operatorShareKey = (operator: string) => `share operator ${operator}`;
 
+/**
+ * The totals key of an operator's hits that matched only as their event's other kit hit (a match whose reading took
+ * another kit hit of the key: a `kitHit` assumption), present where there are any (round 17, the Zhuang Fangyi and
+ * Liino report point 1: her attack 4 placed as attack 2 in five logs, 125 hits ×3.125 off, all "fallback" matches, so
+ * no headline number moved). It describes, never a verdict (scripts/accuracy.ts isDescribingKey); the scoreboard's
+ * by-operator table and measure's comparison count it.
+ */
+export const otherHitKey = (operator: string) => `other-hit operator ${operator}`;
+
+/** The totals key of a stage fight (enginecheck.ts stageFight; 1, present only there): the scoreboard's by-operator mean without them. */
+export const STAGE_KEY = "stage";
+
+/** Per operator, its hits that matched only as their event's other kit hit (otherHitKey), the operators with none left out. */
+export function otherKitHitCounts(verdicts: readonly HitVerdict[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const v of verdicts) if (v.kind === "match" && v.assumptions.some((a) => a.kind === "kitHit")) out[v.hit.operator] = (out[v.hit.operator] ?? 0) + 1;
+  return out;
+}
+
 export interface SnapshotEntry {
   /** Per operator its verdict counts, and under SNAPSHOT_TOTALS_KEY the totals' errors in % (engineReport errors) and the shares (SHARE_KEYS). */
   readonly entry: Record<string, Record<string, number | null>>;
@@ -95,6 +114,7 @@ export function snapshotEntry(raw: GameData, fx: LogFixture, opts: Pick<ReplayOp
   const r1 = (x: number) => Math.round(x * 10) / 10 + 0; // + 0: no -0 in the snapshots
   const logged = report.totals.logged;
   const operatorShares = Object.fromEntries(Object.keys(logged.perOperator).map((op) => [operatorShareKey(op), logged.damage ? r1((100 * (logged.perOperator[op] ?? 0)) / logged.damage) : null]));
-  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares };
+  const otherHits = Object.fromEntries(Object.entries(otherKitHitCounts(verdicts)).map(([op, n]) => [otherHitKey(op), n]));
+  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares, ...otherHits, ...(stageFight(fx) !== null ? { [STAGE_KEY]: 1 } : {}) };
   return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares, oneSided: report.totals.oneSided, replay, byHit, verdicts };
 }

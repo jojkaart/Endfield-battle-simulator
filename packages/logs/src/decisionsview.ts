@@ -10,10 +10,9 @@ import { FPS, withCurveReading, type GameData } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import type { LogFixture } from "./zmdlogs.ts";
+import { secondsText as s, shortSkill } from "./labels.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
-const s = (ms: number) => (ms / 1000).toFixed(2);
-const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.replace(/^chr_\d+_/, "");
 
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */

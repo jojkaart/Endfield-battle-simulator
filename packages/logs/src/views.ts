@@ -28,6 +28,7 @@ import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { stageModifiers, teamBuffNames, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
 import { kindsAggregate, type KindShare } from "./onesided.ts";
 import { decisionText, replayDecisions } from "./decisionsview.ts";
+import { secondsText as s, shortSkill } from "./labels.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -40,7 +41,6 @@ export interface ViewFilter {
 export const underReadings = (assume?: Readonly<Record<string, string>>): { readonly assume?: Readonly<Record<string, string>> } => (assume && Object.keys(assume).length ? { assume } : {});
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
-const s = (ms: number) => (ms / 1000).toFixed(2);
 const inWindow = (f: ViewFilter, t: number) => t >= (f.from ?? -Infinity) && t <= (f.to ?? Infinity);
 const mine = (f: ViewFilter, op: string) => !f.operators?.length || f.operators.includes(op);
 
@@ -48,7 +48,6 @@ const mine = (f: ViewFilter, op: string) => !f.operators?.length || f.operators.
 function label(data: GameData, op: string): string {
   return data.operators[op]?.name ?? op.replace(/^chr_\d+_/, "");
 }
-const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 
 type Line = { readonly t: number; readonly order: number; readonly text: string };
 const render = (lines: Line[]) =>
@@ -803,9 +802,15 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     return [...n].sort((a, b) => b[1] - a[1]).map(([k, c]) => `  ${String(c).padStart(5)}  ${k}  median ratio ${median(g.get(k) ?? [])}`);
   };
   const event = (r: HitRecord) => shortSkill(r.event).replace(/\d+$/, "");
+  const mine = records.filter((r) => r.operator === operator);
+  const asOther = mine.filter((r) => r.assumptions?.some((a) => a.kind === "kitHit")).length;
   const out = [
     `${operator}: ${hits} hits in ${perLog.length} logs, ${mism} mismatches: ${team} team-wide (a teammate mismatches at the same ratio ±${100 * SAME_RATIO}% within ${NEAR_MS / 1000} s), ${noLanding} without a landing, ${mism - team - noLanding} own`,
+    // First (round 17, the Zhuang Fangyi and Liino report point 1): a cast on the wrong step matches as the key's other
+    // kit hit and moves no mismatch count (her attack 4 as attack 2: 125 hits ×3.125, "fallback" in five logs).
+    `  ${asOther} hit(s) matched only as their event's other kit hit (the scoreboard's "as other kit hit")${asOther ? "; the casts every landing of which matched so, after the logs" : ""}`,
     ...perLog,
+    ...otherKitHitCasts(mine, fxLabel),
     "",
     "Own mismatches (not team-wide) by skill event:",
     ...by(({ r }) => [event(r)]),
@@ -813,8 +818,7 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     "Own mismatches by where the log and the replay disagree (none: they agree on every buff they both model):",
     ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
     "",
-    ...fallbackGroups(records.filter((r) => r.operator === operator)),
-    ...otherKitHitCasts(records.filter((r) => r.operator === operator), fxLabel),
+    ...fallbackGroups(mine),
   ];
   if (opts.verbose) {
     out.push("", "Each own mismatch:");

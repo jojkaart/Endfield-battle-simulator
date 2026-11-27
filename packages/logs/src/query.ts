@@ -22,14 +22,9 @@ import { ENGINE_STATUS_BUFF, teamBuffNames } from "./enginecheck.ts";
 import { castEventOf, distinctCasts, mergeMs, placeHits, worldMs, type LoggedCast, type Placement } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
 import type { LogCast, LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
+import { operatorLabel, secondsText as s, shortSkill } from "./labels.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
-const s = (ms: number) => (ms / 1000).toFixed(2);
-/** An operator's label: its English name, else its id without the chr_NNNN_ prefix. */
-export function operatorLabel(data: GameData, op: string): string {
-  return data.operators[op]?.name ?? op.replace(/^chr_\d+_/, "");
-}
-const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 
 export type { ReplayTimeStop } from "./castassembly.ts";
 

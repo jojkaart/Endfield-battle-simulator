@@ -19,12 +19,11 @@
 import { allActions, effectiveKit, FPS, parseReactionEvent, type ArtsElement, type GameData, type KitHit, type LandedHit, type OperatorKit } from "@efsim/engine";
 import { logBuffReplay } from "./logcheck.ts";
 import { placeHits, worldMs } from "./logcasts.ts";
-import { operatorLabel, replayTimeStops, type ReplayTimeStop } from "./query.ts";
+import { replayTimeStops, type ReplayTimeStop } from "./query.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
+import { operatorLabel, secondsText as s, shortSkill } from "./labels.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
-const s = (ms: number) => (ms / 1000).toFixed(2);
-const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 
 /** A burst's cause on one side: the hit (logged event or replayed skill and hit), its time and the world time to the burst (ms). */
 export interface BurstCause {

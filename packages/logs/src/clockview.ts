@@ -22,12 +22,12 @@ import { teamBuffNames } from "./enginecheck.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import { worldMs } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
-import { buffLanes, operatorLabel, replayTimeStops, type BuffLane } from "./query.ts";
+import { buffLanes, replayTimeStops, type BuffLane } from "./query.ts";
 import type { BuffTrace } from "./replayrecord.ts";
 import type { LogFixture } from "./zmdlogs.ts";
+import { operatorLabel, secondsText as s } from "./labels.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
-const s = (ms: number) => (ms / 1000).toFixed(2);
 
 /** How an instance ended in one replay: at a frame (ms) and why, or not before the fight's end. */
 export interface ClockEnd {
