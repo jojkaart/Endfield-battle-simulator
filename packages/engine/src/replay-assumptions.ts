@@ -116,11 +116,11 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "target-deaths",
     question: "What does the replay of a fight read per target (several-targets `targets`) make at a target's logged kill?",
-    default: "moves",
+    default: "kills",
     readings: {
-      moves: "a death only where a kit's targetDeath trigger's hit is logged (Camille's Vesperwings moving on: packages/logs targets.ts deathMoves), the replay's enemy keeping its statuses (the replay until 2026-11-27)",
-      kills: "a death at each logged kill before the log's last ms, its targetDeath triggers running (Laevatain absorbing the dead target's Heat); an operator whose trigger lands a hit makes it only where the log shows its landing; the statuses stay",
-      statuses: "as `kills`, and the dead target's statuses (the replay's enemy's infliction, reactions, physical statuses, Vulnerable; the bursts due on it) end with it, after its triggers: the next target's are its own",
+      moves: "a death only where a kit's targetDeath trigger's hit is logged (Camille's Vesperwings moving on: packages/logs targets.ts deathMoves; the replay until 2026-11-27)",
+      kills: "a death at each logged kill before the log's last ms too, its targetDeath triggers running (Laevatain absorbing the dead target's Heat as Melting Flame); an operator whose trigger lands a hit makes it only where the log shows its landing; the replay's enemy keeps its statuses",
+      statuses: "as `kills`, and the dead target's statuses (the replay's enemy's infliction, reactions, physical statuses, Vulnerable; the bursts due on it) end with it, after its triggers (6339's 29.26 s Laevatain combo then finds no Combustion on its slug: −5 points)",
     },
   },
   {
