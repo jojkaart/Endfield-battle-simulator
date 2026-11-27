@@ -4,9 +4,68 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 186 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 187 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Tail cuts: what the shown-hit guard stands for
+
+Goal: the backlog's accuracy entry "A tail-cut test better than the own-landing pass"
+(docs/friction/2026-11-27-backlog-after-round-20.md): replayrun.ts tailCuts' "a logged hit of its operator's casts no
+other cast holds" guard passed on the cast's own last landing, logged a fraction of a ms into its frame (143 of the
+development logs' 217 TAILKEPT lines, `[shown-own]`); making it exact had cost c4f3 −66 and 9847 −21 plain
+(docs/tried/2026-11-27-tail-own-landing.diff).
+
+What the kept tails supplied (cli-ab `--hits-zones` with the exact guard against the tree, then `zmdlogs replay`):
+- **c4f3** (all 78 moved hits after 109 s): one cast, Pogranichnik's battle skill at 108.08 s. Its logged hit at 109.01 s
+  carries hit_2's value (29,561), the replay's first hit is 23,848; the tail's hit_2 at 109.33 s sets off the Breach
+  the log has at 109.01 s, and its Fervent Morale stack and weapon's team ATK, which the 78 later hits read. The other
+  three shown-own tails in c4f3 (basic attacks) move nothing.
+- **9847** (22 hits, 78–114 s): Liino's battle skill at 75.44 s. Its volley timer opens at the cast's frame 45 (76.94 s),
+  after its last logged projectile (75.83 s); cut there, the volleys the log has from 78.36 s and every 10–12 s after
+  never come. Not a landing of the cast: the timer is a frame action, the volleys a kit buff's hits.
+- Nothing later needed the rest: of the 143, 106 are cut now (TAILCUT 152 → 244 over 61 logs), most of them basic
+  attacks' last hits; the rest are kept by another guard or left by the round limit.
+
+Done (e7d8e08, c542358):
+- The cast's own logged landings are no evidence. In their place: `landed` (a logged hit no cast holds with a tail
+  landing's event within 16 frames: the free match's reach), `status` (a logged status hit of its operator whose
+  nearest status landing of its kind the tail set off: c4f3's Breach; d572's Mi Fu battle skill Crushes at 125.40 and
+  144.84 s),
+  `shown-free` (as before, without the own pass), `effect` (as before) and `needed`: replayrun.ts cutTails (the loop,
+  moved out of buffreplay.ts replayKitBuffs) undoes a cut whose replay loses a logged hit's landing (loggedShown) and
+  keeps the tail. `needed` caught 9847's volleys and 7b54's Laevatain attack 5 at 46.47 s, whose hit_2 breaks the
+  Stagger and so times Arcane's lasers (the log's at 47.62 s).
+- `fight-end` at 0.5 s (TAIL_END_MS; was TAIL_NEAR_MS, 1.5 s): the kill drops only what comes after it. 0eef's Liino
+  combo hit2 at 8.80 s (the team's hits logged to 10.03 s) and 79cc's Ardelia attack3 projectiles at 54.47 s (to
+  55.95 s) are cut; measured as a variant, no other log's damage moved.
+- TAILKEPT `rounds`: casts the 8-round limit leaves uncut, which were silent before (45 casts in 10 logs; d4fb 11,
+  d572 9, 458b 7).
+
+Measured against 14fe159 (`npm run measure -- --base HEAD`) and the scoreboard (`npm run snapshots:update`):
+development plain 84.3% (unchanged; the exact guard alone was 83.7%), mean |damage error| 1.3 → 1.2% (15 better, 4
+worse); verified 1.6 → 1.5% (0eef 2.3 → 1.3%, 4e5e −3.0 → −3.3%); earlier pending plain 84.4% (abfd 414 → 412), 1.2%
+(6 better, 3 worse); several targets plain 71.3 → 72.0% (7b54 116 → 121, −1.2 → +0.1%), |damage error| 6.3 → 9.4%
+(6339 −6.3 → −16.8%); hold-out plain 82.5%, |damage error| 5.8 → 5.9% (4 better, 4 worse, the worse ones in basic
+attacks' totals). Replay-only share: development 1.1 → 0.9%, hold-outs 2.4 → 2.3%, several targets 17.8 → 14.5%; by
+operator Liino 8.5 → 5.6% (0eef no longer her largest), Laevatain 6.6 → 4.6%. A test fixed: tests/logcasts.test.ts's
+b7b3 `absent` case (Last Rite's third slash is now cut, as the fixture's note reads it; the `absent` path is tested
+under `unlogged-tails` `kept`).
+
+Decisions and why:
+- Worse logs are under-predicted fights whose unlogged tails had cancelled part of it: 6339's Laevatain finisher hit_2
+  at 21.60 s (105,356, 10.2% of the fight, no log line), db87's Laevatain ult_attack2 at 38.57 s (38,477), 4e5e's,
+  a9d7's, de6a's and d774's basic tails; the same shape as `cut-all`'s adoption (docs/design/assumptions.md). abfd −2:
+  two logged Si attack-4 hits at 64.10 s, pinned to an attack 4 her next one cut at 64.07 s, had matched the later
+  cast's tail 0.33–0.43 s on; the cut is right, the interrupted cast is the open part (open-problems).
+- The counterfactual check rather than more static guards: a tail's effects reach the log by many paths (a frame
+  action's timer, a status, a Stagger break, SP), and the replay already makes the cut run; a rejected cut costs one
+  round. 16 rounds instead of 8 measured worse (development 1.2 → 1.3%, no plain change, 135 against 115 s): kept 8.
+- loggedShown pairs no landing once only (looser than buffreplay.ts's free match); kept so, as it errs towards cutting
+  only where the log has nothing near (the friction report's point 1 for a shared pairing).
+
+Still open: a tail whose effect shows only in later hits' values (a kit stack, a buff the log doesn't list);
+several independent tails per replay (the round limit's 45 casts); abfd's interrupted attack 4.
 
 ## 2026-11-27: Friction round 20: guards that say what they cite, tried diffs by function, the build screen by the check's tolerance
 
@@ -347,38 +406,3 @@ error. No simulated fight moved (the new reading is the replay's only), so no te
 **Ruled out for the hold-outs:** the hold's start as the moments place it; the placement's stops with the breaks'
 holds; the held cast starts made them worse. Under `break-hold=none` they lose one INSIDE decision: an action the hold
 lengthens past the next press (as 3aa6's breaker logged inside its hold, fc63's combo across a break) is the lead.
-
-## 2026-11-27: Camille's Vesperwings at an away stretch, Pogranichnik's harasses
-
-**Goal:** two leads from docs/open-problems.md: e989's Camille Firefang Weakness (fire Susceptibility 0.12) the replay
-kept on 69.19–89.32 s, and Pogranichnik's harasses 0.2–2 s off in his five logs.
-
-**Camille.** The debuff is a child of the hovering Vesperwings entity (autoFinishByAction); the entity checks its
-target every 0.5 s (buff_chr_0033_camille_normal_skill_bat_checktarget: FindTargetAction, CheckEntityNum,
-FinishOwnerAction unless retargeting) and finishes without one. Every other Camille run ends at a refresh, a kill or
-the fight's end; only e989 has an away stretch, and it lists the debuff to 19.67 s (the first stretch's start: no purge
-is read there, the stretch being longer than PURGE_GAP_MS) and to 69.19 s, 1.74 s before the stretch 70.93–84.83 s, at
-a check's boundary (61.69 s + 15 × 0.5 s). Si's boss leaves as the damage reaches about 50% and 85% of twice its Max HP
-(scripts/probes/entities/jsspsi-phases.ts), the second time 0.2–3.6 s after the share is dealt, still hit meanwhile.
-Built: KitBuff.targetCheck (`every`, `assumption`), read only by the log check's replay (buffreplay.ts targetLosses,
-lostTargets, composed into `held` after the purges), behind Camille's kit assumption `vesperwings-target-loss`:
-`kept` (as before), `away` (the first check after the stretch's last logged hit), `listed` (the check at the debuff's
-last listing within TARGET_LOSS_LEAD_MS, 4 s, before the stretch; default). Measured: `listed` e989 plain 260 → 267,
-|damage error| 0.5 → 0.1%, its 86.65 s Heat burst paired; `away` mixed (264, 0.8%); one hold-out better under both
-(mean |damage error| 6.4 → 5.8%). Why a kit assumption: the engine registry is in timeline/, the parallel agent's
-folder (friction report point 2).
-
-**Pogranichnik.** The harass entity slows itself at each path's frames 0–3 (TimeDilationAction layer 1, 0.4 s, an
-inline curve 0.30 → 0.043 → 1: mean scale 0.23, scripts/probes/entities/harass-slowdown.ts), so its frame-9 hit comes
-9.24 frames late; as an entity's timeline it is on the world's clock, which his own combo's slow-down holds (d4fb's
-Breach at 86.67 s, its harass at 87.97 s across his combo from 87.20 s). Kit: frames [18], `world`. Over his five logs
-(scripts/probes/entities/harass-deltas.ts) median |Δ| 299 → 88 ms, one-sided 37 → 21; frame 17 measured worse (119 ms);
-the teleport takes no time (ruled out). d4fb's 87.97 / 88.55 s harasses now pair right. The Decisive Assault stays at
-frame 25: every logged one comes 0.21–0.44 s after its event, which nothing in the data gives (frame 8 fits all but
-two; not built: open-problems "The placement cases the one-sided rounds left").
-
-**Numbers** (snapshots:update, docs/accuracy.md): development plain 84.2 → 84.3%, |damage error| 1.3%; hold-out plain
-82.5%, mismatch 5.3 → 5.1%, mean |damage error| 6.4 → 5.8%; earlier pending plain 82.2 → 82.3%. Better: e989, c4f3,
-7e19, d4fb, de6a and one hold-out; mixed: a9d7 (plain 332 → 336, damage −1.7 → −1.8%, per-hit error closer); worse:
-none. Team fights unchanged (team-ab identity at e2e6f3f: no team example has either operator); the
-pogranichnik-chen example snapshot moves with the harass frames.

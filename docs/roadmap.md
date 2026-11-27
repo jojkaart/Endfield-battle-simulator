@@ -27,8 +27,8 @@ below ([review-2026-10.md](review-2026-10.md)).
   ([2026-11-27-backlog-after-round-20.md](friction/2026-11-27-backlog-after-round-20.md),
   3 points: clocks around a non-cast hold, snapshots:update at queue time,
   a layered buff's layers; declined for blindness: a hold-out's change
-  split by cast kind; on its accuracy list a better tail-cut test and a
-  shielded target's landing among the older entries) joins the next
+  split by cast kind; on its accuracy list a shielded target's landing
+  among the older entries; the tail-cut test closed 2026-11-27) joins the next
   round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
@@ -139,7 +139,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   84.4%; Liino 2026-11-27: her error is one-sided (beats, finale, volleys the log never shows: her own
   projectiles out of reach; her pre-fight presses; 0eef's combo tail), her Medicant 4 a teammate by value,
   overheals count (test 25 decided); two log-check diffs held back in docs/tried/: next the lead's call on the
-  opening as away, Snowshine's 04d4 build (undecided).
+  opening as away, Snowshine's 04d4 build (undecided); tail cuts 2026-11-27: the shown-hit guard's own-landing pass
+  replaced by what it stood for (`landed`, `status`, cutTails' `needed`: c4f3, 9847 kept), the fight's end 0.5 s
+  (0eef 2.3 → 1.3%, 6339's 21.60 s hit_2 cut): next several independent tails per replay (TAILKEPT `rounds`).
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

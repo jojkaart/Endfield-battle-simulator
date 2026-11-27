@@ -346,8 +346,9 @@ tailCuts: ReplayCastOptions.endsAt).
 
 - `cut`: the guards: each of its logged landings its own, not a variant's, when the log has no hit of its operator's
   casts that another cast doesn't hold from there to 1.5 s after its first later landing, that landing is outside the
-  away stretches and the fight's last 1.5 s with a logged hit of anyone within 1.5 s after it, and no decided game
-  buff the replay starts at one of the tail's landings (or the frame after) is listed as a new run within 1.5 s
+  away stretches and the fight's last 1.5 s (0.5 s since round 21) with a logged hit of anyone within 1.5 s after
+  it, and no decided game buff the replay starts at one of the tail's landings (or the frame after) is listed as a new
+  run within 1.5 s
   (the earliest such cast first, the replay made again after each; a run another cast started in the tail's
   time keeps nothing: pending/zmdlogs-d774d0ce7bd3.json, Zhuang Fangyi's Empyrean battle skill at 103.28 s, three
   strikes logged, was kept by a gear set's team ATK from Arcane's ultimate hit at 107.07 s, two frames before a tail
@@ -361,7 +362,20 @@ tailCuts: ReplayCastOptions.endsAt).
   48.73 s out of an under-predicted total), earlier pending 67.3 → 67.7%, hold-out plain unchanged, mean |damage
   error| 8.4 → 8.3% (1 better, 2 worse, totals only). Without the listing check and the fight's-end rule the first cut
   lost db87 15 plain (Camille's ultimate, whose gear-set and weapon buffs the log lists after its unlogged hits) and
-  2fd9's killing Crush
+  2fd9's killing Crush. Since round 21 (2026-11-27; docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md)
+  the cast's own logged landings are no evidence (its last one, logged a fraction of a ms past its frame's time,
+  had passed the "later hit of its operator's casts" test: 143 of 217 kept tails), and what that test stood for is
+  read instead: a logged hit no cast holds with a tail landing's event within 16 frames of it (`landed`), a logged
+  status hit of its operator whose nearest status landing the tail set off (`status`: c4f3's Pogranichnik battle
+  skill at 108.08 s, the Breach logged at 109.01 s), and a cut whose replay loses a logged hit's landing is undone
+  (`needed`, replayrun.ts cutTails: 9847's Liino battle skill at 75.44 s, the volley timer it opens at its frame 45
+  and the volleys logged from 78.36 s); the fight's end is 0.5 s (0eef's Liino combo hit2 at 8.80 s, the team's hits
+  logged to 10.03 s). Measured against 14fe159: plain unchanged in every group but several targets 71.3 → 72.0%
+  (7b54 +5); mean |damage error| development 1.3 → 1.2% (15 better, 4 worse), verified 1.6 → 1.5% (0eef 2.3 → 1.3%,
+  4e5e −3.0 → −3.3%), hold-out 5.8 → 5.9% (4 better, 4 worse, the worse ones basic-attack totals), several targets
+  6.3 → 9.4% (6339 −6.3 → −16.8%: Laevatain's 21.60 s finisher hit_2, 10.2% of the fight, no log line). The worse
+  ones are under-predicted fights whose unlogged tails had cancelled part of it (db87 −1.5 → −2.2%: Laevatain's
+  38.57 s ult_attack2 hit, 38,477, no log line), as at `cut-all`'s adoption
 - `cut-all`: (a dodge, a swap, the next attack). pending/zmdlogs-207fff414d82.json 17.42 s: Rossi's not-controlled
   attack 4 (hit_ai, frames 195–213) lands two of its five hits, her next cast 2 s later; 20.72 s the same, under her
   battle skill. Measured 2026-11-26 against `kept`: plain as `cut`; mean |damage error| development 7.0 → 6.9%,

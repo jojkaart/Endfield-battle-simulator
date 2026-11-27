@@ -261,6 +261,11 @@ bursts (fc63) and basic-attack tails in small pieces (32 fights).
 - **A tail kept by another cast's buff** (tailCuts): the new-run check now asks a run that starts at one of the tail's
   own landings; d774's Zhuang Fangyi battle skill at 103.28 s (3 strikes, no final in the log) was kept by a gear set's
   team ATK Arcane's ultimate hit started at 107.07 s. d774 plain 392 → 409, +5.8 → −0.6%.
+- **The shown-hit guard's own-landing pass** (round 21, docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md):
+  a cast's own last logged landing, logged a fraction of a ms past its frame's time, kept 143 tails; now the guard
+  asks what it stands for (a logged hit or status for a tail landing, or a replay with the cut that loses a logged
+  hit's landing). Replay-only (docs/accuracy.md): development 1.1 → 0.9%, earlier 0.9 → 0.8%, hold-outs 2.4 → 2.3%,
+  several targets 17.8 → 14.5%; by operator Liino 8.5 → 5.6%, Laevatain 6.6 → 4.6%.
 - **A final whose multiplier reads its event's count** (logcasts.ts nominalScales): Si's combo final (atk_scale2 +
   count × atk_scale2_1) had no nominal scale, so realignByValue never moved a logged final off a slash's slot (6339
   11.31 s; the final's value at counts 1–4 now). Per-hit |error| 6339 30.4 → 21.5%; its total −10.4 → −14.1% (the
@@ -282,8 +287,7 @@ burst mark, 7.2%) and 9c6e 63.34 s (a kill gap, now fixed) are the large cases (
 a gap's length alone).
 
 **Still possible / left:**
-- 6339 and 7b54 (the slug): Laevatain's finisher hit_2 at 21.60 s (10.2%) after the 20.37 s cap with a logged hit at
-  20.60 s between; Laevatain's 38.2 s combo and 6339's 32.97 s battle skill, made from their events, no hit of either
+- 6339 and 7b54 (the slug): Laevatain's 38.2 s combo and 6339's 32.97 s battle skill, made from their events, no hit of either
   logged; 7b54's overlapping Si combos (two finals at 16.36 s, eleven landings for eleven slots, so no realignment);
   Combustion ticks. Since 2026-11-27 both are eight slugs under one id, marked `severalTargets` ("Hard 33's Woodcraft
   Slugs" below): hits on a shielded slug (0, unlogged) fit all of them; no log lists the shield.
@@ -294,7 +298,16 @@ a gap's length alone).
   kill (db87's enemy, a bigents, has a second entity in the Hard 32 multi-target logs: still possible).
 - Si's combo final of unknown crit on a slash's slot (9a80 36.10 s, +6.6% replay-only).
 - Basic-tail cut's knock-on: 4a64 16.93 s, two logged attack-4 hits that matched the cut tail's landings 0.30 s later
-  now Arcane's first attack 4's, with its set's Nature DMG (−2 plain).
+  now Arcane's first attack 4's, with its set's Nature DMG (−2 plain). The same shape at abfd 64.10 s (round 21, −2
+  plain): two logged Si attack-4 hits pinned to an attack 4 that her next attack 4 cut at 64.07 s (CUTS) had matched
+  the later cast's tail 0.33–0.43 s on; the cut is right, the interrupted cast's placement is the open part.
+- Tail cuts the round limit leaves (TAILKEPT `rounds`, round 21): 45 casts in 10 development and earlier logs (d4fb
+  11, d572 9, 458b 7) after all 8 of TAIL_CUT_ROUNDS; 16 rounds measured: development |damage error| 1.2 → 1.3%, no
+  plain change, 135 s against 115 s for every log; kept at 8. Still possible: cutting several independent tails per
+  replay.
+- What `needed` (cutTails) can't see: a tail whose effect only changes later hits' values (a kit stack, a buff the
+  log doesn't list), not whether a logged hit has a landing; and its landing test pairs no landing once only
+  (replayrun.ts loggedShown), looser than buffreplay.ts's free match.
 - The log-only round's placement cases: worked in "The placement cases the one-sided rounds left" above (f879, 3aa6,
   9a80 fixed; 5082, the INT lasers, Pogranichnik, 99fb diagnosed).
 
@@ -484,17 +497,14 @@ ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
 
 ## Liino's own damage error (2026-11-27)
 
-**Shows:** the largest by-operator mean |damage error| (docs/accuracy.md "By operator"): 8.5% over 19 fights,
+**Shows:** the largest by-operator mean |damage error| (docs/accuracy.md "By operator"): 8.5% over 19 fights (5.6% since the round-21 tail cuts),
 median 3.1%, weighted by share 6.8%; every fight's error positive (the replay over), her share 0.9–6.5%.
 
 **Found: none of it is in her matched hits; all one-sided** (`zmdlogs totals --all --json`, her parts per fight
 as % of her logged total). Her matched landings are within ±0.5% in every fight (1cd1 −0.2%, af7b −0.4%); the
 error is replay-only landings, in four kinds:
-- **0eef +57.8% (3.0 points of the mean alone):** her combo's hit2 at 8.80 s, which no log hit stands for (her
-  hit1 logged 7.57 s; the team hits to 10.03 s). Kept by two tailCuts guards: the fight's-end 1.5 s, and the
-  shown-hit guard taking the cast's own last landing (7570 ms, past its frame's 7566.7) for another hit (the same
-  bug the several-targets round found at 6339 21.60 s). Tried: docs/tried/2026-11-27-tail-own-landing.diff with a
-  0.5 s end guard (0eef fixed, Liino 8.5 → 5.5%, but too broad: c4f3 plain −66, hold-out 5.8 → 5.9%).
+- **Fixed 2026-11-27: 0eef +57.8%**, her combo's hit2 at 8.80 s, cut (the fight's-end guard at 0.5 s, the cast's own
+  landing no evidence; docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md; 0eef 2.3 → 1.3%).
 - **The opening:** her stance pressed before the fight's first logged hit (1cd1 3.05 s, first hit 11.00 s; 9c6e,
   c6d8, 9847): the replay's projectiles and first volley there, none logged (1cd1 +8.2, c6d8 +6.5, 9847 +2.7, 9c6e
   +5.7 points of hers). Held back: docs/tried/2026-11-27-opening-away.diff (hold-outs unchanged; three development
@@ -2334,9 +2344,9 @@ logcasts.ts placeWith `batch`; `later`: a third slug's final 125 ms after two sl
   gain. Si's 19.91 s ink hit on two slugs (−11.5%): her
   Final Stroke at 19.08 s is SKIPped (Artful Intent not on: its 10.91 / 14.67 / 18.40 s presses have no logged hit and
   the log never lists her Artful Intent, both on a shielded slug's side; the hitless-press listing evidence can't
-  show a debuff on a target no one else hits). Replay-only: Laevatain's 21.60 s finisher hit_2 (+10.2%), kept by
-  TAILKEPT's "logged hit no other cast holds" guard, which passes the cast's own killing hit (logged 0.3 ms after its
-  frame's time); the guard without that pass measured worse over every log (docs/tried/2026-11-27-tail-own-landing.diff).
+  show a debuff on a target no one else hits). Fixed 2026-11-27: Laevatain's 21.60 s finisher hit_2 (+10.2%, no log
+  line) is cut (docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md); 6339's total −6.3 →
+  −16.8%: what it hid is the log-only side above and the shielded slugs.
 - **Fixed 2026-11-27: Camille's `normal_skill_abilityrange`** (6339 ×5, 7b54 ×1: her Vesperwings moving to the next
   target; docs/journal/2026-11-27-17-camille-s-vesperwings-moving-to-the-next-target.md): engine event `targetDeath`,
   kit trigger `vesperwings_move` landed by the replay at each logged move (pinned), its normal_skill events no press,
