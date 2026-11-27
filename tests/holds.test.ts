@@ -3,7 +3,7 @@
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
 import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
-import { comboHoldSpans, gapsWithin, holdPins, notAClock, pausedBound, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, withoutGaps, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
+import { breakHoldStarts, breakStops, comboHoldSpans, gapsWithin, holdPins, notAClock, pausedBound, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, withoutGaps, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -105,6 +105,23 @@ describe("placeHolds", () => {
     expect(p.total).toBeGreaterThan(300);
     expect(p.total).toBeLessThan(400);
     for (const h of p.holds) expect(h.frame).toBeGreaterThanOrEqual(Math.floor((2000 * FPS) / 1000));
+  });
+
+  it("breakHoldStarts: a break's hold from its ms, or ending at the next moment where that comes sooner (break-hold)", () => {
+    const hit = (t: number, bar?: number) => ({ t, event: "e", operator: "x", effects: [], boundaryEffects: [], ...(bar !== undefined ? { poise: { dealt: 10, bar } } : {}) });
+    const f = (ms: number) => Math.round((ms * FPS) / 1000);
+    // 14 frames (467 ms): the moment after the 10 s break comes 600 ms later, after the 20 s one 105 ms later (9090afbacec9
+    // 128.92 s), the moment before it 420 ms earlier: that hold ends at 20.105 s, not before 19.58 s.
+    const fx = { hits: [hit(9900, 5), hit(10000, 0), hit(10600), hit(19000, 8), hit(19580), hit(20000, 0), hit(20105)] } as never;
+    expect(breakHoldStarts(fx, 14)).toEqual([{ at: f(10000), from: f(10000) }, { at: f(20000), from: f(20105 - (14 * 1000) / FPS) }]);
+    // The moment before bounds it: a hold of 30 frames there starts at 19.58 s.
+    expect(breakHoldStarts(fx, 30)[1]).toEqual({ at: f(20000), from: f(19580) });
+    // Its stop for the tick bounds starts there too; with no hold (`none`), none and every hold at its ms.
+    expect(breakStops(fx, [], 14).map((s) => s.start)).toEqual([f(10000), f(20105 - (14 * 1000) / FPS)]);
+    expect(breakStops(fx, [], 0)).toEqual([]);
+    expect(breakHoldStarts(fx, 0).every((b) => b.from === b.at)).toBe(true);
+    // Engine assumption break-hold-place `ms`: every hold at its break's ms.
+    expect(breakHoldStarts(fx, 14, { "break-hold-place": "ms" }).every((b) => b.from === b.at)).toBe(true);
   });
 });
 

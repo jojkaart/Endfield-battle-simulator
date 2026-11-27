@@ -4,7 +4,7 @@
 // log shows bounds it: a listed buff's run against the replay's own expiry, an enemy tick series against its period.
 // The replay (buffreplay.ts) then holds the world there once, for every timer.
 
-import { breakHoldFrames, FPS, type KitBuff } from "@efsim/engine";
+import { breakHoldFrames, ENGINE_ASSUMPTIONS, FPS, type KitBuff } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { worldMs, type TimeStop } from "./logcasts.ts";
 
@@ -239,13 +239,40 @@ export function loggedBreaks(fx: Pick<LogFixture, "hits">): number[] {
 }
 
 /**
+ * Where the hold at each of the log's Stagger breaks (loggedBreaks) starts (frames; engine assumption break-hold):
+ * at the break's ms, unless the log's next moment comes sooner after it than the hold lasts (`frames`). No logged
+ * moment falls inside a hold (nothing lands while every clock stands), so there the log stamped the breaking hit
+ * inside the hold or at its end, and the hold ends at that next moment, not before the moment before the break
+ * (scripts/probes/stagger/break-hold.ts PLACE=1: 9090afbacec9 128.92 s, the next moment 0.10 s after it, the clocks
+ * 0.32 s late at it and on time after; 3aa6ab93bad4 145.63 s, Zhuang Fangyi's battle skill pressed 0.10 s after her
+ * combo's breaking hit; the breaks inside a combo's slow-down, 4360447193ac 49.14 s, c4f307cd039a 82.65 s,
+ * d4fb69b036fe 97.05 s, hits 0.13–0.25 s after). `at` is the break's own frame, `from` the hold's first. Engine
+ * assumption break-hold-place: `moments` (the default) so, `ms` every hold at its break's ms.
+ */
+export function breakHoldStarts(fx: Pick<LogFixture, "hits">, frames: number, assume?: Readonly<Record<string, string>>): { readonly at: number; readonly from: number }[] {
+  const moments = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
+  const frameOf = (ms: number) => Math.round((ms * FPS) / 1000);
+  const holdMs = (frames * 1000) / FPS;
+  const atMs = (assume?.["break-hold-place"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "break-hold-place")?.default) === "ms";
+  return loggedBreaks(fx).map((t) => {
+    const i = moments.indexOf(t);
+    const [prev, next] = [moments[i - 1], moments[i + 1]];
+    if (atMs || frames <= 0 || next === undefined || next - t >= holdMs - BREAK_EDGE_MS) return { at: frameOf(t), from: frameOf(t) };
+    return { at: frameOf(t), from: frameOf(Math.max(prev ?? 0, next - holdMs)) };
+  });
+}
+
+/** How much sooner (ms) than the hold's end the next logged moment may come and the hold still start at the break (a frame: the log's ms are a frame's). */
+const BREAK_EDGE_MS = 1000 / FPS;
+
+/**
  * The engine's holds at the log's Stagger breaks (engine assumption break-hold, timeline/clock.ts breakHold) as time
- * stops: `frames` at scale 0 from each break, not one inside an ultimate's stop of `stops` (as the engine).
+ * stops: `frames` at scale 0 from each break's hold start (breakHoldStarts), not one inside an ultimate's stop of
+ * `stops` (as the engine).
  */
 export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[], frames: number): TimeStop[] {
   if (frames <= 0) return [];
-  return loggedBreaks(fx).flatMap((t) => {
-    const f = Math.round((t * FPS) / 1000);
+  return breakHoldStarts(fx, frames).flatMap(({ from: f }) => {
     if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) return [];
     return [{ start: f, scales: new Array<number>(frames).fill(0), operator: "", skillId: "stagger-break", kind: null }];
   });

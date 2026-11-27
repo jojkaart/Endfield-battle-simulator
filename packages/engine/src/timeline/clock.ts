@@ -104,16 +104,17 @@ export function breakHoldFrames(assume?: Readonly<Record<string, string>>): numb
  * enablePoiseBreakTimeDilation, true on all 1514, with no length: the length is the logs'). Not inside an ultimate's
  * time stop (4d60 56.29 s, 9a80 34.94 s: hits 0.08–0.23 s after the break, as without one), unless the reading says so
  * (`<n>f-all`). As a slow-down at scale 0 that holds no one less (no caster), the lowest scale counting where it
- * overlaps another; cooldowns run on.
+ * overlaps another; cooldowns run on. `placed`: a replay's hold placed from its log (a break the log stamped inside its
+ * hold: packages/logs holds.ts breakHoldStarts), held at `frame` whatever TimelineScenario.loggedBreaks says.
  */
-export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number): TimelineState {
+export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number, placed = false): TimelineState {
   const n = breakHoldFrames(ctx.scenario.options.assume);
   if (n <= 0) return st;
   const all = engineReading(ctx.scenario, "break-hold").endsWith("-all");
   if (!all && st.slowdowns.some((x) => x.ultimate && frame >= x.start && frame < x.start + x.scales.length)) return st;
   // A replay holds only at the breaks its log shows (TimelineScenario.loggedBreaks).
   const logged = ctx.scenario.loggedBreaks;
-  if (logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
+  if (!placed && logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
   const timing: SkillTiming = { durationFrames: 0, exclusiveFrames: 0, windows: [], channels: [], specification: 0, keepsChain: true, slowdowns: [{ from: 0, scales: new Array<number>(n).fill(0) }], jumps: [], ends: [] };
   return slowDown(ctx, st, BREAK_HOLDER, timing, frame);
 }

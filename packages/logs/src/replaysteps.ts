@@ -129,6 +129,8 @@ export interface ReplayStep {
   readonly through?: number;
   readonly endBar?: number | null;
   readonly hold?: number;
+  /** The hold at a Stagger break the log stamped inside it, placed before the break's ms (holds.ts breakHoldStarts). */
+  readonly breakHold?: true;
 }
 
 /**
@@ -137,14 +139,18 @@ export interface ReplayStep {
  * first); the log's Stagger end before its bar (the bar is the hit's), and its Stagger after it.
  */
 export function stepRank(s: ReplayStep): number {
-  return s.recover ? 0 : s.hold !== undefined ? 1 : s.cast ? 2 : s.endBar !== undefined ? 3 : s.bar !== undefined ? 4 : s.through !== undefined ? 5 : 6;
+  return s.recover ? 0 : s.hold !== undefined || s.breakHold ? 1 : s.cast ? 2 : s.endBar !== undefined ? 3 : s.bar !== undefined ? 4 : s.through !== undefined ? 5 : 6;
 }
 
-/** Every step of one replay in frame order (stepRank at one frame): the log's Stagger, the holds, the casts (not those before the log) and the samples. */
-export function replaySteps(logged: LoggedStagger, worldHolds: readonly { readonly frame: number; readonly frames: number }[], casts: readonly ReplayedCast[], sampleFrames: readonly number[]): ReplayStep[] {
+/**
+ * Every step of one replay in frame order (stepRank at one frame): the log's Stagger, the holds (the hidden ones; the
+ * breaks' placed before their ms, `breakHolds`), the casts (not those before the log) and the samples.
+ */
+export function replaySteps(logged: LoggedStagger, worldHolds: readonly { readonly frame: number; readonly frames: number }[], casts: readonly ReplayedCast[], sampleFrames: readonly number[], breakHolds: readonly number[] = []): ReplayStep[] {
   return [
     ...logged.recoveries.map((frame) => ({ frame, cast: null, recover: true })),
     ...worldHolds.map((h) => ({ frame: h.frame, cast: null, recover: false, hold: h.frames })),
+    ...breakHolds.map((frame) => ({ frame, cast: null, recover: false, breakHold: true as const })),
     ...logged.poiseBars.map((g) => ({ frame: g.frame, cast: null, recover: false, bar: g.bar, calm: g.calm })),
     ...logged.staggerState.map((g) => ({ ...g, cast: null, recover: false })),
     ...casts.filter((c) => !c.beforeLog).map((c) => ({ frame: Math.max(0, frameOf(c.start)), cast: c, recover: false })),
@@ -160,5 +166,6 @@ export function stepWords(s: ReplayStep): string {
   if (s.bar !== undefined) return "the log's Stagger bar";
   if (s.through !== undefined) return "the log's Stagger listing";
   if (s.hold !== undefined) return `a placed hidden hold of ${s.hold} frame(s)`;
+  if (s.breakHold) return "the hold at a Stagger break, placed before the break's ms";
   return "time to the next sample (pauses, stops, holds)";
 }

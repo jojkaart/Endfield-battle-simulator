@@ -6,7 +6,7 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, ENGINE_ASSUMPTIONS, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
+  activeAt, advance, allActions, breakHold, breakHoldFrames, ENGINE_ASSUMPTIONS, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -17,7 +17,7 @@ import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
 import { type ReplayedCast, frameOf } from "./castassembly.ts";
 import { endedWithTick, loggedTick } from "./holdinputs.ts";
-import { loggedBreaks } from "./holds.ts";
+import { breakHoldStarts } from "./holds.ts";
 
 /** A logged cast the replay made against its kit (BuffReplay.castFlags). */
 export interface CastFlag {
@@ -780,6 +780,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
       return to >= from ? [{ from, to }] : [];
     }),
   ];
+  const breaks = breakHoldStarts(fx, breakHoldFrames(opts.assume), opts.assume);
   const scenario: TimelineScenario = {
     team: fx.team,
     target: { enemy: fx.enemy.id, level: fx.enemy.level },
@@ -801,8 +802,9 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
       return modifiers.length ? [{ operator: h.operator, event: h.event, frame: frameOf(h.t), modifiers }] : [];
     }) } : {}),
     ...(opts.reactionLevels?.length ? { loggedReactionLevels: opts.reactionLevels } : {}),
-    // The breaks the log shows: only they hold every clock (engine assumption break-hold).
-    loggedBreaks: loggedBreaks(fx).map(frameOf),
+    // The breaks the log shows: only they hold every clock (engine assumption break-hold), at their own frame; those the
+    // log stamped inside their hold are held by a step of their own, from where the hold began (breakHoldStarts).
+    loggedBreaks: breaks.filter((b) => b.from === b.at).map((b) => b.at),
   };
   const ctx = createContext(data, scenario);
   // Engine assumption hitless-presses: with `inferred`, a press the log shows no hit of is made where its listing shows what only it gives.
@@ -810,7 +812,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });
-  const steps = replaySteps(input.stagger, pass.worldHolds, list, sampleFrames);
+  const steps = replaySteps(input.stagger, pass.worldHolds, list, sampleFrames, breaks.filter((b) => b.from !== b.at).map((b) => b.from));
   const checkpoints: TimelineState[] = [st];
   const made: Made[] = [];
   const needs: Need[] = [];
@@ -858,6 +860,10 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
       }
       if (s.hold !== undefined) {
         st = holdWorld(st, st.frame, s.hold);
+        continue;
+      }
+      if (s.breakHold) {
+        st = breakHold(ctx, st, st.frame, true);
         continue;
       }
       if (s.bar !== undefined) {
