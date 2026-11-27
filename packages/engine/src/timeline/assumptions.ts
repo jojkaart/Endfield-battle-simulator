@@ -14,6 +14,7 @@ import type { TimelineScenario } from "./state.ts";
 /** An engine reading: like a kit's (id, the in-game test that decides it, question, default, readings), with no operator. */
 export type EngineAssumption = KitAssumption;
 
+// split:engine-hold
 /** The default reading of engine assumption break-hold (a constant, so a measure can set it: measure --variant <file>:BREAK_HOLD_READING=…). */
 const BREAK_HOLD_READING = "14f";
 
@@ -111,6 +112,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
       "2s": "2 s more on the enemy's clock, a recovery the data doesn't give (the logs' median past PoiseRecTime and the stops, 2026-11-18)",
     },
   },
+  // split:engine-hold
   {
     id: "break-hold",
     question: "How long does a Stagger break hold every clock (timeline/clock.ts breakHold)? Every damage unit in the data carries enablePoiseBreakTimeDilation (true on all 1514), and no table gives the dilation's length or curve; a Stagger Node's buff (buff_common_mini_poise_break) has its own 0.5 s layer-1 dilation, which holds no clock the logs show (86 node crossings: casts and ticks across them on time, median +3 ms).",

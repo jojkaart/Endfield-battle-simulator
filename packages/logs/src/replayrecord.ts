@@ -274,7 +274,7 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
       // Its start: its end less its length, but not before the last sample, which had none (a Stagger the log's listing
       // held, holdStagger, ends at the listing's next moment: pending/zmdlogs-d4fb69b036fe.json's from 97.26 s read 86.50 s).
       // Nor after this sample: a break's own hold (engine assumption break-hold) moved its end at once.
-      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, lastSample, Math.min(frame, until - o.staggerFrames())), until };
+      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, lastSample, WINDOW_AT_BREAK ? Math.min(frame, until - o.staggerFrames()) : until - o.staggerFrames()), until }; // split:window-start
       lastSample = frame;
       for (const [k, rec] of open) {
         if (seen.has(k)) continue;
@@ -404,3 +404,6 @@ export function countChanges(instances: ReadonlyMap<string, readonly Instance[]>
   }
   return changes;
 }
+// split:window-start
+/** Measure switch (temporary, the hold-out split): a Stagger window seen at a sample starts no later than it. */
+export const WINDOW_AT_BREAK = true;
