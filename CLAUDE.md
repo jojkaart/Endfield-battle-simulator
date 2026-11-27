@@ -45,6 +45,13 @@ After that milestone, a `dev` branch takes over the role `main` has now.
   `../core.ts` (lint). `@efsim/engine` exports both.
 - `packages/data`: tables, the SkillData / BuffData compiler, kits; it
   imports only `@efsim/engine/core`.
+- The engine's open readings: `packages/engine/src/assumptions.ts` (the
+  simulation's) and `replay-assumptions.ts` (those only the log check
+  reads), outside timeline/; each reading's evidence in
+  docs/design/assumptions.md (no cache rebuild, no team-ab for its
+  prose). Every reader takes the run's readings through `readingOf`
+  (`@efsim/engine`), never a default of its own
+  (tests/assumption-readers.test.ts).
 - `packages/logs` (`@efsim/logs`): log import and the log check.
 - `packages/cli`: one module per command in `src/commands/<name>.ts`
   (usage lines, options, run), listed in `src/commands/index.ts`.
@@ -94,7 +101,10 @@ the scoreboard's change and which logs got better or worse). On a merge
 conflict in any of them, take either side and run it; never merge them by
 hand. Quote the scoreboard's numbers, not scratch sums, in the journal.
 A reclassification apart from a change: `node scripts/accuracy.ts
---compare <ref> --regroup`.
+--compare <ref> --regroup`. A tool that prints log keys tells a hold-out
+by `isHoldoutKey` (scripts/accuracy.ts), never by a key's prefix;
+tests/holdout-blindness.test.ts lists every export of accuracy.ts and
+measure.ts as a printer it runs or with why it prints no log.
 To try an idea, measure instead: `npm run measure [-- --with <op>]`
 (about a minute for every log, writes only `scratch/measure/`; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
@@ -125,7 +135,12 @@ value at each cast), `casts --choices` (a late join's rule, REALIGN),
 `hits <fixture> --same-listing <s>` (the nearest hits with the same
 listing: check a listing lead there first), `boundaries` (a boundary
 rule's base rate), `replay --trace-stack owner:stack`, `replay --kit-buff
-<b> --against-lanes`; every view
+<b> --against-lanes` (each pair's ends: ENDS DIFFER), `followups
+<fixture…|--all> --operator <op>` (a kit trigger's own landings against
+the events that fired them), `holds <fixture> --steps <from>-<to>` (the
+hidden holds' per-frame steps); `efsim gamedata enemy <enemy|fixture>`
+(an enemy's tables and its stage's text: read it first for a stage log),
+`gamedata tree <abilityentity_…>` (an entity's spawns); every view
 that replays takes `--assume`; what an operator's non-plain matches
 assume: `zmdlogs assumed --operator <op>`; what a reading changes: `zmdlogs decisions
 <fixture…|--all> --assume <id>=<r>` (the replay's decisions) and `hits
@@ -284,7 +299,12 @@ the files each parallel agent is expected to edit (`node scripts/runstate.ts
 scripts/lead-files.ts <fixture id|operator|word>…` the code files earlier
 commits naming a lead changed, so a split by files sees where the causes
 tend to live; a brief lists files, never a family of them ("the replay
-modules": `node scripts/lead-files.ts --family <name>` prints one); where
+modules": `node scripts/lead-files.ts --family <name>` prints one; `--split
+<agent>=<files|family:x>,…` flags a lead whose earlier fixes touched two
+agents' files: SHARED; split it by question, or name the shared hot files,
+logcasts.ts or buffreplay.ts, in both briefs as "may touch with a note":
+an edit there is one function, committed alone, its message naming the
+other agent); where
 the cause is unknown, split by question; a fix in
 another agent's file goes back as a measured diff in docs/tried/, "held
 back", for the lead to apply after the merge), and
