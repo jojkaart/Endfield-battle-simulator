@@ -3,7 +3,7 @@
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
 import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
-import { comboHoldSpans, holdPins, notAClock, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, withoutGaps, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
+import { comboHoldSpans, gapsWithin, holdPins, notAClock, pausedBound, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, withoutGaps, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -156,6 +156,36 @@ describe("statusBounds", () => {
     expect(b).toEqual(statusBounds(inst, statusLanes(fx), [], new Set(), 0.4));
     expect(why.map((w) => [w.holder, w.verdict.split(" ")[0]])).toEqual([["p", "bound:"], ["p", "didn't"], ["q", "the"]]);
     expect(why[0]?.run).toEqual({ name: "electrification", since: 1000, lastListed: 9600 });
+  });
+
+  // pause-holds `paused`: 4d60e7fe92c2's Electrification from 21.37 s, the replay's out at 30.73 s, listed to 37.00 s
+  // across the away stretch 27.38–37.00 s (a whole-game pause): 6.3 s asked of a 9.4 s life, over its share.
+  const away = { hits: [hit(21370, 21370, true), hit(27380, 21370), hit(37000, 21370), hit(37500, null)] } as never;
+  const paused = [{ status: "electrification", operator: "p", start: 641, end: 922, expired: true }];
+  const gap = [{ from: 27380, to: 37000 }];
+
+  it("past its share, no bound; with the away stretch inside its run (pause-holds `paused`), a bound laid in the stretch", () => {
+    expect(statusBounds(paused, statusLanes(away), [], new Set(), 0.4)).toEqual([]);
+    const b = statusBounds(paused, statusLanes(away), [], new Set(), 0.4, undefined, gap);
+    const min = b.find((x) => Number.isFinite(x.min));
+    expect([min?.a, min?.b, Math.round((min?.min ?? 0) / 100)]).toEqual([27380, 37000, 62]);
+    // The least total then sits in the stretch, not wherever it may.
+    const p = placeHolds(b, { end: 40000 });
+    expect(p.early[p.times.indexOf(27380)]).toBeCloseTo(0, 6);
+    expect(p.late[p.times.indexOf(37000)]).toBeCloseTo(p.total, 6);
+  });
+
+  it("within its share, the bound as without the stretch", () => {
+    expect(statusBounds(inst, statusLanes(fx), [], new Set(), 0.4, undefined, [{ from: 5000, to: 9000 }])).toEqual(statusBounds(inst, statusLanes(fx), [], new Set(), 0.4));
+  });
+});
+
+describe("pausedBound", () => {
+  it("lays a bound asking past its cap inside the gaps within it, and leaves one within its cap as it is", () => {
+    expect(pausedBound(run(0, 20000, 8000), 6000, [{ from: 5000, to: 14000 }, { from: 30000, to: 40000 }])).toMatchObject({ a: 5000, b: 14000, min: 8000 });
+    expect(pausedBound(run(0, 20000, 5000), 6000, [{ from: 5000, to: 14000 }])).toEqual(run(0, 20000, 5000));
+    expect(pausedBound(run(0, 20000, 8000), 6000, [{ from: 25000, to: 30000 }])).toEqual(run(0, 20000, 8000));
+    expect(gapsWithin(0, 20000, [{ from: 5000, to: 14000 }, { from: 18000, to: 30000 }])).toBe(11000);
   });
 });
 

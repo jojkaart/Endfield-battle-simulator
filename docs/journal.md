@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 167 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 168 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -47,6 +47,46 @@ docs/open-problems.md "The totals that rose once hits read right").
 
 **Left:** d774 103.28 s; 3f78's team-wide ×1.017 after 50.55 s (Corrosion's ramp late in the replay: the enemy's
 clock); a9d7's Chen −3.0% (spread, Pogranichnik's team buffs on her combo); 207f's Rossi attack 4 hit_ai tail (+1.3%).
+
+## 2026-11-27: Away stretches: a whole-game pause holds every timer, a boss phase none
+
+**Goal:** three leads on the enemy's clock: do enemy statuses run on, pause or something else while the enemy is away
+(4d60 43–60 s, Zhuang Fangyi's Sunderblades); Liino's stance ending before its last beat (4d60 66–73 s); 8915's
+Corrosion step and Hot Work end early after two combos pressed together (7.07–8.90 s).
+
+**Done:**
+- **Every away stretch of the development logs read by its clocks** (scripts/probes/away/away-clocks.ts: the hold
+  placement's clocks listed on both sides of each stretch, their asks, the basic strings across it). 31 stretches in
+  11 logs. 4d60's two are whole-game pauses: Arcane's string goes on across both (attack 2 → attack 3 after 9.6 and
+  7.2 s) and every clock spanning them, the enemy's statuses and the team's buffs alike, runs past its end by most of
+  the stretch. The other 29 (Si's phases, eny_0125_fdcentur, eny_0128_babyents_hdg031) run on: asks −2.8 to +3.2 s,
+  no string goes on. No difference between enemy statuses and team buffs in either kind, and no enemy-kind rule (4d60's
+  enemy is in 16 other logs with no away stretch): the pauses are the player's.
+- **Engine assumption `pause-holds`, new default `paused`** (holdinputs.ts runBounds, holds.ts statusBounds,
+  pausedBound, gapsWithin): a clock's run across an away stretch may ask the stretch's length past HIDDEN_HOLD_SHARE of
+  its life, and a bound asking past its share is laid inside the stretch, so the least total sits in the pause (8.4 s
+  in 27.67–36.46 s), not spread over 21–46 s as the bare relaxation placed it. Perlica's Electrification is then on for
+  Zhuang Fangyi's 37.00 s combo, and her battle skills strike 6, 8, 8 times as logged. Liino's stance is held by the same
+  pause and runs to her 73.37 s event: lead 2 was this pause too. tests/holds.test.ts, tests/replayrecord.test.ts.
+- **8915's lead at the log's grain:** the game's first Corrosion step comes ≥ 0.15 s before the stop list allows (0.08 s
+  from the battle skill's cast event: its hit sits in a batch), later steps 0.00–0.08 s, Hot Work's end ≥ 0.05 s.
+  Pressed-together combos elsewhere don't hold less: 16 clocks across two combos within 0.3 s run late as single ones
+  (+347 ms median, Σ residual ÷ Σ held 0.82 against 0.86; scripts/probes/combo-hold/combo-pairs.ts). Not built.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 80.0 → 81.0%, mismatch 6.8 → 6.4%, mean |damage error|
+3.3%; hold-out, verified and earlier pending unchanged. Only 4d60 moved (mixed): plain 822 → 987, mismatch 108 → 54,
+per-hit |error| 4.97 → 1.71%, total −1.2 → +1.7% (Zhuang Fangyi's matched +8.1% had cancelled her 0.59M of log-only
+blade hits; now +1.5% with none). The log check's replay only: no simulation reads `pause-holds`, so no team-ab.
+
+**Decisions:** the clocks decide a pause, not the enemy or a flag: a pause holds what spans it, a phase holds nothing,
+and the placement places only what the clocks ask, so the Si phases need no exception. The bound past its share goes
+into the stretch because nothing else can hold a clock that long; within its share a bound stays as it was (the 117 s
+pause was already placed there by 13 clocks).
+
+**Left** (docs/open-problems.md "Away stretches: a pause or a phase", "Zhuang Fangyi's and Liino's mismatches"):
+4d60 69.35–69.84 s, Zhuang Fangyi's Xiranflow layers held 3.0 s by the stops in 43–69 s where the game holds them
+0.6–1.2 s (exposed by the pause: the 43.17 s consumption now takes level 2); her 73.37 s combo with the stance's ATK
+one frame too long; 8915's step (the two combos' placement, the batch's application time).
 
 ## 2026-11-27: Zhuang Fangyi's attack 4 and Liino's silent stance ends
 
@@ -349,40 +389,3 @@ The fact table's test found the log-listing fallback trying both crits where the
 **Left** (docs/friction/2026-11-26-backlog-after-round-15.md): the log context `{ data, assume }` (carried twice),
 fit-build over a wider space with chance counts, the by-operator scoreboard's share (a new snapshot key), a recorded
 Stagger start.
-
-## 2026-11-26: Low plain, low mismatch: the replay's read crits and a status's crit
-
-**Goal:** why most of Rossi's hits (and Chen Qianyu's, Yvonne's, Lifeng's, Pogranichnik's, the male Endministrator's)
-match only under an assumption or the log-listing fallback; make the readings with a mechanism the default, and say
-which are only the check's tolerance (open-problems "Low plain, low mismatch").
-
-**Done:**
-- **Grouped the non-plain matches by what they assume** (scripts/probes/assumed/kinds.ts): Rossi's 1109 were 418
-  `crit` alone (her ultimate stabs and Seething Blood extras), 165 boundary, 181 fallbacks; Yvonne's 150 `crit`; Chen's,
-  Lifeng's, Pogranichnik's and the Endministrator's nearly all fallbacks.
-- **The crit the replay read is the primary reading's** (engine assumption `check-crits`, default `replay`;
-  enginecheck.ts readingBasis, primaryCritRead): the replay had read those crits from the log (replaycrits.ts:
-  Seething Blood extras at the stab's ms, Wolven Blood layers, values) but the check took none and assumed the crit.
-- **A status's damage that crits fires triggers on crits** (engine events.ts statusCritMatches, landing.ts recordStatus
-  `crits`, asEvents; a replayed status's hit takes its logged crit, reactions.ts reactionEventKeys): Chen's Wolven
-  Blood layers in a9d7 gain one at each crit Lift and fell a layer further behind at each (×1.013 → ×1.044 by 69 s);
-  Lupine Scarlet and MI Security are both on abilityEvent 44 (any crit). Seething Blood and the pistol's kind-filtered
-  triggers don't see it.
-
-**Scoreboard** (`npm run snapshots:update`): development plain 69.7 → 71.8%, mismatch 11.2%, mean |damage error|
-6.8%; hold-out plain 81.0 → 82.1% (one log mixed: plain +65, totals); earlier pending plain 70.2 → 72.9%, mean |damage
-error| 3.5 → 3.4%; verified 78.0 → 78.1%. By operator: Rossi 51.9 → 73.2%, Yvonne 31.9 → 71.2%, Chen 30.2 → 38.8%,
-Pogranichnik 44.1 → 41.9%, Lifeng and the Endministrator unchanged. Better: 0c14, 2fd9, 99fb, abfd, d572, a9d7 (101 →
-177 plain), 3f78, 489c, 5082, 4e5e; mixed 207f, 4a64, 9a80 (totals +0.1–0.4%); worse c4f3 (243 → 223, −2.5 → −2.9%):
-Chen's layers now right, her second Wolven Blood final ends 5 s late in the replay and the hidden-hold placement, which
-reads it as a clock, moves its later units, so the third final and Pogranichnik's hits at 116–146 s read ×1.04 off.
-team-ab: both teams' fights unchanged; examples.json: Rossi's example +0.46% (her Lifts' crits add layers).
-
-**Decisions:** `check-crits` registered as an engine reading so the old classification stays one `--assume` away (the
-value inference is cross-validated at 0.90, not proof); the status crit isn't an assumption (the log shows the layer at
-every crit Lift and none at the others). Status damage counts only for triggers on crits: nothing in the logs says
-whether it counts as a hit for other hit triggers. Left as the check's tolerance: boundary buffs at the hit's ms,
-kit buffs changing within 500 ms, Link the replay can't say, crits no inference reads.
-
-**Next / open:** Pogranichnik's Thermite Cutter and Fervent Morale, both on SP the log doesn't record, behind most of
-Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's Wolven Blood final end (a clock).

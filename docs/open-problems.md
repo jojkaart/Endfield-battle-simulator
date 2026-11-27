@@ -67,7 +67,7 @@ without one, and its damageModifier reaches CheckDamageTypeMask 92 (Arts) only, 
 (1.33 ÷ 1.57) with it, plain without. And 207f ends in a kill the log doesn't flag (no `uncapped` on its last hit):
 its total is 5.7600 × the data's Max HP (stageScaledKill; every capped single-life kill sits within 1.3e-5 of such a
 multiple; 5082 is the other, ×7.6000), so Rossi's ultimate final (1,134,403 against a predicted 1,218,124) is the HP that
-was left. Fixed — docs/journal/2026-11-27-02-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
+was left. Fixed — docs/journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
 
 **Found and fixed (3f78 plain 114 → 151, 0.9 → 0.2%):** Rossi's combo 3 at 50.55 s was placed by its perfect hit
 (frame 29) at 49.59 s, 13 frames before combo 2's window opens (its frame 37); its late hit (frame 227, 15 after the
@@ -117,25 +117,66 @@ her action (autoFinishByAction, `finishWithNextSkillIfNotInherited`). castassemb
 the last logged beat, past the last landing of her casts between (9847: her combo at 27.68 s, hits to 28.80 s with the
 ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
 
+**Fixed: 4d60 43–60 s (Zhuang Fangyi's Sunderblades, 3, 5, 3 strikes against the log's 6, 8, 8) and 4d60 66–71 s
+(Liino's stance out at 66.43 s, its beats to 73.37 s), one cause: the away stretch 27.38–37.00 s is a whole-game pause**
+— docs/journal/2026-11-27-02-away-stretches-a-whole-game-pause-holds-every-timer-a-boss.md (engine assumption
+`pause-holds` `paused`; the "Away stretches" entry below).
+
 **Still possible / left:**
-- **4d60 66–71 s (Liino's stance runs out early):** the replay's stance (−0.80 s, 60 s plus 7.2 s of holds) ends at
-  66.43 s, the log's beats go on to 73.37 s (66.72 and 73.37 s events skipped as presses); the old linger had covered
-  5 s of it (16 plain lost with it). The stance's 60 s on the beats' slower clock: `endFollowsTick` on it tried, wrong
-  (its end then came at a tick, 63.83 s: endedWithTick); a logged beat past the run as "still on" is the next try.
-- **4d60 43–60 s (Zhuang Fangyi's Sunderblades):** the log's battle skills strike 6, 8, 8 times at 42.98, 48.74,
-  52.82 s, the replay's 3, 5, 3: Electrification on the enemy from her combo at 37.00 s (the log's lane 36.998–43.175 s,
-  consumed at 43.0 s: 3 blades). The replay's Electrification from Perlica (21.37 s) runs out at 30.73 s, the log's
-  lasts to 37.00 s across the enemy-away stretch 27.37–37.00 s (no hit by anyone), so her combo's forced Electrification
-  has nothing to build on (level 0). Candidate: enemy-side statuses held while the enemy is away (`holds --why
-  status:` shows no other log with a status across a stretch: undecided); else a refresh the replay misses.
-- Rossi's combo 3 in 3f78 and 207f's total: fixed — docs/journal/2026-11-27-02-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
+- **4d60 69.35–69.84 s (exposed by the pause):** Zhuang Fangyi's hits ×0.857 (assumed): three Xiranflow layers in the
+  replay, one in the log. The two layers from her 43.17 s consumption are listed to 68.77 s, gone by 69.35 s (25.6–26.2 s
+  real for a 25 s layer), but the replay holds them by every stop between (Liino's and Perlica's combos, Arcane's
+  ultimate's 47 frames and her combo: 3.0 s) to 71.17 s. Still possible: its layers on a clock the stops (an ultimate's
+  among them) don't hold; the stop list's holds over-counted there. Its layers are no clock of the placement
+  (`maxStacks`), so `holds --why` doesn't show them: `zmdlogs replay --trace-buff
+  chr_0030_zhuangfy:suit_expend_spell01.spell_dmg`.
+- **4d60 73.37 s:** Zhuang Fangyi's combo ×0.945 (assumed): the replay's stance ATK still on, the log's gone; the
+  End Stance is made at 73.40 s, one frame after the logged event at 73.37 s (INSIDE her combo's uncuttable frames).
+- Rossi's combo 3 in 3f78 and 207f's total: fixed — docs/journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
 - **1d91 (the coordinator's lead):** Arcane's strings fall ×0.965 per step from 53.2 s (−3.5, −7.1, −10.6% at 53, 56.5,
   60.3 s) with constant modifiers in the replay: her Medicant layers (wpn_lance_0014, 20 s each) from Liino's beats at
   31.8, 35.0, 38.1, 41.4 s expiring one by one, the beats from 44.9 s giving her none in the game. Still possible: a
   beat's heal triggering Medicant only when it heals (Arcane at full HP: no log records HP), or only in range.
-- **8915 7.07–8.90 s (the coordinator's lead):** a Corrosion ramp step and Hot Work's end 0.1–0.3 s early after
-  Liino's and Si's combos pressed together (clock.ts): not looked at.
+- **8915 7.07–8.90 s (the coordinator's lead):** a Corrosion ramp step and Hot Work's end early after Liino's and Si's
+  combos pressed together (stops 7.07–8.00 and 8.10–8.90 s, Si's cast event at 7.94 s). The amounts are at the log's
+  grain: Corrosion applied at 6.795 s (a batch of three hits; Arcane's battle skill event at 6.06 s puts its frame-20
+  hit at 6.73 s) steps to level 2 by 8.776 s in the game and after 9.006 s in the replay, so the game held it at most
+  0.98 s against the stop list's 1.13 s (`zmdlogs worldtime 8915 6.795 8.776`): 0.15 s, 0.08 s from the cast event;
+  the later steps 0.08 s (9.85 s), then 0.00–0.04 s; Hot Work's end ≥ 0.05 s. **Ruled out:** two combos pressed
+  together holding the clocks less than their stops in general: the 16 tick and cast clocks across two combos within
+  0.3 s of each other (or overlapping) and no other stop run late as single combos do (residual median +347 ms, Σ
+  residual ÷ Σ held 0.82, against 94 single-combo rows: +212 ms, 0.86; scripts/probes/combo-hold/combo-pairs.ts).
+  **Still possible:** the placement of the two combos (Liino's hits at 7.94 and 8.46 s are her frames 9 and 33, 0.52 s
+  apart for 0.80 s of frames, against a placed start of 7.07 s; Si's first two hits are batched at 8.564 s, so her
+  frames 17–35 put her start at 8.00 s, not the placed 8.10 s), which moves her stop but not, by the guessed curve, the
+  total hold (an overlap of Liino's ramp with Si's plateau saves about 2 frames); the Corrosion's application time
+  inside its batch. Not built: one log, under the grain.
 - **c6d8 / 8915:** stage factors (main's `stageFactors`, merged 2026-11-27).
+
+## Away stretches: a pause or a phase (2026-11-27)
+
+**Shows:** do the enemy's statuses (and the team's buffs) run on, stop, or something else while the enemy is away (no
+logged hit by anyone for 6 s or more: 31 stretches in 11 development logs)? scripts/probes/away/away-clocks.ts lists,
+per stretch, every clock of the hold placement listed on both sides of it with what it asks past the replay's expiry,
+and each operator's basic string across it.
+**Found and fixed: two kinds, told apart by the clocks, not by the enemy.** 4d60's two stretches (27.38–37.00 and
+117.22–124.45 s, eny_0120_klbear_tower015) are whole-game pauses: Arcane's basic string goes on across both (attack 2
+→ attack 3, no reset after 9.6 and 7.2 s), and every clock spanning them runs past its end by most of the stretch, the
+enemy's and the team's alike (27.38 s: Perlica's Electrification from 21.37 s listed to 37.00 s, 5.9 s past the
+replay's expiry; her weapon's team buff 6.6–8.6 s on each holder; Liino's 20 s Medicant layers listed 30–31 s; Arcane's
+will_dmg 8.1 s). Every other stretch (29: Si's phases in 0c14, 3aa6, 3f78, 4a64, a9d7, d774, de6a, e989;
+eny_0125_fdcentur in 04d4, c3c7; eny_0128_babyents_hdg031 in 9c6e) runs on: its spanning clocks ask −2.8 to +3.2 s
+(0c14's Jade Vessel enemy_vul 0.8 s across 19.9 s, a9d7's Breach −2.7 s across 24.2 s, 4a64's will_dmg −0.9 s across
+22.2 s, c3c7's Xaihi buffs 0.7–1.1 s across 7.4 s), and no string goes on to its next step across one. The enemy's
+statuses don't differ from the team's buffs in either kind. The placement had dropped 4d60's 27.38 s clocks as asking
+past HIDDEN_HOLD_SHARE of their lives; engine assumption `pause-holds`, new default `paused` (holdinputs.ts runBounds,
+holds.ts statusBounds and pausedBound): a run across an away stretch may ask the stretch's length on top of its share,
+and a bound past its share is laid inside the stretch. 8.4 s placed in 27.67–36.46 s; nothing in the other stretches.
+**Ruled out:** an enemy-kind rule (eny_0120_klbear_tower015 is the enemy of 16 other development logs, none with an
+away stretch; the pauses are the player's, mid-string); enemy statuses held apart from the team's buffs (above).
+**Still possible:** a pause no clock spans (nothing to place, and nothing it would change); a pause shorter than 6 s
+(not an away stretch: its clocks keep HIDDEN_HOLD_SHARE, so one asking past it is dropped as before); a boss phase
+that pauses the world in a log not yet imported (the clocks would say so: the rule is the same).
 
 ## Arcane's mismatches after the stage factors (2026-11-26)
 
@@ -174,8 +215,8 @@ stage windows' edges (a window runs to the next one's first hit, so a landing in
 boss's Stagger break (75.59 s, bar 0: roadmap-details' "the Abyss boss's ×0.1 until its Stagger"); 8915's edges sit at
 no logged bar or break, so its phases' cause (the shields' count) stays unread.
 
-**Next check:** `zmdlogs ends 8915 --at 18.0` and the ramp's readings against the two combo stops; a log with two
-combos pressed together and a Corrosion ramp running.
+**Next check:** a log with two combos pressed together and a Corrosion ramp running (8915's lead: at the log's grain,
+pressed-together combos elsewhere run late like single ones; "Zhuang Fangyi's and Liino's mismatches" above).
 
 ## Low plain, low mismatch: Rossi, Chen Qianyu, Yvonne, Lifeng, Pogranichnik, the Endministrator (2026-11-26)
 

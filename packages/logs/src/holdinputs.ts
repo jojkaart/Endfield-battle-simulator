@@ -10,7 +10,7 @@ import {
 import { TARGET_SIDE_ZONES, type LogFixture } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { worldMs, type Placement, type TimeStop } from "./logcasts.ts";
-import { HOLD_BOUND_TOL_MS, notAClock, refreshedIn, RUN_START_MS, type ClockWhy, type HoldBound, type StatusInstance } from "./holds.ts";
+import { gapsWithin, pausedBound, HOLD_BOUND_TOL_MS, notAClock, refreshedIn, RUN_START_MS, type ClockWhy, type Gap, type HoldBound, type StatusInstance } from "./holds.ts";
 import { type ReplayedCast, frameOf } from "./castassembly.ts";
 
 /**
@@ -355,7 +355,7 @@ export function consumedStatuses(kits: readonly OperatorKit[]): Set<string> {
  * after the expiry hold it too once it lasts) and the next hit of the holder without it (at most). Not a run that ends more than 0.4 s before the replay's expiry (a refresh or cut the replay
  * doesn't make: not a clock) or past HIDDEN_HOLD_SHARE of its life.
  */
-export function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; end: number; expired: boolean }[]>, defs: ReadonlyMap<string, KitBuff>, ends: LoggedLaneEnds, stops: readonly TimeStop[], why?: ClockWhy[]): HoldBound[] {
+export function runBounds(kitInstances: ReadonlyMap<string, readonly { start: number; end: number; expired: boolean }[]>, defs: ReadonlyMap<string, KitBuff>, ends: LoggedLaneEnds, stops: readonly TimeStop[], why?: ClockWhy[], paused: readonly Gap[] = []): HoldBound[] {
   const out: HoldBound[] = [];
   const seen = new Set<string>();
   const sec = (ms: number) => (ms / 1000).toFixed(2);
@@ -414,19 +414,20 @@ export function runBounds(kitInstances: ReadonlyMap<string, readonly { start: nu
             v(`ends ${sec(-hi)} s before the replay's expiry (a refresh or cut the replay doesn't make: not a clock)`);
             continue;
           }
-          if (lo > HIDDEN_HOLD_SHARE * (E - S)) {
-            v(`asks ${sec(lo)} s, over HIDDEN_HOLD_SHARE (${HIDDEN_HOLD_SHARE}) of its life (a refresh the replay missed, or a kit's error)`, lo / 1000);
+          const away = gapsWithin(S, r.lastListed, paused);
+          if (lo > HIDDEN_HOLD_SHARE * (E - S) + away) {
+            v(`asks ${sec(lo)} s, over HIDDEN_HOLD_SHARE (${HIDDEN_HOLD_SHARE}) of its life${paused.length ? " and the away stretches inside its run" : ""} (a refresh the replay missed, or a kit's error)`, lo / 1000);
             continue;
           }
           // An instance buff's run later than INSTANCE_LATE_MS with a reapplication on its holder inside it: a refresh in
           // place is likelier than holds. Without one nothing could have refreshed it, so it is a clock like any other.
-          const refresher = def.instances !== undefined && lo > INSTANCE_LATE_MS ? list.find((x) => x.start > w.start && msOfFrame(x.start) <= r.lastListed) : undefined;
+          const refresher = def.instances !== undefined && lo > INSTANCE_LATE_MS + away ? list.find((x) => x.start > w.start && msOfFrame(x.start) <= r.lastListed) : undefined;
           if (refresher) {
             v(`an instance buff's run ${sec(lo)} s late, over INSTANCE_LATE_MS, with a reapplication inside it (${sec(msOfFrame(refresher.start))} s): a refresh in place is likelier than holds`, lo / 1000);
             continue;
           }
           const tag = `run ${g}|${owner} on ${holder} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : "–end"} ms over ${Math.round(E)}`;
-          if (lo > -HOLD_BOUND_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - HOLD_BOUND_TOL_MS, max: Infinity, kind: "run", tag, ex: lo / 1000 });
+          if (lo > -HOLD_BOUND_TOL_MS) out.push(pausedBound({ a: Math.round(S), b: r.lastListed, min: lo - HOLD_BOUND_TOL_MS, max: Infinity, kind: "run", tag, ex: lo / 1000 }, HIDDEN_HOLD_SHARE * (E - S), paused));
           if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "run", tag, ex: hi / 1000 });
           v(lo > -HOLD_BOUND_TOL_MS || off ? `bound: ${tag}` : "no bound (listed only before its expiry, and no later hit of its holder without it)", lo / 1000);
         }
