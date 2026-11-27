@@ -40977,6 +40977,19 @@
     }
    },
    "why": "efsim zmdlogs fit-build (2026-11-26): as exported 0 of 248 landed hits within ±1 (×0.4701 on every ATK hit: basic attacks, combo, ultimate, talent shockwave, his Knock Down and Swordmancer procs alike); weapon level 3 (OBJ Heavy Burden) alone fits 188 of 248, 160 of 167 clean (median ×1.0005). The export (parser v58) has no weapon level. The hits it leaves are his P1 hits (DEF-scaled, ×1.03–1.12, which the weapon's level doesn't move) and a few under timing differences. Not checked against the weapon's skill levels (3, 2, 3): the breakthrough table isn't in the data sources."
+  },
+  {
+   "operator": "chr_0009_azrila",
+   "set": {
+    "weapon": {
+     "skillLevels": [
+      9,
+      9,
+      5
+     ]
+    }
+   },
+   "why": "efsim zmdlogs fit-build --pairs (2026-11-27): as exported 0 of 284 landed hits within ±1 (×1.0226 on every kit hit: basic attacks, battle skill, combo, finisher, her Knock Down and Shatter statuses, the Swordmancer procs; at every damage bonus and with or without her listed Pay the Ferric Price, so her ATK); Exemplar's skill 1 (wpn_attr_main_high) at level 9 for the exported 8 is the one single change of the 124 that gives it (Strength +20 under LYNX Slab's main attribute +26.9%: the attribute bonus 5.521 → 5.646), and alone fits 170 of 284, 125 of 169 clean (median ×1.0000; one factor in [0.99999, 1.00001] fits every clean hit within ±1). Strength 112 → 132 (SkillPatchTable). The best food (Seš'qa Style Fillet, flat ATK) fits 116 of 284; the 24 pairs are two inputs each. The hits it leaves are her talent's layers (×1.061 and ×1.122: one and two more Pay the Ferric Price layers, which the check reads), Purrchena's set and Susceptibility listings and timing. The export (parser v58) has the skill level, not when it was raised: the multi-target fixtures/multi-target/zmdlogs-146d5ae8c480.json (the same build) reads ×1.0226 too."
   }
  ]
 }
