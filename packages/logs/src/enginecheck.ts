@@ -8,7 +8,7 @@
 // replacing them: where they differ is reported (logDifferences). docs/design/data.md, "The log check's rule".
 
 import {
-  ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, ENGINE_ASSUMPTIONS, FPS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
+  ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, readingOf, FPS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
 import { affixesAsChild } from "@efsim/data";
@@ -298,7 +298,7 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
     // Or near one of the two only (engine assumption totals-crits `read`): the crit the value shows, the reading's own error
     // kept (0c14fb3ce77d: Rossi's first ultimate at 25.2–27.7 s, ×1.032 below the log on every stab for Alesh's
     // unlogged weapon layer, its 27.74 s crit of 326,856 counted at expected crits as 250,328).
-    const read = critOnly ? critFromValue(hit.value, primaryDamage, critOnly.predicted, engineReadingOf(c.replay.assume, "totals-crits")) : null;
+    const read = critOnly ? critFromValue(hit.value, primaryDamage, critOnly.predicted, readingOf(c.replay.assume, "totals-crits")) : null;
     if (read !== null) return { readings, primary: primaryDamage, expected: read, totalsCrit: "read", landing };
     try {
       return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, totalsCrit: "expected", landing };
@@ -806,14 +806,14 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // A fight that ends in a kill: its last logged hits are capped at the enemy's remaining HP, whether or not the log
   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
-  const away = awayLeftOutOfTotals(engineReadingOf(c.replay.assume, "enemy-away")) ? awayWindows(fx) : [];
+  const away = awayLeftOutOfTotals(readingOf(c.replay.assume, "enemy-away")) ? awayWindows(fx) : [];
   // Under `absent` up to the stretch's ends, as the replay's enemy is away (enemyAwaySpans): a landing there no logged
   // hit stands for is one the replay didn't hold back (an Arts Burst, a status's tick: 4a64's Nature burst at 29.30 s).
-  const awayEdge = engineReadingOf(c.replay.assume, "enemy-away") === "absent" ? 0 : AWAY_EDGE_MS;
+  const awayEdge = readingOf(c.replay.assume, "enemy-away") === "absent" ? 0 : AWAY_EDGE_MS;
   const isAway = (frame: number) =>
     away.some((w) => (awayEdge === 0 ? frame > Math.round((w.from * 30) / 1000) && frame < Math.round((w.to * 30) / 1000) : (frame * 1000) / 30 > w.from + awayEdge && (frame * 1000) / 30 < w.to - awayEdge));
   // With the replay's enemy away too (enemy-away `absent`), the frames the enemy leaves at: each stretch's first hit's.
-  const leaving = new Set(engineReadingOf(c.replay.assume, "enemy-away") === "absent" ? away.map((w) => Math.round((w.from * 30) / 1000)) : []);
+  const leaving = new Set(readingOf(c.replay.assume, "enemy-away") === "absent" ? away.map((w) => Math.round((w.from * 30) / 1000)) : []);
   let awayLeftOut = 0;
   // The killing blow's frame: the log's, or the replay's landing of a killing hit if sooner (4360: the battle skill's
   // twelve returning lances land in one frame at 119.20 s, the log's eight before the kill end at 119.235 s).
@@ -1025,14 +1025,9 @@ function critFromValue(value: number, nonCrit: number, crit: number, reading: st
  * inferences only add crits), else not.
  */
 export function primaryCritRead(c: EngineCheck, hit: LogHit): boolean {
-  if (hit.crit !== null || engineReadingOf(c.replay.assume, "check-crits") !== "replay") return false;
+  if (hit.crit !== null || readingOf(c.replay.assume, "check-crits") !== "replay") return false;
   const source = c.replay.critSource(hit);
   return source === "shown" || source === "layers" || source === "values";
-}
-
-/** An engine assumption's reading under a replay's `assume` (its default when not set). */
-function engineReadingOf(assume: Readonly<Record<string, string>>, id: string): string | undefined {
-  return assume[id] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === id)?.default;
 }
 
 /**

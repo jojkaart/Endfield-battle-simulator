@@ -4,7 +4,7 @@
 // log shows bounds it: a listed buff's run against the replay's own expiry, an enemy tick series against its period.
 // The replay (buffreplay.ts) then holds the world there once, for every timer.
 
-import { breakHoldFrames, ENGINE_ASSUMPTIONS, FPS, type KitBuff } from "@efsim/engine";
+import { breakHoldFrames, readingOf, FPS, type KitBuff, type Readings } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { worldMs, type TimeStop } from "./logcasts.ts";
 
@@ -249,11 +249,11 @@ export function loggedBreaks(fx: Pick<LogFixture, "hits">): number[] {
  * combo's breaking hit; the breaks inside a combo's slow-down, 4360447193ac 49.14 s, c4f307cd039a 82.65 s,
  * d4fb69b036fe 97.05 s, hits 0.13–0.25 s after). `at` is the break's own frame, `from` the hold's first.
  */
-export function breakHoldStarts(fx: Pick<LogFixture, "hits">, frames: number, assume?: Readonly<Record<string, string>>): { readonly at: number; readonly from: number }[] {
+export function breakHoldStarts(fx: Pick<LogFixture, "hits">, frames: number, assume: Readings | undefined): { readonly at: number; readonly from: number }[] {
   const moments = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
   const frameOf = (ms: number) => Math.round((ms * FPS) / 1000);
   const holdMs = (frames * 1000) / FPS;
-  const atMs = (assume?.["break-hold-place"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "break-hold-place")?.default) === "ms";
+  const atMs = readingOf(assume, "break-hold-place") === "ms";
   return loggedBreaks(fx).map((t) => {
     const i = moments.indexOf(t);
     const [prev, next] = [moments[i - 1], moments[i + 1]];
@@ -267,12 +267,14 @@ const BREAK_EDGE_MS = 1000 / FPS;
 
 /**
  * The engine's holds at the log's Stagger breaks (engine assumption break-hold, timeline/clock.ts breakHold) as time
- * stops: `frames` at scale 0 from each break's hold start (breakHoldStarts), not one inside an ultimate's stop of
- * `stops` (as the engine).
+ * stops: break-hold's frames at scale 0 from each break's hold start (breakHoldStarts, under break-hold-place), not
+ * one inside an ultimate's stop of `stops` (as the engine). `assume`: the replay's readings (round 19: taking the
+ * defaults here measured the engine and these stops under two readings of one variant).
  */
-export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[], frames: number): TimeStop[] {
+export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[], assume: Readings | undefined): TimeStop[] {
+  const frames = breakHoldFrames(assume);
   if (frames <= 0) return [];
-  return breakHoldStarts(fx, frames).flatMap(({ from: f }) => {
+  return breakHoldStarts(fx, frames, assume).flatMap(({ from: f }) => {
     if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) return [];
     return [{ start: f, scales: new Array<number>(frames).fill(0), operator: "", skillId: "stagger-break", kind: null }];
   });
@@ -281,11 +283,11 @@ export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeSto
 /**
  * The bounds an enemy tick series gives (HOLD_SERIES): its chains of consecutive ticks (a gap of half a period to a
  * period and TICK_GAP_MS), each pair's hold and each tick's against its chain's first (a tick's jitter doesn't add up
- * along a chain).
+ * along a chain). `assume`: the replay's readings (break-hold, break-hold-place: the breaks' holds).
  */
-export function tickBounds(fx: Pick<LogFixture, "hits">, placed: readonly TimeStop[], breakFrames = breakHoldFrames()): HoldBound[] {
+export function tickBounds(fx: Pick<LogFixture, "hits">, placed: readonly TimeStop[], assume: Readings | undefined): HoldBound[] {
   // The breaks' holds are the engine's (break-hold), not hidden ones.
-  const stops = [...placed, ...breakStops(fx, placed, breakFrames)];
+  const stops = [...placed, ...breakStops(fx, placed, assume)];
   const series = new Map<string, number[]>();
   for (const h of fx.hits) {
     if (!HOLD_SERIES[h.event]) continue;

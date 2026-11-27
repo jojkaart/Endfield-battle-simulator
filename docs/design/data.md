@@ -475,7 +475,10 @@ replay and the log's listing still disagree.
 
 Readings of the engine's own open rules (control immunity, ...) switch with
 `--assume` (`zmdlogs check --assume`, `scripts/measure.ts --assume`;
-packages/engine/src/timeline/assumptions.ts), as the kits' do.
+packages/engine/src/assumptions.ts, the simulation's; replay-assumptions.ts, the replay's own; their evidence in
+[assumptions.md](assumptions.md)), as the kits' do. Every reader takes the run's readings through `readingOf`
+(`@efsim/engine`): a helper that reads one is handed the replay's `assume`, never left to its default
+(tests/assumption-readers.test.ts traces every read of a log's check and fails a default the run didn't give).
 
 **What the log records** (round 3, 2026-11-18: facts agents measured and
 left in code comments or reports). ZMDLogs' battle detail, as the importer

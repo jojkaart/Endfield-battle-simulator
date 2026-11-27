@@ -5,7 +5,7 @@
 // controlled (controlledFromLog, controlSwaps), each logged cast event's fate (loggedCastFates) and the stops the
 // replay's casts hold (replayedCastStops). Split from buffreplay.ts (improvement round 14).
 
-import { allActions, applyBuff, chanceJumpsOf, hitLandingFrames, pathTwin, skippedHits, takenPathLandings, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
+import { allActions, applyBuff, chanceJumpsOf, hitLandingFrames, pathTwin, skippedHits, takenPathLandings, computeStats, readingOf, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { awayWindows, loggedNames } from "./enginecheck.ts";
 import { buttonVariants, castFrames, excludes, neededBuffs, nominalScale, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
@@ -947,7 +947,7 @@ export function assembleCasts(data: GameData, fx: LogFixture, placement: Placeme
   if (kits.length === 0) return [];
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
   // Engine assumption listed-casts: with `inferred`, the casts the log shows only by a buff one of their hits alone gives.
-  const listedCasts = (assume["listed-casts"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "listed-casts")?.default) === "inferred";
+  const listedCasts = readingOf(assume, "listed-casts") === "inferred";
   const paths = valuePaths(data, kits, fx, listedPaths(data, kits, fx, castsBeforeLog(kits, fx, placement, silentExits(kits, fx, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement))))))))))));
   return listedCasts ? castsFromHitBuffs(kits, fx, paths) : paths;
 }

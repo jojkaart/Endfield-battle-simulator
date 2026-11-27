@@ -99,7 +99,7 @@ export interface SkillTiming {
   /**
    * normalSkillSubType 1: a sub-skill on the battle-skill button, not the battle skill itself (Si's Initial and Final
    * Stroke, Liino's End Stance, Camille's, Mi Fu's and Purrchena's follow-ups). Whether others' CheckSkillType [2]
-   * sees it is the engine assumption battle-sub-skills (timeline/assumptions.ts).
+   * sees it is the engine assumption battle-sub-skills (packages/engine/src/assumptions.ts).
    */
   readonly subSkill?: true;
   /**

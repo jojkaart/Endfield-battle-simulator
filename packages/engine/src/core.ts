@@ -26,4 +26,6 @@ export * from "./triggers.ts";
 export * from "./buffs.ts";
 export * from "./expr.ts";
 export * from "./moments.ts";
+export * from "./assumptions.ts";
+export * from "./replay-assumptions.ts";
 export * from "./timeline.ts";

@@ -100,7 +100,7 @@ describe("placeHolds", () => {
   it("reads a tick series' chain: each pair, and each tick against the chain's first", () => {
     const hit = (t: number) => ({ t, event: "buff_common_burning_status", operator: "x", effects: [], boundaryEffects: [] });
     // Ticks at 1, 2, 3.5, 4.5 s: one hold of 0.5 s between the second and the third.
-    const bounds = tickBounds({ hits: [1000, 2000, 3500, 4500].map(hit) } as never, []);
+    const bounds = tickBounds({ hits: [1000, 2000, 3500, 4500].map(hit) } as never, [], undefined);
     const p = placeHolds(bounds, { end: 5000 });
     expect(p.total).toBeGreaterThan(300);
     expect(p.total).toBeLessThan(400);
@@ -120,9 +120,11 @@ describe("placeHolds", () => {
     // With no hold (`none`), every hold at its ms.
     expect(breakHoldStarts(fx, 0, moments).every((b) => b.from === b.at)).toBe(true);
     // The default (`ms`): every hold at its break's ms, the tick bounds' stops (breakStops) too; none without a hold.
-    expect(breakHoldStarts(fx, 14).every((b) => b.from === b.at)).toBe(true);
-    expect(breakStops(fx, [], 14).map((s) => s.start)).toEqual([f(10000), f(20000)]);
-    expect(breakStops(fx, [], 0)).toEqual([]);
+    expect(breakHoldStarts(fx, 14, undefined).every((b) => b.from === b.at)).toBe(true);
+    expect(breakStops(fx, [], { "break-hold": "14f" }).map((s) => s.start)).toEqual([f(10000), f(20000)]);
+    expect(breakStops(fx, [], { "break-hold": "none" })).toEqual([]);
+    // The stops follow break-hold-place as the replay does (round 19: tickBounds took the defaults under a variant).
+    expect(breakStops(fx, [], { "break-hold": "14f", ...moments }).map((s) => s.start)).toEqual([f(10000), f(20105 - (14 * 1000) / FPS)]);
   });
 });
 

@@ -22,7 +22,7 @@ import { breakHold, holdNewStatuses, operatorClockDue } from "./clock.ts";
 /** Whether a Stagger dealt broke the bar (dealPoise's `staggered` event). */
 const broken = (r: { readonly events: readonly BattleEvent[] }) => r.events.some((e) => e.type === "staggered");
 import { windowKey } from "./timing.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 
 /** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
 function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {

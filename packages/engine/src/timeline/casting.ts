@@ -13,7 +13,7 @@ import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Sche
 import { DIVE, ENERGY, JUMP, linkValue, SP } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
 import { pathSlowdowns, slowDown } from "./clock.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spAt, spCostAt, spGrantOf } from "./resources.ts";
 import { chainAfter, windowKey } from "./timing.ts";
 import { situationAt } from "./situation.ts";

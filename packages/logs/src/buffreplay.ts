@@ -20,7 +20,7 @@
 // file is the one named here.
 
 import {
-  activeAt, advance, allActions, damageOptions, ENGINE_ASSUMPTIONS, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
+  activeAt, advance, allActions, damageOptions, readingOf, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
   type GameData, type KitHit, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -278,7 +278,7 @@ export const ENEMY_HP_UNKNOWN = "enemy HP unknown";
  */
 export function unknownFacts(data: GameData, fx: LogFixture, assume: Readonly<Record<string, string>> = {}): ReadonlyMap<string, readonly string[]> {
   const out = new Map<string, string[]>();
-  const hp = loggedEnemyHp(data, fx, assume["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
+  const hp = loggedEnemyHp(data, fx, readingOf(assume, "enemy-hp"));
   if (hp?.length) return out;
   for (const b of fx.team) {
     const kit = effectiveKit(data, b);
@@ -300,7 +300,7 @@ export interface ReplayOptions {
   readonly reactionLevels?: TimelineScenario["loggedReactionLevels"];
   /**
    * Readings of open assumptions to replay under (TimelineOptions.assume): the kits' and the engine's own
-   * (timeline/assumptions.ts, e.g. control-immunity), for measuring a reading on the logs. Absent: the defaults.
+   * (packages/engine/src/assumptions.ts, e.g. control-immunity), for measuring a reading on the logs. Absent: the defaults.
    */
   readonly assume?: Readonly<Record<string, string>>;
   /**
@@ -349,8 +349,7 @@ export function targetLosses(kits: readonly OperatorKit[], fx: LogFixture, assum
   for (const kit of kits) {
     for (const def of kit.buffs) {
       if (!def.targetCheck || def.target !== "enemy") continue;
-      const a = (kit.assumptions ?? []).find((x) => x.id === def.targetCheck?.assumption);
-      const reading = assume?.[def.targetCheck.assumption] ?? a?.default ?? "kept";
+      const reading = readingOf(assume, def.targetCheck.assumption, kit.assumptions ?? []);
       if (reading !== "away" && reading !== "listed") continue;
       const names = new Set(loggedNames(def));
       // Its listings (a boundary effect at a run's own start says nothing of its end), in time order.
@@ -412,7 +411,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // With the casts that hit nothing the log needs (missedCasts), added below.
   let casts: readonly ReplayedCast[] = logged;
   // Engine assumption hidden-holds: with `log`, the buffs the log lists past their expiry run on to its end (heldToLoggedEnds).
-  const holdsReading = opts.assume?.["hidden-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "hidden-holds")?.default;
+  const holdsReading = readingOf(opts.assume, "hidden-holds");
   const hiddenHolds = holdsReading === "log" || holdsReading === "placed";
   // With `placed` (and `holds`, the placed holds alone), the world holds placed once for every timer (holds.ts), from a first replay without them.
   const placing = holdsReading === "placed" || holdsReading === "holds";
@@ -428,7 +427,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Engine assumption logged-purges: with `log`, the enemy-side kit buffs end where the log shows the enemy shedding
   // the team's debuffs (purgedByLog); with `log-kills`, also at each logged kill of a fight against several targets
   // under one id (killPurges).
-  const purgeReading = opts.assume?.["logged-purges"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "logged-purges")?.default;
+  const purgeReading = readingOf(opts.assume, "logged-purges");
   const purges = purgeReading === "log" || purgeReading === "log-kills" ? [...new Set([...loggedPurges(fx), ...(purgeReading === "log-kills" ? killPurges(fx) : [])])].sort((a, b) => a - b) : [];
   // Kit assumptions on KitBuff.targetCheck: an entity-held debuff ends at its entity's check after the enemy left (targetLosses).
   const losses = targetLosses(kits, fx, opts.assume);
@@ -454,7 +453,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // logged one (tailCuts), and the replay is made again.
   // The earliest first, the replay made again after each (a cut changes what follows: 0c14's Rossi at 35.40 s takes the
   // Vulnerable stack that her 52.04 s battle skill's follow-up needed), at most TAIL_CUT_ROUNDS.
-  const tailsReading = opts.assume?.["unlogged-tails"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "unlogged-tails")?.default ?? "kept";
+  const tailsReading = readingOf(opts.assume, "unlogged-tails");
   const cuts = new Map<ReplayedCast, number>();
   for (let round = 0; main && round < TAIL_CUT_ROUNDS; round++) {
     const next = [...tailCuts(main, fx, placement, tailsReading)].sort((a, b) => a[1] - b[1])[0];
@@ -476,15 +475,15 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // ultimate, held the world 78 frames each in the hold placement.
     const { stops } = replayStops(data, kits, assembled, main.made.map((m) => m.c));
     // Engine assumption pause-holds: with `paused`, a clock's run across an away stretch may ask its length on top of HIDDEN_HOLD_SHARE.
-    const pauseHolds = opts.assume?.["pause-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "pause-holds")?.default;
+    const pauseHolds = readingOf(opts.assume, "pause-holds");
     const paused = pauseHolds === "paused" ? awayWindows(fx) : [];
     const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks, paused);
     // Engine assumption stagger-holds: inside the Stagger, holds only at the combos' stops (holds.ts comboHoldSpans).
-    const staggerHolds = opts.assume?.["stagger-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "stagger-holds")?.default;
+    const staggerHolds = readingOf(opts.assume, "stagger-holds");
     const comboShare = staggerHolds === "combos" ? 0.5 : staggerHolds === "combos-full" ? 1 : 0;
     // Engine assumption pause-holds: with `away` (and `paused`), the away stretches aren't still though a Stagger covers them (holds.ts withoutGaps).
     const staggerStill = main.staggerWindows.map((w) => [msOfFrame(w.start), msOfFrame(Number.isFinite(w.end) ? w.end : frameOf(Math.max(0, ...fx.hits.map((h) => h.t))))] as const);
-    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks, paused), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
+    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks, paused), ...statuses, ...tickBounds(fx, stops, opts.assume), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),
       still: pauseHolds === "away" || pauseHolds === "paused" ? withoutGaps(staggerStill, awayWindows(fx)) : staggerStill,
       ...(comboShare > 0 ? { slow: comboHoldSpans(stops, comboShare) } : {}),
@@ -616,7 +615,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return r ? [{ hit: h, frame: batchedFrame(casts, h) ?? frameOf(h.t), key: `${h.operator}|reaction:${r.kind}|${r.element}` }] : [];
     });
     const free = main.st.hits.filter((h) => h.skillId.startsWith("reaction:"));
-    const pairing = opts.assume?.["status-pairing"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "status-pairing")?.default;
+    const pairing = readingOf(opts.assume, "status-pairing");
     const reading = pairing === "nearest" ? "nearest" : "assignment";
     const { ctx, checkpoints } = main;
     const stateAt = (frame: number): TimelineState => {

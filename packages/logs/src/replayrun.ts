@@ -6,7 +6,7 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, breakHold, breakHoldFrames, ENGINE_ASSUMPTIONS, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
+  activeAt, advance, allActions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -768,13 +768,13 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   let heldUntil: number | null = null;
   let brokenAt: number | null = null;
   const firstBasic = control ? { operator: control.first } : list.find((c) => c.kind === "basic");
-  const enemyHp = loggedEnemyHp(data, fx, opts.assume?.["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
+  const enemyHp = loggedEnemyHp(data, fx, readingOf(opts.assume, "enemy-hp"));
   // Engine assumption kill-gaps: with `absent`, from KILL_EDGE_MS after a logged kill to KILL_EDGE_MS before the next logged hit too.
-  const killReading = opts.assume?.["kill-gaps"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "kill-gaps")?.default;
+  const killReading = readingOf(opts.assume, "kill-gaps");
   const [killStart, killEnd] = killReading === "tight" ? [1000 / FPS, 1000 / FPS] : [KILL_EDGE_MS, KILL_EDGE_MS];
   const killed = killReading === "absent" || killReading === "tight" ? killGaps(fx) : [];
   const enemyAway = [
-    ...enemyAwaySpans(fx, opts.assume?.["enemy-away"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-away")?.default),
+    ...enemyAwaySpans(fx, readingOf(opts.assume, "enemy-away")),
     ...killed.flatMap((w) => {
       const [from, to] = [Math.round(((w.from + killStart) * FPS) / 1000), Math.round(((w.to - killEnd) * FPS) / 1000)];
       return to >= from ? [{ from, to }] : [];
@@ -808,7 +808,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   };
   const ctx = createContext(data, scenario);
   // Engine assumption hitless-presses: with `inferred`, a press the log shows no hit of is made where its listing shows what only it gives.
-  const pressEvidence: PressEvidence | undefined = (opts.assume?.["hitless-presses"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "hitless-presses")?.default) === "inferred" ? { hits: input.hitsInOrder, kitIds: input.kitIds } : undefined;
+  const pressEvidence: PressEvidence | undefined = readingOf(opts.assume, "hitless-presses") === "inferred" ? { hits: input.hitsInOrder, kitIds: input.kitIds } : undefined;
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });

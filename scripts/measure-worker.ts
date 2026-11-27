@@ -110,7 +110,7 @@ const under = assume && Object.keys(assume).length ? { assume } : undefined;
 if (under) {
   // Older commits' replays take no readings: refuse rather than measure the defaults under another name.
   const engine: any = await import(pathToFileURL(join(tree, "packages/engine/src/index.ts")).href);
-  if (typeof engine.allAssumptions !== "function") throw new Error("--assume: this commit's engine has no assumption registry (timeline/assumptions.ts)");
+  if (typeof engine.allAssumptions !== "function") throw new Error("--assume: this commit's engine has no assumption registry (packages/engine/src/assumptions.ts)");
   const known = engine.allAssumptions(data) as { id: string; readings: Record<string, string> }[];
   for (const [id, r] of Object.entries(under.assume)) if (!known.some((a) => a.id === id && r in a.readings)) throw new Error(`--assume ${id}=${r}: no such reading (${known.map((a) => a.id).join(", ")})`);
 }

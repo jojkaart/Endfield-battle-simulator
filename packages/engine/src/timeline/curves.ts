@@ -5,7 +5,7 @@
 // tried with `measure --variant combo-curve=<r>` rather than a patch of the compiler (round 13's backlog point 4).
 
 import type { GameData, SkillData } from "../model.ts";
-import { ENGINE_ASSUMPTIONS } from "./assumptions.ts";
+import { readingOf } from "../assumptions.ts";
 
 /** The combo slow-down's curve name in the data (every combo's global TimeDilationAction). */
 export const COMBO_CURVE = "ComboSkill";
@@ -25,15 +25,15 @@ export function curveScales(at: (t: number) => number, frames: number): number[]
 }
 
 const byReading = new WeakMap<GameData, Map<string, GameData>>();
-const readingOf = new WeakMap<GameData, { readonly raw: GameData; readonly reading: string }>();
+const curveOf = new WeakMap<GameData, { readonly raw: GameData; readonly reading: string }>();
 
 /**
  * The game data with every ComboSkill slow-down resampled under the readings' combo-curve (the data itself under its
  * default, `guess`, or when it already is that reading's). Memoised per data and reading: one copy per variant.
  */
 export function withCurveReading(data: GameData, assume: Readonly<Record<string, string>> | undefined): GameData {
-  const reading = assume?.["combo-curve"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "combo-curve")?.default ?? "guess";
-  const known = readingOf.get(data);
+  const reading = readingOf(assume, "combo-curve");
+  const known = curveOf.get(data);
   const raw = known?.raw ?? data;
   if (known?.reading === reading) return data;
   if (reading === "guess") return raw;
@@ -50,6 +50,6 @@ export function withCurveReading(data: GameData, assume: Readonly<Record<string,
   }
   const out: GameData = { ...raw, skills };
   memo.set(reading, out);
-  readingOf.set(out, { raw, reading });
+  curveOf.set(out, { raw, reading });
   return out;
 }

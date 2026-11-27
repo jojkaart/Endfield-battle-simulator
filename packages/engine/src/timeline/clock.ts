@@ -7,7 +7,7 @@ import { rampElapsed, type EnemyStatus } from "../status.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
-import { ENGINE_ASSUMPTIONS, engineReading } from "./assumptions.ts";
+import { engineReading, readingOf } from "../assumptions.ts";
 import { COMBO_CURVE, curveScales } from "./curves.ts";
 
 /**
@@ -92,8 +92,8 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 }
 
 /** The frames a Stagger break holds every clock (engine assumption break-hold: "none" or "<n>f"; 0 for none). */
-export function breakHoldFrames(assume?: Readonly<Record<string, string>>): number {
-  const m = /^(\d+)f/.exec(assume?.["break-hold"] ?? (ENGINE_ASSUMPTIONS.find((a) => a.id === "break-hold")?.default as string));
+export function breakHoldFrames(assume: Readonly<Record<string, string>> | undefined): number {
+  const m = /^(\d+)f/.exec(readingOf(assume, "break-hold"));
   return m ? Number(m[1]) : 0;
 }
 
@@ -303,7 +303,7 @@ export function operatorClockDue(st: TimelineState, operator: string, from: numb
  * the enemy's `controlImmune` (set from the logs per enemy: packages/data/src/enemyFacts.ts). Every other enemy
  * freezes, bosses too (in-game test 104, the owner 2026-11-16: most bosses do; until then every Boss was taken as
  * immune). Rhodagn's five logs with a freezer check the same either way. The engine assumption `control-immunity`
- * (timeline/assumptions.ts) switches the rule: listed (this, the default), bosses, none, all.
+ * (packages/engine/src/assumptions.ts) switches the rule: listed (this, the default), bosses, none, all.
  */
 export function controlImmune(ctx: TimelineContext): boolean {
   if (ctx.scenario.target.controlImmune !== undefined) return ctx.scenario.target.controlImmune;

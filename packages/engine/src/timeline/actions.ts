@@ -14,7 +14,7 @@ import type { Clock, Origin, PendingHit, Stacks, TimelineContext, TimelineState 
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
 import { controlImmune, heldFromNow, holdNewStatuses, rampRunsOn, shiftDebuffs, shiftEnemy, statusesRunOn } from "./clock.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks, triggerSituation } from "./situation.ts";

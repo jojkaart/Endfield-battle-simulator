@@ -12,7 +12,7 @@ import type { ArtsElement } from "../reactions.ts";
 import { FPS } from "../units.ts";
 import type { EnemyAction, TimelineContext, TimelineScenario } from "./state.ts";
 import { DIVE, DODGE, JUMP } from "./rules.ts";
-import { ENGINE_ASSUMPTIONS } from "./assumptions.ts";
+import { ENGINE_ASSUMPTIONS, readingOf } from "../assumptions.ts";
 import { withCurveReading } from "./curves.ts";
 
 /** Operator attributes the timeline reads from the panel, whose default (GameData.attributeDefaults) holds when no line sets them. */
@@ -40,7 +40,7 @@ export function kitAssumptions(data: GameData): readonly (KitAssumption & { read
   return Object.values(data.kits.operators).flatMap((k) => (k.assumptions ?? []).map((a) => ({ ...a, operator: k.operator })));
 }
 
-/** Every open assumption: the kits' (with their operator) and the engine's own (timeline/assumptions.ts, no operator). */
+/** Every open assumption: the kits' (with their operator) and the engine's own (packages/engine/src/assumptions.ts, no operator). */
 export function allAssumptions(data: GameData): readonly (KitAssumption & { readonly operator?: string })[] {
   return [...kitAssumptions(data), ...ENGINE_ASSUMPTIONS];
 }
@@ -59,7 +59,8 @@ function checkReadings(data: GameData, assume: Readonly<Record<string, string>> 
 /** A kit with only the triggers of the chosen readings (the default reading of each assumption not chosen). */
 function underReadings(data: GameData, kit: OperatorKit, assume: Readonly<Record<string, string>> | undefined): OperatorKit {
   if (!kit.triggers.some((t) => t.reading)) return kit;
-  const chosen = (id: string) => assume?.[id] ?? kitAssumptions(data).find((x) => x.id === id)?.default;
+  const known = kitAssumptions(data);
+  const chosen = (id: string) => readingOf(assume, id, known);
   return { ...kit, triggers: kit.triggers.filter((t) => !t.reading || chosen(t.reading.assumption) === t.reading.reading) };
 }
 

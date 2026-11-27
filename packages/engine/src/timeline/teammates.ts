@@ -9,7 +9,7 @@ import { exclusiveUntil, ownHitsLanded } from "./timing.ts";
 import { runTriggers } from "./actions.ts";
 import { castSkill } from "./casting.ts";
 import { schedule } from "./schedule.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 
 /**
  * A teammate's pause after a chain it finished (frames): 6.5 s, set so a teammate attacks the share of its free time
@@ -20,7 +20,7 @@ import { engineReading } from "./assumptions.ts";
  * 3.7 s, mean 5.4 s); the share depends on the fight (the enemy: R² 0.41) and the operator (R² 0.41; ranged ones
  * higher), not on Stagger, parser version or time into the fight. 3.5 s (2026-10-28) was the median of the gaps over
  * 1.5 s alone. The steps themselves come at the chain's windows (the logs: 0.82× the steps' exclusive time). The engine
- * assumption `teammate-pause` (timeline/assumptions.ts) switches it: 6.5s (this, the default) or 3.5s.
+ * assumption `teammate-pause` (packages/engine/src/assumptions.ts) switches it: 6.5s (this, the default) or 3.5s.
  */
 export const TEAMMATE_PAUSE_FRAMES = 195;
 const OLD_PAUSE_FRAMES = 105;

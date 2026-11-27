@@ -68,7 +68,10 @@ describe("efsim assumptions", () => {
   it("lists every open assumption with its readings and default, filtered by a regex", () => {
     const all = assumptionsList(data);
     expect(all).toMatch(/^\d+ open assumption\(s\)/);
-    expect(all).toMatch(/^control-immunity {2}\(the engine \(timeline\/assumptions\.ts\); waits on \d+\)$/m);
+    expect(all).toMatch(/^control-immunity {2}\(the engine \(assumptions\.ts\); waits on \d+\)$/m);
+    expect(all).toMatch(/^hidden-holds {2}\(the log replay \(engine replay-assumptions\.ts\); waits on \d+\)$/m);
+    // The evidence from docs/design/assumptions.md, indented under its reading (round 19).
+    expect(assumptionsList(data, /^break-hold$/)).toMatch(/^ {2}\* 14f: .*\n {6}the Stagger Node's own dilation/m);
     expect(all).toMatch(/^ {2}\* \S+: /m);
     const one = assumptionsList(data, /^buff-in-stop$/);
     expect(one).toMatch(/^1 open assumption/);

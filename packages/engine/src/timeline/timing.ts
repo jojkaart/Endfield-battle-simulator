@@ -16,7 +16,7 @@ import { afterRegen, isStaggered, spAt, spCostAt } from "./resources.ts";
 import { situationAt } from "./situation.ts";
 import { advance, nextEventAfter } from "./advance.ts";
 import { castBound, ofCast, ofKind } from "./schedule.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 
 /**
  * Combo-kind skills of an operator that an `openCombo` with `skills` names:
