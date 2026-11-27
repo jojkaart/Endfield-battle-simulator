@@ -1020,7 +1020,7 @@ describe("timeline: control statuses", () => {
     expect(data.constants.burstDelayFrames?.fire).toBe(30);
     expect(burstAt(false)).toEqual([30]);
     // Its buff doesn't run on time dilation (BuffData useTimeDilationDt false), and a freeze is one: others' time stops
-    // and slow-downs hold it (tests/logcasts.test.ts, dbaee23b801d), as they hold its operator.
+    // and slow-downs hold it (tests/logcasts-landings.test.ts, dbaee23b801d), as they hold its operator.
     expect(burstAt(true)).toEqual([30]);
   });
 
