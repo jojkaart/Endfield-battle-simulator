@@ -379,7 +379,11 @@ targets.ts):
   records every hit that deals damage).
 - **The totals:** a replay landing counts once for each logged hit on
   another target that it stands for (9c6e's second Wanderer: "a landing a
-  teammate's hit's"), each at its own primary reading.
+  teammate's hit's"), each at its own primary reading, where that hit's
+  value fits its target's state: a twin no state fits stays log-only, so a
+  pairing the placement made wrong (7b54 15.80 s: Si's combo final paired
+  with two slugs' slashes, its slots used up by the slashes' twins) isn't
+  counted once more per target.
 Only these fixtures read it (no simulation, no hold-out without the mark),
 and statuses' levels and the Stagger per target, a target's own bursts
 and the shielded slugs' landings are still the one enemy's.

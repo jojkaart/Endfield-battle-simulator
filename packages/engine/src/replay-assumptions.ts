@@ -98,7 +98,7 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
     default: "targets",
     readings: {
       one: "as one target: every target's debuffs on the replay's one enemy, a kill sheds them all (logged-purges `log-kills`), a kill gap holds the enemy away (the check until 2026-11-27)",
-      targets: "per target (packages/logs targets.ts): each logged hit on a target (a landing's twins on others, else the alive target its value fits), each target its own debuffs (an instance it got kept to its expiry, one it was read without never later, an open one decided by the first hit only one choice fits) and a kill only its own; the replay's enemy keeps the debuffs at kills and stays through a kill gap with targets left (severalTargets.fromStart), whose landings the totals leave out; a landing counts once per target its logged hits are on",
+      targets: "per target (packages/logs targets.ts): each logged hit on a target (a landing's twins on others, else the alive target its value fits), each its own debuffs and kill; the replay's enemy keeps the debuffs at kills and stays in a kill gap with targets left; a landing counts once per target whose hit fits",
       "targets-once": "as `targets`, but the totals count a landing once, as for one target (its logged hits on other targets log-only)",
       "targets-gaps-away": "as `targets`, but a kill gap holds the replay's enemy away whatever targets are left",
     },

@@ -93,4 +93,19 @@ describe("several targets in the slug logs", () => {
     expect(verdictUnder({})).toBe("plain");
     expect(verdictUnder(ONE)).toBe("fallback");
   });
+
+  // 9c6e: two Wanderers, Typhoeus's shots and bursts logged twice at one ms; per target a landing stands for each
+  // fitting twin, so less of the fight is log-only ("a landing a teammate's hit's"), and the shares still add up.
+  it("counts 9c6e's landings once per target whose hit fits them", async () => {
+    const { engineReport } = await import("../packages/logs/src/logcheck.ts");
+    const { totalsShares } = await import("../packages/logs/src/enginecheck.ts");
+    const fx = fixture("9c6e");
+    const shares = (assume: Readonly<Record<string, string>>) => {
+      const replay = logBuffReplay(data, fx, { assume });
+      return totalsShares(fx.hits, engineReport(data, fx, replay, engineHits(data, fx, replay)).totals);
+    };
+    const [per, once] = [shares({}), shares({ "several-targets": "targets-once" })];
+    expect(per.logOnly).toBeGreaterThan(once.logOnly + 0.02);
+    expect(per.matched + per.replayOnly + per.logOnly).toBeCloseTo(per.error, 6);
+  });
 });

@@ -828,14 +828,17 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const sim = { damage: 0, perOperator: {} as Record<string, number>, perKind: {} as Record<string, number>, hits: 0, statusHits: 0, crits: 0, known: 0, staggered: 0, last: 0 };
   const matched = new Map([...primary].map(([h, p]) => [p.landing, { hit: h, predicted: p.predicted }]));
   // In a fight read per target (fightTargets), a landing stands for one logged hit on each target it reached: those
-  // on other targets than the matched one's count it again, each at its own reading (9c6e's second Wanderer).
+  // on other targets than the matched one's count it again, each at its own reading (9c6e's second Wanderer), where
+  // that hit's value fits its target's state (`fits`): one no state fits stays log-only, a pairing the placement may
+  // have made wrong not counted once more per target (7b54 15.80 s: Si's combo final paired with two slugs' slashes,
+  // its slots used up by the slashes' twins).
   const targets = fightTargets(c);
   const onOthers = new Map<LandedHit, { hit: LogHit; predicted: number }[]>();
   if (targets && landingPerTarget(fx, c.replay.assume)) {
     for (const [h, p] of primary) {
       const first = matched.get(p.landing);
       const seen = [first, ...(onOthers.get(p.landing) ?? [])].map((x) => (x ? targets.of.get(x.hit)?.target : undefined));
-      if (first && first.hit !== h && !seen.includes(targets.of.get(h)?.target)) onOthers.set(p.landing, [...(onOthers.get(p.landing) ?? []), { hit: h, predicted: p.predicted }]);
+      if (first && first.hit !== h && targets.of.get(h)?.how === "fits" && !seen.includes(targets.of.get(h)?.target)) onOthers.set(p.landing, [...(onOthers.get(p.landing) ?? []), { hit: h, predicted: p.predicted }]);
     }
   }
   // Landings of logged hits without a reading (Fixed DMG: Si's Artful Intent burst) are still that hit's: a hit the log
