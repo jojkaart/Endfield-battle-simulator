@@ -47148,5 +47148,14 @@
    "operator": "chr_0006_wolfgd",
    "skill": "chr_0006_wolfgd_combo_skill"
   }
+ ],
+ "buildOverrides": [
+  {
+   "operator": "chr_0024_deepfin",
+   "set": {
+    "attributeNodes": 2
+   },
+   "why": "efsim zmdlogs fit-build (2026-11-27): as exported 0 of 33 landed hits within ±1 (×0.9745 on every kit hit: basic attacks, combo, ultimate and a reaction alike); attribute nodes 2 alone fits 32 of 33, 13 of 13 clean (median ×1.0003): chr_0024_deepfin_5 missing, which CharGrowthTable gives favorability 300, trust the export doesn't record (as Si's in fixtures/pending/zmdlogs-0c14fb3ce77d.json and Perlica's in fixtures/pending/zmdlogs-fc63a2001251.json). The other single changes within 0.1% of the ATK are ruled out by the log or less likely: his weapon's skill 3 at level 2 (×0.9742) would make Thermite Cutter's team ATK 0.06 a layer, the log lists 0.08 (level 4, as exported); the weapon at level 86 (×0.9739) fits fewer. The hit it leaves is a combo under Ardelia's listed Susceptibility at another value."
+  }
  ]
 }

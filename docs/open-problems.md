@@ -1078,6 +1078,26 @@ shares of the off error at that code):**
     level 3 alone fits 188 of 248, 160 of 167 clean. 04d4 plain 185 → 376, mismatch 833 → 616, per-hit 17.9 → 6.5%
     (its total +2.1 → −3.0%: the over-prediction had hidden a deficit; Snowshine's ×0.962 is one part). Not checked
     against the weapon's skill levels (3, 2, 3): the breakthrough table isn't in the data sources.
+  - **04d4 Catcher's P1 strikes ×1.027: fixed 2026-11-27, a percentage of DEF covers his talent's DEF**
+    (docs/journal/2026-11-27-16-ember-alesh-and-catcher-s-mismatches-two-build-fits-and-def.md). Every strike (300 + 5 × DEF) read DEF 231.5 = 160 × 1.252 +
+    31.2: OBJ Heavy Burden's DEF +25.2% (skill 3 level 3, formulaItem 6) of the panel line alone, Resilient Defense's
+    31.2 (1.2 × ⌊Will ÷ 10⌋, formulaItem 5) after it. The game sums a buff's add-slot points before the percentage:
+    (160 + 31.2) × 1.252 = 239.4 fits every strike (bound ×[1.02649, 1.02786] of the old reading, ×1.02697 the
+    new). Engine buffs.ts buffAttr; Catcher 35 → 15 mismatches. Left: his ultimate's hits and strikes under
+    Purrchena's listed set DMG and Susceptibility (×1.091, the listing's), and his ATK hits at ×1.0005 (bound
+    [1.00023, 1.00080]: Will ≥ 267 for the export's 266.4, one point the logs can't place).
+  - **04d4 Ember ×1.0226: fixed 2026-11-27, Exemplar's skill 1 at level 9** (fixture buildOverrides; exported 8).
+    Under the screen's 3% (60% tight), so never a candidate. One factor in [1.02263, 1.02265] fits every clean hit
+    within ±1, at every damage bonus and with or without her listed talent, so ATK: her attribute bonus
+    5.521 → 5.646, Strength +25; skill 1's Strength 112 → 132 under LYNX Slab's main attribute +26.9% is the only
+    single change of fit-build's 124. Ember 310 → 9 mismatches in 04d4; the 9 left are Exemplar's Physical DMG
+    layers and Purrchena's listed buffs. The same build in multi-target 146d (no buildOverrides there).
+  - **9847 Avywenna (35 of 106 mismatch): not her kit, not a build** (2026-11-27). 12 are the fight-wide stretch
+    135.25–141.87 s ×1.043 (`zmdlogs offsets --all`), 10 team-wide; of her own 13, 11 are her combo's and
+    ultimate's lance-back hits at 64.76 and 135.25 s (×1.033, ×1.043) under Liino's listed Medicant layers
+    (buff_wpn_lance_0014_damageup ×3 and ×7, the kit's max_stack 4: the listing counts more layers than the buff
+    keeps) beside the replay's Bonekrushing Smash (suit_attri01, not listed), 2 her combo at 57.64 s and ultimate at 131.44 s. A lead for
+    Liino's Medicant layers (the roadmap's 1d91 item), not Avywenna's kit; her 4360 has 2 mismatches.
   - **04d4 Snowshine ×0.9624: still open, narrowed.** (2026-11-26, combo hold and replay: **ruled out** her
     operator level, potential, weapon skill levels 1 and 2 and each pairing of them, scratch scan on computeStats: levels
     74 and 75 bracket it at ×0.9596 and ×0.9656, P0–P3 ×0.988, the weapon's skill 1 at levels 1–3 ×0.971–0.990 in steps
@@ -1102,6 +1122,15 @@ shares of the off error at that code):**
     146d is the same build. What no log records (her gear's lines, favorability) is the player's screen, not the
     owner's: leave it as the fixture's offset.) (Round 16: `efsim zmdlogs fit-build 04d4 --operator Snowshine --pairs`
     is the same search from the build as read: no single change, 26 pairs of 7,268, 7 distinct ATK values.)
+    (2026-11-27, Ember's and Snowshine's mismatches: **narrowed to one number.** One factor in [0.96232, 0.96258]
+    fits all 157 of her clean hits within ±1: her attribute bonus 3.325 → 3.200, exactly −0.125 (Strength −25, or
+    −15 and Will −25, …). **Ruled out:** an element resistance (Cryo 23 would give ×0.9625, but her physical basic
+    attacks read the same ×0.962 as her Cryo skill hits); every build of attribute nodes 0–3, weapon level 40–90
+    and weapon skill 1 at 1–9 (scratch scan on computeStats) but one with three changes (no nodes, level 89, skill 1
+    at 7: ×0.96237), and none of fit-build's pairs is in the bound with fewer. So no build with a precedent fits
+    (the fixes in this round, Ember's skill 1 and Alesh's nodes, are single changes); Snowshine stays out of scope
+    as a build the logs don't name, OFFSETS_EXPLAINED's entry. **Still possible:** a gear line or favorability as
+    above; the same player's Ember reads +0.125 exactly too, a coincidence of the 0.005 / 0.002 grain.)
   - **7e19 Ember ×1.096: half the check, half her talent's layers.** (1) The check dropped her listed Pay the Ferric
     Price (+0.09 ATK, talent 2, on `attacked`, so its state is the log's) as if it were one of Pogranichnik's two
     Thermite Cutter layers (+0.09 ATK each): loggedEntries matches an unjudged buff's entry against any engine
@@ -1642,7 +1671,8 @@ enemy facts list reaction statuses, not physical ones (scratch check,
   their own (4e5e 12219's one exception open), so nothing to scale.
 - Ember's status hits in 04d4 are ×1.0226 at AI 0 and 12 alike (Knock
   Down and Shatter): AI-independent, the ×1.023 her other hits there have
-  too (accuracy plan: Ember low in every log, uniformly per build).
+  too (accuracy plan: Ember low in every log, uniformly per build). Her
+  ATK: Exemplar's skill 1 at 9 (fitted 2026-11-27, 04d4's buildOverrides).
 - Multi-target logs (10df, 8273) leave their Breach hits as mismatches
   (a9d7's "fight-wide factor" was its team's food: fixed 2026-11-24, "Fight totals").
 
@@ -2156,7 +2186,9 @@ Mi Fu's and Rossi's ratio is 1.1125–1.1130 whatever their other zones.
 - An enemy-side physical term of eny_0124_kltdcap_hdg027 only (no other
   log has physical hits on it; 1d91's tower016 variant has none).
 - Per-log operator factors on Hard 15 and hdg005 (Akekuri's, Alesh's,
-  Estella's buffs), untested.
+  Estella's buffs), untested. (2026-11-27: Hard 15's two are builds,
+  attribute nodes: 012a's Akekuri 0, 4e36's Alesh 2, ×0.9745 on every hit,
+  fixture buildOverrides; Estella's hdg005 left.)
 - Ember's own ×1.044: her ATK ~6% high in the engine (×0.9386 after the
   ×1.1125); P2's attributes (+3.8% ATK) don't fit. Aurora ×0.655
   (whatever the zones); Purrchena is level 1 in 99fb (a build input).
@@ -4034,7 +4066,8 @@ logs outrank Zero Sanity's older in-game values.
 - Da Pan's only log (multi-target 10df): ×1.25 on half his hits and on
   Pogranichnik's in the same fight.
 - 04d4: Catcher's weapon at level 3 (fitted 2026-11-26, buildOverrides), Ember ×1.0226 (as
-  in 146d); Ember ×1.0444 in Hard 27's pair, none in 7e19.
+  in 146d; fitted 2026-11-27, Exemplar's skill 1 at 9); Ember ×1.0444 in Hard 27's pair (fitted, weapon level
+  80), none in 7e19.
 - c3c7: Xaihi's hits all ×0.337.
 
 **Still possible:** build inputs the export doesn't give (weapon levels,
@@ -4717,7 +4750,7 @@ bound builders there were another agent's).
   engine, which the damage doesn't show (seen before the lance fix: recheck).
 - From the roadmap: Snowshine ×0.96
   (04d4), Liino ×1.031 (92b4) offsets; 3aa6's Stagger at 145.6 s; Xaihi's Amp timing (b6aa); Last
-  Rite's weapon buff (b6aa); Ember low by one factor. (bdf2's Si combo
+  Rite's weapon buff (b6aa); Ember low by one factor (fixed 2026-11-27: build fits in every log). (bdf2's Si combo
   finisher ×1.456: closed 2026-11-14, see "Buffs a cast consumes".)
 - b7b3: Tangtang's waterspouts from 15927 ms are ×1.13 the log's in the
   replay (11060 logged against 12495), as before 2026-11-14; it runs the

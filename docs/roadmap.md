@@ -128,7 +128,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   twins on several targets (7b54's Si combos), statuses per target; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
   ends at its entity's check when the enemy leaves (`vesperwings-target-loss` `listed`, e989 plain 260 → 267, one
   hold-out 6.4 → 5.8%), his harasses on the world's clock with their own slow-down (frame 18; d4fb, de6a, c4f3, 7e19
-  better): next his Decisive Assault, logged 0.21–0.44 s after its event against the data's frame 25.
+  better): next his Decisive Assault, logged 0.21–0.44 s after its event against the data's frame 25; the
+  operators mostly mismatching 2026-11-27: build fits under the screen's 3% (04d4's Ember, Exemplar's skill 1 at 9;
+  4e36's Alesh, 2 nodes) and a DEF percentage over the talent's points (Catcher): earlier pending plain 82.3 →
+  84.4%: next Liino's Medicant layers on teammates (9847, listed to ×9), Snowshine's 04d4 build (undecided).
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

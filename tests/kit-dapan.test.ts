@@ -185,7 +185,7 @@ describe("Da Pan's equipment", () => {
     expect(run(scenario({ weapon: BURDEN }), [op("normal_skill"), op("normal_skill")], 200).buffs.some((b) => b.id === "wpn_claym_0015.def")).toBe(false);
   });
 
-  it("OBJ Heavy Burden on Catcher: her ultimate's Weakness gives the DEF buff (its Knock Down refreshes it), and her P1 strikes gain 5 × 0.504 × her DEF line", () => {
+  it("OBJ Heavy Burden on Catcher: her ultimate's Weakness gives the DEF buff (its Knock Down refreshes it), and her P1 strikes gain 5 × 0.504 × her DEF line with her talent's DEF", () => {
     const C = "chr_0020_meurs";
     const catcher: Build = { operator: C, level: 90, promotion: 4, potential: 5, skillLevels: { basic: 12, battle: 12, combo: 12, ultimate: 12 }, weapon: BURDEN, gear: [] };
     const sc: TimelineScenario = { ...scenario(), team: [catcher], startEnergy: { [C]: "full" }, enemyActions: [{ kind: "attack", at: [30] }] };
@@ -203,7 +203,11 @@ describe("Da Pan's equipment", () => {
     // The strike of the hit that applies the Weakness already has it.
     const after = strikes.filter((h) => h.frame >= weakness).map((h) => h.zones.atk);
     const def = ctx.panels.get(C)?.attrs[3];
-    const gain = 5 * 0.504 * ((def?.base ?? NaN) + (def?.add ?? NaN)) * (def?.multiply ?? NaN);
+    // The percentage is of the DEF line with her talent's DEF points (Resilient Defense, formulaItem 5) in it, as the
+    // game's formula sums them (04d4's strikes: ×1.027 without them).
+    const talent = s.buffs.find((b) => b.id === "resilient_defense")?.attrs?.find((a) => a.attr === 3)?.value ?? NaN;
+    expect(talent).toBeGreaterThan(0);
+    const gain = 5 * 0.504 * ((def?.base ?? NaN) + (def?.add ?? NaN) + talent) * (def?.multiply ?? NaN);
     expect(after).toHaveLength(6);
     for (const a of after) expect(a - before).toBeCloseTo(gain, 3);
   });

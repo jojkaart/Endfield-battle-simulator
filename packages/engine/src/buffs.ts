@@ -384,7 +384,13 @@ export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, fr
  * The sum of an attribute that active buffs give an operator (those that
  * don't act on hits directly), strongest per stack group. A percentage
  * (KitBuffModifier.percent) is of the operator's panel `line` for the
- * attribute: value × (base + Σ add) × Π multiply, the panel's percent slot.
+ * attribute with the buffs' points added: value × (base + Σ add + Σ buff
+ * points) × Π multiply, the formula's percent slot over its add slot (the
+ * game's ((base + Σ add) × (1 + Σ percent) + Σ flat) × Π multiply, with the
+ * in-fight buffs in its sums: 04d4's Catcher strikes with his talent's DEF
+ * (formulaItem 5) under his weapon's DEF % (formulaItem 6), ×1.027 when the
+ * percentage left the talent's points out). Every kit buff with points on
+ * an attribute a percentage reaches has them in formulaItem 5.
  * For one landing (`landing`: its filter test and its cast), an entry with
  * filters counts only when they hold for it, and a buff its cast consumed
  * counts too; without it filters aren't judged (readers of a state).
@@ -393,22 +399,17 @@ export function buffAttr(
   buffs: readonly ActiveBuff[], operator: string, frame: number, attr: AttrType, line?: Pick<StatLine, "base" | "add" | "multiply">,
   landing?: { readonly accepts: (f: AttrFilters) => boolean; readonly cast?: number },
 ): number {
-  let sum = 0;
-  const amount = (a: NonNullable<ActiveBuff["attrs"]>[number]) => {
-    if (!a.percent) return a.value;
-    if (!line) throw new EngineError(`a percentage buff on attribute ${attr} needs ${operator}'s panel line for it`);
-    return percentOfLine(a.value, line);
-  };
   const on = buffs.filter((b) => {
     const ofCast = landing !== undefined && b.cast !== undefined && b.cast === landing.cast;
     return activeAt(b, frame) && reaches(b, operator) && ((b.cast === undefined && !b.consumedBy) || ofCast);
   });
-  for (const b of acting(on)) {
-    for (const a of b.attrs ?? []) {
-      if (a.attr !== attr) continue;
-      if (landing && a.filters && !landing.accepts(a.filters)) continue;
-      sum += amount(a);
-    }
+  const entries = acting(on).flatMap((b) => (b.attrs ?? []).filter((a) => a.attr === attr && !(landing && a.filters && !landing.accepts(a.filters))));
+  const points = entries.reduce((s, a) => (a.percent ? s : s + a.value), 0);
+  let sum = points;
+  for (const a of entries) {
+    if (!a.percent) continue;
+    if (!line) throw new EngineError(`a percentage buff on attribute ${attr} needs ${operator}'s panel line for it`);
+    sum += percentOfLine(a.value, { ...line, add: line.add + points });
   }
   return sum;
 }
