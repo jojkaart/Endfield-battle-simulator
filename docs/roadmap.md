@@ -41,8 +41,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   INSIDE gone), a start held by the breaks it ran through a reading
   (`break-held-starts` `held`: fc63, 3aa6; one hold-out −6, not the
   default), the recovery stays 2 s; next the hold-outs' INSIDE, breaks
-  inside a combo's slow-down, 458b 87.47 s, 7b54's same-ms twins on
-  several slugs.
+  inside a combo's slow-down, 458b 87.47 s.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast; Liino's
   Medicant layers on Arcane in 1d91 (beats from 44.9 s give none); Zhuang
@@ -124,8 +123,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   (6339, 7b54 `severalTargets`, a reclassification), a kill purges in such a fight (`logged-purges` `log-kills`),
   status pairs fit by the check's reading, at the logged frame where only that fits (`status-pairing` `check`):
   several targets read per target 2026-11-27 (`several-targets` `targets`: each hit's target by its value, each
-  target its own debuffs and kill; the row plain 54.1 → 68.5%, |damage error| 20.0 → 16.1%): next the placement's
-  twins on several targets (7b54's Si combos), statuses per target; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
+  target its own debuffs and kill; the row plain 54.1 → 68.5%, |damage error| 20.0 → 16.1%); the placement's twins
+  on several targets 2026-11-27 (a batch's alike hits `targets` per landing: 7b54 +26.8 → −3.3%): next Camille's
+  Vesperwings moving to the next slug (a kit hit and a pressless replay landing), statuses per target; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
   ends at its entity's check when the enemy leaves (`vesperwings-target-loss` `listed`, e989 plain 260 → 267, one
   hold-out 6.4 → 5.8%), his harasses on the world's clock with their own slow-down (frame 18; d4fb, de6a, c4f3, 7e19
   better): next his Decisive Assault, logged 0.21–0.44 s after its event against the data's frame 25; the
