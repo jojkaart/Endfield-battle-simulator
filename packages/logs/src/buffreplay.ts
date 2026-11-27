@@ -34,7 +34,7 @@ import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatus
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
 import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
-import { type CheckSide, awayWindows, checkSide, killPurges, primaryParts } from "./enginecheck.ts";
+import { type CheckSide, awayWindows, checkSide, killPurges, loggedNames, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
@@ -315,6 +315,78 @@ export interface ReplayOptions {
   readonly holdBounds?: readonly HoldBound[];
 }
 
+/**
+ * How long (ms) before an away stretch the log may stop listing an entity-held debuff (KitBuff.targetCheck) for the
+ * replay to read its end there (reading `listed`): the enemy no longer a target while it is still hit. Si's boss
+ * (eny_0134_jsspsi) leaves 0.2–3.6 s after its second-phase damage share is dealt (3aa6 0.20, e989 1.74, a9d7 3.57 s;
+ * a scratch probe of the cumulative damage, not kept); pending/zmdlogs-e9896c8d02be.json's Vesperwings listed to 69.19 s,
+ * the stretch from 70.93 s.
+ */
+export const TARGET_LOSS_LEAD_MS = 4000;
+
+/** Where an entity-held enemy buff (KitBuff.targetCheck) loses its target: from `frame` its next check ends it. */
+export interface TargetLoss {
+  readonly owner: string;
+  readonly id: string;
+  /** Frames between the entity's checks, from the instance's application. */
+  readonly every: number;
+  readonly frame: number;
+}
+
+/**
+ * The frames at which the replay's entity-held enemy buffs (KitBuff.targetCheck) lose their target, by the reading of
+ * each one's kit assumption: `away`, the frame after each away stretch's last logged hit (enginecheck.ts awayWindows:
+ * the replay's enemy gone, enemy-away); `listed`, the frame of the buff's last listing (its logged names from its
+ * owner) before the stretch where that comes within TARGET_LOSS_LEAD_MS of it, else as `away`; `kept`, none.
+ * pending/zmdlogs-e9896c8d02be.json: Camille's Vesperwings kept through 19.67–43.14 s (no purge: the stretch is longer
+ * than PURGE_GAP_MS) and 70.93–84.83 s, where the log lists none (its 45.29 s and 85.87 s Laevatain hits, Arcane's
+ * 86.65 s Heat burst); under `listed` from 69.19 s, as the log.
+ */
+export function targetLosses(kits: readonly OperatorKit[], fx: LogFixture, assume: Readonly<Record<string, string>> | undefined): TargetLoss[] {
+  const away = awayWindows(fx);
+  if (away.length === 0) return [];
+  const out: TargetLoss[] = [];
+  for (const kit of kits) {
+    for (const def of kit.buffs) {
+      if (!def.targetCheck || def.target !== "enemy") continue;
+      const a = (kit.assumptions ?? []).find((x) => x.id === def.targetCheck?.assumption);
+      const reading = assume?.[def.targetCheck.assumption] ?? a?.default ?? "kept";
+      if (reading !== "away" && reading !== "listed") continue;
+      const names = new Set(loggedNames(def));
+      // Its listings (a boundary effect at a run's own start says nothing of its end), in time order.
+      const listings = fx.hits
+        .filter((h) => [...h.effects, ...h.boundaryEffects.filter((e) => e.since !== h.t)].some((e) => e.source === kit.operator && names.has(e.buff)))
+        .map((h) => h.t)
+        .sort((x, y) => x - y);
+      for (const w of away) {
+        const last = listings.filter((t) => t <= w.from).at(-1);
+        const listed = reading === "listed" && last !== undefined && w.from - last <= TARGET_LOSS_LEAD_MS;
+        out.push({ owner: kit.operator, id: def.id, every: Math.max(1, Math.round(def.targetCheck.every * FPS)), frame: listed ? frameOf(last) : frameOf(w.from) + 1 });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The state with each entity-held enemy buff on at a target loss (targetLosses) inside (st.frame, `frame`] ended at its
+ * entity's first check from there (pinned: the log decides the loss). Its triggers on ending run as on any end.
+ */
+export function lostTargets(st: TimelineState, frame: number, losses: readonly TargetLoss[]): TimelineState {
+  const due = losses.filter((l) => l.frame > st.frame && l.frame <= frame);
+  if (due.length === 0) return st;
+  let changed = false;
+  const buffs = st.buffs.map((b) => {
+    const l = due.find((x) => b.target === "enemy" && b.owner === x.owner && b.id === x.id && b.appliedAt < x.frame && b.expiresAt > x.frame);
+    if (!l) return b;
+    const check = b.appliedAt + Math.ceil((l.frame - b.appliedAt) / l.every) * l.every;
+    if (check >= b.expiresAt) return b;
+    changed = true;
+    return { ...b, expiresAt: check, pinned: true as const };
+  });
+  return changed ? { ...st, buffs } : st;
+}
+
 export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placement, opts: ReplayOptions = {}): BuffReplay {
   const listed = listedWithValues(fx);
   const kits = fx.team.flatMap((b) => {
@@ -358,7 +430,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // under one id (killPurges).
   const purgeReading = opts.assume?.["logged-purges"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "logged-purges")?.default;
   const purges = purgeReading === "log" || purgeReading === "log-kills" ? [...new Set([...loggedPurges(fx), ...(purgeReading === "log-kills" ? killPurges(fx) : [])])].sort((a, b) => a - b) : [];
-  const held = (st: TimelineState, frame: number) => purgedByLog(heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs), frame, purges);
+  // Kit assumptions on KitBuff.targetCheck: an entity-held debuff ends at its entity's check after the enemy left (targetLosses).
+  const losses = targetLosses(kits, fx, opts.assume);
+  const held = (st: TimelineState, frame: number) => lostTargets(purgedByLog(heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs), frame, purges), frame, losses);
   const tickEvents: TickEvents = { events: loggedTickFrames(kits, logged), landings: loggedTickLandings(kits, placement), endFollows: endFollowsTick(kits) };
   const shownByHits = shownCrits(kits, fx, placement);
   const byLayers = new Map([...shownByHits, ...layerCrits(kits, fx, placement, shownByHits)]);
