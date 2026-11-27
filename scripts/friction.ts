@@ -15,7 +15,8 @@
 //     also its "Parked" section, the points --park names added at its top as one-line entries (title, where the full
 //     text is), and its "Needs an accuracy or search task" list without the entries that carry a "Closed by" line or
 //     whose first line holds a --drop text (round 16's own report point 1: both were copied by hand); the round adds
-//     its new entries to them. --unpark <words> (repeatable) drops the parked entry whose line holds the words (a
+//     its new entries to them. A "Declined" section (round 20: suggestions declined for good, with why) is carried as
+//     it is, between the two. --unpark <words> (repeatable) drops the parked entry whose line holds the words (a
 //     paragraph left with no entry goes with it) and prints its full text, from the backlog file its paragraph names,
 //     on stderr, for the new backlog's point or accuracy entry (round 20, round 19's own report point 2: a point a
 //     new report brought back was removed by hand).
@@ -146,6 +147,12 @@ function entries(body: readonly string[]): { readonly lines: readonly string[]; 
 
 export const PARKED = /^## Parked\b/;
 export const ACCURACY_LIST = /^## Needs an accuracy or search task/;
+/**
+ * A backlog's "Declined" section: suggestions a round declined for good (round 20: the moved hold-outs' casts by kind
+ * and shift, declined for blindness by the lead), carried into every next backlog as it is (carryLists), so a later
+ * round doesn't rebuild one.
+ */
+export const DECLINED = /^## Declined\b/;
 
 /**
  * The backlog's lists for the next one (carry --lists): its Parked section with `park`'s points added at the top as
@@ -168,6 +175,8 @@ export function carryLists(text: string, file: string, park: readonly number[] =
   out.push("## Parked", "", ...(head.length ? head : ["A new report that hits one brings it back with its full text from there."]));
   if (parkedNow.length) out.push("", `Point${park.length > 1 ? "s" : ""} ${park.join(", ")} of ${file} (full text there under the same number), carried twice without a new report:`, "", ...parkedNow);
   out.push(...rest, "");
+  const declined = section(text, DECLINED);
+  if (declined) out.push(text.split("\n").find((l) => DECLINED.test(l)) as string, ...declined, "");
   const list = section(text, ACCURACY_LIST);
   if (list) {
     const used = new Set<string>();

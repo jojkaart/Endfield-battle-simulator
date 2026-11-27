@@ -89,11 +89,11 @@
 // The hold-outs a run moved also get the replay's decision lines counted by kind on both sides (packages/logs
 // decisionsview.ts: SKIP, TAILCUT, TAILKEPT, JUMPDROP, …), their net changes summed per direction: whether a replay
 // rule acted there, without a log, an operator or a skill named (round 18, the placement-cases report point 2). The
-// reference side is --base's code, else the code that wrote the snapshots, measured for those hold-outs alone. And
-// their replayed casts paired across the two sides (castpairs.ts), summed per direction as counts by cast kind:
-// moved by bucket of shift in frames, made only before, only now (round 20, the break-placement report point 2: a
-// hold-out whose decisions didn't move said nothing of which kind of cast moved, nor how far).
-// With --variant, the plain tree's own summary against the reference comes first (round 20, that report's point 3).
+// reference side is --base's code, else the code that wrote the snapshots, measured for those hold-outs alone. No
+// split of the hold-outs' change by cast, skill, operator or rule kind beyond that (docs/design/tests.md "What a
+// hold-out output may say"; round 20 declined the moved hold-outs' casts by kind and shift).
+// With --variant, the plain tree's own summary against the reference comes first (round 20, the break-placement
+// report point 3).
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
 //                       summary.txt, moved.json (when it was queued, its code, the development logs it moved and
@@ -123,7 +123,7 @@ import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
 import { allLogs, compare, direction, GROUPS, groupOf, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
-import type { CastMark, HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
+import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 type DecisionCounts = Readonly<Record<string, number>>;
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
@@ -436,7 +436,6 @@ async function main(argv: string[]): Promise<number> {
   const holdRows = new Map<string, Map<string, readonly HoldUnit[]>>();
   const sharesBy = new Map<string, Map<string, Shares>>();
   const decisionsBy = new Map<string, Map<string, DecisionCounts>>();
-  const castsBy = new Map<string, Map<string, readonly CastMark[]>>();
   // Per tree and readings (`slot`: a --variant's measurements of the same tree apart).
   const measureTree = async (t: string, label: string, which: readonly string[] = order, readings: Readonly<Record<string, string>> = t === tree ? assume : {}, slot = t) => {
     const got = new Map<string, Entry>();
@@ -450,8 +449,6 @@ async function main(argv: string[]): Promise<number> {
     sharesBy.set(slot, shares);
     const decided = decisionsBy.get(slot) ?? new Map<string, DecisionCounts>();
     decisionsBy.set(slot, decided);
-    const castMarks = castsBy.get(slot) ?? new Map<string, readonly CastMark[]>();
-    castsBy.set(slot, castMarks);
     const start = performance.now();
     // A log new since that commit (an import on this branch): its code reads the measured tree's copy of the fixture.
     const fresh = new Set(t === tree ? [] : which.filter((k) => !existsSync(join(t, "fixtures", k))));
@@ -471,7 +468,6 @@ async function main(argv: string[]): Promise<number> {
       if (a.holds) holds.set(a.key, a.holds);
       if (a.shares) shares.set(a.key, a.shares);
       if (a.decisions) decided.set(a.key, a.decisions);
-      if (a.casts) castMarks.set(a.key, a.casts);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
     }, readings);
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
@@ -572,10 +568,7 @@ async function main(argv: string[]): Promise<number> {
       }
     }
     const decisionRefMap = decisionsBy.get(decisionRef ?? refTree ?? "") ?? new Map<string, DecisionCounts>();
-    const holdAgainst = plain ? "against the plain tree" : baseTree ? `against base ${values.base}` : `against ${refLabel}'s code`;
-    const holdDecisionLines = decisionLines(holdMoved.map((k) => ({ direction: direction(entryOf(fromSnap, k) as Entry, entryOf(after, k) as Entry), before: decisionRefMap.get(k), after: decisionsBy.get(`${tree}#${vi}`)?.get(k) })), holdAgainst);
-    const castRefMap = castsBy.get(decisionRef ?? refTree ?? "") ?? new Map<string, readonly CastMark[]>();
-    const holdCastLines = castShiftLines(holdMoved.map((k) => ({ direction: direction(entryOf(fromSnap, k) as Entry, entryOf(after, k) as Entry), before: castRefMap.get(k), after: castsBy.get(`${tree}#${vi}`)?.get(k) })), holdAgainst);
+    const holdDecisionLines = decisionLines(holdMoved.map((k) => ({ direction: direction(entryOf(fromSnap, k) as Entry, entryOf(after, k) as Entry), before: decisionRefMap.get(k), after: decisionsBy.get(`${tree}#${vi}`)?.get(k) })), plain ? "against the plain tree" : baseTree ? `against base ${values.base}` : `against ${refLabel}'s code`);
     const mixedLines = mixedPerHit(mixed, (refTree && perHit.get(refTree)) || new Map(), perHit.get(`${tree}#${vi}`) ?? new Map());
     const hitLines = values.hits ? hitChanges(moved, (refTree && hitRows.get(refTree)) || new Map(), hitRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
     const holdLines = values.hits ? holdChanges(moved, (refTree && holdRows.get(refTree)) || new Map(), holdRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
@@ -604,7 +597,6 @@ async function main(argv: string[]): Promise<number> {
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...holdDecisionLines,
-      ...holdCastLines,
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
       ...(values.patch !== undefined && values.set.length && vi === 0 ? [`The --set patch (for docs/tried/): ${values.patch}`] : []),
@@ -733,45 +725,6 @@ export function decisionLines(moved: readonly { readonly direction: string; read
   return out;
 }
 
-/** The buckets of a moved cast's shift in frames (castShiftLines). */
-export const SHIFT_BUCKETS: readonly (readonly [string, number])[] = [["1–3 f", 3], ["4–10 f", 10], ["11–30 f", 30], [">30 f", Infinity]];
-
-/**
- * The moved hold-outs' replayed casts (MeasureAnswer.casts) paired across the two sides (castpairs.ts pairCasts: the
- * casts that stay first, then the nearest within MOVED_MAX_MS), summed per direction as counts by cast kind: moved per
- * shift bucket (SHIFT_BUCKETS), made only before, only now. Kinds and counts only: no log, operator, skill or time.
- */
-export function castShiftLines(moved: readonly { readonly direction: string; readonly before: readonly CastMark[] | undefined; readonly after: readonly CastMark[] | undefined }[], against = "against the reference"): string[] {
-  if (!moved.length) return [];
-  const by = new Map<string, { n: number; missing: number; still: number; counts: Map<string, number> }>();
-  const ms = (f: number) => (f * 1000) / 30;
-  for (const m of moved) {
-    const d = by.get(m.direction) ?? { n: 0, missing: 0, still: 0, counts: new Map<string, number>() };
-    by.set(m.direction, d);
-    d.n++;
-    if (!m.before || !m.after) {
-      d.missing++;
-      continue;
-    }
-    const as = (xs: readonly CastMark[]) => xs.map(([key, kind, frame]) => ({ operator: key, skillId: "", kind, frame, start: ms(frame) }));
-    // Same start within half a frame: a cast that didn't move.
-    const p = pairCasts(as(m.before), as(m.after), { same: 1000 / 60 });
-    const add = (k: string) => d.counts.set(k, (d.counts.get(k) ?? 0) + 1);
-    for (const [a, b] of p.moved) {
-      const shift = Math.abs(b.frame - a.frame);
-      add(`${a.kind} moved ${(SHIFT_BUCKETS.find(([, max]) => shift <= max) as readonly [string, number])[0]}`);
-    }
-    for (const c of p.gone) add(`${c.kind} only before`);
-    for (const c of p.added) add(`${c.kind} only now`);
-    if (!p.moved.length && !p.gone.length && !p.added.length) d.still++;
-  }
-  const out = [`The moved hold-outs' replayed casts, ${against} (paired by operator and skill; counts by cast kind: moved per shift in frames, made only before, only now; summed per direction):`];
-  for (const [dir, d] of by) {
-    const parts = [...d.counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([k, n]) => `${k} ${n}`);
-    out.push(`  ${dir} (${d.n}): ${parts.length ? parts.join(", ") : "no cast moved"}${d.still ? ` (${d.still} with every cast where it was: the change is in what the casts do)` : ""}${d.missing ? ` (${d.missing} without casts on a side: that commit's code has none)` : ""}`);
-  }
-  return out;
-}
 
 /** A --set entry: a constant's one-line declaration in a file, set to a value. */
 export interface SetEntry {

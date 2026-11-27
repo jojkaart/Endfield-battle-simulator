@@ -73,10 +73,11 @@ the logs what a press during the hold does, implement and measure; branch worktr
   (01dd011): tests/helpers/readings.ts defaultedReads names each defaulted read's caller (`id ← path:line
   (function)`, readSite); LogBuffReplay carries the placement it was made from, which checkLog, engineHits and
   simulateLog take when given only the replay (one placement of the fight).
-- 2 (The same hold-out moved by every variant, and nothing a blind agent can do about it): done but the breaks and
-  stops near the moved casts (carried: 2026-11-27-backlog-after-round-20.md point 4): f6d4a8f, measure's summary
-  pairs the moved hold-outs' replayed casts across both sides (the worker hashes operator and skill) and counts them
-  by cast kind and shift bucket (castShiftLines), or says every cast stayed (the change is in what they do).
+- 2 (The same hold-out moved by every variant, and nothing a blind agent can do about it): declined (blindness),
+  round 20: the moved hold-outs' casts counted by cast kind and shift (f6d4a8f) were removed at the lead's word (a
+  mechanism-class split of the hold-outs' change, hashed names or not); on the Declined list of
+  docs/friction/2026-11-27-backlog-after-round-20.md, and docs/design/tests.md "What a hold-out output may say" says
+  so.
 - 3 (A variant's numbers must be derived by hand when the reference isn't the plain tree): done (f6d4a8f): with
   `--variant` the plain tree's own summary against the reference comes first.
 - 4 (`--set` takes a string constant only with quotes inside the argument): done (f6d4a8f): measure's usage and

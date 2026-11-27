@@ -72,21 +72,11 @@ export type MeasureAnswer =
        * net changes summed over the moved hold-outs (round 18, the placement-cases report point 2). Kinds and counts only.
        */
       readonly decisions?: Readonly<Record<string, number>>;
-      /**
-       * The replay's made casts as [a hash of operator and skill, the cast's kind, its frame] (where the commit's code
-       * has BuffReplay.made): measure pairs them for the moved hold-outs and prints only counts by kind and by bucket of
-       * shift (round 20, the break-placement report point 2: a placement rule's hold-out loss with no decision moved
-       * said nothing). The hash keeps names out of the parent.
-       */
-      readonly casts?: readonly CastMark[];
       readonly seconds: number;
     }
   | { readonly key: string; readonly placement: string; readonly casts?: readonly string[]; readonly seconds: number }
   | { readonly key: string; readonly negative: readonly NegativeCount[]; readonly seconds: number }
   | { readonly key: string; readonly error: string };
-/** A replayed cast as measure's blind hint reads it (MeasureAnswer.casts): an opaque operator-and-skill key, its kind, its frame. */
-export type CastMark = readonly [key: string, kind: string, frame: number];
-
 /** A fight's TotalsShares (packages/logs enginecheck.ts), as far as measure reads them. */
 export interface Shares {
   readonly error: number;
@@ -125,13 +115,6 @@ if (under) {
   for (const [id, r] of Object.entries(under.assume)) if (!known.some((a) => a.id === id && r in a.readings)) throw new Error(`--assume ${id}=${r}: no such reading (${known.map((a) => a.id).join(", ")})`);
 }
 
-/** The replay's made casts (MeasureAnswer.casts), or undefined where the commit's code lacks BuffReplay.made. */
-function castsOf(replay: any): CastMark[] | undefined {
-  const made = replay?.replay?.made;
-  if (!Array.isArray(made)) return undefined;
-  return (made as any[]).filter((m) => m?.cast && !m.cast.missed).map((m): CastMark => [createHash("sha1").update(`${m.cast.operator}|${m.skillId}`).digest("hex").slice(0, 12), String(m.cast.kind ?? "none"), Number(m.frame)]);
-}
-
 /** The replay's decision lines by kind (MeasureAnswer.decisions), or undefined where the commit's code lacks them. */
 function decisionsOf(fx: any, replay: any): Record<string, number> | undefined {
   if (typeof logs.replayDecisions !== "function" || !replay?.replay) return undefined;
@@ -140,7 +123,7 @@ function decisionsOf(fx: any, replay: any): Record<string, number> | undefined {
   return out;
 }
 
-function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[]; holds?: HoldUnit[]; shares?: Shares; decisions?: Record<string, number>; casts?: CastMark[] } {
+function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[]; holds?: HoldUnit[]; shares?: Shares; decisions?: Record<string, number> } {
   // The snapshots' own computation (packages/logs/src/snapshotentry.ts) where the commit has it; before it, its five calls.
   const own = typeof logs.snapshotEntry === "function" ? logs.snapshotEntry(data, fx, under ?? {}) : undefined;
   const replay = own?.replay ?? (under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx));
@@ -156,8 +139,7 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
   const perHit = { n: errors.length, meanAbs: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : 0 };
   const shares = sharesOf(fx, own, replay, byHit, verdicts);
   const decisions = decisionsOf(fx, replay);
-  const casts = castsOf(replay);
-  const extra = { ...(shares ? { shares } : {}), ...(decisions ? { decisions } : {}), ...(casts ? { casts } : {}) };
+  const extra = { ...(shares ? { shares } : {}), ...(decisions ? { decisions } : {}) };
   if (!withHits) return { entry: { ...counts, totals }, perHit, ...extra };
   // The primary reading's modifiers at each landing, where the commit's code has the calls (round 3 on).
   const modsOf = modifiersAt(fx, replay);

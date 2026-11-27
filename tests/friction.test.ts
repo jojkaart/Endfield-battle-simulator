@@ -92,6 +92,13 @@ describe("friction.ts carry --lists (round 16's own report point 1)", () => {
     expect(() => carryLists(backlog, "b.md", [7])).toThrow(/no point 7/);
   });
 
+  // Round 20 (the lead): a suggestion declined for good stays on every next backlog, so no later round rebuilds it.
+  it("carries the Declined section as it is", () => {
+    const withDeclined = backlog.replace("## Needs an accuracy", "## Declined\n\n- **A split by cast kind** (declined (blindness), round 20): why.\n\n## Needs an accuracy");
+    expect(carryLists(withDeclined, "docs/friction-done/b.md")).toContain("## Declined\n\n- **A split by cast kind** (declined (blindness), round 20): why.\n");
+    expect(carryLists(backlog, "docs/friction-done/b.md")).not.toContain("## Declined");
+  });
+
   // Round 20 (round 19's own report point 2): a parked point a new report brings back leaves the list by an option, its
   // full text from the backlog its paragraph names.
   it("--unpark drops a parked entry (its paragraph too when it was the last) and finds its full text", () => {

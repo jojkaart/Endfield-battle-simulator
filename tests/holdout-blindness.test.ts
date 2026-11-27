@@ -76,7 +76,7 @@ const NOT_PRINTERS: Record<string, string> = {
   groupAggregates: "numbers", sharesAggregate: "numbers", operatorNames: "names", operatorLabel: "an operator", addsKeysOnly: "a boolean",
   snapshotsAt: "reads a ref", isDescribingKey: "a boolean", pairKey: "a key", isHoldoutKey: "the test itself",
   logKeys: "keys for the caller, which filters them", interactLines: "development keys from moved.json (MovedRecord.moved: the hold-outs as a count)",
-  selectLogs: "refuses a hold-out", measureOptions: "options", decisionLines: "kinds and counts, no key", castShiftLines: "cast kinds and counts, no key (its casts hashed in the worker)", isSetEntry: "a boolean",
+  selectLogs: "refuses a hold-out", measureOptions: "options", decisionLines: "kinds and counts, no key", isSetEntry: "a boolean",
   parseSet: "a constant", applySets: "a source", replacementDiff: "a diff", combinedPatch: "a diff", setsProblem: "a constant's problem",
   diffHunks: "a diff", hunkParts: "a diff", readingsProblem: "an assumption's problem", defaultReference: "a commit", referenceNote: "a commit",
   splitGroups: "files", exportedNames: "names", importedNames: "names", importLinks: "files", negativeControl: "the verified logs' counts",

@@ -22,14 +22,14 @@ below ([review-2026-10.md](review-2026-10.md)).
   offset screen by the check's ±1 with `--bound` and fit-build's single
   changes, the by-operator table's largest fight and own split, one
   replay event driver and pin rule, `TimelineContext.replayed`, measure
-  `--several-targets` and the hold-outs' cast shifts, `verify-at
-  --snapshot`, smoke at a snapshot); the backlog
+  `--several-targets`, `verify-at --snapshot`, smoke at a snapshot);
+  the backlog
   ([2026-11-27-backlog-after-round-20.md](friction/2026-11-27-backlog-after-round-20.md),
-  4 points: clocks around a non-cast hold, snapshots:update at queue time,
-  a layered buff's layers, a moved hold-out's casts by the break near
-  them; on its accuracy list a better tail-cut test and a shielded
-  target's landing among the older entries) joins the next round once
-  about five new reports have collected.
+  3 points: clocks around a non-cast hold, snapshots:update at queue time,
+  a layered buff's layers; declined for blindness: a hold-out's change
+  split by cast kind; on its accuracy list a better tail-cut test and a
+  shielded target's landing among the older entries) joins the next
+  round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

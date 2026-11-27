@@ -32,8 +32,9 @@ snapshots:update reads the tree while it runs, which kept this round to docs for
 
 ## What worked well
 
-- tests/holdout-blindness.test.ts refusing an unclassified export of measure.ts: the new castShiftLines had to say
-  why it prints no key before the suite passed.
+- tests/holdout-blindness.test.ts refusing an unclassified export of measure.ts: a new printer had to say why it
+  prints no key before the suite passed (though the lead then removed that one: a split by cast kind is a mechanism
+  class, which the test can't see; docs/design/tests.md now says so).
 - `npm run snapshots:update`'s "keys added only … ×294" line: the describing keys' check was one line to read.
 - `node scripts/team-ab.ts --base <ref>`'s identity check, `measure --several-targets` and `verify-at --snapshot`
   (this round's own) each answered in a minute or two.

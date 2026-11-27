@@ -4,9 +4,10 @@ Task: the points of the reports round 20 read (docs/friction-done/2026-11-27-rou
 didn't do. Each point is complete on its own; the originals are in docs/friction-done/ with an "Outcome (round 20)"
 section. Point 1 is round 19's backlog point 1 (carried once); points 2 and 3 are parked points a new report brought
 back (round 6's point 14, by round 19's own report point 1; round 8's point 1, by the Liino report point 3 and the
-Vesperwings report point 3), each with what round 20 did of it; point 4 is new. Round 19's backlog point 2 (the
-same-listing flag) was closed by round 20. Round 20 had every file to itself. The parked list lost the two brought
-back; the accuracy list gained a better tail-cut test and a shielded target's landing (the last two).
+Vesperwings report point 3), each with what round 20 did of it. Round 19's backlog point 2 (the same-listing flag)
+was closed by round 20. Round 20 had every file to itself. The parked list lost the two brought back; a new Declined
+section holds a suggestion declined for good (carried as it is: scripts/friction.ts carryLists); the accuracy list
+gained a better tail-cut test and a shielded target's landing (the last two).
 
 A branch that closes a point adds a line under it: "Closed by <branch>, <commit>: how".
 
@@ -72,23 +73,19 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
 - **From:** docs/friction-done/2026-11-23-backlog-after-round-8.md point 1 (parked, brought back);
   2026-11-27-liino-damage-medicant.md point 3 (the `differences --layers` view).
 
-## 4. A moved hold-out's casts by the break or stop near them
+## Declined
 
-- **What happened:** the break-placement round measured four shapes of a held-start rule; each moved one hold-out by
-  plain −6 with no decision kind's count moved, so the rule was dropped blind. Round 20 added the moved hold-outs'
-  replayed casts to measure's summary (castShiftLines: by cast kind and shift bucket, paired by a hash of operator
-  and skill), but not what sits near the moved casts: a Stagger break outside a stop, inside a combo's slow-down, at
-  an ultimate's edge.
-- **Cause:** the worker returns the casts' kinds and frames only; the breaks (holds.ts loggedBreaks) and the stops
-  (BuffReplay.appliedStops) aren't in its answer.
-- **Suggestion:** with each CastMark the class of the nearest logged break within 30 frames (none, outside a stop, in
-  a combo's slow-down, in an ultimate's stop, at its edge), counted beside the shift bucket ("combo moved 11–30 f at a
-  break in a combo slow-down 2"); kinds and counts only (tests/holdout-blindness.test.ts).
-- **Needs:** scripts/measure-worker.ts (castsOf), scripts/measure.ts (castShiftLines), tests/measure-parts.test.ts. No
-  verdict moves.
-- **Why it helps:** a placement rule's hold-out loss traced to a class of cast and break, and the rule narrowed
-  instead of dropped.
-- **From:** 2026-11-27-break-placement.md point 2 (the breaks and stops near the moved casts).
+Suggestions declined for good, with why: a later round doesn't rebuild them.
+
+- **A moved hold-out's change split by cast, skill, operator or rule kind** (declined (blindness), round 20;
+  docs/friction-done/2026-11-27-break-placement.md point 2): measure's summary was to count the moved hold-outs'
+  replayed casts by cast kind and shift bucket (and the breaks or stops near them), paired by a hash of operator and
+  skill, for a placement rule that moved one hold-out by −6 plain with no decision kind's count moved. Round 20 built
+  it and the lead had it removed: the standing rule for hold-outs is aggregates only, no per-mechanism-class split and
+  no stable per-hold-out labels; counts of moved casts by kind and shift are a mechanism-class split of the
+  hold-outs' change and point a blind agent at which kind of rule to tune against the hold-outs, hashed names or not
+  (docs/design/tests.md "What a hold-out output may say"). A placement rule's hold-out loss is traced on development
+  logs (`cli-ab.ts <ref> --placement`, `zmdlogs decisions --all`), with the hold-outs' aggregates as the check.
 
 ## Parked
 

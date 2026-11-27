@@ -201,14 +201,7 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   direction ("worse (1): JUMPDROP −3"), against `--base`, the plain tree
   (a variant) or the snapshots' writer's code, measured for those
   hold-outs alone. Kinds and counts, never a log, an operator or a skill:
-  "What a hold-out output may say" below. Round 20 (the break-placement
-  report point 2: four shapes of a placement rule moved one hold-out by
-  −6 plain with no decision kind's count moved) adds the moved hold-outs'
-  replayed casts, paired across the two sides by an operator-and-skill
-  hash the worker makes (no name reaches the parent): per direction, the
-  casts moved by cast kind and shift in frames (1–3, 4–10, 11–30, over
-  30), made only before or only now ("worse (1): combo moved 11–30 f 2"),
-  or "every cast where it was": the change is in what the casts do.
+  "What a hold-out output may say" below.
 - **Two measures that change the same logs** (round 12, cooldown-clock
   report point 1: b7b3 better under each of two changes alone, mixed
   under both): each run writes `moved.json` (when it was queued, its code,
@@ -381,7 +374,12 @@ Never: a hold-out's id or file name, its team, an operator, weapon or gear
 set per log, a split per kit or per mechanism class (the lead, 2026-11-25:
 the classes are small enough to narrow a team), a hit, a time or a value
 of one log. Attribution among the hold-outs stays patch-per-kit measures
-on development logs, with the hold-outs' aggregates as the check.
+on development logs, with the hold-outs' aggregates as the check. No new
+split of a hold-out's change by cast, skill, operator or rule kind: the
+moved hold-outs' replayed casts counted by cast kind and shift (round 20,
+the break-placement report point 2) were built and removed (the lead): such
+a split points a blind agent at which kind of rule to tune against the
+hold-outs, hashed names or not.
 
 How a tool tells a hold-out (round 19, round 18's own report point 1): a
 hold-out has two key forms, `holdout/…` (the snapshot files, measure's
