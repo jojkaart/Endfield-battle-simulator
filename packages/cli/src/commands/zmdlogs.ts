@@ -102,6 +102,9 @@ export default command({
                                           of --assume) changes, both sides and the modifiers only one has, then a
                                           count per change (measure --hits for these logs, no lock; repeatable)
                 [--fixtures-from <file>]  Also the fixtures listed in a file, one per line (# comments)
+                [--layers <owner:id>]     Instead: a layered kit buff per hit, the log's entries of its game buff
+                                          (their lane starts), the replay's layers (its modifiers in the primary
+                                          reading) and the layers the logged value implies, then by the log's count
                 [--same-listing s]        Instead (one fixture): the hit at that moment and the nearest hits with the
                                           very same listing (buff, source, value), with their verdicts and a count by
                                           class: a listing difference that reads plain next door is no cause
@@ -435,6 +438,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "against-lanes": { type: "boolean", default: false },
     "why-kept": { type: "boolean", default: false },
     inflictions: { type: "boolean", default: false },
+    layers: { type: "string" },
     pairs: { type: "boolean", default: false },
     listed: { type: "string" },
     all: { type: "boolean", default: false },
@@ -643,7 +647,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const againstHit = values["against-hit"] !== undefined ? Number(values["against-hit"]) * 1000 : undefined;
       if (againstHit !== undefined && !Number.isFinite(againstHit)) throw new Error("zmdlogs hits --against-hit takes seconds");
       if (againstHit !== undefined && (sameAt !== undefined || values.against.length || values.json || values.listed !== undefined)) throw new Error("zmdlogs hits --against-hit prints text lines alone (no --same-listing, --against, --json or --listed)");
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
+      // --layers: an owner given by its name ("Liino:wpn_lance_0014.atk"): its id (clockview.ts kitBuffKey).
+      const layers = values.layers !== undefined ? { layers: kitBuffKey(data(), values.layers) } : {};
+      if (values.layers !== undefined && (values.json || values.against.length || sameAt !== undefined || againstHit !== undefined)) throw new Error("zmdlogs hits --layers prints text lines alone (no --json, --against, --same-listing or --against-hit)");
+      return hitsReport(data, selection, { ...layers, workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });

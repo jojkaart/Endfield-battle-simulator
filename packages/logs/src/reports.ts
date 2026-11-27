@@ -5,9 +5,9 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
-import type { GameData } from "@efsim/engine";
+import { effectiveKit, type GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
-import { exportHits, exportHitsParallel, filterRecords, formatRecord, recordChanges, zoneDifference, type HitRecord } from "./hitexport.ts";
+import { exportHits, exportHitsParallel, filterRecords, formatRecord, layerLines, layerRows, recordChanges, zoneDifference, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
 import { gameDataCacheKey, mainCheckoutOf, operatorId, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
@@ -92,7 +92,7 @@ export interface RecordFilter {
  * `listed`: only the hits listing a matching buff (effects or boundary), each text line with those entries' sources,
  * sinces and values (round 16, arcane-will report point 1).
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly againstHit?: number; readonly listed?: RegExp; readonly progress: (line: string) => void }): Promise<string> {
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly againstHit?: number; readonly listed?: RegExp; readonly layers?: string; readonly progress: (line: string) => void }): Promise<string> {
   // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
   const assume = opts.assume ?? {};
   const under = Object.keys(assume).length > 0;
@@ -121,6 +121,16 @@ export async function hitsReport(data: () => GameData, sel: LogSelection, opts: 
   if (opts.against && Object.keys(opts.against).length) {
     const other = await collectRecords(data, files, opts.workers, opts, opts.progress, false, { ...assume, ...opts.against });
     return recordChanges(records, other).join("\n");
+  }
+  // --layers: a kit buff's layers, the log's against the replay's and the value's (hitexport.ts layerRows).
+  if (opts.layers) {
+    // The kit buff's game buff (KitBuff.gameBuff) from the first selected fight whose team has its owner.
+    const [owner, id] = opts.layers.split(":", 2) as [string, string];
+    const builds = files.map((f) => readLogFixture(f).team.find((b) => b.operator === owner)).filter((b) => b !== undefined);
+    const def = builds.length ? effectiveKit(data(), builds[0] as (typeof builds)[number])?.buffs.find((d) => d.id === id) : undefined;
+    if (!def) throw new Error(`zmdlogs hits --layers ${opts.layers}: no kit buff ${id} of ${owner} in the selected fights' teams (owner:id, efsim kit <operator>)`);
+    const gameBuff = def.gameBuff ?? null;
+    return layerLines(layerRows(filterRecords(records, opts), opts.layers, gameBuff), opts.layers, gameBuff).join("\n");
   }
   const listed = opts.listed;
   if (listed) {
