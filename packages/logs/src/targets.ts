@@ -142,6 +142,52 @@ export function deathMoves(fx: Pick<LogFixture, "hits">, kits: readonly Operator
   return out.sort((a, b) => a.frame - b.frame);
 }
 
+/** A target's death the replay makes (replayrun.ts, engine targetDies), with the triggers that don't run at it. */
+export interface TargetDeath {
+  readonly frame: number;
+  /** For a trace: the logged kill or move it stands for. */
+  readonly why: string;
+  /** The death moves landing from it (their logged landings pinned). */
+  readonly moves: readonly DeathMove[];
+  /** Kit triggers (`owner:triggerId`) that don't run at it (TargetDeathOptions.except). */
+  readonly except: ReadonlySet<string>;
+  /** The dead target's statuses end with it (target-deaths `statuses`). */
+  readonly endsStatuses: boolean;
+}
+
+/**
+ * The deaths the replay makes (replay assumption target-deaths). `moves` (or a fight not read per target): one at each
+ * death move (deathMoves), as the replay made them from 2026-11-27. `kills` and `statuses`, in a fight read per target
+ * (readsTargets): one at each logged kill before the log's last ms (two kills at one ms one death: the replay's one
+ * enemy), and one at each move no kill is the death of (6339 19.68 s), every kit's targetDeath triggers running there
+ * (Laevatain's passive_enemy absorbing the dead target's Heat as Melting Flame), but an operator whose trigger lands a
+ * hit (Camille's move) runs its targetDeath triggers only at the deaths its landing is logged from: elsewhere its
+ * listener was on another target, or it moved onto a shielded slug, which deals 0 and isn't logged. `statuses`: the dead
+ * target's statuses end with it (6339: each Vesperwings move put Heat on a fresh slug, the replay's one enemy holding
+ * the dead one's and bursting at 21.60, 25.57 and 33.17 s, which the log never shows).
+ */
+export function targetDeaths(fx: Pick<LogFixture, "hits" | "severalTargets">, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> | undefined): TargetDeath[] {
+  const moves = deathMoves(fx, kits);
+  const moveWhy = (m: DeathMove) => `${m.trigger}: its landing logged at ${(m.hit.t / 1000).toFixed(2)} s${m.kill ? `, after the kill at ${(m.kill.t / 1000).toFixed(2)} s` : ""}`;
+  const reading = readingOf(assume, "target-deaths");
+  if (reading === "moves" || !readsTargets(fx, assume)) return moves.map((m) => ({ frame: m.frame, why: moveWhy(m), moves: moves.filter((x) => x.frame === m.frame), except: new Set<string>(), endsStatuses: false }));
+  const frameOf = (ms: number) => Math.round((ms * FPS) / 1000);
+  const lastMs = Math.max(...fx.hits.map((h) => h.t));
+  const kills = new Map<number, LogHit>();
+  for (const h of fx.hits) if (killed(h) && h.t < lastMs && !kills.has(frameOf(h.t))) kills.set(frameOf(h.t), h);
+  const frames = [...new Set([...kills.keys(), ...moves.map((m) => m.frame)])].sort((a, b) => a - b);
+  // The operators whose targetDeath triggers land a hit, and those triggers' keys.
+  const movers = new Map<string, string[]>();
+  for (const kit of kits) if (deathHits(kit).length) movers.set(kit.operator, kit.triggers.filter((t) => t.on.event === "targetDeath").map((t) => `${kit.operator}:${t.id}`));
+  return frames.map((frame) => {
+    const here = moves.filter((m) => m.frame === frame);
+    const except = new Set([...movers].flatMap(([op, keys]) => (here.some((m) => m.operator === op) ? [] : keys)));
+    const kill = kills.get(frame);
+    const why = [...(kill ? [`the kill at ${(kill.t / 1000).toFixed(2)} s`] : []), ...here.map(moveWhy)].join("; ");
+    return { frame, why, moves: here, except, endsStatuses: reading === "statuses" };
+  });
+}
+
 /**
  * Whether a logged cast event is the log's record of a death move (deathMoves), not a press: at the ms (±1) of one of
  * its operator's moves whose key is the event's skill id with a suffix (the entity's CastSkill logged under the skill:

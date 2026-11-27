@@ -29,10 +29,10 @@ commit, and how many logs got better or worse.
 |---|---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 78.5% | 99.3% | 0.0% | 1.6% | 6 | 1 |
 | Development (fixtures/pending, holdout.json `development`) | 29 | 15724 | 84.3% | 92.6% | 4.7% | 1.3% | 28 | 63 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.5% | 93.2% | 5.1% | 5.8% | 9 | 20 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.5% | 93.2% | 5.1% | 5.9% | 9 | 20 |
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 84.4% | 95.4% | 4.4% | 1.2% | 22 | 49 |
-| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 771 | 71.3% | 83.5% | 15.3% | 6.3% | 1 | 16 |
-| All but the hold-outs | 61 | 29035 | 83.8% | 93.7% | 4.8% | 1.6% | 57 | 129 |
+| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 771 | 71.6% | 83.7% | 15.2% | 4.6% | 2 | 16 |
+| All but the hold-outs | 61 | 29035 | 83.9% | 93.7% | 4.8% | 1.5% | 58 | 129 |
 
 ## Where the total's error lives
 
@@ -45,9 +45,9 @@ over |matched|, so the error is in what lands, not in its scale.
 |---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 1.5% | 0.5% | 0.0% | 1 |
 | Development (fixtures/pending, holdout.json `development`) | 29 | 1.3% | 1.1% | 0.4% | 17 |
-| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 1.7% | 2.4% | 4.7% | 9 |
+| Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 1.8% | 2.4% | 4.7% | 9 |
 | Earlier pending (imported before the hold-out split) | 23 | 1.1% | 0.9% | 0.5% | 16 |
-| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 5.6% | 17.8% | 22.9% | 3 |
+| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 5.6% | 16.4% | 19.7% | 3 |
 
 ## By operator (every log but the hold-outs)
 
@@ -75,7 +75,7 @@ total (the `share own … operator <id>` keys): a kit's error is matched, a log 
 | chr_0013_aglina (Gilberta) | 15 | 1174 | 90.5% | 4.5% | 0 | 2.9% | 0.9% | 2.2% | 3.1% | 4.5% | fc63 1.0 | 2.0% | 1.0% |
 | chr_0014_aurora (Snowshine) | 2 | 250 | 9.6% | 88.8% | 0 | 2.0% | 2.0% | 3.6% | 3.8% | 3.3% | 04d4 1.9 | 1.8% | 0.2% |
 | chr_0015_lifeng (Lifeng) | 2 | 260 | 91.5% | 0.4% | 1 | 1.9% | 1.9% | 1.8% | 1.9% | 12.1% | d4fb 1.5 | 0.9% | 2.7% |
-| chr_0016_laevat (Laevatain) | 13 | 1497 | 85.0% | 3.2% | 1 | 6.6% | 1.3% | 3.6% | 1.1% | 53.3% | 7b54 3.2 | 1.7% | 10.2% |
+| chr_0016_laevat (Laevatain) | 13 | 1497 | 85.1% | 3.1% | 1 | 9.0% | 1.3% | 5.0% | 1.1% | 53.3% | 6339 4.9 | 1.7% | 7.8% |
 | chr_0017_yvonne (Yvonne) | 2 | 323 | 73.1% | 0.0% | 0 | 3.3% | 3.3% | 2.7% | 3.3% | 63.4% | abfd 2.3 | 2.3% | 5.5% |
 | chr_0019_karin (Akekuri) | 2 | 202 | 94.6% | 0.0% | 0 | 0.9% | 0.9% | 0.9% | 0.9% | 1.4% | 458b 0.9 | 1.2% | 0.3% |
 | chr_0020_meurs (Catcher) | 1 | 252 | 82.1% | 6.0% | 0 | 0.6% | 0.6% | 0.6% | 0.6% | 5.2% | 04d4 0.6 | 1.0% | 0.4% |
@@ -90,8 +90,8 @@ total (the `share own … operator <id>` keys): a kit's error is matched, a log 
 | chr_0030_zhuangfy (Zhuang Fangyi) | 5 | 1392 | 88.4% | 3.1% | 2 | 0.9% | 1.1% | 0.9% | 1.0% | 86.3% | 4d60 0.3 | 0.6% | 0.4% |
 | chr_0031_mifu (Mi Fu) | 5 | 471 | 92.4% | 0.8% | 8 | 1.2% | 0.7% | 1.2% | 1.7% | 48.1% | d572 0.5 | 0.5% | 0.9% |
 | chr_0032_lizhiyan (Arcane) | 40 | 5688 | 87.5% | 3.5% | 25 | 3.6% | 1.6% | 2.4% | 3.5% | 10.2% | 9c6e 0.6 | 1.8% | 5.8% |
-| chr_0033_camille (Camille) | 10 | 1004 | 94.9% | 1.3% | 1 | 9.1% | 0.4% | 8.6% | 1.9% | 6.3% | 6339 4.0 | 1.6% | 8.6% |
+| chr_0033_camille (Camille) | 10 | 1004 | 94.9% | 1.3% | 1 | 5.0% | 0.3% | 3.6% | 1.9% | 6.3% | 7b54 3.5 | 1.6% | 4.6% |
 | chr_0034_typhoea (Typhoeus) | 12 | 2081 | 83.2% | 6.4% | 15 | 2.1% | 0.8% | 2.2% | 2.1% | 75.5% | 9c6e 1.0 | 1.2% | 3.6% |
 | chr_0035_liino (Liino) | 19 | 1469 | 84.8% | 4.7% | 7 | 8.5% | 3.1% | 6.8% | 8.9% | 3.7% | 0eef 3.0 | 0.8% | 11.9% |
-| chr_0036_jsspsi (Si) | 29 | 3060 | 81.5% | 2.9% | 1 | 3.1% | 0.7% | 4.3% | 1.4% | 40.3% | 6339 1.1 | 2.7% | 2.6% |
+| chr_0036_jsspsi (Si) | 29 | 3060 | 81.5% | 2.9% | 1 | 3.2% | 0.7% | 4.4% | 1.4% | 40.3% | 6339 1.1 | 2.7% | 2.6% |
 | chr_0038_purrche (Purrchena) | 3 | 290 | 63.8% | 29.7% | 12 | 26.0% | 26.0% | 13.2% | 9.4% | 3.5% | 99fb 21.3 | 27.6% | 49.5% |

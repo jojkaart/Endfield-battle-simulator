@@ -129,8 +129,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   target its own debuffs and kill; the row plain 54.1 → 68.5%, |damage error| 20.0 → 16.1%); the placement's twins
   on several targets 2026-11-27 (a batch's alike hits `targets` per landing: 7b54 +26.8 → −3.3%); Camille's
   Vesperwings moving to the next slug 2026-11-27 (engine `targetDeath`, the replay's deaths at logged moves, the move
-  a battle-skill cast `vesperwings-move-cast` `battle`: the row |damage error| 8.3 → 6.3%): next statuses per target,
-  other kits' kill listeners (Arcane's seal, Si's ink); Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
+  a battle-skill cast `vesperwings-move-cast` `battle`: the row |damage error| 8.3 → 6.3%); target deaths
+  2026-11-27 (a death at every logged kill, `target-deaths` `kills`; Laevatain absorbs the dead target's Heat: 6339 −6.3
+  → +0.1%, the row 6.3 → 4.6%; Arcane's listener all disabled): next statuses per target (the design in
+  docs/design/data.md: a second replay pass with each landing's target), Si's ink phantom; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
   ends at its entity's check when the enemy leaves (`vesperwings-target-loss` `listed`, e989 plain 260 → 267, one
   hold-out 6.4 → 5.8%), his harasses on the world's clock with their own slow-down (frame 18; d4fb, de6a, c4f3, 7e19
   better): next his Decisive Assault, logged 0.21–0.44 s after its event against the data's frame 25; the

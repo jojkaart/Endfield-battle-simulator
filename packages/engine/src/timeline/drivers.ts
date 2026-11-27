@@ -4,7 +4,7 @@ import type { Build } from "../build.ts";
 import { evalContext } from "../damage.ts";
 import { EngineError } from "../errors.ts";
 import type { GameData } from "../model.ts";
-import type { BattleEvent } from "../events.ts";
+import type { BattleEvent, KitTrigger } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { NO_STATUS } from "../status.ts";
 import { type DamageMoments, hitsMoments } from "../moments.ts";
@@ -262,10 +262,10 @@ export interface EventLanding {
  * yet pinned landing of trigger `trigger`'s hit `hitId`). `event` makes the event from the state at its frame (its
  * operator, say, the one controlled then).
  */
-export function replayEvent(ctx: TimelineContext, state: TimelineState, frame: number, event: (st: TimelineState) => BattleEvent, landings: readonly EventLanding[] = []): TimelineState {
+export function replayEvent(ctx: TimelineContext, state: TimelineState, frame: number, event: (st: TimelineState) => BattleEvent, landings: readonly EventLanding[] = [], only?: (t: KitTrigger) => boolean): TimelineState {
   const st = advance(ctx, state, frame);
   const before = new Set(st.scheduled);
-  const out = runTriggers(ctx, st, [event(st)], null);
+  const out = runTriggers(ctx, st, [event(st)], null, only);
   if (landings.length === 0) return out;
   const fresh = ofKind(out.scheduled, "hit").filter((h) => !before.has(h) && h.trigger !== undefined);
   const moved = new Map<PendingHit, PendingHit>();
@@ -276,15 +276,32 @@ export function replayEvent(ctx: TimelineContext, state: TimelineState, frame: n
   return { ...out, scheduled: out.scheduled.map((x) => (x.kind === "hit" ? (moved.get(x) ?? x) : x)) };
 }
 
+/** What a target's death does beyond its triggers (targetDies; the log check's replay assumption target-deaths). */
+export interface TargetDeathOptions {
+  /** Kit triggers (`owner:triggerId`) that don't run at this death (an operator's move the log shows elsewhere, or not at all). */
+  readonly except?: ReadonlySet<string>;
+  /**
+   * The dead target's statuses end with it (after its triggers, which read them: Laevatain's absorption of its Heat):
+   * the replay's enemy's infliction, reactions, physical statuses, Vulnerable and controls, and the Arts Bursts still
+   * due on it. Its debuffs (kit buffs on the enemy) stay: which target carries those is the log check's to read.
+   */
+  readonly endsStatuses?: boolean;
+}
+
 /**
  * One of several targets dies at `frame` (the log check's replay: a fight against several targets under one enemy id,
- * packages/logs targets.ts deathMoves): the team's `targetDeath` triggers run (Camille's Vesperwings moving to the next
- * target), by replayEvent. The replay's one enemy stays, with its state: which target carries what is the log check's
- * to read. `landings`: the hits the triggers schedule at their logged frames, as replayCast's (pinned: the log's time
- * has the travel the data doesn't give in it).
+ * packages/logs targets.ts targetDeaths): the team's `targetDeath` triggers run (Camille's Vesperwings moving to the
+ * next target, Laevatain absorbing its Heat), by replayEvent, but those `opts.except` names. The replay's one enemy
+ * stays, its debuffs with it (which target carries what is the log check's to read); with `opts.endsStatuses` its
+ * statuses are the next target's, none. `landings`: the hits the triggers schedule at their logged frames, as
+ * replayCast's (pinned: the log's time has the travel the data doesn't give in it).
  */
-export function targetDies(ctx: TimelineContext, state: TimelineState, frame: number, landings: readonly EventLanding[] = []): TimelineState {
-  return replayEvent(ctx, state, frame, (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings);
+export function targetDies(ctx: TimelineContext, state: TimelineState, frame: number, landings: readonly EventLanding[] = [], opts: TargetDeathOptions = {}): TimelineState {
+  const skip = new Set<KitTrigger>();
+  if (opts.except?.size) for (const [owner, kit] of ctx.kits) for (const t of kit.triggers) if (opts.except.has(`${owner}:${t.id}`)) skip.add(t);
+  const out = replayEvent(ctx, state, frame, (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings, skip.size ? (t) => !skip.has(t) : undefined);
+  if (!opts.endsStatuses) return out;
+  return { ...out, enemy: NO_STATUS, scheduled: out.scheduled.filter((x) => x.kind !== "burst") };
 }
 
 /**

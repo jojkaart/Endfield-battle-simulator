@@ -294,6 +294,29 @@ tree against `one` as variants), the several-targets row only, every other row a
   −3.3 → +21.5%: its 47.2–48.1 s combo reads ×1.26 high on every slug, so each copy adds the error once more; 9c6e
   −11.3 → +7.4%), plain unchanged; not the default
 
+## target-deaths
+
+Read only by the log check's replay (packages/logs targets.ts targetDeaths, replayrun.ts's death steps, engine
+targetDies' TargetDeathOptions), in a fight read per target (several-targets `targets`): 6339 and 7b54 (Hard 33's
+slugs), 9c6e (Hard 31's Wanderers); an unmarked log gets the moves' deaths under every reading. Measured 2026-11-27
+(scratch/measure, the three readings as variants, against 14fe159, with Laevatain's death_absorb in every run): every
+row but several targets unchanged; one hold-out worse under all three alike (|damage error| 5.8 → 5.9%: the one
+unmarked log with a logged Vesperwings move, whose death now also runs the team's other death triggers).
+
+- `moves`: (the replay until 2026-11-27, with Laevatain's absorption at the moves' deaths now) the row plain 71.3 →
+  71.5%, mean |damage error| 6.3 → 4.2%; 6339 −6.3 → +0.1% (the slugs' Heat absorbed at the 20.37, 24.02, 29.26 and
+  31.62 s kills: Camille's moves land on a slug without Heat, no burst at 21.60, 25.57, 33.17 s; Melting Flame 4 at the
+  32.24 s battle skill, so the 35.70 s empowered hit lands)
+- `kills`: (default) plain 71.6%, mismatch 15.3 → 15.2%, one-sided landings 40.7 → 36.1% of a fight (replay-only 17.8
+  → 16.4%, log-only 22.9 → 19.7%), mean |damage error| 4.6%: 7b54 plain 116 → 117, mismatch 82 → 81, per hit closer,
+  −1.2 → −2.3% (Laevatain absorbs the 16.36 and 32.94 s kills' Heat: Si's replay-only 30.50 s burst gone, which an
+  under-prediction of the log-only twins had offset); 6339 as `moves`. The default: every death runs its triggers, as
+  the data has them, where `moves` runs them only where Camille's happen to be logged
+- `statuses`: 6339 +0.1 → −5.0% (its 29.26 s Laevatain combo hit, whose kit hit needs Combustion or Corrosion on its
+  target, finds none: the 24.03 s Combustion the replay's one enemy kept stood for whatever its slug had; the replay-only
+  Combustion ticks at 25.03–28.47 s go), 9c6e plain 314 → 313 (a kill there leaves the other Wanderer's statuses);
+  mean 6.2%
+
 ## hitless-presses
 
 The press may have done nothing (a variant the slot held, a press the game dropped), or landed without its damage
