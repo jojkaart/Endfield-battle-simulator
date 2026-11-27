@@ -21,12 +21,13 @@
 
 import {
   activeAt, advance, allActions, readingOf, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
-  type GameData, type KitHit, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
+  type EventLanding, type GameData, type KitHit, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TargetDeathOptions, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { isRecordedBurst } from "./recordedburst.ts";
 import type { LoggedCast, Placement } from "./logcasts.ts";
 import { loggedStagger } from "./replaysteps.ts";
+import type { ReplayTargets } from "./targets.ts";
 import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StackTrace, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
 import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
@@ -218,6 +219,23 @@ export interface BuffReplay {
    * cost silently: docs/open-problems.md "Team SP"), for the casts that lacked any.
    */
   readonly spTopUps: readonly { readonly frame: number; readonly operator: string; readonly skillId: string; readonly sp: number }[];
+  /**
+   * The targets' deaths the replay made (the final run's death steps, in order: targets.ts targetDeaths), each with its
+   * frame, why, the triggers that didn't run and the target that died (with the statuses per target): DEATH lines.
+   */
+  readonly deaths: readonly ReplayDeath[];
+  /** With the statuses per target (target-statuses `per-target`: the second replay), what it was made with (ReplayOptions.targets). */
+  readonly targets?: ReplayTargets;
+}
+
+/** A target's death the replay made (BuffReplay.deaths). */
+export interface ReplayDeath {
+  readonly frame: number;
+  readonly why: string;
+  readonly death: TargetDeathOptions;
+  /** The landings its triggers' hits were pinned at (the moves' logged hits: their refs, their ms), and their operators. */
+  readonly landings: readonly EventLanding[];
+  readonly operators: readonly string[];
 }
 
 /** A cast the replay made (BuffReplay.made). */
@@ -327,6 +345,11 @@ export interface ReplayOptions {
    * of the hits' damage shows (logcheck.ts logBuffReplay: Corrosion's ramp steps, rampsteps.ts rampBounds).
    */
   readonly holdBounds?: readonly HoldBound[];
+  /**
+   * The statuses per target (target-statuses `per-target`): each logged landing's targets and each kill's, from the
+   * first replay's assignment (logcheck.ts logBuffReplay's second pass; enginecheck.ts replayTargets). Absent: one enemy.
+   */
+  readonly targets?: ReplayTargets;
 }
 
 /**
@@ -720,6 +743,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       const [owner, id, at] = k.split("|") as [string, string, string];
       return { buff: `${owner}:${id}`, appliedAt: Number(at), end: laneEnds.decided.get(k)?.end ?? null, why };
     }),
+    deaths: (main?.steps ?? []).flatMap((s): ReplayDeath[] => (s.event?.death && s.event.why !== undefined ? [{ frame: s.frame, why: s.event.why, death: s.event.death, landings: s.event.landings, operators: s.event.operators ?? [] }] : [])),
+    ...(opts.targets ? { targets: opts.targets } : {}),
     spTopUps: main ? main.made.flatMap((m) => {
       const lack = spCostAt(main.ctx, m.pre, m.c.operator, skillCosts(main.ctx, m.c.operator, m.skillId, m.f), m.f) - spAt(m.pre, m.f);
       return lack > 1e-6 ? [{ frame: m.f, operator: m.c.operator, skillId: m.skillId, sp: lack }] : [];

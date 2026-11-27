@@ -652,7 +652,7 @@ const SCHEDULED_KEY: { readonly [K in Scheduled["kind"]]: KeyRules<Extract<Sched
   action: { ...HEADER_KEY, owner: true, trigger: true, event: eventKey, origin: true, awaited: true, afterHits: true },
   energy: { ...HEADER_KEY, operator: true, amount: true, if: true },
   jump: { ...HEADER_KEY, operator: true, from: true, to: true, end: true, then: true, landing: true },
-  burst: { ...HEADER_KEY, event: true, fromKind: true, fromCast: (i, env) => env.rel(i) },
+  burst: { ...HEADER_KEY, event: true, fromKind: true, fromCast: (i, env) => env.rel(i), target: "a replayed fight's target (TimelineScenario.landingTargets), which no search sets" },
   enemyAction: { ...HEADER_KEY, act: true, target: true, element: true },
   auto: { ...HEADER_KEY, operator: true, step: true },
 };
@@ -753,6 +753,7 @@ const STATE_KEY: KeyRules<TimelineState> = {
   resets: (r, env) => r.filter((x) => x.frame > env.frame),
   // Who applied the infliction's stacks (Infliction.by) is a record nothing in the fight reads.
   enemy: (e) => (e.infliction?.by ? { ...e, infliction: { element: e.infliction.element, stacks: e.infliction.stacks, expiresAt: e.infliction.expiresAt } } : e),
+  targets: "a replayed fight's other targets (TimelineScenario.landingTargets), which no search has",
   // In order (the engine reads the first of several matches in places); a family (loose) doesn't care which came first.
   buffs: (b, env) => {
     const out = b.map((x) => project(x, BUFF_KEY, env));

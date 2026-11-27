@@ -104,6 +104,7 @@ export function createContext(raw: GameData, scenario: TimelineScenario): Timeli
     ...(scenario.loggedCrits || scenario.replayed ? { replayed: true as const } : {}),
     ...(scenario.loggedCrits || scenario.replayed || scenario.keepInputs ? { keepInputs: true as const } : {}),
     ...(scenario.loggedModifiers ? { loggedModifiers: byOperatorEvent(scenario.loggedModifiers) } : {}),
+    ...(scenario.landingTargets ? { landingTargets: { byRef: new Map(scenario.landingTargets.flatMap((x) => (x.ref !== undefined ? [[x.ref, x.targets] as const] : []))), byKey: byOperatorEvent(scenario.landingTargets) } } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
     ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
     ...(inputBuffs ? { inputBuffs: true } : {}),

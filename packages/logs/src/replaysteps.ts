@@ -145,13 +145,16 @@ export interface ReplayEventStep {
   readonly words: string;
   readonly make: (st: TimelineState) => BattleEvent;
   readonly landings: readonly EventLanding[];
-  /** A target's death (engine targetDies): the triggers that don't run at it, and whether its statuses end with it. */
+  /** A target's death (engine targetDies): the triggers that don't run at it, whether its statuses end with it, its target. */
   readonly death?: TargetDeathOptions;
+  /** A death's why (targets.ts TargetDeath.why: the logged kill or move it stands for) and its moves' operators, for BuffReplay.deaths. */
+  readonly why?: string;
+  readonly operators?: readonly string[];
 }
 
 /** A target's death as a replay event (targets.ts targetDeaths: its landings the moves' logged hits). */
-export function deathEvent(frame: number, why: string, landings: readonly EventLanding[], death: TargetDeathOptions = {}): { readonly frame: number; readonly event: ReplayEventStep } {
-  return { frame, event: { words: `a target's death (${why})`, make: (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings, death } };
+export function deathEvent(frame: number, why: string, landings: readonly EventLanding[], death: TargetDeathOptions = {}, operators: readonly string[] = []): { readonly frame: number; readonly event: ReplayEventStep } {
+  return { frame, event: { words: `a target's death (${why})`, why, operators, make: (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings, death } };
 }
 
 /** Runs a log-driven event step at the state's frame: a death by targetDies (its options), any other by replayEvent. */

@@ -132,7 +132,7 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
       if (!controlImmune(ctx)) {
         const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
         const stagger = st.stagger;
-        const frozen = shiftEnemy(st, e.frame, lost);
+        const frozen = shiftEnemy(st, e.frame, lost, false);
         const ramp = engineReading(ctx.scenario, "freeze-ramp");
         const after = ramp === "held" ? frozen : ramp === "runs" ? rampRunsOn(st, frozen) : statusesRunOn(st, frozen);
         st = { ...shiftDebuffs(after, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };

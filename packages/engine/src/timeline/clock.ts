@@ -323,41 +323,49 @@ export function controlImmune(ctx: TimelineContext): boolean {
 /**
  * The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, its
  * stagger, its actions, the end of a freeze: TimelineState.enemyFrozenUntil) runs `n` frames later. Not the debuffs
- * on it (enemy-target buffs): shiftDebuffs.
+ * on it (enemy-target buffs): shiftDebuffs. With several targets' statuses (TimelineState.targets), every target's
+ * (the world's clock holds them all), or the current one's alone with `others` false (a freeze: a control on the
+ * target hit).
  */
-export function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState {
+export function shiftEnemy(st: TimelineState, start: number, n: number, others = true): TimelineState {
   if (n === 0) return st;
   const later = moved(start, n);
-  const e = st.enemy;
   return {
     ...st,
-    enemy: {
-      vulnerable: e.vulnerable ? { ...e.vulnerable, expiresAt: later(e.vulnerable.expiresAt) } : null,
-      physical: e.physical.map((x) => ({ ...x, expiresAt: later(x.expiresAt) })),
-      controls: e.controls.map((x) => ({ ...x, expiresAt: later(x.expiresAt) })),
-      infliction: e.infliction ? { ...e.infliction, expiresAt: later(e.infliction.expiresAt) } : null,
-      statuses: e.statuses.map((x) => ({
-        ...x,
-        expiresAt: later(x.expiresAt),
-        ...(x.nextTickAt !== undefined ? { nextTickAt: later(x.nextTickAt) } : {}),
-        // Its ramp (Corrosion) doesn't advance while time stands still: it resumes n frames later, and stands at what it
-        // had reached until then (ActiveStatus.rampHeld; moving appliedAt alone set it back by the stop at its start:
-        // btl_upload_4d60e7fe92c2 at 73.65 s, Arcane's hit inside Zhuang Fangyi's ultimate stop read a level-4 Corrosion
-        // 2.6 s younger than the log's).
-        ...(x.appliedAt <= start && x.expiresAt > start
-          ? { appliedAt: x.appliedAt + n, ...(x.status === "corrosion" ? { rampHeld: { until: Math.max(start + n, x.rampHeld && x.rampHeld.until > start ? x.rampHeld.until + n : 0), elapsed: rampElapsed(x, start) } } : {}) }
-          : // Sooner (a reset: resetSlowdowns): one applied inside the slow-down, whose timer and ramp start when it ends
-            // (holdNewStatuses), starts that much sooner too.
-            // appliedAt is the ramp's reference there, not an event: no floor.
-            n < 0 && x.appliedAt > start && x.expiresAt > start
-            ? { appliedAt: x.appliedAt + n, ...(x.rampHeld && x.rampHeld.until > start ? { rampHeld: { ...x.rampHeld, until: Math.max(start, x.rampHeld.until + n) } } : {}) }
-            : {}),
-      })),
-    },
+    enemy: shiftedStatuses(st.enemy, start, n),
+    ...(st.targets && others ? { targets: { ...st.targets, others: Object.fromEntries(Object.entries(st.targets.others).map(([k, e]) => [k, shiftedStatuses(e, start, n)])) } } : {}),
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
     // A freeze running at `start` ends that much later (a freeze that overlaps it then counts what it adds: runTriggers).
     enemyFrozenUntil: later(st.enemyFrozenUntil),
     scheduled: shiftClock(st.scheduled, (c) => c === "enemy", start, n),
+  };
+}
+
+/** A target's statuses after `start` running `n` frames later (shiftEnemy). */
+function shiftedStatuses(e: EnemyStatus, start: number, n: number): EnemyStatus {
+  const later = moved(start, n);
+  return {
+    vulnerable: e.vulnerable ? { ...e.vulnerable, expiresAt: later(e.vulnerable.expiresAt) } : null,
+    physical: e.physical.map((x) => ({ ...x, expiresAt: later(x.expiresAt) })),
+    controls: e.controls.map((x) => ({ ...x, expiresAt: later(x.expiresAt) })),
+    infliction: e.infliction ? { ...e.infliction, expiresAt: later(e.infliction.expiresAt) } : null,
+    statuses: e.statuses.map((x) => ({
+      ...x,
+      expiresAt: later(x.expiresAt),
+      ...(x.nextTickAt !== undefined ? { nextTickAt: later(x.nextTickAt) } : {}),
+      // Its ramp (Corrosion) doesn't advance while time stands still: it resumes n frames later, and stands at what it
+      // had reached until then (ActiveStatus.rampHeld; moving appliedAt alone set it back by the stop at its start:
+      // btl_upload_4d60e7fe92c2 at 73.65 s, Arcane's hit inside Zhuang Fangyi's ultimate stop read a level-4 Corrosion
+      // 2.6 s younger than the log's).
+      ...(x.appliedAt <= start && x.expiresAt > start
+        ? { appliedAt: x.appliedAt + n, ...(x.status === "corrosion" ? { rampHeld: { until: Math.max(start + n, x.rampHeld && x.rampHeld.until > start ? x.rampHeld.until + n : 0), elapsed: rampElapsed(x, start) } } : {}) }
+        : // Sooner (a reset: resetSlowdowns): one applied inside the slow-down, whose timer and ramp start when it ends
+          // (holdNewStatuses), starts that much sooner too.
+          // appliedAt is the ramp's reference there, not an event: no floor.
+          n < 0 && x.appliedAt > start && x.expiresAt > start
+          ? { appliedAt: x.appliedAt + n, ...(x.rampHeld && x.rampHeld.until > start ? { rampHeld: { ...x.rampHeld, until: Math.max(start, x.rampHeld.until + n) } } : {}) }
+          : {}),
+    })),
   };
 }
 
