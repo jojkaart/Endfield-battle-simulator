@@ -73,7 +73,7 @@ describe("the replay's decisions", () => {
     const land = (n: number) => ({ frame: 211, n }) as unknown as LandedHit;
     const [l1, l2, l3] = [land(1), land(2), land(3)];
     const of = new Map<LogHit, LandedHit>([[a1, l1], [b1, l2], [a2, l3]]);
-    const replay = fakeReplay({ hits: [l1, l3, l2], deaths: [], landing: (h: LogHit) => of.get(h) ?? { unknown: "none" } });
+    const replay = fakeReplay({ hits: [l1, l3, l2], landing: (h: LogHit) => of.get(h) ?? { unknown: "none" } });
     const batch = replayDecisions(data, replay, fx).filter((x) => x.kind === "BATCH");
     expect(batch.map((x) => [x.t, x.operator, x.text])).toEqual([[7049, "op_a", "the replay landed op_a op_a_combo, op_a op_a_lift, op_b op_b_ult; the log's bars give op_a op_a_combo, op_b op_b_ult, op_a op_a_lift"]]);
     // Without the fixture (zmdlogs replay prints its own BATCH lines), none.
