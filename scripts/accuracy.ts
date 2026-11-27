@@ -329,6 +329,19 @@ export interface OperatorAggregate {
   readonly otherHit: number;
   /** The mean |error| over its fights that aren't stage fights (the `stage` key; null: none with an error). */
   readonly meanWithoutStage: number | null;
+  /**
+   * The fight whose |error| carries the most of the mean (its label, given to perOperator) and how many points of the
+   * mean it is (|error| ÷ fights); null without labels or errors (round 20, the Liino report point 1: 0eef, a 10 s
+   * fight, was 3.0 of her 8.5 points).
+   */
+  readonly largest: { readonly log: string; readonly points: number } | null;
+  /**
+   * The means over its fights of its own matched landings' |error| and of its one-sided landings (% of its own logged
+   * total: the `share own … operator <id>` keys; null where no fight has them): a kit's error is matched, a log
+   * check rule's one-sided.
+   */
+  readonly ownMatched: number | null;
+  readonly ownOneSided: number | null;
 }
 
 /** The median of some numbers (null: none). */
@@ -339,12 +352,18 @@ const median = (xs: readonly number[]) => {
   return v.length % 2 ? (v[m] as number) : ((v[m - 1] as number) + (v[m] as number)) / 2;
 };
 
-/** Per operator, over the given logs: its hits' verdicts and the |error| of its total damage (mean, median, by its share of the fight). */
-export function perOperator(entries: readonly Entry[]): Map<string, OperatorAggregate> {
-  const acc = new Map<string, { logs: number; hits: number; plain: number; mismatch: number; otherHit: number; errors: number[]; unstaged: number[]; weighted: number; weights: number; shares: number[] }>();
-  for (const e of entries) {
+/** The keys of an operator's own split (packages/logs snapshotentry.ts operatorOwnKeys). */
+const ownKeys = (op: string) => ({ matched: `share own matched operator ${op}`, oneSided: `share own one-sided operator ${op}` });
+
+/**
+ * Per operator, over the given logs: its hits' verdicts and the |error| of its total damage (mean, median, by its share
+ * of the fight), its own split, and with `labels` (one per entry) the fight carrying most of its mean.
+ */
+export function perOperator(entries: readonly Entry[], labels?: readonly string[]): Map<string, OperatorAggregate> {
+  const acc = new Map<string, { logs: number; hits: number; plain: number; mismatch: number; otherHit: number; errors: number[]; unstaged: number[]; weighted: number; weights: number; shares: number[]; largest: { log: string; err: number } | null; matched: number[]; oneSided: number[] }>();
+  for (const [i, e] of entries.entries()) {
     for (const [op, c] of operators(e)) {
-      const a = acc.get(op) ?? { logs: 0, hits: 0, plain: 0, mismatch: 0, otherHit: 0, errors: [], unstaged: [], weighted: 0, weights: 0, shares: [] };
+      const a = acc.get(op) ?? { logs: 0, hits: 0, plain: 0, mismatch: 0, otherHit: 0, errors: [], unstaged: [], weighted: 0, weights: 0, shares: [], largest: null, matched: [], oneSided: [] };
       a.logs++;
       a.hits += allHits(c);
       a.plain += sum(c, "plain");
@@ -352,6 +371,11 @@ export function perOperator(entries: readonly Entry[]): Map<string, OperatorAggr
       a.otherHit += otherHits(e, op);
       const d = e[TOTALS]?.[`operator ${op}`];
       const share = e[TOTALS]?.[`share operator ${op}`];
+      const own = { matched: e[TOTALS]?.[ownKeys(op).matched], oneSided: e[TOTALS]?.[ownKeys(op).oneSided] };
+      if (own.matched !== undefined && own.matched !== null) a.matched.push(Math.abs(own.matched));
+      if (own.oneSided !== undefined && own.oneSided !== null) a.oneSided.push(own.oneSided);
+      const label = labels?.[i];
+      if (d !== undefined && d !== null && label !== undefined && (a.largest === null || Math.abs(d) > a.largest.err)) a.largest = { log: label, err: Math.abs(d) };
       if (d !== undefined && d !== null) a.errors.push(Math.abs(d));
       if (d !== undefined && d !== null && !isStage(e)) a.unstaged.push(Math.abs(d));
       if (share !== undefined && share !== null) {
@@ -380,6 +404,9 @@ export function perOperator(entries: readonly Entry[]): Map<string, OperatorAggr
           meanShare: a.shares.length ? a.shares.reduce((s, x) => s + x, 0) / a.shares.length : null,
           otherHit: a.otherHit,
           meanWithoutStage: a.unstaged.length ? a.unstaged.reduce((s, x) => s + x, 0) / a.unstaged.length : null,
+          largest: a.largest && a.errors.length ? { log: a.largest.log, points: a.largest.err / a.errors.length } : null,
+          ownMatched: a.matched.length ? a.matched.reduce((s, x) => s + x, 0) / a.matched.length : null,
+          ownOneSided: a.oneSided.length ? a.oneSided.reduce((s, x) => s + x, 0) / a.oneSided.length : null,
         },
       ]),
   );
@@ -464,7 +491,11 @@ export const operatorLabel = (op: string, names: OperatorNames) => (names.has(op
 /** The scoreboard's text (docs/accuracy.md); `names` labels the by-operator table (operatorNames). */
 export function render(s: Snapshots, names: OperatorNames = new Map()): string {
   const groups = groupAggregates(s);
-  const visible = [...allLogs(s).values()].filter((l) => l.group !== "holdout").map((l) => l.entry);
+  const shown = [...allLogs(s)].filter(([, l]) => l.group !== "holdout");
+  const visible = shown.map(([, l]) => l.entry);
+  // A development log's short id (its first four hex digits), as the views name it.
+  const shortOf = (key: string) => /zmdlogs-([0-9a-f]{4})/.exec(key)?.[1] ?? key;
+  const visibleLabels = shown.map(([k]) => shortOf(k));
   const all = aggregate(visible);
   const row = (label: string, a: Aggregate) =>
     `| ${label} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.matched, a.hits)} | ${pct(a.mismatch, a.hits)} | ${err(a.meanDamageError)} | ${a.within5} | ${a.otherHit} |`;
@@ -509,11 +540,14 @@ export function render(s: Snapshots, names: OperatorNames = new Map()): string {
     "`share operator <id>` key), which a few small totals far off (a 9 s fight's +58%) don't dominate; **Share**: its",
     "mean share of a fight's logged total; **Without stage fights**: the mean over its fights without a stage-wide",
     "effect (the `stage` key: the fixture's stageFactors, a stage status, a stage enemy: packages/logs enginecheck.ts",
-    "stageFight); **As other kit hit**: its hits matched only as their event's other kit hit.",
+    "stageFight); **As other kit hit**: its hits matched only as their event's other kit hit; **Largest**: the fight",
+    "carrying the most of the mean and the points of it that fight is; **Own matched / one-sided**: the means of its",
+    "matched landings' |error| and of its one-sided landings (replay-only and log-only), each as % of its own logged",
+    "total (the `share own … operator <id>` keys): a kit's error is matched, a log check rule's one-sided.",
     "",
-    "| Operator | Fights | Hits | Plain | Mismatch | As other kit hit | Mean \\|damage error\\| | Median | Weighted by share | Without stage fights | Share |",
-    "|---|---|---|---|---|---|---|---|---|---|---|",
-    ...[...perOperator(visible)].map(([op, a]) => `| ${operatorLabel(op, names)} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.mismatch, a.hits)} | ${a.otherHit} | ${err(a.meanDamageError)} | ${err(a.medianDamageError)} | ${err(a.weightedDamageError)} | ${err(a.meanWithoutStage)} | ${a.meanShare === null ? "-" : `${a.meanShare.toFixed(1)}%`} |`),
+    "| Operator | Fights | Hits | Plain | Mismatch | As other kit hit | Mean \\|damage error\\| | Median | Weighted by share | Without stage fights | Share | Largest | Own matched | Own one-sided |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ...[...perOperator(visible, visibleLabels)].map(([op, a]) => `| ${operatorLabel(op, names)} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.mismatch, a.hits)} | ${a.otherHit} | ${err(a.meanDamageError)} | ${err(a.medianDamageError)} | ${err(a.weightedDamageError)} | ${err(a.meanWithoutStage)} | ${a.meanShare === null ? "-" : `${a.meanShare.toFixed(1)}%`} | ${a.largest ? `${a.largest.log} ${a.largest.points.toFixed(1)}` : "-"} | ${err(a.ownMatched)} | ${err(a.ownOneSided)} |`),
     "",
   ];
   return lines.join("\n");
