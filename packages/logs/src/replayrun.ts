@@ -724,11 +724,13 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   const firstBasic = control ? { operator: control.first } : list.find((c) => c.kind === "basic");
   const enemyHp = loggedEnemyHp(data, fx, opts.assume?.["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
   // Engine assumption kill-gaps: with `absent`, from KILL_EDGE_MS after a logged kill to KILL_EDGE_MS before the next logged hit too.
-  const killed = (opts.assume?.["kill-gaps"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "kill-gaps")?.default) === "absent" ? killGaps(fx) : [];
+  const killReading = opts.assume?.["kill-gaps"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "kill-gaps")?.default;
+  const [killStart, killEnd] = killReading === "tight" ? [1000 / FPS, 1000 / FPS] : [KILL_EDGE_MS, KILL_EDGE_MS];
+  const killed = killReading === "absent" || killReading === "tight" ? killGaps(fx) : [];
   const enemyAway = [
     ...enemyAwaySpans(fx, opts.assume?.["enemy-away"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-away")?.default),
     ...killed.flatMap((w) => {
-      const [from, to] = [Math.round(((w.from + KILL_EDGE_MS) * FPS) / 1000), Math.round(((w.to - KILL_EDGE_MS) * FPS) / 1000)];
+      const [from, to] = [Math.round(((w.from + killStart) * FPS) / 1000), Math.round(((w.to - killEnd) * FPS) / 1000)];
       return to >= from ? [{ from, to }] : [];
     }),
   ];
