@@ -80,6 +80,9 @@ describe("kit buffs from the replay of the logged casts", () => {
     // Round 19 (the Camille report point 3): instancesWhy says why there's no answer, a buff the replay doesn't decide too.
     expect(r.replay.instancesWhy({ t: 23600, operator: op }, GAME_BUFF)).toEqual({ unknown: expect.stringMatching(/of one of its changes/) as unknown as string });
     expect(r.replay.instancesWhy({ t: 15000, operator: op }, GAME_BUFF)).toBe(1);
+    // …and the replay's state and damage options at another frame, one handle (round 19, the slug report point 3).
+    expect(r.replay.stateAt(450)?.frame).toBe(450);
+    expect(Array.isArray(r.replay.optionsAt(op, 450)?.modifiers)).toBe(true);
     expect(r.replay.instancesWhy({ t: 15000, operator: op }, "buff_no_such")).toEqual({ unknown: expect.stringMatching(/isn't a game buff the replay decides .*kitWindows/) as unknown as string });
   });
 

@@ -6,7 +6,7 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
+  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -726,8 +726,25 @@ interface ReplayPass {
   readonly held: (st: TimelineState, frame: number) => TimelineState;
 }
 
+/**
+ * A replay run's state at a frame: its latest step at or before it, advanced (pure). The one handle on "the replay's
+ * state at another frame" (round 19, the slug report point 3: the status pairing re-wrote it beside the facts' check);
+ * BuffReplay.stateAt gives it to views.
+ */
+export function runStateAt(run: Pick<ReplayRun, "ctx" | "checkpoints">, frame: number): TimelineState {
+  let cp = run.checkpoints[0] as TimelineState;
+  for (const x of run.checkpoints) if (x.frame <= frame) cp = x;
+  return cp.frame === frame ? cp : advance(run.ctx, cp, frame);
+}
+
+/** The timeline's damage options for `operator` at a frame of a replay run (damageOptions at runStateAt): its modifiers with their sources, Stagger, the situation. */
+export function runOptionsAt(run: Pick<ReplayRun, "ctx" | "checkpoints">, operator: string, frame: number): ReturnType<typeof damageOptions> {
+  const st = runStateAt(run, frame);
+  return damageOptions(run.ctx, st, operator, st.enemy, frame);
+}
+
 /** One replay's run: its record (replayrecord.ts), the casts as made, the states after each step, and what went wrong. */
-interface ReplayRun extends ReplayRecord {
+export interface ReplayRun extends ReplayRecord {
   readonly ctx: TimelineContext;
   readonly st: TimelineState;
   readonly brokenAt: number | null;

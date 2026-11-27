@@ -20,7 +20,7 @@
 // file is the one named here.
 
 import {
-  activeAt, advance, allActions, damageOptions, readingOf, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
+  activeAt, advance, allActions, readingOf, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
   type GameData, type KitHit, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -32,7 +32,7 @@ import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tic
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
-import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
+import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { type CheckSide, awayWindows, checkSide, killPurges, loggedNames, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
@@ -98,6 +98,13 @@ export interface BuffReplay {
   instances(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | null;
   /** As instances, with why there is no answer in place of null (round 19, the Camille report point 3: a test read null at every hit of an undecided buff). */
   instancesWhy(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | { readonly unknown: string };
+  /**
+   * The main run's state at a frame (replayrun.ts runStateAt), and the timeline's damage options for an operator there
+   * (runOptionsAt: modifiers with their sources, Stagger, the situation); null without a run. A view's or a reading's
+   * "the replay at the log's time" (round 19, the slug report point 3).
+   */
+  stateAt(frame: number): TimelineState | null;
+  optionsAt(operator: string, frame: number): ReturnType<typeof runOptionsAt> | null;
   /** What the replay knows of a logged cast (placed: logcasts.ts), or why it knows nothing. */
   castFacts(cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { readonly unknown: string };
   /** A logged hit's landing in the replay (its damage, modifiers and LandingFacts), or why there is none. */
@@ -551,12 +558,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
         landed.set(String(i), best);
       }
     }
-    /** The replay's state at a frame: its latest step at or before it, advanced (pure). */
-    const stateAt = (frame: number): TimelineState => {
-      let cp = checkpoints[0] as TimelineState;
-      for (const x of checkpoints) if (x.frame <= frame) cp = x;
-      return cp.frame === frame ? cp : advance(ctx, cp, frame);
-    };
+    /** The replay's state at a frame (runStateAt). */
+    const stateAt = (frame: number): TimelineState => runStateAt({ ctx, checkpoints }, frame);
     const linkLive = (x: TimelineState, op: string, frame: number) =>
       x.link.filter((e) => e > frame).length + x.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, op) && activeAt(b, frame)).length;
     const consumable = (x: TimelineState, op: string, kind: SkillType | "none", frame: number) =>
@@ -624,12 +627,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const free = main.st.hits.filter((h) => h.skillId.startsWith("reaction:"));
     const pairing = readingOf(opts.assume, "status-pairing");
     const reading = pairing === "nearest" ? "nearest" : "assignment";
-    const { ctx, checkpoints } = main;
-    const stateAt = (frame: number): TimelineState => {
-      let cp = checkpoints[0] as TimelineState;
-      for (const x of checkpoints) if (x.frame <= frame) cp = x;
-      return cp.frame === frame ? cp : advance(ctx, cp, frame);
-    };
+
     const queryFrame = new Map(queries.map((q) => [q.hit, q.frame]));
     // Under `check`, a landing of a burst or a status the replay made on the other side of a buff's edge than the
     // game's (a stop held one and not the other) fits as well with its damage again from the replay's modifiers at the
@@ -638,8 +636,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       const inputs = x.inputs;
       const f = queryFrame.get(h) ?? frameOf(h.t);
       if (!inputs || inputs.kind !== "status" || inputs.reaction.kind === "combustionTick" || f === x.frame) return null;
-      const st = stateAt(f);
-      const o = damageOptions(ctx, st, x.operator, st.enemy, f);
+      const o = runOptionsAt(main, x.operator, f);
       return { ...x, inputs: { ...inputs, options: { ...inputs.options, staggered: o.staggered, situation: o.situation, modifiers: o.modifiers } } };
     };
     let sideMemo: CheckSide | undefined;
@@ -773,6 +770,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return typeof n === "number" ? n : null;
     },
     instancesWhy,
+    stateAt: (frame) => (main ? runStateAt(main, frame) : null),
+    optionsAt: (operator, frame) => (main ? runOptionsAt(main, operator, frame) : null),
     castFacts,
     critSource(hit) {
       if (hit.crit !== null) return "log";
