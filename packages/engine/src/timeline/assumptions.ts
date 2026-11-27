@@ -147,6 +147,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       none: "no: the Stagger is still from its start to its end (the placement until 2026-11-26)",
       away: "yes: each away stretch is cut out of the Stagger's still span, and the clocks place what they ask there. pending/zmdlogs-4d60e7fe92c2.json (eny_0120_klbear_tower015) 117.22–124.45 s, inside the log's Stagger 115.75–133.34 s: its Stagger lasts 7 s longer than the engine's, and Perlica's Wild Wanderer team buff, Arcane's two Solemn Phalanx debuffs on the enemy, Perlica's Qingbo layer and Liino's beats all run 5.5–7 s past their ends across it; 5.4 s placed there, 13 clocks spanning it, earliest and latest within 0.4 s. Measured 2026-11-26 against `none`: development plain 69.0 → 69.6% (4d60 696 → 806, −4.1 → −1.5%), no other log moved, hold-outs unchanged",
+      paused: "as `away`, and a clock's run across an away stretch may ask the stretch's length on top of HIDDEN_HOLD_SHARE of its life (holdinputs.ts runBounds, holds.ts statusBounds): a whole-game pause holds every timer however short its life",
     },
   },
   {
