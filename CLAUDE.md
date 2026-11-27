@@ -86,7 +86,10 @@ engine change's team numbers: `node scripts/team-ab.ts --base <ref>` (an
 identity check first: the 32-seed runs only when a team's own fight
 changed; it prints the table). A
 background test run: add `--reporter=default
---reporter=./scripts/vitest-progress.ts` (a line per finished file). A test file
+--reporter=./scripts/vitest-progress.ts` (a line per finished file); a plain
+`npx vitest run` reads the tree as it goes: don't edit meanwhile, or run it
+at a snapshot, `node scripts/verify-at.ts --snapshot --files <a,b>` (smoke
+fixes its code at queue time too). A test file
 that takes over ~40 s gets split, and a single test of tens of seconds goes
 to `tests/slow/`. Shared test builders live in `tests/helpers/` (synthetic
 kits and logs, buff history); after a split, `npm run prune-unused --
@@ -116,9 +119,16 @@ instead of chained measures (each also against the same code without it;
 hunks; its
 first line says when the snapshots compared against aren't the code's
 own: `--base HEAD` is then this tree's change alone),
+`--several-targets` for a change gated on the fixture mark (the three
+several-targets logs; the final measure stays full; `--set`'s value is
+source text: `--set 'x.ts:MODE="any"'`),
 `--patch <diff>` for a change that is none:
 [docs/design/tests.md](docs/design/tests.md#measuring-a-change); a change
-measured and dropped keeps its diff in [docs/tried/](docs/tried/README.md)),
+measured and dropped keeps its diff in [docs/tried/](docs/tried/README.md);
+before measuring a rule change, `node scripts/tried.ts --touching
+<file>[:<function>]` lists the tried diffs that touch it, and `node
+scripts/tried.ts new <slug> -- <files>` keeps one, never `git diff >` over
+an existing name),
 and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards); `npm run measure -- --help` lists its
 options, checked before it queues; with no reference named and stale
@@ -135,7 +145,11 @@ value at each cast), `casts --choices` (a late join's rule, REALIGN),
 `hits <fixture> --same-listing <s>` (the nearest hits with the same
 listing: check a listing lead there first), `boundaries` (a boundary
 rule's base rate), `replay --trace-stack owner:stack`, `replay --kit-buff
-<b> --against-lanes` (each pair's ends: ENDS DIFFER), `followups
+<b> --against-lanes` (each pair's ends: ENDS DIFFER), `offsets --all
+--bound` (the factor interval that fits every clean hit within ±1),
+`decisions --all` (TAILKEPT by guard: `[shown-own]` a tail kept on the
+cast's own landing), `node scripts/cli-ab.ts <ref> --hits-zones <fixture>`
+(which kit buff moved each hit), `followups
 <fixture…|--all> --operator <op>` (a kit trigger's own landings against
 the events that fired them), `holds <fixture> --steps <from>-<to>` (the
 hidden holds' per-frame steps); `efsim gamedata enemy <enemy|fixture>`
@@ -290,7 +304,9 @@ after a commit that touched `fixtures/holdout/`, no `git status`, `git
 diff --stat|--name-only`, `git show --stat`, `git log --stat` or `git
 merge` with its diffstat over it without `-- . ':!fixtures/holdout'` (or
 `--no-stat`); `npm run merge` and premerge print hold-out paths as a
-count only.
+count only. A tool's hold-out output is aggregates only: never a
+hold-out's change split by cast, skill, operator or rule kind, hashed or
+not (round 20; the friction backlog's "Declined" section carries it).
 `efsim zmdlogs list [--with <operator>]` lists the development logs.
 
 The lead: name the base commit (or branch) in a sub-agent's brief, and
@@ -329,7 +345,8 @@ then move the reports to [docs/friction-done/](docs/friction-done/README.md)
 a snapshot key that only describes, when snapshots:update says "keys added
 only" and "No log's verdicts moved"; its summary names the keys. The new
 backlog: `node scripts/friction.ts carry <backlog> <n,…|none> --lists
-[--park <n,…>]`.
+[--park <n,…>] [--unpark <words>]` (`--unpark`: a parked point a new report
+hits, its full text on stderr).
 
 ## Data and reference code
 
