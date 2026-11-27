@@ -15,7 +15,7 @@
 //   whether a teammate mismatches at the same ratio nearby (team-wide, so not this operator's kit).
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
-import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
+import { effectiveKit, FPS, parseReactionEvent, type GameData } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
@@ -27,7 +27,7 @@ import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { stageModifiers, teamBuffNames, type KillKind, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
 import { kindsAggregate, type KindShare } from "./onesided.ts";
-import { decisionText, replayDecisions } from "./decisionsview.ts";
+import { batchDecision, batchDisagreements, decisionText, landingsOf, replayDecisions } from "./decisionsview.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
@@ -79,38 +79,6 @@ function barMark(fx: LogFixture): (h: LogHit) => string {
   return (h) => (h.poise && order.has(h) ? ` [bar ${h.poise.bar + h.poise.dealt} → ${h.poise.bar}]` : "");
 }
 
-/** A batched ms whose replay landings came in another order than the log's bars give (batchDisagreements). */
-export interface BatchDisagreement {
-  readonly t: number;
-  /** The logged hits in the replay's landing order, and in the bars'. */
-  readonly replay: readonly LogHit[];
-  readonly bars: readonly LogHit[];
-}
-
-/**
- * The batched ms (castassembly.ts batchOrder) where the replay's landings of the logged hits came in another order
- * than the bars' (a place lower than one landed before it): the BATCH lines of `zmdlogs replay`. Pinned landings land in
- * the bars' order since 2026-11-26 (schedule.ts dueBefore), so these are landings the bars didn't order (a trigger's
- * hit, a cast the replay moved).
- */
-export function batchDisagreements(fx: LogFixture, landings: readonly LandedHit[], byLanding: ReadonlyMap<LandedHit, LogHit>): BatchDisagreement[] {
-  const order = batchOrder(fx.hits);
-  const at = new Map<number, LogHit[]>();
-  for (const l of landings) {
-    const h = byLanding.get(l);
-    if (!h || !order.has(h)) continue;
-    const list = at.get(h.t) ?? [];
-    if (!list.includes(h)) list.push(h);
-    at.set(h.t, list);
-  }
-  const out: BatchDisagreement[] = [];
-  for (const [t, replayed] of at) {
-    const places = replayed.map((h) => order.get(h) as number);
-    if (places.every((p, i) => i === 0 || p >= (places[i - 1] as number))) continue;
-    out.push({ t, replay: replayed, bars: [...replayed].sort((a, b) => (order.get(a) as number) - (order.get(b) as number)) });
-  }
-  return out.sort((a, b) => a.t - b.t);
-}
 
 /** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
 export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): string {
@@ -278,17 +246,6 @@ export function stopsView(data: GameData, logs: readonly { readonly short: strin
   return out.join("\n");
 }
 
-/** The replay's landing of each logged hit (the hit it stands for), as the log check finds it. */
-function landingsOf(replay: BuffReplay, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
-  const byLanding = new Map<LandedHit, LogHit>();
-  const missing = new Map<LogHit, string>();
-  for (const h of fx.hits) {
-    const l = parseReactionEvent(h.event) ? replay.statusLanding(h) : replay.landing(h);
-    if ("unknown" in l) missing.set(h, l.unknown);
-    else byLanding.set(l, h);
-  }
-  return { byLanding, missing };
-}
 
 /**
  * `zmdlogs replay`: the replay of a fight in time order: its landings (with the logged hit each stands for, or
@@ -317,8 +274,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   // A batched ms the replay landed in another order than the log's bars (round 16, batched-landings report point 2).
   for (const b of batchDisagreements(fx, replay.hits, byLanding)) {
     if (!inWindow(f, b.t) || !b.replay.some((h) => mine(f, h.operator))) continue;
-    const words = (hs: readonly LogHit[]) => hs.map((h) => `${label(data, h.operator)} ${shortSkill(h.event)}`).join(", ");
-    lines.push({ t: b.t, order: 1, text: `BATCH  the replay landed ${words(b.replay)}; the log's bars give ${words(b.bars)}` });
+    lines.push({ t: b.t, order: 1, text: decisionText(batchDecision(data, b)) });
   }
   // With the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding).
   for (const [h, why] of missing) {
