@@ -111,6 +111,23 @@ export interface TimelineScenario {
    * (breakHold `placed`: the log stamped it inside its hold) isn't among them.
    */
   readonly loggedBreaks?: readonly number[];
+  /**
+   * A logged fight against several targets under one enemy id (the log check's replay only, never a simulation: replay
+   * assumption target-statuses `per-target`): the targets each logged landing reached, by its `ref` (a pinned landing's
+   * logged hit) or a kit hit of `operator` with `event` among its events landing at `frame` (±1). The enemy's statuses
+   * are then kept per target (TimelineState.targets, timeline/targets.ts): a landing lands on its first target and
+   * applies what it inflicts on the others too; a landing without an entry, on the target hit last.
+   */
+  readonly landingTargets?: readonly LandingTarget[];
+}
+
+/** One logged landing's targets (TimelineScenario.landingTargets): target ids as the log check numbers them (targets.ts assignTargets). */
+export interface LandingTarget {
+  readonly operator: string;
+  readonly event: string;
+  readonly frame: number;
+  readonly ref?: string;
+  readonly targets: readonly number[];
 }
 
 /** The scenario with a fight `seconds` long (whole frames at FPS, rounded): the one way to set a length in seconds. */
@@ -286,6 +303,8 @@ export interface PendingBurst extends ScheduledHeader {
   /** The kind of the hit that caused it, and its cast's index (for the burst's events: not a CastRef, an interrupt doesn't stop a burst). */
   readonly fromKind: SkillType | "none";
   readonly fromCast?: number;
+  /** With TimelineScenario.landingTargets: the target whose infliction set it off, on whom it lands. */
+  readonly target?: number;
 }
 
 /** One of the enemy's actions (TimelineScenario.enemyActions), on its clock. */
@@ -360,6 +379,13 @@ export interface LandedHit extends HitDamage {
    * cast's landings of the hit as one random sum (moments.ts hitsMoments).
    */
   readonly landed?: { readonly cast: number; readonly of: number; readonly counts: readonly number[]; readonly scale: number };
+  /** With TimelineScenario.landingTargets: the target it landed on (record only). */
+  readonly target?: number;
+  /**
+   * With TimelineScenario.landingTargets: a kit hit's other targets (a landing logged on several), each with its
+   * statuses before the hit's applications (record only: the log check reads a twin's hit on one of them at them).
+   */
+  readonly otherTargets?: readonly { readonly target: number; readonly enemy: EnemyStatus }[];
 }
 
 /**
@@ -398,8 +424,11 @@ export interface LandingFacts {
   readonly enemyHp: number;
 }
 
-/** A status event with the frame it happened at; the record of what the enemy's arts state did. */
-export type ReactionRecord = StatusEvent;
+/**
+ * A status event with the frame it happened at; the record of what the enemy's arts state did. `target`: with
+ * TimelineScenario.landingTargets, the target it happened on (record only).
+ */
+export type ReactionRecord = StatusEvent & { readonly target?: number };
 
 /** The whole simulation state: plain data, cheap to copy for branching. */
 export interface TimelineState {
@@ -483,6 +512,11 @@ export interface TimelineState {
   readonly resets?: readonly { readonly frame: number; readonly priority: number; readonly by: string }[];
   readonly enemy: EnemyStatus;
   /**
+   * With TimelineScenario.landingTargets (a replay of several targets): the target `enemy` is (the one hit last) and the
+   * others' statuses, each kept as it was when another was swapped in (timeline/targets.ts). Absent otherwise: one enemy.
+   */
+  readonly targets?: { readonly current: number; readonly others: Readonly<Record<number, EnemyStatus>> };
+  /**
    * Timed buffs and debuffs from skills: only those still active. `advance` prunes a buff once it has ended, so the
    * final state of a run shows none that ran out; to see every instance a run had, step through it (the tests'
    * helper tests/helpers/buffs.ts buffHistory).
@@ -538,6 +572,8 @@ export interface TimelineContext {
   readonly loggedCritRefs?: ReadonlyMap<string, boolean>;
   /** TimelineScenario.loggedModifiers by `operator|event`. */
   readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
+  /** TimelineScenario.landingTargets by `ref` and by `operator|event` (timeline/targets.ts landingTargetsOf). */
+  readonly landingTargets?: { readonly byRef: ReadonlyMap<string, readonly number[]>; readonly byKey: ReadonlyMap<string, readonly LandingTarget[]> };
   /** Landings keep their inputs (TimelineScenario.keepInputs, or a replayed fight). */
   readonly keepInputs?: true;
   /**

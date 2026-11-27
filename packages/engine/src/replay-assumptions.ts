@@ -124,6 +124,15 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "target-statuses",
+    question: "Does the replay of a fight read per target keep the enemy's statuses per target?",
+    default: "per-target",
+    readings: {
+      one: "no: one enemy holds every target's infliction, reactions and physical statuses (the replay until 2026-11-27)",
+      "per-target": "yes: a second replay with each logged landing on the targets the first one's assignment put its hits on, the others' statuses kept apart, a death ending its own target's; Stagger and debuffs one",
+    },
+  },
+  {
     id: "hitless-presses",
     question: "Is a logged press of a skill whose hits the log shows elsewhere, but none of its own this time, made (the enemy there, not an away stretch's `unseen` press)?",
     default: "inferred",

@@ -958,6 +958,8 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
     // The breaks the log shows: only they hold every clock (engine assumption break-hold), at their own frame; those the
     // log stamped inside their hold are held by a step of their own, from where the hold began (breakHoldStarts).
     loggedBreaks: breaks.filter((b) => b.from === b.at).map((b) => b.at),
+    // The statuses per target (target-statuses `per-target`: the second replay): each logged landing's targets.
+    ...(opts.targets ? { landingTargets: opts.targets.landings } : {}),
   };
   const ctx = createContext(data, scenario);
   // Engine assumption hitless-presses: with `inferred`, a press the log shows no hit of is made where its listing shows what only it gives.
@@ -969,8 +971,9 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   // hit is logged (Camille's Vesperwings moving to the next slug), at the logged kill before it (else the trigger's lead
   // before it), and under `kills` / `statuses` at each logged kill of a fight read per target; the moves' landings
   // pinned at their logged frames (the hit's index the ref, as a cast's landings').
-  const deaths = targetDeaths(fx, [...ctx.kits.values()], opts.assume).map((d) =>
-    deathEvent(d.frame, d.why, d.moves.map((m) => ({ trigger: m.trigger, hitId: m.hitId, frame: m.landing, ref: String(fx.hits.indexOf(m.hit)), ms: m.hit.t })), { except: d.except, endsStatuses: d.endsStatuses }),
+  // With the statuses per target, each kill's target dies (its statuses end there).
+  const deaths = targetDeaths(fx, [...ctx.kits.values()], opts.assume, opts.targets?.kills).map((d) =>
+    deathEvent(d.frame, d.why, d.moves.map((m) => ({ trigger: m.trigger, hitId: m.hitId, frame: m.landing, ref: String(fx.hits.indexOf(m.hit)), ms: m.hit.t })), { except: d.except, endsStatuses: d.endsStatuses, ...(d.target !== undefined ? { target: d.target } : {}) }, d.moves.map((m) => m.operator)),
   );
   const steps = replaySteps(input.stagger, pass.worldHolds, list, sampleFrames, breaks.filter((b) => b.from !== b.at).map((b) => b.from), deaths);
   const checkpoints: TimelineState[] = [st];

@@ -19,6 +19,7 @@ import { asEvents, draw, landBurst, landHit, recordStatus, type StatusCrits } fr
 import { castSkill, endCurrentSkill, settleCastBuffs, takeJump } from "./casting.ts";
 import { dueBefore, IN_FRAME_RANK, ofCast, schedule, stepOf, unschedule } from "./schedule.ts";
 import { teammateAttack } from "./teammates.ts";
+import { otherTargetTick, withTarget } from "./targets.ts";
 
 /**
  * The earliest periodic tick of an active buff at or before `frame`. A tick
@@ -98,7 +99,9 @@ function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: PendingEn
 
 /** What runs next (nextDue): a scheduled item, or what the state's own times make due. */
 type Due =
-  | { readonly step: "statusTick" | "buffExpiry"; readonly frame: number }
+  | { readonly step: "buffExpiry"; readonly frame: number }
+  /** `target`: another target's tick (TimelineScenario.landingTargets: timeline/targets.ts), run on it. */
+  | { readonly step: "statusTick"; readonly frame: number; readonly target?: number }
   | { readonly step: "buffTick"; readonly frame: number; readonly buff: ActiveBuff }
   | { readonly step: "scheduled"; readonly frame: number; readonly item: Scheduled };
 
@@ -116,6 +119,8 @@ function nextDue(st: TimelineState, frame: number): Due | null {
   };
   const tick = nextTick(st.enemy);
   if (tick !== null && tick <= frame) consider({ step: "statusTick", frame: tick });
+  const other = otherTargetTick(st);
+  if (other !== null && other.frame <= frame) consider({ step: "statusTick", frame: other.frame, target: other.target });
   const expiry = nextExpiry(st.buffs, frame);
   if (expiry !== null) consider({ step: "buffExpiry", frame: expiry });
   const buffTick = nextBuffTick(st.buffs, frame);
@@ -134,6 +139,7 @@ export function nextEventAfter(st: TimelineState, frame: number): number | null 
   };
   for (const x of st.scheduled) consider(x.frame);
   for (const x of st.enemy.statuses) if (x.nextTickAt !== undefined && x.nextTickAt <= x.expiresAt) consider(x.nextTickAt);
+  consider(otherTargetTick(st)?.frame);
   for (const b of st.buffs) {
     consider(b.expiresAt);
     if (tickDueBeforeEnd(b)) consider(b.nextTick);
@@ -149,13 +155,17 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     const at = due.frame;
     switch (due.step) {
       case "statusTick": {
-        const before = st.enemy;
-        const t = tickStatus(st.enemy, at);
-        const crits: StatusCrits = new Map();
-        st = recordStatus(ctx, { ...st, enemy: t.state }, t.events, before, undefined, undefined, crits);
-        st = runTriggers(ctx, st, asEvents(t.events, "none", undefined, crits), null);
-        // Each tick takes the attacker side the next one deals with (engine assumption combustion-snapshot, `last-tick`).
-        if (engineReading(ctx.scenario, "combustion-snapshot") === "last-tick") st = retakeTickSnapshots(st, t.events);
+        // Another target's tick (several targets) runs on it, the target hit last current again after.
+        st = withTarget(st, due.target, (s0) => {
+          const before = s0.enemy;
+          const t = tickStatus(s0.enemy, at);
+          const crits: StatusCrits = new Map();
+          let s = recordStatus(ctx, { ...s0, enemy: t.state }, t.events, before, undefined, undefined, crits);
+          s = runTriggers(ctx, s, asEvents(t.events, "none", undefined, crits), null);
+          // Each tick takes the attacker side the next one deals with (engine assumption combustion-snapshot, `last-tick`).
+          if (engineReading(ctx.scenario, "combustion-snapshot") === "last-tick") s = retakeTickSnapshots(s, t.events);
+          return s;
+        });
         break;
       }
       case "buffExpiry": {

@@ -15,7 +15,7 @@
 //   whether a teammate mismatches at the same ratio nearby (team-wide, so not this operator's kit).
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
-import { effectiveKit, FPS, kitHitEntries, parseReactionEvent, type GameData } from "@efsim/engine";
+import { effectiveKit, expireStatus, FPS, kitHitEntries, parseReactionEvent, targetEnemy, type EnemyStatus, type GameData, type ReactionRecord } from "@efsim/engine";
 import { NO_LANDING } from "./replaykeys.ts";
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
@@ -368,7 +368,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   // The replay's own decisions (decisionsview.ts replayDecisions, from BuffReplay's records): SKIP the logged casts it
   // didn't make and why, TAILCUT those it ended after their last logged landing, FAILED / MISSED, INFER the hitless
   // presses it made from the listing, MADE a cast made as another skill than the placement's, FORCED / INSIDE / CUTS.
-  for (const d of [...replayDecisions(data, replay), ...deathDecisions(data, fx)]) if (inWindow(f, d.t) && mine(f, d.operator)) lines.push({ t: d.t, order: 1, text: decisionText(d) });
+  for (const d of [...replayDecisions(data, replay), ...deathDecisions(data, replay)]) if (inWindow(f, d.t) && mine(f, d.operator)) lines.push({ t: d.t, order: 1, text: decisionText(d) });
   // The log's cast events and what the cast assembly made of each (loggedCastFates), with where the event sits in its
   // skill's stop (castEventPlace; placement leads report point 1: "0.02 s of world time apart" hid 1.76 s of log time).
   const hitTimes = fx.hits.map((h) => h.t).sort((a, b) => a - b);
@@ -513,7 +513,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them; [twin: …]: its logged hit the placement took for another target's landing of its slot, and the rule), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame), DEATH a target's death made where a kit's move at one is logged (Camille's Vesperwings)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them; [twin: …]: its logged hit the placement took for another target's landing of its slot, and the rule), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame), DEATH each target's death the replay made (its record: a logged kill, a kit's move logged after one; the target that dies where the statuses are per target)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines), ...pairs].join("\n");
 }
 
@@ -674,6 +674,77 @@ export function staggerRuns(data: GameData, fx: LogFixture, opts: { readonly ass
     i = k;
   }
   return out;
+}
+
+/** A status event in a few words (`zmdlogs statuses`): its kind and what it is of (element, status, level, stacks). */
+function statusEventWords(e: ReactionRecord): string {
+  switch (e.kind) {
+    case "burst":
+      return `burst ${e.element}${e.inflictedAt !== undefined ? ` (inflicted at ${s(msOf(e.inflictedAt))})` : ""}`;
+    case "reaction":
+      return `reaction ${e.status} L${e.level} (${e.element}${e.consumed ? ` on ${e.consumed}` : ", forced"}${e.initialHit ? "" : ", no hit"})`;
+    case "consumed":
+      return `consumed ${e.element} ×${e.stacks}`;
+    case "statusConsumed":
+      return `consumed ${e.status} L${e.level}`;
+    case "vulnerable":
+      return `Vulnerable ${e.before} → ${e.stacks}`;
+    case "physical":
+      return `${e.status} L${e.level}${e.forced ? " (forced)" : ""}`;
+    case "control":
+      return `${e.status} ${e.frames} frames${e.freezes ? " (freezes)" : ""}`;
+    case "shatter":
+      return `shatter L${e.level}`;
+    case "combustionTick":
+      return `combustion tick L${e.level}`;
+    case "inflicted":
+      return `inflicted ${e.element} ×${e.stacks}`;
+  }
+}
+
+/** An enemy's statuses in a few words: its infliction (element ×stacks), reactions and physical statuses with their levels, Vulnerable. */
+function enemyWords(e: EnemyStatus | null, frame: number): string {
+  if (!e) return "?";
+  const x = expireStatus(e, frame);
+  const parts = [
+    ...(x.infliction ? [`${x.infliction.element}×${x.infliction.stacks}`] : []),
+    ...x.statuses.map((y) => `${y.status} L${y.level}`),
+    ...x.physical.map((y) => `${y.status} L${y.level}`),
+    ...(x.vulnerable ? [`Vulnerable ${x.vulnerable.stacks}`] : []),
+  ];
+  return parts.length ? parts.join(", ") : "none";
+}
+
+/**
+ * `zmdlogs statuses`: the replay's record of the enemy's statuses (BuffReplay.reactions: bursts, reactions,
+ * consumptions, physical statuses, Combustion ticks), each with its target where the statuses are per target
+ * (target-statuses `per-target`: ReactionRecord.target), its damage landing's value and the target's statuses after
+ * it; the replay's deaths (BuffReplay.deaths) between. The target-statuses report point 1: a burst too many or a
+ * reaction a kit hit's `if` needs, answered without a probe.
+ */
+export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly assume?: Readonly<Record<string, string>>; readonly targets?: readonly number[] } = {}): string {
+  const { replay } = logBuffReplay(data, fx, underReadings(f.assume));
+  const perTarget = replay.targets !== undefined;
+  const lines: { t: number; text: string }[] = [];
+  const damage = new Map<string, number>();
+  for (const l of replay.hits) if (l.skillId.startsWith("reaction:")) damage.set(`${l.frame}|${l.operator}|${l.target ?? ""}`, (damage.get(`${l.frame}|${l.operator}|${l.target ?? ""}`) ?? 0) + l.exact);
+  const shown = (target: number | undefined) => !f.targets?.length || (target !== undefined && f.targets.includes(target));
+  for (const e of replay.reactions) {
+    const t = msOf(e.frame);
+    if (!inWindow(f, t) || !mine(f, e.operator) || !shown(e.target)) continue;
+    const d = damage.get(`${e.frame}|${e.operator}|${e.target ?? ""}`);
+    const st = replay.stateAt(e.frame);
+    const after = st ? (e.target !== undefined ? targetEnemy(st, e.target) : st.enemy) : null;
+    lines.push({ t, text: `${s(t).padStart(7)}  ${e.target !== undefined ? `T${e.target}`.padEnd(4) : "    "}${label(data, e.operator).padEnd(12)} ${statusEventWords(e)}${d !== undefined ? `: ${Math.round(d)}` : ""}  → ${enemyWords(after, e.frame)}` });
+  }
+  for (const d of replay.deaths) {
+    const t = msOf(d.frame);
+    if (!inWindow(f, t) || !shown(d.death.target)) continue;
+    lines.push({ t, text: `${s(t).padStart(7)}  ${d.death.target !== undefined ? `T${d.death.target}`.padEnd(4) : "    "}DEATH (${d.why})${d.death.target !== undefined ? ": its statuses end" : ""}` });
+  }
+  lines.sort((a, b) => a.t - b.t);
+  const head = `${fx.id}: the replay's status record (BuffReplay.reactions; times in s): each burst, reaction, consumption, physical status and Combustion tick with its operator, ${perTarget ? "its target (T<n>, the check's target numbering: target-statuses per-target), " : "(one enemy: not read per target, or target-statuses one) "}the damage the replay dealt with it, and → the ${perTarget ? "target's" : "enemy's"} statuses after it (infliction element×stacks, reactions and physical statuses with their levels, Vulnerable); DEATH the replay's deaths (BuffReplay.deaths)`;
+  return [head, ...lines.map((l) => l.text), ...(lines.length ? [] : ["  (none in the window)"])].join("\n");
 }
 
 /** `zmdlogs stagger`: a fight's Stagger runs, the log's against the replay's. */
