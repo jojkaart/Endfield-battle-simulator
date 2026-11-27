@@ -111,17 +111,21 @@ describe("placeHolds", () => {
     const hit = (t: number, bar?: number) => ({ t, event: "e", operator: "x", effects: [], boundaryEffects: [], ...(bar !== undefined ? { poise: { dealt: 10, bar } } : {}) });
     const f = (ms: number) => Math.round((ms * FPS) / 1000);
     // 14 frames (467 ms): the moment after the 10 s break comes 600 ms later, after the 20 s one 105 ms later (9090afbacec9
-    // 128.92 s), the moment before it 420 ms earlier: that hold ends at 20.105 s, not before 19.58 s.
-    const fx = { hits: [hit(9900, 5), hit(10000, 0), hit(10600), hit(19000, 8), hit(19580), hit(20000, 0), hit(20105)] } as never;
+    // 128.92 s), the moment before it 600 ms earlier: that hold ends at 20.105 s.
+    const fx = { hits: [hit(9900, 5), hit(10000, 0), hit(10600), hit(19000, 8), hit(19400), hit(20000, 0), hit(20105)] } as never;
     const moments = { "break-hold-place": "moments" };
     expect(breakHoldStarts(fx, 14, moments)).toEqual([{ at: f(10000), from: f(10000) }, { at: f(20000), from: f(20105 - (14 * 1000) / FPS) }]);
-    // The moment before bounds it: a hold of 30 frames there starts at 19.58 s.
-    expect(breakHoldStarts(fx, 30, moments)[1]).toEqual({ at: f(20000), from: f(19580) });
+    // The default is `moments`.
+    expect(breakHoldStarts(fx, 14, undefined)).toEqual(breakHoldStarts(fx, 14, moments));
+    // The moment before bounds it, 134 ms after it (the landings logged there; 9090's 128.50 s volleys): a hold of 30
+    // frames there starts at 19.534 s.
+    expect(breakHoldStarts(fx, 30, moments)[1]).toEqual({ at: f(20000), from: f(19400 + 134) });
     // With no hold (`none`), every hold at its ms.
     expect(breakHoldStarts(fx, 0, moments).every((b) => b.from === b.at)).toBe(true);
-    // The default (`ms`): every hold at its break's ms, the tick bounds' stops (breakStops) too; none without a hold.
-    expect(breakHoldStarts(fx, 14, undefined).every((b) => b.from === b.at)).toBe(true);
-    expect(breakStops(fx, [], { "break-hold": "14f" }).map((s) => s.start)).toEqual([f(10000), f(20000)]);
+    // `ms`: every hold at its break's ms, the tick bounds' stops (breakStops) too; none without a hold.
+    const ms = { "break-hold-place": "ms" };
+    expect(breakHoldStarts(fx, 14, ms).every((b) => b.from === b.at)).toBe(true);
+    expect(breakStops(fx, [], { "break-hold": "14f", ...ms }).map((s) => s.start)).toEqual([f(10000), f(20000)]);
     expect(breakStops(fx, [], { "break-hold": "none" })).toEqual([]);
     // The stops follow break-hold-place as the replay does (round 19: tickBounds took the defaults under a variant).
     expect(breakStops(fx, [], { "break-hold": "14f", ...moments }).map((s) => s.start)).toEqual([f(10000), f(20105 - (14 * 1000) / FPS)]);

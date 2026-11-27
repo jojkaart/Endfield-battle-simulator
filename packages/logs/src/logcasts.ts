@@ -5,9 +5,10 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, evalContext, evaluate, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, evalContext, evaluate, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, readingOf, type Readings, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
+import { breakStops } from "./holds.ts";
 
 /**
  * A logged cast whose next landing comes later than the key's landings span
@@ -182,14 +183,21 @@ const HELD_EVENT_MS = 2000;
  * (9090afbacec9: Typhoeus's combo, pressed at 60.63 s after her shot at 60.60 s, held from 60.01 s; cast before the
  * shot, the replay cast it grounded; 4d60e7fe92c2: Li Zhiyan's combo before her attack 4's last hits at 80.14 s).
  */
-function castStart(t: number, frame: number, stops: readonly TimeStop[], events: readonly number[]): number {
+function castStart(t: number, frame: number, stops: readonly TimeStop[], events: readonly number[], breaks: readonly TimeStop[] = []): number {
   const plain = t - msOf(frame);
   const held = heldStart(t, frame, stops);
-  if (held >= plain - msOf(1)) return plain;
+  // The breaks' holds after a start the landing gave (not the event's: a press is where it is), the cast running then.
+  const atBreaks = (s: number, base: readonly TimeStop[]) => {
+    const [a, b] = [Math.round((s * FPS) / 1000), Math.round((t * FPS) / 1000)];
+    const running = breaks.filter((x) => x.start > a && x.start < b);
+    return running.length ? heldStart(t, frame, [...base, ...running]) : s;
+  };
+  if (held >= plain - msOf(1)) return atBreaks(plain, []);
   const near = events.filter((e) => e >= held - HELD_EVENT_MS && e <= t);
-  if (near.length === 0) return plain;
+  if (near.length === 0) return atBreaks(plain, []);
   const e = near.reduce((a, x) => (Math.abs(x - held) < Math.abs(a - held) ? x : a));
-  return Math.abs(e - held) < Math.abs(e - plain) ? Math.max(held, e) : plain;
+  if (Math.abs(e - held) >= Math.abs(e - plain)) return atBreaks(plain, []);
+  return e > held ? e : Math.max(atBreaks(held, stops), e);
 }
 
 /** How close (ms) a landing logged at a frozen stop's end is to that end (the log's ms are batched). */
@@ -405,10 +413,14 @@ function inTurn(data: GameData, fx: LogFixture, placement: Placement): Placement
   return { ...placement, casts, inTurn: records, hits: new Map([...placement.hits].map(([h, p]) => [h, moved.has(p.cast) ? { ...p, cast: moved.get(p.cast) as LoggedCast } : p])) };
 }
 
-/** A new cast's start (castStart), or its event's with the landings the stop's end batched (beforeStopStart, LoggedCast.beforeStop). */
-function newCastStart(t: number, frame: number, stops: readonly TimeStop[], events: readonly number[]): Pick<LoggedCast, "start" | "beforeStop"> {
+/**
+ * A new cast's start (castStart), or its event's with the landings the stop's end batched (beforeStopStart,
+ * LoggedCast.beforeStop). `breaks`: the holds at the log's Stagger breaks the cast ran through (engine assumption
+ * break-held-starts `held`; empty under `unheld`, the default).
+ */
+function newCastStart(t: number, frame: number, stops: readonly TimeStop[], events: readonly number[], breaks: readonly TimeStop[]): Pick<LoggedCast, "start" | "beforeStop"> {
   const early = beforeStopStart(t, frame, stops, events);
-  return early === null ? { start: castStart(t, frame, stops, events) } : { start: early, beforeStop: t };
+  return early === null ? { start: castStart(t, frame, stops, events, breaks) } : { start: early, beforeStop: t };
 }
 
 /**
@@ -836,17 +848,21 @@ function exactSlots(g: Group, key: string): boolean {
  *
  * ultimateOverlaps lists the ultimate stops still overlapping after pass 3 (tests/logcasts-stops.test.ts pins them).
  */
-export function placeHits(data: GameData, fx: LogFixture): Placement {
-  return placementPasses(data, fx).placed;
+export function placeHits(data: GameData, fx: LogFixture, assume?: Readings): Placement {
+  return placementPasses(data, fx, assume).placed;
 }
 
-/** placeHits' passes (its comment): the first placement, the second (from the first's stops), and the placement after the rules over the settled one. */
-export function placementPasses(data: GameData, fx: LogFixture): { readonly first: Placement; readonly second: Placement; readonly placed: Placement } {
-  const firstPlacement = placeWith(data, fx, []);
+/**
+ * placeHits' passes (its comment): the first placement, the second (from the first's stops), and the placement after
+ * the rules over the settled one. `assume`: the run's readings (the holds at the log's Stagger breaks: engine
+ * assumptions break-hold, break-hold-place), as the replay's.
+ */
+export function placementPasses(data: GameData, fx: LogFixture, assume?: Readings): { readonly first: Placement; readonly second: Placement; readonly placed: Placement } {
+  const firstPlacement = placeWith(data, fx, [], assume);
   // The placed casts' stops cut at their resets, and the unplaced cast events' stops as they are: an event's time is the
   // press, not the cast, so its reset is no time to cut at (1cd1657bc305: Arcane's combo event at 34.70 s, cast at
   // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
-  const second = placeWith(data, fx, passStops(data, fx, firstPlacement));
+  const second = placeWith(data, fx, passStops(data, fx, firstPlacement), assume);
   const placed = inTurn(data, fx, second);
   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
@@ -866,8 +882,8 @@ function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[
  * cast gone or new counts too). Non-empty: the casts whose start rests on a stop that pass 2 itself moved, where a rule
  * reading other casts' stops cascades. A diagnosis (`zmdlogs casts --settle`), never part of the placement.
  */
-export function settleCheck(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): { readonly operator: string; readonly skillId: string; readonly now: number | null; readonly third: number | null }[] {
-  const third = inTurn(data, fx, placeWith(data, fx, passStops(data, fx, placement)));
+export function settleCheck(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), assume?: Readings): { readonly operator: string; readonly skillId: string; readonly now: number | null; readonly third: number | null }[] {
+  const third = inTurn(data, fx, placeWith(data, fx, passStops(data, fx, placement), assume));
   // One pairing (castpairs.ts, round 13's backlog point 1): the casts that stay first, then the moved ones by nearest.
   const pairs = pairCasts(placement.casts, third.casts);
   const out: { operator: string; skillId: string; now: number | null; third: number | null }[] = [
@@ -929,7 +945,22 @@ function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly Logg
   return out;
 }
 
-function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): Placement {
+/**
+ * The holds at the log's Stagger breaks a new cast's start reads under engine assumption break-held-starts `held`
+ * (castStart): the engine's (holds.ts breakStops, from a pass with stops: none inside an ultimate's), which stop every
+ * clock, a cast's own too, so a landing after one is that many frames later than its frame says (fc63a2001251:
+ * Typhoeus's combo, its event at 98.42 s, its arrows at 101.87 s at frame 35 after Arcane's ultimate stop and the
+ * 101.11 s break; placed from 99.03 s, the replay held it again and her battle skill at 102.33 s came inside its
+ * uncuttable frames). Not one inside another operator's combo slow-down, where the log's next moments often come
+ * sooner than a hold allows (4360447193ac 49.14 s, d4fb69b036fe 97.05 s: 0.13–0.25 s after). `others`: the stops of
+ * the other operators.
+ */
+function heldBreaks(fx: LogFixture, stops: readonly TimeStop[], others: readonly TimeStop[], assume: Readings | undefined): TimeStop[] {
+  const combos = others.filter((s) => s.kind === "combo");
+  return breakStops(fx, stops, assume).filter((b) => !combos.some((s) => b.start >= s.start && b.start <= s.start + s.scales.findLastIndex((x) => x < 1)));
+}
+
+function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], assume: Readings | undefined): Placement {
   const hits = new Map<LogHit, PlacedHit>();
   const casts: LoggedCast[] = [];
   const realign: RealignRecord[] = [];
@@ -941,6 +972,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     if (groups.length === 0) continue;
     const mine = sorted.filter((h) => h.operator === build.operator);
     const others = stops.filter((x) => x.operator !== build.operator);
+    const breaks = stops.length && readingOf(assume, "break-held-starts") === "held" ? heldBreaks(fx, stops, others, assume) : [];
     const slotCache = new Map<string, Slot[] | null>();
     const slots = (g: Group, key: string) => {
       const k = `${g.id}|${key}`;
@@ -978,7 +1010,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     // (eventStopStart): a travelling one always, another detached one where its frame's stop contradicts the log.
     const startFor = (g: Group, h: LogHit, first: Slot | undefined): Pick<LoggedCast, "start" | "beforeStop" | "fromEvent"> => {
       const fromEvent = g.kind === "ultimate" && first && first.hits.every((x) => x.travels || x.detached || x.landedCount !== undefined) ? eventStopStart(data.skills[g.skillId]?.timing, build.operator, h.t, first.frame, others, eventsOf(g), sorted, !first.hits.every((x) => x.travels)) : null;
-      return fromEvent !== null ? { start: fromEvent, fromEvent: true } : newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g));
+      return fromEvent !== null ? { start: fromEvent, fromEvent: true } : newCastStart(h.t, first ? (g.kind === null ? first.frame : ownStopLoggedFrame(data.skills[g.skillId]?.timing, first.hits, first.frame)) : 0, g.kind === "combo" ? others.filter((x) => x.kind !== "combo") : others, eventsOf(g), breaks);
     };
     /** One pass over the operator's logged hits; `starts` (by skill) picks among groups sharing a key. */
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {

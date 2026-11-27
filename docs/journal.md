@@ -4,9 +4,54 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 180 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 181 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Casts across a Stagger break: the hold from the moments, break-held-starts
+
+**Goal:** the hold-outs' INSIDE under the break's hold (docs/open-problems.md "The hold at a Stagger break"): which
+casts the hold lengthens past the next press, what the logs show about a press during the hold, and a rule for it.
+
+**Done:**
+- `zmdlogs decisions --all --assume break-hold=none`: the development INSIDE flags the hold makes are four, fc63
+  102.33 s (Typhoeus's combo ran through the break, placed from its landing without the hold, held again by the
+  replay), 3aa6 145.73 s (Zhuang Fangyi's battle skill 3 frames after her own combo's breaking hit), 4d60 56.60 s (a
+  break on Arcane's ultimate stop's end frame; the clocks on time after it) and 458b 87.47 s (an INSIDE without the
+  hold too).
+- **`break-hold-place` `moments` is the default**, its hold starting no sooner than 134 ms after the moment before
+  (holds.ts BREAK_AFTER_PREV_MS: 9090's 128.50 s volleys, logged there, the replay's clock 0.07–0.10 s late, land
+  before it; tests/buffreplay-typhoeus.test.ts passes). 4d60's INSIDE gone.
+- **The placement takes the run's readings** (placeHits / placementPasses / settleCheck `assume`; logBuffReplay,
+  composeCheck and the views with `--assume` pass them; checkLog takes the composed placement instead of placing
+  again at the defaults), and engine assumption **`break-held-starts`** (default `unheld`) has the held start as a
+  reading: `held` moves a start the landing puts before a break, not inside another operator's combo slow-down, by
+  the break's hold (logcasts.ts heldBreaks, castStart). It supersedes the round's two tried diffs (deleted).
+- Probes scripts/probes/stagger/press-in-hold.ts (the starts inside or before a hold) and ult-edge.ts (breaks at an
+  ultimate's stop); tests/break-placement.test.ts.
+
+**Scoreboard** (`npm run snapshots:update`, against 2d414f3): development plain 84.3% (4d60 983 → 985, 9090 1031 →
+1030, 4360 assumed +1 fallback −1), earlier pending 82.3% (d4fb 851 → 850; 3aa6 and 458b other), verified and
+hold-outs unchanged. 9090's and d4fb's: hidden holds placed elsewhere (the tick bounds take the moved holds).
+
+**Decisions:** `moments` adopted: the log's evidence (no logged moment inside a hold) where `ms` contradicts it, flat
+on every group, 4d60's INSIDE gone. `held` not the default: development unchanged (fc63's and 3aa6's INSIDE gone),
+earlier d4fb +2, but one hold-out −6 plain (unquantified +3, fallback +1, mismatch +2, no decision kind moved), the
+same in every variant measured (all breaks; outside every combo slow-down; under `ms`). No simulated fight moved (the
+engine's timeline untouched), so no team-ab.
+
+**Dead ends:** a start inside a hold moved before it (the first try: new INSIDE flags at d4fb 40.43, 195.87 s and
+3aa6 145.53 s: those combos were pressed in the hold, the kit's uncuttable frames forbid the earlier start); the
+same rule under `ms` (one hold-out −6, d4fb −9: the stamped-inside breaks' holds are misplaced at the ms); no hold
+at an ultimate stop's end frame (engine and replay: under `moments` development unchanged, one hold-out −1; kept in
+docs/tried/2026-11-27-break-ultimate-stop-end.diff). Whether a press during a hold waits it out or runs unheld the
+landings can't tell (30 starts inside a hold, 12 at its last 55 ms; d4fb 196.05 s and 9847 57.64 s read as
+unheld presses).
+
+**Left:** the hold-outs' INSIDE (not fc63's kind alone); breaks inside a combo's slow-down (4360, c4f3, d4fb: moments
+0.13–0.25 s after); 458b 87.47 s. Not taken up: the several-targets agent's 7b54 lead (Si's combo slashes on several
+slugs at one ms spread over the slots; a placement counting same-ms twins on several targets as one slot), left for
+the next round.
 
 ## 2026-11-27: Several targets read per target
 
@@ -367,50 +412,3 @@ over 1.5 s mostly before her cast (3 of 15 frames), not built.
 names, enablePoiseBreakTimeDilation, with no length), Arcane's INT lasers (the log's batched ms), Pogranichnik's
 harasses (the entity's own 0.4 s slow-downs and teleport, not modelled), 99fb's bleed after Rossi's ultimate (the
 statuses' side).
-
-## 2026-11-27: Replay-only landings: kill gaps, basic tails, tails kept by another cast's buff, finals by value
-
-**Goal:** the replay-only side of the fight totals (docs/accuracy.md "Where the total's error lives": development 4.5%,
-hold-outs 4.0% of a fight's logged total): landings the replay makes that the log never shows, sorted by kind, operator
-and skill over every development and earlier-pending log, the recurring causes fixed by mechanisms from the data or
-the logs. Known leads: 207f's Rossi attack-4 tail, d774's Zhuang Fangyi battle skill at 103.28 s, 4bfc.
-
-**Done** (docs/open-problems.md "Replay-only landings"):
-- **A logged kill's gap** (engine assumption `kill-gaps`, default `absent`; enginecheck.ts killGaps, replayrun.ts): a
-  hit capped at the HP left before the fight's last hit is a kill (a life, a phase, one of several targets), and until
-  the next logged hit the replay's enemy is away, 0.15 s inside both ends (KILL_EDGE_MS). 9c6e 63.34–67.64 s
-  (Typhoeus's 160k burst), the slug's caps in 6339.
-- **Basic attacks' tails cut** (`unlogged-tails` `cut-all`, the new default): 207f's Rossi attack 4 hit_ai (two of
-  five logged, twice).
-- **A tail is kept only by a buff run its own landings start** (tailCuts): d774's battle skill at 103.28 s had been
-  kept by a gear set's team ATK from Arcane's ultimate hit 2 frames before a tail strike.
-- **Si's combo final placed by value** (logcasts.ts nominalScales: the multipliers of a value expression over event
-  counts 1–4): 6339's logged final at 11.31 s now on the final's slot.
-- **Typhoeus's burst across stops the pass misplaced** (logcasts.ts joinDelayed, stackedHeldMs): fc63 43.58 / 87.81 s
-  no longer open shots the log doesn't have (also the log-only round's fc63 87.87 s case).
-- tests/replay-only.test.ts (five tests).
-
-**Scoreboard** (`npm run snapshots:update` after merging main at 5637d06; `measure --base 5637d06` for this branch
-alone): development plain 81.5% (unchanged), mismatch 6.3%, mean |damage error| 3.2 → 3.4%, replay-only 4.5 → 3.6%;
-hold-out plain 82.6%, mismatch 5.5 → 5.4%, mean |damage error| 7.1 → 6.3%, replay-only 4.0 → 2.9%; earlier pending
-plain 81.5 → 81.6%, 1.6 → 1.3%; verified unchanged but 4e5e −2.9 → −3.0%. Better: d774 (plain 392 → 409, +5.8 →
-−0.6%), fc63 (513 → 523, 3.6 → 3.2%), 207f (+1.6 → +0.4%), 7b54, 012a, and 15 development logs closer in total. Worse:
-9c6e (−13.9 → −20.6%, plain 202 → 200: its two capped kill bursts at 79.85 s, whose readings mean nothing, plain →
-assumed) and 6339 (−8.0 → −14.1%, plain 112 → 114, per hit 30.4 → 21.5%): both under-predicted fights whose log-only
-side (−38%, −26%) the removed landings had cancelled; 5082, db87, 9090, 4360, a9d7, 9847 by 0.1–0.5 points (unlogged
-basic tails gone from under-predicted fights); 4a64 −2 plain (two logged attack-4 hits that had matched the cut tail's
-landings 0.30 s later). No simulation reads any of it (log check only): no team-ab.
-
-**Decisions:** the kill gap's 0.15 s edges because without them one hold-out lost 13 plain (logged landings a few
-frames off the next logged ms) for a better total (`tight`, 5.4%); `cut-all` because a basic attack is cut by the same
-unlogged inputs a skill is, and the measure (14 closer, 6 further, all six under-predicted) is the earlier one's with
-the totals since read right. The final's value range kept though its total effect is negative in 6339 and one hold-out:
-the per-hit error and the verdicts improve, the total had been right by a replay-only final cancelling a second copy.
-
-**Dead ends:** a value of unknown crit fitting a slot up to ×3 above it (9a80's final at 36.10 s): +1 plain, one
-hold-out's total 0.5 points of the mean worse, docs/tried/2026-11-27-unknown-crit-slots.diff; logged gaps of 2.5–6 s as
-away (no rule from length alone: 21 of 119 have replay-only landings, mostly small).
-
-**Left:** the slug's unlogged hits (6339's hit_2 at 21.60 s, 7b54's Laevatain combo and overlapping Si combos: a shield
-no log lists), 9c6e's second target, 9a80's final; the log-only round's placement cases f879 95.10, 5082 45.06, 3aa6
-125.65 s, Pogranichnik's harasses, 99fb's bleed ticks, Arcane's INT lasers (not reached).

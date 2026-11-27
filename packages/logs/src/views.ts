@@ -967,7 +967,7 @@ const PIN_TAGS = 4;
  * spanning it (a buff's run, a tick series), the bounds dropped as conflicting, and (with `verbose`) every bound.
  */
 export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: RegExp; readonly assume?: Readonly<Record<string, string>> } = {}): string {
-  const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
+  const r = logBuffReplay(data, fx, placeHits(data, fx, opts.assume), { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
   const h = r.hiddenHolds;
   if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
   if (opts.why) return holdsWhy(data, fx, r.holdClocks ?? [], h, opts.why, r.logEnds);
@@ -1013,7 +1013,7 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
  * the window's); each applied stop: its frames and the world frames it holds (Σ 1 − scale).
  */
 export function holdsSteps(data: GameData, fx: LogFixture, from: number, to: number, opts: { readonly assume?: Readonly<Record<string, string>> } = {}): string {
-  const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
+  const r = logBuffReplay(data, fx, placeHits(data, fx, opts.assume), { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
   const h = r.hiddenHolds;
   if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
   const ms = (f: number) => (f * 1000) / FPS;
@@ -1061,7 +1061,7 @@ export function droppedView(data: GameData, logs: readonly { readonly short: str
   let none = 0;
   for (const { short, fx } of logs) {
     opts.progress?.(`holds ${short}`);
-    const placement = placeHits(data, fx);
+    const placement = placeHits(data, fx, opts.assume);
     const r = logBuffReplay(data, fx, placement, { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
     const h = r.hiddenHolds;
     if (!h) {
@@ -1138,7 +1138,7 @@ function holdsWhy(data: GameData, fx: LogFixture, clocks: readonly ClockWhy[], h
  * those where the log's step differs from the replay's or the placed hold falls outside.
  */
 export function rampView(data: GameData, fx: LogFixture, opts: { readonly verbose?: boolean; readonly why?: boolean; readonly assume?: Readonly<Record<string, string>> } = {}): string {
-  const placement = placeHits(data, fx);
+  const placement = placeHits(data, fx, opts.assume);
   const { replay } = logBuffReplay(data, fx, placement, underReadings(opts.assume));
   const steps = corrosionRamp(data, fx, placement, replay);
   const h = replay.hiddenHolds;

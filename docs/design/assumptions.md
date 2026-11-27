@@ -95,14 +95,34 @@ time after, the next moment 0.10 s after it; c4f307cd039a 33.58 s, 0.38 s before
 s, the breaker's battle skill pressed 0.10 s after her combo's breaking hit). Read only by the log check's replay
 (packages/logs holds.ts breakHoldStarts, replayrun.ts), not by simulations, whose breaks hold at the breaking hit.
 
-- `moments`: (not before the moment before the break), else it starts at the break's ms; 12 of 71 development breaks
-  move, 3 to 12 frames (three into an ultimate's stop, so not held: 4d60e7fe92c2 56.30 s, 9a8097fcf351 34.93 s,
-  4e3651100056 56.07 s). The enemy's tick bounds (holds.ts tickBounds, called without the replay's options) take the
-  default reading. Measured 2026-11-27 as the default, its tick bounds too, against `ms`: development plain 84.2%
-  either way (4d60e7fe92c2 +2: its INSIDE at 56.60 s gone; 9090afbacec9 −2: Liino's two volleys due at 128.57–128.60
-  s, logged at 128.50 s, held past their landing, the replay's clock 0.07–0.10 s late there; hidden holds placed
-  elsewhere), earlier pending d4fb69b036fe −1 (hidden holds), verified and hold-outs unchanged: not adopted, the log's
-  evidence real but the replay's clocks around a break too loose for it
+- `moments`: (not sooner than 134 ms after the moment before the break: the landings logged there, the replay's
+  clock a few frames late, land before it), else it starts at the break's ms; 12 of 71 development breaks move, 3 to
+  12 frames (three into an ultimate's stop, so not held: 4d60e7fe92c2 56.30 s, 9a8097fcf351 34.93 s, 4e3651100056
+  56.07 s). The default since 2026-11-27 (the break placement round): measured against `ms` (on 2d414f3): development
+  plain 84.3% either way (4d60e7fe92c2 +2: its INSIDE at 56.60 s gone; 9090afbacec9 −1 and earlier pending
+  d4fb69b036fe −1: hidden holds placed elsewhere, 60.63, 75.28, 156.55 s and 115.09 s), verified and hold-outs
+  unchanged; the 134 ms keep 9090's 128.50 s volleys landing (tests/buffreplay-typhoeus.test.ts; without it 9090 −1
+  more). The log's evidence (no moment inside a hold) where `ms` contradicts it.
+- `ms`: the default until 2026-11-27
+
+## break-held-starts
+
+Read by the placement (packages/logs logcasts.ts heldBreaks, castStart), which takes the run's readings
+(placeHits' `assume`). A break's hold stops every clock (break-hold), so a cast that ran through one lands that many
+frames later than its frame says; the placement read its start from the landing alone, and the replay then held it
+again (fc63a2001251 102.33 s: Typhoeus's battle skill INSIDE her combo's uncuttable frames, the combo's event at 98.42 s
+before the 101.11 s break). Whether a press inside a hold waits it out or runs unheld the landings can't tell
+(scripts/probes/stagger/press-in-hold.ts: 30 starts inside a hold, 12 of them at its last 55 ms), so a start inside
+one stays where it is.
+
+- `unheld`: the default; the break's hold isn't read
+- `held`: a break between the start the landing gives and the landing, not inside another operator's combo
+  slow-down (4360447193ac 49.14 s, d4fb69b036fe 97.05 s: the next moments 0.13–0.25 s after), moves the start
+  that many frames earlier (fc63's combo 99.03 → 98.57 s; 3aa6ab93bad4's Zhuang Fangyi combo 144.83 → 144.47 s under
+  break-hold-place `moments`, her breaking hit stamped inside its hold). Measured 2026-11-27 against `unheld` (on
+  2d414f3's code with `moments`): development unchanged (fc63 totals only: its INSIDE gone), earlier pending
+  d4fb69b036fe +2 plain, one hold-out −6 plain (unquantified +3, fallback +1, mismatch +2; no decision kind's count
+  moved), the same in every variant tried (every break, outside every combo, the ms reading)
 
 ## hidden-holds
 

@@ -115,13 +115,33 @@ threshold).
   56.07 s into an ultimate's stop, so not held: 4d60's INSIDE at 56.60 s gone). Measured as the default against `ms`:
   development plain 84.2% either way (4d60 +2; 9090 −2: Liino's two volleys due at 128.57–128.60 s, logged at
   128.50 s, held past their landing, the replay's clock 0.07–0.10 s late there; d4fb −1, hidden holds placed
-  elsewhere), hold-outs unchanged; tests/buffreplay-typhoeus.test.ts's 58 volleys in 9090 fail. Not adopted (the
-  default stays `ms`): the evidence is the log's, but the replay's clocks around a break are too loose for it.
-  **Ruled out** as the hold-outs' 30 hits: the hold's start as the log's moments place it (unchanged); the
-  placement's stops with the breaks' holds ([tried](tried/2026-11-27-placement-break-stops.diff): hold-outs
-  unchanged) and a cast's start held back by them without a cast event
-  ([tried](tried/2026-11-27-break-held-cast-starts.diff): fc63's and 3aa6's INSIDE, hold-outs 2 worse, plain −12). Under `break-hold=none` the 2 better
-  hold-outs lose one INSIDE decision (measure's decision counts): an action the hold lengthens past the next press.
+  elsewhere), hold-outs unchanged; tests/buffreplay-typhoeus.test.ts's 58 volleys in 9090 fail. Adopted in round 3
+  (below) with its hold starting no sooner than 134 ms after the moment before.
+  **Ruled out** as the hold-outs' 30 hits: the hold's start as the log's moments place it (unchanged). Under
+  `break-hold=none` the 2 better hold-outs lose one INSIDE decision (measure's decision counts): an action the hold
+  lengthens past the next press.
+- **Round 3, the casts across a break** (docs/journal/2026-11-27-15-casts-across-a-stagger-break-the-hold-from-the-moments-break.md;
+  scripts/probes/stagger/press-in-hold.ts, ult-edge.ts; `zmdlogs decisions --all --assume break-hold=none`): the development INSIDE flags the
+  hold makes are four: fc63 102.33 s (Typhoeus's combo ran through the 101.11 s break, its event at 98.42 s, placed
+  from its landing without the hold, so the replay held it again: her battle skill inside its uncuttable frames), 3aa6
+  145.73 s (Zhuang Fangyi's battle skill 3 frames after her own combo's breaking hit, the combo's window at frame 25
+  pushed past it: with `moments` the hold ends at the 145.74 s moment, her breaking hit stamped inside it), 4d60
+  56.60 s (a break on Arcane's ultimate stop's end frame: the clocks on time after it, no hold), 458b 87.47 s (an
+  INSIDE without the hold too, 14 frames deeper with it). **Found and fixed:** `break-hold-place` `moments` the default,
+  its hold no sooner than 134 ms after the moment before (9090's 128.50 s volleys land): 4d60 +2 plain, 9090 −1 and
+  d4fb −1 (hidden holds placed elsewhere), hold-outs unchanged; 4d60's INSIDE gone. The placement takes the run's
+  readings (placeHits' `assume`; checkLog takes the composed placement), and engine assumption `break-held-starts`
+  (default `unheld`) has the held start as a reading: `held` moves a start the landing puts before a break (not inside
+  another operator's combo slow-down) by its hold (logcasts.ts heldBreaks; fc63 99.03 → 98.57 s, 3aa6's combo 144.83 →
+  144.47 s): fc63's and 3aa6's INSIDE gone, development unchanged, earlier d4fb +2, one hold-out −6 plain with no
+  decision kind's count moved, the same under every variant tried (every break; outside every combo slow-down, which
+  left fc63 out by its pass-1 stop; under `ms`): not the default. **Ruled out:** a press inside a hold always waiting it
+  out (d4fb 196.05 s: Chen Qianyu's combo 0.27 s into the hold of her own battle skill's break, which the kit's
+  uncuttable frames forbid before 196.07 s; 9847 57.64 s: Perlica's combo event at the break and its landing 0.82 s
+  later at its frame 24, unheld) as a placement rule; a start inside a hold moved before it (round 3's first try:
+  new INSIDE flags at d4fb 40.43, 195.87 s and 3aa6 145.53 s). Tried and dropped: no hold on an ultimate stop's end
+  frame ([tried](tried/2026-11-27-break-ultimate-stop-end.diff): under `moments` development unchanged, one hold-out
+  plain −1).
 - **Inside a combo's slow-down the hold applies, unscaled** (break-place.ts STRADDLE=1): a7a7 48.14 s and f879
   57.12 s (Wulfgard's combo breaking in its own stop) +468–501 ms after the ms, c83c 55.83 s (in Si's combo) +458
   ms, as outside one. The three with hits 0.13–0.25 s after (4360 49.14 s, c4f3 82.65 s, d4fb 97.05 s) are the
@@ -135,13 +155,15 @@ threshold).
 
 **Still possible:** the stamp's place inside the hold from something else than the moments (c4f3 33.58 s's +381 and
 5082's +210 before the ms, where the next moment allows the hold at the ms; the log's ~100 ms flush on the world's
-clock would put the stamp anywhere in it); what the 2 hold-outs' INSIDE is (an action held past the next press: a
-breaker's own cast logged inside its hold, as 3aa6 145.63 s, or a cast across a break placed without it, as fc63
-99.03 s); the length (above); `moments` once the replay's landings around a break are tighter (9090's volleys).
-**Next check:** the casts' starts across a break against their logged events where they have one (a narrower
-version of the held-starts diff); `moments` with its hold not starting before the replay's own landings logged at
-the moment before (9090 128.50 s); a `stagger-recovery` refit once more Staggers are bracketed (the median's error is
-as large as its offset).
+clock would put the stamp anywhere in it); what the 2 hold-outs' INSIDE is (not fc63's case alone: `held` costs one
+hold-out 6 plain and moves none of its decisions; a press in the hold waiting it out or running unheld, which the
+landings can't tell); whether a break inside a combo's slow-down holds at all (4360 49.14 s, c4f3 82.65 s, d4fb
+97.05 s: moments 0.13–0.25 s after; c4f3's Chen combo can't start before 81.93 s, so its breaking hit came at 82.50 s
+or later, and Pogranichnik's hit at 82.78 s); the length (above).
+**Next check:** the 458b 87.47 s INSIDE (Akekuri's combo 38 frames inside her ultimate with no hold: a placement of
+its own); a press in a hold, from a log with a cast event and a kit window there (the ambiguous starts in
+press-in-hold.ts); `held` once a second log decides the hold-out's kind; a `stagger-recovery` refit once more
+Staggers are bracketed (the median's error is as large as its offset).
 
 ## The placement cases the one-sided rounds left (2026-11-27)
 

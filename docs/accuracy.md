@@ -83,7 +83,7 @@ stageFight); **As other kit hit**: its hits matched only as their event's other 
 | chr_0026_lastrite (Last Rite) | 4 | 156 | 69.2% | 0.6% | 5 | 1.5% | 1.3% | 1.7% | 1.5% | 38.5% |
 | chr_0027_tangtang (Tangtang) | 2 | 265 | 74.7% | 1.5% | 25 | 4.3% | 4.3% | 4.3% | 4.3% | 35.0% |
 | chr_0028_wulfa (Rossi) | 10 | 2305 | 77.8% | 4.0% | 6 | 1.2% | 0.8% | 1.2% | 1.1% | 62.3% |
-| chr_0029_pograni (Pogranichnik) | 5 | 649 | 77.8% | 0.6% | 15 | 2.0% | 0.6% | 1.5% | 2.0% | 12.6% |
+| chr_0029_pograni (Pogranichnik) | 5 | 649 | 77.7% | 0.6% | 15 | 2.0% | 0.6% | 1.6% | 2.0% | 12.6% |
 | chr_0030_zhuangfy (Zhuang Fangyi) | 5 | 1392 | 88.4% | 3.1% | 2 | 0.9% | 1.1% | 0.9% | 1.0% | 86.3% |
 | chr_0031_mifu (Mi Fu) | 5 | 471 | 92.4% | 0.8% | 8 | 1.2% | 0.7% | 1.2% | 1.7% | 48.1% |
 | chr_0032_lizhiyan (Arcane) | 40 | 5688 | 87.5% | 3.5% | 25 | 3.6% | 1.6% | 2.4% | 3.5% | 10.2% |

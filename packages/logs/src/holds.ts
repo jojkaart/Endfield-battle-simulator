@@ -258,9 +258,15 @@ export function breakHoldStarts(fx: Pick<LogFixture, "hits">, frames: number, as
     const i = moments.indexOf(t);
     const [prev, next] = [moments[i - 1], moments[i + 1]];
     if (atMs || frames <= 0 || next === undefined || next - t >= holdMs - BREAK_EDGE_MS) return { at: frameOf(t), from: frameOf(t) };
-    return { at: frameOf(t), from: frameOf(Math.max(prev ?? 0, next - holdMs)) };
+    return { at: frameOf(t), from: frameOf(Math.max((prev ?? 0) + BREAK_AFTER_PREV_MS, next - holdMs)) };
   });
 }
+
+/**
+ * How long after the moment before a break (ms) a hold the log's moments place may start (breakHoldStarts): the
+ * landings logged at that moment, which the replay's clock has a few frames late, land before it.
+ */
+const BREAK_AFTER_PREV_MS = 134;
 
 /** How much sooner (ms) than the hold's end the next logged moment may come and the hold still start at the break (a frame: the log's ms are a frame's). */
 const BREAK_EDGE_MS = 1000 / FPS;

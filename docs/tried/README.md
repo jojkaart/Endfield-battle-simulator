@@ -33,12 +33,13 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
 - [2026-11-27-jump-launched-landings.diff](2026-11-27-jump-launched-landings.diff): the replay's JUMPDROP leaving out
   a logged landing launched before the jump (KitHit.launch: f879's Magma Fragment ticks across Laevatain's empowered
   jump 30 → 80); no development log moves, one hold-out −23 plain: not explained without opening it.
-- [2026-11-27-break-held-cast-starts.diff](2026-11-27-break-held-cast-starts.diff): a new cast's start held back
-  by every logged break's hold between it and its first landing, no cast event needed (logcasts.ts newCastStart,
-  passStops; fc63's and 3aa6's INSIDE); development 3 better, 1 mixed, hold-outs 2 worse (plain −12).
-- [2026-11-27-placement-break-stops.diff](2026-11-27-placement-break-stops.diff): the placement's pass-2 stops with
-  the logged breaks' holds (logcasts.ts passStops); development unchanged, earlier pending 1 worse, 1 mixed, hold-outs
-  unchanged: a held start needs a cast event near it, which few casts across a break have.
+- [2026-11-27-break-ultimate-stop-end.diff](2026-11-27-break-ultimate-stop-end.diff): no hold at a Stagger break
+  on an ultimate stop's end frame (engine timeline/clock.ts breakHold, holds.ts breakStops: 4d60's 56.29 s break,
+  the clocks on time after it); under break-hold-place `moments` development unchanged, one hold-out mixed (plain −1):
+  one log's case, the replay right there already, and an engine change for nothing.
+- The two placement diffs of 2026-11-27's break round (break-held-cast-starts, placement-break-stops) are gone:
+  engine assumption break-held-starts `held` is their rule as a reading (logcasts.ts heldBreaks, castStart; the
+  placement takes the run's readings), measured with `--variant break-held-starts=held`.
 - [2026-11-27-status-value-fit-10.diff](2026-11-27-status-value-fit-10.diff): the status pairing's value fit at 10%
   instead of 1% (statuspairs.ts STATUS_VALUE_FIT), so a burst a buff's edge put off by ×1.1 pairs beyond 16 frames;
   1 log better, 2 worse, 1 mixed (Combustion ticks of one value trading places): mixed.

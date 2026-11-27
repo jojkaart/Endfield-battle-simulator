@@ -672,13 +672,13 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
   if (placementOrOpts !== undefined && !isPlacement(placementOrOpts)) {
     if (Object.keys(opts).length) throw new Error("logBuffReplay: options given twice (as the third argument and the fourth)");
     const { placement: given, ...rest } = placementOrOpts;
-    return logBuffReplay(data, fx, given ?? placeHits(data, fx), rest);
+    return logBuffReplay(data, fx, given ?? placeHits(data, fx, rest.assume), rest);
   }
   // A reading of the data itself (engine assumption combo-curve): the placement's stop lists and the replay's timeline
   // must read the same curve, so the data must already be under it (combo-hold report point 3: a call with the raw data
   // mixed the two silently; the views, snapshotEntry and hitRecords wrap it at their entry).
   if (withCurveReading(data, opts.assume) !== data) throw new Error(`logBuffReplay under combo-curve ${opts.assume && "combo-curve" in opts.assume ? readingOf(opts.assume, "combo-curve") : "(the default)"}: the game data is under another of its readings, so the placement and the replay would read two curves; pass withCurveReading(data, assume) (@efsim/engine), and a placement made from it`);
-  const placement = placementOrOpts ?? placeHits(data, fx);
+  const placement = placementOrOpts ?? placeHits(data, fx, opts.assume);
   let replay = replayKitBuffs(data, fx, placement, opts);
   // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
   const levels = new Map<string, ReactionLevel>();
@@ -734,6 +734,8 @@ export interface CheckLogOptions {
   readonly replay?: LogBuffReplay;
   /** The engine's readings of every hit already made for this replay (engineHits). */
   readonly engineHits?: EngineHits;
+  /** The placement the replay was made from (placeHits, under the run's readings); absent: placed again at the defaults. */
+  readonly placement?: Placement;
   /**
    * false: without the engine's readings, the log's listing with the replay's decisions alone, its readings keeping their
    * classes (the check before 2026-10-25; for testing the fallback's readings on their own). Default: the engine first.
@@ -766,7 +768,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
   const caps = kitStackCaps(data, panels);
   const auras = unloggedEnemyAuras(data, fx, panels);
   const finisher = finisherModifier(data, fx.enemy.id);
-  const placement = placeHits(data, fx);
+  const placement = opts.placement ?? placeHits(data, fx);
   // The hits as the replay decides their kit buffs; with `buffs: "log"`, as logged.
   const replay = opts.buffs === "log" ? null : (opts.replay ?? logBuffReplay(data, fx, placement));
   const byEngineHit = replay && opts.engine !== false ? (opts.engineHits ?? engineHits(data, fx, replay, placement)) : null;
