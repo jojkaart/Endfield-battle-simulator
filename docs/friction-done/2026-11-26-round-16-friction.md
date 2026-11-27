@@ -64,3 +64,17 @@ aren't repeated.
 - team-ab's identity check in about a minute for the engine record, and snapshots:update's new "keys added only" line
   answering the brief's "nothing moved" in one line.
 - The reports' episodes as tests (6339's purges, e82d's 8.93 s and its 6.90 s instance, c4f3's batch, d4fb's bank).
+
+## Outcome (round 17)
+
+- 1 (The new backlog's parked and accuracy lists are copied by hand): done (21e5956): `friction.ts carry <backlog>
+  <n,…|none> --lists [--park <n,…>] [--drop <text>]…` prints the Parked section with the parked points on top and the
+  accuracy list without its "Closed by" or dropped entries; this round's backlog was made with it.
+- 2 (A point partly closed comes out of the outcomes skeleton as "carried"): done (21e5956): a From entry's
+  parenthesis after the number fills the outcome as "done but <part> (carried: <backlog> point k)" (carriedFrom's
+  Carried.part).
+- 3 (No test helper for a replay's records, so a decisions test fakes a BuffReplay): done (1b0a829):
+  tests/helpers/replay.ts fakeReplay (the records named as BuffReplay has them, every other member throws "not
+  faked"); the BOTHPATHS and BATCH tests use it.
+- 4 (A new view next to query.ts must avoid an import cycle for one label function): done (21e5956):
+  packages/logs/src/labels.ts (operatorLabel, shortSkill, secondsText), a leaf every view imports; eight copies gone.

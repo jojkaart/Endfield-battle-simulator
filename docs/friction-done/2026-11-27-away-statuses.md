@@ -56,3 +56,16 @@ pressed together. Branch worktree-agent-ad069ca5ecd085e53.
 - `zmdlogs hits --against <id>=<r>` and `--zones --reading log` made the 69.35 s regression (three Xiranflow layers
   against one) clear in two commands.
 - `scripts/edit.ts` for doc edits: no shell damage, all or nothing.
+
+## Outcome (round 17)
+
+- 1 (No view says what happens in an away stretch): done (b6ea1e0): `efsim zmdlogs away <fixture…|--all>`
+  (awayview.ts): per stretch the clocks listed on both sides with their asks, the hold placed inside it, the basic
+  strings across it and a verdict (31 stretches: 2 pause, 11 runs on, 4 mixed, 14 no clock); the probe is deleted,
+  its citations name the view.
+- 2 (Layered buffs are invisible to every clock view): done but its per-layer clock (carried: 2026-11-27-backlog-after-round-17.md point 1);
+  48f45b2: `--kit-buff` / `--trace-buff` read the owner by its name (clockview.ts kitBuffKey), and clock's refusal
+  names the team's keys with that id or prefix.
+- 3 (The bare relaxation placed the pause in the wrong place, silently): done (48f45b2): `zmdlogs holds` flags a
+  unit free over more than 3 s (WIDE) and counts them on its second line; measure --hits's hidden-holds block already
+  prints each moved unit's earliest–latest.

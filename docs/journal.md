@@ -4,9 +4,45 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 168 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 169 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Improvement round 17: numbers that move, questions across logs, one cause per line
+
+**Goal:** improvement round 17 over the five open friction reports (Arcane's stage factors, round 16's own, away
+statuses, exposed totals, Zhuang Fangyi and Liino) and round 16's backlog; every file the round's
+(docs/friction-done/2026-11-27-round-17.md has the details).
+
+**Done:**
+- **Numbers that move:** two describing snapshot keys, `other-hit operator <id>` (hits matched only as their event's
+  other kit hit: the class that hid Zhuang Fangyi's attack 4) and `stage` (enginecheck.ts stageFight); the
+  scoreboard's by-operator table names each operator ("chr_0032_lizhiyan (Arcane)"), with "As other kit hit" (per
+  group too: development 100, hold-outs 19) and "Without stage fights"; `zmdlogs groups` prints the count and casts
+  first, and mismatches inside a fight-wide factor stretch apart.
+- **Across logs:** `node scripts/cli-ab.ts <ref> --placement` (every log's CAST/HIT lines that differ, by rule and
+  operator, 12 s); `efsim zmdlogs away` (31 stretches: 2 pause, 11 runs on, 4 mixed, 14 no clock); BATCH in `zmdlogs
+  decisions` (20 in 10 logs); `zmdlogs offsets --all` ends with the factor stretches no fixture holds (14 in 8 logs).
+- **One cause, one line:** `totals`' total ÷ Max HP and kill kind; `hits --against-hit`; stageNote in `replay` and
+  `bursts`; the CAST line's `[paths: …]`; holds' WIDE units; `--kit-buff` by an owner's name; kit-census's dead kit
+  buffs; groups' log-only buffs.
+- **Paperwork and helpers:** `friction.ts carry --lists [--park] [--drop]` (this backlog made with it), "done but
+  <part>" outcomes, tests/helpers/replay.ts fakeReplay, packages/logs/src/labels.ts; tests/logcasts.test.ts split (56 s
+  → 29 + 33 s).
+
+**Checks:** `npm run snapshots:update`: "No log's verdicts moved", "keys added only in 45 log(s) … other-hit operator
+<id> ×58, stage ×8"; docs/accuracy.md's old columns identical row by row. team-ab against 44a72be (an engine reading's
+description changed): unchanged.
+
+**Decisions:** the names come from the game data's cache (the snapshots stay the scoreboard's only numbers);
+`isDescribingKey` holds every kind that isn't a verdict, and a hold-out's moved key is printed by kind (a lone `share
+operator` key named its id before). The away probe is deleted, the view cited in its place; the stage probe stays
+(the docs cite its numbers). The verdict of an away stretch is "pause" when most clocks ask half its length, "runs on"
+when every one asks under a quarter.
+
+**Left** (docs/friction/2026-11-27-backlog-after-round-17.md): a layered buff's per-layer clock; the recorded Stagger
+start parked; on the accuracy list the element mask of log-only buffs and the 14 factor stretches (7b54's slug first).
+CLAUDE.md lines for the lead in the round's summary.
 
 ## 2026-11-27: Exposed totals: stage Electrification, kills, Rossi's combo 3
 
@@ -356,37 +392,3 @@ end at a hit's ms isn't one side of the hit in general; c4f3's case is decided b
 **Left:** what ends Arcane's doubles Susceptibility before Si's final (e82d, 6339); a bound from an end-boundary hit's
 value; the order of landings batched at a stop's end (c4f3 7.05 s). Friction report
 docs/friction/2026-11-26-arcane-will.md.
-
-## 2026-11-26: Improvement round 15: one rule for each fact, records the views carry
-
-**Goal:** the five open friction reports and round 14's backlog (docs/friction/README.md's round), every file free:
-the structural causes first (a fact computed twice by two rules, a record the views didn't carry, a comparison against
-the wrong reference), behaviour-preserving.
-
-**Done** (docs/friction-done/2026-11-26-round-15.md has the list and the commits):
-- One rule each: the replay's stops (castassembly.ts replayStops, read by the hold placement and every world-time view;
-  `zmdlogs worldtime` replays and shows a tick-read event without frames); a hit's twin on a jump's other path (engine
-  timeline/paths.ts pathTwin, pathLandings, for the control and chance paths and castassembly.ts); each assumption
-  kind's fact (assumptions.ts ASSUMPTION_FACTS, docs/design/data.md's table, tests/assumption-facts.test.ts); one
-  reason per kit buff (replaycrits.ts buffDecidability).
-- Records the views carry: HitRecord.assumptions and landing.cast, `zmdlogs assumed --operator`, groups' rows of casts
-  matched only as another kit hit, LINK and two-casts MADE lines, measure's hold units with their pinning bounds,
-  `zmdlogs clock`'s check paired by the nearest start, `zmdlogs stagger`'s FLAG.
-- The reference: measure with no reference named and stale snapshots measures the merge base with main as --base;
-  cli-ab reads the other worktree's paths as this checkout's.
-- Tools: scripts/split-module.ts (a split as a checked move), check-links.ts staleCitations (eight fixed) and conflict
-  markers (docs/roadmap.md had a merge's, resolved), `lead-files.ts --family`, bash-guard's sed hint, process step 6
-  (CLAUDE.md is the lead's: lines proposed in the summary's "For the lead").
-
-**Checks:** `npm run measure -- --base 32dfacd --at HEAD` after the refactors: no log's verdicts moved; team-ab against
-32dfacd: every team's fight the same; `npm run snapshots:update` at the end: the scoreboard unchanged.
-
-**Found on the way:** the CLI's `--no-cache` and `--no-foods` were dropped by parseArgs' allowNegative (read as an
-undeclared `cache=false`), so the hits cache was read whatever the flag said; fixed (command.ts withDeclaredNegatives).
-The fact table's test found the log-listing fallback trying both crits where the replay had read one (three hits in
-0c14 and a9d7; a fallback either way): on the backlog's accuracy list with two other candidates the table names
-(reaction levels the log decided, the enemy's side).
-
-**Left** (docs/friction/2026-11-26-backlog-after-round-15.md): the log context `{ data, assume }` (carried twice),
-fit-build over a wider space with chance counts, the by-operator scoreboard's share (a new snapshot key), a recorded
-Stagger start.

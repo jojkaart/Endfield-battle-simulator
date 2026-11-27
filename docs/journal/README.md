@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-27: Improvement round 17: numbers that move, questions across logs, one cause per line](2026-11-27-04-improvement-round-17-numbers-that-move-questions-across-logs.md)
 - [2026-11-27: Exposed totals: stage Electrification, kills, Rossi's combo 3](2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)
 - [2026-11-27: Away stretches: a whole-game pause holds every timer, a boss phase none](2026-11-27-02-away-stretches-a-whole-game-pause-holds-every-timer-a-boss.md)
 - [2026-11-27: Zhuang Fangyi's attack 4 and Liino's silent stance ends](2026-11-27-01-zhuang-fangyi-s-attack-4-and-liino-s-silent-stance-ends.md)

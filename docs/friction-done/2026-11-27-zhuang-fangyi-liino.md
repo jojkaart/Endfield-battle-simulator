@@ -59,3 +59,19 @@ Task: find and fix the recurring causes of Zhuang Fangyi's and Liino's mismatche
 `zmdlogs casts --choices` (the rule that picked each step) found the attack-4 cause in minutes; `holds --why
 status:<name>` gave the Electrification gap directly; `measure --base` with the per-log mean per-hit error for mixed
 logs made "worse" logs explainable.
+
+## Outcome (round 17)
+
+- 1 (Fallback matches hid a ×3.125 placement error for weeks): done (21e5956, dbe2545): a describing snapshot key
+  `other-hit operator <id>` (the hits matched only as their event's other kit hit), the scoreboard's "As other kit
+  hit" column per group and operator, measure's group lines when it moves, and `zmdlogs groups` prints the count and
+  the casts first.
+- 2 (Placement rules' side effects only show in other operators' logs): done (3aa7e39): `node scripts/cli-ab.ts <ref>
+  --placement [<fixture…>] [--operator <name>] [--summary]`: every development log's CAST and HIT lines that differ,
+  counts per log, rule and operator, about 12 s (against 7e6c12f: Zhuang Fangyi 63 casts, 148 hits).
+- 3 (Stage-factor logs dominated the operators' mismatch lists): done (f857001): `zmdlogs groups` counts mismatches
+  inside a fight-wide factor stretch (buildoffsets.ts factorStretches) as fight-wide, before team-wide and own;
+  `zmdlogs offsets --all` lists the stretches no fixture holds.
+- 4 ("Linger" was in the kit against the data): done (17fec8c): kit-census's last section names a kit buff whose game
+  buff only disabled create actions make (gamedata.ts buffCreators, kit-census.ts deadKitBuffs; none now, Liino's
+  linger would have been one: a test).
