@@ -1330,7 +1330,11 @@ class Compiler {
     // Capped before the channel's end: a target that comes into reach late takes its ticks later, up to the end. split:channel-end
     const last = start + (interval > 0 ? toFrame((n - 1) * interval) : n - 1);
     if (t.startsWith("ChannelingAction") && n >= perTarget && end > last) {
-      for (let i = before; i < this.landings.length; i++) this.landings[i] = { ...(this.landings[i] as CompiledLanding), latest: end };
+      // The ticks' own landings: not what a buff or entity they create deals later (Rossi's combo afterhits). split:channel-end
+      for (let i = before; i < this.landings.length; i++) {
+        const l = this.landings[i] as CompiledLanding;
+        if (!l.detached && l.frame <= end) this.landings[i] = { ...l, latest: end };
+      }
     }
     if (this.landings.length > before) this.notes.add(`${ctx.file}@${start}: ${t} ticks from frame ${start} every ${fmt(interval)} s to ${end}${Number.isFinite(perTarget) ? `, at most ${perTarget} per target` : ""} (first tick assumed at the start)`);
   }

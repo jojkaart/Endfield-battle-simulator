@@ -22,6 +22,15 @@ export const CAST_SLACK_MS = 1000;
 /** A cast's next landing of a key logged this close to its slot's frame (from the key's first landing) is that landing (ms). */
 const ON_TIME_MS = 150;
 
+/**
+ * How far past its channel's end (KitHit.latestFrame) a tick may land and still be its cast's, with no logged press of
+ * its operator since the cast's last landing (ms; split:channel-end):
+ * the logs run channels up to 0.23 s past the data's end (9090afbacec9 93.91 s Liino's attack 2, 4bfc6f3e84b8 52.23 s
+ * Arclight's attack 4, c3c735dbb022 60.94 s Si's attack 4: holds the replay doesn't know of, or a later start), while a
+ * new cast's ticks come 0.63 s or more past it (abfd4b7478ec 63.77 s, c3c735dbb022 33.64 s).
+ */
+const CHANNEL_SLACK_MS = 400;
+
 /** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
 export interface TimeStop {
   /** A frame (30 a second), not ms as the log's times; it lasts `scales.length` frames. */
@@ -1119,11 +1128,20 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // ticks; an enemy in reach late takes them up to there), so a landing of its key later than that from the cast's
         // first landing is a new cast's, however long the skill's whole action (abfd4b7478ec 63.77 s: Si's attack 4 has
         // 552 frames and a channel to frame 40; two ticks at 61.96 / 62.08 s, a battle press, then six at 63.77–64.35 s,
-        // which took the first cast's four slots left and cut the second's at 64.10 s; c3c735dbb022 60.64 s). Only one
+        // which took the first cast's four slots left and cut the second's at 64.10 s; c3c735dbb022 33.64 s). Only one
         // channel's own ticks, from its first (head and next slot the same kit hit): a skill of several one-tick channels
         // (Laevatain's normal_skill_during_ult, frames 13 / 23 / 98) keeps the slack its stops need (db8711232de9 30.01 s).
         const channel = next?.hits.find((x) => x.latestFrame !== undefined && head?.hits.includes(x)); // split:channel-end
-        const pastChannel = channel !== undefined && head !== undefined && elapsed > msOf((channel.latestFrame as number) - head.frame) + ON_TIME_MS; // split:channel-end
+        // Past it by more than CHANNEL_SLACK_MS; or by more than ON_TIME_MS with a logged press of the operator's between
+        // the cast's last landing and this one (c3c735dbb022 60.64 s: one tick at 59.30 s, a battle press at 59.50 s,
+        // five ticks 0.1 s apart from 60.64 s, 1.34 s on; without the press the five would split at the slack).
+        const channelEnd = channel !== undefined && head !== undefined ? msOf((channel.latestFrame as number) - head.frame) : Infinity; // split:channel-end
+        const pressedBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.last.t && c.t < h.t); // split:channel-end
+        // Not across an ultimate's event: logged at its stop's end, its stop isn't among this pass's (unplacedCastStops
+        // start it at the event), and it held the channel (c83c75d02a85 92.48 s: Si's attack 4's third tick 0.01 s after
+        // Laevatain's 90.43–92.47 s ultimate stop, its event at 92.48 s, 0.1 s of world time after the second).
+        const ultimateBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.t > cur.last.t && c.t <= h.t && data.kits.operators[c.operator]?.skills.find((s) => s.skillId === c.skill)?.kind === "ultimate"); // split:channel-end
+        const pastChannel = !ultimateBetween && (elapsed > channelEnd + CHANNEL_SLACK_MS || (pressedBetween && elapsed > channelEnd + ON_TIME_MS)); // split:channel-end
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
