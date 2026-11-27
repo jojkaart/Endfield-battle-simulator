@@ -115,6 +115,12 @@ export interface LogFixture {
    * operator's hits at one factor there (enginecheck.ts stageModifiers), each with its evidence.
    */
   readonly stageFactors?: readonly StageFactor[];
+  /**
+   * Hand-written: the fight is against several enemies of one template, which the log names by one enemy id (so the
+   * import couldn't put it under fixtures/multi-target/), with the evidence. The check runs it as one target; the
+   * scoreboard keeps it out of the development and earlier-pending rows (scripts/accuracy.ts, its own row).
+   */
+  readonly severalTargets?: { readonly why: string };
 }
 
 /**

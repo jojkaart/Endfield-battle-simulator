@@ -321,6 +321,15 @@ on `zmdlogs hits --json`), and the `replay` view's LAND lines and the `bursts`
 rows show the staged damage beside the replay's own (enginecheck.ts
 `stageNote`). Not a fudge per hit: one factor per window, from all
 four operators' hits at once, as a build override is one input from many.
+A fight against several enemies of one template, which the log names by one
+enemy id (so the import couldn't put it under fixtures/multi-target/), is
+the fixture's hand-written `severalTargets` with its evidence (2026-11-27,
+9c6e): one operator's status event twice within a frame (one enemy can't
+burst twice at once) and kills before the fight's end with hits going on
+(scripts/probes/targets/two-targets.ts). The check still runs it as one
+target; its snapshot entry carries the `several targets` key and the
+scoreboard gives it a row of its own, out of the development and
+earlier-pending means (scripts/accuracy.ts `withSeveralTargets`).
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
 sets fields over it when the fixture is read (logs.ts `readLogFixture`;

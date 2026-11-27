@@ -4,7 +4,7 @@
 //
 // Per burst, in time order:
 // - the logged burst (a hit logged under buff_common_<e>_<e>_triggered) and the replay's burst landing the log check
-//   pairs with it (BuffReplay.statusLanding: same operator and element, nearest within its window), with the offset;
+//   pairs with it (BuffReplay.statusLanding: same operator and element, one assignment by value and time: statuspairs.ts), with the offset;
 //   a logged burst without one says why; a replay burst no logged one took is "replay only";
 // - its cause on each side: on the replay's, the landing whose infliction set it off, from the burst's own record
 //   (StatusEvent `inflictedAt`, engine landing.ts delayBursts; improvement round 14, backlog after round 13 point 2),

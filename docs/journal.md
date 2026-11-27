@@ -4,9 +4,59 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 171 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 172 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Status landings paired by value; two-target fights marked
+
+**Goal:** the status landings' pairing (BuffReplay.statusLanding: a logged Arts Burst, Combustion tick or other
+status hit took the nearest replay landing within 16 frames, in time order) as a value-based assignment, so a burst a
+stop held 0.55–0.85 s late still pairs with its own landing (the log-only round's lead, c779's crossed pair); 9c6e's
+two targets marked so they stop weighing on the development means; beside an agent on placement cases (its files
+untouched here).
+
+**Done:**
+- **One assignment per operator, kind and element** (packages/logs/src/statuspairs.ts pairStatusLandings, engine
+  assumption `status-pairing`, default `assignment`; `nearest` the old pairing): over stretches without a gap of more
+  than 60 frames, the pairing with the most pairs (a Hungarian method, each logged hit with a "none" column), then the
+  least frames apart, a landing whose value doesn't fit counting 60 frames more; a landing 16–60 frames away only
+  where its value fits within 1% (statusValueFits: the landing's damage again from its inputs under the log's crit
+  flag, times the fixture's stage factor, against the uncapped logged value). c779: logged 9.68 s now takes the
+  replay's 9.27 s and 10.08 s the 10.03 s (was 9.68 → 10.03, both others one-sided). `zmdlogs bursts --all`: one-sided
+  bursts 31 log-only / 40 replay-only → 19 / 28 at 30 frames, and four more pairs at 60 (c3c7 22.32, c83c 32.31, 79cc
+  24.23, 3aa6 12.31 s: 1.5–2.1 s late, equal values).
+- **9c6e marked `severalTargets`** (fixture field with its evidence, schema, LogFixture; snapshotentry.ts emits the
+  describing key `several targets`; scripts/accuracy.ts withSeveralTargets puts such a pending log in a row of its
+  own; measure.ts's overlay keeps the mark). The evidence (scripts/probes/targets/two-targets.ts): Typhoeus's Nature
+  burst logged twice within a frame nine times (79.85 s: 143,320 and 33,858 at one ms, both capped from one uncapped
+  412,733) and eight kills with hits going on to 95.6 s. No other development log has the shape: the slug's kills
+  (6339, 7b54) are one enemy's lives and phases; b7b3 10.91, c4f3 7.05 and db87 14.01 s have one status twin each and
+  no kill.
+- tests/status-pairing.test.ts (the assignment on c779's shape and on the log, the value-gated window, the mark's
+  group); docs/design/data.md, fixtures/multi-target/README.md, docs/tried/2026-11-27-status-value-fit-10.diff.
+
+**Scoreboard** (`npm run snapshots:update`, against main at 107766a). The reclassification alone (main's snapshots
+with 9c6e in its own row, scratch only): development plain 81.5 → 82.4%, mismatch 6.3 → 5.9%, mean |damage error|
+3.4 → 2.9%, 32 → 31 fights; its log-only share 3.13 → 2.02%, replay-only 3.61 → 3.33% (not an accuracy gain). The
+pairing on top: development plain 82.4 → 82.5%, replay-only 3.33 → 3.15%, log-only 2.02 → 1.84%, |matched| 2.28%
+unchanged, one-sided fights 21; hold-out plain 82.6 → 82.7%, replay-only 2.9 → 2.7%, log-only 5.0 → 4.8%, |matched|
+2.0% unchanged, one-sided 11 → 10; earlier pending plain 81.6 → 81.7%, 1.1 → 1.0% / 0.9 → 0.8%; verified plain 78.2 →
+78.4% (40d9 +1). As the scoreboard has it: development 82.5%, 5.9%, 2.9%; the new row 1 fight, 48.1% plain, 20.6%.
+Better: 489c, 79cc, 9c0b, af7b, c779, c83c, db87, f978, 0c14, 3aa6, 458b, 9555, d572, 40d9, four hold-outs; mixed:
+7910, f879, c3c7 (plain +1 to +4, mismatch down, their totals 0.1–0.2 points further: a status hit now paired whose
+landing's value differs slightly from the one-sided pair's), none worse. No simulation reads the pairing (log check
+only): no team-ab.
+
+**Decisions:** a field the scoreboard reads, not a move to fixtures/multi-target/: the check runs 9c6e usefully as one
+target (200 plain, the kill gaps' tests), its snapshot stays pinned and no key or test path moves. The 60-frame window
+over 30: measured with --patch, 7 logs and 2 hold-outs better, none worse. The value fit at 1%: the replay's value is
+the replay's own, so a burst landed before a buff the game's had is off by that buff, and 10% was mixed (the ticks of
+one Combustion share a value and traded places): docs/tried/2026-11-27-status-value-fit-10.diff.
+
+**Left:** pairs whose replay value a buff's edge puts off (1d91 50.47 / 51.02 s ×1.095, 7b54 46.70 s, a7a7 39.27 s,
+e989 86.65 s, 7910 28.27 s, abfd 100.93 s): the fit judged by the check's reading of the pair; 9c6e's second target
+itself (the engine has one); the slug's unlogged hits (lead 3, not reached).
 
 ## 2026-11-27: Replay-only landings: kill gaps, basic tails, tails kept by another cast's buff, finals by value
 
@@ -378,52 +428,3 @@ engine rule simulations read changed.
 **Left:** e82d −8.9% (a log with a second touch inside an Imprisonment decides it); 7b54's partial ends (16.48,
 19.59, 47.48 s: other debuffs listed on); 6339's Laevatain hits 14.6–19.2 s (the replay ×1.28) and Si's combo final
 slots at 11.31 s.
-
-## 2026-11-26: A stop's batched landings: the log's Stagger bars give their order; Pogranichnik's Morale before the damage
-
-**Goal:** the order of the landings the log batches at a stop's end (c4f3 7.05 s: Chen Qianyu's combo shattered the
-Solidification in the replay, Estella's in the game), as a general rule; the Vulnerable stacks c4f3's 13.07 s Breach
-consumed (three in the replay, four by the next combo's path); if time, d4fb 86.67 s (Pogranichnik's bank 0.3 s late)
-and 7910's early rogue wave.
-
-**Done:**
-- **A logged ms is a batch, its order the Stagger bars'.** The log flushes every ~100 ms and at a stop's end, so one ms
-  holds hits up to three frames apart; each Stagger event's bar (the one before it less its dealt) falls in the game's
-  order. c4f3 7049 ms: Estella's combo 274 → 264 (the Shatter credited to it), her ultimate 254 → 234, Chen's combo and
-  the Lifts 234 → 224 (open-problems had read the bars backwards). Over the development logs' 60 pairs of two operators'
-  events at one ms the bars follow neither the operator IDs (28 right), the team's order (39) nor the casts' starts (29
-  of 44: why docs/tried/2026-11-24-same-ms-cast-order.diff was mixed): the game's time order inside the batch, which only
-  the bars keep (scripts/probes/physical/batch-rules.ts). The replay now lands pinned landings at one logged ms in the
-  bars' order (castassembly.ts `batchOrder` → landings' `order` → engine `ScheduledHeader.loggedOrder`, schedule.ts
-  `dueBefore`). Simulations keep the ID order: no rule from cast data fits.
-- **Lead 2 was a knock-on of lead 1.** With the batch's order Estella's Lift adds the Vulnerable stack Chen's Shatter
-  had not, and c4f3's 13.07 s Breach consumes four; every Breach or Crush before a Pogranichnik combo whose path its
-  values decide now consumes the path's stacks (25 combos; at cbe7d5b c4f3 13.67 s alone differed:
-  scripts/probes/physical/breach-path.ts). c4f3's hits from 7.05 to 14.43 s replay exact.
-- **Fervent Morale before the damage of the hit that makes it** (lead 3, d4fb 86.67 s): the layer the logs list since a
-  Breach's ms is talent 2's, from his ultimate's follow-up on his own physical status, which comes with the data's
-  FractureAction before the battle skill's DamageAction: `beforeDamage` on oath_harass_status_self / _mate (d4fb 86.67,
-  161.59 s, c4f3 71.15 s, a9d7 205.06 s, de6a 26.03 s exact). And a hit's stacks gained with its SP before the damage
-  raise their stacks event then (landing.ts; only Pogranichnik's hits have both): the bank's layer counts for the slash
-  that filled it (d4fb 47.92 s).
-
-**Scoreboard** (`npm run snapshots:update` after merging main at f05036d, the logged purges; `measure --base f05036d`
-for this change alone): development plain 74.3 → 76.2%, mismatch 10.4 → 10.2%, mean |damage error| 5.1 → 4.9%; hold-out plain 82.1 → 82.2%, 7.4 → 7.1% (2 better, none worse); earlier pending plain 73.0 → 77.7%,
-mismatch 11.7 → 11.3%, 3.5 → 3.4%. Chen 43.0 → 74.3% plain, Pogranichnik 52.1 → 75.3%, Estella 59.9 → 81.0%, the male
-Endministrator 52.9 → 88.7%, Lifeng 43.5 → 91.2%. Better c4f3 (275 → 464, −3.4 → −0.8%), 3f78 (91 → 147, −3.7 →
-0.0%), a9d7 (265 → 333, −3.3 → −1.5%), d4fb (516 → 844), de6a (71 → 287), 458b, 7e19 and four by a hit or two. Mixed
-b7b3 (0.4 → 0.7%: Tangtang's battle-skill shot before Last Rite's combo by the bars, now an exact read crit, which had
-hidden her expected-crit landings' +12%; Arcane's touch at 7.15 s now exact) and 4bfc (−1.0 → −1.2%: Arclight's burst at
-88.82 s matched, Zhuang Fangyi's replay-only 19,584 gone). The per-operator total errors that rose (Arclight 4.8 → 5.7%,
-Tangtang 3.6 → 4.0%, Lifeng 0.9 → 1.3%) are those hits turning exact. team-ab: unchanged (both teams' own fights the same,
-the owner's Estella team included). The example pogranichnik-chen moved (+1.5%, the Morale timing), snapshot updated.
-
-**Decisions:** the bars are read only where the batch has two Stagger origins and two bars; several events at bar 0
-(a break) share a place, as do events without Stagger (the ID order then). schedule.ts, state.ts and planning/search.ts
-(a key field) were outside the brief's file list: one line each for `loggedOrder`. No assumption: the bars are the log's
-own record of the order.
-
-**Left:** Estella's weapon ATK at 7.05 s (her combo, Shatter and Lift with it, her ultimate after them without it: one
-batch, not built); the harasses' logged delays (0.6–1.3 s, the kit's 0.3 s) and d4fb's 88.55 s harass and 89.82 s
-Assault placed as an ultimate the replay doesn't cast; c4f3 92.93 / 147.41 s and a9d7 239.40 s Morale layers; 7910's
-early rogue wave (not attempted).

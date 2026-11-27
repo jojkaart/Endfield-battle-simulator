@@ -111,7 +111,11 @@ a gap's length alone).
   20.60 s between; Laevatain's 38.2 s combo and 6339's 32.97 s battle skill, made from their events, no hit of either
   logged; 7b54's overlapping Si combos (two finals at 16.36 s, eleven landings for eleven slots, so no realignment);
   Combustion ticks. Shield-blocked hits (open below, "Hard 33's slug") fit all of them; no log lists the shield.
-- 9c6e's second target (Typhoeus's bursts as twins of a teammate's hit).
+- 9c6e's second target (Typhoeus's bursts as twins of a teammate's hit). Marked 2026-11-27 (fixture `severalTargets`,
+  scripts/probes/targets/two-targets.ts: Typhoeus's Nature burst twice within a frame nine times, 79.85 s two capped
+  values from one uncapped 412,733, eight kills); a reclassification, not a fix: the engine has no second target. No
+  other development log has the shape; b7b3 10.91 s, c4f3 7.05 s and db87 14.01 s have one status twin each and no
+  kill (db87's enemy, a bigents, has a second entity in the Hard 32 multi-target logs: still possible).
 - Si's combo final of unknown crit on a slash's slot (9a80 36.10 s, +6.6% replay-only).
 - Basic-tail cut's knock-on: 4a64 16.93 s, two logged attack-4 hits that matched the cut tail's landings 0.30 s later
   now Arcane's first attack 4's, with its set's Nature DMG (−2 plain).
@@ -121,7 +125,8 @@ a gap's length alone).
 ## Log-only landings: what the log shows and the replay never makes (2026-11-27)
 
 **Shows** (`zmdlogs totals --all --kinds`, `--json`): development log-only 3.2% of a fight's logged total (mean), of
-which 9c6e (−37.8%: two targets, a multi-target log under one enemy id) and 6339 (−25.6%: Hard 33's slug, "Hard 33's
+which 9c6e (−37.8%: two targets, a multi-target log under one enemy id; since 2026-11-27 the fixture's
+`severalTargets`, its own scoreboard row, out of the development mean) and 6339 (−25.6%: Hard 33's slug, "Hard 33's
 slug" below) carry 2.0 points; over the other 54 development, earlier-pending and verified fights the mean is −1.0%, no
 key above −0.1% of the mean (Zhuang Fangyi's strikes, Arcane's INT lasers, Typhoeus's 4th-shot burst the largest). By
 cause:
@@ -138,9 +143,17 @@ cause:
   the same offsets (scripts/probes/bursts/burst-before-stop.ts: 13 held, 16 not, 11 unclear; Wulfgard's combo at
   +200–300 ms held Arcane's in c779 and c83c, Camille's at +167–267 ms didn't in 40d9 and 012a). Ties at +0 ms (an
   ultimate's stop at the burst's frame: 7910 28.27, c3c7 20.83, c83c 30.73 s) go both ways too (8915 81.80 s not held).
-  The pairing (BuffReplay.statusLanding, buffreplay.ts: nearest within 16 frames, in time order) then leaves both sides
-  one-sided, and once pairs them crosswise (c779: logged 9.68 s takes the replay's 10.03 s, so 9.27 and 10.08 s stay
-  unpaired).
+  The pairing (BuffReplay.statusLanding: nearest within 16 frames, in time order) then left both sides one-sided, and
+  once paired them crosswise (c779: logged 9.68 s took the replay's 10.03 s, so 9.27 and 10.08 s stayed unpaired).
+  **Fixed as far as the values decide it** (engine assumption `status-pairing` `assignment`, statuspairs.ts; journal
+  docs/journal/2026-11-27-07-status-landings-paired-by-value-two-target-fights-marked.md): one assignment per operator,
+  kind and element, the most pairs and then the closest, a landing 16–60 frames away only where its value fits within
+  1%. One-sided bursts in `zmdlogs bursts --all` 31 log-only / 40 replay-only → 19 / 28 (30 frames), and c3c7 22.32,
+  c83c 32.31, 79cc 24.23, 3aa6 12.31 s (1.5–2.1 s late, equal values) at 60 frames. Left: pairs whose replay value is
+  off by a buff the replay's burst landed before or after (1d91 50.47 / 51.02 s ×1.095, 7b54 46.70 / 47.39 s, a7a7
+  39.27 / 40.87 s, e989 86.65 / 88.70 s, 7910 28.27 / 29.85 s, abfd 100.93 / 103.48 s): a 10% fit was mixed
+  (docs/tried/2026-11-27-status-value-fit-10.diff); the fit judged by the check's reading of the pair (the log's
+  listed buffs) is untried.
 - **The placement and the cast assembly** (the replay-only agent's files, not changed here): fc63 87.87 s Typhoeus's
   burst landed 0.48 s early, inside the 0.2 s Sign cooldown of the one before, so her 101.87 s combo has 7 Signs;
   f879 95.10 s Laevatain's battle skill made before her 92.50 s Heat absorption (no empowered hit, −2.1%); 5082
@@ -162,12 +175,12 @@ its operator and element within 5 s; a missing physical-status trigger in the de
 shots' consumption Signs (the replay's two match the Nature it had).
 
 **Still possible:** the bursts: the replay's timing against a stop's start at about its precision (±0.2 s), the
-enemy's clock running late across combos ("The enemy's clock" below) on bursts due near a stop; a pairing of status
-landings by value and an assignment over the whole fight instead of the time-ordered nearest. Arcane's lasers: a hold
-on the world's clock that only her lasers show, or the lasers' start not at the logged event.
+enemy's clock running late across combos ("The enemy's clock" below) on bursts due near a stop (the pairing no longer
+depends on it where the values fit); the pairs a buff's edge puts off in value (above). Arcane's lasers: a hold on the
+world's clock that only her lasers show, or the lasers' start not at the logged event.
 
-**Next check:** the pairing of status landings as an assignment (buffreplay.ts statusLanding), measured; then the
-INT lasers' start against the logged combo event across every INT log (`zmdlogs casts --operator Arcane`).
+**Next check:** the INT lasers' start against the logged combo event across every INT log (`zmdlogs casts --operator
+Arcane`); the status pairing's value fit by the check's reading.
 
 ## The totals that rose once hits read right (2026-11-27)
 

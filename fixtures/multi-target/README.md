@@ -28,3 +28,5 @@ doesn't run these. They're kept for developing multi-target support.
 
 | `zmdlogs-4bfe5e8fcb60.json` | indie_hard032_s (2026-10-22, v59, 117 s) | eny_0127_bigents_hdg032 (430), eny_0127_bigents (2), eny_0128_babyents_hdg032 (1) | Typhoeus, Arcane, Perlica, Liino |
 Imported 2026-11-08 / 09 in the screened batches (docs/accuracy-plan.md, "Choosing logs"); the export doesn't show the target count, so these were caught only on import. Hard 32 (indie_hard032_s) has a second boss entity under the template ID: `zmdlogs-8318e149e80f.json` hits eny_0127_bigents once for 445,369 (13% of the damage), `zmdlogs-4bfe5e8fcb60.json` twice for 87,169, with one hit on its adds (eny_0128_babyents_hdg032).
+
+Several enemies under one template id can't be told apart at import: `pending/zmdlogs-9c6e97486a9d.json` (Hard 31, eny_0128_babyents_hdg031) stays in fixtures/pending with the fixture field `severalTargets` and its evidence (docs/design/data.md; scripts/probes/targets/two-targets.ts finds the shape: one operator's status event twice within a frame, kills before the fight's end), checked as one target and kept out of the development means by the scoreboard (its own row).

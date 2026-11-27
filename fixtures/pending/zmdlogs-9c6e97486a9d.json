@@ -25,6 +25,9 @@
   "id": "eny_0128_babyents_hdg031",
   "level": 90
  },
+ "severalTargets": {
+  "why": "Hard 31's baby ents, several under the one template id (scripts/probes/targets/two-targets.ts, 2026-11-27): Typhoeus's Nature burst logged twice within a frame nine times (79.85 s: 143,320 and 33,858 at one ms, both capped from one uncapped 412,733, two targets killed by one burst; 29.01, 30.52, 52.80, 94.32 s two values at one ms), and eight kills (hits capped at the HP left) from 12.76 s with hits going on to 95.6 s. No other development log has either but one twin (b7b3, c4f3, db87). The check runs it as one target: its totals' log-only −37.8% and replay-only +12.3% are the second target's."
+ },
  "team": [
   {
    "operator": "chr_0034_typhoea",
