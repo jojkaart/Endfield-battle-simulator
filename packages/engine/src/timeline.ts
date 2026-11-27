@@ -19,7 +19,7 @@ export { createContext, kitAssumptions, allAssumptions, panelAt, enemyActionsOf,
 export { ENGINE_ASSUMPTIONS, engineReading, type EngineAssumption } from "./timeline/assumptions.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { setPoise, refillPoise, holdStagger, staggerFrames } from "./timeline/resources.ts";
-export { cutAtResets, holdWorld, pathSlowdowns } from "./timeline/clock.ts";
+export { breakHoldFrames, cutAtResets, holdWorld, pathSlowdowns } from "./timeline/clock.ts";
 export { COMBO_CURVE, COMBO_CURVES, curveScales, withCurveReading } from "./timeline/curves.ts";
 export { exclusiveUntil, earliestStart, enhancedBasic, ownHitsLanded, skillAvailable } from "./timeline/timing.ts";
 export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";

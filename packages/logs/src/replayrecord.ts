@@ -273,7 +273,8 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
       if (until !== null && staggerOpen) staggerOpen.until = until;
       // Its start: its end less its length, but not before the last sample, which had none (a Stagger the log's listing
       // held, holdStagger, ends at the listing's next moment: pending/zmdlogs-d4fb69b036fe.json's from 97.26 s read 86.50 s).
-      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, lastSample, until - o.staggerFrames()), until };
+      // Nor after this sample: a break's own hold (engine assumption break-hold) moved its end at once.
+      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, lastSample, Math.min(frame, until - o.staggerFrames())), until };
       lastSample = frame;
       for (const [k, rec] of open) {
         if (seen.has(k)) continue;

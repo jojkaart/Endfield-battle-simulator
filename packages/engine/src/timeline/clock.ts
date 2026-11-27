@@ -7,7 +7,7 @@ import { rampElapsed, type EnemyStatus } from "../status.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
-import { engineReading } from "./assumptions.ts";
+import { ENGINE_ASSUMPTIONS, engineReading } from "./assumptions.ts";
 import { COMBO_CURVE, curveScales } from "./curves.ts";
 
 /**
@@ -90,6 +90,33 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);
 }
+
+/** The frames a Stagger break holds every clock (engine assumption break-hold: "none" or "<n>f"; 0 for none). */
+export function breakHoldFrames(assume?: Readonly<Record<string, string>>): number {
+  const m = /^(\d+)f/.exec(assume?.["break-hold"] ?? (ENGINE_ASSUMPTIONS.find((a) => a.id === "break-hold")?.default as string));
+  return m ? Number(m[1]) : 0;
+}
+
+/**
+ * The hold at a Stagger break (engine assumption break-hold; docs/open-problems.md "The hold at a Stagger break"): the
+ * hit that empties the bar stops every clock, the world's (the enemy's statuses and ticks, every buff, combo windows)
+ * and every operator's, the breaker's too, for breakHoldFrames frames (the data's damage units carry
+ * enablePoiseBreakTimeDilation, true on all 1514, with no length: the length is the logs'). Not inside an ultimate's
+ * time stop (4d60 56.29 s, 9a80 34.94 s: hits 0.08–0.23 s after the break, as without one), unless the reading says so
+ * (`<n>f-all`). As a slow-down at scale 0 that holds no one less (no caster), the lowest scale counting where it
+ * overlaps another; cooldowns run on.
+ */
+export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number): TimelineState {
+  const n = breakHoldFrames(ctx.scenario.options.assume);
+  if (n <= 0) return st;
+  const all = engineReading(ctx.scenario, "break-hold").endsWith("-all");
+  if (!all && st.slowdowns.some((x) => x.ultimate && frame >= x.start && frame < x.start + x.scales.length)) return st;
+  const timing: SkillTiming = { durationFrames: 0, exclusiveFrames: 0, windows: [], channels: [], specification: 0, keepsChain: true, slowdowns: [{ from: 0, scales: new Array<number>(n).fill(0) }], jumps: [], ends: [] };
+  return slowDown(ctx, st, BREAK_HOLDER, timing, frame);
+}
+
+/** The caster of a break's hold (breakHold): no operator, so it holds every one. */
+const BREAK_HOLDER = "stagger-break";
 
 /** The frames a combo's slow-down holds each operator it holds beyond its own scales (engine assumption combo-operator-hold: "none" or "<n>f"). */
 function comboOperatorHold(ctx: TimelineContext): number {
