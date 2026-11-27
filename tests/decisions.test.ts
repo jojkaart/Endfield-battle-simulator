@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { withCurveReading } from "@efsim/engine";
 import type { LandedHit } from "@efsim/engine";
-import { decisionsDiff, lanePairs, linkGains, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type DecisionLine, type HitRecord, type LogHit } from "@efsim/logs";
+import { decisionsDiff, laneEnds, lanePairs, linkGains, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type DecisionLine, type HitRecord, type LogHit } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 import { fakeReplay } from "./helpers/replay.ts";
 import { logHitOf, syntheticFixture } from "./helpers/synthetic.ts";
@@ -53,6 +53,16 @@ describe("the replay's decisions", () => {
       { logged: null, replay: 9000 },
       { logged: 20000, replay: null },
     ]);
+    // Round 19 (the Camille report point 4): each pair's ends, the replay's chain followed through refreshes the log
+    // keeps in one run, stopped at one where the log starts its next run; a pair whose ends differ says how.
+    const runs = [
+      { since: 1000, firstListed: 1000, lastListed: 5000, nextUnlisted: 5500 },
+      { since: 8000, firstListed: 8000, lastListed: 9000, nextUnlisted: 9400 },
+    ];
+    const windows = [{ start: 1000, end: 3000, expired: false }, { start: 3000, end: 8000, expired: false, replaces: 1000 }, { start: 8000, end: 9200, expired: true, replaces: 3000 }];
+    expect(laneEnds({ logged: 1000, replay: 1000 }, runs, windows)).toEqual({ log: { last: 5000, unlisted: 5500 }, replay: { end: 8000, why: "refreshed where the log starts its next run" }, differ: expect.stringMatching(/keeps it 2\.50 s past the log's next hit without it/) as unknown as string });
+    expect(laneEnds({ logged: 8000, replay: 8000 }, runs, windows)).toEqual({ log: { last: 9000, unlisted: 9400 }, replay: { end: 9200, why: "ran out" } });
+    expect(laneEnds({ logged: null, replay: 1000 }, runs, [{ start: 1000, end: 2000, expired: true }])?.differ).toBeUndefined();
   });
 
   it("counts a batched ms landed out of the bars' order as a BATCH decision, given the fixture (backlog after round 16 point 3)", () => {
