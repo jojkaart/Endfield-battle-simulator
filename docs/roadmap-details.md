@@ -327,6 +327,14 @@ end-boundary hits as past the run measured mixed (docs/tried/2026-11-26-boundary
 chain's data for the doubles' end; a hold bound only where the end-boundary hit's value decides; the batch order at a
 stop's end.
 
+**Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
+the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only
+(207f's physical hits ×0.847), a kill read from a total that is a two-decimal multiple of Max HP (207f, 5082: no
+uncapped last hit), Rossi's combo 3 placed on its jumped path where the perfect one would start inside combo 2 (3f78).
+Next ([open-problems](open-problems.md) "The totals that rose once hits read right"): d774's first Empyrean battle
+skill at 103.28 s (3 strikes, no final: +4.7% of the fight), 3f78's Corrosion ramp late after 50.55 s (×1.017, the
+enemy's clock), a9d7's Chen −3.0% (spread), 207f's Rossi attack 4 hit_ai tail.
+
 **Arcane's mismatches (2026-11-26, [journal](journal/2026-11-26-15-arcane-s-mismatches-a-stage-s-damage-factor-from-the-fixture.md)):**
 492 of her 697 mismatches were 8915's and c6d8's stages: one round factor on every operator's hits in a window, now
 the fixtures' `stageFactors` (enginecheck.ts stageModifiers; development mismatch 10.2 → 6.9%, earlier pending 11.3 →

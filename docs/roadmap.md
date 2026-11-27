@@ -98,7 +98,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   fc63's Corrosion under `window-reaction`; away stretches 2026-11-27: a pause (4d60, both stretches: every clock held,
   the team's and the enemy's) or a phase (the other 29: every clock runs on), told by the clocks (`pause-holds`
   `paused`); 8915's early Corrosion step is at the log's grain, combos pressed together elsewhere run late as single
-  ones.
+  ones; exposed totals 2026-11-27: a stage Electrification is Arts-only, a kill
+  from a stage-scaled total (207f +5.5 → +1.6%), Rossi's combo 3 on its jumped path (3f78 plain 114 → 151): next d774's
+  first Empyrean battle skill (3 strikes, no final, 103.28 s), 3f78's Corrosion ramp ×1.017, a9d7's Chen.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

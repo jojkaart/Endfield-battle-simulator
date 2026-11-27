@@ -56,6 +56,43 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## The totals that rose once hits read right (2026-11-27)
+
+The fights whose totals rose in the attack-4 round (207f, 3aa6, d774, 9847, a9d7) and 3f78's Rossi combo 3. No
+cause is shared by all of them; each is split by `zmdlogs totals <fixture> --by event | --by crit | --kinds`.
+
+**Found and fixed (207f +5.5 → +1.6%):** Hard 27's stage Electrification was added to every element: the log lists it
+without one, and its damageModifier reaches CheckDamageTypeMask 92 (Arts) only, physical (mask 129) only with
+`if_contain_physicdamage` = 1, which nothing in the data sets. Rossi's and Gilberta's physical hits 21–36 s read ×0.847
+(1.33 ÷ 1.57) with it, plain without. And 207f ends in a kill the log doesn't flag (no `uncapped` on its last hit):
+its total is 5.7600 × the data's Max HP (stageScaledKill; every capped single-life kill sits within 1.3e-5 of such a
+multiple; 5082 is the other, ×7.6000), so Rossi's ultimate final (1,134,403 against a predicted 1,218,124) is the HP that
+was left. Fixed — docs/journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
+
+**Found and fixed (3f78 plain 114 → 151, 0.9 → 0.2%):** Rossi's combo 3 at 50.55 s was placed by its perfect hit
+(frame 29) at 49.59 s, 13 frames before combo 2's window opens (its frame 37); its late hit (frame 227, 15 after the
+jump 0 → 212) puts it at 50.05 s, inside the window, where the perfect-timing ring (combo 2's frame 52) isn't on, so the
+kit's own condition jumps. The 50.55 s hit comes 1.0 s after combo 2's second hit, 2.2–5 s in every other cast of hers.
+Gilberta's ultimate Susceptibility at 58.90 s now 0.39, the log's. (All 28 logged combo-3 hits carry Stagger 5, poise_f,
+perfect ones too: the Stagger doesn't tell the paths apart.)
+
+**Still possible / left:**
+- **3f78 50.55–61.5 s, ×1.017 team-wide (unquantified):** Corrosion's resistance shred ramps later in the replay than
+  in the game (59.12 s reads 18.27, the game's value 20.23, which the replay reaches at 59.43 s): the enemy's clock
+  (another agent's files this round), present before the combo-3 change too (54.65 s unchanged).
+- **d774 +4.9% (Zhuang Fangyi +6.2%):** her first Empyrean battle skill at 103.28 s strikes 3 times in the log
+  (104.18–104.50 s) and has no final; the replay's 9-blade cast lands 6 strikes and a 152k final more (+4.7% of the
+  fight). Her attacks go on (105.02 s), Arcane's ultimate stop is 105.50–107.07 s, nobody else hits 104.5–107.1 s.
+  Every other cast without its final ends at an enemy-away stretch (3aa6 42.89 s, d774 29.41 and 122.84 s). Ruled out:
+  the blade count (the next battle skill at 111.25 s strikes 9 times with its final), an attack cutting the strikes
+  (attacks at 112.29 / 112.98 s don't), half a life's HP (the damage reaches 1.4953 Max HP by 105.1 s, life 2's half is
+  ~1.506). Still possible: a short enemy-away (2 s, under ENEMY_AWAY_MS), a boss action the log doesn't name.
+- **a9d7 −1.5% (Chen −3.0%):** spread over her battle skill (−0.57% of the fight), combo (−0.50%, fallbacks ×1.104 with
+  Pogranichnik's Fervent Morale and team ATK listed), Lifts and the Shatter at 275.51 s (log-only); not worked.
+- **207f +1.6% left:** Rossi's attack 4 hit_ai replay-only landings 17.7–21.3 s (+1.3%: her not-controlled path's
+  tail) and four log-only bleed ticks.
+- 3aa6 (+0.9%) and 9847 (−0.9%) are within 1%: not worked.
+
 ## Zhuang Fangyi's and Liino's mismatches (2026-11-27)
 
 **Found and fixed: Zhuang Fangyi's attack 4 was placed as attack 2** in every log of hers (125 fallback hits, ×3.125 =
@@ -95,11 +132,7 @@ ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
   chr_0030_zhuangfy:suit_expend_spell01.spell_dmg`.
 - **4d60 73.37 s:** Zhuang Fangyi's combo ×0.945 (assumed): the replay's stance ATK still on, the log's gone; the
   End Stance is made at 73.40 s, one frame after the logged event at 73.37 s (INSIDE her combo's uncuttable frames).
-- **Rossi's combo 3 (3f78, 207f), knocked on by the placement:** her combo_2_skill-keyed hit is now combo 3 (the log's
-  Stagger credits combo_3_skill), made INSIDE combo 2's uncuttable frames (its perfect hit at frame 29 is 0.4 s before
-  the kit lets combo 3 start). 207f's hits after it are now plain (combo_crit), its total up (+1.2 → +5.5%: Rossi's
-  replay-only attack 4 hit_ai landings with the crit buff); 3f78 plain 147 → 114: Gilberta's ultimate Susceptibility
-  at 58.90 s reads 0.42 against the log's 0.39, one Vulnerable stack more (the perfect path's no_guard and its Lift).
+- Rossi's combo 3 in 3f78 and 207f's total: fixed — docs/journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
 - **1d91 (the coordinator's lead):** Arcane's strings fall ×0.965 per step from 53.2 s (−3.5, −7.1, −10.6% at 53, 56.5,
   60.3 s) with constant modifiers in the replay: her Medicant layers (wpn_lance_0014, 20 s each) from Liino's beats at
   31.8, 35.0, 38.1, 41.4 s expiring one by one, the beats from 44.9 s giving her none in the game. Still possible: a

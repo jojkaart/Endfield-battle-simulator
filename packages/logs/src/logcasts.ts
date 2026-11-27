@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
 
@@ -993,14 +993,19 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? (choice as { g: Group }).g;
         const chosen: CastChoice | null = candidates.length < 2 ? null : late ? { rule: "late", candidates: candidates.map((x) => x.id) } : (choice as { why: CastChoice }).why;
         const s = slots(g, h.event);
-        const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, first?.frame ?? 0)), h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...startFor(g, h, first), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}) };
+        const joined = late?.cast ?? joinable((opened.get(g.id) ?? []).filter((c) => !landedLater(c, s?.[0]?.frame ?? 0)), h, s?.[0]?.frame ?? 0, stops);
+        // A new cast's first landing on the path a conditional jump goes to, where the skipped path's start is one its
+        // operator's previous cast doesn't allow (jumpedFirst): the twin's slot, the start by its frame on that path.
+        const jumped = joined === null && s ? jumpedFirst(data, g, h, s, skillCasts, others) : null;
+        const firstIndex = jumped?.index ?? 0;
+        const first = s?.[firstIndex];
+        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
-        current.set(h.event, { cast, first: h.t, last: h, index: 0, span, longest, slots: s, exact: exactSlots(g, h.event), scales: g.scales });
-        placed.set(h, { cast, index: 0, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}) });
+        current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: s, exact: exactSlots(g, h.event), scales: g.scales });
+        placed.set(h, { cast, index: firstIndex, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}) });
       }
       return placed;
     };
@@ -1294,6 +1299,41 @@ function joinDelayed(candidates: readonly Group[], h: LogHit, slots: (g: Group, 
     }
   }
   return best;
+}
+
+/**
+ * A new cast's first landing `h` (the key's slot 0) taken on the path a conditional jump of its skill goes to: when the
+ * slot's hits all lie in the part a jump at `at` to `to` skips, one of them has a twin past `to` (engine paths.ts
+ * pathTwin) with a slot of its own, and the start by slot 0's frame is before the operator's latest cast lets the skill
+ * start (its windows listing the skill, in the world's time: other operators' stops hold it), while the start by the
+ * twin's frame on the jumped path (its kit frame less to − at) is not. Then that slot and that start; else null.
+ * Rossi's sequence 2 (combo_3: frame 0 → 212 without the perfect-timing ring): pending/zmdlogs-3f78ceb15bc3.json's
+ * 50.55 s landing, 1.0 s after sequence 1's second hit (2.2–5 s in every other cast of hers), placed by the perfect hit's
+ * frame 29 at 49.59 s, 13 frames before sequence 1's window (its frame 37) opens; by the late hit's 227 − 212 = 15 at
+ * 50.05 s, inside it, where the ring (sequence 1's frame 52) isn't on yet, so the kit's own condition takes the jump.
+ */
+function jumpedFirst(data: GameData, g: Group, h: LogHit, s: readonly Slot[], prevs: readonly LoggedCast[], held: readonly TimeStop[]): { readonly index: number; readonly start: number } | null {
+  const timing = data.skills[g.skillId]?.timing;
+  const head = s[0];
+  if (!timing || !head || g.kind === null) return null;
+  const prev = prevs.filter((c) => c.kind !== null && c.start <= h.t).reduce<LoggedCast | null>((m, c) => (!m || c.start > m.start ? c : m), null);
+  const windows = prev ? (data.skills[prev.skillId]?.timing?.windows ?? []).filter((w) => w.skills.includes(g.skillId)) : [];
+  if (!prev || windows.length === 0) return null;
+  const opens = Math.min(...windows.map((w) => w.from));
+  const allowed = (start: number) => start >= prev.start && worldMs(prev.start, start, held) >= msOf(opens) - ON_TIME_MS;
+  const skipStart = h.t - msOf(head.frame);
+  if (allowed(skipStart)) return null;
+  for (const j of timing.jumps) {
+    if (!j.conditional || !head.hits.every((x) => (x.frames ?? []).length > 0 && (x.frames ?? []).every((f) => f >= j.at && f < j.to))) continue;
+    for (const x of head.hits) {
+      const twin = pathTwin({ hits: g.hits }, x, j.at, j.to);
+      const index = twin ? s.findIndex((slot, i) => i > 0 && slot.hits.includes(twin)) : -1;
+      if (index < 0) continue;
+      const start = h.t - msOf((s[index] as Slot).frame - (j.to - j.at));
+      if (allowed(start)) return { index, start };
+    }
+  }
+  return null;
 }
 
 /** Casts of one skill placed from different keys this close are one cast. */

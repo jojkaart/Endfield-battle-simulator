@@ -43,7 +43,7 @@ import {
 } from "@efsim/engine";
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
-import { engineCheck, engineReadings, fightTotals, logDifferences, stageModifiers, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
+import { engineCheck, engineReadings, fightTotals, logDifferences, stageModifiers, stageScaledKill, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
 import { boundarySubsets, buffFile, collapseRepeats, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
@@ -137,11 +137,23 @@ function findHits(data: GameData, build: Build, event: string): [{ skillId: stri
  * uncapped damage above its value. Its value is the HP that was left, and
  * its uncapped damage the log's overkill estimate
  * (fixtures/zmdlogs-4e5e1390085e.json 69142 ms: 39523 logged, 261745
- * "uncapped", ×13 the prediction), so it can't be judged.
+ * "uncapped", ×13 the prediction), so it can't be judged. In a fight whose
+ * total is a stage-scaled Max HP (stageScaledKill) the last logged hits
+ * without an uncapped value too, as far as they read above their value
+ * (`capOnly`): one of them is the HP that was left
+ * (pending/zmdlogs-207fff414d82.json, Rossi's ultimate final ×0.931).
  */
-function killingBlows(fx: LogFixture): ReadonlySet<LogHit> {
+function killingBlows(data: GameData, fx: LogFixture): ReadonlyMap<LogHit, { readonly capOnly: boolean }> {
   const last = Math.max(...fx.hits.map((h) => h.t));
-  return new Set(fx.hits.filter((h) => h.t === last && h.uncapped !== undefined && h.uncapped > h.value));
+  const out = new Map<LogHit, { readonly capOnly: boolean }>(fx.hits.filter((h) => h.t === last && h.uncapped !== undefined && h.uncapped > h.value).map((h) => [h, { capOnly: false }] as const));
+  if (out.size === 0 && stageScaledKill(data, fx)) for (const h of fx.hits) if (h.t === last) out.set(h, { capOnly: true });
+  return out;
+}
+
+/** Whether a killing blow can't be judged at the nearest reading: always with the log's overkill, else only above its value. */
+function unjudgedKill(killing: ReadonlyMap<LogHit, { readonly capOnly: boolean }>, hit: LogHit, nearest: number): boolean {
+  const k = killing.get(hit);
+  return k !== undefined && (!k.capOnly || nearest > hit.value);
 }
 
 interface Candidate {
@@ -760,7 +772,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
   const replayed = replay?.replayed ?? null;
   const asReplayed = (h: LogHit) => replayed?.hits.get(h) ?? h;
   const noneDecided: ReadonlySet<string> = new Set();
-  const killing = killingBlows(fx);
+  const killing = killingBlows(data, fx);
   const ownBuffs = new Map([...panels].map(([op, m]) => [op, unloggedOwnBuffs(data, fx, m.build, m.panel)]));
   const fromKits = new Map<string, Variant[] | null>();
   const valued = (u: LogHit["unquantified"][number]) => {
@@ -989,7 +1001,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
         }
         const near = closest(burst.readings).map((r) => r.predicted);
         // The killing blow's uncapped value is the log's overkill estimate: a burst that fits no reading isn't a mismatch then.
-        if (killing.has(logged)) return { kind: "unquantified", hit: logged, predicted: near[0] as number, reason: "killingBlow", readings };
+        if (unjudgedKill(killing, logged, near[0] as number)) return { kind: "unquantified", hit: logged, predicted: near[0] as number, reason: "killingBlow", readings };
         return { kind: "mismatch", hit: logged, predicted: [...new Set(near)].slice(0, 6), ratio: actual / (near[0] as number), readings };
       }
     }
@@ -1017,7 +1029,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     }
     const nearest = predicted[0] ?? 0;
     // The killing blow's value is the HP left and its uncapped damage the log's overkill estimate: it can't be judged.
-    if (killing.has(logged)) return { kind: "unquantified", hit: logged, predicted: nearest, reason: "killingBlow", readings };
+    if (unjudgedKill(killing, logged, nearest)) return { kind: "unquantified", hit: logged, predicted: nearest, reason: "killingBlow", readings };
     // Buffs the log lists without a value (not Corrosion) that no kit values: the prediction lacks them. Not a match, and
     // not a mismatch the kits are to blame for either (an unvalued verdict: a verified fixture has none).
     const listedHere = new Set([...hit.effects, ...hit.boundaryEffects].map((e) => e.buff));

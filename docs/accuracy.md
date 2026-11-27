@@ -24,10 +24,10 @@ commit, and how many logs got better or worse.
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% |
 |---|---|---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 804 | 78.2% | 99.3% | 0.0% | 1.6% | 6 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 81.0% | 90.7% | 6.4% | 3.3% | 27 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 16495 | 81.4% | 90.9% | 6.3% | 3.1% | 28 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.6% | 92.8% | 5.5% | 7.1% | 9 |
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 81.4% | 92.1% | 7.6% | 1.6% | 22 |
-| All but the hold-outs | 61 | 29035 | 81.1% | 91.5% | 6.7% | 2.5% | 55 |
+| All but the hold-outs | 61 | 29035 | 81.4% | 91.7% | 6.7% | 2.4% | 56 |
 
 ## Where the total's error lives
 
@@ -39,7 +39,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | Logs | Fights | \|Matched\| | Replay-only | Log-only | One-sided |
 |---|---|---|---|---|---|
 | Verified (fixtures/) | 6 | 1.4% | 0.5% | 0.1% | 2 |
-| Development (fixtures/pending, holdout.json `development`) | 32 | 2.7% | 4.5% | 3.2% | 24 |
+| Development (fixtures/pending, holdout.json `development`) | 32 | 2.6% | 4.5% | 3.2% | 25 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 1.8% | 4.0% | 5.1% | 11 |
 | Earlier pending (imported before the hold-out split) | 23 | 1.3% | 1.5% | 0.9% | 17 |
 
@@ -61,11 +61,11 @@ mean share of a fight's logged total.
 | chr_0009_azrila | 4 | 388 | 13.7% | 80.2% | 2.5% | 2.2% | 3.8% | 27.6% |
 | chr_0011_seraph | 7 | 266 | 87.6% | 0.0% | 1.5% | 0.8% | 1.2% | 1.3% |
 | chr_0012_avywen | 2 | 186 | 78.0% | 20.4% | 0.3% | 0.3% | 0.4% | 62.3% |
-| chr_0013_aglina | 15 | 1174 | 89.3% | 4.9% | 3.0% | 0.9% | 2.2% | 4.5% |
+| chr_0013_aglina | 15 | 1174 | 89.9% | 4.7% | 2.8% | 0.8% | 2.2% | 4.5% |
 | chr_0014_aurora | 2 | 250 | 9.6% | 88.8% | 4.2% | 4.2% | 4.3% | 3.3% |
 | chr_0015_lifeng | 2 | 260 | 91.2% | 0.4% | 1.3% | 1.3% | 1.2% | 12.1% |
 | chr_0016_laevat | 13 | 1497 | 80.6% | 4.7% | 9.0% | 1.1% | 4.6% | 53.3% |
-| chr_0017_yvonne | 2 | 323 | 71.2% | 0.3% | 2.5% | 2.5% | 1.5% | 63.4% |
+| chr_0017_yvonne | 2 | 323 | 71.2% | 0.0% | 2.5% | 2.5% | 1.5% | 63.4% |
 | chr_0019_karin | 2 | 202 | 94.1% | 0.0% | 0.7% | 0.7% | 0.7% | 1.4% |
 | chr_0020_meurs | 1 | 252 | 75.8% | 13.9% | 0.9% | 0.9% | 0.9% | 5.2% |
 | chr_0021_whiten | 5 | 289 | 81.0% | 2.1% | 2.4% | 2.4% | 2.3% | 20.7% |
@@ -74,13 +74,13 @@ mean share of a fight's logged total.
 | chr_0025_ardelia | 11 | 1470 | 83.3% | 9.7% | 3.0% | 2.2% | 3.0% | 8.0% |
 | chr_0026_lastrite | 4 | 156 | 67.3% | 0.6% | 1.6% | 1.4% | 1.7% | 38.5% |
 | chr_0027_tangtang | 2 | 265 | 70.2% | 5.7% | 4.1% | 4.1% | 4.2% | 35.0% |
-| chr_0028_wulfa | 10 | 2305 | 74.2% | 5.1% | 1.8% | 0.9% | 1.9% | 62.3% |
+| chr_0028_wulfa | 10 | 2305 | 76.6% | 4.6% | 1.3% | 0.7% | 1.2% | 62.3% |
 | chr_0029_pograni | 5 | 649 | 75.3% | 0.6% | 2.4% | 0.9% | 1.7% | 12.6% |
 | chr_0030_zhuangfy | 5 | 1392 | 86.7% | 3.7% | 2.1% | 1.0% | 2.1% | 86.3% |
 | chr_0031_mifu | 5 | 471 | 91.3% | 0.8% | 1.3% | 0.5% | 1.2% | 48.1% |
-| chr_0032_lizhiyan | 40 | 5688 | 85.8% | 4.1% | 4.2% | 2.4% | 2.8% | 10.2% |
+| chr_0032_lizhiyan | 40 | 5688 | 86.0% | 4.1% | 4.2% | 2.4% | 2.8% | 10.2% |
 | chr_0033_camille | 10 | 1004 | 90.8% | 4.2% | 5.7% | 0.8% | 4.2% | 6.3% |
 | chr_0034_typhoea | 12 | 2081 | 79.2% | 8.2% | 2.2% | 1.4% | 2.4% | 75.5% |
 | chr_0035_liino | 19 | 1469 | 83.5% | 4.7% | 9.9% | 6.3% | 8.8% | 3.7% |
-| chr_0036_jsspsi | 29 | 3060 | 80.1% | 3.8% | 3.7% | 0.7% | 5.3% | 40.3% |
+| chr_0036_jsspsi | 29 | 3060 | 80.2% | 3.8% | 3.7% | 0.7% | 5.3% | 40.3% |
 | chr_0038_purrche | 3 | 290 | 63.8% | 29.7% | 25.4% | 25.4% | 12.1% | 3.5% |

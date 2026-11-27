@@ -211,6 +211,28 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     expect(logOnly(data, fx, teamBuffNames(data, fx), stab).effects.map((e) => e.buff)).toContain("buff_common_pulse_pulse_conduct_triggered_do");
     const v = checkLog(data, fx).find((x) => x.hit === stab);
     expect(v && verdictCount(v)).toBe("plain");
+    // Arts DMG Taken only (CheckDamageTypeMask 92): Rossi's physical attacks under it read plain without its +0.24.
+    const physical = fx.hits.find((h) => h.t === 25235 && h.event === "chr_0028_wulfa_attack1") as LogHit;
+    const conduct = logOnly(data, fx, teamBuffNames(data, fx), physical).effects.filter((e) => e.buff === "buff_common_pulse_pulse_conduct_triggered_do");
+    expect(conduct.map((e) => e.element).sort()).toEqual(["cryst", "fire", "natural", "pulse"]);
+    const pv = checkLog(data, fx).find((x) => x.hit === physical);
+    expect(pv && verdictCount(pv)).toBe("plain");
+  });
+
+  it("a fight whose total is a stage-scaled Max HP ends in a kill though its last hit carries no uncapped value (207f ×5.76, 5082 ×7.60)", async () => {
+    const { stageScaledKill } = await import("../packages/logs/src/enginecheck.ts");
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-207fff414d82.json", import.meta.url).pathname);
+    expect(stageScaledKill(data, fx)).toBe(true);
+    expect(stageScaledKill(data, readLogFixture(new URL("../fixtures/pending/zmdlogs-5082ceaffad1.json", import.meta.url).pathname))).toBe(true);
+    // A total off a multiple by more than the hits' rounding isn't (d774: ×2.00877, the boss Si's lives).
+    expect(stageScaledKill(data, readLogFixture(new URL("../fixtures/pending/zmdlogs-d774d0ce7bd3.json", import.meta.url).pathname))).toBe(false);
+    // The killing ultimate final counts at the HP that was left (1,134,403), not its predicted 1,218,124.
+    const replay = logBuffReplay(data, fx);
+    const t = engineReport(data, fx, replay, engineHits(data, fx, replay)).totals;
+    const final = t.parts.find((p) => p.logged?.t === 42848 && p.logged.event === "chr_0028_wulfa_ultimate_skill");
+    expect(final?.damage).toBe(1134403);
+    expect(t.logged.killMs).toBe(42848);
   });
 });
 
@@ -322,6 +344,24 @@ describe("a later landing of a cast across time stops", () => {
     expect(cast(106391, `buff_${W}_combo_2_damage`)).toBe(cast(104058, `${W}_combo_2_skill`));
     // Its follow-up's perfect hit at 107319 ms, logged under combo 2's key, after an attack 3 at 104058 ms.
     expect(cast(107319, `${W}_combo_2_skill`)?.skillId).toBe(`${W}_combo_3_skill`);
+  });
+
+  it("a first landing the perfect path would start inside the cast before is the jumped path's (3f78 50.55 s: Rossi's sequence 2 late, from 50.05 s, after sequence 1's window at its frame 37)", async () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-3f78ceb15bc3.json", import.meta.url).pathname);
+    const W = "chr_0028_wulfa";
+    const p = placeHits(data, fx);
+    const placed = p.hits.get(fx.hits.find((h) => h.operator === W && h.t === 50552 && h.event === `${W}_combo_2_skill`) as LogHit);
+    expect(placed?.cast.skillId).toBe(`${W}_combo_3_skill`);
+    expect(placed?.hits.map((h) => h.id)).toEqual(["late"]);
+    expect(Math.round(placed?.cast.start ?? 0)).toBe(50052);
+    // The replay takes the jump by the kit's own condition: no perfect hit, no extra Vulnerable, no cast inside sequence 1.
+    const { logBuffReplay } = await import("@efsim/cli");
+    const r = logBuffReplay(data, fx).replay;
+    expect(r.hits.filter((h) => h.operator === W && h.skillId === `${W}_combo_3_skill` && Math.abs(h.frame - 1517) < 10).map((h) => h.hitId)).toEqual(["late"]);
+    // Every other cast of hers keeps its perfect path (489c: 107.32 s).
+    const fx2 = readLogFixture(new URL("../fixtures/pending/zmdlogs-489c0be3e162.json", import.meta.url).pathname);
+    const p2 = placeHits(data, fx2);
+    expect(p2.hits.get(fx2.hits.find((h) => h.operator === W && h.t === 107319 && h.event === `${W}_combo_2_skill`) as LogHit)?.hits.map((h) => h.id)).toEqual(["perfect"]);
   });
 
   it("a logged landing a jump would skip: the replay drops the jump and its path (d572: Rossi's sequence-2 perfect hit at 39.23 s, its Lift and extra Vulnerable, no late hit)", async () => {
