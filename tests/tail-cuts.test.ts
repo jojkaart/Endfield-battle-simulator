@@ -42,6 +42,20 @@ describe("unlogged tails (0c14's Rossi)", () => {
     expect(logBuffReplay(data, fx, undefined, { assume: { "unlogged-tails": "kept" } }).replay.tailsKept).toEqual([]);
   });
 
+  // Round 20 (three reports: twins point 1, Liino point 4, the backlog's tail-own-landing diff): the "logged hit no other
+  // cast holds" guard kept 6339's 21.60 s Laevatain tail on the cast's own killing hit at 20.37 s, logged 0.3 ms into
+  // its frame. The record names the guard and says the hit it cites is the cast's own.
+  it("says when the hit a guard cites is the cast's own landing (6339's Laevatain at 21.60 s)", () => {
+    const f6339 = (devFixtures({ ids: ["6339"] })[0] as { fx: Parameters<typeof logBuffReplay>[1] }).fx;
+    const kept = logBuffReplay(data, f6339).replay.tailsKept.find((x) => x.cast.operator === "chr_0016_laevat" && Math.abs(x.frame * (1000 / 30) - 21600) < 50);
+    expect(kept?.guard).toBe("shown-own");
+    expect(kept?.cites?.heldBy).toBe("own");
+    expect(kept?.cites?.hit.t).toBe(20367);
+    expect(kept?.cites?.afterMs).toBeLessThan(1000 / 30);
+    expect(kept?.why).toMatch(/held by this cast: its own landing/);
+    for (const k of replay.tailsKept) expect(k.guard).toMatch(/^(variant|fight-end|away|no-enemy|shown-own|shown-free|effect)$/);
+  });
+
   it("lands none of its Lift, wolves or bleed; under `kept` they come back", () => {
     const tail = (hits: typeof replay.hits) => hits.filter((h) => h.operator === ROSSI && h.skillId === SKILL && h.frame >= 1095 && h.frame <= 1120);
     expect(tail(replay.hits).map((h) => h.hitId)).toEqual([]);

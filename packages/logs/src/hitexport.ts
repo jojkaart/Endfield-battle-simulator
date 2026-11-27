@@ -10,7 +10,7 @@
 // primary with one disagreement taken the log's way (hitCounterfactuals).
 
 import { basename } from "node:path";
-import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
+import { activeAt, FPS, landingDamage, parseReactionEvent, readingDoesNotApply, reaches, roundDamage, type ActiveBuff, type AttrType, type GameData, type KitHit, type LandingInputs, type Situation, type StatPanel, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fightTargets, logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
@@ -96,6 +96,12 @@ export interface HitRecord {
   /** The game buffs the log lists at the hit (its effects, one entry per buff with its instance count when above 1: "id ×2"). */
   readonly listed: readonly string[];
   /**
+   * For a buff the log lists more than once at the hit: each entry's lane start (ms; null where the import has none), in
+   * the listing's order (round 20, the Liino report point 3: whether 9 listed Medicant entries are 9 layers took a join
+   * of every JSON line back to its fixture).
+   */
+  readonly listedSinces?: Readonly<Record<string, readonly (number | null)[]>>;
+  /**
    * Where the log's listing and the engine's modifiers at the landing disagree (logDifferences: kit buffs by their
    * logged names, Stagger): "engine" has it and the log doesn't list it, "log" the reverse, "values" both with other
    * values. Kit hits with a landing only.
@@ -123,6 +129,8 @@ export interface HitRecord {
     readonly modifiers: readonly { readonly source: string; readonly zone: string; readonly element?: string; readonly value: number; readonly kitBuff?: string }[];
     /** A status event's reaction (kind, element, stacks). */
     readonly reaction?: { readonly kind: string; readonly element: string; readonly stacks: number };
+    /** A hit whose multiplier multiplies another base than ATK (KitHit.base): that base and its attributes' parts (baseBreakdown). */
+    readonly base?: HitBase;
     /**
      * A kit hit's enemy statuses at the landing (before its own applications): applier, level, Arts Intensity, from
      * EnemyStatus.statuses (reactions: Combustion, Corrosion, ...) and, with `physical: true`, EnemyStatus.physical
@@ -131,6 +139,61 @@ export interface HitRecord {
      */
     readonly enemy?: readonly { readonly status: string; readonly level: number; readonly operator: string; readonly artsIntensity: number; readonly appliedAt: number; readonly appliedAtMs: number; readonly damageScale?: number; readonly physical?: true }[];
   };
+}
+
+/**
+ * A base other than ATK (KitHit.base, an expression of the operator's attributes: 04d4's Catcher strikes at 300 + 5 ×
+ * DEF), with each attribute it reads: the panel's line (base, add, percent, flat, multiply, its total and the sources
+ * that make it), what the fight's buffs add (the reading's own attrBonus) and the active buffs with entries on it
+ * (points, or a percentage of the line). Round 20 (the build-fits report point 4): Catcher's 1457.6 took three kit
+ * files and the BuffData trees to take apart.
+ */
+export interface HitBase {
+  readonly value: number;
+  readonly expr: unknown;
+  readonly attrs: readonly {
+    readonly attr: number;
+    readonly name: string;
+    /** The panel's value of it plus the fight's buffs': what the expression read. */
+    readonly value: number;
+    readonly panel: { readonly base: number; readonly add: number; readonly percent: number; readonly flat: number; readonly multiply: number; readonly total: number; readonly contributions: readonly { readonly source: string; readonly value: number }[] } | null;
+    readonly inFight: number;
+    readonly buffs: readonly { readonly buff: string; readonly value: number; readonly percent?: true }[];
+  }[];
+}
+
+/** The attributes an expression reads (`{attr: n}` anywhere in it, `attrAtLeast` too). */
+function exprAttrs(e: unknown, out = new Set<number>()): Set<number> {
+  if (Array.isArray(e)) for (const x of e) exprAttrs(x, out);
+  else if (e && typeof e === "object") {
+    for (const [k, v] of Object.entries(e)) {
+      if (k === "attr" && typeof v === "number") out.add(v);
+      else if (k === "attrAtLeast" && Array.isArray(v)) {
+        for (const a of v) if (typeof a === "number") out.add(a);
+      } else exprAttrs(v, out);
+    }
+  }
+  return out;
+}
+
+/** A kit hit's base breakdown (HitBase), or undefined for a hit on ATK. `buffs`: the replay's active buffs at the landing. */
+export function baseBreakdown(inputs: LandingInputs, hit: KitHit, situation: Situation | undefined, frame: number, baseValue: number, buffs: readonly ActiveBuff[] | null): HitBase | undefined {
+  if (inputs.kind !== "hit" || hit.base === undefined) return undefined;
+  const panel: StatPanel = inputs.panel;
+  const attrs = [...exprAttrs(hit.base)].map((attr) => {
+    const line = panel.attrs[attr];
+    const inFight = situation?.attrBonus?.(attr as AttrType) ?? 0;
+    const on = (buffs ?? []).filter((b) => activeAt(b, frame) && reaches(b, inputs.operator) && b.attrs?.some((a) => a.attr === attr));
+    return {
+      attr,
+      name: line?.name ?? String(attr),
+      value: (line?.total ?? 0) + inFight,
+      panel: line ? { base: line.base, add: line.add, percent: line.percent, flat: line.flat, multiply: line.multiply, total: line.total, contributions: line.contributions.map((c) => ({ source: c.source, value: c.value })) } : null,
+      inFight,
+      buffs: on.flatMap((b) => (b.attrs ?? []).filter((a) => a.attr === attr).map((a) => ({ buff: `${b.owner}:${b.id}`, value: a.value, ...(a.percent ? { percent: true as const } : {}) }))),
+    };
+  });
+  return { value: baseValue, expr: hit.base, attrs };
 }
 
 /** Every logged hit of a fixture as a record (the multi-target fixtures aren't checked: single-target engine). */
@@ -159,6 +222,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       ...(v.kind === "match" && v.assumptions.length ? { assumptions: v.assumptions } : {}),
       ...verdictReadingOf(v),
       listed: listedBuffs(hit.effects),
+      ...listedSincesOf(hit.effects),
       critSource: replay.replay.critSource(hit),
       ...(facts.get(hit.operator) ? { unknownFacts: facts.get(hit.operator) as readonly string[] } : {}),
       ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills } } : {}),
@@ -210,6 +274,11 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
         zones: d.zones,
         modifiers: d.modifiers.map((m) => ({ source: m.source, zone: m.zone, ...(m.element ? { element: m.element } : {}), value: m.value, ...(m.kitBuff ? { kitBuff: `${m.kitBuff.owner}:${m.kitBuff.id}` } : {}) })),
         ...(inputs.kind === "status" ? { reaction: { kind: inputs.reaction.kind, element: inputs.reaction.element, stacks: inputs.reaction.stacks } } : {}),
+        ...(() => {
+          if (inputs.kind !== "hit") return {};
+          const b = baseBreakdown(inputs, primary.other?.hit ?? inputs.hit, primary.options.situation, landing.frame, d.zones.atk, (primary.other?.hit ?? inputs.hit).base !== undefined ? (replay.replay.stateAt(landing.frame)?.buffs ?? null) : null);
+          return b ? { base: b } : {};
+        })(),
         ...(landing.facts
           ? {
               enemy: [...landing.facts.enemy.statuses.map((s) => ({ s, physical: false })), ...landing.facts.enemy.physical.map((s) => ({ s, physical: true }))].map(({ s, physical }) => ({
@@ -317,6 +386,14 @@ export interface Graded {
 }
 
 /** The game buffs a hit's effects list, each once with its instance count when above 1 ("id ×2"), in listing order. */
+/** HitRecord.listedSinces: the lane starts of each buff listed more than once (no field when none is). */
+export function listedSincesOf(effects: readonly { readonly buff: string; readonly since?: number }[]): { listedSinces?: Record<string, (number | null)[]> } {
+  const by = new Map<string, (number | null)[]>();
+  for (const e of effects) by.set(e.buff, [...(by.get(e.buff) ?? []), e.since ?? null]);
+  const many = [...by].filter(([, s]) => s.length > 1);
+  return many.length ? { listedSinces: Object.fromEntries(many) } : {};
+}
+
 export function listedBuffs(effects: readonly { readonly buff: string }[]): string[] {
   const n = new Map<string, number>();
   for (const e of effects) n.set(e.buff, (n.get(e.buff) ?? 0) + 1);

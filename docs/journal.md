@@ -4,9 +4,39 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 185 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 186 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Friction round 20: guards that say what they cite, tried diffs by function, the build screen by the check's tolerance
+
+Goal: improvement round 20 over seven reports and round 19's backlog (summary:
+docs/friction-done/2026-11-27-round-20.md; what's left: docs/friction/2026-11-27-backlog-after-round-20.md).
+
+Done: TAILKEPT names its guard and whether the hit it cites is the cast's own landing (`[shown-own]`, logged a few ms
+into its frame), `zmdlogs decisions` counts the lines by guard; scripts/tried.ts (`--touching <file>[:<function>]`,
+`index`, `new` refusing an existing name) with a test over docs/tried/; the build-offset screen at 0.3% and 2 damage
+on the median hit (the check's ±1), `offsets --bound` (the factor interval), fit-build's weapon skill levels and
+potentials as scored singles, `hits --json` landing.base (a DEF base's parts) and listedSinces; the by-operator
+table's Largest and Own matched / one-sided (two describing `share own … operator` keys); measure's plain tree first
+under `--variant`, `--several-targets`; engine replayEvent with one pin rule (pinLanding) and TimelineContext.replayed for the record-only fields;
+NOLAND's kit-gap and trigger-group details, the twin's rule on LAND, LogBuffReplay.placement, a defaulted read's
+caller; `verify-at --snapshot`, smoke fixing its code at queue time; `carry --unpark`, the same-listing VALUE flag,
+`cli-ab --hits-zones`.
+
+Decisions: the tail guard's behaviour stays (an exact guard moved 24 logs, docs/tried/2026-11-27-tail-own-landing.diff):
+a test of what it stands for is on the accuracy list, beside a shielded target's landing. A DEF base's parts are
+computed in hitexport.ts from the landing's inputs and the replay's state, not recorded by the engine. The
+offset screen's lower threshold flagged no new development row (Ember's and Alesh's are fitted), so no
+OFFSETS_EXPLAINED entry. Two parked points came back with `--unpark` (round 6's smoke-and-snapshots, round 8's
+layers): smoke's half is done, snapshots' and the layers views are the backlog's points 2 and 3. The moved hold-outs'
+replayed casts by kind and shift, built for the break-placement report, were removed at the lead's word: a split of
+the hold-outs' change by mechanism class (hashed names or not) is what blindness forbids; the backlog's new Declined
+section keeps it from being rebuilt, and docs/design/tests.md "What a hold-out output may say" names it. For the same
+reason the two `share own … operator` keys are left out of the hold-out snapshot (accuracy.ts isHoldoutOmittedKey).
+
+Checks: `npm run snapshots:update`: no log's verdicts moved, every group unchanged, keys added only (`share own matched
+operator <id>`, `share own one-sided operator <id>`); team-ab identical at the engine change (7be8b2d).
 
 ## 2026-11-27: Liino's damage error and her weapon's Medicant layers
 
@@ -352,45 +382,3 @@ two; not built: open-problems "The placement cases the one-sided rounds left").
 7e19, d4fb, de6a and one hold-out; mixed: a9d7 (plain 332 → 336, damage −1.7 → −1.8%, per-hit error closer); worse:
 none. Team fights unchanged (team-ab identity at e2e6f3f: no team example has either operator); the
 pogranichnik-chen example snapshot moves with the harass frames.
-
-## 2026-11-27: The hold at a Stagger break; Rossi's bleed through her freeze
-
-**Goal:** two leads of the placement-cases round (docs/open-problems.md): the clocks that run late across a logged
-Stagger break (round 18's `zmdlogs clocks` rows, 5082's Yvonne +0.51 s), and 99fb's bleed ticks after Rossi's
-ultimate placed as battle-skill hits.
-
-**Done** (docs/open-problems.md "The hold at a Stagger break"):
-- **A break holds every clock** (engine assumption `break-hold`, default `14f`; timeline/clock.ts breakHold, called
-  at dealPoise's `staggered` in landing.ts): 14 frames at scale 0 for the world, the enemy and every operator, the
-  breaker too, not inside an ultimate's stop. The evidence (scripts/probes/stagger/break-hold.ts): the clocks 0.6 s or
-  more past a break run 0.41–0.61 s late but two (26 rows, every operator and enemy, enemy ticks too, median 0.54 s);
-  none at the 86 Stagger Node crossings, whose buff (buff_common_mini_poise_break) has a 0.5 s layer-1 dilation. The
-  data's enablePoiseBreakTimeDilation is true on every damage unit and has no length. 14f: the Node buff's curve holds
-  0.46 s, and 12f–18f match alike while 16f/18f put c83c's total 5 points off (a tail cut's threshold).
-- The replay: its tick bounds take the logged breaks as stops (holds.ts loggedBreaks, breakStops), so the hidden
-  holds don't place the hold again; it holds only at the breaks the log shows (TimelineScenario.loggedBreaks, ±4
-  frames: 6339, d4fb, f978 and 0c14 break the replay's own bar where the log has none). 5082's Yvonne keeps her chain
-  at 45.06 s. Dropped after the split: the replay's Stagger window recorded from the break, not 14 frames later
-  (docs/tried/2026-11-27-break-window-start.diff; the hold-outs 2 better without it).
-- **Rossi's bleed runs through her ultimate's freeze** (kit `runsThroughFreeze` on Razor Clawmark): the replay held it
-  +93 frames at the freeze (frames 57–150 of her ultimate on an Elite), and the log's ticks run a second apart there in
-  every Elite log (99fb, 2fd9, 207f). Nothing ended the bleed: the "ended" one was held, so its logged ticks had no
-  replayed landing and the placement took them for a battle skill's.
-
-**Scoreboard** (`npm run snapshots:update` at the final commit, against f96757f): development plain 83.9 → 84.2%,
-mismatch 4.8 → 4.7%, mean |damage error| 1.2 → 1.3%; earlier pending plain 81.9 → 82.2%; verified unchanged;
-hold-outs plain 82.9 → 82.5%, mismatch 5.4 → 5.3%, |damage error| 6.3 → 6.4% (2 logs, about 30 hits plain → assumed:
-still matched, under every hold length). The split (open-problems' table): the hold itself carries the hold-outs'
-loss; the gate, the tick stops and the Stagger end don't; Rossi's bleed alone moves no hold-out aggregate (development
-plain +0.1, and its fights' totals 207f 0.4 → 1.1%, 99fb −0.1 → 0.5%: more of the logged ticks land).
-
-**Team numbers** (`node scripts/team-ab.ts --base a6c425f`, 32 seeds): the owner's team (estella-si-akekuri-arcane)
-sustained DPS −0.89% (full energy, sd 2.9%) and −0.90% (zero); Typhoeus's team −0.60% / −0.36%: every break now costs
-the team 0.47 s, within one sd.
-
-**Decisions:** an engine stop, not a replay-only hold: the evidence is every operator's and the enemy's, so the
-simulation has it too. `stagger-recovery` stays `2s` (with the hold the engine's own Stagger runs short in 18 of 71
-logged runs, quartiles 0.43 / 0.84 / 1.62 s, against 20, 0.60 / 1.53 / 3.32 s; a refit is a next check).
-
-**Open:** where the hold sits against the breaking hit's logged ms (9090, c4f3, 3aa6: the late clocks before it);
-breaks inside a combo's slow-down; the hold-outs' 30 hits.

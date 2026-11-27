@@ -19,6 +19,13 @@
 //                                                     ref's) and per operator; --summary only the counts, --operator
 //                                                     only its lines (round 17, the Zhuang Fangyi and Liino report
 //                                                     point 2: a placement rule's false positives before a measure)
+//   node scripts/cli-ab.ts <ref> --hits-zones <fixture> [--assume <id>=<r>]
+//                                                     `zmdlogs hits <fixture> --json` on both sides, paired by hit:
+//                                                     for each hit whose verdict class or primary reading moved, its
+//                                                     class and reading before and after and the modifiers (by kit
+//                                                     buff, else source, and zone) that differ, one line each (round
+//                                                     20, the Vesperwings report point 3: a removed press's Yinglung's
+//                                                     Edge layer was found by comparing zone products by hand)
 //   … --patch <diff>                                  the patch applied on <ref>'s code first (git apply, in its own
 //                                                     worktree scratch/at/<hash>-patched, made afresh): a view this
 //                                                     tree added, run on the old code too (`git diff <base> --
@@ -130,6 +137,60 @@ interface PlacementRecord {
   readonly value?: number;
   readonly cast?: { readonly skill: string; readonly start: number; readonly index: number; readonly frame?: number; readonly sameAs?: boolean };
   readonly text: string;
+}
+
+/** The fields of a `zmdlogs hits --json` record --hits-zones reads. */
+interface HitZonesRecord {
+  readonly t: number;
+  readonly operator: string;
+  readonly event: string;
+  readonly value: number;
+  readonly class: string;
+  readonly predicted: number | null;
+  readonly landing?: { readonly modifiers: readonly { readonly source: string; readonly zone: string; readonly value: number; readonly kitBuff?: string }[] };
+}
+
+/**
+ * cli-ab --hits-zones: two `zmdlogs hits --json` outputs paired by hit (time, operator, event, value; repeats in
+ * order), and for each hit whose class or primary reading moved, a line with both and a line per modifier that differs
+ * (keyed by its kit buff, else its source, and its zone: "- was", "+ now", "~ was → now").
+ */
+export function hitsZonesDiff(was: string, now: string): string[] {
+  const parse = (s: string) => s.split("\n").filter((l) => l.startsWith("{")).map((l) => JSON.parse(l) as HitZonesRecord);
+  const keyed = (rs: readonly HitZonesRecord[]) => {
+    const seen = new Map<string, number>();
+    return new Map(rs.map((r) => {
+      const k = `${r.t}|${r.operator}|${r.event}|${r.value}`;
+      const n = seen.get(k) ?? 0;
+      seen.set(k, n + 1);
+      return [`${k}|${n}`, r] as const;
+    }));
+  };
+  const [a, b] = [keyed(parse(was)), keyed(parse(now))];
+  const mods = (r: HitZonesRecord | undefined) => {
+    const m = new Map<string, number>();
+    for (const x of r?.landing?.modifiers ?? []) {
+      const k = `${x.kitBuff ?? x.source} ${x.zone}`;
+      m.set(k, (m.get(k) ?? 0) + x.value);
+    }
+    return m;
+  };
+  const r4 = (x: number) => Number(x.toFixed(4));
+  const out: string[] = [];
+  let moved = 0;
+  for (const [k, after] of b) {
+    const before = a.get(k);
+    if (before && before.class === after.class && before.predicted === after.predicted) continue;
+    moved++;
+    out.push(`${(after.t / 1000).toFixed(2).padStart(7)}  ${after.operator} ${after.event} ${after.value}: ${before ? `${before.class} ${before.predicted ?? "-"}` : "(not at the ref)"} → ${after.class} ${after.predicted ?? "-"}`);
+    const [x, y] = [mods(before), mods(after)];
+    for (const key of [...new Set([...x.keys(), ...y.keys()])].sort()) {
+      const [p, q] = [x.get(key), y.get(key)];
+      if (p !== undefined && q !== undefined && r4(p) === r4(q)) continue;
+      out.push(p === undefined ? `    + ${key} ${r4(q as number)}` : q === undefined ? `    - ${key} ${r4(p)}` : `    ~ ${key} ${r4(p)} → ${r4(q)}`);
+    }
+  }
+  return [moved ? `${moved} hit(s) whose class or primary reading moved, with the modifiers that differ (by kit buff, else source, and zone):` : "no hit's class or primary reading moved", ...out];
 }
 
 const short = (id: string) => id.replace(/^chr_\d+_[a-z]+_/, "");
@@ -293,8 +354,13 @@ function main(argv: string[]): number {
     key ??= HOLDS_KEY;
   }
   const placement = own.includes("--placement");
+  const hitsZones = opt("--hits-zones");
+  if (hitsZones !== undefined) {
+    const assume = opt("--assume");
+    efsim = ["zmdlogs", "hits", hitsZones, "--json", ...(assume !== undefined ? ["--assume", assume] : [])];
+  }
   if (!ref || ref.startsWith("--") || (efsim.length === 0 && !placement)) {
-    process.stderr.write("usage: node scripts/cli-ab.ts <ref> [--key <regex>] [--all] [--raw] [--patch <diff>] -- <efsim args…> | <ref> [--patch <diff>] --holds <fixture> | <ref> --placement [<fixture id>…] [--operator <name>] [--summary]\n");
+    process.stderr.write("usage: node scripts/cli-ab.ts <ref> [--key <regex>] [--all] [--raw] [--patch <diff>] -- <efsim args…> | <ref> [--patch <diff>] --holds <fixture> | <ref> --placement [<fixture id>…] [--operator <name>] [--summary] | <ref> [--patch <diff>] --hits-zones <fixture> [--assume <id>=<r>]\n");
     return 2;
   }
   const short = spawnSync("git", ["rev-parse", "--short=9", "--verify", `${ref}^{commit}`], { cwd: ROOT, encoding: "utf8" });
@@ -325,6 +391,11 @@ function main(argv: string[]): number {
   };
   const [was, now] = [own.includes("--raw") ? run(tree) : withRoot(run(tree), tree, ROOT), run(ROOT)];
   const say = (l: string) => process.stdout.write(l + "\n");
+  if (hitsZones !== undefined) {
+    say(`cli-ab --hits-zones: efsim ${efsim.join(" ")}: ${ref} (${short.stdout.trim()}${patch !== undefined ? ` with ${patch}` : ""}) against this tree`);
+    for (const l of hitsZonesDiff(was, now)) say(l);
+    return 0;
+  }
   say(`cli-ab: efsim ${efsim.join(" ")}: ${ref} (${short.stdout.trim()}${patch !== undefined ? ` with ${patch}` : ""}, -) against this tree (+)${key ? `, lines paired by /${key}/ (~)` : ""}`);
   if (was === now) {
     say("the outputs are identical");

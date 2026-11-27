@@ -4,6 +4,7 @@ import type { Build } from "../build.ts";
 import { evalContext } from "../damage.ts";
 import { EngineError } from "../errors.ts";
 import type { GameData } from "../model.ts";
+import type { BattleEvent } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { NO_STATUS } from "../status.ts";
 import { type DamageMoments, hitsMoments } from "../moments.ts";
@@ -166,18 +167,14 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const own = new Map<string, PendingHit[]>();
     for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
     for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
-    const moved = new Map<PendingHit, { frame: number; ref?: string; loggedMs?: number; loggedOrder?: number }>();
+    const moved = new Map<PendingHit, PinAt>();
     for (const l of landings) {
       const h = own.get(l.hitId)?.[l.nth];
-      if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms, ...(l.order !== undefined ? { loggedOrder: l.order } : {}) } : {}) });
+      if (h) moved.set(h, pinAt(frame, l));
     }
-    // A pinned landing was launched by its logged frame (a detached one's launch, KitHit.launch, is on the kit's timeline, which jumps shorten).
-    // A delayed hit's logged frame is its damage's (KitHit.enemyDelay): its landing stays at its kit frame.
+    // A delayed hit's logged frame is its damage's (KitHit.enemyDelay): its landing stays at its kit frame (pinLanding).
     const delayed = new Set(skill.hits.filter((h) => h.enemyDelay !== undefined).map((h) => h.id));
-    const pin = (h: PendingHit, m: { frame: number; ref?: string; loggedMs?: number; loggedOrder?: number }): PendingHit =>
-      delayed.has(h.hitId)
-        ? { ...h, damageFrame: Math.max(m.frame, h.frame), ...(m.ref !== undefined ? { ref: m.ref } : {}) }
-        : { ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) };
+    const pin = (h: PendingHit, m: PinAt): PendingHit => pinLanding(h, m, delayed.has(h.hitId));
     // A hit with a random landed count (KitHit.landedCount) lands as often as the log shows: its other planned landings
     // didn't (5082ceaffad1: 10 of Ardelia's 14 sheep). Not one that carries SP or uses stacks up.
     const random = new Set(skill.hits.filter((h) => h.landedCount !== undefined).map((h) => h.id));
@@ -222,26 +219,72 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   return runTriggers(ctx, st, r.events, r.origin, decidedIds.size ? (t) => !decidedIds.has(t.id) : undefined);
 }
 
+/** Where a pinned landing goes (pinAt): its logged frame, its logged hit's reference, ms and place in its batch. */
+export interface PinAt {
+  readonly frame: number;
+  readonly ref?: string;
+  readonly loggedMs?: number;
+  readonly loggedOrder?: number;
+}
+
 /**
- * One of several targets dies at `frame` (the log check's replay: a fight against several targets under one enemy id,
- * packages/logs targets.ts deathMoves): the team's `targetDeath` triggers run (Camille's Vesperwings moving to the next
- * target). The replay's one enemy stays, with its state: which target carries what is the log check's to read.
- * `landings`: the hits the triggers schedule at their logged frames, as replayCast's (pinned: the log's time has the
- * travel the data doesn't give in it); the first not yet pinned landing of trigger `trigger`'s hit `hitId` lands at
- * `frame`, with `ref` (its LandedHit carries it and its facts).
+ * A landing the log shows, as a driver at `frame` pins it (replayCast's landings, replayEvent's): never before the
+ * driver's frame; the log's ms (and batch order) kept only where the logged frame is the landing's own (not before).
  */
-export function targetDies(ctx: TimelineContext, state: TimelineState, frame: number, landings: readonly { readonly trigger: string; readonly hitId: string; readonly frame: number; readonly ref?: string; readonly ms?: number }[] = []): TimelineState {
+export function pinAt(frame: number, l: { readonly frame: number; readonly ref?: string; readonly ms?: number; readonly order?: number }): PinAt {
+  return { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms, ...(l.order !== undefined ? { loggedOrder: l.order } : {}) } : {}) };
+}
+
+/**
+ * A pending hit pinned at its logged landing (the replay's one pin rule, round 20: it was written out in replayCast and
+ * in the target's death): it lands at `m.frame`, pinned (no stop or hold moves it), launched by then (a detached hit's
+ * launch, KitHit.launch, is on the kit's timeline, which jumps shorten). A `delayed` hit's logged frame is its
+ * damage's (KitHit.enemyDelay): its landing stays at its kit frame, its damage at the logged one.
+ */
+export function pinLanding(h: PendingHit, m: PinAt, delayed = false): PendingHit {
+  if (delayed) return { ...h, damageFrame: Math.max(m.frame, h.frame), ...(m.ref !== undefined ? { ref: m.ref } : {}) };
+  return { ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) };
+}
+
+/** A landing of a hit an event's triggers schedule, at its logged frame (replayEvent): trigger `trigger`'s hit `hitId`. */
+export interface EventLanding {
+  readonly trigger: string;
+  readonly hitId: string;
+  readonly frame: number;
+  readonly ref?: string;
+  readonly ms?: number;
+}
+
+/**
+ * A battle event the log shows and no cast makes, at `frame` (the log check's replay; round 20, the Vesperwings report
+ * point 1: a target's death was its own step kind and driver, its landing pin a copy of replayCast's): the team's
+ * triggers on it run, and `landings` pins the hits they schedule at their logged frames (pinLanding: the first not
+ * yet pinned landing of trigger `trigger`'s hit `hitId`). `event` makes the event from the state at its frame (its
+ * operator, say, the one controlled then).
+ */
+export function replayEvent(ctx: TimelineContext, state: TimelineState, frame: number, event: (st: TimelineState) => BattleEvent, landings: readonly EventLanding[] = []): TimelineState {
   const st = advance(ctx, state, frame);
   const before = new Set(st.scheduled);
-  const out = runTriggers(ctx, st, [{ type: "targetDeath", frame, operator: st.controlled }], null);
+  const out = runTriggers(ctx, st, [event(st)], null);
   if (landings.length === 0) return out;
   const fresh = ofKind(out.scheduled, "hit").filter((h) => !before.has(h) && h.trigger !== undefined);
   const moved = new Map<PendingHit, PendingHit>();
   for (const l of landings) {
     const h = fresh.find((x) => !moved.has(x) && x.trigger?.id === l.trigger && x.hitId === l.hitId);
-    if (h) moved.set(h, { ...h, frame: Math.max(frame, l.frame), pinned: true, ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms } : {}) });
+    if (h) moved.set(h, pinLanding(h, pinAt(frame, l)));
   }
   return { ...out, scheduled: out.scheduled.map((x) => (x.kind === "hit" ? (moved.get(x) ?? x) : x)) };
+}
+
+/**
+ * One of several targets dies at `frame` (the log check's replay: a fight against several targets under one enemy id,
+ * packages/logs targets.ts deathMoves): the team's `targetDeath` triggers run (Camille's Vesperwings moving to the next
+ * target), by replayEvent. The replay's one enemy stays, with its state: which target carries what is the log check's
+ * to read. `landings`: the hits the triggers schedule at their logged frames, as replayCast's (pinned: the log's time
+ * has the travel the data doesn't give in it).
+ */
+export function targetDies(ctx: TimelineContext, state: TimelineState, frame: number, landings: readonly EventLanding[] = []): TimelineState {
+  return replayEvent(ctx, state, frame, (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings);
 }
 
 /**

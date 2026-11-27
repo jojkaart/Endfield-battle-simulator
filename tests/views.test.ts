@@ -3,7 +3,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { assumedView, castsView, differencesReport, fallbackGroups, foldLabel, groupsReport, kindSet, otherKitHitCasts, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerLine, staggerSummary, staggerView, totalsAllView, type HitRecord, type StaggerRun } from "@efsim/logs";
+import { assumedView, castsView, differencesReport, fallbackGroups, foldLabel, groupsReport, kindSet, kitKeys, otherKitHitCasts, logBuffReplay, loggedCastFates, readLogFixture, replayView, staggerLine, staggerSummary, staggerView, totalsAllView, type HitRecord, type StaggerRun } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 
 const data = loadGameData();
@@ -41,6 +41,24 @@ describe("the placement and replay views", () => {
     const op = fx.team[0]?.operator as string;
     const only = replayView(data, fx, { operators: [op] });
     expect(only.split("\n").slice(1).every((l) => l.includes(data.operators[op]?.name ?? op) || /STAGGER/.test(l))).toBe(true);
+  });
+
+  // Round 20 (the twins report point 3, the Vesperwings report point 2): a key no kit lists and a trigger group's
+  // landing each say what they are, not "a placement error".
+  it("names a key no kit hit lists (a kit gap) and a trigger group's landing on NOLAND lines", () => {
+    expect(kitKeys(data, fx).has(fx.hits.find((h) => h.operator === fx.team[0]?.operator && h.event.includes("attack"))?.event ?? "none")).toBe(true);
+    const i = fx.hits.findIndex((h) => h.t > 4000 && !h.event.startsWith("buff_"));
+    const odd = { ...fx, hits: fx.hits.map((h, k) => (k === i ? { ...h, event: `${h.event}_abilityrange_x` } : h)) };
+    const at = (fx.hits[i] as { t: number }).t;
+    expect(replayView(data, odd, { from: at, to: at })).toMatch(/NOLAND .*_abilityrange_x \d+: a hit the placement doesn't place: a key no kit hit or trigger hit of the team lists \(a kit gap, not a placement error: `efsim gamedata who \S+_abilityrange_x`/);
+    const s6339 = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-63398339803e.json"));
+    expect(replayView(data, s6339, { from: 19900, to: 19920 })).toMatch(/NOLAND Si normal_skill_inkmove_2 \d+: .*a trigger's landing \(trigger:artful_intent_end\): the replay lands it from the trigger's event/);
+  });
+
+  // Round 20 (the several-targets report point 1): the placement's twin rule on the replay's LAND line.
+  it("marks a landing whose logged hit the placement took as another target's (7b54's Si combo at 15.60 s)", () => {
+    const s7b54 = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-7b54dc249bcd.json"));
+    expect(replayView(data, s7b54, { from: 15590, to: 15610 })).toMatch(/LAND {3}Si combo_skill slash\S* \d+ \[pinned\] = logged .* \[twin: batch, 2 targets per landing of the 8 alike hits at this ms/);
   });
 
   it("says what the replay made of each of the log's cast events (EVENT lines)", () => {

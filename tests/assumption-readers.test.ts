@@ -13,7 +13,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { defaultedReads } from "./helpers/readings.ts";
+import { readingOf, traceReadings } from "@efsim/engine";
+import { defaultedReads, readSite } from "./helpers/readings.ts";
 
 const data = loadGameData();
 const ROOT = new URL("..", import.meta.url).pathname;
@@ -44,5 +45,16 @@ describe("assumption readers", () => {
     const { defaulted, reads } = defaultedReads(data, "6339");
     expect(reads).toBeGreaterThan(0);
     expect(defaulted, "read at their defaults though the run gave every reading: a reader not handed the run's `assume`").toEqual([]);
+  });
+
+  // Round 20 (the break-placement report point 1): a defaulted read names its caller, not only its id.
+  it("names where a defaulted read was made", () => {
+    const sites: string[] = [];
+    const readerWithoutTheRun = () => readingOf(undefined, "break-hold");
+    traceReadings((r) => {
+      if (!r.given) sites.push(readSite(new Error().stack));
+    }, readerWithoutTheRun);
+    expect(sites).toHaveLength(1);
+    expect(sites[0]).toMatch(/^tests\/assumption-readers\.test\.ts:\d+( \(\S+\))?$/);
   });
 });

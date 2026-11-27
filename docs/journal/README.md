@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-27: Friction round 20: guards that say what they cite, tried diffs by function, the build screen by the check's tolerance](2026-11-27-18-friction-round-20-guards-that-say-what-they-cite-tried-diffs.md)
 - [2026-11-27: Liino's damage error and her weapon's Medicant layers](2026-11-27-17-liino-s-damage-error-and-her-weapon-s-medicant-layers.md)
 - [2026-11-27: Camille's Vesperwings moving to the next target](2026-11-27-17-camille-s-vesperwings-moving-to-the-next-target.md)
 - [2026-11-27: Twins on several targets](2026-11-27-16-twins-on-several-targets.md)

@@ -43,6 +43,16 @@ describe("the build fitter", () => {
     expect(fit.best[0]?.cleanFits).toBeGreaterThanOrEqual(150);
   });
 
+  // Round 20 (the build-fits report point 2): the single change that fits exactly, scored beside the combinations.
+  it("scores a weapon skill level as a single change: 04d4's Ember at Exemplar's skill 1 level 9", () => {
+    const fit = fitBuild(data, exported("04d401ad257e"), "chr_0009_azrila", { foods: false });
+    expect(fit.exported.fits).toBe(0);
+    expect(fit.best[0]?.set).toEqual({ weapon: { skillLevels: [9, 9, 5] } });
+    expect(fit.best[0]?.inputs).toBe(1);
+    expect(fit.best[0]?.label).toBe("weapon skill 1 level 9");
+    expect(fit.best[0]?.fits).toBeGreaterThanOrEqual(160);
+  });
+
   it("counts the wider space's single changes and pairs that give an offset (--pairs; round 16): 04d4's Snowshine ×0.9624", () => {
     // The bursts-and-cooldowns round's probe (scripts/probes/stats/snowshine-builds.ts, on top of two nodes: 46 pairs):
     // from the build as read, no single change and many pairs, so the logs don't decide it.

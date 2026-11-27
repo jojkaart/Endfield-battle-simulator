@@ -3,7 +3,7 @@
 // order the replay takes them at one frame (stepRank). Its own module (improvement round 8, round 5's parked point 12):
 // a new kind of step is an edit here and one branch in replayOnce.
 
-import { FPS } from "@efsim/engine";
+import { FPS, type BattleEvent, type EventLanding, type TimelineState } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import type { ReplayedCast } from "./castassembly.ts";
 
@@ -131,8 +131,25 @@ export interface ReplayStep {
   readonly hold?: number;
   /** The hold at a Stagger break the log stamped inside it, placed before the break's ms (holds.ts breakHoldStarts). */
   readonly breakHold?: true;
-  /** One of several targets dies here (engine targetDies): what shows it (targets.ts deathMoves: a logged move's landing). */
-  readonly death?: string;
+  /** A battle event the log shows and no cast makes (engine replayEvent): a target's death, say. */
+  readonly event?: ReplayEventStep;
+}
+
+/**
+ * A log-driven battle event (round 20, the Vesperwings report point 1: the next one, Arcane's seal or Si's ink at a
+ * kill, needs no new step kind): its words for a trace, the event as made from the state at its frame, and the landings
+ * of the hits its triggers schedule, pinned at their logged frames (engine replayEvent, pinLanding).
+ */
+export interface ReplayEventStep {
+  /** For a trace (stepWords): "a target's death (…)". */
+  readonly words: string;
+  readonly make: (st: TimelineState) => BattleEvent;
+  readonly landings: readonly EventLanding[];
+}
+
+/** A target's death as a replay event (targets.ts deathMoves: its landings the trigger's logged hits). */
+export function deathEvent(frame: number, why: string, landings: readonly EventLanding[]): { readonly frame: number; readonly event: ReplayEventStep } {
+  return { frame, event: { words: `a target's death (${why})`, make: (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings } };
 }
 
 /**
@@ -141,17 +158,17 @@ export interface ReplayStep {
  * first); the log's Stagger end before its bar (the bar is the hit's), and its Stagger after it.
  */
 export function stepRank(s: ReplayStep): number {
-  return s.recover ? 0 : s.hold !== undefined || s.breakHold ? 1 : s.cast || s.death !== undefined ? 2 : s.endBar !== undefined ? 3 : s.bar !== undefined ? 4 : s.through !== undefined ? 5 : 6;
+  return s.recover ? 0 : s.hold !== undefined || s.breakHold ? 1 : s.cast || s.event !== undefined ? 2 : s.endBar !== undefined ? 3 : s.bar !== undefined ? 4 : s.through !== undefined ? 5 : 6;
 }
 
 /**
  * Every step of one replay in frame order (stepRank at one frame): the log's Stagger, the holds (the hidden ones; the
- * breaks' placed before their ms, `breakHolds`), the casts (not those before the log), the deaths of several targets'
- * ones (`deaths`: targets.ts deathMoves) and the samples.
+ * breaks' placed before their ms, `breakHolds`), the casts (not those before the log), the log-driven events (`events`:
+ * the deaths of several targets' ones, targets.ts deathMoves; deathEvent) and the samples.
  */
-export function replaySteps(logged: LoggedStagger, worldHolds: readonly { readonly frame: number; readonly frames: number }[], casts: readonly ReplayedCast[], sampleFrames: readonly number[], breakHolds: readonly number[] = [], deaths: readonly { readonly frame: number; readonly why: string }[] = []): ReplayStep[] {
+export function replaySteps(logged: LoggedStagger, worldHolds: readonly { readonly frame: number; readonly frames: number }[], casts: readonly ReplayedCast[], sampleFrames: readonly number[], breakHolds: readonly number[] = [], events: readonly { readonly frame: number; readonly event: ReplayEventStep }[] = []): ReplayStep[] {
   return [
-    ...deaths.map((d) => ({ frame: d.frame, cast: null, recover: false, death: d.why })),
+    ...events.map((d) => ({ frame: d.frame, cast: null, recover: false, event: d.event })),
     ...logged.recoveries.map((frame) => ({ frame, cast: null, recover: true })),
     ...worldHolds.map((h) => ({ frame: h.frame, cast: null, recover: false, hold: h.frames })),
     ...breakHolds.map((frame) => ({ frame, cast: null, recover: false, breakHold: true as const })),
@@ -171,6 +188,6 @@ export function stepWords(s: ReplayStep): string {
   if (s.through !== undefined) return "the log's Stagger listing";
   if (s.hold !== undefined) return `a placed hidden hold of ${s.hold} frame(s)`;
   if (s.breakHold) return "the hold at a Stagger break, placed before the break's ms";
-  if (s.death !== undefined) return `a target's death (${s.death})`;
+  if (s.event !== undefined) return s.event.words;
   return "time to the next sample (pauses, stops, holds)";
 }

@@ -1,7 +1,24 @@
 // scripts/cli-ab.ts outputDiff: two outputs of one efsim command (another commit's code and this tree's), the lines
 // only one side has, and with a key the lines that changed paired up (zmdlogs holds --verbose: a bound by its tag).
 import { describe, expect, it } from "vitest";
-import { HOLDS_KEY, outputDiff, placementDiff, placementLogs, placementOutputsDiff, withRoot } from "../scripts/cli-ab.ts";
+import { HOLDS_KEY, hitsZonesDiff, outputDiff, placementDiff, placementLogs, placementOutputsDiff, withRoot } from "../scripts/cli-ab.ts";
+
+// Round 20 (the Vesperwings report point 3): which kit buff moved a hit, from two `zmdlogs hits --json` outputs.
+describe("hitsZonesDiff (cli-ab --hits-zones)", () => {
+  const rec = (value: number, cls: string, predicted: number, mods: readonly [string, string, number][]) => JSON.stringify({ t: 1000, operator: "chr_a", event: "e", value, class: cls, predicted, landing: { modifiers: mods.map(([kitBuff, zone, v]) => ({ source: "s", zone, value: v, kitBuff })) } });
+  it("prints each moved hit with the modifiers that differ by kit buff and zone", () => {
+    const was = [rec(100, "plain", 100, [["si:edge", "damageBonus", 0.4], ["si:x", "atk", 0.1]]), rec(50, "plain", 50, [])].join("\n");
+    const now = [rec(100, "mismatch", 95, [["si:edge", "damageBonus", 0.2], ["si:y", "atk", 0.1]]), rec(50, "plain", 50, [])].join("\n");
+    expect(hitsZonesDiff(was, now)).toEqual([
+      "1 hit(s) whose class or primary reading moved, with the modifiers that differ (by kit buff, else source, and zone):",
+      "   1.00  chr_a e 100: plain 100 → mismatch 95",
+      "    ~ si:edge damageBonus 0.4 → 0.2",
+      "    - si:x atk 0.1",
+      "    + si:y atk 0.1",
+    ]);
+    expect(hitsZonesDiff(was, was)).toEqual(["no hit's class or primary reading moved"]);
+  });
+});
 
 describe("outputDiff", () => {
   it("lists lines only at the ref (-) and only here (+), a repeated line as often as it differs", () => {

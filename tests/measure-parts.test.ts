@@ -143,4 +143,8 @@ describe("the hold-outs in a split's parts and the replay's decisions (round 18)
     expect(lines).toContain("  better (1): no decision kind's count moved (1 without decisions on a side: that commit's code has none)");
     expect(decisionLines([])).toEqual([]);
   });
+
+  it("takes --several-targets (round 20, the twins report point 2)", () => {
+    expect(measureOptions(["--several-targets"]).values["several-targets"]).toBe(true);
+  });
 });

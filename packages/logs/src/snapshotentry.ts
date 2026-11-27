@@ -71,6 +71,16 @@ export const SHARE_KEYS = { matched: "share matched", replayOnly: "share replay-
 export const operatorShareKey = (operator: string) => `share operator ${operator}`;
 
 /**
+ * The totals keys of where an operator's own error lives (%, to 0.1, of its own logged total): its matched landings'
+ * error (predicted − logged, signed) and its one-sided landings' (|replay-only| + |log-only|), round 20 (the Liino
+ * report point 1: her 8.5% by-operator mean was one-sided landings in one 10 s fight, none of it her kit, which a
+ * scratch join of the totals with the snapshots found). They describe, never a verdict (`share ` keys); the
+ * scoreboard's by-operator table shows their means. A hold-out's snapshot entry never carries them (scripts/accuracy.ts
+ * isHoldoutOmittedKey, applied where hold-out entries are recorded: tests/slow/pending.ts, measure).
+ */
+export const operatorOwnKeys = (operator: string) => ({ matched: `share own matched operator ${operator}`, oneSided: `share own one-sided operator ${operator}` }) as const;
+
+/**
  * The totals key of an operator's hits that matched only as their event's other kit hit (a match whose reading took
  * another kit hit of the key: a `kitHit` assumption), present where there are any (round 17, the Zhuang Fangyi and
  * Liino report point 1: her attack 4 placed as attack 2 in five logs, 125 hits ×3.125 off, all "fallback" matches, so
@@ -121,6 +131,19 @@ export function snapshotEntry(raw: GameData, fx: LogFixture, opts: Pick<ReplayOp
   const logged = report.totals.logged;
   const operatorShares = Object.fromEntries(Object.keys(logged.perOperator).map((op) => [operatorShareKey(op), logged.damage ? r1((100 * (logged.perOperator[op] ?? 0)) / logged.damage) : null]));
   const otherHits = Object.fromEntries(Object.entries(otherKitHitCounts(verdicts)).map(([op, n]) => [otherHitKey(op), n]));
-  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares, ...otherHits, ...(stageFight(fx) !== null ? { [STAGE_KEY]: 1 } : {}), ...(fx.severalTargets ? { [SEVERAL_TARGETS_KEY]: 1 } : {}) };
+  // An operator's own split, from the fight's (TotalsShares.perOperator, % of the fight's logged total) over its own total.
+  const own = Object.fromEntries(
+    shares.perOperator.flatMap((p) => {
+      const mine = logged.perOperator[p.operator] ?? 0;
+      if (!(mine > 0) || !logged.damage) return [];
+      const k = operatorOwnKeys(p.operator);
+      const of = (x: number) => r1((x * logged.damage) / mine);
+      return [
+        [k.matched, of(p.matched)],
+        [k.oneSided, of(Math.abs(p.replayOnly) + Math.abs(p.logOnly))],
+      ];
+    }),
+  );
+  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares, ...own, ...otherHits, ...(stageFight(fx) !== null ? { [STAGE_KEY]: 1 } : {}), ...(fx.severalTargets ? { [SEVERAL_TARGETS_KEY]: 1 } : {}) };
   return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares, oneSided: report.totals.oneSided, replay, byHit, verdicts };
 }

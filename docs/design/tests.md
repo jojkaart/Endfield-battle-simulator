@@ -147,7 +147,14 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   fixing its own snapshot (round 7). Since round 11 the same code without
   any variant is measured too, and each variant's summary also gives its
   moves against that plain tree: the variant's own effect, apart from what
-  the tree changed since the snapshots (`--no-plain` skips that run).
+  the tree changed since the snapshots (`--no-plain` skips that run). Since
+  round 20 the plain tree's own summary against the reference comes first
+  (the break-placement report point 3: "what does my tree do" was derived
+  from the two variant blocks, and misread once).
+- **A change gated on a fixture mark** (round 20, the twins report point
+  2): `--several-targets` measures only the fixtures marked
+  `severalTargets` (6339, 7b54, 9c6e), a minute per iteration in place
+  of every log; the final measure stays full.
 - **Which part of a batch moved which log** (round 11; a batch of four
   changes took three more measures and a wrong claim to split):
   `--split files [--group a,b]` measures the whole change against
@@ -183,7 +190,9 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   that variant on its own patched worktree, so `--variant
   x.ts:WIDE=30 --variant x.ts:WIDE=16` compares two values against the
   plain tree in one run. Not with `--live`; with `--patch`, only on
-  other files.
+  other files. The value is source text pasted as it is: a string
+  constant needs its quotes inside the argument, `--set
+  'x.ts:MODE="any"'` (round 20).
 - **What a moved hold-out's replay did** (round 18, the placement-cases
   report point 2: a data-right change cost one hold-out 23 plain and was
   dropped unexplained): the summary counts the moved hold-outs' replay
@@ -365,7 +374,15 @@ Never: a hold-out's id or file name, its team, an operator, weapon or gear
 set per log, a split per kit or per mechanism class (the lead, 2026-11-25:
 the classes are small enough to narrow a team), a hit, a time or a value
 of one log. Attribution among the hold-outs stays patch-per-kit measures
-on development logs, with the hold-outs' aggregates as the check.
+on development logs, with the hold-outs' aggregates as the check. No new
+split of a hold-out's change by cast, skill, operator or rule kind: the
+moved hold-outs' replayed casts counted by cast kind and shift (round 20,
+the break-placement report point 2) were built and removed (the lead): such
+a split points a blind agent at which kind of rule to tune against the
+hold-outs, hashed names or not. For the same reason a hold-out's snapshot
+entry carries no operator's own matched / one-sided split (the `share own
+… operator <id>` keys, written for the other groups only: scripts/accuracy.ts
+`isHoldoutOmittedKey`, tests/holdout-blindness.test.ts).
 
 How a tool tells a hold-out (round 19, round 18's own report point 1): a
 hold-out has two key forms, `holdout/…` (the snapshot files, measure's

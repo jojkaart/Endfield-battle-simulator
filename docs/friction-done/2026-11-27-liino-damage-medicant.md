@@ -66,3 +66,19 @@ her weapon's Medicant layers listed up to ×9 are real; branch worktree-agent-a9
 - `zmdlogs totals --all --json` plus jq / a scratch script answered "which landings carry an operator's error" in
   minutes once I thought to use it; `measure --variant <file>:<CONST>=<v>` separated the two changes in one run.
 - Fixtures' `since` fields made the overheal question decidable from the opening (heals before any hit).
+
+## Outcome (round 20)
+
+- 1 (The by-operator mean hides that one tiny fight carries a third of it): done (1bb8286, 482152a): docs/accuracy.md's
+  by-operator table has Largest (the fight and its points of the mean: Liino's 0eef 3.0) and Own matched / one-sided
+  (describing keys `share own matched operator <id>`, `share own one-sided operator <id>`: Liino 0.8% / 11.9%). The
+  per-fight `totals --all --operator --own` view wasn't built: the keys give it per fight (jq over the snapshots).
+- 2 (The cause sat in another agent's files, and a fix there had already been tried the same day): done (df024bb):
+  `node scripts/tried.ts --touching <file>[:<function>]|<word>` and `index`; `tried.ts new <slug> -- <files>` refuses
+  an existing name; tests/tried.test.ts holds every diff to a header and a README link. The CLAUDE.md line is proposed
+  for the lead (round 20's summary).
+- 3 (`hits --json` lists a hit's buffs as names only): done but the `differences --layers` view (carried:
+  2026-11-27-backlog-after-round-20.md point 3): f96773c, `listedSinces` (each entry's lane start for a buff listed
+  more than once; `listed` already had the counts).
+- 4 (TAILKEPT's reason didn't say the "other" hit was the cast's own): done (df024bb): TailKept.guard and `cites`; the
+  line says "held by this cast: its own landing at its last logged frame, logged n ms into that frame".

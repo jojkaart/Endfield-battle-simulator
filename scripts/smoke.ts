@@ -10,10 +10,17 @@
 //
 // Usage: npm run smoke [-- --full]          (node scripts/smoke.ts; a short job under the test lock: scripts/testlock.ts)
 // Last line: `EFSIM-DONE smoke pass|fail`.
+//
+// The code is fixed when it is queued (round 20, round 6's parked point 14, brought back by round 19's own report
+// point 1): a snapshot commit of the working tree (scripts/at-commit.ts snapshotCommit) in its own worktree under
+// scratch/at/, where the tests run when the lock comes, so edits meanwhile don't reach them. A clean tree runs at HEAD's.
 
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import { runLockedAsync } from "./testlock.ts";
+
+const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 export const SMOKE_FILES = [
   "tests/kit-",
@@ -31,8 +38,14 @@ async function main(argv: string[]): Promise<number> {
   const full = argv.includes("--full");
   const reporters = process.stdout.isTTY ? [] : ["--reporter=default", "--reporter=./scripts/vitest-progress.ts"];
   const start = performance.now();
-  let status = await runLockedAsync(["npx", "vitest", "run", ...reporters, ...SMOKE_FILES], { kind: "short", who: "smoke", done: "smoke" });
-  if (full && status === 0) status = await runLockedAsync(["npx", "vitest", "run", "--config", "vitest.logs.config.ts", ...reporters, ...SMOKE_SLOW], { kind: "short", who: "smoke", done: "smoke" });
+  const snap = snapshotCommit(ROOT);
+  const cwd = join(ROOT, "scratch", "at", snap.commit.slice(0, 9));
+  atCommit(snap.commit, cwd);
+  process.stdout.write(`smoke: the code is fixed at queue time (${snap.dirty ? `a snapshot ${snap.commit.slice(0, 9)} of the working tree` : `HEAD ${snap.commit.slice(0, 9)}, the tree clean`}, in ${cwd}): keep editing while it waits\n`);
+  let status = await runLockedAsync(["npx", "vitest", "run", ...reporters, ...SMOKE_FILES], { kind: "short", who: "smoke", done: "smoke", cwd });
+  if (full && status === 0) status = await runLockedAsync(["npx", "vitest", "run", "--config", "vitest.logs.config.ts", ...reporters, ...SMOKE_SLOW], { kind: "short", who: "smoke", done: "smoke", cwd });
+  // A snapshot's own worktree goes after the run (as measure's); HEAD's stays for the next one.
+  if (snap.dirty) removeAtCommit(cwd);
   process.stdout.write(`smoke: ${status === 0 ? "passed" : "FAILED"} in ${((performance.now() - start) / 1000).toFixed(0)} s${status === 0 ? "; premerge (node scripts/premerge.ts) before merging" : ": a timing change? see each failure (kit tests pin expiries; examples: efsim repair)"}\n`);
   process.stdout.write(`EFSIM-DONE smoke ${status === 0 ? "pass" : "fail"}\n`);
   return status;

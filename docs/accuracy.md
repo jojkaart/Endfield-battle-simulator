@@ -56,39 +56,42 @@ mean over its fights, the median, and the mean weighted by its share of each fig
 `share operator <id>` key), which a few small totals far off (a 9 s fight's +58%) don't dominate; **Share**: its
 mean share of a fight's logged total; **Without stage fights**: the mean over its fights without a stage-wide
 effect (the `stage` key: the fixture's stageFactors, a stage status, a stage enemy: packages/logs enginecheck.ts
-stageFight); **As other kit hit**: its hits matched only as their event's other kit hit.
+stageFight); **As other kit hit**: its hits matched only as their event's other kit hit; **Largest**: the fight
+carrying the most of the mean and the points of it that fight is; **Own matched / one-sided**: the means of its
+matched landings' |error| and of its one-sided landings (replay-only and log-only), each as % of its own logged
+total (the `share own … operator <id>` keys): a kit's error is matched, a log check rule's one-sided.
 
-| Operator | Fights | Hits | Plain | Mismatch | As other kit hit | Mean \|damage error\| | Median | Weighted by share | Without stage fights | Share |
-|---|---|---|---|---|---|---|---|---|---|---|
-| chr_0002_endminm (Endministrator) | 1 | 310 | 89.0% | 0.3% | 0 | 2.0% | 2.0% | 2.0% | 2.0% | 41.1% |
-| chr_0003_endminf (Endministrator) | 2 | 162 | 91.4% | 0.0% | 0 | 1.1% | 1.1% | 1.4% | 1.1% | 27.5% |
-| chr_0004_pelica (Perlica) | 11 | 1076 | 88.3% | 5.4% | 0 | 2.0% | 0.2% | 1.9% | 2.2% | 7.4% |
-| chr_0005_chen (Chen Qianyu) | 6 | 810 | 74.8% | 3.2% | 0 | 1.1% | 0.8% | 1.4% | 1.1% | 36.4% |
-| chr_0006_wolfgd (Wulfgard) | 7 | 808 | 91.0% | 2.7% | 0 | 0.8% | 0.5% | 0.7% | 0.8% | 15.6% |
-| chr_0007_ikut (Arclight) | 2 | 257 | 93.8% | 1.9% | 0 | 4.7% | 4.7% | 4.5% | 4.7% | 3.0% |
-| chr_0009_azrila (Ember) | 4 | 388 | 64.7% | 2.6% | 2 | 1.9% | 1.1% | 2.2% | 3.3% | 27.6% |
-| chr_0011_seraph (Xaihi) | 7 | 266 | 88.7% | 0.0% | 0 | 1.0% | 0.6% | 0.9% | 1.0% | 1.3% |
-| chr_0012_avywen (Avywenna) | 2 | 186 | 79.6% | 19.9% | 0 | 0.5% | 0.5% | 0.5% | 0.5% | 62.3% |
-| chr_0013_aglina (Gilberta) | 15 | 1174 | 90.5% | 4.5% | 0 | 2.9% | 0.9% | 2.2% | 3.1% | 4.5% |
-| chr_0014_aurora (Snowshine) | 2 | 250 | 9.6% | 88.8% | 0 | 2.0% | 2.0% | 3.6% | 3.8% | 3.3% |
-| chr_0015_lifeng (Lifeng) | 2 | 260 | 91.5% | 0.4% | 1 | 1.9% | 1.9% | 1.8% | 1.9% | 12.1% |
-| chr_0016_laevat (Laevatain) | 13 | 1497 | 85.0% | 3.2% | 1 | 6.6% | 1.3% | 3.6% | 1.1% | 53.3% |
-| chr_0017_yvonne (Yvonne) | 2 | 323 | 73.1% | 0.0% | 0 | 3.3% | 3.3% | 2.7% | 3.3% | 63.4% |
-| chr_0019_karin (Akekuri) | 2 | 202 | 94.6% | 0.0% | 0 | 0.9% | 0.9% | 0.9% | 0.9% | 1.4% |
-| chr_0020_meurs (Catcher) | 1 | 252 | 82.1% | 6.0% | 0 | 0.6% | 0.6% | 0.6% | 0.6% | 5.2% |
-| chr_0021_whiten (Estella) | 5 | 289 | 80.3% | 2.1% | 1 | 2.5% | 2.4% | 2.3% | 2.5% | 20.7% |
-| chr_0022_bounda (Fluorite) | 1 | 56 | 89.3% | 0.0% | 0 | 4.3% | 4.3% | 4.3% | 4.3% | 2.0% |
-| chr_0024_deepfin (Alesh) | 4 | 169 | 90.5% | 0.6% | 0 | 3.5% | 2.3% | 2.9% | 3.5% | 5.5% |
-| chr_0025_ardelia (Ardelia) | 11 | 1470 | 83.8% | 9.7% | 2 | 2.7% | 2.2% | 2.3% | 2.7% | 8.0% |
-| chr_0026_lastrite (Last Rite) | 4 | 156 | 69.2% | 0.6% | 5 | 1.5% | 1.3% | 1.7% | 1.5% | 38.5% |
-| chr_0027_tangtang (Tangtang) | 2 | 265 | 74.7% | 1.5% | 25 | 4.3% | 4.3% | 4.3% | 4.3% | 35.0% |
-| chr_0028_wulfa (Rossi) | 10 | 2305 | 77.8% | 4.0% | 6 | 1.2% | 0.8% | 1.2% | 1.1% | 62.3% |
-| chr_0029_pograni (Pogranichnik) | 5 | 649 | 77.7% | 0.6% | 15 | 2.0% | 0.6% | 1.6% | 2.0% | 12.6% |
-| chr_0030_zhuangfy (Zhuang Fangyi) | 5 | 1392 | 88.4% | 3.1% | 2 | 0.9% | 1.1% | 0.9% | 1.0% | 86.3% |
-| chr_0031_mifu (Mi Fu) | 5 | 471 | 92.4% | 0.8% | 8 | 1.2% | 0.7% | 1.2% | 1.7% | 48.1% |
-| chr_0032_lizhiyan (Arcane) | 40 | 5688 | 87.5% | 3.5% | 25 | 3.6% | 1.6% | 2.4% | 3.5% | 10.2% |
-| chr_0033_camille (Camille) | 10 | 1004 | 94.9% | 1.3% | 1 | 9.1% | 0.4% | 8.6% | 1.9% | 6.3% |
-| chr_0034_typhoea (Typhoeus) | 12 | 2081 | 83.2% | 6.4% | 15 | 2.1% | 0.8% | 2.2% | 2.1% | 75.5% |
-| chr_0035_liino (Liino) | 19 | 1469 | 84.8% | 4.7% | 7 | 8.5% | 3.1% | 6.8% | 8.9% | 3.7% |
-| chr_0036_jsspsi (Si) | 29 | 3060 | 81.5% | 2.9% | 1 | 3.1% | 0.7% | 4.3% | 1.4% | 40.3% |
-| chr_0038_purrche (Purrchena) | 3 | 290 | 63.8% | 29.7% | 12 | 26.0% | 26.0% | 13.2% | 9.4% | 3.5% |
+| Operator | Fights | Hits | Plain | Mismatch | As other kit hit | Mean \|damage error\| | Median | Weighted by share | Without stage fights | Share | Largest | Own matched | Own one-sided |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| chr_0002_endminm (Endministrator) | 1 | 310 | 89.0% | 0.3% | 0 | 2.0% | 2.0% | 2.0% | 2.0% | 41.1% | d4fb 2.0 | 2.3% | 0.2% |
+| chr_0003_endminf (Endministrator) | 2 | 162 | 91.4% | 0.0% | 0 | 1.1% | 1.1% | 1.4% | 1.1% | 27.5% | 7e19 1.1 | 1.3% | 0.1% |
+| chr_0004_pelica (Perlica) | 11 | 1076 | 88.3% | 5.4% | 0 | 2.0% | 0.2% | 1.9% | 2.2% | 7.4% | d774 1.1 | 2.0% | 0.0% |
+| chr_0005_chen (Chen Qianyu) | 6 | 810 | 74.8% | 3.2% | 0 | 1.1% | 0.8% | 1.4% | 1.1% | 36.4% | a9d7 0.5 | 0.9% | 0.7% |
+| chr_0006_wolfgd (Wulfgard) | 7 | 808 | 91.0% | 2.7% | 0 | 0.8% | 0.5% | 0.7% | 0.8% | 15.6% | c83c 0.3 | 0.5% | 1.6% |
+| chr_0007_ikut (Arclight) | 2 | 257 | 93.8% | 1.9% | 0 | 4.7% | 4.7% | 4.5% | 4.7% | 3.0% | 4bfc 3.5 | 0.2% | 4.9% |
+| chr_0009_azrila (Ember) | 4 | 388 | 64.7% | 2.6% | 2 | 1.9% | 1.1% | 2.2% | 3.3% | 27.6% | 7e19 1.4 | 2.0% | 0.3% |
+| chr_0011_seraph (Xaihi) | 7 | 266 | 88.7% | 0.0% | 0 | 1.0% | 0.6% | 0.9% | 1.0% | 1.3% | 5082 0.4 | 0.9% | 0.1% |
+| chr_0012_avywen (Avywenna) | 2 | 186 | 79.6% | 19.9% | 0 | 0.5% | 0.5% | 0.5% | 0.5% | 62.3% | 9847 0.5 | 1.6% | 1.1% |
+| chr_0013_aglina (Gilberta) | 15 | 1174 | 90.5% | 4.5% | 0 | 2.9% | 0.9% | 2.2% | 3.1% | 4.5% | fc63 1.0 | 2.0% | 1.0% |
+| chr_0014_aurora (Snowshine) | 2 | 250 | 9.6% | 88.8% | 0 | 2.0% | 2.0% | 3.6% | 3.8% | 3.3% | 04d4 1.9 | 1.8% | 0.2% |
+| chr_0015_lifeng (Lifeng) | 2 | 260 | 91.5% | 0.4% | 1 | 1.9% | 1.9% | 1.8% | 1.9% | 12.1% | d4fb 1.5 | 0.9% | 2.7% |
+| chr_0016_laevat (Laevatain) | 13 | 1497 | 85.0% | 3.2% | 1 | 6.6% | 1.3% | 3.6% | 1.1% | 53.3% | 7b54 3.2 | 1.7% | 10.2% |
+| chr_0017_yvonne (Yvonne) | 2 | 323 | 73.1% | 0.0% | 0 | 3.3% | 3.3% | 2.7% | 3.3% | 63.4% | abfd 2.3 | 2.3% | 5.5% |
+| chr_0019_karin (Akekuri) | 2 | 202 | 94.6% | 0.0% | 0 | 0.9% | 0.9% | 0.9% | 0.9% | 1.4% | 458b 0.9 | 1.2% | 0.3% |
+| chr_0020_meurs (Catcher) | 1 | 252 | 82.1% | 6.0% | 0 | 0.6% | 0.6% | 0.6% | 0.6% | 5.2% | 04d4 0.6 | 1.0% | 0.4% |
+| chr_0021_whiten (Estella) | 5 | 289 | 80.3% | 2.1% | 1 | 2.5% | 2.4% | 2.3% | 2.5% | 20.7% | ad7f 1.0 | 2.5% | 0.1% |
+| chr_0022_bounda (Fluorite) | 1 | 56 | 89.3% | 0.0% | 0 | 4.3% | 4.3% | 4.3% | 4.3% | 2.0% | abfd 4.3 | 0.5% | 4.8% |
+| chr_0024_deepfin (Alesh) | 4 | 169 | 90.5% | 0.6% | 0 | 3.5% | 2.3% | 2.9% | 3.5% | 5.5% | ad7f 2.4 | 0.9% | 3.0% |
+| chr_0025_ardelia (Ardelia) | 11 | 1470 | 83.8% | 9.7% | 2 | 2.7% | 2.2% | 2.3% | 2.7% | 8.0% | 1d91 0.8 | 1.6% | 1.2% |
+| chr_0026_lastrite (Last Rite) | 4 | 156 | 69.2% | 0.6% | 5 | 1.5% | 1.3% | 1.7% | 1.5% | 38.5% | 9555 0.8 | 1.1% | 1.8% |
+| chr_0027_tangtang (Tangtang) | 2 | 265 | 74.7% | 1.5% | 25 | 4.3% | 4.3% | 4.3% | 4.3% | 35.0% | b7b3 2.8 | 8.1% | 5.5% |
+| chr_0028_wulfa (Rossi) | 10 | 2305 | 77.8% | 4.0% | 6 | 1.2% | 0.8% | 1.2% | 1.1% | 62.3% | 4e5e 0.6 | 1.3% | 0.8% |
+| chr_0029_pograni (Pogranichnik) | 5 | 649 | 77.7% | 0.6% | 15 | 2.0% | 0.6% | 1.6% | 2.0% | 12.6% | de6a 1.6 | 0.7% | 11.0% |
+| chr_0030_zhuangfy (Zhuang Fangyi) | 5 | 1392 | 88.4% | 3.1% | 2 | 0.9% | 1.1% | 0.9% | 1.0% | 86.3% | 4d60 0.3 | 0.6% | 0.4% |
+| chr_0031_mifu (Mi Fu) | 5 | 471 | 92.4% | 0.8% | 8 | 1.2% | 0.7% | 1.2% | 1.7% | 48.1% | d572 0.5 | 0.5% | 0.9% |
+| chr_0032_lizhiyan (Arcane) | 40 | 5688 | 87.5% | 3.5% | 25 | 3.6% | 1.6% | 2.4% | 3.5% | 10.2% | 9c6e 0.6 | 1.8% | 5.8% |
+| chr_0033_camille (Camille) | 10 | 1004 | 94.9% | 1.3% | 1 | 9.1% | 0.4% | 8.6% | 1.9% | 6.3% | 6339 4.0 | 1.6% | 8.6% |
+| chr_0034_typhoea (Typhoeus) | 12 | 2081 | 83.2% | 6.4% | 15 | 2.1% | 0.8% | 2.2% | 2.1% | 75.5% | 9c6e 1.0 | 1.2% | 3.6% |
+| chr_0035_liino (Liino) | 19 | 1469 | 84.8% | 4.7% | 7 | 8.5% | 3.1% | 6.8% | 8.9% | 3.7% | 0eef 3.0 | 0.8% | 11.9% |
+| chr_0036_jsspsi (Si) | 29 | 3060 | 81.5% | 2.9% | 1 | 3.1% | 0.7% | 4.3% | 1.4% | 40.3% | 6339 1.1 | 2.7% | 2.6% |
+| chr_0038_purrche (Purrchena) | 3 | 290 | 63.8% | 29.7% | 12 | 26.0% | 26.0% | 13.2% | 9.4% | 3.5% | 99fb 21.3 | 27.6% | 49.5% |

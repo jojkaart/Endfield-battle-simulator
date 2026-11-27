@@ -18,7 +18,7 @@ import { loadGameData } from "@efsim/data";
 import { loggedAsPairs, offsetHits, readLogFixture, screenOffsets, snapshotEntry, unexplainedLoggedAs, unexplainedOffsets, type LoggedAsPair, type OperatorOffset } from "@efsim/logs";
 import { changes, entry, logFixtures, ROOT, shard, totalsChanges, totalsOf, type FixtureCounts } from "../logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "../snapshot.ts";
-import { direction, fitChange, GROUPS, groupOf, readSplit, type Direction, type Entry, type Group } from "../../scripts/accuracy.ts";
+import { direction, fitChange, GROUPS, groupOf, readSplit, withoutHoldoutOmitted, type Direction, type Entry, type Group } from "../../scripts/accuracy.ts";
 
 export const PENDING_SHARDS = 4;
 
@@ -69,7 +69,9 @@ export function pendingSuite(index: number): void {
     it("checks as its snapshot says", () => {
       const fx = readLogFixture(join(ROOT, "fixtures", file));
       // Its verdict counts and its totals' errors (the simulation of the logged casts against the log), as measure computes them.
-      const { counts: now, totals, byHit, verdicts } = snapshotEntry(data, fx);
+      const { counts: now, totals: computed, byHit, verdicts } = snapshotEntry(data, fx);
+      // A hold-out's entry carries no operator's own split (scripts/accuracy.ts isHoldoutOmittedKey; round 20, the lead).
+      const totals = file.startsWith("holdout/") ? withoutHoldoutOmitted(computed) : computed;
       if (!file.startsWith("holdout/")) {
         offsets.set(file, unexplainedOffsets(fx, screenOffsets(offsetHits(fx, byHit, verdicts))));
         loggedAs.set(file, unexplainedLoggedAs(loggedAsPairs(data, fx, (h) => {

@@ -120,6 +120,17 @@ describe("the by-operator table and describing keys (round 16, totals-off report
     expect(perOperator([e(3, undefined)]).get("chr_a")).toMatchObject({ weightedDamageError: null, meanShare: null });
   });
 
+  // Round 20 (the Liino report point 1): which fight carries the mean, and the operator's own matched / one-sided split.
+  it("names the fight carrying most of an operator's mean and its own matched and one-sided means", () => {
+    const own = (err: number, matched: number, oneSided: number): Entry => ({ chr_a: { plain: 1 }, totals: { damage: 1, "operator chr_a": err, "share own matched operator chr_a": matched, "share own one-sided operator chr_a": oneSided } });
+    const a = perOperator([own(57.8, 0.4, 58), own(-2, -1.5, 0.5), own(1, 0.2, 0.8)], ["0eef", "1cd1", "1d91"]).get("chr_a");
+    expect(a?.largest?.log).toBe("0eef");
+    expect(a?.largest?.points).toBeCloseTo(57.8 / 3, 6);
+    expect(a?.ownMatched).toBeCloseTo((0.4 + 1.5 + 0.2) / 3, 6);
+    expect(a?.ownOneSided).toBeCloseTo((58 + 0.5 + 0.8) / 3, 6);
+    expect(perOperator([e(3, 5)]).get("chr_a")).toMatchObject({ largest: null, ownMatched: null, ownOneSided: null });
+  });
+
   it("tells an entry that only gained totals keys from one whose values moved, naming kinds, never ids", () => {
     expect(addsKeysOnly(e(3, undefined), e(3, 20))).toBe(true);
     expect(addsKeysOnly(e(3, undefined), e(4, 20))).toBe(false);

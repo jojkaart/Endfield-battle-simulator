@@ -7,11 +7,18 @@ worked, found by reading 80 lines of prose).
 
 ## How
 
-- **Keep it:** before reverting, `git diff -- <files> > docs/tried/YYYY-MM-DD-<slug>.diff` (or the
-  `scratch/measure/patches/` copy a `measure --patch` run made), then write its header above the first `diff --git`
-  line (git apply skips text before it): what it does, the measure it got (the summary's lines, development and
-  hold-out), why it was dropped, and what would have to change for it to work. Name the file in its
-  [open-problems.md](../open-problems.md) paragraph ("tried: docs/tried/<file>").
+- **Look first:** before measuring a rule change, `node scripts/tried.ts --touching <file>[:<function>]` (or a
+  function, a reading id, a constant: a word of the headers) lists the diffs here that touch it, with each header's
+  first line; `node scripts/tried.ts index` every diff's files and functions (round 20, the Liino report point 2: a
+  tail-cut diff tried hours earlier was derived again and measured twice).
+- **Keep it:** before reverting, `node scripts/tried.ts new <slug> -- <files>` (writes
+  `docs/tried/YYYY-MM-DD-<slug>.diff` from `git diff -- <files>` under a header skeleton; it refuses a name that
+  exists: a plain `git diff > …` over another round's file overwrote it once), or copy the `scratch/measure/patches/`
+  file a `measure --patch` run made under a new name. Then fill in its header above the first `diff --git` line (git
+  apply skips text before it): what it does, the measure it got (the summary's lines, development and hold-out), why
+  it was dropped, and what would have to change for it to work. Link it below and name the file in its
+  [open-problems.md](../open-problems.md) paragraph ("tried: docs/tried/<file>"). tests/tried.test.ts checks every
+  diff has a header and a link here.
 - **Re-measure it:** `npm run measure -- --patch docs/tried/<file>.diff` on the current code (`--base HEAD` for the
   patch's own effect). A patch that no longer applies says so; port it by hand and keep the new diff in its place.
 - **Adopted later:** delete the file in the commit that adopts the change, and say so in its open-problems paragraph.

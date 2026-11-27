@@ -23,6 +23,8 @@ export interface DecisionLine {
   readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "FORCED" | "INSIDE" | "CUTS" | "DEATH";
   readonly operator: string;
   readonly text: string;
+  /** A sub-kind `zmdlogs decisions` counts the kind's lines by (TAILKEPT: the guard, replayrun.ts TAIL_GUARDS). */
+  readonly detail?: string;
 }
 
 /**
@@ -109,7 +111,7 @@ export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixt
   for (const x of replay.skipped) out.push({ t: msOf(x.frame), kind: "SKIP", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
   for (const x of replay.tailCuts) out.push({ t: msOf(x.frame), kind: "TAILCUT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): ended after its last logged landing, none of its later ones in the log (unlogged-tails)` });
   // A tail the cut's guards kept (replayrun.ts tailCuts' `kept`): which guard, and what it found.
-  for (const x of replay.tailsKept ?? []) out.push({ t: msOf(x.frame), kind: "TAILKEPT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): its unlogged tail kept: ${x.why}` });
+  for (const x of replay.tailsKept ?? []) out.push({ t: msOf(x.frame), kind: "TAILKEPT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): its unlogged tail kept [${x.guard}]: ${x.why}`, detail: x.guard });
   for (const x of replay.failed) out.push({ t: x.cast.start, kind: "FAILED", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) out.push({ t: m.start, kind: "MISSED", operator: m.operator, text: `${who(m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
   for (const m of replay.made) {
@@ -182,7 +184,13 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
   const under = Object.keys(assume).length > 0;
   const mine = (d: DecisionLine) => !opts.operators?.length || opts.operators.includes(d.operator);
   const lines: string[] = [];
-  const counts = new Map<string, { minus: number; plus: number; logs: Set<string> }>();
+  const counts = new Map<string, { minus: number; plus: number; logs: Set<string>; details: Map<string, number> }>();
+  const counted = (d: DecisionLine) => {
+    const c = counts.get(d.kind) ?? { minus: 0, plus: 0, logs: new Set<string>(), details: new Map<string, number>() };
+    if (d.detail !== undefined) c.details.set(d.detail, (c.details.get(d.detail) ?? 0) + 1);
+    counts.set(d.kind, c);
+    return c;
+  };
   let changed = 0;
   for (const [i, { short, fx }] of logs.entries()) {
     opts.progress?.(`decisions: ${short} (${i + 1}/${logs.length})`);
@@ -192,10 +200,9 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
     if (!under) {
       if (base.length) lines.push(`${short}:`, ...base.map((d) => `  ${s(d.t).padStart(7)}  ${decisionText(d)}`));
       for (const d of base) {
-        const c = counts.get(d.kind) ?? { minus: 0, plus: 0, logs: new Set<string>() };
+        const c = counted(d);
         c.plus++;
         c.logs.add(short);
-        counts.set(d.kind, c);
       }
       continue;
     }
@@ -206,20 +213,22 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
     changed++;
     lines.push(`${short}:`, ...diff.map(({ side, d }) => `  ${side} ${s(d.t).padStart(7)}  ${decisionText(d)}`));
     for (const { side, d } of diff) {
-      const c = counts.get(d.kind) ?? { minus: 0, plus: 0, logs: new Set<string>() };
+      const c = counted(d);
       if (side === "-") c.minus++;
       else c.plus++;
       c.logs.add(short);
-      counts.set(d.kind, c);
     }
   }
   const reading = Object.entries(assume).map(([k, v]) => `${k}=${v}`).join(", ");
   const head = under
     ? `The replay's decisions that differ under ${reading} (decisionsview.ts; - only under the defaults, + only under the reading), ${changed} of ${logs.length} log(s):`
     : `The replay's decisions (decisionsview.ts: ${DECISION_KINDS.join(", ")}), ${logs.length} log(s):`;
+  // A kind with sub-kinds (TAILKEPT's guards) says how its lines split (round 20, the twins report point 1: that the
+  // own-landing pass keeps most tails, before a change to it is measured).
   const summary = DECISION_KINDS.filter((k) => counts.has(k)).map((k) => {
-    const c = counts.get(k) as { minus: number; plus: number; logs: Set<string> };
-    return `  ${k.padEnd(7)} ${under ? `-${c.minus} +${c.plus}` : String(c.plus)} in ${c.logs.size} log(s)`;
+    const c = counts.get(k) as { minus: number; plus: number; logs: Set<string>; details: Map<string, number> };
+    const by = [...c.details].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([x, n]) => `${x} ${n}`);
+    return `  ${k.padEnd(7)} ${under ? `-${c.minus} +${c.plus}` : String(c.plus)} in ${c.logs.size} log(s)${by.length ? ` (by ${under ? "line, either side" : "line"}: ${by.join(", ")})` : ""}`;
   });
   return [head, ...lines, "", under ? "Per kind (only under the defaults, only under the reading):" : "Per kind:", ...(summary.length ? summary : ["  none"])].join("\n");
 }

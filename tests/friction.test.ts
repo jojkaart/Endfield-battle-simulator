@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { carriedFrom, carry, carryLists, missingFiles, outcomeSkeleton, points } from "../scripts/friction.ts";
+import { carriedFrom, carry, carryLists, missingFiles, outcomeSkeleton, points, unparked, unparkedText, type Unparked } from "../scripts/friction.ts";
 
 const report = ["# A report (2026-11-23)", "", "Task: x.", "", "## 1. First thing.", "", "- **What happened:** a.", "- **From:** round 4.", "", "## 2. Second", "- **What happened:** b.", "", "## What worked well", "", "Fine."].join("\n");
 
@@ -90,6 +90,29 @@ describe("friction.ts carry --lists (round 16's own report point 1)", () => {
     expect(out).not.toMatch(/A batch's Lift|Arcane's bursts|What worked well/);
     expect(() => carryLists(backlog, "b.md", [], ["no such entry"])).toThrow(/no accuracy-list entry/);
     expect(() => carryLists(backlog, "b.md", [7])).toThrow(/no point 7/);
+  });
+
+  // Round 20 (the lead): a suggestion declined for good stays on every next backlog, so no later round rebuilds it.
+  it("carries the Declined section as it is", () => {
+    const withDeclined = backlog.replace("## Needs an accuracy", "## Declined\n\n- **A split by cast kind** (declined (blindness), round 20): why.\n\n## Needs an accuracy");
+    expect(carryLists(withDeclined, "docs/friction-done/b.md")).toContain("## Declined\n\n- **A split by cast kind** (declined (blindness), round 20): why.\n");
+    expect(carryLists(backlog, "docs/friction-done/b.md")).not.toContain("## Declined");
+  });
+
+  // Round 20 (round 19's own report point 2): a parked point a new report brings back leaves the list by an option, its
+  // full text from the backlog its paragraph names.
+  it("--unpark drops a parked entry (its paragraph too when it was the last) and finds its full text", () => {
+    const two = backlog.replace("Round 9's points:", "Round 9's points (full text in docs/friction-done/2026-11-23-backlog-after-round-9.md under the same number):").replace("- 2. A kit value.", "- 2. A kit value.\n- 3. No twin test.");
+    const out = carryLists(two, "docs/friction-done/b.md", [], [], ["A kit value"]);
+    expect(out).toContain("Round 9's points (full text in");
+    expect(out).not.toContain("A kit value");
+    expect(out).toContain("- 3. No twin test.");
+    const gone = carryLists(backlog, "docs/friction-done/b.md", [], [], ["A kit value"]);
+    expect(gone).not.toMatch(/Round 9's points|A kit value/);
+    const [u] = unparked(two, ["A kit value"]);
+    expect(u).toEqual({ line: "- 2. A kit value.", file: "docs/friction-done/2026-11-23-backlog-after-round-9.md", n: 2 });
+    expect(unparkedText(u as Unparked, () => "## 2. A kit value written\n- **Needs:** kits.\n")).toContain("## 2. A kit value written\n- **Needs:** kits.");
+    expect(() => unparked(two, ["no such"])).toThrow(/0 parked entries/);
   });
 });
 

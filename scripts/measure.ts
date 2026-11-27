@@ -23,6 +23,9 @@
 //                       commits' code, whatever their committed snapshots say)
 //   --with <operator>   only logs whose team has it (operator id, or part of the id or name; repeatable: any of them)
 //   --logs <id,…>       only these logs (ids or unique parts of them; never a hold-out)
+//   --several-targets   only the logs whose fixture is marked severalTargets (the several-targets row: 6339, 7b54,
+//                       9c6e at round 20), for a change gated on the mark; the final measure stays full (round 20,
+//                       the twins report point 2)
 //   --changed placement only logs whose placed casts (placeHits) differ between the measured code and the --base /
 //                       --against ref's code (seconds per log, then only those are checked); prints, per
 //                       development log, the casts that moved (~, paired as packages/logs/src/castpairs.ts does), those
@@ -41,7 +44,9 @@
 //                       = …;`, exactly one in the file) set to the value (repeatable; round 18, the status-pairing
 //                       report point 2: a constant's value took a commit, an edit, a diff and a revert each): a
 //                       --patch made from the code measured (with --patch too: both, on different files), kept under
-//                       scratch/measure/patches/ for docs/tried/ and named in the summary. Not with --live
+//                       scratch/measure/patches/ for docs/tried/ and named in the summary. Not with --live. The value
+//                       is source text, pasted as it is: a string needs its quotes inside the argument,
+//                       `--set 'x.ts:MODE="any"'` (round 20, the break-placement report point 4)
 //   --split files|commits|hunks  after the whole change against --base (default HEAD: the working tree's change), the
 //                       share of each part (round 11: "which change moved this log" took three more measures): files,
 //                       each changed file's diff alone on --base (`--group a,b` puts the files under these path
@@ -84,7 +89,11 @@
 // The hold-outs a run moved also get the replay's decision lines counted by kind on both sides (packages/logs
 // decisionsview.ts: SKIP, TAILCUT, TAILKEPT, JUMPDROP, …), their net changes summed per direction: whether a replay
 // rule acted there, without a log, an operator or a skill named (round 18, the placement-cases report point 2). The
-// reference side is --base's code, else the code that wrote the snapshots, measured for those hold-outs alone.
+// reference side is --base's code, else the code that wrote the snapshots, measured for those hold-outs alone. No
+// split of the hold-outs' change by cast, skill, operator or rule kind beyond that (docs/design/tests.md "What a
+// hold-out output may say"; round 20 declined the moved hold-outs' casts by kind and shift).
+// With --variant, the plain tree's own summary against the reference comes first (round 20, the break-placement
+// report point 3).
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
 //                       summary.txt, moved.json (when it was queued, its code, the development logs it moved and
@@ -112,7 +121,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { allLogs, compare, direction, GROUPS, groupOf, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, holdoutEntry, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 type DecisionCounts = Readonly<Record<string, number>>;
@@ -255,6 +264,8 @@ function costs(tree: string, keys: readonly string[]): Map<string, number> {
 
 /** The teams of the logs (operator ids), read from the fixtures themselves. */
 const teamOf = (tree: string, key: string) => (JSON.parse(readFileSync(join(tree, "fixtures", key), "utf8")) as { team: { operator: string }[] }).team.map((b) => b.operator);
+/** Whether a log's fixture is marked severalTargets (measure --several-targets). */
+const severalTargetsOf = (tree: string, key: string) => (JSON.parse(readFileSync(join(tree, "fixtures", key), "utf8")) as { severalTargets?: unknown }).severalTargets !== undefined;
 
 /**
  * The options, parsed and checked as far as they can be without the code or git (round 13, damage-factors report
@@ -271,6 +282,7 @@ export function measureOptions(argv: readonly string[]) {
       base: { type: "string" },
       with: { type: "string", multiple: true, default: [] },
       logs: { type: "string", multiple: true, default: [] },
+      "several-targets": { type: "boolean", default: false },
       changed: { type: "string" },
       assume: { type: "string", multiple: true, default: [] },
       workers: { type: "string", default: String(Math.min(3, Math.max(1, cpus().length - 1))) },
@@ -373,6 +385,8 @@ async function main(argv: string[]): Promise<number> {
   const split = readSplit(readFileSync(join(tree, "fixtures/holdout/holdout.json"), "utf8"));
   let keys = logKeys(tree);
   if (values.logs.length) keys = selectLogs(keys, values.logs.flatMap((x) => x.split(",")).filter(Boolean), split.holdout);
+  // --several-targets: the fixtures marked severalTargets (never a hold-out: the mark is read from development fixtures only).
+  if (values["several-targets"]) keys = keys.filter((k) => !isHoldout(k) && severalTargetsOf(tree, k));
   if (values.with.length) {
     const { loadGameData } = await import("@efsim/data");
     const ops = loadGameData().operators as Record<string, { name?: string }>;
@@ -447,7 +461,8 @@ async function main(argv: string[]): Promise<number> {
       }
       if ("error" in a) throw new Error(`${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
       if (!("entry" in a)) return;
-      got.set(a.key, a.entry);
+      // A hold-out's entry as its snapshot holds it (accuracy.ts holdoutEntry: no operator's own split).
+      got.set(a.key, isHoldout(a.key) ? holdoutEntry(a.entry) : a.entry);
       if (a.untimed) untimed.add(a.key);
       if (a.perHit) fits.set(a.key, a.perHit);
       if (a.hits) rows.set(a.key, a.hits);
@@ -571,6 +586,8 @@ async function main(argv: string[]): Promise<number> {
     writeFileSync(join(dir, "accuracy.md"), render(after, await operatorNames()));
     const lines = [
       ...(vi === 0 ? referenceLine : []),
+      // The tree's own change first, when variants are measured beside it (round 20: it was measured, not printed).
+      ...(vi === 0 && plain ? [`The plain tree (${what}, no variant) against the reference:`, ...compare(before, plain).map((l) => `  ${l}`), ""] : []),
       `Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
       ...compare(before, after),
       ...(plain ? [`Variant ${vi + 1} against the plain tree (the same code${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}, no variant): the variant's own effect`, ...compare(plain, after).map((l) => `  ${l}`)] : []),
@@ -708,6 +725,7 @@ export function decisionLines(moved: readonly { readonly direction: string; read
   }
   return out;
 }
+
 
 /** A --set entry: a constant's one-line declaration in a file, set to a value. */
 export interface SetEntry {

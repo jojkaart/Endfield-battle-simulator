@@ -61,3 +61,18 @@ what the logs decide; branch worktree-agent-a3e7b4de355ae8803.
   stretches in one call; the per-event median ratios made each cause obvious.
 - `fit-build --pairs` listing exactly one single change was decisive evidence for Ember.
 - `npm run measure` with no reference compared against the right snapshots and named the two better logs.
+
+## Outcome (round 20)
+
+- 1 (The build-offset screen hides small exact offsets): done (f96773c): OFFSET_SCREEN minOff 3% → 0.3% and 2 damage
+  on the row's median hit (the check's ±1); the view's `mism` column, candidates by their mismatches. No development
+  row sits between 0.3% and 3% now (Ember's and Alesh's were fitted), so no OFFSETS_EXPLAINED entry was needed; the
+  slow suites hold the new screen.
+- 2 (fit-build's "best" list ranks multi-input fits above the single change that fits exactly): done (f96773c): each
+  weapon skill level and potential is scored as a single change beside the combinations, each candidate marked `[n
+  inputs]`; 04d4's Ember without her override finds weapon skill 1 at level 9 first (tests/buildfit-fit.test.ts).
+- 3 (No view for "one factor fits every clean hit within ±1"): done (f96773c): `zmdlogs offsets --bound` (factorBounds:
+  per operator and event the interval, empty with the factor fitting most).
+- 4 (A DEF-based hit's base isn't shown with its parts): done (f96773c): `hits --json` landing.base (the expression,
+  each attribute's panel line and sources, the fight's buffs on it, the reading's in-fight total), computed in
+  hitexport.ts from the landing's inputs and the replay's state, not an engine record.
