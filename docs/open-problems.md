@@ -91,8 +91,8 @@ threshold); where the hold sits against the logged ms of the breaking hit (9090 
 the next hits 0.1–0.35 s after it); whether a break inside a combo's slow-down holds (4360 49.14 s, d4fb 97.05 s,
 c4f3 82.65 s: hits 0.13–0.25 s after, all three Lifts or combos inside a combo's stop); breaks inside an ultimate's
 stop (4d60 56.29 s, 9a80 34.94 s: hits 0.08–0.23 s after; `16f-all` measured worse). The hold-outs: plain 82.7 →
-82.2% under every length (2 logs, about 30 hits plain → assumed, still matched); one candidate, a replay whose Stagger
-is the engine's own (no listing) and now ends 0.47 s later, so hits at its end read on the Stagger's other side.
+82.2% under every length (82.9 → 82.4% after main at f96757f; 2 logs, about 30 hits plain → assumed, still matched); one candidate, a replay whose Stagger
+is the engine's own (no listing) and now ends 0.47 s later, so hits at its end read on the Stagger's other side (no development log shows it: those with no listing never move).
 **Next check:** the hold's position against the breaking hit's logged ms (the three "before" cases against the
 others: the gap before the break); a `stagger-recovery` refit with the hold on the enemy's clock (`zmdlogs stagger`:
 the engine's own runs short in 18 of 71, quartiles 0.43 / 0.84 / 1.62 s, against 20, 0.60 / 1.53 / 3.32 s without).

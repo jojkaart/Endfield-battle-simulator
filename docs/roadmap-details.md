@@ -359,6 +359,14 @@ The status pairs a buff's edge put off pair by the check's reading (`status-pair
 e989's Camille Firefang Weakness the replay keeps 69.19–89.32 s; per-target state for several-targets fights (an
 engine with more than one enemy).
 
+**The hold at a Stagger break (2026-11-27, [journal](journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md)):**
+a break holds every clock 14 frames, the breaker's too, not inside an ultimate's stop (engine assumption `break-hold`;
+the logs' 0.41–0.61 s, the Stagger Node buff's curve 0.46 s); the replay holds only at the logged breaks. Rossi's bleed
+runs through her ultimate's freeze (99fb's ticks). Owner's team −0.9% (within one sd). Next ([open-problems](open-problems.md)
+"The hold at a Stagger break"): the hold's position against the breaking hit's logged ms (9090, c4f3, 3aa6), breaks
+inside a combo's slow-down, a `stagger-recovery` refit with the hold on the enemy's clock, the two hold-outs' 30 hits
+plain → assumed.
+
 **Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
 the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only
 (207f's physical hits ×0.847), a kill read from a total that is a two-decimal multiple of Max HP (207f, 5082: no

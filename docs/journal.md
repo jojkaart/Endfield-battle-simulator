@@ -4,9 +4,49 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 175 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 176 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: The hold at a Stagger break; Rossi's bleed through her freeze
+
+**Goal:** two leads of the placement-cases round (docs/open-problems.md): the clocks that run late across a logged
+Stagger break (round 18's `zmdlogs clocks` rows, 5082's Yvonne +0.51 s), and 99fb's bleed ticks after Rossi's
+ultimate placed as battle-skill hits.
+
+**Done** (docs/open-problems.md "The hold at a Stagger break"):
+- **A break holds every clock** (engine assumption `break-hold`, default `14f`; timeline/clock.ts breakHold, called
+  at dealPoise's `staggered` in landing.ts): 14 frames at scale 0 for the world, the enemy and every operator, the
+  breaker too, not inside an ultimate's stop. The evidence (scripts/probes/stagger/break-hold.ts): the clocks 0.6 s or
+  more past a break run 0.41–0.61 s late but two (26 rows, every operator and enemy, enemy ticks too, median 0.54 s);
+  none at the 86 Stagger Node crossings, whose buff (buff_common_mini_poise_break) has a 0.5 s layer-1 dilation. The
+  data's enablePoiseBreakTimeDilation is true on every damage unit and has no length. 14f: the Node buff's curve holds
+  0.46 s, and 12f–18f match alike while 16f/18f put c83c's total 5 points off (a tail cut's threshold).
+- The replay: its tick bounds take the logged breaks as stops (holds.ts loggedBreaks, breakStops), so the hidden
+  holds don't place the hold again; it holds only at the breaks the log shows (TimelineScenario.loggedBreaks, ±4
+  frames: 6339, d4fb, f978 and 0c14 break the replay's own bar where the log has none); its Stagger window starts at the
+  break, not after the hold (replayrecord.ts). 5082's Yvonne keeps her chain at 45.06 s.
+- **Rossi's bleed runs through her ultimate's freeze** (kit `runsThroughFreeze` on Razor Clawmark): the replay held it
+  +93 frames at the freeze (frames 57–150 of her ultimate on an Elite), and the log's ticks run a second apart there in
+  every Elite log (99fb, 2fd9, 207f). Nothing ended the bleed: the "ended" one was held, so its logged ticks had no
+  replayed landing and the placement took them for a battle skill's.
+
+**Scoreboard** (`npm run snapshots:update` after merging main at f96757f): development plain 83.9 → 84.2%, mismatch
+4.8 → 4.7%, mean |damage error| 1.2 → 1.3%; earlier pending plain 81.9 → 82.2%; verified unchanged; hold-outs plain
+82.9 → 82.4%, |damage error| 6.3 → 6.4% (2 logs worse, about 30 hits plain → assumed: still matched, under every hold
+length; the cause isn't known, a candidate is in open-problems). Rossi's bleed alone: 207f, 489c, 9a80, 2fd9, 99fb
+plain up, one hold-out better.
+
+**Team numbers** (`node scripts/team-ab.ts --base a6c425f`, 32 seeds): the owner's team (estella-si-akekuri-arcane)
+sustained DPS −0.89% (full energy, sd 2.9%) and −0.90% (zero); Typhoeus's team −0.60% / −0.36%: every break now costs
+the team 0.47 s, within one sd.
+
+**Decisions:** an engine stop, not a replay-only hold: the evidence is every operator's and the enemy's, so the
+simulation has it too. `stagger-recovery` stays `2s` (with the hold the engine's own Stagger runs short in 18 of 71
+logged runs, quartiles 0.43 / 0.84 / 1.62 s, against 20, 0.60 / 1.53 / 3.32 s; a refit is a next check).
+
+**Open:** where the hold sits against the breaking hit's logged ms (9090, c4f3, 3aa6: the late clocks before it);
+breaks inside a combo's slow-down; the hold-outs' 30 hits.
 
 ## 2026-11-27: Hard 33's eight slugs; status pairs read by the check
 
@@ -412,40 +452,3 @@ pause was already placed there by 13 clocks).
 4d60 69.35–69.84 s, Zhuang Fangyi's Xiranflow layers held 3.0 s by the stops in 43–69 s where the game holds them
 0.6–1.2 s (exposed by the pause: the 43.17 s consumption now takes level 2); her 73.37 s combo with the stance's ATK
 one frame too long; 8915's step (the two combos' placement, the batch's application time).
-
-## 2026-11-27: Zhuang Fangyi's attack 4 and Liino's silent stance ends
-
-**Goal:** Zhuang Fangyi's (65.4% plain, 16.2% mismatch, 86% of her fights' damage) and Liino's (15.5% mismatch,
-share-weighted |error| 15.1%) recurring mismatches, with mechanisms from the data or the logs.
-
-**Done:**
-- **Zhuang Fangyi's attack 4 was placed as attack 2 in every log of hers** (125 hits ×3.125, all "fallback", so no
-  headline number showed it; `zmdlogs groups`' cast list did). Attack 4 spawns attack 2's range entity, one key for
-  both. logcasts.ts choose: a skill's own start from its other keys anchors one cast only (attack 2's from its
-  travelling swords, 0.7 s late, had taken every range hit within 1.5 s); at one logged ms the keys of one group are
-  placed first (attack 3's swords then say the step); a step through an unlogged basic step by both windows' sum (her
-  attack 3's swords missing); a landing on its way isn't an older cast's once a newer cast with its key started and it's
-  overdue by its frame (3aa6 106.11 s). Tried and dropped on the way: a time bound on every launched entity's next
-  landing (f879 +30 plain, but Yvonne's combo field in 5082, held 5 s, split: +7%) and the newer-cast cut without the
-  overdue test (Yvonne's ultimate shots).
-- **Liino's Vocalist linger removed:** its CreateBuffAction is disabled in the data (`gamedata tree
-  buff_chr_0035_liino_normalskill_buff_atkup`); 9847, 0eef and 4d60 read without one.
-- **An unlogged End Stance from her beats** (castassembly.ts silentExits): no log has her basic attacks inside a run of
-  beats; after the last logged beat and the landings of her casts since, before a basic attack (9847 28.83 s).
-  tests/logcasts-chains.test.ts, tests/kit-liino.test.ts.
-
-**Scoreboard** (merged main at 22367af, the stage factors; `measure --base 22367af` for this branch alone):
-development plain 79.2 → 80.0%, mismatch 6.9 → 6.8%, mean |damage error| 3.1 → 3.3%; hold-out plain 82.2 → 82.6%,
-mismatch 5.6 → 5.5%, 7.1%; earlier pending plain 80.6 → 81.4%, 7.7 → 7.6%, 1.5 → 1.6%. By operator (against 22367af):
-Zhuang Fangyi plain 71.4 → 79.2%, mismatch 8.3 → 7.1%, mean |damage error| 2.1%, median 1.7 → 1.0%; Liino plain 80.1 →
-82.8%, mismatch 4.7%, mean 10.1 → 9.9%, share-weighted 9.0 → 8.7%. Better: 4bfc 821 → 856, 4d60 806
-→ 822, 9847 304 → 413 (per hit 4.7 → 2.3%), 3aa6 402 → 413, c6d8 467 → 507, 8915, 1cd1, f879, two hold-outs. The
-totals that rose (207f +1.2 → +5.5%, 3aa6, d774, 9847) are hits now read right exposing over-predictions elsewhere (per
-hit closer in every one: 207f 8.3 → 3.3%). Worse: 3f78 147 → 114 plain (Rossi's combo 3 now the log's, by its
-Stagger origin, made inside combo 2's frames; its perfect path's Vulnerable gives Gilberta's 58.90 s ultimate one stack
-more than the log's 0.39), 9090 −1, 4d60's 66–71 s (−16 inside the +16: the stance runs out before its last beat,
-which the linger had covered). team-ab (Typhoeus's team, the linger): sustained DPS −0.15% full, −0.11% zero.
-
-**Left** (docs/open-problems.md "Zhuang Fangyi's and Liino's mismatches (2026-11-27)"): 4d60 43–60 s, Zhuang Fangyi's
-Sunderblades (Electrification lost across the enemy-away stretch 27.4–37.0 s); Liino's stance on the beats' clock; her
-Medicant layers on Arcane in 1d91; Rossi's combo 3 Vulnerable; 8915's clock lead (not looked at).
