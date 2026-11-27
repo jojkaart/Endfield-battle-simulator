@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 165 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 166 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Zhuang Fangyi's attack 4 and Liino's silent stance ends
+
+**Goal:** Zhuang Fangyi's (65.4% plain, 16.2% mismatch, 86% of her fights' damage) and Liino's (15.5% mismatch,
+share-weighted |error| 15.1%) recurring mismatches, with mechanisms from the data or the logs.
+
+**Done:**
+- **Zhuang Fangyi's attack 4 was placed as attack 2 in every log of hers** (125 hits ×3.125, all "fallback", so no
+  headline number showed it; `zmdlogs groups`' cast list did). Attack 4 spawns attack 2's range entity, one key for
+  both. logcasts.ts choose: a skill's own start from its other keys anchors one cast only (attack 2's from its
+  travelling swords, 0.7 s late, had taken every range hit within 1.5 s); at one logged ms the keys of one group are
+  placed first (attack 3's swords then say the step); a step through an unlogged basic step by both windows' sum (her
+  attack 3's swords missing); a landing on its way isn't an older cast's once a newer cast with its key started and it's
+  overdue by its frame (3aa6 106.11 s). Tried and dropped on the way: a time bound on every launched entity's next
+  landing (f879 +30 plain, but Yvonne's combo field in 5082, held 5 s, split: +7%) and the newer-cast cut without the
+  overdue test (Yvonne's ultimate shots).
+- **Liino's Vocalist linger removed:** its CreateBuffAction is disabled in the data (`gamedata tree
+  buff_chr_0035_liino_normalskill_buff_atkup`); 9847, 0eef and 4d60 read without one.
+- **An unlogged End Stance from her beats** (castassembly.ts silentExits): no log has her basic attacks inside a run of
+  beats; after the last logged beat and the landings of her casts since, before a basic attack (9847 28.83 s).
+  tests/logcasts-chains.test.ts, tests/kit-liino.test.ts.
+
+**Scoreboard** (merged main at 22367af, the stage factors; `measure --base 22367af` for this branch alone):
+development plain 79.2 → 80.0%, mismatch 6.9 → 6.8%, mean |damage error| 3.1 → 3.3%; hold-out plain 82.2 → 82.6%,
+mismatch 5.6 → 5.5%, 7.1%; earlier pending plain 80.6 → 81.4%, 7.7 → 7.6%, 1.5 → 1.6%. By operator (against 22367af):
+Zhuang Fangyi plain 71.4 → 79.2%, mismatch 8.3 → 7.1%, mean |damage error| 2.1%, median 1.7 → 1.0%; Liino plain 80.1 →
+82.8%, mismatch 4.7%, mean 10.1 → 9.9%, share-weighted 9.0 → 8.7%. Better: 4bfc 821 → 856, 4d60 806
+→ 822, 9847 304 → 413 (per hit 4.7 → 2.3%), 3aa6 402 → 413, c6d8 467 → 507, 8915, 1cd1, f879, two hold-outs. The
+totals that rose (207f +1.2 → +5.5%, 3aa6, d774, 9847) are hits now read right exposing over-predictions elsewhere (per
+hit closer in every one: 207f 8.3 → 3.3%). Worse: 3f78 147 → 114 plain (Rossi's combo 3 now the log's, by its
+Stagger origin, made inside combo 2's frames; its perfect path's Vulnerable gives Gilberta's 58.90 s ultimate one stack
+more than the log's 0.39), 9090 −1, 4d60's 66–71 s (−16 inside the +16: the stance runs out before its last beat,
+which the linger had covered). team-ab (Typhoeus's team, the linger): sustained DPS −0.15% full, −0.11% zero.
+
+**Left** (docs/open-problems.md "Zhuang Fangyi's and Liino's mismatches (2026-11-27)"): 4d60 43–60 s, Zhuang Fangyi's
+Sunderblades (Electrification lost across the enemy-away stretch 27.4–37.0 s); Liino's stance on the beats' clock; her
+Medicant layers on Arcane in 1d91; Rossi's combo 3 Vulnerable; 8915's clock lead (not looked at).
 
 ## 2026-11-26: Arcane's mismatches: a stage's damage factor from the fixture
 
@@ -346,39 +383,3 @@ operator's own total, mostly the stage logs and small totals (Liino's unlogged b
 **Left:** slots by value (9c0b's Hunter Pursuit, whose misplaced first landing sends its Link to the wrong cast;
 7910's rogue wave), e82d's Si combo final (Arcane's weapon WILL lines ×5 listed, ×2 in the engine), 9c6e (two
 targets). Friction report docs/friction/2026-11-26-totals-off.md.
-
-## 2026-11-26: Alesh's Rare Fin: chance paths and a cast from the listing
-
-**Goal:** casts and paths the log shows only through their listed buffs, as general rules: 0c14's eventless 12.5 s
-Alesh combo and the Rare Fin path of her combos in 0c14, 4e36 and a9d7 (open-problems "0c14").
-
-**Done** (open-problems "0c14: Si, and Rossi's later windows", "The damage factors"):
-- **A chance jump the log decides** (engine drivers.ts replayCast `chanceJumps`, chanceJumpsOf, chancePathLandings):
-  the trigger isn't rolled; a taken jump is scheduled at its frame; the logged landings go to the path's hits of the
-  same keys at the same frames from the cast's start (Alesh: hook 22 / slam 38 against hook_ex 77 / slam_ex 93 after
-  10 → 65). Simulations never pass it.
-- **The replay's chance paths from the listing** (castassembly.ts listedPaths): her P3 team ATK, only on the Rare Fin
-  slam, is listed from exactly the slam's logged ms in all six cases; not taken where P3 is listed somewhere but on no
-  hit in 3 s after, a running run decided by its end (a refresh keeps the `since`). 17 decisions in 3 logs (PATH
-  lines in `zmdlogs decisions`), none against the values.
-- **A cast from a hit's listed buff** (engine assumption `listed-casts` `inferred`, castsFromHitBuffs): a buff exactly
-  one kit hit gives, its run starting where no cast of the skill could have landed it, gets a cast timed to land the
-  hit there, its path's earlier hits pinned; its landings count for nothing. One cast in 61 development logs (0c14 at
-  12.00 s: its Thermite layer at 12.73 s against the log's 12.71 s).
-- In-game test 71 part 1 as good as decided by 0c14 (seven consumptions, seven combos; a run-out, none).
-
-**Scoreboard** (measure against ade98a1, both rules; `listed-casts` alone: 0c14 404 → 493): earlier pending plain
-68.1 → 70.2%, mean |damage error| 3.6 → 3.5% (0c14 plain 338 → 493, mismatch 20 → 12, total −1.3 → −0.3%; 4e36 281 →
-368, +2.2 → +0.9%); development plain 69.6 → 69.7% (a9d7 99 → 101, −2.2 → −2.6%: its rolled Rare Fin landings, which
-the log hasn't, gone, Alesh matched −5.6 → −0.7%); hold-out plain 80.8 → 81.0% (1 better, 1 mixed: +4 plain, its
-total further); verified unchanged; negative control within its bound. The snapshots' scoreboard: docs/accuracy.md.
-team-ab: unchanged (no simulated fight moved).
-
-**Decisions:** the path rule isn't an assumption (the listing's evidence is exact to the ms in every case); the cast
-rule is (`listed-casts`), as a cast made with no hit or event could be invented. P3 itself stays the log's: judged by
-the replay where every cast's path was decided, 0c14 gained 3 mismatches' worth and one hold-out log lost 47 plain,
-which can't be diagnosed by hand (docs/tried/2026-11-26-chance-path-buffs-decided.diff). The Stagger at its breaking
-hit and the lives model were not reached.
-
-**Problems:** the first measure compared against snapshots another commit's code wrote; the same-key pairing of two
-paths' hits was wrong where one key covers the whole skill (friction report docs/friction/2026-11-26-alesh-rare-fin.md).

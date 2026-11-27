@@ -345,16 +345,16 @@
   ]
  },
  "liino-laevatain.scenario.json": {
-  "total": 586603.049,
+  "total": 586515.059,
   "hits": 62,
   "casts": 15,
   "perOperator": {
    "chr_0016_laevat": 478939.477,
-   "chr_0035_liino": 107663.572
+   "chr_0035_liino": 107575.582
   },
-  "digest": "1eb275e1106b",
+  "digest": "f1d030c2b1b9",
   "windows": [
-   "9a42c3b5d671",
+   "dcb391fe91e7",
    "aaca399ae041",
    "24b9babd56d1"
   ]
@@ -435,19 +435,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2666360.202,
+  "total": 2660238.646,
   "hits": 169,
   "casts": 64,
   "perOperator": {
-   "chr_0036_jsspsi": 695965.344,
-   "chr_0016_laevat": 1638155.093,
-   "chr_0035_liino": 206988.593,
+   "chr_0036_jsspsi": 694875.224,
+   "chr_0016_laevat": 1633536.69,
+   "chr_0035_liino": 206575.561,
    "chr_0013_aglina": 125251.171
   },
-  "digest": "53182b314cb0",
+  "digest": "715e7cd62193",
   "windows": [
    "b0c782d11f81",
-   "b670e10de1b3"
+   "22483252d616"
   ]
  },
  "si-laevatain.scenario.json": {
@@ -493,44 +493,44 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4921844.634,
+  "total": 4885248.742,
   "hits": 516,
   "casts": 167,
   "perOperator": {
-   "chr_0034_typhoea": 3788229.535,
-   "chr_0032_lizhiyan": 193825.365,
-   "chr_0035_liino": 325037.768,
-   "chr_0004_pelica": 614751.966
+   "chr_0034_typhoea": 3760432.302,
+   "chr_0032_lizhiyan": 192483.21,
+   "chr_0035_liino": 319814.161,
+   "chr_0004_pelica": 612519.069
   },
-  "digest": "763ffccd73e2",
+  "digest": "70cfaa7c615f",
   "windows": [
-   "41616d40e62e",
-   "faab0585a5d6",
-   "484e02b2c48f",
-   "ab4c737c57d5",
+   "17591050110c",
+   "efd04bfbdbe1",
+   "5743d42d6a91",
+   "192272ea43f3",
    "ee599cd8e9c3",
-   "1d93a4c638c5",
+   "fa517db90fea",
    "16559fd12ceb"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5662066.901,
+  "total": 5602835.787,
   "hits": 443,
   "casts": 166,
   "perOperator": {
-   "chr_0034_typhoea": 4223123.339,
-   "chr_0032_lizhiyan": 387816.027,
-   "chr_0035_liino": 319609.078,
-   "chr_0004_pelica": 731518.457
+   "chr_0034_typhoea": 4182014.893,
+   "chr_0032_lizhiyan": 383777.145,
+   "chr_0035_liino": 317283.796,
+   "chr_0004_pelica": 719759.953
   },
-  "digest": "7145e74c226f",
+  "digest": "bf10a2b41c14",
   "windows": [
    "8d6f9985b4a5",
    "e7bf682434b9",
    "6f97eaed1425",
-   "cbeb1cdab91b",
-   "8b96c6483eba",
-   "40e6c171c4f3"
+   "778b0cc947b6",
+   "ff1ccb142212",
+   "fc5117d0b2a5"
   ]
  },
  "typhoeus-gilberta.scenario.json": {

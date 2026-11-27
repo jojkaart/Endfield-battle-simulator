@@ -56,6 +56,54 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Zhuang Fangyi's and Liino's mismatches (2026-11-27)
+
+**Found and fixed: Zhuang Fangyi's attack 4 was placed as attack 2** in every log of hers (125 fallback hits, ×3.125 =
+attack 4's range atk_scale 0.25 ÷ attack 2's 0.08): attack 4 spawns attack 2's range entity, so both log
+`attack2_abilityrange` (logcasts.ts choose). Three causes: attack 2's own start placed from its swords (1.87 s in 4d60,
+0.7 s after its real start: the swords travel) anchored every later range hit within 1.5 s, attack 4's too, though
+attack 2's own range hit had taken it (a skill's own anchor now decides one cast); at a logged ms the range hit came
+before attack 3's swords, so attack 3's cast wasn't there to say the next step (one-group keys first in a batch); and
+where attack 3's swords are unlogged (4d60 148.72 s, 4bfc 136.59 s, 3aa6 107.32 s) the chain went to a "restart" (a step
+through an unlogged basic step by both windows now). A cut attack 4's entity also took attack 2's range hits 7 s later
+(3aa6 106.11 s): a landing on its way isn't an older cast's once a newer cast with its key started and it's overdue by
+its frame. tests/logcasts-chains.test.ts.
+
+**Found and fixed: Liino's Vocalist Stance has no linger.** normalskill_buff_atkup's on-finish CreateBuffAction
+(atkup_finishtime, 5 s team ATK) is disabled in the data (`gamedata tree buff_chr_0035_liino_normalskill_buff_atkup`):
+the kit's vocalist_linger is gone. 9847 (ATK gone by 30.11 s, last beat 25.54 s), 0eef (gone by 8.74 s, last beat
+4.19 s) and 4d60 (plain without ATK from 73.65 s, last beat 73.37 s) all read without one.
+
+**Found and fixed: an unlogged End Stance from the beats.** No log has Liino's basic attack inside a run of her beats
+(scratch count over every Liino log: eight runs of attacks, all after the beats stop); the stance's buffs end with
+her action (autoFinishByAction, `finishWithNextSkillIfNotInherited`). castassembly.ts silentExits infers the exit after
+the last logged beat, past the last landing of her casts between (9847: her combo at 27.68 s, hits to 28.80 s with the
+ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
+
+**Still possible / left:**
+- **4d60 66–71 s (Liino's stance runs out early):** the replay's stance (−0.80 s, 60 s plus 7.2 s of holds) ends at
+  66.43 s, the log's beats go on to 73.37 s (66.72 and 73.37 s events skipped as presses); the old linger had covered
+  5 s of it (16 plain lost with it). The stance's 60 s on the beats' slower clock: `endFollowsTick` on it tried, wrong
+  (its end then came at a tick, 63.83 s: endedWithTick); a logged beat past the run as "still on" is the next try.
+- **4d60 43–60 s (Zhuang Fangyi's Sunderblades):** the log's battle skills strike 6, 8, 8 times at 42.98, 48.74,
+  52.82 s, the replay's 3, 5, 3: Electrification on the enemy from her combo at 37.00 s (the log's lane 36.998–43.175 s,
+  consumed at 43.0 s: 3 blades). The replay's Electrification from Perlica (21.37 s) runs out at 30.73 s, the log's
+  lasts to 37.00 s across the enemy-away stretch 27.37–37.00 s (no hit by anyone), so her combo's forced Electrification
+  has nothing to build on (level 0). Candidate: enemy-side statuses held while the enemy is away (`holds --why
+  status:` shows no other log with a status across a stretch: undecided); else a refresh the replay misses.
+- **Rossi's combo 3 (3f78, 207f), knocked on by the placement:** her combo_2_skill-keyed hit is now combo 3 (the log's
+  Stagger credits combo_3_skill), made INSIDE combo 2's uncuttable frames (its perfect hit at frame 29 is 0.4 s before
+  the kit lets combo 3 start). 207f's hits after it are now plain (combo_crit), its total up (+1.2 → +5.5%: Rossi's
+  replay-only attack 4 hit_ai landings with the crit buff); 3f78 plain 147 → 114: Gilberta's ultimate Susceptibility
+  at 58.90 s reads 0.42 against the log's 0.39, one Vulnerable stack more (the perfect path's no_guard and its Lift).
+- **1d91 (the coordinator's lead):** Arcane's strings fall ×0.965 per step from 53.2 s (−3.5, −7.1, −10.6% at 53, 56.5,
+  60.3 s) with constant modifiers in the replay: her Medicant layers (wpn_lance_0014, 20 s each) from Liino's beats at
+  31.8, 35.0, 38.1, 41.4 s expiring one by one, the beats from 44.9 s giving her none in the game. Still possible: a
+  beat's heal triggering Medicant only when it heals (Arcane at full HP: no log records HP), or only in range.
+- **8915 7.07–8.90 s (the coordinator's lead):** a Corrosion ramp step and Hot Work's end 0.1–0.3 s early after
+  Liino's and Si's combos pressed together (clock.ts): not looked at.
+- **c6d8 / 8915:** stage factors (main's `stageFactors`, merged 2026-11-27).
+
 ## Arcane's mismatches after the stage factors (2026-11-26)
 
 **Found and fixed** (docs/journal/2026-11-26-15-arcane-s-mismatches-a-stage-s-damage-factor-from-the-fixture.md):
@@ -1853,6 +1901,9 @@ the owner).
 if another log without Liino's buffs listed shows it.
 
 ## Liino's stance ATK ends early in 0eef and 1cd1 (the 5 s linger)
+
+**Settled 2026-11-27: there is no linger** (its CreateBuffAction is disabled in the data; "Zhuang Fangyi's and Liino's
+mismatches (2026-11-27)" above). 0eef's ATK going at 8.74 s fits a stance that ended without one.
 
 **Shows:** the team ATK of Vocalist Stance leaves teammates' hits long
 before the stance's 60 s, with no End Stance in the log (no log has one):

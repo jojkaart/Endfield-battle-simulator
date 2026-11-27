@@ -155,7 +155,7 @@ function choiceWords(c: CastChoice): string {
   switch (c.rule) {
     case "anchor": return `anchor: its anchor's start ${s(c.ref ?? 0)} s, ${c.d ?? 0} ms off, ${of}`;
     case "alike": return `alike: nearest the windows of ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)} (${c.d ?? 0} ms outside), ${of}`;
-    case "window": return `window: the chain step after ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)}, ${of}`;
+    case "window": return `window: the chain step after ${c.via ? `${shortSkill(c.via)} (unlogged) after ` : ""}${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)}, ${of}`;
     case "restart": return `restart: ${shortSkill(c.by?.skillId ?? "")}@${s(c.by?.start ?? 0)} lists none of them, the first, ${of}`;
     case "late": return `late: a later landing of an opened cast, ${of}`;
     case "first": return `first in kit order, nothing else deciding, ${of}`;

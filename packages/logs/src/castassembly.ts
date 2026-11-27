@@ -603,6 +603,53 @@ export function exitPresses(kits: readonly OperatorKit[], fx: Pick<LogFixture, "
 }
 
 /**
+ * Exit presses the log shows by a stance's beats stopping: a state whose buff's ticks the log records as cast events
+ * (KitBuff.ticksLoggedAs) and whose exit skill ends it (as exitPresses finds them), and a logged basic attack of its
+ * operator after the last logged tick with no cast ending the state between. No log has the operator's basic attack
+ * inside a run of the state's ticks (Liino: none of her basic-attack runs in eight logs), and the state's action ends
+ * with any other action of hers (its buffs are autoFinishByAction), so the state was over: an inferred exit after the
+ * last logged tick, past the last landing of the operator's casts between (her combo hands the stance on only from
+ * its frame 67; cut before, it ends it), no later than a frame before the attack, made only while the state's buff is
+ * on (whileBuff). 984748cfa662: Liino's beats every ~3.2 s to 25.54 s, her combo at 27.68 s (hits to 28.80 s with
+ * the stance's ATK), the team's hits without it from 30.11 s, her own basic attacks from 33.78 s; the replay kept the
+ * stance to her ultimate at 50.97 s (her and her teammates' hits ×0.86–0.92 the replay's).
+ */
+export function silentExits(kits: readonly OperatorKit[], fx: Pick<LogFixture, "casts">, casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const added: ReplayedCast[] = [];
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  const frame = 1000 / FPS;
+  for (const kit of kits) {
+    for (const skill of kit.skills) {
+      const avail = skill.available;
+      if (!avail || !("not" in avail)) continue;
+      const exit = kit.skills.find((s) => s.skillId !== skill.skillId && s.kind === skill.kind && same(s.available, avail.not));
+      if (!exit) continue;
+      const ended = kit.triggers.filter((t) => t.on.event === "cast" && (t.on.skills ?? []).includes(exit.skillId)).flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "endBuff" ? [a.buff] : [])));
+      const ticked = kit.buffs.find((b) => ended.includes(b.id) && b.ticksLoggedAs !== undefined);
+      if (!ticked?.ticksLoggedAs) continue;
+      // The casts that end the state: the exit and any skill a trigger ends the ticked buff on (the ultimate).
+      const enders = new Set([exit.skillId, ...kit.triggers.filter((t) => t.on.event === "cast" && allActions(t.do).some((a) => a.kind === "endBuff" && a.buff === ticked.id)).flatMap((t) => (t.on.event === "cast" ? (t.on.skills ?? []) : []))]);
+      const ticks = (fx.casts ?? []).filter((e) => e.operator === kit.operator && e.skill === ticked.ticksLoggedAs).map((e) => e.t);
+      const mine = casts.filter((c) => c.operator === kit.operator);
+      let after = -Infinity;
+      for (const c of mine) {
+        if (c.kind !== "basic" || c.landings.length === 0 || c.start <= after) continue;
+        const last = ticks.filter((t) => t < c.start).at(-1);
+        if (last === undefined) continue;
+        if ([...mine, ...added].some((d) => d.operator === kit.operator && enders.has(d.skillId) && d.start >= last && d.start < c.start)) continue;
+        const between = mine.filter((d) => d !== c && d.start > last && d.start < c.start && d.landings.length > 0);
+        const at = Math.min(Math.max(last, ...between.map((d) => d.lastHit)) + frame, c.start - frame);
+        const others = ended.filter((b) => b !== ticked.id);
+        added.push({ operator: kit.operator, key: exit.skillId, group: exit.skillId, skillId: exit.skillId, kind: exit.kind, start: at, lastHit: at, keepPrevious: false, landings: [], whileBuff: { buff: ticked.id, endsAt: at, or: others } });
+        after = c.start;
+      }
+    }
+  }
+  if (!added.length) return [...casts];
+  return [...casts, ...added].sort((x, y) => x.start - y.start);
+}
+
+/**
  * Casts the log shows only by a buff they apply (its buff lanes: the hits listing it): a game buff the log lists with
  * values that one trigger of the team applies, on the owner's casts of skills whose damage the log never shows for it
  * (dbaee23b801d: Xaihi's ultimate, no damage, applies her weapon's team ATK, buff_wpn_funnel_0005_atk_up). Each run of
@@ -893,7 +940,7 @@ export function assembleCasts(data: GameData, fx: LogFixture, placement: Placeme
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
   // Engine assumption listed-casts: with `inferred`, the casts the log shows only by a buff one of their hits alone gives.
   const listedCasts = (assume["listed-casts"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "listed-casts")?.default) === "inferred";
-  const paths = valuePaths(data, kits, fx, listedPaths(data, kits, fx, castsBeforeLog(kits, fx, placement, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement)))))))))));
+  const paths = valuePaths(data, kits, fx, listedPaths(data, kits, fx, castsBeforeLog(kits, fx, placement, silentExits(kits, fx, exitPresses(kits, fx, pullingPresses(kits, placement, castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts, castFrames(placement))))))))))));
   return listedCasts ? castsFromHitBuffs(kits, fx, paths) : paths;
 }
 

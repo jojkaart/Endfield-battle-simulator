@@ -37,10 +37,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   on the new lists, a cheaper worth for timeline-moving stats.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast;
-  Liino's stance ATK missing at 4d60's combos; Cosmovoice ending before its
-  logged finale (Perlica's combo hits and 9090's −9.6% done 2026-11-22:
-  Pulser Labs and Wild Wanderer before the hit's damage; Liino's volleys
-  done 2026-11-18, her beats and stances before a log 2026-11-22).
+  Liino's stance running out ~7 s before its last logged beat (4d60 66–73 s:
+  the stance's 60 s on the beats' clock); her Medicant layers on Arcane in
+  1d91 (beats from 44.9 s give none); Zhuang Fangyi's Sunderblades in 4d60
+  43–60 s (Electrification across the enemy-away stretch 27.4–37.0 s); done
+  2026-11-27: her attack 4 placement, Liino's linger (disabled in the data)
+  and her unlogged End Stance from the beats (team −0.15%).
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't
