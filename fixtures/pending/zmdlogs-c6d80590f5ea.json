@@ -252,9 +252,9 @@
  "stageFactors": [
   {
    "from": 15750,
-   "to": 76585,
+   "to": 75592,
    "factor": 0.1,
-   "why": "The stage's shield (indie_hard011_s): every operator's hits at ×0.100 from 15.75 to 75.59 s (scripts/probes/stage/stage-factors.ts at 7e6c12f: 334 of the 413 hits within 2% of it, all four operators), ×1 to 14.46 s and from 76.59 s."
+   "why": "The stage's boss (indie_hard011_s): every operator's hits at ×0.100 from 15.75 s to its Stagger break at 75.59 s, the breaking hit included (Zhuang Fangyi's, bar 0) (scripts/probes/stage/stage-factors.ts at 7e6c12f: 334 of the 413 hits within 2% of it, all four operators); ×1 to 14.46 s and from 76.59 s, the Staggered hits after the break included."
   }
  ],
  "hits": [
