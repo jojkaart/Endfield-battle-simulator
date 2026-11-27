@@ -4,6 +4,7 @@
 // The logic is @efsim/logs' (reports.ts and the modules it calls); this module checks the arguments and calls it.
 
 import {
+  kitBuffKey,
   awayView,
   battleIdOf,
   buffsView,
@@ -507,7 +508,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     }
     if (sub === "clock") {
       if (values["kit-buff"].length !== 1) throw new Error("zmdlogs clock takes one --kit-buff owner:id (efsim kit <operator> lists its buffs) and optional fixtures");
-      const kitBuff = values["kit-buff"][0] as string;
+      const kitBuff = kitBuffKey(data(), values["kit-buff"][0] as string);
       const named = args.slice(1);
       const logs = devFixtures({ ...(named.length ? { ids: named } : { withOperators: [kitBuff.split(":")[0] as string] }) });
       return clockView(data(), logs, kitBuff, assume);
@@ -576,7 +577,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
+      // An owner given by its name ("Zhuang Fangyi:suit_expend_spell01.spell_dmg"): its id (clockview.ts kitBuffKey).
+      const keyed = (xs: readonly string[]) => xs.map((x) => kitBuffKey(data(), x));
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};

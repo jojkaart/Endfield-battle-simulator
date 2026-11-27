@@ -18,7 +18,8 @@
 // the log keeps a refreshed run's `since`, the replay starts a new instance (round 8).
 
 import { FPS, type GameData } from "@efsim/engine";
-import { teamBuffNames } from "./enginecheck.ts";
+import { operatorId } from "@efsim/data";
+import { teamBuffNames, type TeamBuffNames } from "./enginecheck.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import { worldMs } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
@@ -146,11 +147,43 @@ function instancesOf(traces: readonly BuffTrace[], buff: string): ClockInstance[
     });
 }
 
+/**
+ * A kit buff key as given (`owner:id`, `owner:id@op`) with its owner read as an operator's display name or part of
+ * its id (operatorId: "Zhuang Fangyi:suit_expend_spell01.spell_dmg" → chr_0030_zhuangfy:…; round 17, the
+ * away-statuses report point 2: an equipment buff is owned by its wearer's id, and the name took three tries). A key
+ * whose owner is an id, a trace kind (trigger:, stack:, status:) or no operator stays as it is.
+ */
+export function kitBuffKey(data: Pick<GameData, "operators">, spec: string): string {
+  const at = spec.indexOf(":");
+  if (at <= 0) return spec;
+  const owner = spec.slice(0, at);
+  if (/^chr_\d+_/.test(owner) || ["trigger", "stack", "status", "enemy"].includes(owner)) return spec;
+  try {
+    return `${operatorId(data, owner)}${spec.slice(at)}`;
+  } catch {
+    return spec;
+  }
+}
+
+/** The team's kit buff keys with `kitBuff`'s id (after its owner), or whose id starts with what its owner names: a refusal's candidates. */
+export function kitBuffCandidates(names: Pick<TeamBuffNames, "defs">, kitBuff: string): string[] {
+  const at = kitBuff.indexOf(":");
+  const [owner, id] = at > 0 ? [kitBuff.slice(0, at), kitBuff.slice(at + 1)] : ["", kitBuff];
+  return [...names.defs.keys()].filter((k) => {
+    const kid = k.slice(k.indexOf(":") + 1);
+    return kid === id || (owner !== "" && kid.startsWith(owner)) || (id !== "" && kid.startsWith(id));
+  });
+}
+
 /** The rows of `kitBuff` (owner:id) in one log; `assume` the readings of the check's replay (its own clock always under hidden-holds=none on top). */
 export function kitBuffClock(data: GameData, fx: LogFixture, kitBuff: string, assume: Readonly<Record<string, string>> = {}): ClockRow[] {
   const owner = kitBuff.split(":")[0] as string;
   const names = teamBuffNames(data, fx);
-  if (!names.defs.has(kitBuff)) throw new Error(`${fx.id}: no kit buff ${kitBuff} in this team (efsim kit ${owner} lists its buffs)`);
+  if (!names.defs.has(kitBuff)) {
+    // Which owners have that id (an equipment buff is its wearer's: chr_…:suit_….x), so the next try is the right one.
+    const near = kitBuffCandidates(names, kitBuff);
+    throw new Error(`${fx.id}: no kit buff ${kitBuff} in this team (efsim kit ${owner} lists its buffs)${near.length ? `; with that id or prefix: ${near.slice(0, 8).join(", ")}${near.length > 8 ? ` (+${near.length - 8} more)` : ""} (an equipment or weapon buff is owned by its wearer's id)` : ""}`);
+  }
   const ownRun = logBuffReplay(data, fx, undefined, { assume: { ...assume, "hidden-holds": "none" }, trace: [kitBuff] }).replay;
   const own = instancesOf(ownRun.traces, kitBuff);
   const check = instancesOf(logBuffReplay(data, fx, undefined, { ...(Object.keys(assume).length ? { assume } : {}), trace: [kitBuff] }).replay.traces, kitBuff);

@@ -820,6 +820,9 @@ const KILL_TEXT: Readonly<Record<KillKind, string>> = {
 /** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */
 const HOLD_UNIT_MS = 512;
 
+/** A hold unit free over more than this (ms, from its earliest to its latest) is flagged WIDE by `zmdlogs holds`. */
+const WIDE_HOLD_MS = 3000;
+
 /** How many of the bounds pinning a unit `holds --verbose` names (nearest first; the rest counted). */
 const PIN_TAGS = 4;
 
@@ -843,6 +846,7 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
     const shown = tags.length > PIN_TAGS ? [...tags.slice(0, PIN_TAGS), `+${tags.length - PIN_TAGS} more`] : tags;
     return [...(p.total ? ["the least total"] : []), ...shown].join("; ") || "P's own rules (nondecreasing, no faster than real time)";
   };
+  let wideUnits = 0;
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
     const [early, late, mid] = [clockReaches(h, h.early, m), clockReaches(h, h.late, m), clockReaches(h, h.mid, m)];
     const clocks = [...new Set(h.kept.filter((b) => b.a <= early && late <= b.b).map((b) => (b.kind === "run" ? b.tag : series(b.tag))))];
@@ -852,8 +856,13 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
       const j = h.late.findIndex((x) => x >= m - 1e-6);
       pins = `; earliest held back by: ${i > 0 ? pinText(holdPins(h, i - 1, "early")) : "the fight's start"}; latest forced by: ${j >= 0 ? pinText(holdPins(h, j, "late")) : "none"}`;
     }
-    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}${pins}`);
+    // A unit the clocks leave free over seconds is placed at the window's midpoint, wherever that falls (round 17, the
+    // away-statuses report point 3: 8 s of 4d60's pause spread over 21.9–45.9 s before holds.ts pausedBound).
+    const wide = late - early > WIDE_HOLD_MS ? `  WIDE: the clocks don't pin it (${s(late - early)} s from earliest to latest; placed at the midpoint)` : "";
+    if (wide) wideUnits++;
+    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}${pins}${wide}`);
   }
+  if (wideUnits) lines.splice(1, 0, `  ${wideUnits} unit(s) WIDE: free over more than ${s(WIDE_HOLD_MS)} s, placed at their window's midpoint, not where a clock puts them`);
   for (const [k, b] of h.dropped.entries()) {
     const against = (h.conflicts[k] ?? []).map((x) => x.tag);
     lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)${opts.verbose && against.length ? `, conflicting with: ${against.join("; ")}` : ""}`);

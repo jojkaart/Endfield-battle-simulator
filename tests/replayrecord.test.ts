@@ -86,6 +86,13 @@ describe("the replay's record", () => {
     const text = holdsView(data, fx, { verbose: true });
     const bound = /bound: run buff_wpn_funnel_0016_will_dmg\|chr_0032_lizhiyan on enemy 38267→\S+ ms over \d+: P\(130\.49\) − P\(38\.27\) in \[−∞, ([\d.]+)\] s/.exec(text);
     expect(Number(bound?.[1])).toBeGreaterThan(53);
+    // A unit free over more than 3 s is flagged WIDE, counted on the second line (round 17, the away-statuses report point 3).
+    const wide = text.split("\n").filter((l) => /^ {2}unit .*WIDE: the clocks don't pin it/.test(l));
+    expect(text.split("\n")[1]).toBe(`  ${wide.length} unit(s) WIDE: free over more than 3.00 s, placed at their window's midpoint, not where a clock puts them`);
+    for (const l of wide) {
+      const m = /earliest ([\d.]+), latest ([\d.]+)/.exec(l);
+      expect(Number(m?.[2]) - Number(m?.[1])).toBeGreaterThan(3);
+    }
   });
 
   it("holds every timer across an away stretch the log shows as a pause (4d60 27.38–37.00 s; pause-holds `paused`)", () => {
