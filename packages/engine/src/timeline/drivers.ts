@@ -218,7 +218,7 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     });
     const jumpedTo = new Set(contradicted.flatMap((j) => [...own.values()].flat().filter((h) => !moved.has(h) && h.frame >= j.frame + (j.to - j.from))));
     const taken = eventJumps(ctx, st, operator, skillId, index, frame, moved);
-    st = { ...st, scheduled: [...st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h) && !pastChannel.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; const t = h.kind === "hit" ? turned.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : t !== undefined ? { ...h, frame: t } : h; }), ...taken] };
+    st = { ...st, scheduled: [...st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h) && !pastChannel.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; const t = h.kind === "hit" ? turned.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : t !== undefined ? { ...h, frame: t } : h; }), ...taken] }; // split:channel-turn
   }
   if (opts.endsAt !== undefined && opts.endsAt > frame) {
     const end: PendingJump = { kind: "jump", frame: opts.endsAt, clock: { operator }, cast: { operator, index }, operator, from: opts.endsAt - frame, to: opts.endsAt - frame, end: true, pinned: true };
