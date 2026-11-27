@@ -751,7 +751,9 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Every one-sided landing across fights, for a question of your own | `efsim zmdlogs totals --all --json` (a JSON line each, cached; then `jq`) |
 | Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
 | Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
-| The open assumptions `--assume` takes, their readings | `efsim assumptions [<re>]` |
+| What an ability entity (`abilityentity_…`, no file of its own in the export) does: the actions that spawn it and the skill it runs | `efsim gamedata tree <entity id>` (round 19) |
+| An enemy's tables and its stage's own text (several targets, shields, phases: read it first for a stage log), a fight's total in Max HPs | `efsim gamedata enemy <enemy id\|fixture>` (round 19: Hard 33's "They are legion") |
+| The open assumptions `--assume` takes, their readings and their evidence | `efsim assumptions [<re>]` (evidence: [assumptions.md](assumptions.md)) |
 | Operator ids and weapon names of the logs | `efsim zmdlogs list --ids [--with <op>]` |
 | Where the placement put each hit and cast | `efsim zmdlogs casts <fixture> [--from --to]` |
 | The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE: uncuttable frames; CUTS: a legal interrupt cancelling pending hits; EVENT; `[crit …: source]` on a landing the log gives no crit) |
