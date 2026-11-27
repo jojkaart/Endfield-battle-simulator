@@ -1,0 +1,173 @@
+Tried 2026-11-27 (twins-on-several-targets round), dropped.
+
+What: targets.ts subSkillEvent and its use in castassembly.ts assembleCasts (and loggedCastFates' `sub-skill` fate,
+the EVENT line's words): in a fight read per target, a logged cast event at the ms of a hit of its operator whose key
+is the skill's id with a suffix no kit hit lists is a sub-skill's cast, no press, left out of every pass. The case:
+Camille's Vesperwings moving to the next slug when its own dies (abilityrange_first's listen_target_dead →
+reset_target → projhit_sub → normal_skill_abilityrange, the battle skill's damage, Heat infliction and
+Susceptibility on the next target); ZMDLogs logs a normal_skill event at four of its six such hits (6339 19.68,
+24.55, 29.67 s; 7b54 16.59 s), the fire Susceptibility listed since each hit's ms. Over every development log the only
+other such events are Purrchena's (04d4, 99fb), presses of keys her kit lacks.
+
+Measured (npm run measure -- --base HEAD --logs 6339,7b54,9c6e, on top of the round's twins):
+  6339 plain 115 → 103, −10.3 → −15.2% (the twins alone: 115, −10.3%); 7b54, 9c6e as with the twins alone.
+
+Why dropped: the press the replay made at each event stood in for the move: its landing 0.4 s later has the same
+damage (9287 against the logged 9287) and gives the next slug the Susceptibility and the Heat infliction Laevatain
+absorbs (her Melting Flame at 32.24 s is a stack short already: the 35.70 s empowered hit is log-only). Without the
+move's own landing, leaving the events out loses that state. What it needs: a kit hit for the move (key
+normal_skill_abilityrange, the battle skill's scale, Heat infliction, the Vesperwings buff) landed by the replay at
+each logged move (or at a logged kill of the target carrying her Vesperwings, targets.ts knows which), with no press:
+packages/data's Camille kit and a replay-side "entity landing" cast, neither in this round's files. Then this diff
+applies on top.
+
+diff --git a/packages/logs/src/castassembly.ts b/packages/logs/src/castassembly.ts
+index fe375d1..83445aa 100644
+--- a/packages/logs/src/castassembly.ts
++++ b/packages/logs/src/castassembly.ts
+@@ -8,6 +8,7 @@
+ import { allActions, applyBuff, chanceJumpsOf, hitLandingFrames, pathTwin, skippedHits, takenPathLandings, computeStats, readingOf, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
+ import type { LogFixture, LogHit } from "./zmdlogs.ts";
+ import { awayWindows, loggedNames } from "./enginecheck.ts";
++import { subSkillEvent } from "./targets.ts";
+ import { buttonVariants, castFrames, excludes, neededBuffs, nominalScale, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+ 
+ /** The game buffs the log lists with values somewhere (effects or boundary effects). */
+@@ -842,9 +843,10 @@ export interface LoggedCastFate {
+   /**
+    * "placed": a placed cast's own event (`cast`: its start and the world time between, ms); "tick": a tick of a buff
+    * (KitBuff.ticksLoggedAs) or "press" / "cast": added as a cast of its own (a slot press when the skill's hits show
+-   * elsewhere); "follow-up": a follow-up-only skill, left to the engine; "unknown": no kit skill of that id.
++   * elsewhere); "follow-up": a follow-up-only skill, left to the engine; "sub-skill": a sub-skill's cast the log
++   * records under the skill (targets.ts subSkillEvent), no press; "unknown": no kit skill of that id.
+    */
+-  readonly fate: "placed" | "tick" | "press" | "cast" | "follow-up" | "unknown";
++  readonly fate: "placed" | "tick" | "press" | "cast" | "follow-up" | "sub-skill" | "unknown";
+   readonly cast?: { readonly start: number; readonly world: number };
+   /** "placed" as a cast of another skill of its kind, the variant the kit casts in its place (variantCastOf). */
+   readonly variant?: string;
+@@ -871,6 +873,7 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
+     const skill = kit?.skills.find((x) => x.skillId === lc.skill);
+     if (!skill) return { ...base, fate: "unknown" };
+     if (skill.followUpOnly) return { ...base, fate: "follow-up" };
++    if (subSkillEvent(fx, kits, lc, undefined)) return { ...base, fate: "sub-skill" };
+     const c = placed.find((x) => near(x, lc, lc.skill));
+     if (c) return { ...base, fate: "placed", cast: { start: c.start, world: Math.max(0, worldMs(Math.min(c.start, lc.t), Math.max(c.start, lc.t), stops)) } };
+     const tick = kit?.buffs.find((d) => d.ticksLoggedAs === lc.skill);
+@@ -943,8 +946,12 @@ export function replayStops(data: GameData, kits: readonly OperatorKit[], casts:
+  * hits, buff ends and exits (castsFromBuffLanes, castsFromTriggerHits, castsFromBuffEnds, exitPresses), and the presses
+  * that pull a buff (pullingPresses).
+  */
+-export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> = {}): ReplayedCast[] {
++export function assembleCasts(data: GameData, logged: LogFixture, placement: Placement, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> = {}): ReplayedCast[] {
+   if (kits.length === 0) return [];
++  // A sub-skill's cast the log records under its skill (targets.ts subSkillEvent: Camille's Vesperwings moving to the
++  // next of several targets) is no press: left out of every pass.
++  const subs = (logged.casts ?? []).filter((lc) => subSkillEvent(logged, kits, lc, assume));
++  const fx: LogFixture = subs.length ? { ...logged, casts: (logged.casts ?? []).filter((lc) => !subs.includes(lc)) } : logged;
+   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
+   // Engine assumption listed-casts: with `inferred`, the casts the log shows only by a buff one of their hits alone gives.
+   const listedCasts = readingOf(assume, "listed-casts") === "inferred";
+diff --git a/packages/logs/src/targets.ts b/packages/logs/src/targets.ts
+index cb80fd4..42de21b 100644
+--- a/packages/logs/src/targets.ts
++++ b/packages/logs/src/targets.ts
+@@ -11,8 +11,8 @@
+ // purge at a kill). The placement (logcasts.ts placeWith) reads batchTargets for which logged hits of a batch are one
+ // landing's twins; the assignment takes those as one landing reaching each of its targets once.
+ 
+-import { readingOf, type LandedHit, type Modifier, type TimelineState } from "@efsim/engine";
+-import type { LogFixture, LogHit } from "./zmdlogs.ts";
++import { allActions, readingOf, type LandedHit, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
++import type { LogCast, LogFixture, LogHit } from "./zmdlogs.ts";
+ 
+ /** Targets alive at once where the fixture doesn't say (severalTargets.atOnce): two, the least that is several. */
+ export const DEFAULT_AT_ONCE = 2;
+@@ -86,6 +86,25 @@ export function batchTargets(hits: readonly BatchHit[], critFactor: number, atOn
+   return { targets: 1, by: "none fits" };
+ }
+ 
++/**
++ * Whether a logged cast event of a fight read per target is a sub-skill's cast the log records under its skill, not a
++ * press: a logged hit of its operator at its ms (±1) has a key that is the skill's id with a suffix and that no kit hit
++ * or trigger hit lists. Camille's Vesperwings: on its target's death (buff_chr_0033_camille_normal_skill_listen_target_dead,
++ * reset_target, projhit_sub) the entity casts normal_skill_abilityrange on the next target, and ZMDLogs logs a
++ * normal_skill event at that hit's ms: 6339 at 19.68, 24.55 and 29.67 s, 7b54 at 16.59 s (four of its six such hits;
++ * none of the battle skill's own landings, which come 0.5–1.0 s after their press, is logged at it), each with her fire
++ * Susceptibility listed since that ms on the next hits, the debuff moved to the next slug. Made as presses, the replay
++ * gave each a replay-only battle-skill landing 0.4 s on (6339 20.10, 24.97, 30.07 s). Outside such fights the only such
++ * events are Purrchena's (04d4, 99fb), presses of keys her kit lacks: not read there.
++ */
++export function subSkillEvent(fx: Pick<LogFixture, "hits" | "severalTargets">, kits: readonly OperatorKit[], lc: LogCast, assume: Readonly<Record<string, string>> | undefined): boolean {
++  if (!readsTargets(fx, assume)) return false;
++  const kit = kits.find((k) => k.operator === lc.operator);
++  if (!kit) return false;
++  const known = new Set([...kit.skills.flatMap((s) => s.hits.flatMap((h) => h.events)), ...kit.triggers.flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits.flatMap((h) => h.events) : [])))]);
++  return fx.hits.some((h) => h.operator === lc.operator && Math.abs(h.t - lc.t) <= 1 && h.event.startsWith(`${lc.skill}_`) && !known.has(h.event));
++}
++
+ /** The enemy statuses whose modifiers sit on a target (engine status.ts statusModifiers' sources), by kind. */
+ const STATUS_SOURCE = /^(Corrosion|Electrification|Breach) level /;
+ 
+diff --git a/packages/logs/src/views.ts b/packages/logs/src/views.ts
+index dcd83e3..47f80b2 100644
+--- a/packages/logs/src/views.ts
++++ b/packages/logs/src/views.ts
+@@ -415,8 +415,10 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
+               ? "a cast of its own (no hit of the skill in the log)"
+               : e.fate === "follow-up"
+                 ? "a follow-up-only skill: left to the engine"
+-                : "no kit skill of that id: ignored";
+-    const fate = e.fate === "tick" ? null : replayFate(e);
++                : e.fate === "sub-skill"
++                  ? "a sub-skill's cast logged under the skill at a hit of a key no kit hit lists (targets.ts subSkillEvent: Camille's Vesperwings moving to the next target): no press, not made"
++                  : "no kit skill of that id: ignored";
++    const fate = e.fate === "tick" || e.fate === "sub-skill" ? null : replayFate(e);
+     lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}${fate ? `; ${fate}` : ""}${place ? `; ${eventPlaceText(place)}` : ""}` });
+   }
+   for (const x of replay.traces) {
+diff --git a/tests/target-twins.test.ts b/tests/target-twins.test.ts
+index 38db746..60c0b9d 100644
+--- a/tests/target-twins.test.ts
++++ b/tests/target-twins.test.ts
+@@ -1,14 +1,16 @@
+ // The placement's twins in a fight against several targets (logcasts.ts placeWith's `batch` and `later` rules,
+ // targets.ts batchTargets): a batch of one key's alike hits at one ms is `targets` hits per landing, so Si's combo
+-// slashes logged on several slugs take one slot per landing, not one per slug (7b54 15.60 s).
++// slashes logged on several slugs take one slot per landing, not one per slug (7b54 15.60 s); and a logged cast event
++// at a sub-skill's hit is no press (targets.ts subSkillEvent: Camille's Vesperwings moving to the next slug).
+ import { describe, expect, it } from "vitest";
+ import { loadGameData } from "@efsim/data";
+-import { batchTargets, devFixtures, oneTargetByValue, placeHits, type BatchHit, type LogFixture } from "@efsim/logs";
++import { effectiveKit, type OperatorKit } from "@efsim/engine";
++import { batchTargets, devFixtures, loggedCastFates, oneTargetByValue, placeHits, subSkillEvent, type BatchHit, type LogFixture } from "@efsim/logs";
+ 
+ const data = loadGameData();
+ const fixture = (id: string) => (devFixtures({ ids: [id] })[0] as { fx: LogFixture }).fx;
+ const SI = "chr_0036_jsspsi";
+-
++const CAMILLE = "chr_0033_camille";
+ const n = (value: number): BatchHit => ({ value, crit: false });
+ const c = (value: number): BatchHit => ({ value, crit: true });
+ const u = (value: number): BatchHit => ({ value, crit: null });
+@@ -67,3 +69,20 @@ describe("logcasts.ts placeWith: twins on several targets", () => {
+   });
+ });
+ 
++describe("targets.ts subSkillEvent", () => {
++  it("reads Camille's normal_skill events at her Vesperwings' retarget hits as no press (6339, 7b54)", () => {
++    for (const [id, at] of [["6339", [19684, 24555, 29672]], ["7b54", [16589]]] as const) {
++      const fx = fixture(id);
++      const kits = fx.team.flatMap((b) => {
++        const k = effectiveKit(data, b);
++        return k ? [k] : [];
++      }) as OperatorKit[];
++      const subs = (fx.casts ?? []).filter((lc) => subSkillEvent(fx, kits, lc, undefined)).map((lc) => lc.t);
++      expect(subs.every((t) => at.some((x) => Math.abs(x - t) <= 1))).toBe(true);
++      expect(subs.length).toBe(at.length);
++      expect((fx.casts ?? []).filter((lc) => lc.operator === CAMILLE && subs.includes(lc.t)).length).toBe(at.length);
++      expect(loggedCastFates(data, fx).filter((f) => f.fate === "sub-skill").length).toBe(at.length);
++      expect((fx.casts ?? []).some((lc) => subSkillEvent(fx, kits, lc, { "several-targets": "one" }))).toBe(false);
++    }
++  });
++});

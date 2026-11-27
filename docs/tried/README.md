@@ -27,6 +27,10 @@ presses round) by general rules: the replay's enemy away (engine assumption enem
 inferred from the listing (`hitless-presses` `inferred`), the totals' leaving frame and a kill read from the last
 life's damage ([open-problems.md](../open-problems.md), "The damage factors"). Their diffs are deleted.
 
+- [2026-11-27-sub-skill-events.diff](2026-11-27-sub-skill-events.diff): a logged cast event at a hit of a key the
+  kit lacks, named after the skill, read as a sub-skill's cast, no press (Camille's Vesperwings moving to the next
+  slug: 6339, 7b54); 6339 plain 115 → 103, −10.3 → −15.2%: the press it replaced stood in for the move's landing
+  (damage, Susceptibility, Heat), which has no kit hit yet.
 - [2026-11-27-tail-own-landing.diff](2026-11-27-tail-own-landing.diff): tailCuts' "logged hit no other cast holds"
   guard not passing the cast's own last landing logged at its frame (6339's 21.60 s Laevatain hit_2, +10.2%);
   development plain 84.3 → 83.7% (c4f3 −66, 9847 −21), hold-out |damage error| 5.8 → 5.9%: more cut tails whose
