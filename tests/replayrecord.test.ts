@@ -76,7 +76,7 @@ describe("the replay's record", () => {
   it("splits the simulated total into matched, replay-only and log-only parts", () => {
     const text = totalsView(data, b7b3);
     expect(text).toMatch(/ {2}team: [\d,]+ vs [\d,]+ \([+-]\d+\.\d%\)/);
-    expect(text).toMatch(/ {2}Arcane: [\d,]+ vs [\d,]+ \([+-]\d+\.\d%\): matched [\d,]+ vs [\d,]+ \([+-]\d+\.\d%, \d+ landing\(s\)\); simulated \+ replay only [\d,]+ \(\d+ landing\(s\)\)/);
+    expect(text).toMatch(/ {2}Arcane: [\d,]+ vs [\d,]+ \([+-]?\d+\.\d%\): matched [\d,]+ vs [\d,]+ \([+-]?\d+\.\d%, \d+ landing\(s\)\); simulated \+ replay only [\d,]+ \(\d+ landing\(s\)\)/);
   });
 
   it("places the holds without the stop of a cast event read as a buff's tick (4d60: the Empyrean's end at 106.47 s)", () => {

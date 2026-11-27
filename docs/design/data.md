@@ -326,10 +326,18 @@ enemy id (so the import couldn't put it under fixtures/multi-target/), is
 the fixture's hand-written `severalTargets` with its evidence (2026-11-27,
 9c6e): one operator's status event twice within a frame (one enemy can't
 burst twice at once) and kills before the fight's end with hits going on
-(scripts/probes/targets/two-targets.ts). The check still runs it as one
+(scripts/probes/targets/two-targets.ts), or, for Hard 33's Woodcraft Slugs
+(6339, 7b54), a logged total of whole slugs (9.6 Max HP, eight of 1.2),
+kills at whole slugs of damage, two kills at one ms and one hit's key at
+one ms with values its debuffs can't both give
+(scripts/probes/targets/slugs.ts). The check still runs it as one
 target; its snapshot entry carries the `several targets` key and the
 scoreboard gives it a row of its own, out of the development and
-earlier-pending means (scripts/accuracy.ts `withSeveralTargets`).
+earlier-pending means (scripts/accuracy.ts `withSeveralTargets`). Its
+listing is every target's under the one id (7b54: two slugs' hits under one
+listing, ×1.198 apart), so a kill is the one moment the log says the hits
+change target: the replay's enemy sheds the team's debuffs there (engine
+assumption `logged-purges`, `log-kills`: enginecheck.ts `killPurges`).
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
 sets fields over it when the fixture is read (logs.ts `readLogFixture`;

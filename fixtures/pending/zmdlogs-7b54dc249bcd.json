@@ -25,6 +25,9 @@
   "id": "eny_0129_slwood_hdg033",
   "level": 90
  },
+ "severalTargets": {
+  "why": "Hard 33's Woodcraft Slugs, eight under the one id (scripts/probes/targets/slugs.ts, 2026-11-27): the logged total is 9.600 Max HP (the data's 110,060), eight slugs of 1.2, and its kills (hits capped at the HP left) fall at 2.07 (16.36 s: two at one ms), 3.03, 4.01, 6.57 and 8.00 (48.06 s: two at one ms) slugs of damage; one hit of one event key at one ms with differing values 17 times (Si's combo slashes 6040 / 6569 / 9853 at 15.60 s, one slash on slugs with different debuffs), and Laevatain's attack 1 at 5.27 and 10.99 s under one listing 1,927 and 1,608 (×1.198 = Jade Vessel's 1.12 × Camille's 1.07: the second slug had neither). The stage's text (indie_hard033's dungeonDesc: \"They are legion\"; a slug restores its shield stacks by burrowing, one random slug loses them for good and its death unshields another) and the data's number shield (buff_common_eny_numshield: −9999 in the product zone, a shielded slug's hits deal 0 and aren't logged: 0–5.27, 5.27–10.99 and 21.06–26.98 s without a hit). ZMDLogs lists every slug's debuffs under the one id (the partial purges at 16.48, 19.59 and 47.48 s are kills). The check runs it as one target: its matched +16.4% and replay-only +29.5% are the other slugs' debuffs and the shielded slugs' hits."
+ },
  "team": [
   {
    "operator": "chr_0033_camille",
