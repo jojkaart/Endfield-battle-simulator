@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-27: Status landings paired by value; two-target fights marked](2026-11-27-07-status-landings-paired-by-value-two-target-fights-marked.md)
 - [2026-11-27: Placement cases: entity landings by their span, presses in away stretches, used-up casts by value](2026-11-27-07-placement-cases-entity-landings-by-their-span-presses-in.md)
 - [2026-11-27: Replay-only landings: kill gaps, basic tails, tails kept by another cast's buff, finals by value](2026-11-27-06-replay-only-landings-kill-gaps-basic-tails-tails-kept-by.md)
 - [2026-11-27: Log-only landings: Typhoeus's Signs, Zhuang Fangyi's Sunderblades](2026-11-27-05-log-only-landings-typhoeus-s-signs-zhuang-fangyi-s.md)

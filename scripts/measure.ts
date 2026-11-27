@@ -96,7 +96,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { allLogs, compare, direction, GROUPS, groupOf, operatorNames, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, operatorNames, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
@@ -190,7 +190,8 @@ export function overlay(base: Snapshots, measured: ReadonlyMap<string, Entry>, s
       pending.set(k, e);
     }
   }
-  return { verified: Object.fromEntries(verified), pending: Object.fromEntries(pending), split };
+  // The several-target logs as the overlaid entries mark them (a measured entry may carry the key or drop it).
+  return { verified: Object.fromEntries(verified), pending: Object.fromEntries(pending), split: withSeveralTargets(split, Object.fromEntries(pending)) };
 }
 
 /** Runs jobs on worker threads loading `tree`'s code; each answer to `done` as it comes. */
@@ -496,8 +497,8 @@ async function main(argv: string[]): Promise<number> {
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
       ...(holdLines?.summary ?? []),
       ...(ownLines ? [`Variant ${vi + 1}'s own hits, against the plain tree:`, ...ownLines.summary.map((l) => `  ${l}`)] : []),
-      ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
-      ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
+      ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
+      ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
     ];

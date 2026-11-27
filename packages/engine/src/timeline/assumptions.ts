@@ -172,6 +172,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "status-pairing",
+    question: "Which of the replay's status landings (Arts Bursts, reactions, Combustion ticks, physical statuses) stands for a logged status hit? The game's bursts and ticks land 0.55–0.85 s later than the replay's about half the time (a stop starting 0–300 ms after the burst is due holds the game's: scripts/probes/bursts/burst-before-stop.ts, 13 held, 16 not), which the replay's timing can't decide. Read only by the log check's replay (packages/logs statuspairs.ts pairStatusLandings), not by simulations.",
+    default: "assignment",
+    readings: {
+      nearest: "per logged hit in time order, its operator's free landing of its kind and element nearest it within 16 frames (the replay until 2026-11-27): a burst held late leaves both sides one-sided, and pending/zmdlogs-c7790d76a4f0.json's logged 9.68 s took the replay's 10.03 s, so 9.27 and 10.08 s stayed unpaired",
+      assignment: "per operator, kind and element, one assignment over the fight: the most pairs, then the least frames apart (a landing whose value doesn't fit counts 60 frames more), a landing 16–60 frames away only where its value fits the logged one within 1% (under the log's crit flag and the fixture's stage factor). Measured 2026-11-27 against `nearest`: development plain 81.5 → 81.6%, hold-out 82.6 → 82.7%, earlier pending 81.6 → 81.7% with a 30-frame window (14 logs and 3 hold-outs better, 3 mixed: more plain, their totals 0.1–0.2 points further; none worse: pending/zmdlogs-c7790d76a4f0.json's 9.27 / 10.08 s bursts both paired, Wulfgard's and Laevatain's Combustion ticks a stop held paired with their own); 60 frames then 7 logs and 2 hold-outs more better, none worse",
+    },
+  },
+  {
     id: "logged-purges",
     question: "Does the enemy shed the team's debuffs at once where the log shows them all gone together (a stage's phase change)? No kit rule ends them there. Read only by the log check's replay (packages/logs holdinputs.ts loggedPurges, purgedByLog).",
     default: "log",

@@ -41,11 +41,13 @@ const isShareKey = (k: string) => k.startsWith("share ");
 const OTHER_HIT = "other-hit operator ";
 /** The totals key of a stage fight (snapshotentry.ts STAGE_KEY). */
 const STAGE = "stage";
+/** The totals key of a fight against several enemies under one id (snapshotentry.ts SEVERAL_TARGETS_KEY: the fixture's severalTargets). */
+const SEVERAL = "several targets";
 /**
  * A totals key that describes, never a verdict: the shares (where the error lives, an operator's share), an operator's
- * hits matched as another kit hit, a stage fight. `direction` leaves them out; a round may add one (docs/friction/README.md step 3).
+ * hits matched as another kit hit, a stage fight, several targets. `direction` leaves them out; a round may add one (docs/friction/README.md step 3).
  */
-export const isDescribingKey = (k: string) => isShareKey(k) || k.startsWith(OTHER_HIT) || k === STAGE;
+export const isDescribingKey = (k: string) => isShareKey(k) || k.startsWith(OTHER_HIT) || k === STAGE || k === SEVERAL;
 /** An entry without the describing keys: what `direction` compares. */
 const verdictPart = (e: Entry): Entry => (e[TOTALS] ? { ...e, [TOTALS]: Object.fromEntries(Object.entries(e[TOTALS]).filter(([k]) => !isDescribingKey(k))) } : e);
 
@@ -53,18 +55,30 @@ const verdictPart = (e: Entry): Entry => (e[TOTALS] ? { ...e, [TOTALS]: Object.f
 export type Entry = Readonly<Record<string, Readonly<Record<string, number | null>>>>;
 export type Entries = Readonly<Record<string, Entry>>;
 
-export type Group = "verified" | "development" | "holdout" | "earlier";
-export const GROUPS: readonly Group[] = ["verified", "development", "holdout", "earlier"];
+export type Group = "verified" | "development" | "holdout" | "earlier" | "targets";
+export const GROUPS: readonly Group[] = ["verified", "development", "holdout", "earlier", "targets"];
 const GROUP_LABEL: Record<Group, string> = {
   verified: "Verified (fixtures/)",
   development: "Development (fixtures/pending, holdout.json `development`)",
   holdout: "Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only)",
   earlier: "Earlier pending (imported before the hold-out split)",
+  targets: "Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`)",
 };
 
 export interface Split {
   readonly development: ReadonlySet<string>;
   readonly holdout: ReadonlySet<string>;
+  /**
+   * The pending logs against several enemies under one id (their entries' SEVERAL key, from the fixture's
+   * severalTargets; withSeveralTargets): their own group, out of the development and earlier-pending means (a
+   * reclassification, not an accuracy change: 9c6e, 2026-11-27).
+   */
+  readonly severalTargets?: ReadonlySet<string>;
+}
+
+/** The split with its severalTargets: the pending entries (keys pending/… or holdout/…) whose totals carry the SEVERAL key. */
+export function withSeveralTargets(split: Split, pending: Entries): Split {
+  return { ...split, severalTargets: new Set(Object.entries(pending).filter(([k, e]) => !k.startsWith("holdout/") && e[TOTALS]?.[SEVERAL]).map(([k]) => idOf(k))) };
 }
 
 /** The hold-out split, by log id (zmdlogs-…). */
@@ -83,7 +97,9 @@ export function groupOf(key: string, split: Split): Group {
   if (key.startsWith("holdout/")) return "holdout";
   if (!key.startsWith("pending/")) return "verified";
   const id = idOf(key);
-  return split.holdout.has(id) ? "holdout" : split.development.has(id) ? "development" : "earlier";
+  if (split.holdout.has(id)) return "holdout";
+  if (split.severalTargets?.has(id)) return "targets";
+  return split.development.has(id) ? "development" : "earlier";
 }
 
 const operators = (e: Entry) => Object.entries(e).filter(([k]) => k !== TOTALS) as [string, Readonly<Record<string, number>>][];
@@ -356,7 +372,8 @@ export interface Snapshots {
 export function readSnapshots(read: (path: string) => string | undefined = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), "utf8") : undefined)): Snapshots {
   const json = (p: string) => JSON.parse(read(p) ?? "{}") as Entries;
   const split = read(SPLIT) ?? read(OLD_SPLIT);
-  return { verified: json(VERIFIED), pending: { ...json(PENDING), ...json(HOLDOUT) }, split: split ? readSplit(split) : { development: new Set(), holdout: new Set() } };
+  const pending = { ...json(PENDING), ...json(HOLDOUT) };
+  return { verified: json(VERIFIED), pending, split: withSeveralTargets(split ? readSplit(split) : { development: new Set(), holdout: new Set() }, pending) };
 }
 
 /** Snapshots.pending as its two files hold it: the pending logs' entries and the hold-outs' (keys holdout/…). */
