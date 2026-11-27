@@ -79,3 +79,25 @@ worktree branch of agent-a95e7da3ed781c88d, base main at 5b08218 (round 22, besi
   moved and by which rule; it turned three bad iterations into three quick fixes without a measure each.
 - `zmdlogs casts --choices`' `[joined: …]` lines named the faulty join (to come, 1.81 s, slot due at 0.20 s) at once.
 - `efsim gamedata tree <skill>` showed the ChannelingAction (frames 5–40, maxCountPerTarget 6) that decided the case.
+
+## Outcome (round 21)
+
+- 1 (A hunk split part that throws reads as a −100% regression, not "not measured alone"): done (9ba1d99): the
+  worker sends the replay's code errors (scripts/code-errors.ts: a ReferenceError or TypeError caught per cast;
+  MeasureAnswer.threw), a split part with any is "not measured alone" naming the error, the whole measure says so
+  before its numbers; at queue time `--split hunks` names a hunk using a name only another hunk declares
+  (measure.ts crossHunkNames).
+- 2 (A split measured with `--at HEAD` took hunks committed after it was queued): done (9ba1d99): `--at`, `--base`,
+  `--against` pinned to commits at queue time (measure.ts pinRefs; a `--split` without `--base` gets HEAD's), the
+  "Split by … against <base>, the code at <code>" line names both.
+- 3 (keepPrevious is computed in three places, each with its own "previous cast"): done (22debb5): castassembly.ts
+  keptPrevious / isPreviousCast, the one rule withKeptPrevious (was `ordered`), replayedCasts and missedCasts call,
+  with ReplayedCast.keepPreviousWhy (castsFromBuffEnds says why too); the CUTS line of a cast that keeps its previous
+  cast's hits says it keeps them. Every development log's flags the same (10458 casts; replayedCasts keeps the
+  placement's order: five logs' casts aren't in start order there).
+- 4 (The kit compiler can't tell a tick's own landings from what the tick creates): done (2fdc4e6): skillCompile.ts
+  Ctx.channel, a token per channel cleared by enter(), kept per landing; the compiled data is byte for byte the same.
+  Without the old `!detached` the token would also mark 9 kit hits of channels inside a detached file: on the
+  backlog's accuracy list.
+- 5 (The casts view's words live in another agent's file): done (7052a47): packages/logs/src/placementwords.ts
+  (lateJoin, twinWords, joinWords, choiceWords, inTurnWords, pathsWords, pastChannelWords), a move.

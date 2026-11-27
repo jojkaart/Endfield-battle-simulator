@@ -16,7 +16,8 @@
 // makeCast, replayedSkill, inferredPress, missedCasts, tailCuts, landingWatch, loggedEnemyHp), holdinputs.ts what
 // holds its timers to the log (loggedTick, heldTicks, loggedLaneEnds, heldToLoggedEnds, runBounds), replaycrits.ts the
 // crits the log leaves out (shownCrits, layerCrits, valueCrits), replayedhits.ts what it makes of the logged hits
-// (replayedHits, disagreementRuns). A doc citing "buffreplay.ts <function>" from before the split: the function's
+// (replayedHits, disagreementRuns), landingpairs.ts the kit landings paired with the logged hits (pairKitLandings,
+// round 21), counterfactual.ts a replay with casts cut (ReplayOptions.cutCasts). A doc citing "buffreplay.ts <function>" from before the split: the function's
 // file is the one named here.
 
 import {

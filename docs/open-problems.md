@@ -2412,7 +2412,10 @@ since, its `if` needs Combustion or Corrosion on its slug: a status from a landi
 shielded at 24.02 s, the empowered hit's explosion reaching it for 0); a twin's second target missing a status its
 applier's unlogged landing gave (9c6e 74.47 s: Liino's ultimate on T6 without the log's Electrification; 53.98 s
 Ardelia's attack 3 ×1.011 on a Corrosion ramp of another age); 7b54's 36.08–36.84 s Laevatain battle skill over
-×1.2–1.3 under per-target (Scorching Heart on from 31.03 s, Melting Flame 4 from her absorption then).
+×1.2–1.3 under per-target (Scorching Heart on from 31.03 s, Melting Flame 4 from her absorption then); 7b54's
+second assignment numbering its targets otherwise than the replay's landings (round 21's `zmdlogs hits` `≠ landing`:
+147 of 210 hits with both, 6339 none, 9c6e one), so a candidate read at the replay's target of its id may be another
+slug's statuses: the ids mapped onto the replay's (the backlog's accuracy list).
 
 **Still possible / left:** the other
 listeners on a target's death (BuffData abilityEvent 1 on a buff on the target): Arcane's

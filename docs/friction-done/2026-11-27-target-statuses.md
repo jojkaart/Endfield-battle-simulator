@@ -61,3 +61,15 @@ and the per-target statuses; build the kit listeners on a target's death the dat
 - The engine's replayEvent/targetDies from round 20: a new death kind needed an options argument, not a step kind.
 - `zmdlogs totals --kinds` and NOLAND's reason (a kit hit's `if` that didn't hold) named the 29.26 s combo hit's cause
   at once.
+
+## Outcome (round 21)
+
+- 1 (No view of the replay's status record (bursts, consumptions, reactions, ticks)): done: `zmdlogs statuses` came
+  with the statuses-per-target round (bursts, reactions, consumptions, physical statuses, ticks, deaths); round 21
+  added `--inflictions` (ded49bf: each target's element × stacks where a frame of kit landings changed it, from the
+  replay's states, no engine record).
+- 2 (The replay's new deaths don't show in `zmdlogs decisions` / `replay`): done by the statuses-per-target round
+  (BuffReplay.deaths, decisionsview.ts deathDecisions from the replay's record).
+- 3 (Finding every BuffData handler of one ability event took 21 runs of `gamedata find`): done (72abb23): `efsim
+  gamedata handlers <abilityEvent|buffEvent> <n>` (the action types that run and those switched off, ALL DISABLED);
+  `gamedata find` says when a disabled parent switches an action off (Found.disabledBy), `--enabled` leaves it out.

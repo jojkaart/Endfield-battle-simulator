@@ -39,3 +39,10 @@ snapshots:update reads the tree while it runs, which kept this round to docs for
 - `node scripts/team-ab.ts --base <ref>`'s identity check, `measure --several-targets` and `verify-at --snapshot`
   (this round's own) each answered in a minute or two.
 - `friction.ts outcomes … --backlog` filling the "done but … (carried …)" lines from the new backlog's From lines.
+
+## Outcome (round 21)
+
+- 1 (`--unpark` leaves the parked paragraph's own number list stale): done (9ba1d99): friction.ts withoutNumbers drops
+  the unparked numbers from the intro's "points …" list (a range split around one), or warns naming the intro.
+- 2 (An `end` block in an edits file needs its `>>>>>>>` though the header suggests it is optional): done (9ba1d99):
+  the next `@@@` line or the file's end closes an `end` block (its trailing blank lines dropped); the header says so.

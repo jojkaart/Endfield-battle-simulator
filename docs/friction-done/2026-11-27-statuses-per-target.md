@@ -59,3 +59,18 @@ the interrupted-casts agent). Result: replay assumption target-statuses `per-tar
 - The engine's replay-only scenario fields (loggedCrits as the model): `landingTargets` went in the same way, and
   team-ab's identity check confirmed the simulations untouched at once.
 - The previous agent's design note and friction report named exactly the missing pieces (DEATH lines, the status view).
+
+## Outcome (round 21)
+
+- 1 (Code that reads `TimelineState.enemy` as "the enemy" is spread over both packages, with no list of it): done
+  (72abb23) as a test, not a lint rule: tests/enemy-readers.test.ts lists every read of `.enemy.statuses` / `physical`
+  / `infliction` / `vulnerable` in the packages with what it means; docs/design/timeline.md names it. The freeze's
+  readers (clock.ts) read the current target only: on the backlog's accuracy list.
+- 2 (The check's per-target assignment numbers targets its own way, the replay's ids are another pass's): done
+  (5cef03e): HitRecord.target.landing (the landing's targets), `≠ landing T<m>` on `zmdlogs hits` lines,
+  hitexport.ts targetMismatches, a test on 6339 (none) and 9c6e (one). 7b54 has 147 of 210: on the backlog's accuracy
+  list (the second assignment's ids mapped onto the replay's moves verdicts).
+- 3 (No per-hit diff of two readings' verdicts): done (5cef03e): it existed as `zmdlogs hits <fixture> --against
+  <id>=<r>` (CLAUDE.md names it; both sides' class and primary reading, the modifiers only one has, a count per
+  change); its lines now name the target on each side. `--json` writes only JSON to stdout: the line before it was
+  the progress on stderr (`2>/dev/null`).

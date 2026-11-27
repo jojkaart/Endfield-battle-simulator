@@ -435,6 +435,13 @@ status tick run on their own target, and `targetDies` with a `target` ends
 that target's statuses. The Stagger, enemy-side kit buffs and the enemy's
 clock stay one. `LandedHit.target` / `otherTargets`, `ReactionRecord.target`
 and `PendingBurst.target` are set only there (search KeyRules: records).
+Every read of one enemy's fields (`.enemy.statuses`, `physical`,
+`infliction`, `vulnerable`) in the packages is listed in
+tests/enemy-readers.test.ts with what it means (the landing's target, every
+target through `everyTarget` / `targetEnemy`, or one enemy by construction:
+the planning, unitsAt's first pass); a new one fails there until classified
+(round 21, the statuses-per-target report point 1: the hidden holds shifted
+the current target only, found a measure per reader).
 
 **Per-operator contribution** of buffs and debuffs uses LMDI (log-mean
 Divisia) attribution, as End-DPScope does: it splits each hit's damage

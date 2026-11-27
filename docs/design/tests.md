@@ -178,7 +178,16 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   end with how many of the hold-outs the whole change moved it moves the
   same way alone (counts per direction: "worse 1 (this part alone: 1
   worse)"), which says which rule a hold-out-only regression comes from
-  without naming the log.
+  without naming the log. Round 21 (the interrupted-casts report points 1
+  and 2): a part whose replay threw a code error (a name only another
+  hunk declares, caught per cast: every moved log read as losing every
+  landing, a "−100%") is "not measured alone" with the error
+  (scripts/code-errors.ts; the whole measure says so too, before its
+  numbers), and at queue time a hunk that uses a name only another hunk
+  declares is named (mark them with one `split:<name>`). `--at`,
+  `--base` and `--against` are pinned to their commits at queue time, a
+  `--split` without `--base` gets HEAD's: a commit made during the wait
+  doesn't reach the split, whose head line names both commits.
 - **A constant's value** (round 18, the status-pairing report point 2:
   a commit, an edit, a diff and a revert per value): `--set
   <file>:<CONST>=<value>` (repeatable) measures the code with that
@@ -224,6 +233,15 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   to [docs/tried/](../tried/README.md) with its measure in a header, named
   in its open-problems paragraph, so `--patch docs/tried/<file>` measures
   it again once what blocked it is fixed (round 9).
+- **What the log loses without a tail** (round 21, the tail-cut report
+  point 2): `zmdlogs decisions --why-kept <fixture>` replays once per
+  TAILKEPT line with that tail cut (ReplayOptions.cutCasts, the snapshots'
+  check composed on it: counterfactual.ts) and lists the logged hits
+  whose landing, class or primary reading moved, with a count per class
+  change; seconds per kept tail, no lock. A tried diff whose context went
+  stale: `node scripts/tried.ts refresh <diff>` makes it again on HEAD
+  (git apply -3 in a scratch worktree) under the same header, or names
+  the files whose hunks conflict.
 - **Options before the queue** (round 13: `measure -- --help` waited
   5 min for the lock, then failed): measure parses its options and
   checks `--assume` / `--variant` readings against the registered
@@ -274,7 +292,13 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   leaks into `efsim assumptions` and `--assumptions` checks if forgotten.
 - **`npm run snapshots:update`** stays the final step before a commit
   that moves verdicts (it also rewrites the example and kit snapshots and
-  checks every test's assertions).
+  checks every test's assertions). It reads the working tree, so since
+  round 21 (backlog after round 20 point 2) it takes the code's key at
+  queue time (snapshots.ts codeKey: HEAD, the tracked changes and the
+  untracked files, its own outputs and docs left out) and fails, the
+  files put back, when the code changed by the time the lock came or the
+  suites ended, naming the paths: edit docs while it waits, or commit
+  and run it in a worktree of its own.
 - **Timing changes:** `npm run smoke` (scripts/smoke.ts, under 2 min: every
   kit test, the loop and beam searches, the owner's rules check, the
   timeline and examples tests: what engine timing changes broke far from
