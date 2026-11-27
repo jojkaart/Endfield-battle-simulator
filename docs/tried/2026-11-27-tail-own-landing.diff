@@ -1,5 +1,9 @@
 Tried 2026-11-27 (twins-on-several-targets round), dropped.
 
+Superseded 2026-11-27 (round 21, docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md): the
+exact guard is in, with what the pass had stood for read instead (`landed`, `status`, cutTails' `needed`): c4f3's
+and 9847's tails are kept by those, and development plain stays 84.3%. Kept here for its numbers.
+
 Found again 2026-11-27 (the Liino round, independently): zmdlogs-0eef2474a26f.json, Liino's combo hit1 logged at
 7570 ms (its frame 7566.7 ms) kept her hit2 at 8.80 s (+57.8% of her total, 3.0 points of her by-operator mean); that
 tail is also kept by the fight's-end guard (TAIL_NEAR_MS 1.5 s; it starts 1.23 s before the log's last hit, the

@@ -6,7 +6,7 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
+  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, kitHitEntries, parseReactionEvent,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -350,16 +350,29 @@ function missedStep(ctx: TimelineContext, st: TimelineState, operator: string, f
 
 /** How far (ms) around a cast's unlogged tail a logged hit of its operator with one of its skill's events keeps it whole, and a logged hit of anyone after its first landing shows the enemy there (tailCuts). */
 const TAIL_NEAR_MS = 1500;
+/**
+ * How close (ms) to the log's last hit a tail may start and be kept whole (tailCuts' `fight-end`: the kill drops what
+ * comes after it). 1.5 s (TAIL_NEAR_MS) until round 21, which kept tails the team's logged hits went on after: 0eef's
+ * Liino combo hit2 at 8.80 s (+57.8% of her total, the log's hits to 10.03 s), 79cc's Ardelia attack3 projectiles at
+ * 54.47 s (the log's to 55.95 s); measured 2026-11-27 at 0.5 s: 0eef 2.0 → 1.3%, no other log's damage moved.
+ */
+const TAIL_END_MS = 500;
 
 /** How many frames after one of a tail's landings a buff run it started may begin (tailCuts: a trigger on the landing). */
 const TAIL_EFFECT_FRAMES = 1;
+/**
+ * How far (frames) a logged hit may lie from one of a tail's landings, or from a status landing the tail set off, to
+ * stand for it (tailCuts' `landed` and `status` guards): the free match's reach (buffreplay.ts NEAR_FRAMES, the
+ * landings the replay pairs with logged hits it didn't pin).
+ */
+const TAIL_LANDED_FRAMES = 16;
 /** The most casts tailCuts ends in one fight, one replay each. */
 export const TAIL_CUT_ROUNDS = 8;
 
 /**
  * A cast with an unlogged tail that tailCuts kept whole, and the guard that kept it (round 18, the replay-only report
  * point 3: d774's 103.28 s battle skill had every condition of a cut but one, found by a stderr print in the guard):
- * TAILKEPT lines. `frame` is the tail's first landing.
+ * TAILKEPT lines. `frame` is the tail's first landing (`rounds`: its last logged landing, where the cut would end it).
  */
 export interface TailKept {
   readonly cast: ReplayedCast;
@@ -368,21 +381,25 @@ export interface TailKept {
   /** The guard that kept it (TAIL_GUARDS; `zmdlogs decisions` counts the TAILKEPT lines by it). */
   readonly guard: TailGuard;
   /**
-   * For the `shown-own` / `shown-free` guards: the logged hit it cites, and how far (ms) the log's ms is past the cast's
-   * last logged landing's frame time (round 20, three reports: the cited hit was most often the cast's own last landing,
-   * logged a few ms into its frame (0.3 ms in 6339 at 20.37 s), so the guard passed by the ms, not by another hit).
+   * For the `landed`, `status` and `shown-free` guards: the logged hit it cites, and how far (ms) the log's ms is past
+   * the cast's last logged landing's frame time.
    */
-  readonly cites?: { readonly hit: LogHit; readonly heldBy: "own" | "none"; readonly afterMs: number };
+  readonly cites?: { readonly hit: LogHit; readonly afterMs: number };
 }
 
 /**
  * tailCuts' guards, in the order it tries them: `variant` (a logged landing landed as another cast's), `fight-end`
  * (within TAIL_NEAR_MS of the log's last hit), `away` (the tail starts in an away stretch), `no-enemy` (no logged hit
- * after it), `shown-own` (a logged hit of its operator the cast itself holds, past its last logged landing's frame time:
- * the log's ms after the frame's, a pass by rounding), `shown-free` (one no cast holds), `effect` (a run the tail
- * started that the log lists).
+ * after it), `landed` (a logged hit no cast holds stands for one of the tail's landings: its operator, one of the
+ * landing's events, within TAIL_LANDED_FRAMES), `status` (a logged status hit of its operator stands for a status
+ * landing the tail set off), `shown-free` (a logged hit of its operator's casts no cast holds, near the tail), `effect`
+ * (a run the tail started that the log lists), `needed` (its cut tried, the replay lost a logged hit's landing:
+ * cutTails), `rounds` (no guard kept it, but cutTails' TAIL_CUT_ROUNDS were used). Until round 21 a `shown-own` guard
+ * came before `shown-free`: the cast's
+ * own last logged landing, logged a fraction of a ms past its frame's time, passed for another hit (143 of the
+ * development logs' 217 TAILKEPT lines); what it kept that the log shows is what `landed` and `status` now read.
  */
-export const TAIL_GUARDS = ["variant", "fight-end", "away", "no-enemy", "shown-own", "shown-free", "effect"] as const;
+export const TAIL_GUARDS = ["variant", "fight-end", "away", "no-enemy", "landed", "status", "shown-free", "effect", "needed", "rounds"] as const;
 export type TailGuard = (typeof TAIL_GUARDS)[number];
 
 /**
@@ -394,7 +411,7 @@ export type TailGuard = (typeof TAIL_GUARDS)[number];
  * last logged landing, at that landing's frame (ReplayCastOptions.endsAt). pending/zmdlogs-0c14fb3ce77d.json: Rossi's battle skill at
  * 35.40 s, its two charge hits logged, then neither her Lift at frame 35 nor the wolves and their bleed.
  */
-export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, reading: string, kept?: TailKept[]): Map<ReplayedCast, number> {
+export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, reading: string, kept?: TailKept[], needed?: ReadonlyMap<ReplayedCast, LogHit>): Map<ReplayedCast, number> {
   const out = new Map<ReplayedCast, number>();
   if (reading !== "cut" && reading !== "cut-all") return out;
   const kinds: ReadonlySet<SkillType> = new Set<SkillType>(reading === "cut-all" ? ["basic", "battle", "combo", "ultimate"] : ["battle", "combo", "ultimate"]);
@@ -420,8 +437,8 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
     if (!first) continue;
     const from = ms(first.frame);
     // Not at the fight's end (the kill drops what comes after it), nor in an away stretch (nothing lands there).
-    if (from > last - TAIL_NEAR_MS) {
-      keep("fight-end", `its tail starts within ${TAIL_NEAR_MS / 1000} s of the log's last hit (the kill drops what comes after it)`);
+    if (from > last - TAIL_END_MS) {
+      keep("fight-end", `its tail starts within ${TAIL_END_MS / 1000} s of the log's last hit (the kill drops what comes after it)`);
       continue;
     }
     const awayAt = away.find((w) => from > w.from && from < w.to);
@@ -433,25 +450,46 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
       keep("no-enemy", `no logged hit of anyone within ${TAIL_NEAR_MS / 1000} s after its tail's first landing (the log doesn't show the enemy there)`);
       continue;
     }
-    // A logged hit of the operator's casts (not a status's or a trigger's) that no other cast holds: this cast's, placed
-    // elsewhere or matched freely (a follow-up's, a tick's), so the log shows more of it.
-    // Its `cites` and its guard say whether the hit is the cast's own (round 20): a landing of the cast itself at its
-    // last logged frame passes `h.t > ms(lastLogged)` when the log's ms is a fraction past the frame's time, which is
-    // most of what this guard keeps; making it exact cut tails whose effects later hits needed
-    // (docs/tried/2026-11-27-tail-own-landing.diff, development plain 84.3 → 83.7%): a better test is on the backlog's
-    // accuracy list.
-    const shownAt = fx.hits.findIndex((h, i) => {
-      if (h.operator !== c.operator || h.t <= ms(lastLogged) || h.t > from + TAIL_NEAR_MS) return false;
-      const by = heldBy.get(String(i));
-      if (by && by !== c) return false;
-      return (placement.hits.get(h)?.cast.kind ?? null) !== null;
+    const end = (tail.at(-1) as LandedHit).frame + 1;
+    const atTail = (f: number) => tail.some((h) => f >= h.frame && f <= h.frame + TAIL_EFFECT_FRAMES);
+    const after = (h: LogHit) => Math.round((h.t - ms(lastLogged)) * 10) / 10;
+    const free = (h: LogHit, i: number) => h.operator === c.operator && h.t > ms(lastLogged) && !heldBy.has(String(i));
+    // What the guard stands for: the tail's landings, or what they set off, are in the log (round 21). Not the cast's
+    // own logged landings: its last one, logged a fraction of a ms past its frame's time, passed the earlier `h.t >
+    // ms(lastLogged)` test for another hit (143 of 217 TAILKEPT lines; docs/tried/2026-11-27-tail-own-landing.diff).
+    // A logged hit no cast holds with the event of one of the tail's landings, near it: the free match would pair them
+    // (buffreplay.ts), so cutting the tail drops a landing the log has (9847: Liino's battle skill at 75.44 s, its
+    // volleys from 78.30 s matched freely, 2.4 s after the tail's first landing, and the stance's ticks after them).
+    const events = new Map(kitHitEntries(run.ctx.kits.get(c.operator)).map((e) => [`${e.skillId}|${e.hit.id}`, e.hit.events] as const));
+    const landedAt = fx.hits.findIndex((h, i) => free(h, i) && tail.some((x) => Math.abs(frameOf(h.t) - x.frame) <= TAIL_LANDED_FRAMES && (events.get(`${x.skillId}|${x.hitId}`) ?? []).includes(h.event)));
+    if (landedAt >= 0) {
+      const h = fx.hits[landedAt] as LogHit;
+      keep("landed", `a logged hit no cast holds, ${h.event} at ${(h.t / 1000).toFixed(2)} s, stands for one of its tail's landings (its event, within ${TAIL_LANDED_FRAMES} frames): the log has the tail`, { hit: h, afterMs: after(h) });
+      continue;
+    }
+    // A logged status hit of its operator whose nearest status landing of its kind and element the tail set off (at one
+    // of its landings): the tail's effect is in the log (c4f3: Pogranichnik's battle skill at 108.08 s, its hit_2 at
+    // 109.33 s the Breach the log has at 109.01 s, with its Fervent Morale and weapon's team ATK that 78 later hits read).
+    const statuses = run.st.hits.filter((x) => x.skillId.startsWith("reaction:") && x.operator === c.operator);
+    const statusAt = fx.hits.findIndex((h) => {
+      const r = h.operator === c.operator && h.t > ms(lastLogged) ? parseReactionEvent(h.event) : null;
+      if (!r) return false;
+      const f = frameOf(h.t);
+      const same = statuses.filter((x) => x.skillId === `reaction:${r.kind}` && x.element === r.element && Math.abs(x.frame - f) <= TAIL_LANDED_FRAMES);
+      const nearest = Math.min(...same.map((x) => Math.abs(x.frame - f)));
+      return same.some((x) => atTail(x.frame) && Math.abs(x.frame - f) === nearest);
     });
-    const shown = shownAt >= 0 ? (fx.hits[shownAt] as LogHit) : undefined;
-    if (shown) {
-      const own = heldBy.get(String(shownAt)) === c;
-      const afterMs = Math.round((shown.t - ms(lastLogged)) * 10) / 10;
-      const whose = own ? `held by this cast: its own landing at its last logged frame, logged ${afterMs} ms into that frame: a pass by the ms, not another hit` : "held by no cast";
-      keep(own ? "shown-own" : "shown-free", `a logged hit of its operator's casts no other cast holds, ${shown.event} at ${(shown.t / 1000).toFixed(2)} s (${whose}), may be its tail's (placed elsewhere or matched freely)`, { hit: shown, heldBy: own ? "own" : "none", afterMs });
+    if (statusAt >= 0) {
+      const h = fx.hits[statusAt] as LogHit;
+      keep("status", `a logged status hit of its operator, ${h.event} at ${(h.t / 1000).toFixed(2)} s, stands for a status landing its tail set off (the nearest of its kind, within ${TAIL_LANDED_FRAMES} frames): the tail's effect is in the log`, { hit: h, afterMs: after(h) });
+      continue;
+    }
+    // A logged hit of the operator's casts (not a status's or a trigger's) that no cast holds, near the tail: this
+    // cast's, placed elsewhere or matched freely (a follow-up's, a tick's), so the log shows more of it.
+    const shownAt = fx.hits.findIndex((h, i) => free(h, i) && h.t <= from + TAIL_NEAR_MS && (placement.hits.get(h)?.cast.kind ?? null) !== null);
+    if (shownAt >= 0) {
+      const h = fx.hits[shownAt] as LogHit;
+      keep("shown-free", `a logged hit of its operator's casts no cast holds, ${h.event} at ${(h.t / 1000).toFixed(2)} s, may be its tail's (placed elsewhere or matched freely)`, { hit: h, afterMs: after(h) });
       continue;
     }
     // A new run of a decided game buff the replay starts from the cut to the tail's end that the log lists then and not
@@ -461,8 +499,6 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
     // nothing of the tail (d774d0ce7bd3: Zhuang Fangyi's battle skill at 103.28 s, three strikes logged; a gear set's
     // team ATK from Arcane's ultimate hit at 107.07 s, two frames before a tail strike, kept six strikes and a 152k final
     // the log doesn't have).
-    const end = (tail.at(-1) as LandedHit).frame + 1;
-    const atTail = (f: number) => tail.some((h) => f >= h.frame && f <= h.frame + TAIL_EFFECT_FRAMES);
     const listed = (g: string, a: number, b: number) => fx.hits.some((h) => h.t >= a && h.t <= b && h.effects.some((e) => e.buff === g));
     let effect: { buff: string; start: number } | undefined;
     for (const [key, list] of run.instances) {
@@ -476,10 +512,84 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
     // At its last logged landing's own frame: an end runs after that frame's hits (schedule.ts IN_FRAME), so a tail landing
     // the frame after is cut too (c83c75d02a85: Si's combo final at 56.73 s, a frame after her last logged slash, 5.0% of
     // the fight, landed past a cut at lastLogged + 1).
-    if (!effect) out.set(c, lastLogged);
-    else keep("effect", `a new run of ${effect.buff} starts at its tail's landing (${(ms(effect.start) / 1000).toFixed(2)} s) that the log lists then and not before: the tail's effects came, so its landings did`);
+    if (effect) {
+      keep("effect", `a new run of ${effect.buff} starts at its tail's landing (${(ms(effect.start) / 1000).toFixed(2)} s) that the log lists then and not before: the tail's effects came, so its landings did`);
+      continue;
+    }
+    // Its cut tried (cutTails): the replay without the tail lost a logged hit's landing, so what the tail set off is in the log.
+    const need = needed?.get(c);
+    if (need) {
+      keep("needed", `the replay with it cut lost the landing of a logged hit, ${need.event} of ${need.operator} at ${(need.t / 1000).toFixed(2)} s: what the tail set off (a buff, a status, SP or energy, a later cast) is in the log`, { hit: need, afterMs: after(need) });
+      continue;
+    }
+    out.set(c, lastLogged);
   }
   return out;
+}
+
+/**
+ * The logged hits a run has a landing for, by index (cutTails' `needed` guard): a pinned landing (LandedHit.ref), else
+ * for a status hit a status landing of its operator, kind and element, else a landing of its operator with its event,
+ * within TAIL_LANDED_FRAMES (the free match's reach, without its one-landing-each pairing). Up to the run's break.
+ */
+export function loggedShown(run: ReplayRun, fx: LogFixture): Set<number> {
+  const out = new Set<number>();
+  const events = new Map([...run.ctx.kits.values()].flatMap((k) => kitHitEntries(k).map((e) => [`${k.operator}|${e.skillId}|${e.hit.id}`, e.hit.events] as const)));
+  const near = new Map<string, number[]>();
+  const add = (key: string, f: number) => near.set(key, [...(near.get(key) ?? []), f]);
+  for (const x of run.st.hits) {
+    if (x.ref !== undefined) out.add(Number(x.ref));
+    if (x.skillId.startsWith("reaction:")) add(`${x.operator}|${x.skillId}|${x.element}`, x.frame);
+    else for (const e of events.get(`${x.operator}|${x.skillId}|${x.hitId}`) ?? []) add(`${x.operator}|${e}`, x.frame);
+  }
+  fx.hits.forEach((h, i) => {
+    if (out.has(i)) return;
+    const f = frameOf(h.t);
+    if (run.brokenAt !== null && f >= run.brokenAt) return;
+    const r = parseReactionEvent(h.event);
+    const frames = near.get(r ? `${h.operator}|reaction:${r.kind}|${r.element}` : `${h.operator}|${h.event}`) ?? [];
+    if (frames.some((x) => Math.abs(x - f) <= TAIL_LANDED_FRAMES)) out.add(i);
+  });
+  return out;
+}
+
+/**
+ * Engine assumption unlogged-tails (`cut`, `cut-all`): the casts tailCuts names ended after their last logged landing, the
+ * earliest first and the replay made again after each (a cut changes what follows: 0c14's Rossi at 35.40 s takes the
+ * Vulnerable stack that her 52.04 s battle skill's follow-up needed), at most TAIL_CUT_ROUNDS. A cut whose replay loses
+ * the landing of a logged hit the run before it had (loggedShown) is undone and the tail kept (`needed`): the tail's
+ * effects are in the log (round 21; 9847: Liino's battle skill at 75.44 s, the volley timer it opens at its frame 45, after
+ * its last logged projectile, whose volleys the log has from 78.36 s). Returns the last run, its casts, the cuts and what
+ * the guards kept on that run (TAILKEPT).
+ */
+export function cutTails(first: ReplayRun, casts: readonly ReplayedCast[], rerun: (casts: readonly ReplayedCast[]) => ReplayRun, fx: LogFixture, placement: Placement, reading: string): { main: ReplayRun; casts: readonly ReplayedCast[]; cuts: Map<ReplayedCast, number>; kept: TailKept[] } {
+  let main = first;
+  let list = casts;
+  const cuts = new Map<ReplayedCast, number>();
+  const needed = new Map<ReplayedCast, LogHit>();
+  for (let round = 0; round < TAIL_CUT_ROUNDS; round++) {
+    const next = [...tailCuts(main, fx, placement, reading, undefined, needed)].sort((a, b) => a[1] - b[1])[0];
+    if (!next) break;
+    const [cast, frame] = next;
+    const cut = { ...cast, cutAt: frame };
+    const tried = list.map((c) => (c === cast ? cut : c));
+    const run = rerun(tried);
+    const shown = loggedShown(run, fx);
+    const lost = [...loggedShown(main, fx)].filter((i) => !shown.has(i) && (run.brokenAt === null || frameOf((fx.hits[i] as LogHit).t) < run.brokenAt)).sort((a, b) => a - b)[0];
+    if (lost !== undefined) {
+      needed.set(cast, fx.hits[lost] as LogHit);
+      continue;
+    }
+    cuts.set(cut, frame);
+    list = tried;
+    main = run;
+  }
+  const kept: TailKept[] = [];
+  // Casts the round limit left uncut, said as such (TAILKEPT `rounds`).
+  for (const [cast, frame] of tailCuts(main, fx, placement, reading, kept, needed)) {
+    kept.push({ cast, frame, guard: "rounds", why: `every guard passed, but the cut's ${TAIL_CUT_ROUNDS} rounds (one replay each) were used: not cut` });
+  }
+  return { main, casts: list, cuts, kept };
 }
 
 /** An operator's basic attacks the attack input repeats: not a finisher (skillSpecification 8) or a dive (6), nor a follow-up. */

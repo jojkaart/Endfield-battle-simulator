@@ -32,7 +32,7 @@ import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tic
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
-import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt, tailCuts } from "./replayrun.ts";
+import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, type TailKept, cutTails, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { type CheckSide, awayWindows, checkSide, killPurges, loggedNames, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
@@ -464,23 +464,12 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     main = run("never");
   }
   // Engine assumption unlogged-tails: with `cut`, a cast whose later landings the log has none of ends after its last
-  // logged one (tailCuts), and the replay is made again.
-  // The earliest first, the replay made again after each (a cut changes what follows: 0c14's Rossi at 35.40 s takes the
-  // Vulnerable stack that her 52.04 s battle skill's follow-up needed), at most TAIL_CUT_ROUNDS.
+  // logged one (replayrun.ts cutTails: one cast at a time, the replay made again after each, a cut undone where its
+  // replay loses a logged hit's landing). What the guards kept on the run the cuts ended with: TAILKEPT lines.
   const tailsReading = readingOf(opts.assume, "unlogged-tails");
-  const cuts = new Map<ReplayedCast, number>();
-  for (let round = 0; main && round < TAIL_CUT_ROUNDS; round++) {
-    const next = [...tailCuts(main, fx, placement, tailsReading)].sort((a, b) => a[1] - b[1])[0];
-    if (!next) break;
-    const [cast, frame] = next;
-    const cut = { ...cast, cutAt: frame };
-    cuts.set(cut, frame);
-    casts = casts.map((c) => (c === cast ? cut : c));
-    main = run("never");
-  }
-  // What the guards kept on the run the cuts ended with (TAILKEPT: the round-18 record of a rule that declines to act).
-  const tailsKept: TailKept[] = [];
-  if (main) tailCuts(main, fx, placement, tailsReading, tailsKept);
+  let cuts = new Map<ReplayedCast, number>();
+  let tailsKept: TailKept[] = [];
+  if (main) ({ main, casts, cuts, kept: tailsKept } = cutTails(main, casts, (list) => run("never", list), fx, placement, tailsReading));
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops, the views' list too (castassembly.ts replayStops): the placed casts' miss an

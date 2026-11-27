@@ -106,8 +106,12 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
   it("a landing the fixture marks absent from the log is left out of the replay's totals (b7b3: Last Rite's third ultimate slash)", async () => {
     const { engineHits, engineReport, logBuffReplay } = await import("../packages/logs/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
-    const replay = logBuffReplay(data, fx);
+    // Since round 21 the tail cut ends her ultimate after its second slash by default (unlogged-tails, its fight's-end
+    // guard at 0.5 s: the slash at 16.77 s, the log's hits to 18.02 s), as the fixture's note reads it; with the tail
+    // kept the replay lands it and `absent` leaves it out.
     const LR = "chr_0026_lastrite";
+    expect(logBuffReplay(data, fx).replay.hits.some((h) => h.operator === LR && h.hitId === "slash_3")).toBe(false);
+    const replay = logBuffReplay(data, fx, undefined, { assume: { "unlogged-tails": "kept" } });
     expect(replay.replay.hits.some((h) => h.operator === LR && h.hitId === "slash_3")).toBe(true);
     const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
     expect(report.totals.absent).toEqual({ leftOut: 1, unmatched: [] });

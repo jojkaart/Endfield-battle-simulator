@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 187 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 188 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -51,6 +51,68 @@ without an assumption: the data's handler is enabled and unconditional.
 **Left:** statuses per target as designed (9c6e's second Wanderer's Nature bursts); 6339's 25.03–28.47 s Combustion
 ticks against its 29.26 s combo hit; Si's ink phantom; the DEATH lines list only the moves (decisionsview.ts, the
 other agent's file: friction report point 2).
+
+## 2026-11-27: Tail cuts: what the shown-hit guard stands for
+
+Goal: the backlog's accuracy entry "A tail-cut test better than the own-landing pass"
+(docs/friction/2026-11-27-backlog-after-round-20.md): replayrun.ts tailCuts' "a logged hit of its operator's casts no
+other cast holds" guard passed on the cast's own last landing, logged a fraction of a ms into its frame (143 of the
+development logs' 217 TAILKEPT lines, `[shown-own]`); making it exact had cost c4f3 −66 and 9847 −21 plain
+(docs/tried/2026-11-27-tail-own-landing.diff).
+
+What the kept tails supplied (cli-ab `--hits-zones` with the exact guard against the tree, then `zmdlogs replay`):
+- **c4f3** (all 78 moved hits after 109 s): one cast, Pogranichnik's battle skill at 108.08 s. Its logged hit at 109.01 s
+  carries hit_2's value (29,561), the replay's first hit is 23,848; the tail's hit_2 at 109.33 s sets off the Breach
+  the log has at 109.01 s, and its Fervent Morale stack and weapon's team ATK, which the 78 later hits read. The other
+  three shown-own tails in c4f3 (basic attacks) move nothing.
+- **9847** (22 hits, 78–114 s): Liino's battle skill at 75.44 s. Its volley timer opens at the cast's frame 45 (76.94 s),
+  after its last logged projectile (75.83 s); cut there, the volleys the log has from 78.36 s and every 10–12 s after
+  never come. Not a landing of the cast: the timer is a frame action, the volleys a kit buff's hits.
+- Nothing later needed the rest: of the 143, 106 are cut now (TAILCUT 152 → 244 over 61 logs), most of them basic
+  attacks' last hits; the rest are kept by another guard or left by the round limit.
+
+Done (e7d8e08, c542358):
+- The cast's own logged landings are no evidence. In their place: `landed` (a logged hit no cast holds with a tail
+  landing's event within 16 frames: the free match's reach), `status` (a logged status hit of its operator whose
+  nearest status landing of its kind the tail set off: c4f3's Breach; d572's Mi Fu battle skill Crushes at 125.40 and
+  144.84 s),
+  `shown-free` (as before, without the own pass), `effect` (as before) and `needed`: replayrun.ts cutTails (the loop,
+  moved out of buffreplay.ts replayKitBuffs) undoes a cut whose replay loses a logged hit's landing (loggedShown) and
+  keeps the tail. `needed` caught 9847's volleys and 7b54's Laevatain attack 5 at 46.47 s, whose hit_2 breaks the
+  Stagger and so times Arcane's lasers (the log's at 47.62 s).
+- `fight-end` at 0.5 s (TAIL_END_MS; was TAIL_NEAR_MS, 1.5 s): the kill drops only what comes after it. 0eef's Liino
+  combo hit2 at 8.80 s (the team's hits logged to 10.03 s) and 79cc's Ardelia attack3 projectiles at 54.47 s (to
+  55.95 s) are cut; measured as a variant, no other log's damage moved.
+- TAILKEPT `rounds`: casts the 8-round limit leaves uncut, which were silent before (45 casts in 10 logs; d4fb 11,
+  d572 9, 458b 7).
+
+Measured after merging main at fa2c2ad (the target-deaths round; `npm run measure -- --base fa2c2ad`) and the
+scoreboard (`npm run snapshots:update`): development plain 84.3% (unchanged; the exact guard alone was 83.7%), mean
+|damage error| 1.3 → 1.2% (15 better, 4 worse); verified 1.6 → 1.5% (0eef 2.3 → 1.3%, 4e5e −3.0 → −3.3%); earlier
+pending plain 84.4% (abfd 414 → 412), 1.2% (6 better, 3 worse); several targets plain 71.6 → 72.1% (7b54 117 → 121,
+−2.3 → −1.0%), |damage error| 4.6 → 7.6% (6339 +0.1 → −10.4%); hold-out plain 82.5%, |damage error| 5.9 → 5.9% (4
+better, 4 worse, the worse ones in basic attacks' totals). Against 14fe159 the same but for several targets (6.3 →
+9.4%, 6339 −6.3 → −16.8%) and the hold-outs (5.8 → 5.9%). Replay-only share: development 1.1 → 0.9%, hold-outs 2.4 →
+2.3%, several targets 16.4 → 13.1%; by operator Liino 8.5 → 5.6% (0eef no longer her largest), Laevatain 9.0 → 6.5%.
+A test fixed: tests/logcasts.test.ts's
+b7b3 `absent` case (Last Rite's third slash is now cut, as the fixture's note reads it; the `absent` path is tested
+under `unlogged-tails` `kept`).
+
+Decisions and why:
+- Worse logs are under-predicted fights whose unlogged tails had cancelled part of it: 6339's Laevatain finisher hit_2
+  at 21.60 s (105,356, 10.2% of the fight, no log line; at fa2c2ad it offset the log-only rest to +0.1%, its first
+  hit the slug's kill at 20.37 s, Camille's Vesperwings moving at 20.60 s), db87's Laevatain ult_attack2 at 38.57 s (38,477), 4e5e's,
+  a9d7's, de6a's and d774's basic tails; the same shape as `cut-all`'s adoption (docs/design/assumptions.md). abfd −2:
+  two logged Si attack-4 hits at 64.10 s, pinned to an attack 4 her next one cut at 64.07 s, had matched the later
+  cast's tail 0.33–0.43 s on; the cut is right, the interrupted cast is the open part (open-problems).
+- The counterfactual check rather than more static guards: a tail's effects reach the log by many paths (a frame
+  action's timer, a status, a Stagger break, SP), and the replay already makes the cut run; a rejected cut costs one
+  round. 16 rounds instead of 8 measured worse (development 1.2 → 1.3%, no plain change, 135 against 115 s): kept 8.
+- loggedShown pairs no landing once only (looser than buffreplay.ts's free match); kept so, as it errs towards cutting
+  only where the log has nothing near (the friction report's point 1 for a shared pairing).
+
+Still open: a tail whose effect shows only in later hits' values (a kit stack, a buff the log doesn't list);
+several independent tails per replay (the round limit's 45 casts); abfd's interrupted attack 4.
 
 ## 2026-11-27: Friction round 20: guards that say what they cite, tried diffs by function, the build screen by the check's tolerance
 
@@ -359,35 +421,3 @@ accuracy list, not this round.
 
 Checks: `npm run snapshots:update`: no log's verdicts moved, nothing changed; team-ab identical at both engine
 changes (the move, and the replay-only firing record).
-
-## 2026-11-27: The break's open points: the hold's place, combos, the Stagger end
-
-**Goal:** the open points of the hold at a Stagger break (docs/open-problems.md "The hold at a Stagger break"): where
-the hold sits against the breaking hit's logged ms, breaks inside a combo's slow-down, a `stagger-recovery` refit,
-and the two hold-outs whose ~30 hits went plain → assumed.
-
-**Done:**
-- **The hold's place** (scripts/probes/stagger/break-place.ts): of the 22 breaks a clock reads, 16 are late after the
-  ms only; 9090 128.92 s before it only, c4f3 33.58 s and 5082 44.43 s on both sides. The log stamps a breaking hit at
-  its hold's start, inside it or at its end. No logged moment falls inside a hold, so the next moment bounds it:
-  engine assumption `break-hold-place`, reading `moments` (holds.ts breakHoldStarts, a replay step that holds from
-  the hold's start: replaysteps.ts, clock.ts breakHold `placed`), registered with the default `ms`.
-- **Combos:** the hold applies inside a combo's slow-down, unscaled (a7a7 48.14 s, f879 57.12 s, c83c 55.83 s:
-  +458–501 ms after the ms); the three with hits 0.13–0.25 s after are the stamped-inside case.
-- **The Stagger end:** scripts/probes/stagger/stagger-end-fit.ts over `zmdlogs stagger`'s 38 bracketed runs: the
-  engine's own end +0.32 s past the bracket's middle at the median; −0.3 s centres it, the mean |error| 2.74 → 2.72 s.
-- Two placement diffs measured and kept in docs/tried (logcasts.ts is another agent's file): the pass-2 stops with the
-  breaks' holds (hold-outs unchanged), and a cast's start held back by them without a cast event (development 3
-  better, hold-outs 2 worse, plain −12).
-
-**Scoreboard:** unchanged (the defaults are the old behaviour; `npm run measure` with `moments` as the default:
-development plain 84.2% either way, 4d60 +2, 9090 −2, d4fb −1; hold-outs unchanged).
-
-**Decisions:** `moments` not the default: flat on every group, and in 9090 it holds Liino's two volleys due at
-128.57–128.60 s (logged at 128.50 s, the replay's clock 0.07–0.10 s late there) past their landing
-(tests/buffreplay-typhoeus.test.ts). `stagger-recovery` stays `2s`: the shift that centres the median is within its
-error. No simulated fight moved (the new reading is the replay's only), so no team-ab.
-
-**Ruled out for the hold-outs:** the hold's start as the moments place it; the placement's stops with the breaks'
-holds; the held cast starts made them worse. Under `break-hold=none` they lose one INSIDE decision: an action the hold
-lengthens past the next press (as 3aa6's breaker logged inside its hold, fc63's combo across a break) is the lead.

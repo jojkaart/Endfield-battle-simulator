@@ -276,6 +276,9 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
   guard stands for (did the tail's effects come: a buff, a status, an SP or energy step the log shows after the cut,
   as the `effect` guard reads a buff run) in place of the ms comparison; with 0eef a 0.5 s fight's-end guard on top
   (the diff's header: 0eef 2.3 → 1.3%). Moves verdicts: measure, snapshots:update.
+  Closed by worktree-agent-a6c96ce9f410159ac, e7d8e08 and c542358: the own landing is no evidence; `landed`,
+  `status` and cutTails' `needed` (a cut whose replay loses a logged hit's landing is undone) read what the pass stood
+  for, the fight's end at 0.5 s (docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md).
 - **A shielded target's landing** (docs/friction-done/2026-11-27-several-targets.md point 3): in 6339's kill gaps the
   next slug takes Camille's Vesperwings as the log lists, but no infliction (her weapon's Heat DMG the replay applies):
   a shielded slug takes 0 damage and no status while kit buffs on hit still apply. TimelineScenario.enemyAway is all
