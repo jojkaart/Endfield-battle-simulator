@@ -410,7 +410,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
             const p: PendingHit = {
               kind: "hit", frame: frame + f, clock, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index, ...(nested.length ? { nested } : {}) },
               // A replayed fight's record of the firing (LandedHit.fired): nothing reads it to decide.
-              ...(ctx.loggedCrits ? { fired: { trigger: t.id, frame: e.frame, event: firingLabel(e) } } : {}),
+              ...(ctx.replayed ? { fired: { trigger: t.id, frame: e.frame, event: firingLabel(e) } } : {}),
               ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}), ...(h.fixedDamage !== undefined ? { fixed: evaluate(h.fixedDamage, ec()) } : {}),
               // A tick's hit with an ATK snapshot keeps the attacker side its buff took when applied.
               ...(h.atkSnapshot && e.type === "buffTick" && e.snapshot ? { snapshot: e.snapshot } : {}),

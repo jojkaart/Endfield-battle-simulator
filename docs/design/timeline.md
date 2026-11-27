@@ -414,6 +414,19 @@ the battles it's over and their seeds, the crit mode played, `meanError`,
 Breakdowns and event traces are opt-in at run time (search only needs
 totals), but always produced in tests.
 
+**A replayed fight's records.** The log check's replay sets
+`TimelineContext.replayed` (from `TimelineScenario.loggedCrits`, or
+`replayed` for a replay without logged crits); a simulation never does. Every
+field that only records reads that one flag, so the search's states stay byte
+for byte the same (planning/search.ts KeyRules makes each new PendingHit field
+say it is a record): `LandedHit.facts` (the enemy and the buffs at a landing),
+`PendingHit.fired` / `LandedHit.fired` (the firing behind a trigger's landing,
+`zmdlogs followups`) and `keepInputs` (`LandedHit.inputs`). One rule reads it
+too: a replay leaves a cast's random landed counts to replayCast, which lands
+the ones the log shows (casting.ts landedCounts). A log-driven event no cast
+makes (a target's death) goes in through `replayEvent` (drivers.ts), its
+logged landings pinned by `pinLanding`, the one pin rule replayCast uses too.
+
 **Per-operator contribution** of buffs and debuffs uses LMDI (log-mean
 Divisia) attribution, as End-DPScope does: it splits each hit's damage
 exactly and additively across the operators whose effects contributed.

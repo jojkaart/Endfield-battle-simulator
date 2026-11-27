@@ -627,6 +627,13 @@ export interface Placement {
   readonly realign?: readonly RealignRecord[];
 }
 
+/**
+ * The placement's groups of an operator: one per kit skill, and one per kit trigger with hits (`trigger:<id>`, kind
+ * null). A trigger group is placed for its hits' pairing only (their slots and values): the replay never casts it, it
+ * lands the hits from the trigger's event and matches them to the log by time, so its landings are never pinned
+ * (castassembly.ts replayedCasts says so on a NOLAND line; round 20, the Vesperwings report point 2). A trigger hit
+ * given a log key therefore makes such a group by design.
+ */
 function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture): Group[] {
   const team = fx.team;
   const kit = effectiveKit(data, build);

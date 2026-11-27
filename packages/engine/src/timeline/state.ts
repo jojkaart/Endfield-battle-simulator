@@ -86,6 +86,8 @@ export interface TimelineScenario {
    * hit event says so to crit triggers. Its LandedHit records whether the log decided it (`loggedCrit`).
    */
   readonly loggedCrits?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly crit: boolean; readonly ref?: string }[];
+  /** A replayed fight without logged crits (TimelineContext.replayed; loggedCrits sets it too). */
+  readonly replayed?: boolean;
   /**
    * A logged fight's effects no kit models (the log check's simulation of the logged casts only): a kit hit of
    * `operator` with `event` among its events landing at `frame` (±1) takes these modifiers on top of the timeline's.
@@ -536,8 +538,15 @@ export interface TimelineContext {
   readonly loggedCritRefs?: ReadonlyMap<string, boolean>;
   /** TimelineScenario.loggedModifiers by `operator|event`. */
   readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
-  /** Landings keep their inputs (TimelineScenario.keepInputs, or a replayed fight's loggedCrits). */
+  /** Landings keep their inputs (TimelineScenario.keepInputs, or a replayed fight). */
   readonly keepInputs?: true;
+  /**
+   * A replayed fight (the log check's: TimelineScenario.loggedCrits or `replayed`): the one condition every
+   * record-only field reads (LandedHit.facts, PendingHit.fired, keepInputs) and the replay's own rules (landedCounts
+   * left to replayCast). Round 20 (round 19's own report point 3): they read `loggedCrits` as a stand-in, so a replay
+   * without logged crits would have lost them. docs/design/timeline.md lists the record-only fields.
+   */
+  readonly replayed?: true;
   /** The team's kit triggers on crits (`on: {event: hit, crit}`) with their owners: with crit `distribution`, the hits they could fire on roll their crit (landing.ts). */
   readonly critListeners?: readonly { readonly owner: string; readonly trigger: KitTrigger }[];
 }

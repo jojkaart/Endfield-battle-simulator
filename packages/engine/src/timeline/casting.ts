@@ -45,11 +45,11 @@ function plannedLandings(own: readonly PendingHit[], planned: readonly PendingJu
  * distributions"), out of the L planned ones: at the expected count every one lands, marked with L (landing.ts
  * scales its damage and Stagger by E[N] / L); with rolled crits N is drawn from the observed counts and N of the L
  * chosen uniformly (stream `landed`); TimelineOptions.landedCounts takes the fewest or most, the first landings.
- * A logged fight's replay (loggedCrits) leaves them to replayCast, which lands the ones the log shows.
+ * A logged fight's replay (TimelineContext.replayed) leaves them to replayCast, which lands the ones the log shows.
  */
 function landedCounts(ctx: TimelineContext, st: TimelineState, skill: KitSkill, pending: readonly PendingHit[], planned: readonly PendingJump[], operator: string, index: number): { state: TimelineState; pending: readonly PendingHit[] } {
   const hits = skill.hits.filter((h): h is KitHit & { landedCount: LandedCount } => h.landedCount !== undefined);
-  if (hits.length === 0 || ctx.loggedCrits) return { state: st, pending };
+  if (hits.length === 0 || ctx.replayed) return { state: st, pending };
   const potential = (ctx.builds.get(operator) as Build).potential;
   const how = ctx.scenario.options.landedCounts ?? (ctx.scenario.options.crit === "rolled" ? "rolled" : "expected");
   let state = st;

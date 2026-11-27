@@ -1082,7 +1082,10 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
   for (const [h, p] of [...placement.hits].sort((a, b) => a[0].t - b[0].t)) {
     const d = ofCast(p.cast);
     if (!d) {
-      unpinned?.set(String(hitIndex.get(h)), `no pinned landing: its placed cast (${p.cast.skillId} from ${(p.cast.start / 1000).toFixed(2)} s) isn't one the replay casts (distinctCasts)`);
+      // A trigger group's "cast" (logcasts.ts groupsOf `trigger:<id>`) is placed for the trigger's own pairing and never
+      // cast (round 20, the Vesperwings report point 2: its NOLAND line read like a placement error).
+      const trigger = p.cast.group.startsWith("trigger:");
+      unpinned?.set(String(hitIndex.get(h)), trigger ? `a trigger's landing (${p.cast.group}): the replay lands it from the trigger's event and matches it by time, never pinned from a placed cast` : `no pinned landing: its placed cast (${p.cast.skillId} from ${(p.cast.start / 1000).toFixed(2)} s) isn't one the replay casts (distinctCasts)`);
       continue;
     }
     // A delayed hit's damage (KitHit.enemyDelay) lands whatever comes after its cast: it doesn't show the cast going on.

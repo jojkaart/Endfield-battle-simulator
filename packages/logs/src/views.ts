@@ -15,7 +15,8 @@
 //   whether a teammate mismatches at the same ratio nearby (team-wide, so not this operator's kit).
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
-import { effectiveKit, FPS, parseReactionEvent, type GameData } from "@efsim/engine";
+import { effectiveKit, FPS, kitHitEntries, parseReactionEvent, type GameData } from "@efsim/engine";
+import { NO_LANDING } from "./replaykeys.ts";
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
@@ -317,6 +318,11 @@ export function stopsView(data: GameData, logs: readonly { readonly short: strin
 }
 
 
+/** Every log key the team's kits list: their skills' and triggers' hits' events (kitHitEntries). */
+export function kitKeys(data: GameData, fx: Pick<LogFixture, "team">): Set<string> {
+  return new Set(fx.team.flatMap((b) => kitHitEntries(effectiveKit(data, b)).flatMap((e) => e.hit.events)));
+}
+
 /**
  * `zmdlogs replay`: the replay of a fight in time order: its landings (with the logged hit each stands for, or
  * "replay only"), logged hits without a landing and why, failed and missed casts, Stagger windows, and the windows of
@@ -346,11 +352,15 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     if (!inWindow(f, b.t) || !b.replay.some((h) => mine(f, h.operator))) continue;
     lines.push({ t: b.t, order: 1, text: decisionText(batchDecision(data, b)) });
   }
-  // With the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding).
+  // With the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding); a key no kit
+  // hit of the team lists says so (round 20, the twins report point 3: Camille's normal_skill_abilityrange, her
+  // Vesperwings' move, read as a placement error until `gamedata who`): a kit gap, for packages/data.
+  const keys = kitKeys(data, fx);
   for (const [h, why] of missing) {
     if (!inWindow(f, h.t) || !mine(f, h.operator)) continue;
     const drop = replay.droppedLanding(h);
-    lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}${drop ? `: ${drop}` : ""}` });
+    const gap = why === NO_LANDING.notPlaced && !parseReactionEvent(h.event) && !keys.has(h.event) ? `: a key no kit hit or trigger hit of the team lists (a kit gap, not a placement error: \`efsim gamedata who ${h.event}\` names what casts it)` : "";
+    lines.push({ t: h.t, order: 3, text: `NOLAND ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value}: ${why}${drop ? `: ${drop}` : ""}${gap}` });
   }
   // The replay's own decisions (decisionsview.ts replayDecisions, from BuffReplay's records): SKIP the logged casts it
   // didn't make and why, TAILCUT those it ended after their last logged landing, FAILED / MISSED, INFER the hitless
