@@ -878,7 +878,7 @@ export const ENEMY_AWAY_MS = 6000;
 const AWAY_EDGE_MS = 300;
 
 /** The fight's stretches between consecutive logged hits of ENEMY_AWAY_MS or more (ms). */
-export function awayWindows(fx: LogFixture): { readonly from: number; readonly to: number }[] {
+export function awayWindows(fx: Pick<LogFixture, "hits">): { readonly from: number; readonly to: number }[] {
   const ts = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
   const out: { from: number; to: number }[] = [];
   for (let i = 1; i < ts.length; i++) if ((ts[i] as number) - (ts[i - 1] as number) >= ENEMY_AWAY_MS) out.push({ from: ts[i - 1] as number, to: ts[i] as number });
