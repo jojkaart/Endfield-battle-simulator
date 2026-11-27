@@ -45,6 +45,16 @@ cancelled over-predictions elsewhere (d774's 103.28 s Empyrean cast, open). Typh
 1.4 → 0.8%; Zhuang Fangyi's plain 86.7 → 87.0%, mismatch 3.7 → 3.4%.
 team-ab against 896bb86: Estella, Si, Akekuri, Arcane unchanged (both energies); Typhoeus's team sustained full −0.38%,
 zero +0.44% (within one sd), its zero bot −4.0%.
+**The bot's −4.0% is the Sign reading's, and a correct consequence** (`efsim rules … --seeds 1 --assume
+typhoeus-sign-cooldown=shared` gives the base's 58,952 exactly; no Zhuang Fangyi in the team, so not the floor): the bot
+(reaction 0) is one deterministic 300 s run. Its presses are identical to 137.17 s; there Arcane's Nature burst at
+136.43 s and Typhoeus's at 136.57 s both give a Sign, her 8th one shot sooner, so her combo window opens and rule 3
+casts the combo at 137.17 s instead of after her 3rd shot at 137.43 s (one shot fewer, Perlica's ultimate 0.26 s
+sooner). The run then drifts: damage is the same to 120 s, −3.7% in 120–180 s, unchanged 180–240 s, −14% in 240–300 s,
+where Liino's ultimate at 276.97 s no longer comes before the fight's end (Liino −21%, Typhoeus −3.6%). The same pair
+at 75.87 / 76.00 s changes nothing (her Signs were already at 8). The bot choosing differently there is the mechanism
+(the rule list casts the combo as soon as it opens); the −4% is one path's fight-end luck, not the reading's value: the
+32-seed means move +0.44 / −0.38%, within one sd (scratch/bot.ts, not kept: a single-run trace).
 
 **Decisions:** `by-source` the default: the one log that decides between the readings decides for it, and nothing in
 the data says the tag is the enemy's. The floor as a kit trigger on the cast at frame 0, the data's own clip.

@@ -76,6 +76,11 @@ cause:
 - **A counted resource one short (kit side; fixed).** Typhoeus's Signs (1d91: a combo cast with 7, its 4th shot a
   plain one, no burst; kit assumption `typhoeus-sign-cooldown`) and Zhuang Fangyi's Sunderblades (d774 70.46 s: 5
   blades, the log's 8; the 3 s floor at each battle skill's frames 0–3) — docs/journal/2026-11-27-05-log-only-landings-typhoeus-s-signs-zhuang-fangyi-s.md.
+  In the simulation, the Sign reading moves Typhoeus's team's zero-energy bot (one deterministic 300 s run) by −4.0%:
+  at 136.43 / 136.57 s Arcane's and her bursts both give a Sign, her combo is cast one shot sooner (137.17 s, rule 3),
+  and the drifted run ends without Liino's 276.97 s ultimate (240–300 s −14%; the same to 120 s). A consequence of the
+  mechanism on one path, not a sign the reading is wrong: the 32-seed means move +0.44% (zero) and −0.38% (full),
+  within one sd; under `shared` the bot is the base's exactly (the journal entry has the trace).
 - **Arts Bursts and Combustion ticks 0.55–0.85 s later in the game than in the replay** (twin like: 15 bursts, 6
   ticks): a stop starting 0–300 ms after the replay's burst is due holds the game's about half the time, both ways at
   the same offsets (scripts/probes/bursts/burst-before-stop.ts: 13 held, 16 not, 11 unclear; Wulfgard's combo at
