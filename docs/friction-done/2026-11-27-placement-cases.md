@@ -54,3 +54,16 @@ main 107766a, beside an agent on status pairing.
   caught that Zhuang Fangyi's ranges moved with Laevatain's fix, and measure's `--split files` isolated the drivers.ts
   part as the hold-out's loss.
 - `efsim gamedata tree <skill>` answered the entity question (the Magma Fragment's own timeline) directly.
+
+## Outcome (round 18)
+
+- 1 (A placement's "why this slot" isn't printed for a joined landing): done: PlacedHit.joined (span, to come, paced,
+  same ultimate, delayed, reach; the elapsed and due ms), printed by `zmdlogs casts --choices` where a landing joined
+  more than 1 s past its slot's frame (399 HIT lines over the development logs, 204 of them `to come`).
+- 2 (A hold-out-only regression can't be traced, so a data-right change is dropped): done but the skill kind:
+  measure counts the moved hold-outs' replay decision lines by kind on both sides, net per direction (decisionLines),
+  and per `--split` part how many of the whole change's moved hold-outs it moves the same way. The casts' skill kind
+  isn't printed: a split per mechanism class is on docs/design/tests.md's "never" list.
+- 3 (Stagger-break holds have no view): done but holds --steps (carried: 2026-11-27-backlog-after-round-18.md point
+  3): `zmdlogs clocks` marks the clocks a logged Stagger break falls inside and sums them apart (cast clocks: 40 rows,
+  median 186 ms late, against 10 ms without); the hold's per-frame steps are left.

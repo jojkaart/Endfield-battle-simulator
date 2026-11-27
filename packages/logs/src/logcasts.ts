@@ -554,6 +554,37 @@ export interface PlacedHit {
   readonly at?: ReadonlyMap<KitHit, number>;
   /** The same landing on another enemy (a fight against several in a single-target log): the logged hit whose landing it shares. */
   readonly sameAs?: LogHit;
+  /** Why it joined a cast placed before it rather than open one (absent: it opened its cast, or the realignment moved it): PlacedJoin. */
+  readonly joined?: PlacedJoin;
+}
+
+/**
+ * Which rule of placeWith joined a logged landing to a cast placed before it (round 18, the placement-cases report
+ * point 1: f879's 94.71 s explosion joined its cast 7.6 s late, and which of six conditions did it took a read of
+ * placeWith): `span` within the cast's landings' span, `to come` slots to come within the skill's whole action, `paced`
+ * a detached series' next landing at its gap, `same ultimate` within an ultimate's action, `delayed` a delayed hit's
+ * landing (joinDelayed), `reach` a key's first landing within an earlier cast's reach (joinable). `elapsed` the world
+ * ms from the cast's first landing (from its start: delayed, reach), `due` the slot's kit frame from the same point (ms;
+ * absent where the key's slots are unknown). `zmdlogs casts --choices` prints it where elapsed passes due by more than
+ * CAST_SLACK_MS.
+ */
+export interface PlacedJoin {
+  readonly by: "span" | "to come" | "paced" | "same ultimate" | "delayed" | "reach";
+  readonly elapsed: number;
+  readonly due?: number;
+}
+
+/**
+ * A cast's landings of one key that realignByValue looked at and left on their slots by time, and why (round 18, the
+ * replay-only report point 3: 6339's final, skipped as "every value of unknown crit", found by a stderr print), or
+ * moved (`realigned`): `zmdlogs casts --choices`' REALIGN lines. Only keys with two landings or more and slots to spare.
+ */
+export interface RealignRecord {
+  readonly cast: LoggedCast;
+  readonly key: string;
+  readonly landings: number;
+  readonly why: string;
+  readonly realigned: boolean;
 }
 
 export interface Placement {
@@ -563,6 +594,8 @@ export interface Placement {
   readonly merge?: ReadonlyMap<string, number>;
   /** What the in-turn rule decided for each ultimate it looked at (inTurn; its last run's: `zmdlogs placement --choices`). */
   readonly inTurn?: readonly InTurnRecord[];
+  /** What realignByValue decided for each cast's key it looked at (placeWith's own pass). */
+  readonly realign?: readonly RealignRecord[];
 }
 
 function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture): Group[] {
@@ -899,6 +932,7 @@ function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly Logg
 function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): Placement {
   const hits = new Map<LogHit, PlacedHit>();
   const casts: LoggedCast[] = [];
+  const realign: RealignRecord[] = [];
   const sorted = [...fx.hits].sort((a, b) => a.t - b.t);
   const teamGroups = new Map(fx.team.map((b) => [b.operator, groupsOf(data, b, computeStats(data, b), fx)]));
   const controlled = controlEvidence(fx, teamGroups);
@@ -1030,7 +1064,8 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           cur.last = h;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;
-          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}) });
+          const joined: PlacedJoin = { by: sameUltimate ? "same ultimate" : elapsed <= cur.span + CAST_SLACK_MS ? "span" : toCome ? "to come" : "paced", elapsed, ...(slot && head ? { due: msOf(slot.frame - head.frame) } : {}) };
+          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), joined });
           continue;
         }
         const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
@@ -1085,7 +1120,9 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
         current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: s, exact: exactSlots(g, h.event), scales: g.scales, ranges: g.ranges });
-        placed.set(h, { cast, index: firstIndex, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}) });
+        // A landing joined to a cast another key opened (joinDelayed, joinable): from the cast's start, against its frame.
+        const via: PlacedJoin | undefined = joined === null ? undefined : { by: late ? "delayed" : "reach", elapsed: worldMs(cast.start, h.t, stops), ...(first ? { due: msOf(first.frame) } : {}) };
+        placed.set(h, { cast, index: firstIndex, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}), ...(via ? { joined: via } : {}) });
       }
       return placed;
     };
@@ -1108,11 +1145,11 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       const g = groups.find((x) => x.id === c.group);
       const { beforeStop: _b, fromEvent: _f, ...rest } = c;
       return g ? { ...rest, ...startFor(g, h, slot) } : null;
-    });
+    }, realign);
     for (const [h, p] of placed) hits.set(h, p);
     casts.push(...new Set([...placed.values()].map((p) => p.cast)));
   }
-  return { hits, casts };
+  return { hits, casts, ...(realign.length ? { realign } : {}) };
 }
 
 /**
@@ -1263,6 +1300,7 @@ function realignByValue(
   scalesOf: (c: LoggedCast) => (k: KitHit) => readonly number[] | undefined,
   stops: readonly TimeStop[],
   restart: (c: LoggedCast, h: LogHit, slot: Slot) => LoggedCast | null,
+  record: RealignRecord[] = [],
 ): void {
   const byCast = new Map<LoggedCast, Map<string, LogHit[]>>();
   for (const [h, p] of placed) {
@@ -1276,18 +1314,29 @@ function realignByValue(
     for (const [key, hits] of keys) {
       const s = slotsOf(cast, key);
       const n = hits.length;
-      if (!s || n < 2 || n >= s.length || s.some((x) => x.hits.some((k) => k.landedCount !== undefined))) continue;
+      if (!s || n < 2 || n >= s.length) continue;
+      const note = (why: string) => record.push({ cast, key, landings: n, why, realigned: false });
+      if (s.some((x) => x.hits.some((k) => k.landedCount !== undefined))) {
+        note("a slot of a counted landing (landedCount): not by value");
+        continue;
+      }
       const scales = scalesOf(cast);
       // Each slot's multipliers (its alternatives', each of a hit's own: nominalScales); a slot with a hit of none leaves
       // the values undecided.
       const slotScales = s.map((x) => x.hits.map((k) => scales(k)));
-      if (slotScales.some((v) => v.some((m) => m === undefined))) continue;
+      if (slotScales.some((v) => v.some((m) => m === undefined))) {
+        note("a slot whose hit has no multiplier: the values undecided");
+        continue;
+      }
       const ms = (slotScales as (readonly number[])[][]).map((v) => v.flat());
       const all = [...new Set(ms.flat())];
       if (Math.max(...all) / Math.min(...all) <= VALUE_TOLERANCE) continue; // the values can't tell the slots apart
       const list = [...hits].sort((a, b) => a.t - b.t);
       const now = list.map((h) => (placed.get(h) as PlacedHit).index);
-      if (now.some((j, i) => j >= s.length || (i > 0 && j <= (now[i - 1] as number)))) continue;
+      if (now.some((j, i) => j >= s.length || (i > 0 && j <= (now[i - 1] as number)))) {
+        note("its landings' slots aren't in time order");
+        continue;
+      }
       // A crit's value, or a hit's whose crit the log doesn't say, isn't compared (a value of unknown crit fitting a slot
       // up to a crit's factor above it measured worse on a hold-out's total: docs/tried/2026-11-27-unknown-crit-slots.diff).
       const value = (h: LogHit) => (h.crit === false ? (h.uncapped ?? h.value) : null);
@@ -1295,7 +1344,10 @@ function realignByValue(
         const v = value(h);
         return v !== null && v > 0 ? all.map((m) => v / m) : [];
       });
-      if (refs.length === 0) continue;
+      if (refs.length === 0) {
+        note("no landing of a known non-crit value (each a crit or of unknown crit): nothing to scale by");
+        continue;
+      }
       const off = (i: number, j: number, ref: number) => {
         const v = value(list[i] as LogHit);
         return v === null || v <= 0 || (ms[j] as number[]).some((m) => Math.abs(Math.log(v / (m * ref))) <= tolerance) ? 0 : 1;
@@ -1348,14 +1400,21 @@ function realignByValue(
       const clean = list.filter((h) => !stops.some((x) => msOf(x.start) < h.t && msOf(x.start + x.scales.length) > (list[0] as LogHit).t)).length;
       const cleanCost = (f: { at: readonly number[] }) => f.at.slice(0, clean).reduce((a, j, i) => a + Math.abs((w[i] as number) - msOf((s[j] as Slot).frame - (s[f.at[0] as number] as Slot).frame)), 0);
       const chosen = free !== null && (kept === null || free.off < kept.off || (free.off === kept.off && cleanCost(free) < cleanCost(kept) - REALIGN_MS)) ? free : kept;
-      if (chosen === null || chosen.off >= before) continue;
+      if (chosen === null || chosen.off >= before) {
+        note(`${before} value(s) off their slots, and no assignment fits more`);
+        continue;
+      }
       const first = chosen.at[0] as number;
       const moved = first !== now[0] ? restart(cast, list[0] as LogHit, s[first] as Slot) : cast;
-      if (moved === null) continue;
+      if (moved === null) {
+        note(`a better fit starts the cast at slot ${first}, which its group can't start from`);
+        continue;
+      }
+      record.push({ cast: moved, key, landings: n, why: `${before} → ${chosen.off} value(s) off: slots ${now.join(",")} → ${chosen.at.join(",")}${moved !== cast ? ", the cast restarted" : ""}`, realigned: true });
       list.forEach((h, i) => {
         const p = placed.get(h) as PlacedHit;
         const slot = s[chosen.at[i] as number] as Slot;
-        const { at: _at, ...rest } = p;
+        const { at: _at, joined: _joined, ...rest } = p;
         placed.set(h, { ...rest, cast: moved, index: chosen.at[i] as number, hits: slot.hits, frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) });
       });
       // Another enemy's landing of a realigned one (sameAs) takes its slot.

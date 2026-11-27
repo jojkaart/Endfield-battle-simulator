@@ -9,12 +9,16 @@
 // direction counts), never a hold-out log's own numbers (docs/accuracy-plan.md, "Choosing logs"). What any hold-out
 // output may say: docs/design/tests.md "What a hold-out output may say".
 //
-// Usage: node scripts/accuracy.ts [--write | --check | --compare <git ref>]
+// Usage: node scripts/accuracy.ts [--write | --check | --compare <git ref> [--regroup]]
 //   (none)      print the scoreboard
 //   --write     write docs/accuracy.md
 //   --check     exit 1 if docs/accuracy.md isn't what the snapshots give
 //   --compare   the scoreboard's groups and each log's direction (better / worse by the fit measure) against the
-//               snapshots at a git ref (e.g. HEAD, main)
+//               snapshots at a git ref (e.g. HEAD, main), then the where-the-error-lives table's groups that moved
+//   --regroup   with --compare: first the reference's entries in today's groups (this tree's split and marks: a log
+//               marked severalTargets since, a log moved between groups), so the lines read "reclassification: a → b"
+//               and "change: b → c" (round 18, the status-pairing report point 1: two scratch scripts for two
+//               numbers the journal needed)
 //
 // No engine: the snapshots hold every number, so this takes a fraction of a second; the game data (its cache) gives
 // the by-operator table's display names only (operatorNames; --compare reads none).
@@ -91,14 +95,17 @@ const idOf = (key: string) => (key.split("/").pop() as string).replace(/\.json$/
 
 /**
  * The group of a log's snapshot key (a path under fixtures/: "zmdlogs-….json", "pending/zmdlogs-….json" or
- * "holdout/zmdlogs-….json"; before 2026-11-16 the hold-outs were under pending/ too).
+ * "holdout/zmdlogs-….json"; before 2026-11-16 the hold-outs were under pending/ too). With its entry, a describing key
+ * there decides a group too (the SEVERAL key: `targets`), so a caller holding the entry needs no marked split (round
+ * 18, the status-pairing report point 4: the group was decided in three places, each its own way); without one, the
+ * split's marks (withSeveralTargets).
  */
-export function groupOf(key: string, split: Split): Group {
+export function groupOf(key: string, split: Split, entry?: Entry): Group {
   if (key.startsWith("holdout/")) return "holdout";
   if (!key.startsWith("pending/")) return "verified";
   const id = idOf(key);
   if (split.holdout.has(id)) return "holdout";
-  if (split.severalTargets?.has(id)) return "targets";
+  if (entry?.[TOTALS]?.[SEVERAL] || split.severalTargets?.has(id)) return "targets";
   return split.development.has(id) ? "development" : "earlier";
 }
 
@@ -389,7 +396,7 @@ export function splitPending(pending: Entries): { readonly pending: Entries; rea
 export function allLogs(s: Snapshots): Map<string, { group: Group; entry: Entry }> {
   const out = new Map<string, { group: Group; entry: Entry }>();
   for (const [k, e] of Object.entries(s.verified)) out.set(k, { group: "verified", entry: e });
-  for (const [k, e] of Object.entries(s.pending)) out.set(k.replace(/^holdout\//, "pending/"), { group: groupOf(k, s.split), entry: e });
+  for (const [k, e] of Object.entries(s.pending)) out.set(k.replace(/^holdout\//, "pending/"), { group: groupOf(k, s.split, e), entry: e });
   return out;
 }
 
@@ -399,7 +406,7 @@ export function groupAggregates(s: Snapshots): Map<Group, Aggregate> {
 }
 
 /** A group's totals by where the error lives: the mean shares over its fights that have them, and how many are one-sided. */
-interface SharesAggregate {
+export interface SharesAggregate {
   readonly fights: number;
   readonly matched: number;
   readonly replayOnly: number;
@@ -408,7 +415,7 @@ interface SharesAggregate {
   readonly oneSided: number;
 }
 
-function sharesAggregate(entries: readonly Entry[]): SharesAggregate | null {
+export function sharesAggregate(entries: readonly Entry[]): SharesAggregate | null {
   const xs = entries.flatMap((e) => {
     const t = e[TOTALS];
     const [m, r, l] = [t?.[SHARES.matched], t?.[SHARES.replayOnly], t?.[SHARES.logOnly]];
@@ -520,6 +527,32 @@ function sharesTable(s: Snapshots): string[] {
     ...rows,
     "",
   ];
+}
+
+/**
+ * The where-the-error-lives table's change (sharesTable): per group whose aggregate moved, its fights, |matched|,
+ * replay-only, log-only and one-sided before → after (round 18, the status-pairing report point 1: the journal's
+ * shares came from a scratch re-implementation of sharesAggregate). Nothing where none moved.
+ */
+export function sharesCompare(before: Snapshots, after: Snapshots): string[] {
+  const [a, b] = [allLogs(before), allLogs(after)];
+  const of = (m: ReturnType<typeof allLogs>, g: Group) => sharesAggregate([...m.values()].filter((l) => l.group === g).map((l) => l.entry));
+  const out: string[] = [];
+  for (const g of GROUPS) {
+    const [x, y] = [of(a, g), of(b, g)];
+    if (JSON.stringify(x) === JSON.stringify(y)) continue;
+    const f = (k: "matched" | "replayOnly" | "logOnly") => `${x ? x[k].toFixed(2) : "-"} → ${y ? y[k].toFixed(2) : "-"}%`;
+    out.push(`  ${GROUP_LABEL[g]}: fights ${x?.fights ?? 0} → ${y?.fights ?? 0}, |matched| ${f("matched")}, replay-only ${f("replayOnly")}, log-only ${f("logOnly")}, one-sided ${x?.oneSided ?? 0} → ${y?.oneSided ?? 0}`);
+  }
+  return out.length ? ["Where the total's error lives (mean shares of the fights' logged totals, two decimals):", ...out] : [];
+}
+
+/**
+ * The reference's entries in another split's groups (--compare --regroup): the hold-out split and the several-target
+ * marks of `today`, so a comparison against them is the reclassification alone, and one from them the change alone.
+ */
+export function regrouped(reference: Snapshots, today: Snapshots): Snapshots {
+  return { ...reference, split: today.split };
 }
 
 /** The comparison against older snapshots: each group's aggregates before → after, and the logs' directions. */
@@ -650,9 +683,18 @@ async function main(argv: readonly string[]): Promise<number> {
     return ok ? 0 : 1;
   }
   if (argv[0] === "--compare") {
-    const ref = argv[1] ?? "HEAD";
+    const ref = argv[1] !== undefined && !argv[1].startsWith("--") ? argv[1] : "HEAD";
+    const then = snapshotsAt(ref);
+    if (argv.includes("--regroup")) {
+      const mid = regrouped(then, now);
+      console.log(`Reclassification alone: the snapshots at ${ref}, in ${ref}'s groups → the same entries in this tree's groups (its hold-out split and several-target marks):`);
+      for (const l of [...compare(then, mid), ...sharesCompare(then, mid)]) console.log(`  ${l}`);
+      console.log(`The change alone: the snapshots at ${ref} in this tree's groups → this tree's snapshots:`);
+      for (const l of [...compare(mid, now), ...sharesCompare(mid, now)]) console.log(`  ${l}`);
+      return 0;
+    }
     console.log(`Accuracy against ${ref} (the log verdict snapshots):`);
-    for (const l of compare(snapshotsAt(ref), now)) console.log(l);
+    for (const l of [...compare(then, now), ...sharesCompare(then, now)]) console.log(l);
     return 0;
   }
   process.stdout.write(text);

@@ -32,7 +32,7 @@ import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tic
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
-import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
+import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { awayWindows } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
@@ -105,6 +105,8 @@ export interface BuffReplay {
   readonly skipped: readonly SkippedCast[];
   /** The casts ended after their last logged landing (engine assumption unlogged-tails `cut`: tailCuts), at that frame: TAILCUT lines. */
   readonly tailCuts: readonly { readonly cast: ReplayedCast; readonly frame: number }[];
+  /** The casts with an unlogged tail that a guard of tailCuts kept whole, and the guard (the last round's run): TAILKEPT lines. */
+  readonly tailsKept: readonly TailKept[];
   /**
    * Presses the log shows no hit of that the replay made from the listing (engine assumption hitless-presses
    * `inferred`: inferredPress), by their index in the timeline's casts, and why: their own landings stand for no damage
@@ -380,6 +382,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     casts = casts.map((c) => (c === cast ? cut : c));
     main = run("never");
   }
+  // What the guards kept on the run the cuts ended with (TAILKEPT: the round-18 record of a rule that declines to act).
+  const tailsKept: TailKept[] = [];
+  if (main) tailCuts(main, fx, placement, tailsReading, tailsKept);
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops, the views' list too (castassembly.ts replayStops): the placed casts' miss an
@@ -549,6 +554,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     castFlags: main?.flags ?? [],
     skipped: main?.skipped ?? [],
     tailCuts: [...cuts].map(([cast, frame]) => ({ cast, frame })),
+    tailsKept,
     inferred: new Map((main?.made ?? []).flatMap((m) => (m.inferred !== undefined ? [[m.index, m.inferred] as const] : []))),
     made: (main?.made ?? []).map((m, k, all) => {
       // Gained at the cast and in the advance to the next one (the last one's: to its post state).

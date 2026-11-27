@@ -19,13 +19,13 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
+  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
   readonly operator: string;
   readonly text: string;
 }
 
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "FORCED", "INSIDE", "CUTS"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "FORCED", "INSIDE", "CUTS"];
 
 /** The replay's landing of each logged hit (the hit it stands for), as the log check finds it, and why the others have none. */
 export function landingsOf(replay: Pick<BuffReplay, "landing" | "statusLanding">, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
@@ -89,6 +89,8 @@ export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixt
   if (fx) for (const b of batchDisagreements(fx, replay.hits, landingsOf(replay, fx).byLanding)) out.push(batchDecision(data, b));
   for (const x of replay.skipped) out.push({ t: msOf(x.frame), kind: "SKIP", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
   for (const x of replay.tailCuts) out.push({ t: msOf(x.frame), kind: "TAILCUT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): ended after its last logged landing, none of its later ones in the log (unlogged-tails)` });
+  // A tail the cut's guards kept (replayrun.ts tailCuts' `kept`): which guard, and what it found.
+  for (const x of replay.tailsKept ?? []) out.push({ t: msOf(x.frame), kind: "TAILKEPT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): its unlogged tail kept: ${x.why}` });
   for (const x of replay.failed) out.push({ t: x.cast.start, kind: "FAILED", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
   for (const m of replay.missed) out.push({ t: m.start, kind: "MISSED", operator: m.operator, text: `${who(m.operator)} ${shortSkill(m.skillId)} made for ${shortSkill(m.need.skillId)}@${s(m.need.start)} (a cast that hits nothing, which the log can't show)` });
   for (const m of replay.made) {

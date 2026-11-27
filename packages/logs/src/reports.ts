@@ -12,7 +12,7 @@ import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatS
 import { gameDataCacheKey, mainCheckoutOf, operatorId, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
 import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
-import type { TotalsShares } from "./enginecheck.ts";
+import { stageFight, type TotalsShares } from "./enginecheck.ts";
 import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
@@ -365,8 +365,12 @@ export async function boundariesCliReport(data: () => GameData, sel: LogSelectio
  * the fixture are unchanged (as the hit records; not under another reading). Never a hold-out: their aggregates come
  * from measure.
  */
-export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly kinds?: boolean; readonly json?: boolean; readonly progress?: (line: string) => void }): Promise<string> {
-  const files = selectedFiles(sel, "totals");
+export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly kinds?: boolean; readonly json?: boolean; readonly skip?: readonly string[]; readonly progress?: (line: string) => void }): Promise<string> {
+  const fights = selectedFiles(sel, "totals").map((f) => ({ file: f, ...fightMarks(readLogFixture(f)) }));
+  const { kept, skipped } = skipFights(fights, opts.skip ?? []);
+  if (skipped.length) opts.progress?.(`totals: ${skipped.length} fight(s) left out (--skip ${(opts.skip ?? []).join(",")}): ${skipped.map((x) => shortId(fixtureLabel(x.file))).join(", ")}`);
+  const files = kept.map((x) => x.file);
+  const marks = new Map(kept.map((x) => [x.file, x]));
   const workers = opts.workers === undefined ? 1 : Number(opts.workers);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   const assume = opts.assume ?? {};
@@ -392,8 +396,16 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
     }
   const split = readLogSplit(REPO_ROOT);
   const dev = new Set(split.development.map((d) => d.replace(/^zmdlogs-/, "")));
-  const groupOf = (f: string): TotalsGroup => (isMultiTarget(f) ? "multi" : !resolve(f).startsWith(resolve(REPO_ROOT, LOG_DIRS.pending) + "/") ? "verified" : dev.has(fixtureLabel(f).replace(/^zmdlogs-/, "")) ? "development" : "earlier");
-  if (opts.json) return oneSidedJson(files.map((f) => ({ fight: shortId(fixtureLabel(f)), group: groupOf(f), oneSided: (shares.get(f) as FightTotals).oneSided })), opts.operators);
+  // A pending fight against several enemies under one id is its own group, as on the scoreboard (scripts/accuracy.ts
+  // groupOf: the fixture's severalTargets; round 18, the status-pairing report point 4: the views and the scoreboard
+  // grouped 9c6e apart).
+  const groupOf = (f: string): TotalsGroup => (isMultiTarget(f) ? "multi" : !resolve(f).startsWith(resolve(REPO_ROOT, LOG_DIRS.pending) + "/") ? "verified" : marks.get(f)?.severalTargets ? "targets" : dev.has(fixtureLabel(f).replace(/^zmdlogs-/, "")) ? "development" : "earlier");
+  if (opts.json)
+    return oneSidedJson(files.map((f) => {
+      const s = (shares.get(f) as FightTotals).shares;
+      const m = marks.get(f);
+      return { fight: shortId(fixtureLabel(f)), group: groupOf(f), oneSided: (shares.get(f) as FightTotals).oneSided, fightError: s.error, ...(s.logged !== undefined ? { logged: s.logged } : {}), ...(m?.stage ? { stage: true } : {}), ...(m?.severalTargets ? { severalTargets: true } : {}) };
+    }), opts.operators);
   const rows = files.map((f) => ({ short: shortId(fixtureLabel(f)), group: groupOf(f), shares: (shares.get(f) as FightTotals).shares }));
   if (opts.kinds) return totalsKindsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
   return totalsAllView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
@@ -430,14 +442,44 @@ interface FightTotals {
   readonly oneSided: readonly OneSided[];
 }
 
+/** What `zmdlogs totals --skip` reads of a fight: a stage fight (enginecheck.ts stageFight), several targets under one id. */
+export function fightMarks(fx: LogFixture): { readonly stage: boolean; readonly severalTargets: boolean } {
+  return { stage: stageFight(fx) !== null, severalTargets: fx.severalTargets !== undefined };
+}
+
+/**
+ * `zmdlogs totals --skip <id|stage|several>,…`: the fights left in and out (round 18, the log-only report point 1: "the
+ * same ranking without the two outliers" took two scratch scripts). An id is a fixture's short id or the start of it;
+ * `stage` every stage fight, `several` every fight against several targets under one id. A word that names no fight
+ * is refused (a typo would leave the ranking as it was, silently).
+ */
+export function skipFights<F extends { readonly file: string; readonly stage: boolean; readonly severalTargets: boolean }>(fights: readonly F[], skip: readonly string[]): { readonly kept: F[]; readonly skipped: F[] } {
+  const words = skip.flatMap((x) => x.split(",")).map((x) => x.trim()).filter(Boolean);
+  const id = (f: F) => fixtureLabel(f.file).replace(/^zmdlogs-/, "");
+  const hits = (w: string, f: F) => (w === "stage" ? f.stage : w === "several" ? f.severalTargets : id(f).startsWith(w.replace(/^zmdlogs-/, "")));
+  for (const w of words) if (w !== "stage" && w !== "several" && !fights.some((f) => hits(w, f))) throw new Error(`--skip ${w}: no selected fight has that id (ids, or the words stage and several)`);
+  const out = (f: F) => words.some((w) => hits(w, f));
+  return { kept: fights.filter((f) => !out(f)), skipped: fights.filter(out) };
+}
+
 /**
  * `zmdlogs totals --all --json`: every one-sided landing of the selected fights, a JSON line each with its fight
  * (short id) and group, from the cache like the shares (one-sided report point 1: each new ranking question re-ran
- * every replay in a scratch script; now `jq` over this), largest |damage| first within a fight.
+ * every replay in a scratch script; now `jq` over this), largest |damage| first within a fight. Each line also has
+ * its `share` of the fight's logged total (%, signed as `damage`: the scoreboard's unit), the fight's `logged` total
+ * and `fightError` (%), and `stage` / `severalTargets` where they hold (round 18, the log-only and replay-only reports'
+ * point 1 and 2: a ranking by share back-computed the logged total from the text table).
  */
-export function oneSidedJson(fights: readonly { readonly fight: string; readonly group: TotalsGroup; readonly oneSided: readonly OneSided[] }[], operators?: readonly string[]): string {
+export function oneSidedJson(fights: readonly { readonly fight: string; readonly group: TotalsGroup; readonly oneSided: readonly OneSided[]; readonly logged?: number; readonly fightError?: number; readonly stage?: boolean; readonly severalTargets?: boolean }[], operators?: readonly string[]): string {
+  const r3 = (x: number) => Math.round(x * 1000) / 1000;
   return fights
-    .flatMap((f) => [...f.oneSided].filter((o) => !operators?.length || operators.includes(o.operator)).sort((a, b) => Math.abs(b.damage) - Math.abs(a.damage)).map((o) => JSON.stringify({ fight: f.fight, group: f.group, ...o })))
+    .flatMap((f) => {
+      const { oneSided, ...fight } = f;
+      return [...oneSided]
+        .filter((o) => !operators?.length || operators.includes(o.operator))
+        .sort((a, b) => Math.abs(b.damage) - Math.abs(a.damage))
+        .map((o) => JSON.stringify({ ...fight, ...o, ...(f.logged ? { share: r3((100 * o.damage) / f.logged) } : {}), ...(f.fightError !== undefined ? { fightError: r3(f.fightError) } : {}) }));
+    })
     .join("\n");
 }
 

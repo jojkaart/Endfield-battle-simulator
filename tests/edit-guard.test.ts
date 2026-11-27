@@ -7,7 +7,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { chained, refusal, refusalText } from "../scripts/bash-guard.ts";
+import { chained, commitMessageFile, refusal, refusalText, staleMessage } from "../scripts/bash-guard.ts";
 import { damagedDocs, damagedText } from "../scripts/check-links.ts";
 import { applyEdits, parseEdits } from "../scripts/edit.ts";
 
@@ -121,6 +121,18 @@ describe("scripts/bash-guard.ts", () => {
     expect(chained("node scripts/edit.ts e.txt")).toBe(false);
     expect(refusalText(`node scripts/edit.ts e.txt && ${heredoc}`, "a heredoc.")).toMatch(/Nothing in this call ran, its other commands included/);
     expect(refusalText("echo \"`date`\"", "a backtick.")).not.toMatch(/Nothing in this call ran/);
+  });
+
+  it("refuses a commit whose message file still holds the last commit's message (round 18, round 17's own report point 1)", () => {
+    expect(commitMessageFile("git commit -F scratch/msg.txt -- docs")).toBe("scratch/msg.txt");
+    expect(commitMessageFile("git commit -q --file=scratch/m.txt -- a")).toBe("scratch/m.txt");
+    expect(commitMessageFile("git commit -qF 'scratch/m 2.txt'")).toBe("scratch/m 2.txt");
+    expect(commitMessageFile("git log -F x")).toBeUndefined();
+    expect(commitMessageFile("git commit -m title -- a")).toBeUndefined();
+    const head = "Totals: share per line\n\nbody\n\nCo-Authored-By: x\n";
+    expect(staleMessage("scratch/msg.txt", head.trim() + "\n", head)).toMatch(/still holds the last commit's message/);
+    expect(staleMessage("scratch/msg.txt", "Another change\n", head)).toBeUndefined();
+    expect(staleMessage("scratch/msg.txt", "  \n", head)).toBeUndefined();
   });
 
   it("checks a command written to a file (--check-file), so a forbidden form is tried without the harness seeing it", () => {

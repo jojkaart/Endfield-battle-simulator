@@ -55,7 +55,9 @@ export interface OneSided {
   /**
    * `stop` inside a slow-down the replay applied; `cut` within CUT_MS after a cast made as a cut (CastFlag cuts / inside)
    * of its operator; `next cast` past its operator's next logged cast after its own cast began (replay only); `end`
-   * within END_MS of the log's last hit; `away` within AWAY_EDGE_MS of a stretch without logged hits (or in it).
+   * within END_MS of the log's last hit; `away` within AWAY_EDGE_MS of a stretch without logged hits (or in it);
+   * `kill` after a logged kill before the fight's end (enginecheck.ts killGaps: after a capped hit, before the next
+   * logged hit; round 18, the replay-only report point 4: 9c6e's and 6339's mid-fight kills showed only in a jq dump).
    */
   readonly flags: readonly string[];
   /** Its twin's time and key (twin contexts). */
@@ -110,6 +112,7 @@ export function oneSidedLandings(
   counted: readonly CountedLanding[],
   away: readonly { readonly from: number; readonly to: number }[],
   uncounted: ReadonlyMap<LandedHit, string>,
+  kills: readonly { readonly from: number; readonly to: number }[] = [],
 ): OneSided[] {
   const standsFor = new Set(counted.flatMap((p) => (p.logged ? [p.logged] : [])));
   const byLanding = new Map(counted.map((p) => [p.landing, p]));
@@ -217,6 +220,7 @@ export function oneSidedLandings(
   for (const x of items) {
     if (x.t >= lastLogged - END_MS) x.flags.push("end");
     if (away.some((w) => Math.abs(x.t - w.from) <= AWAY_EDGE_MS || Math.abs(x.t - w.to) <= AWAY_EDGE_MS || (x.t > w.from && x.t < w.to))) x.flags.push("away");
+    if (kills.some((w) => x.t > w.from && x.t < w.to)) x.flags.push("kill");
     if (x.context === ONE_SIDED.unread || x.context?.startsWith("twin")) continue;
     if (x.side === "replay" && x.landing) {
       const l = x.landing;

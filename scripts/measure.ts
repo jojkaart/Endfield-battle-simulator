@@ -34,17 +34,29 @@
 //                       variant, files under <out>/variant-<n>/ (separating two readings' effects without chaining
 //                       measures, each taking its own snapshot); the same code without any variant is measured too
 //                       (round 11), and each variant's summary also says what it moves against that plain tree, the
-//                       question an idea on top of the tree asks (--no-plain: skip that run)
-//   --split files|commits  after the whole change against --base (default HEAD: the working tree's change), the
+//                       question an idea on top of the tree asks (--no-plain: skip that run). An entry
+//                       <file>:<CONST>=<value> is a --set of that variant alone (its own patched worktree): a
+//                       constant's values side by side, `--variant x.ts:WIDE=30 --variant x.ts:WIDE=60`
+//   --set <file>:<CONST>=<value>  measure the code with the constant's one-line declaration (`[export] const CONST
+//                       = …;`, exactly one in the file) set to the value (repeatable; round 18, the status-pairing
+//                       report point 2: a constant's value took a commit, an edit, a diff and a revert each): a
+//                       --patch made from the code measured (with --patch too: both, on different files), kept under
+//                       scratch/measure/patches/ for docs/tried/ and named in the summary. Not with --live
+//   --split files|commits|hunks  after the whole change against --base (default HEAD: the working tree's change), the
 //                       share of each part (round 11: "which change moved this log" took three more measures): files,
 //                       each changed file's diff alone on --base (`--group a,b` puts the files under these path
 //                       prefixes into one part; repeatable; `--only a,b` instead: those files one part and every
 //                       other file one more, two parts for "did these move it"); commits, each commit of --base..the
-//                       code against its parent (the working tree's own changes the last). Files that import a name
+//                       code against its parent (the working tree's own changes the last); hunks, each diff hunk
+//                       alone on --base (round 18, the replay-only report point 1: three rules in one file took a
+//                       hand-made reverse patch and a measure each), the hunks whose lines carry one `split:<name>`
+//                       marker (a comment) one part, at most MAX_HUNK_PARTS parts (`--only a,b`: the hunks of
+//                       those files apart, every other file one part). Files that import a name
 //                       another changed file adds go in one part on their own (importLinks: a new export and its
-//                       users can't run apart; round 16). Each part is measured only on the logs the
-//                       whole change moved, so a split costs about one measure of those per part. Not with --variant,
-//                       --patch or --live
+//                       users can't run apart; round 16; hunks: a part that doesn't run alone is named). Each part is
+//                       measured only on the logs the whole change moved, so a split costs about one measure of those
+//                       per part; per part, of the hold-outs the whole change moved, how many it moves the same way
+//                       alone (counts only). Not with --variant, --patch, --set or --live
 //   --patch <file>      measure the code with this diff applied on top (git apply; the code at --at, else the tree
 //                       as queued): one half of a change, or the old reading of a log tool's rule, without editing
 //                       and reverting the tree (round 8). The diff is copied at queue time; with --base HEAD the
@@ -69,6 +81,10 @@
 //   --help, -h          this text. The options are checked before the run queues for the lock (the readings against
 //                       the registered assumptions too): a typo fails in seconds
 //   --live              read the working tree when the run starts (after the queue's wait), not as it was queued
+// The hold-outs a run moved also get the replay's decision lines counted by kind on both sides (packages/logs
+// decisionsview.ts: SKIP, TAILCUT, TAILKEPT, JUMPDROP, …), their net changes summed per direction: whether a replay
+// rule acted there, without a log, an operator or a skill named (round 18, the placement-cases report point 2). The
+// reference side is --base's code, else the code that wrote the snapshots, measured for those hold-outs alone.
 //   --out <dir>         where to write (default scratch/measure/<time>/): log-verdicts.json,
 //                       log-verdicts-pending.json, log-verdicts-holdout.json (never diff it by eye), accuracy.md,
 //                       summary.txt, moved.json (when it was queued, its code, the development logs it moved and
@@ -99,6 +115,7 @@ import { Worker } from "node:worker_threads";
 import { allLogs, compare, direction, GROUPS, groupOf, operatorNames, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
+type DecisionCounts = Readonly<Record<string, number>>;
 import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { printHelp } from "./usage.ts";
@@ -265,24 +282,28 @@ export function measureOptions(argv: readonly string[]) {
       split: { type: "string" },
       group: { type: "string", multiple: true, default: [] },
       only: { type: "string" },
+      set: { type: "string", multiple: true, default: [] },
     },
     allowNegative: true,
   });
   if (values.changed !== undefined && values.changed !== "placement") throw new Error("--changed takes placement");
+  const variantSets = values.variant.flatMap((x) => x.split(",")).filter(isSetEntry);
   if (values.split !== undefined) {
-    if (values.split !== "files" && values.split !== "commits") throw new Error("--split takes files or commits");
-    if (values.variant.length || values.patch !== undefined || values.live) throw new Error("--split measures the code's own parts: not with --variant, --patch or --live");
+    if (values.split !== "files" && values.split !== "commits" && values.split !== "hunks") throw new Error("--split takes files, commits or hunks");
+    if (values.variant.length || values.patch !== undefined || values.set.length || values.live) throw new Error("--split measures the code's own parts: not with --variant, --patch, --set or --live");
     if (values.at !== undefined && values.base === undefined) throw new Error("--split with --at needs --base <ref> (the commit the parts are split against)");
     // The working tree's change (the snapshot taken at queue time) against HEAD, unless --base names another commit.
     values.base ??= "HEAD";
   }
   if (values.group.length && values.split !== "files") throw new Error("--group goes with --split files");
-  if (values.only !== undefined && values.split !== "files") throw new Error("--only goes with --split files");
+  if (values.only !== undefined && values.split !== "files" && values.split !== "hunks") throw new Error("--only goes with --split files or hunks");
   if (values.only !== undefined && values.group.length) throw new Error("--split files: --only or --group, not both");
   const workers = Number(values.workers);
   if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
   if (values.patch !== undefined && values.live) throw new Error("--patch applies to a commit (--at, or the tree as queued): not with --live");
-  parseReadings([...values.assume, ...values.variant.flatMap((x) => x.split(","))]);
+  if ((values.set.length || variantSets.length) && values.live) throw new Error("--set (and a --variant's <file>:<CONST>=<value>) patches a commit (--at, or the tree as queued): not with --live");
+  for (const s of [...values.set, ...variantSets]) parseSet(s);
+  parseReadings([...values.assume, ...values.variant.flatMap((x) => x.split(",")).filter((x) => !isSetEntry(x))]);
   if (values.patch !== undefined && !existsSync(resolve(values.patch))) throw new Error(`--patch ${values.patch}: no such file`);
   return { values, workers };
 }
@@ -290,6 +311,20 @@ export function measureOptions(argv: readonly string[]) {
 async function main(argv: string[]): Promise<number> {
   const { values, workers } = measureOptions(argv);
   const say = (l: string) => process.stdout.write(l + "\n");
+
+  // --set: a patch of the constants made from the code measured (and --patch's own diff, on other files), kept for docs/tried/.
+  const codeRef = values.at ?? values.snapshot ?? "HEAD";
+  const userPatch = values.patch;
+  const setsPatch = (sets: readonly string[], label: string): string => {
+    const diff = combinedPatch(userPatch !== undefined ? readFileSync(resolve(userPatch), "utf8") : "", sets.map(parseSet), (f) => gitShow(codeRef, f));
+    const dir = join(ROOT, "scratch/measure/patches");
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `set-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${process.pid}-${label}.diff`);
+    writeFileSync(file, diff);
+    return file;
+  };
+  if (values.set.length) values.patch = setsPatch(values.set, "base");
+  const patchLabel = [...(userPatch !== undefined ? [userPatch] : []), ...values.set.map((x) => `--set ${x}`)].join(" and ");
 
   // The code: --at's commit, the snapshot taken when the run was queued (the entry point below), or the tree as it is now;
   // with --patch, that commit with the diff applied in a worktree of its own (removed after).
@@ -323,7 +358,7 @@ async function main(argv: string[]): Promise<number> {
         ? `the code at HEAD (${short(snapshot)}; the tree was clean when queued)`
         : `the working tree as queued (snapshot ${short(snapshot)} on ${short(values["snapshot-head"] ?? "HEAD")})`
       : "the working tree";
-  const patched = values.patch !== undefined ? `${code} with ${values.patch} applied` : code;
+  const patched = values.patch !== undefined ? `${code} with ${patchLabel} applied` : code;
   const what = `${patched}${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}${values.base ? ` against the code at ${values.base}${defaulted?.base ? " (the merge base with main)" : ""}` : ` against the snapshots at ${against}`}`;
   // The reference's own code (placement-leads report point 3): after a code commit the snapshots at HEAD aren't HEAD's
   // code, so "against the snapshots" mixes those commits' changes into this tree's. Said first, in the summary too.
@@ -381,6 +416,7 @@ async function main(argv: string[]): Promise<number> {
   const hitRows = new Map<string, Map<string, readonly HitRow[]>>();
   const holdRows = new Map<string, Map<string, readonly HoldUnit[]>>();
   const sharesBy = new Map<string, Map<string, Shares>>();
+  const decisionsBy = new Map<string, Map<string, DecisionCounts>>();
   // Per tree and readings (`slot`: a --variant's measurements of the same tree apart).
   const measureTree = async (t: string, label: string, which: readonly string[] = order, readings: Readonly<Record<string, string>> = t === tree ? assume : {}, slot = t) => {
     const got = new Map<string, Entry>();
@@ -392,6 +428,8 @@ async function main(argv: string[]): Promise<number> {
     holdRows.set(slot, holds);
     const shares = sharesBy.get(slot) ?? new Map<string, Shares>();
     sharesBy.set(slot, shares);
+    const decided = decisionsBy.get(slot) ?? new Map<string, DecisionCounts>();
+    decisionsBy.set(slot, decided);
     const start = performance.now();
     // A log new since that commit (an import on this branch): its code reads the measured tree's copy of the fixture.
     const fresh = new Set(t === tree ? [] : which.filter((k) => !existsSync(join(t, "fixtures", k))));
@@ -410,6 +448,7 @@ async function main(argv: string[]): Promise<number> {
       if (a.hits) rows.set(a.key, a.hits);
       if (a.holds) holds.set(a.key, a.holds);
       if (a.shares) shares.set(a.key, a.shares);
+      if (a.decisions) decided.set(a.key, a.decisions);
       say(`[${got.size}/${which.length}] ${label}${isHoldout(a.key) ? "a hold-out log" : `${a.key} ${a.seconds.toFixed(1)} s`}`);
     }, readings);
     say(`measure: ${label || "measured "}${got.size} logs in ${((performance.now() - start) / 1000).toFixed(0)} s`);
@@ -428,7 +467,18 @@ async function main(argv: string[]): Promise<number> {
     say(`measure: ${label}negative control on ${counts.size} verified log(s)`);
     return negativeControl(counts);
   };
-  const variants = values.variant.length ? values.variant.map((v) => ({ text: v, readings: { ...assume, ...parseReadings(v.split(",")) } })) : [{ text: "", readings: assume }];
+  const variants = values.variant.length ? values.variant.map((v) => ({ text: v, readings: { ...assume, ...parseReadings(v.split(",").filter((x) => !isSetEntry(x))) }, sets: v.split(",").filter(isSetEntry) })) : [{ text: "", readings: assume, sets: [] as string[] }];
+  // A variant with --set entries: the measured code with them, in a worktree of its own (removed after).
+  const variantPatches = new Map<number, string>();
+  const variantTree = (sets: readonly string[], vi: number): string => {
+    if (!sets.length) return tree;
+    const dir = resolve(ROOT, "scratch/at", `measure-${short(codeRef)}-set${vi + 1}-${process.pid}`);
+    const patch = setsPatch([...values.set, ...sets], `variant-${vi + 1}`);
+    variantPatches.set(vi, patch);
+    atCommit(codeRef, dir, patch);
+    process.on("exit", () => removeAtCommit(dir));
+    return dir;
+  };
   const entryOf = (s: Snapshots, k: string) => (k.includes("/") ? s.pending[k] : s.verified[k]);
   const reference = snapshotsAt(against);
   let before: Snapshots | undefined;
@@ -445,7 +495,7 @@ async function main(argv: string[]): Promise<number> {
     const label = variants.length > 1 || values.variant.length ? `variant ${vi + 1} (${v.text}): ` : "";
     const dir = variants.length > 1 ? join(out, `variant-${vi + 1}`) : out;
     mkdirSync(dir, { recursive: true });
-    const measured = await measureTree(tree, label, order, v.readings, `${tree}#${vi}`);
+    const measured = await measureTree(variantTree(v.sets, vi), label, order, v.readings, `${tree}#${vi}`);
     before ??= baseTree ? overlay(reference, await measureTree(baseTree, `base ${values.base}: `)) : reference;
     if (values.variant.length && values.plain && !plain) plain = overlay(before, await measureTree(tree, "plain (no variant): ", order, assume, `${tree}#plain`), split);
     const after = overlay(before, measured, split);
@@ -474,6 +524,32 @@ async function main(argv: string[]): Promise<number> {
         await measureTree(refTree, `reference ${refLabel}: `, which);
       }
     }
+    // The moved hold-outs' decisions at the reference (round 18): --base's, the plain tree's for a variant, else the
+    // snapshots' writer's code measured for them alone (refTree, as the mixed logs').
+    // A variant's against the plain tree (the same code without it), as its own effect; else against the reference.
+    const decisionRef = plain ? `${tree}#plain` : baseTree ? baseTree : undefined;
+    const fromSnap = plain ?? (before as Snapshots);
+    const holdMoved = keys.filter((k) => {
+      if (!isHoldout(k)) return false;
+      const [a, b] = [entryOf(fromSnap, k), entryOf(after, k)];
+      return a !== undefined && b !== undefined && direction(a, b) !== "same";
+    });
+    if (holdMoved.length && !decisionRef) {
+      if (!refTree) {
+        const writer = snapshotWriter(against);
+        refTree = resolve(ROOT, "scratch/at", short(writer.commit));
+        refLabel = short(writer.commit);
+        atCommit(writer.commit, refTree);
+      }
+      const done = decisionsBy.get(refTree) ?? new Map();
+      const which = holdMoved.filter((k) => !done.has(k));
+      if (which.length) {
+        say(`measure: ${which.length} hold-out(s) moved: their replay decisions at ${refLabel}'s code`);
+        await measureTree(refTree, `reference ${refLabel}: `, which);
+      }
+    }
+    const decisionRefMap = decisionsBy.get(decisionRef ?? refTree ?? "") ?? new Map<string, DecisionCounts>();
+    const holdDecisionLines = decisionLines(holdMoved.map((k) => ({ direction: direction(entryOf(fromSnap, k) as Entry, entryOf(after, k) as Entry), before: decisionRefMap.get(k), after: decisionsBy.get(`${tree}#${vi}`)?.get(k) })), plain ? "against the plain tree" : baseTree ? `against base ${values.base}` : `against ${refLabel}'s code`);
     const mixedLines = mixedPerHit(mixed, (refTree && perHit.get(refTree)) || new Map(), perHit.get(`${tree}#${vi}`) ?? new Map());
     const hitLines = values.hits ? hitChanges(moved, (refTree && hitRows.get(refTree)) || new Map(), hitRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
     const holdLines = values.hits ? holdChanges(moved, (refTree && holdRows.get(refTree)) || new Map(), holdRows.get(`${tree}#${vi}`) ?? new Map()) : undefined;
@@ -499,8 +575,11 @@ async function main(argv: string[]): Promise<number> {
       ...(ownLines ? [`Variant ${vi + 1}'s own hits, against the plain tree:`, ...ownLines.summary.map((l) => `  ${l}`)] : []),
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
+      ...holdDecisionLines,
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
+      ...(values.patch !== undefined && values.set.length && vi === 0 ? [`The --set patch (for docs/tried/): ${values.patch}`] : []),
+      ...(variantPatches.has(vi) ? [`Variant ${vi + 1}'s --set patch (for docs/tried/): ${variantPatches.get(vi) as string}`] : []),
     ];
     if (keys.length === logKeys(tree).length && !baseTree) {
       const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(dir, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
@@ -523,7 +602,7 @@ async function main(argv: string[]): Promise<number> {
     }
   }
   if (values.split !== undefined && baseTree && before && whole) {
-    const lines = await splitParts(values.split as "files" | "commits", { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, ...(values.only !== undefined ? { only: values.only } : {}), keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
+    const lines = await splitParts(values.split as "files" | "commits" | "hunks", { base: values.base as string, baseTree, code: values.at ?? snapshot ?? snapshotCommit(ROOT).commit, groups: values.group, ...(values.only !== undefined ? { only: values.only } : {}), keys: order, before, whole, split, measure: (t, label, which) => measureTree(t, label, which, assume, `${t}#split`) });
     writeFileSync(join(out, "summary.txt"), [...allLines, "", ...lines].join("\n") + "\n");
     allLines.push("", ...lines);
   }
@@ -597,13 +676,208 @@ export function kindLines(after: ReadonlyMap<string, Shares>, split: Split, befo
   return out;
 }
 
+/**
+ * The moved hold-outs' replay decisions (MeasureAnswer.decisions) as net changes per kind, summed per direction (round
+ * 18, the placement-cases report point 2: a data-right change cost one hold-out 23 plain and nothing said whether a
+ * replay rule acted there): "worse (1): JUMPDROP −3, MADE +1". Kinds and counts only, never a log. Nothing where no
+ * hold-out moved; a direction whose hold-outs lack a side says so.
+ */
+export function decisionLines(moved: readonly { readonly direction: string; readonly before: DecisionCounts | undefined; readonly after: DecisionCounts | undefined }[], against = "against the reference"): string[] {
+  if (!moved.length) return [];
+  const by = new Map<string, { n: number; missing: number; net: Map<string, number> }>();
+  for (const m of moved) {
+    const d = by.get(m.direction) ?? { n: 0, missing: 0, net: new Map<string, number>() };
+    by.set(m.direction, d);
+    d.n++;
+    if (!m.before || !m.after) {
+      d.missing++;
+      continue;
+    }
+    for (const k of new Set([...Object.keys(m.before), ...Object.keys(m.after)])) d.net.set(k, (d.net.get(k) ?? 0) + (m.after[k] ?? 0) - (m.before[k] ?? 0));
+  }
+  const signed = (n: number) => (n > 0 ? `+${n}` : `−${-n}`);
+  const out = [`The moved hold-outs' replay decisions, ${against} (zmdlogs decisions' kinds: net change per kind, summed per direction; counts only):`];
+  for (const [dir, d] of by) {
+    const parts = [...d.net].filter(([, n]) => n !== 0).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).map(([k, n]) => `${k} ${signed(n)}`);
+    out.push(`  ${dir} (${d.n}): ${parts.length ? parts.join(", ") : "no decision kind's count moved"}${d.missing ? ` (${d.missing} without decisions on a side: that commit's code has none)` : ""}`);
+  }
+  return out;
+}
+
+/** A --set entry: a constant's one-line declaration in a file, set to a value. */
+export interface SetEntry {
+  readonly file: string;
+  readonly name: string;
+  readonly value: string;
+}
+
+/** Whether a --variant entry is a --set's `<file>:<CONST>=<value>` (not an assumption's `<id>=<reading>`). */
+export const isSetEntry = (x: string) => /^[^=:]+:[A-Za-z_$][\w$]*=/.test(x);
+
+export function parseSet(x: string): SetEntry {
+  const m = /^([^=:]+):([A-Za-z_$][\w$]*)=(.+)$/.exec(x);
+  if (!m) throw new Error(`--set takes <file>:<CONST>=<value> (got ${x})`);
+  return { file: (m[1] as string).replace(/^\.\//, ""), name: m[2] as string, value: m[3] as string };
+}
+
+/** A file's text with the --set entries on it applied (each one-line declaration `[export] const NAME[: T] = …;`, exactly one per name). */
+export function applySets(file: string, text: string, sets: readonly SetEntry[]): string {
+  const lines = text.split("\n");
+  for (const e of sets) {
+    const re = new RegExp(`^(\\s*(?:export\\s+)?const\\s+${e.name}\\s*(?::[^=]+)?=\\s*)(.*?)(;\\s*(?://.*)?)$`);
+    const at = lines.flatMap((l, i) => (re.test(l) ? [i] : []));
+    if (at.length !== 1) throw new Error(`--set ${file}:${e.name}: ${at.length ? `${at.length} one-line declarations of it` : `no one-line declaration \`const ${e.name} = …;\``} in ${file}`);
+    const i = at[0] as number;
+    const m = re.exec(lines[i] as string) as RegExpExecArray;
+    lines[i] = `${m[1]}${e.value}${m[3]}`;
+  }
+  return lines.join("\n");
+}
+
+/** A unified diff of a file whose lines were replaced one for one (applySets): a hunk per run of changes, 3 lines of context. */
+export function replacementDiff(file: string, was: string, now: string): string {
+  const [a, b] = [was.split("\n"), now.split("\n")];
+  // The lines a diff counts: without the empty string after a final newline.
+  const n = was.endsWith("\n") ? a.length - 1 : a.length;
+  const changed = a.slice(0, n).flatMap((l, i) => (l !== b[i] ? [i] : []));
+  if (!changed.length) return "";
+  const hunks: [number, number][] = [];
+  for (const i of changed) {
+    const [from, to] = [Math.max(0, i - 3), Math.min(n, i + 4)];
+    const last = hunks.at(-1);
+    if (last && from <= last[1]) last[1] = to;
+    else hunks.push([from, to]);
+  }
+  const out = [`diff --git a/${file} b/${file}`, `--- a/${file}`, `+++ b/${file}`];
+  for (const [from, to] of hunks) {
+    out.push(`@@ -${from + 1},${to - from} +${from + 1},${to - from} @@`);
+    for (let i = from; i < to; i++) out.push(...(a[i] === b[i] ? [` ${a[i]}`] : [`-${a[i]}`, `+${b[i]}`]));
+  }
+  return out.join("\n") + "\n";
+}
+
+/** The files a unified diff changes (its `+++ b/…` lines). */
+const diffFiles = (diff: string) => new Set([...diff.matchAll(/^\+\+\+ b\/(.+)$/gm)].map((m) => m[1] as string));
+
+/**
+ * --set's patch: `patch` (a --patch's diff, or empty) and the constants set, each file's text read by `show` (the code
+ * measured). A constant in a file the --patch changes is refused: set it in the diff itself.
+ */
+export function combinedPatch(patch: string, sets: readonly SetEntry[], show: (file: string) => string): string {
+  const byFile = new Map<string, SetEntry[]>();
+  for (const s of sets) byFile.set(s.file, [...(byFile.get(s.file) ?? []), s]);
+  const touched = diffFiles(patch);
+  let out = patch && !patch.endsWith("\n") ? `${patch}\n` : patch;
+  for (const [file, es] of byFile) {
+    if (touched.has(file)) throw new Error(`--set ${file}: the --patch changes that file too: set the constant in the diff itself`);
+    const text = show(file);
+    out += replacementDiff(file, text, applySets(file, text, es));
+  }
+  return out;
+}
+
+/** The checks of --set (and a --variant's sets) on the working tree, before the run queues: each declaration found once. */
+export function setsProblem(values: { readonly set: readonly string[]; readonly variant: readonly string[] }, root = ROOT): string | null {
+  for (const x of [...values.set, ...values.variant.flatMap((v) => v.split(",")).filter(isSetEntry)]) {
+    try {
+      const e = parseSet(x);
+      const path = join(root, e.file);
+      if (!existsSync(path)) return `measure: --set ${x}: no file ${e.file}`;
+      applySets(e.file, readFileSync(path, "utf8"), [e]);
+    } catch (err) {
+      return `measure: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  }
+  return null;
+}
+
+/** One hunk of a unified diff: its file, the file's header lines, the hunk's text, its `split:<name>` marker, a label. */
+export interface DiffHunk {
+  readonly file: string;
+  readonly header: string;
+  readonly text: string;
+  readonly marker?: string;
+  readonly label: string;
+}
+
+/**
+ * A unified diff's hunks (`git diff` output): per file its header (diff --git … +++ b/…) and each `@@` hunk; a file
+ * section with no hunk (binary, a mode change) is one hunk of its own. A hunk's marker is the first `split:<name>` on
+ * one of its changed lines (a comment the author puts there: the hunks of one rule measured as one part).
+ */
+export function diffHunks(diff: string): DiffHunk[] {
+  const out: DiffHunk[] = [];
+  const sections = diff.split(/^(?=diff --git )/m).filter((x) => x.startsWith("diff --git "));
+  for (const sec of sections) {
+    const lines = sec.replace(/\n$/, "").split("\n");
+    const file = /^diff --git a\/(.+?) b\//.exec(lines[0] as string)?.[1] ?? "?";
+    const first = lines.findIndex((l) => l.startsWith("@@"));
+    if (first < 0) {
+      out.push({ file, header: lines.join("\n"), text: "", label: file });
+      continue;
+    }
+    const header = lines.slice(0, first).join("\n");
+    let cur: string[] = [];
+    const flush = () => {
+      if (!cur.length) return;
+      const marker = cur.slice(1).find((l) => /^[-+]/.test(l) && /\bsplit:[\w.-]+/.test(l))?.match(/\bsplit:([\w.-]+)/)?.[1];
+      const at = /^@@ -\d+(?:,\d+)? \+(\d+)/.exec(cur[0] as string)?.[1] ?? "?";
+      out.push({ file, header, text: cur.join("\n"), ...(marker ? { marker } : {}), label: `${file}:${at}` });
+      cur = [];
+    };
+    for (const l of lines.slice(first)) {
+      if (l.startsWith("@@")) flush();
+      cur.push(l);
+    }
+    flush();
+  }
+  return out;
+}
+
+/** The most parts --split hunks measures (each about one measure of the moved logs): more needs markers or --only. */
+export const MAX_HUNK_PARTS = 24;
+
+/**
+ * --split hunks' parts: the hunks of one marker together, every other hunk alone; with `only` (comma-separated path
+ * prefixes) only those files' hunks apart, every other file's together as "the rest". Hold-out fixtures are one part,
+ * named by their count. Each part's patch: its files' headers with their hunks.
+ */
+export function hunkParts(hunks: readonly DiffHunk[], only?: string): { readonly label: string; readonly patch: string }[] {
+  const ps = only?.split(",").map((p) => p.trim()).filter(Boolean);
+  const apart = (f: string) => !ps || ps.some((p) => f === p || f.startsWith(p));
+  const parts = new Map<string, { label: string; hunks: DiffHunk[] }>();
+  const add = (key: string, label: string, h: DiffHunk) => {
+    const p = parts.get(key) ?? { label, hunks: [] };
+    p.hunks.push(h);
+    parts.set(key, p);
+  };
+  for (const h of hunks) {
+    if (h.file.startsWith("fixtures/holdout/")) add("holdout", "", h);
+    else if (!apart(h.file)) add("rest", "", h);
+    else if (h.marker) add(`marker:${h.marker}`, `split:${h.marker}`, h);
+    else add(`hunk:${h.label}`, h.label, h);
+  }
+  const holdFiles = new Set(parts.get("holdout")?.hunks.map((h) => h.file) ?? []).size;
+  const restFiles = new Set(parts.get("rest")?.hunks.map((h) => h.file) ?? []).size;
+  if (parts.has("holdout")) (parts.get("holdout") as { label: string }).label = `fixtures/holdout/ (${holdFiles} file(s))`;
+  if (parts.has("rest")) (parts.get("rest") as { label: string }).label = `the rest (${restFiles} file(s))`;
+  const patchOf = (hs: readonly DiffHunk[]) => {
+    const byFile = new Map<string, DiffHunk[]>();
+    for (const h of hs) byFile.set(h.file, [...(byFile.get(h.file) ?? []), h]);
+    return [...byFile.values()].map((fh) => [(fh[0] as DiffHunk).header, ...fh.map((h) => h.text).filter(Boolean)].join("\n")).join("\n") + "\n";
+  };
+  const out = [...parts.values()].map((p) => ({ label: p.label, patch: patchOf(p.hunks) }));
+  if (out.length > MAX_HUNK_PARTS) throw new Error(`--split hunks: ${out.length} parts, over ${MAX_HUNK_PARTS} (each about a measure of the moved logs): mark the hunks of one rule with a \`split:<name>\` comment, or name the files with --only`);
+  return out;
+}
+
 /** `<id>=<reading>` pairs as readings (--assume, --variant). */
 /**
  * The readings of --assume and --variant checked against the kits' and the engine's registered assumptions (a
  * misspelt id or reading fails here, before the queue, not after it). Loads the game data: seconds.
  */
 export async function readingsProblem(values: { readonly assume: readonly string[]; readonly variant: readonly string[] }): Promise<string | null> {
-  const list = [...values.assume, ...values.variant.flatMap((x) => x.split(","))];
+  const list = [...values.assume, ...values.variant.flatMap((x) => x.split(",")).filter((x) => !isSetEntry(x))];
   if (!list.length) return null;
   const [{ loadGameData }, { allAssumptions }] = await Promise.all([import("@efsim/data"), import("@efsim/engine")]);
   const known = allAssumptions(loadGameData());
@@ -778,18 +1052,40 @@ export function splitLines(parts: readonly { readonly label: string; readonly fr
   };
   const wholeMoved = movedBy(before, whole);
   const anyPart = new Set<string>();
+  // allLogs keys a hold-out as under pending/ (its key before 2026-11-16): its group says it is one (round 18: by the key
+  // alone, a hold-out moved by the whole change and by no part was named among the logs "by no part alone").
+  const held = new Set([...allLogs(before), ...allLogs(whole), ...parts.flatMap((p) => [...allLogs(p.to)])].filter(([, l]) => l.group === "holdout").map(([k]) => k));
+  const isHeld = (k: string) => isHoldout(k) || held.has(k);
+  // The hold-outs the whole change moved, by direction: per part, how many it moves the same way alone (counts only,
+  // round 18, the replay-only report point 1: "the hold-out the whole change made worse is this part's" is a count).
+  const dirOf = (a: Snapshots, b: Snapshots, k: string) => {
+    const [x, y] = [allLogs(a).get(k), allLogs(b).get(k)];
+    return x && y ? direction(x.entry, y.entry) : "new";
+  };
+  const heldWhole = [...wholeMoved].filter(isHeld).map((k) => [k, dirOf(before, whole, k)] as const);
+  const heldLine = (p: { readonly from: Snapshots; readonly to: Snapshots }): string[] => {
+    if (!heldWhole.length) return [];
+    const by = new Map<string, { n: number; same: number }>();
+    for (const [k, d] of heldWhole) {
+      const x = by.get(d) ?? { n: 0, same: 0 };
+      by.set(d, x);
+      x.n++;
+      if (dirOf(p.from, p.to, k) === d) x.same++;
+    }
+    return [`  of the hold-outs the whole change moved: ${[...by].map(([d, x]) => `${d} ${x.n} (this part alone: ${x.same} ${d})`).join(", ")}`];
+  };
   for (const [i, p] of parts.entries()) {
     const moved = movedBy(p.from, p.to);
     if (!moved.size) {
       out.push(`Part ${i + 1}: ${p.label}: no log's verdicts moved`);
       continue;
     }
-    out.push(`Part ${i + 1}: ${p.label}`, ...compare(p.from, p.to).filter((l) => !/: unchanged$/.test(l)).map((l) => `  ${l}`));
+    out.push(`Part ${i + 1}: ${p.label}`, ...compare(p.from, p.to).filter((l) => !/: unchanged$/.test(l)).map((l) => `  ${l}`), ...heldLine(p));
     for (const k of moved) anyPart.add(k);
   }
   const name = (ks: readonly string[]) => {
-    const hold = ks.filter(isHoldout).length;
-    return [...ks.filter((k) => !isHoldout(k)).sort(), ...(hold ? [`${hold} hold-out(s)`] : [])].join(", ");
+    const hold = ks.filter(isHeld).length;
+    return [...ks.filter((k) => !isHeld(k)).sort(), ...(hold ? [`${hold} hold-out(s)`] : [])].join(", ");
   };
   const unexplained = [...wholeMoved].filter((k) => !anyPart.has(k));
   const extra = [...anyPart].filter((k) => !wholeMoved.has(k));
@@ -818,9 +1114,11 @@ interface SplitRun {
  * stats-candidates report point 5): `files`, each part's diff alone on the base (a patched worktree of its own,
  * removed after); `commits`, each commit against its parent (worktrees under scratch/at/<hash>, kept like --base's).
  */
-async function splitParts(how: "files" | "commits", r: SplitRun): Promise<string[]> {
+async function splitParts(how: "files" | "commits" | "hunks", r: SplitRun): Promise<string[]> {
+  // allLogs keys a hold-out as under pending/ (round 18: by its holdout/ key every hold-out counted as moved).
   const moved = r.keys.filter((k) => {
-    const [a, b] = [allLogs(r.before).get(k), allLogs(r.whole).get(k)];
+    const lk = k.replace(/^holdout\//, "pending/");
+    const [a, b] = [allLogs(r.before).get(lk), allLogs(r.whole).get(lk)];
     return !a || !b || direction(a.entry, b.entry) !== "same";
   });
   const head = `Split by ${how} against ${r.base} (each part measured on the ${moved.length} log(s) the whole change moved; the rest as the base has them):`;
@@ -855,6 +1153,31 @@ async function splitParts(how: "files" | "commits", r: SplitRun): Promise<string
       } catch (e) {
         // A part that doesn't run alone (it needs another file's change: a new export, say) is named, not fatal.
         notes.push(`  ${g.label}: not measured alone (${(e instanceof Error ? e.message : String(e)).split("\n")[0]}); put it in one part with the files it needs: --group ${[g.label, "<the other files>"].join(",")}`);
+      } finally {
+        removeAtCommit(dir);
+      }
+    }
+    if (left) notes.push(`  (${left} doc or test file(s) left out: they change no measured code)`);
+  } else if (how === "hunks") {
+    const files = git(["diff", "--name-only", r.base, r.code]).split("\n").filter(Boolean);
+    const code = files.filter((f) => !NOT_CODE(f));
+    const left = files.length - code.length;
+    if (!code.length) return [head, `  nothing to split: no code file changed (${left} doc or test file(s) left out)`];
+    const diff = execFileSync("git", ["diff", "--binary", r.base, r.code, "--", ...code], { cwd: ROOT, encoding: "utf8", maxBuffer: 256 << 20 });
+    const groups = hunkParts(diffHunks(diff), r.only);
+    const patches = join(ROOT, "scratch/measure/patches");
+    mkdirSync(patches, { recursive: true });
+    for (const [i, g] of groups.entries()) {
+      const file = join(patches, `split-${process.pid}-hunk${i + 1}.diff`);
+      writeFileSync(file, g.patch);
+      const dir = resolve(ROOT, "scratch/at", `measure-${shortRef(r.base)}-hunk${i + 1}-${process.pid}`);
+      try {
+        atCommit(r.base, dir, file);
+        const got = await r.measure(dir, `part ${i + 1} (${g.label}): `, moved);
+        parts.push({ label: `${g.label} alone on ${r.base}`, from: r.before, to: overlay(r.before, got, r.split) });
+      } catch (e) {
+        // A hunk that doesn't apply or run alone (another hunk's context, a new export) is named, not fatal.
+        notes.push(`  ${g.label}: not measured alone (${(e instanceof Error ? e.message : String(e)).split("\n")[0]}); mark it and the hunks it needs with one \`split:<name>\` comment`);
       } finally {
         removeAtCommit(dir);
       }
@@ -1058,6 +1381,11 @@ function git(args: readonly string[]): string {
   return execFileSync("git", args, { cwd: ROOT, encoding: "utf8" }).trim();
 }
 
+/** A file's text at a commit (untrimmed). */
+function gitShow(ref: string, file: string): string {
+  return execFileSync("git", ["show", `${ref}:${file}`], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 });
+}
+
 /**
  * A `--patch` without `--at` goes on top of the tree as queued, which holds the working tree's changes: a diff that is
  * one of those changes doesn't apply there (physical-statuses report point 1: a split of one batch's effect failed so
@@ -1085,7 +1413,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   } catch (e) {
     problem = `measure: ${e instanceof Error ? e.message : String(e)} (npm run measure -- --help for the options)`;
   }
-  if (!problem && testLockFile()) problem = await readingsProblem(measureOptions(argv).values);
+  if (!problem && testLockFile()) problem = setsProblem(measureOptions(argv).values) ?? (await readingsProblem(measureOptions(argv).values));
   if (problem) {
     process.stderr.write(problem + "\n");
     process.stdout.write("EFSIM-DONE measure fail\n");

@@ -20,6 +20,11 @@
 // The summary per clock kind and what holds inside (no stop, combos only, an ultimate, other stops only): rows, the
 // residual's median, the held time's median and Σ residual ÷ Σ held (the share of the held time the clock runs late by);
 // `by: "operator"` the same per combo operator over the rows with one operator's combos only.
+//
+// A row whose span holds a logged Stagger break (the start of one of the log's Stagger spans: query.ts
+// loggedStaggerSpans) is marked, and each clock kind's summary gives those rows apart (round 18, the placement-cases
+// report point 3: 5082's Yvonne held about 0.5 s at a break, found by the replay, the stagger view and the holds side
+// by side): a hold the stop list lacks at a break (the data's enablePoiseBreakTimeDilation?) shows as their residual.
 
 import { FPS, type ArtsElement, type GameData } from "@efsim/engine";
 import { burstRows } from "./burstsview.ts";
@@ -57,6 +62,8 @@ export interface PaceRow {
   readonly heldByOperator: Readonly<Record<string, number>>;
   /** All of it inside the log's Stagger (loggedStaggerSpans). */
   readonly staggered: boolean;
+  /** The logged Stagger breaks (a Stagger span's start) inside it, ms. */
+  readonly breaks: readonly number[];
 }
 
 /** The rows of a log, and how many were left out because a stop straddles them. */
@@ -89,13 +96,13 @@ export function logClocks(data: GameData, log: { readonly short: string; readonl
   const spanOf = (t: number) => spans.findIndex((x) => x.from <= t && t <= x.to);
   const rows: PaceRow[] = [];
   let straddled = 0;
-  const add = (r: Omit<PaceRow, "log" | "residual" | "held" | "heldByOperator" | "staggered">, counted: readonly ReplayTimeStop[]) => {
+  const add = (r: Omit<PaceRow, "log" | "residual" | "held" | "heldByOperator" | "staggered" | "breaks">, counted: readonly ReplayTimeStop[]) => {
     const h = heldInside(r.a, r.b, counted);
     if (h.straddled) {
       straddled++;
       return;
     }
-    rows.push({ ...r, log: short, residual: worldMs(r.a, r.b, counted) - r.expected, held: h.held, heldByOperator: h.byOp, staggered: spanOf(r.a) >= 0 && spanOf(r.a) === spanOf(r.b) });
+    rows.push({ ...r, log: short, residual: worldMs(r.a, r.b, counted) - r.expected, held: h.held, heldByOperator: h.byOp, staggered: spanOf(r.a) >= 0 && spanOf(r.a) === spanOf(r.b), breaks: spans.map((x) => x.from).filter((t) => t > r.a && t < r.b) });
   };
   if (kinds.has("tick")) {
     // The enemy's clock: every stop counts (holds.ts tickBounds' chains, cut at the log's Stagger's edges).
@@ -172,7 +179,7 @@ function rowLine(data: GameData, r: PaceRow): string {
     const [op, kind] = k.split("|") as [string, string];
     return `${operatorLabel(data, op)} ${kind} ${s(v)}`;
   });
-  return `  ${r.log} ${r.kind} ${r.what} ${s(r.a)}⇒${s(r.b)}: expected ${s(r.expected)}, residual ${r.residual >= 0 ? "+" : ""}${s(r.residual)} s; held ${by.length ? by.join(", ") : "nothing"}${r.staggered ? " [in the log's Stagger]" : ""}`;
+  return `  ${r.log} ${r.kind} ${r.what} ${s(r.a)}⇒${s(r.b)}: expected ${s(r.expected)}, residual ${r.residual >= 0 ? "+" : ""}${s(r.residual)} s; held ${by.length ? by.join(", ") : "nothing"}${r.staggered ? " [in the log's Stagger]" : ""}${r.breaks.length ? ` [a Stagger break inside at ${r.breaks.map(s).join(", ")}]` : ""}`;
 }
 
 /**
@@ -202,6 +209,9 @@ export function clocksView(data: GameData, logs: readonly { readonly short: stri
       out.push(summaryLine(g, sel));
       if (k === "tick") for (const [label, st] of [["  in the log's Stagger", true], ["  outside it", false]] as const) if (sel.some((r) => r.staggered === st)) out.push(summaryLine(label, sel.filter((r) => r.staggered === st)));
     }
+    // The rows with a logged Stagger break inside, whatever holds them, against those without one.
+    const broken = mine.filter((r) => r.breaks.length);
+    if (broken.length) out.push(summaryLine("a Stagger break inside", broken), summaryLine("no Stagger break inside", mine.filter((r) => !r.breaks.length)));
     if (opts.by === "operator") {
       const byOp = new Map<string, PaceRow[]>();
       for (const r of mine) {

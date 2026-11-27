@@ -5,7 +5,7 @@
 // (logcasts.ts joinDelayed). Each on the log that showed it.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { devFixtures, logBuffReplay, placeHits, type LogFixture, type LogHit } from "@efsim/logs";
+import { devFixtures, engineHits, engineReport, logBuffReplay, placeHits, type LogFixture, type LogHit } from "@efsim/logs";
 import { killGaps } from "../packages/logs/src/enginecheck.ts";
 
 const data = loadGameData();
@@ -28,7 +28,13 @@ describe("a logged kill's gap (kill-gaps `absent`)", () => {
   it("lands none of Typhoeus's hits inside it; under `there` her burst comes back", () => {
     const inGap = (hits: readonly { operator: string; hitId: string; frame: number }[]) => hits.filter((h) => h.operator === T && h.frame >= frameOf(63337 + 150) && h.frame <= frameOf(67635 - 150)).map((h) => h.hitId);
     expect(inGap(logBuffReplay(data, fx).replay.hits)).toEqual([]);
-    expect(inGap(logBuffReplay(data, fx, { assume: { "kill-gaps": "there" } }).replay.hits)).toContain("burst");
+    const there = logBuffReplay(data, fx, { assume: { "kill-gaps": "there" } });
+    expect(inGap(there.replay.hits)).toContain("burst");
+    // Round 18 (the replay-only report point 4): the totals' one-sided landings inside a kill gap carry the `kill` flag.
+    const oneSided = engineReport(data, fx, there, engineHits(data, fx, there)).totals.oneSided;
+    const flagged = oneSided.filter((o) => o.flags.includes("kill"));
+    expect(flagged.some((o) => o.side === "replay" && o.operator === T && o.t > 63337 && o.t < 67635)).toBe(true);
+    expect(flagged.every((o) => killGaps(fx).some((g) => o.t > g.from && o.t < g.to))).toBe(true);
   });
 });
 

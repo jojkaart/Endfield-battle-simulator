@@ -66,6 +66,12 @@ export type MeasureAnswer =
       readonly untimed?: boolean;
       /** The totals' error by where it lives (TotalsShares; where the commit's code has snapshotEntry's `shares`): measure's aggregates, hold-outs only in them. */
       readonly shares?: Shares;
+      /**
+       * The replay's decision lines counted by kind (packages/logs decisionsview.ts replayDecisions: SKIP, TAILCUT,
+       * JUMPDROP, …; where the commit's code has them): a hold-out's only trace of which replay rule acted there, as
+       * net changes summed over the moved hold-outs (round 18, the placement-cases report point 2). Kinds and counts only.
+       */
+      readonly decisions?: Readonly<Record<string, number>>;
       readonly seconds: number;
     }
   | { readonly key: string; readonly placement: string; readonly casts?: readonly string[]; readonly seconds: number }
@@ -109,7 +115,15 @@ if (under) {
   for (const [id, r] of Object.entries(under.assume)) if (!known.some((a) => a.id === id && r in a.readings)) throw new Error(`--assume ${id}=${r}: no such reading (${known.map((a) => a.id).join(", ")})`);
 }
 
-function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[]; holds?: HoldUnit[]; shares?: Shares } {
+/** The replay's decision lines by kind (MeasureAnswer.decisions), or undefined where the commit's code lacks them. */
+function decisionsOf(fx: any, replay: any): Record<string, number> | undefined {
+  if (typeof logs.replayDecisions !== "function" || !replay?.replay) return undefined;
+  const out: Record<string, number> = {};
+  for (const d of logs.replayDecisions(data, replay.replay, fx) as { kind: string }[]) out[d.kind] = (out[d.kind] ?? 0) + 1;
+  return out;
+}
+
+function entryOf(fx: any, withHits = false): { entry: Record<string, Record<string, number | null>>; perHit: PerHit; hits?: HitRow[]; holds?: HoldUnit[]; shares?: Shares; decisions?: Record<string, number> } {
   // The snapshots' own computation (packages/logs/src/snapshotentry.ts) where the commit has it; before it, its five calls.
   const own = typeof logs.snapshotEntry === "function" ? logs.snapshotEntry(data, fx, under ?? {}) : undefined;
   const replay = own?.replay ?? (under ? logs.logBuffReplay(data, fx, logs.placeHits(data, fx), under) : logs.logBuffReplay(data, fx));
@@ -124,7 +138,9 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
   });
   const perHit = { n: errors.length, meanAbs: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : 0 };
   const shares = sharesOf(fx, own, replay, byHit, verdicts);
-  if (!withHits) return { entry: { ...counts, totals }, perHit, ...(shares ? { shares } : {}) };
+  const decisions = decisionsOf(fx, replay);
+  const extra = { ...(shares ? { shares } : {}), ...(decisions ? { decisions } : {}) };
+  if (!withHits) return { entry: { ...counts, totals }, perHit, ...extra };
   // The primary reading's modifiers at each landing, where the commit's code has the calls (round 3 on).
   const modsOf = modifiersAt(fx, replay);
   // The verdicts are in fx.hits' order (checkLog maps over them).
@@ -135,7 +151,7 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
     return mods ? [t, op, event, verdict, ratio, mods] : [t, op, event, verdict, ratio];
   });
   const holds = holdUnits(replay.replay?.hiddenHolds);
-  return { entry: { ...counts, totals }, perHit, hits, ...(holds ? { holds } : {}), ...(shares ? { shares } : {}) };
+  return { entry: { ...counts, totals }, perHit, hits, ...(holds ? { holds } : {}), ...extra };
 }
 
 /** The placed holds' units (views.ts holdsView's unit lines: the clocks' earliest, latest and midpoint at each 0.512 s of hold). */

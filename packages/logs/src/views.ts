@@ -22,7 +22,7 @@ import type { HitRecord } from "./hitexport.ts";
 import { FACTOR_STRETCH, factorStretches } from "./buildoffsets.ts";
 import { clockAt, clockReaches, holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
-import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast } from "./logcasts.ts";
+import { CAST_SLACK_MS, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast, type PlacedJoin } from "./logcasts.ts";
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -81,31 +81,64 @@ function barMark(fx: LogFixture): (h: LogHit) => string {
 }
 
 
-/** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
-export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): string {
+/**
+ * One line of `zmdlogs casts` as a record (round 18, round 17's own report point 2: scripts/cli-ab.ts --placement
+ * paired and counted casts by regexes over the text and broke on a skill id without an underscore): its kind and time
+ * (ms), the operator (id) and the fields a comparison pairs by, with the line's text. `zmdlogs casts --json` prints
+ * them; castsView renders the text.
+ */
+export interface CastsRecord {
+  readonly kind: "EVENT" | "CAST" | "REALIGN" | "STOP" | "HIT" | "OTHER";
+  readonly t: number;
+  readonly operator: string;
+  /** The operator's display name (as the text has it). */
+  readonly name: string;
+  /** EVENT, STOP: the skill; CAST, REALIGN: the cast's group (the skill placed); HIT: its event. */
+  readonly skill: string;
+  /** CAST: the kind of skill and the key it was placed from; REALIGN: the key. */
+  readonly castKind?: string | null;
+  readonly key?: string;
+  /** CAST: the rule that chose its skill among those sharing its key (LoggedCast.chosen; `-` none). */
+  readonly rule?: string;
+  /** HIT: the value, and the cast and slot it was placed at (absent: unplaced or a status event). */
+  readonly value?: number;
+  readonly cast?: { readonly skill: string; readonly start: number; readonly index: number; readonly frame?: number; readonly sameAs?: boolean };
+  /** HIT: why it joined a cast placed before it (PlacedHit.joined), where it did. */
+  readonly joined?: PlacedJoin;
+  readonly text: string;
+}
+
+/** `zmdlogs casts`' lines as records, in time order (castsView's text, CastsRecord), and the view's header line. */
+export function castsRecords(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): { readonly header: string; readonly records: CastsRecord[] } {
   const placement = placeHits(data, fx);
-  const lines: Line[] = [];
+  const lines: (CastsRecord & { readonly order: number })[] = [];
   const batched = batchMark(fx);
   const bar = barMark(fx);
-  for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ t: c.t, order: 0, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
+  for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ kind: "EVENT", t: c.t, order: 0, operator: c.operator, name: label(data, c.operator), skill: c.skill, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
   for (const c of distinctCasts(placement)) {
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
     // The first landing's other paths (LoggedCast.paths): each start it would give and whether the previous cast allows it.
     const paths = f.rules && c.paths?.length ? `  [paths: ${c.paths.map((p) => `${p.hitId}@${p.frame}${p.jump ? ` on ${p.jump.at}→${p.jump.to}` : " (no jump)"}: start ${s(p.start)}${p.allowed ? ", allowed" : ", not allowed"}${Math.abs(p.start - c.start) < 1 ? " (taken)" : ""}`).join("; ")}]` : "";
-    lines.push({ t: c.start, order: 1, text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}` });
+    lines.push({ kind: "CAST", t: c.start, order: 1, operator: c.operator, name: label(data, c.operator), skill: c.group, castKind: c.kind, key: c.key, rule: c.chosen?.rule ?? "-", text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}` });
   }
+  // What the realignment by value decided for a cast's key (Placement.realign, round 18): moved, or left and why.
+  if (f.rules)
+    for (const r of placement.realign ?? []) {
+      if (!inWindow(f, r.cast.start) || !mine(f, r.cast.operator)) continue;
+      lines.push({ kind: "REALIGN", t: r.cast.start, order: 1, operator: r.cast.operator, name: label(data, r.cast.operator), skill: r.cast.group, key: r.key, text: `REALIGN ${label(data, r.cast.operator)} ${shortSkill(r.cast.group)} key ${shortSkill(r.key)} (${r.landings} landings): ${r.realigned ? "realigned by value" : "left by time"}: ${r.why}` });
+    }
   // The stops the replay holds (query.ts replayTimeStops, the views' one list): a cast placed from its cast event alone
   // (an ultimate at its logged stop's end: db87's Laevatain at 16.60 s) is marked.
   for (const st of replayTimeStops(data, fx, placement)) {
     const [a, z] = [msOf(st.start), msOf(st.start + st.scales.length)];
     if (z < (f.from ?? -Infinity) || a > (f.to ?? Infinity)) continue;
     const zero = st.scales.filter((x) => x === 0).length;
-    lines.push({ t: a, order: 2, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})${st.placed ? "" : " [no placed hits: the replay's cast from its event or inferred]"}${tickReadNote(st)}` });
+    lines.push({ kind: "STOP", t: a, order: 2, operator: st.operator, name: label(data, st.operator), skill: st.skillId, text: `STOP   ${label(data, st.operator)} ${shortSkill(st.skillId)} ${s(a)}–${s(z)} s (${zero} of ${st.scales.length} frames at 0, lowest scale ${Math.min(...st.scales).toFixed(2)})${st.placed ? "" : " [no placed hits: the replay's cast from its event or inferred]"}${tickReadNote(st)}` });
   }
   for (const h of fx.hits) {
     if (!inWindow(f, h.t)) continue;
     if (!mine(f, h.operator)) {
-      lines.push({ t: h.t, order: 4, text: `  .    ${label(data, h.operator)} ${shortSkill(h.event)}` });
+      lines.push({ kind: "OTHER", t: h.t, order: 4, operator: h.operator, name: label(data, h.operator), skill: h.event, text: `  .    ${label(data, h.operator)} ${shortSkill(h.event)}` });
       continue;
     }
     const p = placement.hits.get(h);
@@ -114,9 +147,34 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { read
     // a projectile's or an entity's skill (Si's bursts by the stroke or Inksoul behind them).
     const origin = h.poise?.origin;
     const credited = origin !== undefined && origin !== h.event && !h.event.startsWith(origin) && origin !== p?.cast.skillId ? ` (origin ${shortSkill(origin)})` : "";
-    lines.push({ t: h.t, order: 3, text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}${bar(h)}` });
+    const joined = f.rules && p?.joined && lateJoin(p.joined) ? `  [${joinWords(p.joined)}]` : "";
+    const cast = p ? { skill: p.cast.group, start: p.cast.start, index: p.index, ...(p.frame !== undefined ? { frame: p.frame } : {}), ...(p.sameAs ? { sameAs: true } : {}) } : undefined;
+    lines.push({ kind: "HIT", t: h.t, order: 3, operator: h.operator, name: label(data, h.operator), skill: h.event, value: h.value, ...(cast ? { cast } : {}), ...(p?.joined ? { joined: p.joined } : {}), text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}${bar(h)}${joined}` });
   }
-  return [`${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)${f.rules ? "; [the rule that chose the skill among those sharing its key: logcasts.ts choose, LoggedCast.chosen]" : ""}`, render(lines)].join("\n");
+  const header = `${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)${f.rules ? `; [the rule that chose the skill among those sharing its key: logcasts.ts choose, LoggedCast.chosen]; a HIT's [joined: …] where it joined its cast more than ${CAST_SLACK_MS / 1000} s after its slot's frame (PlacedHit.joined: the rule and the times); REALIGN what the realignment by value did with a cast's key` : ""}`;
+  const records = lines.sort((a, b) => a.t - b.t || a.order - b.order).map(({ order: _o, ...r }) => r);
+  return { header, records };
+}
+
+/** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
+export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): string {
+  const { header, records } = castsRecords(data, fx, f);
+  return [header, records.map((l) => `${s(l.t).padStart(7)}  ${l.text}`).join("\n")].join("\n");
+}
+
+/** `zmdlogs casts --json`: one JSON line per record (CastsRecord), each with its fixture's id. */
+export function castsJson(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): string {
+  return castsRecords(data, fx, f).records.map((r) => JSON.stringify({ log: fx.id, ...r })).join("\n");
+}
+
+/** Whether a join came later than its slot's frame by more than CAST_SLACK_MS (where the slot's frame is unknown: than the slack itself). */
+export const lateJoin = (j: PlacedJoin) => j.elapsed > (j.due ?? 0) + CAST_SLACK_MS;
+
+/** A late join (PlacedHit.joined) in words: the rule and the times. */
+function joinWords(j: PlacedJoin): string {
+  const from = j.by === "delayed" || j.by === "reach" ? "its cast's start" : "the cast's first landing";
+  const rule = j.by === "span" ? "within the cast's landings' span" : j.by === "to come" ? "slots to come within the skill's action" : j.by === "paced" ? "a detached series at its pace" : j.by === "same ultimate" ? "within the ultimate's action" : j.by === "delayed" ? "a delayed hit's landing (joinDelayed)" : "within an earlier cast's reach (joinable)";
+  return `joined: ${j.by}, ${rule}: ${s(j.elapsed)} s after ${from}${j.due !== undefined ? `, its slot's frame at ${s(j.due)} s` : ""}`;
 }
 
 /** A cast's choice (LoggedCast.chosen) in words: the rule, what decided it and the candidates. */
@@ -430,7 +488,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early, LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings, NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines), ...pairs].join("\n");
 }
 
@@ -1160,8 +1218,11 @@ export interface TotalsRow {
   readonly group: TotalsGroup;
   readonly shares: TotalsShares;
 }
-export type TotalsGroup = "verified" | "development" | "earlier" | "multi";
-const TOTALS_GROUPS: readonly TotalsGroup[] = ["verified", "development", "earlier", "multi"];
+/** `targets`: a pending fight against several enemies under one id (the fixture's severalTargets), the scoreboard's own row. */
+export type TotalsGroup = "verified" | "development" | "earlier" | "targets" | "multi";
+const TOTALS_GROUPS: readonly TotalsGroup[] = ["verified", "development", "earlier", "targets", "multi"];
+/** The groups whose fights the combined rows and the by-key ranking leave out: multi-target imports, several targets under one id. */
+const APART: ReadonlySet<TotalsGroup> = new Set(["multi", "targets"]);
 
 const sharePct = (x: number) => `${x >= 0 ? "+" : ""}${x.toFixed(2)}%`;
 
@@ -1171,7 +1232,7 @@ function totalsOneSided(data: GameData, fx: LogFixture, t: TotalsComparison, f: 
   const items = t.oneSided.filter((x) => !f.operators?.length || f.operators.includes(x.operator));
   const byContext = kindsAggregate([items.map((x): KindShare => ({ context: x.context, nature: x.nature, skill: x.skill, replay: x.side === "replay" ? (100 * x.damage) / L : 0, log: x.side === "log" ? (100 * x.damage) / L : 0, n: 1, flagged: {} }))], (k) => k.context);
   const out = [
-    `${fx.id}: the one-sided landings (onesided.ts; % of the logged total): replay-only (+) and log-only (−), each with where it sits (twin: an opposite-side landing of its operator within 1.5 s; cast tail / head / gap / unlogged: its cast's landings standing for logged hits; no landing: the replay's reason), its nature and skill kind, and flags (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past its operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits).`,
+    `${fx.id}: the one-sided landings (onesided.ts; % of the logged total): replay-only (+) and log-only (−), each with where it sits (twin: an opposite-side landing of its operator within 1.5 s; cast tail / head / gap / unlogged: its cast's landings standing for logged hits; no landing: the replay's reason), its nature and skill kind, and flags (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past its operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits; kill: after a logged kill before the fight's end, before the next logged hit).`,
     "  by where they sit:",
     ...byContext.map((k) => `    ${sharePct(k.replay)} ${sharePct(k.log)}  ${k.kind}`),
     "  each:",
@@ -1206,11 +1267,11 @@ export function totalsKindsView(data: GameData, rows: readonly TotalsRow[], f: {
   const top = f.top ?? 15;
   const kindsOf = (r: TotalsRow) => (r.shares.kinds ?? []).filter(() => !f.operators?.length || r.shares.perOperator.some((o) => f.operators?.includes(o.operator)));
   const out = [
-    "The one-sided landings by kind (onesided.ts), as mean % of a fight's logged total: gross (replay-only + |log-only|), replay-only, log-only, net, the fights with any, and the flags' gross shares (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past the operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits). Where they sit: unread (a logged hit's own landing without a reading), twin like / other (an opposite-side landing of the operator within 1.5 s, values within ×1.5 or ×3), then the replay's cast (no cast, cast unlogged / tail / head / gap) or the log's reason (no landing: …).",
+    "The one-sided landings by kind (onesided.ts), as mean % of a fight's logged total: gross (replay-only + |log-only|), replay-only, log-only, net, the fights with any, and the flags' gross shares (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past the operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits; kill: after a logged kill before the fight's end). Where they sit: unread (a logged hit's own landing without a reading), twin like / other (an opposite-side landing of the operator within 1.5 s, values within ×1.5 or ×3), then the replay's cast (no cast, cast unlogged / tail / head / gap) or the log's reason (no landing: …).",
   ];
   const groups: { name: string; rows: TotalsRow[] }[] = [
-    { name: "development, earlier pending and verified", rows: rows.filter((r) => r.group !== "multi") },
-    ...TOTALS_GROUPS.filter((g) => g !== "multi").map((g) => ({ name: g, rows: rows.filter((r) => r.group === g) })),
+    { name: "development, earlier pending and verified", rows: rows.filter((r) => !APART.has(r.group)) },
+    ...TOTALS_GROUPS.filter((g) => g !== "multi").map((g) => ({ name: g === "targets" ? "several targets under one id" : g, rows: rows.filter((r) => r.group === g) })),
   ];
   for (const g of groups) {
     if (!g.rows.length) continue;
@@ -1219,7 +1280,7 @@ export function totalsKindsView(data: GameData, rows: readonly TotalsRow[], f: {
     out.push(`  by nature:`, ...formatKindLines(kindsAggregate(fights, (k) => k.nature), top));
     out.push(`  by where they sit · nature · skill kind:`, ...formatKindLines(kindsAggregate(fights), top));
   }
-  const all = rows.filter((r) => r.group !== "multi");
+  const all = rows.filter((r) => !APART.has(r.group));
   const keys = new Map<string, { operator: string; side: string; key: string; context: string; share: number; n: number; fights: Map<string, number> }>();
   for (const r of all)
     for (const k of r.shares.keys ?? []) {

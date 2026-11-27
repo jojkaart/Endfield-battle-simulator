@@ -67,3 +67,18 @@ placement cases. Branch: this worktree's, based on main at 107766a.
 - `measure --variant status-pairing=nearest` with the plain run gave the change's effect both ways in one run, and
   `--hits` named every hit that moved, so "none worse" was checkable.
 - `scripts/edit.ts` for fixture and doc edits with backticks.
+
+## Outcome (round 18)
+
+- 1 (Separating a reclassification from a code change in the scoreboard numbers needs scratch scripts): done:
+  `node scripts/accuracy.ts --compare <ref> --regroup` (the reference's entries in this tree's groups, then the change
+  alone), and --compare prints the where-the-error-lives groups that moved (sharesCompare; sharesAggregate exported).
+  Against 107766a it gives the journal's scratch numbers (development plain 81.5 → 82.4%, log-only 3.13 → 2.02%).
+- 2 (Measuring a constant's value takes a commit, an edit, a diff and a revert per value): done: `measure --set
+  <file>:<CONST>=<value>` and `--variant <file>:<CONST>=<value>` (its own patched worktree), the patch kept under
+  scratch/measure/patches/ and named in the summary; tried with two STATUS_WIDE_FRAMES values in one run.
+- 3 (Waiting for a background job: Monitor's events arrive only between turns): for the lead: the CLAUDE.md sentence
+  is proposed in docs/friction-done/2026-11-27-round-18.md "For the lead".
+- 4 (A new scoreboard group touches three files that each decide groups their own way): done: groupOf(key, split,
+  entry) reads the SEVERAL key from the entry (allLogs passes it); measure's lines go through the overlay's marked
+  split, and the totals views group a several-target fight as the scoreboard does.

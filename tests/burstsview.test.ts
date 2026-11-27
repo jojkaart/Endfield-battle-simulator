@@ -3,10 +3,24 @@
 // once, whatever the replay's accuracy is.
 import { describe, expect, it } from "vitest";
 import { loadGameData, operatorId } from "@efsim/data";
-import { burstRows, burstsView, devFixtures, logBuffReplay } from "@efsim/logs";
+import { burstLine, burstRows, burstsView, devFixtures, logBuffReplay, withBurstTwins, type BurstRow } from "@efsim/logs";
 import { parseReactionEvent } from "@efsim/engine";
 
 const data = loadGameData();
+
+// Round 18 (the log-only report point 4): a LOG ONLY and a REPLAY ONLY burst of one operator and element within 1.5 s
+// are one timing question: marked as twins, one to one, nearest first.
+describe("twin bursts (withBurstTwins)", () => {
+  const row = (t: number, side: "log" | "replay", element = "fire", operator = "a"): BurstRow => ({ operator, element, stops: [], ...(side === "log" ? { logged: { t, value: 100, cause: null }, unknown: "none near" } : { replay: { t, damage: 90, cause: null } }) });
+  it("pairs each one-sided burst with the nearest other-side one of its operator and element within 1.5 s", () => {
+    const rows = withBurstTwins([row(9270, "log"), row(10080, "replay"), row(9900, "replay"), row(9300, "replay", "ice"), row(20000, "replay")]);
+    expect(rows.map((r) => r.twin ?? null)).toEqual([9900, null, 9270, null, null]);
+    expect(burstLine(data, rows[0] as BurstRow)).toMatch(/LOG ONLY .*; twin: the REPLAY ONLY burst at 9\.90 \(630 ms apart, outside the pairing\)$/);
+  });
+  it("names the pairing's rule in the header", () => {
+    expect(burstsView(data, [])).toMatch(/one assignment, the most pairs, then the closest in value and time, a landing within 16 frames whatever its value, up to 60 where its value fits within 1%/);
+  });
+});
 
 describe("a fight's Arts Bursts (zmdlogs bursts)", () => {
   const logs = devFixtures({ ids: ["00ae"] });

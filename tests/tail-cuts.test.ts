@@ -30,6 +30,18 @@ describe("unlogged tails (0c14's Rossi)", () => {
     expect(finals).toEqual([]);
   });
 
+  // Round 18 (the replay-only report point 3): a guard that keeps a tail says so (TAILKEPT), as a cut does (TAILCUT).
+  it("records the tails its guards kept, with the guard (TAILKEPT)", () => {
+    const kept = replay.tailsKept.filter((x) => x.cast.operator === ROSSI);
+    expect(kept.length).toBeGreaterThan(0);
+    for (const k of kept) {
+      expect(replay.tailCuts.some((c) => c.cast === k.cast)).toBe(false);
+      expect(k.why).toMatch(/logged hit|away stretch|last hit|another cast's|new run of/);
+    }
+    // Under `kept` the cut's rule doesn't run: no guard to report.
+    expect(logBuffReplay(data, fx, undefined, { assume: { "unlogged-tails": "kept" } }).replay.tailsKept).toEqual([]);
+  });
+
   it("lands none of its Lift, wolves or bleed; under `kept` they come back", () => {
     const tail = (hits: typeof replay.hits) => hits.filter((h) => h.operator === ROSSI && h.skillId === SKILL && h.frame >= 1095 && h.frame <= 1120);
     expect(tail(replay.hits).map((h) => h.hitId)).toEqual([]);

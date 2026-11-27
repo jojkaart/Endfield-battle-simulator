@@ -158,7 +158,37 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   change moved; the summary ends with the logs no part moved alone (parts
   acting together). Tried on the placement leads' range (`--split commits
   --at 9c209b3 --base c6f1874`): 1cd1 and af7b by 00876b1, 4d60 by the
-  merge that brought the Empyrean's end in.
+  merge that brought the Empyrean's end in. `--split hunks` (round 18,
+  the replay-only report point 1: three rules in one file took a
+  hand-made reverse patch and a measure each) measures each diff hunk
+  alone on the base; hunks whose changed lines carry one `split:<name>`
+  comment are one part, `--only a,b` splits only those files' hunks (the
+  rest one part), and more than 24 parts is refused. Each part's lines
+  end with how many of the hold-outs the whole change moved it moves the
+  same way alone (counts per direction: "worse 1 (this part alone: 1
+  worse)"), which says which rule a hold-out-only regression comes from
+  without naming the log.
+- **A constant's value** (round 18, the status-pairing report point 2:
+  a commit, an edit, a diff and a revert per value): `--set
+  <file>:<CONST>=<value>` (repeatable) measures the code with that
+  constant's one-line declaration (`[export] const CONST = …;`, exactly
+  one in the file, checked before the queue) set to the value, as a
+  patch made from the code measured and kept under
+  scratch/measure/patches/ (the summary names it: the docs/tried/ diff
+  for free). As a `--variant` entry, `<file>:<CONST>=<value>` measures
+  that variant on its own patched worktree, so `--variant
+  x.ts:WIDE=30 --variant x.ts:WIDE=16` compares two values against the
+  plain tree in one run. Not with `--live`; with `--patch`, only on
+  other files.
+- **What a moved hold-out's replay did** (round 18, the placement-cases
+  report point 2: a data-right change cost one hold-out 23 plain and was
+  dropped unexplained): the summary counts the moved hold-outs' replay
+  decision lines by kind on both sides (`zmdlogs decisions`' SKIP,
+  TAILCUT, TAILKEPT, JUMPDROP, MADE, …), as net changes summed per
+  direction ("worse (1): JUMPDROP −3"), against `--base`, the plain tree
+  (a variant) or the snapshots' writer's code, measured for those
+  hold-outs alone. Kinds and counts, never a log, an operator or a skill:
+  "What a hold-out output may say" below.
 - **Two measures that change the same logs** (round 12, cooldown-clock
   report point 1: b7b3 better under each of two changes alone, mixed
   under both): each run writes `moved.json` (when it was queued, its code,
@@ -312,7 +342,15 @@ snapshots:update's summary) may print:
   net changes, summed over the hold-outs;
 - the means of a kinds table over the hold-outs;
 - how many moved hold-outs have an operator, only where round 9's
-  measure already prints it (counts, never which log).
+  measure already prints it (counts, never which log);
+- the replay's decision kinds' net changes over the moved hold-outs, per
+  direction, and per `--split` part how many of the whole change's moved
+  hold-outs it moves the same way (round 18; counts).
+
+A stable label per hold-out across runs ("hold-out #7") was proposed
+(round 18, the replay-only report point 1) and not built: with `--with
+<operator>` selecting the hold-outs measured, a label that persists
+would say which hold-outs have which operator.
 
 Never: a hold-out's id or file name, its team, an operator, weapon or gear
 set per log, a split per kit or per mechanism class (the lead, 2026-11-25:

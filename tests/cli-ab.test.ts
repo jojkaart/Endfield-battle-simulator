@@ -1,7 +1,7 @@
 // scripts/cli-ab.ts outputDiff: two outputs of one efsim command (another commit's code and this tree's), the lines
 // only one side has, and with a key the lines that changed paired up (zmdlogs holds --verbose: a bound by its tag).
 import { describe, expect, it } from "vitest";
-import { HOLDS_KEY, outputDiff, placementDiff, placementLogs, withRoot } from "../scripts/cli-ab.ts";
+import { HOLDS_KEY, outputDiff, placementDiff, placementLogs, placementOutputsDiff, withRoot } from "../scripts/cli-ab.ts";
 
 describe("outputDiff", () => {
   it("lists lines only at the ref (-) and only here (+), a repeated line as often as it differs", () => {
@@ -48,5 +48,26 @@ describe("cli-ab --placement (round 17, the Zhuang Fangyi and Liino report point
     expect(out).toContain("     1  gone ← anchor");
     expect(out.some((l) => /^ {2}Zhuang Fangyi +3 casts +1 hits$/.test(l))).toBe(true);
     expect(placementDiff(was, was)).toEqual(["the placement of every log (2) is the same"]);
+  });
+
+  // Round 18 (round 17's own report point 2): placement-lines prints records (views.ts castsRecords), compared by their
+  // fields: a skill id without an underscore parses, and a note added to a line's text (a HIT's [joined: …]) moves nothing.
+  it("compares records by their fields, prints the view's text, and falls back to the text for an older side", () => {
+    const head = (id: string) => JSON.stringify({ log: `zmdlogs-${id}`, kind: "HEADER", text: `zmdlogs-${id}: placement (logcasts.ts placeHits); times in s` });
+    const castR = (t: number, skill: string, rule: string) => JSON.stringify({ log: "zmdlogs-ab12", kind: "CAST", t, operator: "chr_0030_zhuangfy", name: "Zhuang Fangyi", skill, castKind: "basic", key: "attack2_abilityrange", rule, text: `CAST   Zhuang Fangyi ${skill} (basic) key attack2_abilityrange  [${rule}: x]` });
+    const hitR = (t: number, start: number, skill: string, note = "") => JSON.stringify({ log: "zmdlogs-ab12", kind: "HIT", t, operator: "chr_0030_zhuangfy", name: "Zhuang Fangyi", skill: "chr_0030_zhuangfy_attack2_abilityrange", value: 4899, cast: { skill, start, index: 0, frame: 15 }, text: `HIT    Zhuang Fangyi attack2_abilityrange 4899 → ${skill}@${(start / 1000).toFixed(2)} #0 frame 15${note}` });
+    const was = [head("ab12"), castR(2400, "attack2", "anchor"), hitR(2500, 2400, "attack2", "  [joined: to come, …]"), castR(5000, "attack4", "first")].join("\n");
+    const same = [head("ab12"), castR(2400, "attack2", "anchor"), hitR(2500, 2400, "attack2"), castR(5000, "attack4", "first")].join("\n");
+    expect(placementOutputsDiff(was, same)).toEqual(["the placement of every log (1) is the same"]);
+    const now = [head("ab12"), castR(2440, "attack4", "window"), hitR(2500, 2440, "attack4"), castR(5000, "attack4", "first")].join("\n");
+    const out = placementOutputsDiff(was, now);
+    expect(out).toContain("  ab12  2 cast(s), 1 HIT line(s) differ");
+    expect(out).toContain("     1  window ← new");
+    expect(out).toContain("     1  gone ← anchor");
+    // The detail prints the view's own text (its rule's reasons), not the built line.
+    expect(out.some((l) => l.includes("[window: x]"))).toBe(true);
+    // A side from before castsRecords (text): the records side is compared as the view prints it.
+    const text = [`zmdlogs-ab12: placement (logcasts.ts placeHits); times in s`, `   2.40  CAST   Zhuang Fangyi attack2 (basic) key attack2_abilityrange  [anchor: x]`, `   2.50  HIT    Zhuang Fangyi attack2_abilityrange 4899 → attack2@2.40 #0 frame 15`, `   5.00  CAST   Zhuang Fangyi attack4 (basic) key attack2_abilityrange  [first: x]`].join("\n");
+    expect(placementOutputsDiff(text, same)).toEqual(["the placement of every log (1) is the same"]);
   });
 });
