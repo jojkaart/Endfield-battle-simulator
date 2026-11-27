@@ -338,6 +338,18 @@ combo event (00ae 66.32 s, a7a7 48.89 s); the placement's casts that leave hits 
 45.06, 9a80 34.94, 3aa6 125.65 s: the replay-only agent's files); the hold-outs' physical statuses (2.08% of their
 log-only, none of the development logs').
 
+**Placement cases (2026-11-27, [journal](journal/2026-11-27-07-placement-cases-entity-landings-by-their-span-presses-in.md)):**
+three of the log-only placement cases were the placement's late joins and one a skipped press. Fixed: an ability
+entity's landings are due within the slots' span, not the skill's whole duration (logcasts.ts onEntityClock: f879's
+94.71 s explosion was the 87.12 s cast's "tick", and its empowered hit came before the Heat absorption); a slot press
+whose first landing is due in an away stretch is `unseen` and made as its button's variant (3aa6's Empyrean battle
+skill at 125.65 s: the ninth Sunderblade); a used-up cast's second landing at its last ms isn't a second enemy's when
+the values say so (9a80's Si finals). Next ([open-problems](open-problems.md) "The placement cases the one-sided rounds
+left"): 5082's Yvonne, whose own timeline the log shows held ~0.5 s at a Stagger break (the data's
+enablePoiseBreakTimeDilation, no length: a probe of every operator's lateness after logged breaks first);
+Pogranichnik's harass entity's own 0.4 s slow-downs and teleport; 99fb's bleed after Rossi's ultimate (statuses);
+docs/tried/2026-11-27-jump-launched-landings.diff once a development log shows the case.
+
 **Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
 the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only
 (207f's physical hits ×0.847), a kill read from a total that is a two-decimal multiple of Max HP (207f, 5082: no

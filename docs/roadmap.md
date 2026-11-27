@@ -106,10 +106,13 @@ below ([review-2026-10.md](review-2026-10.md)).
   placement's log-only casts (f879 95.10, 5082 45.06, 3aa6 125.65 s); replay-only landings 2026-11-27: a logged
   kill's gap (`kill-gaps`), basic tails cut (`unlogged-tails` `cut-all`, 207f), a tail kept only by its own landings'
   buffs (d774 103.28 s fixed), Si's final placed by value, Typhoeus's bursts across misplaced stops (fc63): hold-out
-  |damage error| 7.1 → 6.3%; next the slug's unlogged hits (shield?), Si's finals of unknown crit (9a80); status
-  pairing 2026-11-27: one assignment by value and time (`status-pairing`, development one-sided 5.35 → 4.99%, matched
-  unchanged), 9c6e marked `severalTargets` (its own row); next the pairs a buff's edge puts off in value, judged by the
-  check's reading.
+  |damage error| 7.1 → 6.3%; next the slug's unlogged hits (shield?); status pairing 2026-11-27: one assignment by
+  value and time (`status-pairing`, development one-sided 5.35 → 4.99%, matched unchanged), 9c6e marked
+  `severalTargets` (its own row); next the pairs a buff's edge puts off in value, judged by the check's reading;
+  placement cases 2026-11-27: an ability entity's landings due within the slots' span (f879's empowered battle skill),
+  a press due in an away stretch made as its button's variant (3aa6), a used-up cast's second landing by the slots'
+  multipliers (9a80's finals): next 5082's Yvonne held at a Stagger break (a break dilation?), Pogranichnik's harass
+  entity's own slow-downs.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

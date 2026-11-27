@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 172 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 173 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -57,6 +57,54 @@ one Combustion share a value and traded places): docs/tried/2026-11-27-status-va
 **Left:** pairs whose replay value a buff's edge puts off (1d91 50.47 / 51.02 s ×1.095, 7b54 46.70 s, a7a7 39.27 s,
 e989 86.65 s, 7910 28.27 s, abfd 100.93 s): the fit judged by the check's reading of the pair; 9c6e's second target
 itself (the engine has one); the slug's unlogged hits (lead 3, not reached).
+
+## 2026-11-27: Placement cases: entity landings by their span, presses in away stretches, used-up casts by value
+
+**Goal:** the placement and cast-assembly cases the two one-sided rounds left (docs/open-problems.md "Log-only
+landings", "Replay-only landings"): f879 95.10 s, 5082 45.06 s, 3aa6 125.65 s, Pogranichnik's harasses, 99fb's bleed
+ticks, Arcane's INT lasers, 9a80 34.94 s; beside an agent on status pairing (buffreplay.ts theirs).
+
+**Done** (docs/open-problems.md "The placement cases the one-sided rounds left"; tests/placement-cases.test.ts):
+- **An ability entity's landings are due within the slots' span** (logcasts.ts onEntityClock): a key's next landing
+  joined the open cast while it had slots to come within the skill's whole duration (9.4 s for Laevatain's battle
+  skill). An entity's landings (`launch`; no flight, buff timeline, enemy delay or random count; not a buff's key) come
+  at their own frames whatever the cast does. f879: the 94.71 s Magma Fragment explosion had been the 87.12 s cast's
+  first tick (that cast's ticks unlogged; their radius, 2.5 against the explosion's 3, is one possible reason), so the 95.94 s empowered hit made a
+  battle skill at 92.48 s, before her final strike's Heat absorption at 92.49 s; now one cast at 93.98 s with 4 Melting
+  Flame, and the 162,889 lands. Also 6339 31.62 s, Zhuang Fangyi's attack 2 / 4 ranges in 3aa6 and 4bfc. Rossi's
+  combo afterhits (a buff's timeline, 9a80 29.20 s) are left out: measured first without that, 9a80 lost 64 plain.
+- **A slot press whose first landing is due in an away stretch is `unseen`** (castassembly.ts, awayWindows), **made as
+  the button's variant the kit holds** (replayrun.ts replayedSkill): 3aa6 125.65 s, Zhuang Fangyi's Empyrean battle
+  skill 0.08 s after the last hit before a 14 s gap; its Sunderblade is the 145.74 s cast's ninth, the 148.68 s final
+  of 9 lands.
+- **A second landing at a used-up cast's last ms isn't the same landing on a second enemy when both are non-crits in
+  the ratio of slot 0's multiplier to its slot's** (logcasts.ts nextByValue): 9a80 34.94 s, Si's final (349,888) and
+  her next combo's first slash (28,396); the 36.10 s final now on its slot. First by the values' ratio alone: 9c6e (two
+  targets under one id, their values ×1.3+ apart by their own debuffs) lost 36 plain while its total went −20.6 →
+  −0.9%, the second target's landings made as casts of their own: the wrong mechanism.
+- A press made in an away stretch takes what a cast takes: 7b54's Si at 24.81 s (21.06–26.98 s without a hit, the
+  slug) is made as Initial Stroke and takes the team's Link stack her 29.00 s cast had (7b54 +40.3 → +40.4%).
+
+**Scoreboard** (`npm run snapshots:update` after merging main at 14d422c, the status-pairing round; `measure --base
+14d422c` for this branch alone): development (31 fights, 9c6e now its own row) plain 82.5 → 82.7%, mismatch 5.9 →
+5.8%, mean |damage error| 2.9%, as other kit hit 81 → 78, |matched| 2.3 → 2.2%, replay-only 3.1 → 2.8%, log-only 1.8 →
+1.6%; earlier pending plain 81.7 → 81.8%, log-only 0.8 → 0.6%, as other kit hit 58 → 50; hold-out, verified and the
+several-targets row unchanged. Better: f879 (plain 797 → 826, mismatch 12 → 3, per hit 1.85 → 0.61%; total +0.1 →
++1.6%: the missing 162,889 had cancelled over-predictions), 6339 (−14.1 → −12.6%), 9a80 (277 → 279), 3aa6 (415 →
+418), 4bfc (856 → 861). Worse: 7b54 +40.3 → +40.4% (below). Log tools only: no simulation reads them, no team-ab.
+
+**Decisions:** the entity rule as "no toCome" rather than a new bound: the slots' span plus CAST_SLACK_MS is the bound
+the pass already has for every other landing. The away test beside the ±1 s quiet test, not instead of it.
+
+**Dead ends:** the replay's JUMPDROP leaving out landings launched before the jump (engine drivers.ts; f879's ticks
+dropped her empowered jump): no development log moved, one hold-out −23 plain, dropped
+(docs/tried/2026-11-27-jump-launched-landings.diff). Yvonne's chain window held by the hidden holds: they sit spread
+over 1.5 s mostly before her cast (3 of 15 frames), not built.
+
+**Left:** 5082's Yvonne (her timeline held ~0.5 s at her combo's Stagger break, 44.43 s; a break dilation the data
+names, enablePoiseBreakTimeDilation, with no length), Arcane's INT lasers (the log's batched ms), Pogranichnik's
+harasses (the entity's own 0.4 s slow-downs and teleport, not modelled), 99fb's bleed after Rossi's ultimate (the
+statuses' side).
 
 ## 2026-11-27: Replay-only landings: kill gaps, basic tails, tails kept by another cast's buff, finals by value
 
@@ -389,42 +437,3 @@ doesn't reproduce. BATCH stays out of `decisions` (its records are the replay's,
 **Left** (docs/friction/2026-11-26-backlog-after-round-16.md): the recorded Stagger start (carried once), the stage
 logs' flag in the scoreboard, BATCH counted in `decisions`; the log context parked. CLAUDE.md lines for the lead in the
 round's summary.
-
-## 2026-11-26: What ends Arcane's Doubles Susceptibility: the slug's purges, e82d's second touch
-
-**Goal:** the lead from docs/journal/2026-11-26-12-arcane-s-will-lines-and-chen-s-late-wolven-blood-final.md: Arcane's
-combo Susceptibility (`doubles_susceptibility`) gone before Si's combo final in e82d (8.93–9.12 s) and 6339 (29.38 s),
-which the replay keeps; find what ends it in the data, check it on every Arcane log, implement, measure.
-
-**Done:**
-- **Every run of it, every Arcane log** (scripts/probes/kits/arcane-doubles-runs.ts): in WILL each run ends at its
-  seal's tick, 6.1–7.6 s of world time, but four. **6339's two and 7b54's at 47.48 s aren't Arcane's:** every team
-  debuff on Hard 33's slug ends at the same logged moment (Jade Vessel, Camille's Susceptibility, Arcane's weapon
-  lines), and in 6339 every hit after 11.27 s read exactly with the log's listing, the replay's 1.40 times the logged.
-- **Engine assumption `logged-purges`** (default `log`; packages/logs holdinputs.ts loggedPurges, purgedByLog, wired in
-  buffreplay.ts): a logged moment after which none of the team's runs on the enemy listed there is listed again, at
-  least 3 debuffs (a debuff's per-element affixes once) from two operators, the next moment within 1.5 s: the replay
-  ends every enemy-side kit buff, status, infliction, Vulnerable stack and control there, and drops an Arts Burst on
-  its way (6339's replay-only burst at 29.40 s had put Arcane's Solemn Phalanx line on every later hit). Only 6339's two
-  moments qualify among the development logs. Scoreboard: development plain 73.8 → 74.3%, mean |damage error| 6.1 →
-  5.1%; 6339 plain 28 → 112 of 140, +40.8 → −8.0%; verified, hold-out and earlier pending unchanged.
-  tests/logged-purges.test.ts.
-- **e82d is the only second touch inside a running seal in any log** (multi-target included;
-  arcane-second-touch.ts): only the Doubles Susceptibility goes, the first run's listing ending where the second's
-  begins. Ruled out: Si's Immobilization (seals applied while she holds the enemy run their full length:
-  arcane-doubles-immobilization.ts), Si's Initial Stroke (0eef inside a run), Rhodagn's Stagger node (bar 225), the
-  seal's early end by abilityEvent 8 / 1403 / 1601 (it casts abilityentity_end, logged as a combo cast; none),
-  its tick. Open: the second application refreshing the first instance, which ends with the first seal at the second
-  touch's InterruptAction (87 ms before the last inside listing: the log's batching), or Arcane's passive's
-  TagQueryListener. Not implemented: one hit in one log.
-
-**Decisions:** a log-read stage event, not a kit rule: no data names the slug's phases, and the purge's evidence is the
-log's own listing (as the logged Stagger steps are). Statuses and inflictions go too (the burst decided it: without
-them 6339 kept 35 mismatches). The affix pair counts once because 3aa6 at 25.42 s (Arcane's pair and Perlica's
-Electrification) read as a purge otherwise and lost 26 plain (earlier pending). The −8.0% isn't worse than +40.8%: the
-over-prediction had cancelled Si's low combo-final slots at 11.31 s (the slug's HP cap). No team-ab: no kit or
-engine rule simulations read changed.
-
-**Left:** e82d −8.9% (a log with a second touch inside an Imprisonment decides it); 7b54's partial ends (16.48,
-19.59, 47.48 s: other debuffs listed on); 6339's Laevatain hits 14.6–19.2 s (the replay ×1.28) and Si's combo final
-slots at 11.31 s.

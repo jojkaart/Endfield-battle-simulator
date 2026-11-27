@@ -27,10 +27,14 @@ presses round) by general rules: the replay's enemy away (engine assumption enem
 inferred from the listing (`hitless-presses` `inferred`), the totals' leaving frame and a kill read from the last
 life's damage ([open-problems.md](../open-problems.md), "The damage factors"). Their diffs are deleted.
 
+- [2026-11-27-jump-launched-landings.diff](2026-11-27-jump-launched-landings.diff): the replay's JUMPDROP leaving out
+  a logged landing launched before the jump (KitHit.launch: f879's Magma Fragment ticks across Laevatain's empowered
+  jump 30 → 80); no development log moves, one hold-out −23 plain: not explained without opening it.
 - [2026-11-27-status-value-fit-10.diff](2026-11-27-status-value-fit-10.diff): the status pairing's value fit at 10%
   instead of 1% (statuspairs.ts STATUS_VALUE_FIT), so a burst a buff's edge put off by ×1.1 pairs beyond 16 frames;
   1 log better, 2 worse, 1 mixed (Combustion ticks of one value trading places): mixed.
-- [2026-11-27-unknown-crit-slots.diff](2026-11-27-unknown-crit-slots.diff): realignByValue letting a value of unknown
+- [2026-11-27-unknown-crit-slots.diff](2026-11-27-unknown-crit-slots.diff) (its case, 9a80's 36.10 s final, is on the
+  final's slot since logcasts.ts nextByValue, 2026-11-27): realignByValue letting a value of unknown
   crit fit a slot up to ×3 above its scale (9a80's Si combo final at 36.10 s, 495,353, ×16.25 the slashes, on a
   slash's slot); 9a80 plain 277 → 278, one hold-out's total worse (hold-out mean |damage error| 6.3 → 6.8%, "kind
   combo, time to kill"): not explained without opening it.
