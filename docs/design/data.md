@@ -333,14 +333,56 @@ burst twice at once) and kills before the fight's end with hits going on
 (6339, 7b54), a logged total of whole slugs (9.6 Max HP, eight of 1.2),
 kills at whole slugs of damage, two kills at one ms and one hit's key at
 one ms with values its debuffs can't both give
-(scripts/probes/targets/slugs.ts). The check still runs it as one
-target; its snapshot entry carries the `several targets` key and the
-scoreboard gives it a row of its own, out of the development and
-earlier-pending means (scripts/accuracy.ts `withSeveralTargets`). Its
-listing is every target's under the one id (7b54: two slugs' hits under one
-listing, ×1.198 apart), so a kill is the one moment the log says the hits
-change target: the replay's enemy sheds the team's debuffs there (engine
-assumption `logged-purges`, `log-kills`: enginecheck.ts `killPurges`).
+(scripts/probes/targets/slugs.ts). Its snapshot entry carries the
+`several targets` key and the scoreboard gives it a row of its own, out of
+the development and earlier-pending means (scripts/accuracy.ts
+`withSeveralTargets`). Its listing is every target's under the one id
+(7b54: two slugs' hits under one listing, ×1.198 apart).
+
+**Several targets: per-target state on the check's side** (2026-11-27,
+engine assumption `several-targets`, reading `targets`; `one`: the check
+before, one target, the replay's enemy shedding every debuff at each kill,
+`logged-purges` `log-kills`). The simulation keeps one enemy; the replay
+and the check hold what the log needs per target (packages/logs
+targets.ts):
+- **The targets a fixture has:** `severalTargets.atOnce`, the most alive
+  at once (the stage's: Hard 33's eight slugs, Hard 31's two Wanderers),
+  and `fromStart`, all of them there from the fight's start (the slugs:
+  none arrives later, so a kill leaves the others); without them, two at
+  once, arriving as others die.
+- **Which target a logged hit is on**, in time order: two logged hits that
+  one replay landing stands for (one hit's key at one ms, twice in the log)
+  are on two targets while there are targets for both; a capped hit kills
+  its target; otherwise the hit is on the alive target its value fits
+  (±1, the check's primary reading with that target's debuffs), the one hit
+  last first, a new one (while `atOnce` allows) only when none fits, and
+  where none fits at all, the one hit last. The log has no target per hit
+  and lists every target's debuffs under the one id, so the values are the
+  one evidence, as they are for a crit the log leaves out.
+- **Which debuffs each target carries:** the units of a hit's primary
+  reading that sit on the enemy (each kit buff with `target: "enemy"`,
+  and the enemy's Corrosion, Electrification and Breach), each an
+  instance of the replay's (its `appliedAt`). A target that got an
+  instance keeps it to its expiry; one whose hit's value showed it
+  without an instance never gets that instance later (an application
+  reaches a target when it lands or not at all); an instance a target
+  hasn't been read under yet is open, and the first hit that fits under
+  one choice of the open ones only decides each (on in every fitting
+  choice, or off in every one), the others stay open and read on. A
+  kill ends its target's debuffs only: the replay's enemy keeps them (no
+  `log-kills` purge), and the check reads each hit with its target's.
+- **A kill gap with targets left** (`fromStart`, fewer kills so far than
+  `atOnce`): the replay's enemy stays (kill-gaps doesn't hold it away), so
+  a landing there applies its debuffs (6339 14.09 s: Camille's
+  Susceptibility on the next slug, its hit unlogged on a shielded slug),
+  and the totals leave its landings out as an away stretch's (the log
+  records every hit that deals damage).
+- **The totals:** a replay landing counts once for each logged hit on
+  another target that it stands for (9c6e's second Wanderer: "a landing a
+  teammate's hit's"), each at its own primary reading.
+Only these fixtures read it (no simulation, no hold-out without the mark),
+and statuses' levels and the Stagger per target, a target's own bursts
+and the shielded slugs' landings are still the one enemy's.
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
 sets fields over it when the fixture is read (logs.ts `readLogFixture`;

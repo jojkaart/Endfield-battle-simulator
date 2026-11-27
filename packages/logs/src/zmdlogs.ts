@@ -117,10 +117,12 @@ export interface LogFixture {
   readonly stageFactors?: readonly StageFactor[];
   /**
    * Hand-written: the fight is against several enemies of one template, which the log names by one enemy id (so the
-   * import couldn't put it under fixtures/multi-target/), with the evidence. The check runs it as one target; the
-   * scoreboard keeps it out of the development and earlier-pending rows (scripts/accuracy.ts, its own row).
+   * import couldn't put it under fixtures/multi-target/), with the evidence. The check reads it per target (engine
+   * assumption several-targets `targets`: targets.ts), `atOnce` the most alive at once (default 2), `fromStart` all of
+   * them there from the start (a kill leaves the others); the scoreboard keeps it out of the development and
+   * earlier-pending rows (scripts/accuracy.ts, its own row).
    */
-  readonly severalTargets?: { readonly why: string };
+  readonly severalTargets?: { readonly why: string; readonly atOnce?: number; readonly fromStart?: true };
 }
 
 /**

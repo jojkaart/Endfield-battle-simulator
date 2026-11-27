@@ -27,6 +27,7 @@ export * from "./replayedhits.ts";
 export * from "./recordedburst.ts";
 export * from "./reactioncheck.ts";
 export * from "./enginecheck.ts";
+export * from "./targets.ts";
 export * from "./onesided.ts";
 export * from "./logcheck.ts";
 export * from "./hitexport.ts";

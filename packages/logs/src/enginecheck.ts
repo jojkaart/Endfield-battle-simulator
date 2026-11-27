@@ -9,7 +9,7 @@
 
 import {
   ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, readingOf, FPS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
-  type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
+  type CritMode, type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
 import { affixesAsChild } from "@efsim/data";
 import { type AbsentLanding, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
@@ -18,6 +18,7 @@ import type { Assumption } from "./assumptions.ts";
 import { isRecordedBurst, recordedBurst, replayRecord } from "./recordedburst.ts";
 import { kindShares, oneSidedLandings, type CountedLanding, type KeyShare, type KindShare, type OneSided } from "./onesided.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
+import { assignTargets, enemyUnit, gapsWithTargetsLeft, keepsKillGaps, landingPerTarget, readsTargets, unitsAt, type TargetAssignment, type TargetHitInput } from "./targets.ts";
 
 /**
  * The game buffs a battle log lists a kit buff's effects under: its gameBuff, its loggedAs, and the affix buffs those
@@ -373,11 +374,74 @@ export function primaryParts(c: CheckSide, unjudgedKitBuffs: ReadonlyMap<string,
   return { category, own, logMods, engine, judged, unjudgedNames, withLog, modifiers: withLog(judged, category) };
 }
 
+/** The team's kit buffs that sit on the enemy (`owner:id`, their def's target "enemy"): targets.ts enemyUnit's kit units. */
+function enemyKitBuffs(c: Pick<EngineCheck, "names">): Set<string> {
+  return new Set([...c.names.defs].filter(([, d]) => d.target === "enemy").map(([k]) => k));
+}
+
+/** A landing's inputs without the modifiers of these enemy-side units (targets.ts enemyUnit): its target lacks them. */
+function withoutUnits(c: Pick<EngineCheck, "names">, inputs: LandingInputs, drop: ReadonlySet<string>): LandingInputs {
+  if (drop.size === 0) return inputs;
+  const enemy = enemyKitBuffs(c);
+  return { ...inputs, options: { ...inputs.options, modifiers: (inputs.options.modifiers ?? []).filter((m) => !drop.has(enemyUnit(m, enemy) ?? "")) } };
+}
+
+/** A logged hit's inputs and its primary reading's options (readingBasis's, without a Combustion tick's snapshot hit), or null without a landing. */
+function primaryOf(c: EngineCheck, hit: LogHit): { readonly landing: LandedHit & { readonly inputs: LandingInputs }; readonly inputs: LandingInputs; readonly options: DamageOptions } | null {
+  const landing = landingOf(c, hit);
+  if ("unknown" in landing) return null;
+  const inputs = (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs;
+  const { category, judged, withLog } = primaryParts(c, c.replay.unjudgedKitBuffs, hit, inputs, null);
+  const crit = hit.crit === null ? (primaryCritRead(c, hit) ? "always" : "never") : hit.crit ? "always" : "never";
+  const { critRoll: _roll, ...options } = { ...inputs.options, crit, modifiers: withLog(judged, category) } as DamageOptions & { critRoll?: number };
+  return { landing, inputs, options };
+}
+
+const assignments = new WeakMap<BuffReplay, TargetAssignment | null>();
+
+/**
+ * The per-target assignment of a fight against several targets under one id (targets.ts assignTargets; engine
+ * assumption several-targets `targets`), or null: not such a fight, or read as one target. Each hit's units are its
+ * primary reading's enemy-side ones as the replay has them at its landing; a choice of units fits where the reading
+ * without them is within ±1 of its value (its uncapped value where capped), under its crit or, the log not giving it,
+ * the other. Once per replay.
+ */
+export function fightTargets(c: EngineCheck): TargetAssignment | null {
+  if (!readsTargets(c.fx, c.replay.assume)) return null;
+  const known = assignments.get(c.replay);
+  if (known !== undefined) return known;
+  const enemy = enemyKitBuffs(c);
+  const inputs: TargetHitInput[] = c.fx.hits.map((hit) => {
+    const p = primaryOf(c, hit);
+    if (!p) return { hit, landing: null, frame: Math.round((hit.t * FPS) / 1000), units: [], fits: () => false };
+    const mods = p.options.modifiers ?? [];
+    const keys = [...new Set(mods.map((m) => enemyUnit(m, enemy)).filter((k): k is string => k !== null))];
+    const value = hit.uncapped ?? hit.value;
+    const crits: CritMode[] = hit.crit === null ? [p.options.crit ?? "never", p.options.crit === "always" ? "never" : "always"] : [p.options.crit ?? "never"];
+    const fits = (drop: ReadonlySet<string>) =>
+      crits.some((crit) => {
+        try {
+          const d = landingDamage(c.data, c.target, p.inputs, { ...p.options, crit, modifiers: mods.filter((m) => !drop.has(enemyUnit(m, enemy) ?? "")) }, undefined);
+          return Math.abs(roundDamage(d.exact) - value) <= 1;
+        } catch (e) {
+          if (!readingDoesNotApply(e)) throw e;
+          return false;
+        }
+      });
+    return { hit, landing: p.landing, frame: p.landing.frame, units: unitsAt(c.replay.stateAt(p.landing.frame), p.landing.frame, keys), fits };
+  });
+  const a = assignTargets(c.fx, inputs);
+  assignments.set(c.replay, a);
+  return a;
+}
+
 export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): ReadingBasis | { readonly landing: { readonly unknown: string } } {
   const landing = landingOf(c, hit);
   if ("unknown" in landing) return { landing };
-  // A status pair that fits only at the logged hit's frame is read there (BuffReplay.statusInputs).
-  const inputs = (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs;
+  // A status pair that fits only at the logged hit's frame is read there (BuffReplay.statusInputs). In a fight against
+  // several targets, without the enemy-side units its target lacks (fightTargets).
+  const landed = (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs;
+  const inputs = withoutUnits(c, landed, fightTargets(c)?.of.get(hit)?.drop ?? new Set());
   const op = hit.operator;
   const { category, own, logMods, engine, judged, unjudgedNames, withLog } = primaryParts(c, c.replay.unjudgedKitBuffs, hit, inputs, place.snapshotOf);
   // Where the log doesn't give the crit: the crit the replay read from the log (engine assumption check-crits `replay`:
@@ -763,6 +827,17 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   }
   const sim = { damage: 0, perOperator: {} as Record<string, number>, perKind: {} as Record<string, number>, hits: 0, statusHits: 0, crits: 0, known: 0, staggered: 0, last: 0 };
   const matched = new Map([...primary].map(([h, p]) => [p.landing, { hit: h, predicted: p.predicted }]));
+  // In a fight read per target (fightTargets), a landing stands for one logged hit on each target it reached: those
+  // on other targets than the matched one's count it again, each at its own reading (9c6e's second Wanderer).
+  const targets = fightTargets(c);
+  const onOthers = new Map<LandedHit, { hit: LogHit; predicted: number }[]>();
+  if (targets && landingPerTarget(fx, c.replay.assume)) {
+    for (const [h, p] of primary) {
+      const first = matched.get(p.landing);
+      const seen = [first, ...(onOthers.get(p.landing) ?? [])].map((x) => (x ? targets.of.get(x.hit)?.target : undefined));
+      if (first && first.hit !== h && !seen.includes(targets.of.get(h)?.target)) onOthers.set(p.landing, [...(onOthers.get(p.landing) ?? []), { hit: h, predicted: p.predicted }]);
+    }
+  }
   // Landings of logged hits without a reading (Fixed DMG: Si's Artful Intent burst) are still that hit's: a hit the log
   // capped at the enemy's remaining HP caps the landing's damage too (bdf223db8e49's killing burst, 284,900 of 530,319).
   const cappedHit = new Map<LandedHit, LogHit>();
@@ -810,8 +885,12 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // Under `absent` up to the stretch's ends, as the replay's enemy is away (enemyAwaySpans): a landing there no logged
   // hit stands for is one the replay didn't hold back (an Arts Burst, a status's tick: 4a64's Nature burst at 29.30 s).
   const awayEdge = readingOf(c.replay.assume, "enemy-away") === "absent" ? 0 : AWAY_EDGE_MS;
+  // In a fight read per target, a kill gap with targets left (targets.ts gapsWithTargetsLeft) too, KILL_EDGE_MS inside
+  // its ends: the replay's enemy stays there for the debuffs its landings apply, but no landing of it dealt damage.
+  const keptGaps = keepsKillGaps(fx, c.replay.assume) ? gapsWithTargetsLeft(fx, killGaps(fx)) : [];
   const isAway = (frame: number) =>
-    away.some((w) => (awayEdge === 0 ? frame > Math.round((w.from * 30) / 1000) && frame < Math.round((w.to * 30) / 1000) : (frame * 1000) / 30 > w.from + awayEdge && (frame * 1000) / 30 < w.to - awayEdge));
+    away.some((w) => (awayEdge === 0 ? frame > Math.round((w.from * 30) / 1000) && frame < Math.round((w.to * 30) / 1000) : (frame * 1000) / 30 > w.from + awayEdge && (frame * 1000) / 30 < w.to - awayEdge)) ||
+    keptGaps.some((w) => (frame * 1000) / 30 > w.from + KILL_EDGE_MS && (frame * 1000) / 30 < w.to - KILL_EDGE_MS);
   // With the replay's enemy away too (enemy-away `absent`), the frames the enemy leaves at: each stretch's first hit's.
   const leaving = new Set(readingOf(c.replay.assume, "enemy-away") === "absent" ? away.map((w) => Math.round((w.from * 30) / 1000)) : []);
   let awayLeftOut = 0;
@@ -867,21 +946,26 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     else damage = l.exact;
     if (capped) damage = Math.min(damage, capped.value);
     counted.add(l);
-    const of = m?.hit ?? capped ?? fixedHit.get(l);
-    parts.push({ operator: l.operator, skillId: l.skillId, hitId: l.hitId, frame: l.frame, damage, ...(of ? { logged: of } : {}) });
-    countedLandings.push({ landing: l, damage, ...(of ? { logged: of } : {}) });
-    sim.damage += damage;
-    if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
-    add(sim.perOperator, l.operator, damage);
-    add(sim.perKind, l.skillId.startsWith("reaction:") ? "status" : l.inputs?.kind === "hit" ? l.inputs.hit.damageType : kindOf(data, fx, l.operator, l.skillId), damage);
-    sim.hits++;
-    if (l.skillId.startsWith("reaction:")) sim.statusHits++;
-    if (m && m.hit.crit !== null) {
-      sim.known++;
-      if (m.hit.crit) sim.crits++;
-    }
-    if (l.inputs?.options.staggered) sim.staggered++;
-    if (l.frame <= end) sim.last = Math.max(sim.last, (l.frame * 1000) / 30);
+    // `read`: a logged hit's reading counted it (its crit is the sim's too).
+    const count = (damage: number, of: LogHit | undefined, read: LogHit | undefined) => {
+      parts.push({ operator: l.operator, skillId: l.skillId, hitId: l.hitId, frame: l.frame, damage, ...(of ? { logged: of } : {}) });
+      countedLandings.push({ landing: l, damage, ...(of ? { logged: of } : {}) });
+      sim.damage += damage;
+      if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
+      add(sim.perOperator, l.operator, damage);
+      add(sim.perKind, l.skillId.startsWith("reaction:") ? "status" : l.inputs?.kind === "hit" ? l.inputs.hit.damageType : kindOf(data, fx, l.operator, l.skillId), damage);
+      sim.hits++;
+      if (l.skillId.startsWith("reaction:")) sim.statusHits++;
+      if (read && read.crit !== null) {
+        sim.known++;
+        if (read.crit) sim.crits++;
+      }
+      if (l.inputs?.options.staggered) sim.staggered++;
+      if (l.frame <= end) sim.last = Math.max(sim.last, (l.frame * 1000) / 30);
+    };
+    count(damage, m?.hit ?? capped ?? fixedHit.get(l), m?.hit);
+    // The same landing on the other targets its logged hits are on (fightTargets).
+    for (const o of m ? (onOthers.get(l) ?? []) : []) count(Math.min(o.predicted, o.hit.uncapped !== undefined || killing.has(o.hit) ? o.hit.value : Infinity), o.hit, o.hit);
   }
   const recordedShifts = recordedBurstShifts(c, counted);
   for (const s of recordedShifts) add(sim.perOperator, s.operator, s.amount);
@@ -911,7 +995,8 @@ export function awayWindows(fx: Pick<LogFixture, "hits">): { readonly from: numb
  * phase, one of several targets) is gone there, and the log records every landing that lands, so a landing in between
  * found no one: pending/zmdlogs-9c6e97486a9d.json 63.34–67.64 s (Typhoeus's shot capped at 8,037 of 17,127, then 14
  * landings of hers in the replay alone, her Power Shot's 160k burst among them), pending/zmdlogs-63398339803e.json's
- * slug (capped at 10.35, 11.31, 24.02 s: Si's burst mark and Laevatain's battle-skill ticks after them, unlogged).
+ * slug (capped at 10.35, 11.31, 24.02 s: Si's burst mark and Laevatain's battle-skill ticks after them, unlogged). In
+ * a fight against several targets some stay (targets.ts gapsWithTargetsLeft).
  */
 export function killGaps(fx: LogFixture): { readonly from: number; readonly to: number }[] {
   const ts = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
@@ -923,6 +1008,13 @@ export function killGaps(fx: LogFixture): { readonly from: number; readonly to: 
 }
 
 /**
+ * How far inside a kill gap (killGaps) the replay's enemy is away: a landing logged with the kill or with the next hit
+ * may come a few frames off its logged ms in the replay (the log flushes about every 100 ms:
+ * pending/zmdlogs-9c6e97486a9d.json 55.20 s, Arcane's combo boom at the kill, 0.12 s before the next logged hit).
+ */
+export const KILL_EDGE_MS = 150;
+
+/**
  * The frames after each logged kill (killGaps) of a fight against several targets under one id (the fixture's
  * severalTargets), where the replay's one enemy sheds the team's debuffs (engine assumption logged-purges, reading
  * `log-kills`; holdinputs.ts purgedByLog): the killed target's debuffs go with it, and the hits after it land on
@@ -930,10 +1022,11 @@ export function killGaps(fx: LogFixture): { readonly from: number; readonly to: 
  * pending/zmdlogs-63398339803e.json): ZMDLogs lists the debuffs of every slug under the one id, so the listing can't
  * say which a hit's slug had; 7b54's hits after its kills at 16.36, 19.59, 32.94 s read ×1.10–1.45 low with the
  * replay's debuffs on. A target that had been hit before (6339 after 20.37 s: Jade Vessel on the next slug) reads
- * low by what it had.
+ * low by what it had. None where the check reads the fight per target (engine assumption several-targets `targets`:
+ * a kill ends its own target's debuffs only, fightTargets; the replay's enemy keeps the others').
  */
-export function killPurges(fx: LogFixture): number[] {
-  if (!fx.severalTargets) return [];
+export function killPurges(fx: LogFixture, assume?: Readonly<Record<string, string>>): number[] {
+  if (!fx.severalTargets || readsTargets(fx, assume)) return [];
   return [...new Set(killGaps(fx).map((k) => Math.round((k.from * FPS) / 1000) + 1))];
 }
 
