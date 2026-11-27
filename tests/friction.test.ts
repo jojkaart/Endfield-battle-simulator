@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { carriedFrom, carry, carryLists, missingFiles, outcomeSkeleton, points, unparked, unparkedText, type Unparked } from "../scripts/friction.ts";
+import { carriedFrom, carry, carryLists, missingFiles, outcomeSkeleton, points, unparked, unparkedText, withoutNumbers, type Unparked } from "../scripts/friction.ts";
 
 const report = ["# A report (2026-11-23)", "", "Task: x.", "", "## 1. First thing.", "", "- **What happened:** a.", "- **From:** round 4.", "", "## 2. Second", "- **What happened:** b.", "", "## What worked well", "", "Fine."].join("\n");
 
@@ -113,6 +113,17 @@ describe("friction.ts carry --lists (round 16's own report point 1)", () => {
     expect(u).toEqual({ line: "- 2. A kit value.", file: "docs/friction-done/2026-11-23-backlog-after-round-9.md", n: 2 });
     expect(unparkedText(u as Unparked, () => "## 2. A kit value written\n- **Needs:** kits.\n")).toContain("## 2. A kit value written\n- **Needs:** kits.");
     expect(() => unparked(two, ["no such"])).toThrow(/0 parked entries/);
+  });
+
+  // Round 21 (round 20's own report point 1): the intro's own number list loses an unparked point's number.
+  it("--unpark drops the number from its paragraph's list of points", () => {
+    expect(withoutNumbers("Round 6's points 1–10, 12 and 14 (full text in x.md under the same number):", [14])).toBe("Round 6's points 1–10 and 12 (full text in x.md under the same number):");
+    expect(withoutNumbers("Round 6's points 1–10 and 12 (full text", [5])).toBe("Round 6's points 1–4, 6–10 and 12 (full text");
+    expect(withoutNumbers("Round 11's points 1, 2 and 4 (full", [1, 4])).toBe("Round 11's point 2 (full");
+    expect(withoutNumbers("Round 9's points (full text", [2])).toBeNull();
+    expect(withoutNumbers("Round 9's points 1 and 3 (full", [2])).toBeNull();
+    const three = backlog.replace("Round 9's points:", "Round 9's points 2 and 3 (full text in x.md):").replace("- 2. A kit value.", "- 2. A kit value.\n- 3. No twin test.");
+    expect(carryLists(three, "docs/friction-done/b.md", [], [], ["A kit value"])).toContain("Round 9's point 3 (full text in x.md):");
   });
 });
 

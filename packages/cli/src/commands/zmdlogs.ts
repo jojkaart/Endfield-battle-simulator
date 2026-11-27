@@ -238,7 +238,8 @@ export default command({
                                           them) that differ between the default readings (-) and the given one (+), per log,
                                           then a count per kind: a replay rule's false positives before a measure
                                           (two replays per log, seconds each); without --assume every decision;
-                                          --operator: only these operators'
+                                          --operator: only these operators'; --all takes about 3 min, past the
+                                          2-minute foreground limit: run it in the background, output to a file
   efsim zmdlogs stops <fixture…|--all>    replay --stops' STOP lines over several logs (default: every verified and
                                           pending development log with --all), then a count per kind (as listed,
                                           covered, length, timeline only, list only) and how many logs have each
@@ -670,6 +671,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (named.length && values.all) throw new Error("zmdlogs decisions: fixtures or --all, not both");
       // With --operator, only the logs whose team has one of them.
       const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
+      // Round 21 (the tail-cut report point 4): a run past the foreground limit loses what was piped after it.
+      if (values.all) process.stderr.write(`zmdlogs decisions --all: ${logs.length} logs, about 3 s each: run it in the background with its output to a file\n`);
       return decisionsView(data(), logs, { assume, operators, progress });
     }
     if (sub === "placement") {

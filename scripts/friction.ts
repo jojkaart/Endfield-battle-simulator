@@ -251,16 +251,53 @@ function withoutParked(rest: readonly string[], unpark: readonly string[]): stri
   const out: string[] = [];
   const ps = paragraphs(rest);
   const isList = (p: readonly string[]) => entries(p).some((e) => e.entry);
-  const left = ps.map((p) => (isList(p) ? entries(p).filter((e) => !(e.entry && unpark.some((w) => e.lines.join(" ").includes(w)))).flatMap((e) => e.lines) : [...p]));
+  const gone = (e: { entry: boolean; lines: readonly string[] }) => e.entry && unpark.some((w) => e.lines.join(" ").includes(w));
+  const left = ps.map((p) => (isList(p) ? entries(p).filter((e) => !gone(e)).flatMap((e) => e.lines) : [...p]));
   ps.forEach((p, i) => {
-    const l = left[i] as string[];
+    let l = left[i] as string[];
     if (!l.length) return;
     // An intro whose list after it lost every entry goes too.
     const next = ps[i + 1];
     if (!isList(p) && next !== undefined && isList(next) && !(left[i + 1] as string[]).length) return;
+    // An intro whose list lost some: the numbers it names lose them too (round 21, round 20's own report point 1).
+    if (!isList(p) && next !== undefined && isList(next)) {
+      const ns = entries(next).filter(gone).flatMap((e) => {
+        const m = /^- (\d+)\./.exec(e.lines[0] ?? "");
+        return m ? [Number(m[1])] : [];
+      });
+      if (ns.length) {
+        const text = withoutNumbers(l.join("\n"), ns);
+        if (text === null) process.stderr.write(`friction: --unpark: the intro "${(l[0] ?? "").slice(0, 80)}…" names no "points …" list holding ${ns.join(", ")}: fix its numbers by hand\n`);
+        else l = text.split("\n");
+      }
+    }
     out.push("", ...l);
   });
   return out;
+}
+
+/**
+ * A parked paragraph's intro without these point numbers in its "points …" list (`1–10, 12 and 14` less 14: `1–10 and
+ * 12`; a range split around a number: `1–10` less 5, `1–4 and 6–10`), "points" to "point" where one is left; null where
+ * the intro has no such list holding every one of them.
+ */
+export function withoutNumbers(intro: string, ns: readonly number[]): string | null {
+  const m = /\b(points?) ((?:\d+(?:–\d+)?)(?:(?:,\s*|,?\s+and\s+)\d+(?:–\d+)?)*)/.exec(intro);
+  if (!m) return null;
+  const tokens = (m[2] as string).split(/,\s*(?:and\s+)?|\s+and\s+/).map((t) => t.trim()).filter(Boolean);
+  let spans = tokens.map((t) => {
+    const [a, b] = t.split("–").map(Number) as [number, number | undefined];
+    return [a, b ?? a] as [number, number];
+  });
+  for (const n of ns) {
+    if (!spans.some(([a, b]) => a <= n && n <= b)) return null;
+    spans = spans.flatMap(([a, b]): [number, number][] => (n < a || n > b ? [[a, b]] : [...(a < n ? [[a, n - 1] as [number, number]] : []), ...(n < b ? [[n + 1, b] as [number, number]] : [])]));
+  }
+  if (!spans.length) return null;
+  const words = spans.map(([a, b]) => (a === b ? String(a) : `${a}–${b}`));
+  const list = words.length === 1 ? words[0] : `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`;
+  const one = words.length === 1 && spans[0]?.[0] === spans[0]?.[1];
+  return intro.slice(0, m.index) + `${one ? "point" : "points"} ${list}` + intro.slice(m.index + m[0].length);
 }
 
 /** An unparked point's full text from its backlog file (its `## n.` section), or a note why there is none. */

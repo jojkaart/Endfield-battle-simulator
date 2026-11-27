@@ -91,6 +91,12 @@ export interface BuffReplay {
    */
   readonly missed: readonly MissedCast[];
   /**
+   * The logged casts the kit allows only after casts that hit nothing that missedCasts never looked at: its
+   * MISSED_ROUNDS were used (round 21, the tail-cut report point 3: a limit that bites shows as MISSED `rounds` lines,
+   * not as a missing line). Absent where none.
+   */
+  readonly missedUnsearched?: readonly { readonly operator: string; readonly skillId: string; readonly start: number }[];
+  /**
    * Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null where the
    * replay doesn't answer: near a change (REPLAY_EDGE_MS), after the replay broke, where a crit the log doesn't give
    * decides it, and for a game buff the replay doesn't decide (BuffReplay.undecided; a kit buff's windows: kitWindows).
@@ -521,7 +527,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the
   // replay made again with its casts, until no need is left that such casts meet.
   const tried = new Set<ReplayedCast>();
-  for (let added = 0; main && added < MISSED_ROUNDS; ) {
+  let added = 0;
+  for (; main && added < MISSED_ROUNDS; ) {
     const r = main;
     const need = r.needs.find((n) => !tried.has(n.c));
     if (!need) break;
@@ -532,6 +539,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     main = run("never");
     added++;
   }
+  // The needs the round limit left unsearched (BuffReplay.missedUnsearched).
+  const missedUnsearched = main && added >= MISSED_ROUNDS ? main.needs.filter((n) => !tried.has(n.c)).map((n) => ({ operator: n.c.operator, skillId: n.c.skillId, start: n.c.start })) : [];
   // The bound for buffs a trigger on crits is behind: only needed where some landing's crit isn't logged.
   // …and for every kit buff a trigger on crits is behind (BuffReplay.kitBuffNearChange: the log check's engine readings).
   const anyCritTrigger = kits.some((k) => k.triggers.some((t) => t.on.event === "hit" && t.on.crit !== undefined));
@@ -706,6 +715,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     failed,
     unjudgedKitBuffs,
     missed: (main?.made ?? []).flatMap((m) => (m.c.missed ? [{ operator: m.c.operator, skillId: m.skillId, start: m.c.start, need: { skillId: m.c.missed.skill, start: m.c.missed.at } }] : [])),
+    ...(missedUnsearched.length ? { missedUnsearched } : {}),
     hits: main?.st.hits ?? [],
     reactions: main?.st.reactions ?? [],
     staggers: main ? main.staggerWindows.map((w) => w.start) : [],

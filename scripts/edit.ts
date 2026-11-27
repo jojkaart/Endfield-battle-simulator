@@ -17,7 +17,9 @@
 //   >>>>>>>
 //
 // `<<<<<<< all` replaces every occurrence (at least one); `<<<<<<< end` takes no old text and appends the new lines at
-// the end of the file (a new describe block, a journal paragraph; its `=======` may be left out); `@@@ new <path>`
+// the end of the file (a new describe block, a journal paragraph; its `=======` may be left out, and so may its
+// `>>>>>>>` where the next `@@@` line or the end of the edits file closes it, trailing blank lines dropped: round 21,
+// one append per report written in one go); `@@@ new <path>`
 // creates a file that mustn't exist yet, from its blocks' new text. Markers are whole lines; anything outside blocks is
 // ignored (comments).
 //
@@ -79,8 +81,14 @@ export function parseEdits(text: string): FileEdits[] {
     const neu: string[] = [];
     let part: string[] = old;
     let mid = false;
+    let unclosed = false;
     i++;
     for (;;) {
+      // An "end" block ends at the next "@@@" line or the file's end too (round 20's own report point 2).
+      if (mode === "end" && (i >= lines.length || FILE.test(lines[i] as string))) {
+        unclosed = true;
+        break;
+      }
       if (i >= lines.length) throw new Error(`line ${start}: the block isn't closed (">>>>>>>")`);
       const x = lines[i] as string;
       i++;
@@ -98,6 +106,8 @@ export function parseEdits(text: string): FileEdits[] {
       neu.push(...old.splice(0));
       mid = true;
     }
+    // Closed by a "@@@" line or the file's end: the blank lines before it separate blocks, they aren't text.
+    if (unclosed) while (neu.length && (neu.at(-1) as string).trim() === "") neu.pop();
     if (!mid) throw new Error(`line ${start}: the block has no "=======" line`);
     // The markers' one easy typo (round 10 friction point 4): the mode on a line of its own, read as the old text.
     if (mode === "once" && (old.join("\n").trim() === "end" || old.join("\n").trim() === "all")) throw new Error(`line ${start}: the old text is "${old.join("").trim()}": did you mean "<<<<<<< ${old.join("").trim()}" (the mode on the marker's own line)?`);
