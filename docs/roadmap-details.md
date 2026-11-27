@@ -356,8 +356,17 @@ at one ms, the stage's text; scripts/probes/targets/slugs.ts): 6339 and 7b54 mar
 a reclassification), the replay's enemy shedding the team's debuffs at each kill there (`logged-purges` `log-kills`).
 The status pairs a buff's edge put off pair by the check's reading (`status-pairing` `check`, window 90 frames): 1d91,
 7910, a7a7, abfd plain. Next ([open-problems](open-problems.md) "Hard 33's Woodcraft Slugs", "Log-only landings"):
-e989's Camille Firefang Weakness the replay keeps 69.19–89.32 s; per-target state for several-targets fights (an
-engine with more than one enemy).
+per-target state for several-targets fights (an engine with more than one enemy).
+
+**Camille's Vesperwings and Pogranichnik's harasses (2026-11-27, [journal](journal/2026-11-27-11-camille-s-vesperwings-at-an-away-stretch-pogranichnik-s.md)):**
+the hovering Vesperwings' debuff ends at its entity's 0.5 s target check once the enemy leaves (KitBuff.targetCheck,
+kit assumption `vesperwings-target-loss` `listed`: the check at its last listing within 4 s before an away stretch;
+e989 plain 260 → 267, |damage error| 0.5 → 0.1%, one hold-out 6.4 → 5.8%); Pogranichnik's harasses at frame 18 (the
+entity's own layer-1 slow-down, 9.24 frames) on the world's clock (his combo's slow-down holds them): median |Δ| 299
+→ 88 ms over his five logs, d4fb, de6a, c4f3, 7e19 better, a9d7 mixed (closer per hit). Next
+([open-problems](open-problems.md) "The placement cases the one-sided rounds left"): his Decisive Assault, logged
+0.21–0.44 s after the event that makes it, the data's frame 25 (34 with its own slow-down); why Si's boss stops
+being a target 1.74 s before it leaves (a second Camille log with an away stretch would test `listed` against `away`).
 
 **The hold at a Stagger break (2026-11-27, [journal](journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md)):**
 a break holds every clock 14 frames, the breaker's too, not inside an ultimate's stop (engine assumption `break-hold`;

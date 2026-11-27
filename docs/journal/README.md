@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-27: Camille's Vesperwings at an away stretch, Pogranichnik's harasses](2026-11-27-11-camille-s-vesperwings-at-an-away-stretch-pogranichnik-s.md)
 - [2026-11-27: The hold at a Stagger break; Rossi's bleed through her freeze](2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md)
 - [2026-11-27: Hard 33's eight slugs; status pairs read by the check](2026-11-27-09-hard-33-s-eight-slugs-status-pairs-read-by-the-check.md)
 - [2026-11-27: Improvement round 18: records of rules that decline, one run for several answers](2026-11-27-08-improvement-round-18-records-of-rules-that-decline-one-run.md)

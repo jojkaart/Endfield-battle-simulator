@@ -318,8 +318,8 @@ export interface ReplayOptions {
 /**
  * How long (ms) before an away stretch the log may stop listing an entity-held debuff (KitBuff.targetCheck) for the
  * replay to read its end there (reading `listed`): the enemy no longer a target while it is still hit. Si's boss
- * (eny_0134_jsspsi) leaves 0.2–3.6 s after its second-phase damage share is dealt (3aa6 0.20, e989 1.74, a9d7 3.57 s;
- * a scratch probe of the cumulative damage, not kept); pending/zmdlogs-e9896c8d02be.json's Vesperwings listed to 69.19 s,
+ * (eny_0134_jsspsi) leaves 0.2–3.6 s after its second-phase damage share is dealt (3aa6 0.20, e989 1.74, a9d7 3.57 s:
+ * scripts/probes/entities/jsspsi-phases.ts); pending/zmdlogs-e9896c8d02be.json's Vesperwings listed to 69.19 s,
  * the stretch from 70.93 s.
  */
 export const TARGET_LOSS_LEAD_MS = 4000;
