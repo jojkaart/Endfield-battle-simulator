@@ -9,6 +9,17 @@
     "Verification: efsim zmdlogs check on fixtures/zmdlogs-dbaee23b801d.json (P1, weapon, Deep Rampart), zmdlogs-0eef2474a26f.json and zmdlogs-bdf223db8e49.json (P5), zmdlogs-d9e59d0fb737.json (P0; its Typhoeus hits after t=9605 are ×1.54–1.9 above the kit, unexplained, but under Corrosion, so unquantified; its ultimate main hit at t=4415 is ×1.1585 with no logged buff, so that hit's event key is left off). Results in docs/kit-batches/batch-1/chr_0034_typhoea.md, \"Kit (2026-10-18)\".",
     "Only ultimate_skillfloating is in CharGrowthTable's ultimate group (chr_0034_typhoea_ultimate_skill is unused), so the ultimate always uses its values (atk_scale_outer 0.75 at level 12)."
   ],
+  "assumptions": [
+    {
+      "id": "typhoeus-sign-cooldown",
+      "question": "Do her own Nature bursts and her teammates' share the 0.2 s adding cooldown of the talent's burst Sign? passitive_enemy_listennaturalspellbrust creates arrow_energy_buffer_1 or arrow_energy_buffer_3 by a CheckTagMatch on tag 943477982 (used only in her files), two identical buffers each with its own addingCooldown 0.2.",
+      "default": "by-source",
+      "readings": {
+        "shared": "one cooldown for every Nature burst on the enemy (the tag a property of the enemy: one buffer always; the kit until 2026-11-27). Measured against by-source: only 1d91 moves, its combo at 28.68 s cast with 7 Signs (the combo needs 8)",
+        "by-source": "her own bursts and her teammates' each have their own cooldown (the tag one of hers: her bursts take one buffer, the teammates' the other; 2026-11-27). pending/zmdlogs-1d9198480e75: Arcane's Nature burst at 11.79 s and hers at 11.90 s both give a Sign, so her combo at 28.68 s has the 8 it needs and four Hunting Arrows (the 4th shot at 39.72 s a Power Shot with its burst at 40.03 s, as logged; one Sign short, a plain shot and no burst). Every other Typhoeus log has 8 Signs at each combo under both readings but dbae (7, its fight-start Signs), fc63 101.87 s (7: a burst placed 0.48 s early) and 9c6e 78.87 s (4, two targets)"
+      }
+    }
+  ],
   "element": "natural",
   "stacks": [
     {
@@ -113,6 +124,7 @@
         ]
       },
       "by": "anyone",
+      "reading": { "assumption": "typhoeus-sign-cooldown", "reading": "shared" },
       "if": {
         "talentAtLeast": [
           0,
@@ -139,6 +151,80 @@
         }
       ],
       "note": "Talent 1: \"Whenever a Nature Burst is triggered on an enemy, Typhoeus gains 1 Sign\" (passitive_enemy_listennaturalspellbrust on every Nature-burst tag, hers and teammates'; arrow_energy_buffer_1/3 have a 0.2 s adding cooldown). CharGrowthTable: \"COMBO TRIGGER: When Typhoeus reaches max Signs.\": arrow_energy creates combo_trigger_combo whenever a Sign is added at 8."
+    },
+    {
+      "id": "talent_sign_own",
+      "on": {
+        "event": "burst",
+        "elements": [
+          "natural"
+        ]
+      },
+      "by": "self",
+      "reading": { "assumption": "typhoeus-sign-cooldown", "reading": "by-source" },
+      "if": {
+        "talentAtLeast": [
+          0,
+          1
+        ]
+      },
+      "cooldown": 0.2,
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "signs",
+              "amount": 1
+            }
+          ]
+        },
+        {
+          "kind": "openCombo",
+          "if": {
+            "stack": "signs",
+            "atLeast": 8
+          }
+        }
+      ],
+      "note": "Under typhoeus-sign-cooldown `by-source`: her own Nature bursts' Sign, with its own 0.2 s adding cooldown (talent_sign_team the teammates')."
+    },
+    {
+      "id": "talent_sign_team",
+      "on": {
+        "event": "burst",
+        "elements": [
+          "natural"
+        ]
+      },
+      "by": "teammate",
+      "reading": { "assumption": "typhoeus-sign-cooldown", "reading": "by-source" },
+      "if": {
+        "talentAtLeast": [
+          0,
+          1
+        ]
+      },
+      "cooldown": 0.2,
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "signs",
+              "amount": 1
+            }
+          ]
+        },
+        {
+          "kind": "openCombo",
+          "if": {
+            "stack": "signs",
+            "atLeast": 8
+          }
+        }
+      ],
+      "note": "Under typhoeus-sign-cooldown `by-source`: the teammates' Nature bursts' Sign, its 0.2 s adding cooldown apart from her own (talent_sign_own)."
     },
     {
       "id": "sign_window",

@@ -77,6 +77,20 @@ describe("Typhoeus's shots that hit nothing (2026-11-15)", () => {
   });
 });
 
+describe("1d9198480e75: her own and a teammate's Nature bursts 0.1 s apart each give a Sign (typhoeus-sign-cooldown, 2026-11-27)", () => {
+  const T = "chr_0034_typhoea";
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-1d9198480e75.json", import.meta.url).pathname);
+  const at = (t: number, event: string) => fx.hits.find((h) => h.operator === T && h.t === t && h.event === event) as LogHit;
+  const burst = at(40032, "buff_common_natural_natural_triggered_typhoea");
+
+  it("Arcane's burst at 11.79 s and hers at 11.90 s: the combo at 28.68 s has 8 Signs, four Hunting Arrows, the 4th shot's burst at 40.03 s lands", () => {
+    // Under `shared` (one cooldown for every burst on the enemy) one Sign short: three arrows, the 4th shot a plain one
+    // without a burst (measured 2026-11-27; not replayed here, 5 s).
+    const l = logBuffReplay(data, fx).replay.landing(burst);
+    expect("unknown" in l ? l.unknown : l.hitId).toBe("burst");
+  });
+});
+
 describe("bdf223db8e49: Typhoeus's hover through her shots and her hovering combo", () => {
   it("keeps the hover when a logged shot cuts the loop the previous one started, and casts the combo the slot holds", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-bdf223db8e49.json", import.meta.url).pathname);
