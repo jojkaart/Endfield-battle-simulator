@@ -60,6 +60,20 @@ guard stands for, measure it, and judge it by every group; branch worktree-agent
 - **Files:** packages/cli/src/commands/zmdlogs.ts
 - **Why it helps:** one wasted run per agent that uses it.
 
+## 5. A merge from main mid-task cost a premerge
+
+- **What happened:** the lead merged the target-deaths round into main while this branch's premerge ran; I stopped
+  it, merged (conflicts in replayrun.ts's import line, the snapshots and the journal), measured again against
+  fa2c2ad and ran snapshots:update again (~25 min). The re-run premerge then failed on one test,
+  tests/engine-assumptions.test.ts's 320-character limit on a registry reading, which I had lengthened
+  (replay-assumptions.ts `unlogged-tails` `cut`); no faster test run had named it, as no changed file imports it
+  (`vitest related` misses it).
+- **Cause:** the registry's length rule lives in a test that only the full suite runs.
+- **Suggestion:** `npm run lint:changed` (or a small check in it) runs the registry checks when
+  packages/engine/src/replay-assumptions.ts or assumptions.ts changed.
+- **Files:** scripts/lint-changed.ts, tests/engine-assumptions.test.ts
+- **Why it helps:** a 15-minute premerge per forgotten sentence; the check takes milliseconds.
+
 ## What worked well
 
 `cli-ab --hits-zones` named the 78 moved hits of c4f3 and the modifiers each lost (Fervent Morale, the weapon's team
