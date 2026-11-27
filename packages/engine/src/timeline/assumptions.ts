@@ -162,6 +162,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "kill-gaps",
+    question: "Is the enemy there between a logged kill (a hit capped at the HP left: the log's `uncapped` above its value, before the fight's last hit) and the next logged hit, however short that stretch? Read only by the log check's replay (packages/logs enginecheck.ts killGaps: the replay's TimelineScenario.enemyAway), not by simulations.",
+    default: "absent",
+    readings: {
+      there: "yes: only the enemy-away stretches hold the replay's enemy away (the replay until 2026-11-27)",
+      absent: "no: from the frame after the kill's ms to the frame before the next logged hit the replay's enemy is away, as in an enemy-away stretch under `absent` (a life, a phase or one of several targets ended; the log records every landing that lands). pending/zmdlogs-9c6e97486a9d.json 63.34–67.64 s: Typhoeus's shot capped at 8,037 of 17,127, then 14 landings of hers the log doesn't have (her Power Shot's burst, 160k, and her combo's field ticks); pending/zmdlogs-63398339803e.json's slug, capped at 10.35, 11.31 and 24.02 s, Si's burst mark and Laevatain's battle-skill ticks after them unlogged",
+    },
+  },
+  {
     id: "logged-purges",
     question: "Does the enemy shed the team's debuffs at once where the log shows them all gone together (a stage's phase change)? No kit rule ends them there. Read only by the log check's replay (packages/logs holdinputs.ts loggedPurges, purgedByLog).",
     default: "log",
