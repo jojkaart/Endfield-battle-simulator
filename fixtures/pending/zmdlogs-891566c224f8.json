@@ -249,6 +249,26 @@
    ]
   }
  ],
+ "stageFactors": [
+  {
+   "from": 0,
+   "to": 38445,
+   "factor": 0.5,
+   "why": "The stage's shields (indie_hard018_s): every operator's hits at ×0.500 to 37.71 s (scripts/probes/stage/stage-factors.ts at 7e6c12f: 228 of the 261 hits from 2.50 to 37.71 s within 2% of it, all four operators); the next window from its first hit."
+  },
+  {
+   "from": 38445,
+   "to": 41013,
+   "factor": 0.05,
+   "why": "×0.050 on every hit from 38.45 to 39.72 s (15 of 15, Arcane, Si, Liino); the next window from its first hit (41.01 s)."
+  },
+  {
+   "from": 41013,
+   "to": 86768,
+   "factor": 0.2,
+   "why": "×0.200 on every hit from 41.01 to 85.93 s (274 of the 285 to 85.50 s within 2%, all four operators); from 86.77 s the hits read ×1 (the shields gone)."
+  }
+ ],
  "hits": [
   {
    "t": 2183,

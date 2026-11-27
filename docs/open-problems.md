@@ -56,6 +56,46 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Arcane's mismatches after the stage factors (2026-11-26)
+
+**Found and fixed** (docs/journal/2026-11-26-15-arcane-s-mismatches-a-stage-s-damage-factor-from-the-fixture.md):
+of Arcane's 697 mismatches (`zmdlogs groups --operator Arcane`), 492 were 8915's and c6d8's stages, one round factor
+on every operator's hits in a window (8915 ×0.5 / ×0.05 / ×0.2, c6d8 ×0.1; scripts/probes/stage/stage-factors.ts),
+now the fixtures' `stageFactors`: 233 left. The brief named the operator Akekuri; the numbers (5688 hits, 40 fights,
+12.3%) and the file are Arcane's (chr_0032_lizhiyan); Akekuri (chr_0019_karin) has 202 hits in 2 fights, no mismatch.
+
+**Left, largest first (none hers alone):**
+- **1d91 60:** steps of ×0.965 / ×0.929 / ×0.894 on her strings (2.1, 53–62, 66.9–71.9 s); the log lists none of
+  Liino's or Ardelia's buffs there (Liino's weapon ATK layers, "Arcane's mismatches as one group"): the Liino lane.
+- **fc63 55 (52 team-wide):** 89–110 s every operator ×0.97 → ×0.835 as the replay's Corrosion ramps (Gilberta's
+  level 2 from 90.17 s, the log lists no Corrosion anywhere in this export); under `window-reaction=applied` 37 turn
+  plain and 45 assumed (`zmdlogs hits fc63 --against window-reaction=applied`), but 101–106 s stays ×0.92: the
+  touch's element after a reaction (test 33), not built.
+- **7b54 28:** Hard 33's slug, its partial purges and factors ×0.90 / ×0.91 / ×0.835 at 11–29 s that aren't one
+  round factor (the probe's runs): not a stage factor.
+- **8915 26 (newly checkable):** a ×1.012–1.015 team-wide step at 8.8–19.1 and 93–99.5 s, one Corrosion ramp step
+  (resistance ×1.0132 a second) that the game reaches 0.1–0.3 s before the replay (8.78, 9.85, 11.93, 15.90, 19.0 s);
+  Hot Work's Nature buff 6.80–18.07 s in the replay, gone from the listing by 18.02 s. Both after Liino's and Si's
+  combos pressed together (stops 7.07–8.00 and 8.10–8.90 s): the replay holds the enemy's clock longer there than the
+  game. Si's combo at 32.7–33.9 s ×0.945 (her Yinglung's Edge, not Arcane's).
+- **9c6e 25:** two targets (a multi-target import). **4d60 11:** ×1.02 on her strings at 73–85 s, team-wide ×1.13 at
+  37–43 s (Zhuang Fangyi's lane). **9c0b 8:** her lasers ×1.20 at 21 s, a first strike placed before Laevatain's stop
+  (placement).
+
+**Ruled out:** her kit values (every skill has plain matches; the stage windows' 900 hits now read exactly at the
+factor); 8915's and c6d8's windows as per-operator build offsets (`zmdlogs offsets`: all four operators at one factor,
+none left after it).
+
+**Still possible:** for 8915's step lead, the combo stops' hold on the enemy's clock (the "enemy's clock" entry below
+says the game runs late across a combo's stop, here early: two combos 0.1 s apart, maybe overlapping in the game); the
+stage windows' edges (a window runs to the next one's first hit, so a landing in the gap takes the earlier factor:
+8915 37.71–38.45, 39.72–41.01 and 85.93–86.77 s; which the game had there no hit says). c6d8's window ends at the
+boss's Stagger break (75.59 s, bar 0: roadmap-details' "the Abyss boss's ×0.1 until its Stagger"); 8915's edges sit at
+no logged bar or break, so its phases' cause (the shields' count) stays unread.
+
+**Next check:** `zmdlogs ends 8915 --at 18.0` and the ramp's readings against the two combo stops; a log with two
+combos pressed together and a Corrosion ramp running.
+
 ## Low plain, low mismatch: Rossi, Chen Qianyu, Yvonne, Lifeng, Pogranichnik, the Endministrator (2026-11-26)
 
 **Shows:** at 36e3bc8 Rossi 51.9% plain (2305 hits), Chen 30.2% (810), Yvonne 31.9% (323), Lifeng 43.5% (260),
@@ -848,7 +888,8 @@ Edge and Jade Vessel against the log's damageTaken entries); an ATK snapshot for
 takeAtkSnapshot false).
 
 **Still possible / left (largest first; `zmdlogs totals --all`):**
-- **The stage logs** (8915 +62%, 7b54 +49%, c6d8 +42%, 6339 +38%): the stages' shields and phase factors (×0.1–0.7 on
+- **The stage logs** (8915 and c6d8 fixed 2026-11-26: their round factors are the fixtures' stageFactors, 8915 +62.3 →
+  +6.8%, c6d8 +43.9 → +0.5%; 7b54 +49%, 6339 +38% left): the stages' shields and phase factors (×0.1–0.7 on
   every hit; "Arcane's mismatches", "Hard 33's slug"), not the totals' to fix.
 - **2fd9 −15.6%** (fixed by round 4, item 14: Rossi's perfect combo's Lift and Vulnerable stack on Snowshine's
   counter-bash infliction; both Crushes plain at 4 stacks, "The damage factors" above)**:** Mi Fu's Crush ×1.90 low at 2 Vulnerable stacks (22.3, 47.9 s), while her killing Crush at 3 stacks
@@ -1475,7 +1516,9 @@ Grouped (scratch: `zmdlogs hits --json` over every log, each Arcane
 mismatch against teammates' mismatches within 1.5 s at the same ratio
 ±1.5%, and the engine's modifiers against the log's listing per hit):
 
-- **Stage logs** (8915 323, c6d8 200, 7b54 28, 6339 6: 557) and the
+- **Stage logs** (8915 323, c6d8 200, 7b54 28, 6339 6: 557; 8915's and
+  c6d8's round factors are their fixtures' stageFactors since 2026-11-26,
+  their Arcane mismatches 292 → 42 and 200 → 20) and the
   fight-wide factor of **d9e5** (15: every operator ×1.12–1.20 from 4.4 s,
   Arcane ×1.116–1.134, Liino ×1.20; the old ×1.7–2.0 is gone): not hers.
 - **Team-wide** (another operator's mismatch at the same ratio within
@@ -2088,13 +2131,8 @@ f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
   - c7790: the engine ticks 10 times in 22.5–32.1 s where the log has 7
     (and 3 against 2 at 63.7 s); the log's ticks there are 1.5–2.6 s
     apart.
-- **8915's stage** (indie_hard018_s, the Skydrummer's shields that each
-  reaction or physical status removes): every operator's hits ×0.5 to
-  37.7 s, ×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s, ×1 from 86.8 s;
-  nothing in the log's buffs marks it. Not modelled; the log is mostly
-  not checkable until it is. It is all of Arcane's ×1.85 there (in-game
-  test 7, 2026-11-18: 238 of her 278 hits in the windows within 1% of the
-  factor).
+- **8915's stage:** fixed (the fixture's stageFactors) —
+  docs/journal/2026-11-26-15-arcane-s-mismatches-a-stage-s-damage-factor-from-the-fixture.md.
 - **c83c Si's combo from ~55 s: now only the Yinglung stack count
   (2026-11-18).** The +21% is gone (consumed buffs end at their cast's
   last hit, 2026-11-14): her combos at 55.6, 82.8 and 98.4 s are ×0.9494,

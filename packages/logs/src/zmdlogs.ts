@@ -109,6 +109,23 @@ export interface LogFixture {
    * (logs.ts readLogFixture applies them to `team`; readLogFixtureRaw doesn't), each with its evidence.
    */
   readonly buildOverrides?: readonly BuildOverride[];
+  /**
+   * Hand-written: a stage's damage factor on every hit in a window, which no game table the project reads has and the
+   * log doesn't list (8915's Skydrummer shields ×0.5 / ×0.05 / ×0.2, c6d8's ×0.1), read from the log as every
+   * operator's hits at one factor there (enginecheck.ts stageModifiers), each with its evidence.
+   */
+  readonly stageFactors?: readonly StageFactor[];
+}
+
+/**
+ * A stage's damage factor (LogFixture.stageFactors): every hit logged at or after `from` and before `to` (ms) takes
+ * × `factor` in the multiplicative zone, as do the replay's landings then (the fight's totals).
+ */
+export interface StageFactor {
+  readonly from: number;
+  readonly to: number;
+  readonly factor: number;
+  readonly why: string;
 }
 
 /** Build fields a fixture sets over an exported build (LogFixture.buildOverrides): `weapon` only the fields it changes. */

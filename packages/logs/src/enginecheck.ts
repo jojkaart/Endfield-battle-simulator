@@ -153,6 +153,16 @@ export function landingOf(c: EngineCheck, hit: LogHit): (LandedHit & { readonly 
   return l as LandedHit & { readonly inputs: LandingInputs };
 }
 
+/**
+ * The stage's damage factor at a logged moment (ms; LogFixture.stageFactors) as a multiplicative modifier, or none. A
+ * stage's shield phases scale every hit by one round factor (8915: ×0.5, ×0.05, ×0.2; c6d8: ×0.1) that no table the
+ * project reads has and no buff the log lists marks; with it the check judges the rest of those hits.
+ */
+export function stageModifiers(fx: Pick<LogFixture, "stageFactors">, t: number): Modifier[] {
+  const s = fx.stageFactors?.find((w) => t >= w.from && t < w.to);
+  return s ? [{ zone: "multiplicative", value: s.factor - 1, source: `stage factor ×${s.factor}` }] : [];
+}
+
 const LINK = /^Link \(\d+\)$/;
 const isLog = (m: Modifier) => m.source.startsWith("log buff ");
 const near = (a: number, b: number) => Math.abs(a - b) <= 1e-3 * Math.max(1, Math.abs(a), Math.abs(b));
@@ -296,8 +306,9 @@ export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): Read
     snapshotOwn
       ? [...logModifiers(effects, cat, c.caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotOwn.effects, cat, c.caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]
       : logModifiers(effects, cat, c.caps);
-  // The engine's modifiers (kit buffs, statuses, Link, the finisher), without kit buffs the replay can't judge: their state is the log's.
-  const engine = inputs.options.modifiers?.filter((m) => !isLog(m)) ?? [];
+  // The engine's modifiers (kit buffs, statuses, Link, the finisher), without kit buffs the replay can't judge: their
+  // state is the log's; and the stage's factor at the hit (LogFixture.stageFactors), in every reading.
+  const engine = [...(inputs.options.modifiers?.filter((m) => !isLog(m)) ?? []), ...stageModifiers(c.fx, hit.t)];
   const unjudged = (m: Modifier) => m.kitBuff !== undefined && c.replay.unjudgedKitBuffs.has(`${m.kitBuff.owner}:${m.kitBuff.id}`);
   const judged = engine.filter((m) => !unjudged(m));
   const unjudgedNames = new Set([...c.replay.unjudgedKitBuffs.keys()].flatMap((k) => c.names.ofKitBuff.get(k) ?? []));
@@ -774,7 +785,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     }
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined || killing.has(m.hit) ? m.hit.value : Infinity);
-    else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
+    else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected", modifiers: [...(l.inputs.options.modifiers ?? []), ...stageModifiers(fx, (l.frame * 1000) / 30)] }).exact;
     else damage = l.exact;
     if (capped) damage = Math.min(damage, capped.value);
     counted.add(l);

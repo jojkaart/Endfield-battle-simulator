@@ -97,8 +97,8 @@ export function isOffsetCandidate(o: OperatorOffset): boolean {
  */
 export const OFFSETS_EXPLAINED: Readonly<Record<string, string>> = {
   // The stage logs: the stages' shields and phase factors (×0.1–0.7 on whole stretches: docs/open-problems.md "Fight
-  // totals", the stage logs), tight where one phase holds most of an operator's hits.
-  "c6d8 chr_0004_pelica": "the stage's shield (×0.1 on whole phases): a stage log",
+  // totals", the stage logs), tight where one phase holds most of an operator's hits. A stage's round factor is the
+  // fixture's stageFactors instead (8915, c6d8: no offset left).
   "7b54 chr_0032_lizhiyan": "the stage's shield and phase factors: a stage log (under the log's reading ×1.00: the listing has them)",
   "6339 chr_0032_lizhiyan": "the stage's shield and phase factors: a stage log",
   // Build inputs known and not fitted (docs/open-problems.md "Hard 27", "Fight-wide factors in older imports").

@@ -43,7 +43,7 @@ import {
 } from "@efsim/engine";
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
-import { engineCheck, engineReadings, fightTotals, logDifferences, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
+import { engineCheck, engineReadings, fightTotals, logDifferences, stageModifiers, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
 import { boundarySubsets, buffFile, collapseRepeats, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
@@ -927,7 +927,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
         // (DamageOptions.staggered: its multiplier and the modifiers limited to Staggered enemies), not the log's ×1.3 entry.
         const staggered = c.effects.some((e) => STAGGER_BUFF.test(e.buff));
         const options = (category: HitCategory) => ({
-          crit: c.crit ? ("always" as const) : ("never" as const), staggered, modifiers: [...loggedMods(category).filter((m) => !STAGGER_BUFF.test(m.gameBuff ?? "")), ...c.extra, ...variant.modifiers],
+          crit: c.crit ? ("always" as const) : ("never" as const), staggered, modifiers: [...loggedMods(category).filter((m) => !STAGGER_BUFF.test(m.gameBuff ?? "")), ...c.extra, ...variant.modifiers, ...stageModifiers(fx, hit.t)],
         });
         const results: { assumptions: Assumption[]; r: { exact: number } }[] = reaction
           ? [{ assumptions: [], r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]

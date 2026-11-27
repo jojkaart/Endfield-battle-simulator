@@ -308,6 +308,17 @@ Electrification) and comes from the log like a buff no kit defines
 (enginecheck.ts `logOnly`). The Endministrator is read as the variant
 her keys name (logs.ts `withEndminVariant`: chr_0002_endminm_* beyond
 the combo is the male's kit).
+A stage's damage factor (a stage's shield phases: 8915's Skydrummer ×0.5,
+×0.05, ×0.2; c6d8's ×0.1), which no table the project reads has and no
+listed buff marks, is the fixture's hand-written `stageFactors`
+(2026-11-26): every hit logged in a window `[from, to)` ms, and the
+replay's landings then in the totals, take its factor in the
+multiplicative zone (enginecheck.ts `stageModifiers`, in every reading and
+the log-listing ones); its evidence is every operator's hits there at that
+one round factor (scripts/probes/stage/stage-factors.ts on `zmdlogs hits
+--json`), and the `replay` view's LAND lines show the staged damage beside
+the replay's own. Not a fudge per hit: one factor per window, from all
+four operators' hits at once, as a build override is one input from many.
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
 sets fields over it when the fixture is read (logs.ts `readLogFixture`;

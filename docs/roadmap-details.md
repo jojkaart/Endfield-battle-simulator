@@ -316,6 +316,13 @@ end-boundary hits as past the run measured mixed (docs/tried/2026-11-26-boundary
 chain's data for the doubles' end; a hold bound only where the end-boundary hit's value decides; the batch order at a
 stop's end.
 
+**Arcane's mismatches (2026-11-26, [journal](journal/2026-11-26-15-arcane-s-mismatches-a-stage-s-damage-factor-from-the-fixture.md)):**
+492 of her 697 mismatches were 8915's and c6d8's stages: one round factor on every operator's hits in a window, now
+the fixtures' `stageFactors` (enginecheck.ts stageModifiers; development mismatch 10.2 → 6.9%, earlier pending 11.3 →
+7.7%). Left: 1d91's steps (Liino's lane), fc63's Corrosion 89–110 s (`window-reaction`, test 33), 7b54's slug, 8915's
+Corrosion step and Hot Work end 0.1–0.3 s early after two combos pressed together (the enemy's clock), 9c6e's two
+targets. A stage factor for a new stage log: scripts/probes/stage/stage-factors.ts, then the fixture's field.
+
 **Arcane's Doubles end (2026-11-26, [journal](journal/2026-11-26-13-what-ends-arcane-s-doubles-susceptibility-the-slug-s-purges.md)):**
 6339's two early ends (and 7b54's at 47.48 s) are Hard 33's slug shedding every team debuff at once; the log check's
 replay reads those purges from the log (`logged-purges`: development plain 73.8 → 74.3%, 6339 28 → 112 plain). e82d's
@@ -478,7 +485,8 @@ b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), bdf2's Si combo
 finisher ×1.456 (no stack count fits), 7e19's Crush landings unmatched (Endministrator
 +46%),
 bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss
-boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and
+boss's ×0.1 until its Stagger in c6d8: the fixture's stageFactors since 2026-11-26, read from the log, not simulated),
+then B6 (Si's battle-skill entity and Arcane's and
 Pogranichnik's ultimates ignore others' time stops: small), B9, B10.
 
 ## The tool's purpose: the favourites' rotations
