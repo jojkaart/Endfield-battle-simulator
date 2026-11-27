@@ -357,3 +357,15 @@ set per log, a split per kit or per mechanism class (the lead, 2026-11-25:
 the classes are small enough to narrow a team), a hit, a time or a value
 of one log. Attribution among the hold-outs stays patch-per-kit measures
 on development logs, with the hold-outs' aggregates as the check.
+
+How a tool tells a hold-out (round 19, round 18's own report point 1): a
+hold-out has two key forms, `holdout/…` (the snapshot files, measure's
+logKeys) and `pending/…` (accuracy.ts allLogs and `pairKey`, its key
+before 2026-11-16, so older refs pair), so a prefix test on allLogs' keys
+names one. Every check goes through `isHoldoutKey(key, split)`
+(scripts/accuracy.ts), with the snapshots' own split. tests/holdout-blindness.test.ts
+runs every printing function of accuracy.ts and measure.ts on synthetic
+snapshots whose hold-out moves (alone, beside a development log, new,
+gone) and fails if its id appears anywhere; every exported function of the
+two modules is listed there as a printer it runs or with why it prints no
+log, so a new export is classified before it merges.

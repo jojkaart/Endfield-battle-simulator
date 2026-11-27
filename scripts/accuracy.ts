@@ -94,6 +94,22 @@ export function readSplit(text = readFileSync(join(ROOT, SPLIT), "utf8")): Split
 const idOf = (key: string) => (key.split("/").pop() as string).replace(/\.json$/, "");
 
 /**
+ * A log's key as allLogs gives it, the one form comparisons pair by: a hold-out's under pending/ (its key before
+ * 2026-11-16, so an older ref's snapshots pair with today's). The snapshot files and measure's logKeys key it holdout/….
+ */
+export const pairKey = (key: string) => key.replace(/^holdout\//, "pending/");
+
+/**
+ * Whether a log's key, in either form (holdout/… from the snapshot files and logKeys, pending/… from allLogs and
+ * pairKey), is a hold-out's: the one test the printing functions' blindness rests on (round 19, round 18's own report
+ * point 1: measure's prefix test on allLogs' keys named a hold-out "moved by no part alone"). `split`: the snapshots'
+ * own (Snapshots.split), so a test's synthetic hold-outs count.
+ */
+export function isHoldoutKey(key: string, split: Pick<Split, "holdout">): boolean {
+  return key.startsWith("holdout/") || split.holdout.has(idOf(key));
+}
+
+/**
  * The group of a log's snapshot key (a path under fixtures/: "zmdlogs-….json", "pending/zmdlogs-….json" or
  * "holdout/zmdlogs-….json"; before 2026-11-16 the hold-outs were under pending/ too). With its entry, a describing key
  * there decides a group too (the SEVERAL key: `targets`), so a caller holding the entry needs no marked split (round
@@ -396,7 +412,7 @@ export function splitPending(pending: Entries): { readonly pending: Entries; rea
 export function allLogs(s: Snapshots): Map<string, { group: Group; entry: Entry }> {
   const out = new Map<string, { group: Group; entry: Entry }>();
   for (const [k, e] of Object.entries(s.verified)) out.set(k, { group: "verified", entry: e });
-  for (const [k, e] of Object.entries(s.pending)) out.set(k.replace(/^holdout\//, "pending/"), { group: groupOf(k, s.split, e), entry: e });
+  for (const [k, e] of Object.entries(s.pending)) out.set(pairKey(k), { group: groupOf(k, s.split, e), entry: e });
   return out;
 }
 

@@ -112,7 +112,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { allLogs, compare, direction, GROUPS, groupOf, operatorNames, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 type DecisionCounts = Readonly<Record<string, number>>;
@@ -139,7 +139,12 @@ export function logKeys(tree: string): string[] {
   return [...dir(""), ...dir("pending"), ...dir("holdout")].sort();
 }
 
-const isHoldout = (key: string) => key.startsWith("holdout/");
+let rootSplit: Pick<Split, "holdout"> | undefined;
+/** Whether a key in either form is a hold-out's, by this checkout's split (accuracy.ts isHoldoutKey). */
+const isHoldout = (key: string) => {
+  rootSplit ??= existsSync(join(ROOT, "fixtures/holdout/holdout.json")) ? readSplit() : { holdout: new Set<string>() };
+  return isHoldoutKey(key, rootSplit);
+};
 const idOf = (key: string) => (key.split("/").pop() as string).replace(/\.json$/, "");
 
 /** How far back (hours) a measure looks for earlier measures that moved the same logs (interactLines). */
@@ -1055,7 +1060,7 @@ export function splitLines(parts: readonly { readonly label: string; readonly fr
   // allLogs keys a hold-out as under pending/ (its key before 2026-11-16): its group says it is one (round 18: by the key
   // alone, a hold-out moved by the whole change and by no part was named among the logs "by no part alone").
   const held = new Set([...allLogs(before), ...allLogs(whole), ...parts.flatMap((p) => [...allLogs(p.to)])].filter(([, l]) => l.group === "holdout").map(([k]) => k));
-  const isHeld = (k: string) => isHoldout(k) || held.has(k);
+  const isHeld = (k: string) => isHoldout(k) || isHoldoutKey(k, before.split) || isHoldoutKey(k, whole.split) || held.has(k);
   // The hold-outs the whole change moved, by direction: per part, how many it moves the same way alone (counts only,
   // round 18, the replay-only report point 1: "the hold-out the whole change made worse is this part's" is a count).
   const dirOf = (a: Snapshots, b: Snapshots, k: string) => {
@@ -1117,7 +1122,7 @@ interface SplitRun {
 async function splitParts(how: "files" | "commits" | "hunks", r: SplitRun): Promise<string[]> {
   // allLogs keys a hold-out as under pending/ (round 18: by its holdout/ key every hold-out counted as moved).
   const moved = r.keys.filter((k) => {
-    const lk = k.replace(/^holdout\//, "pending/");
+    const lk = pairKey(k);
     const [a, b] = [allLogs(r.before).get(lk), allLogs(r.whole).get(lk)];
     return !a || !b || direction(a.entry, b.entry) !== "same";
   });
