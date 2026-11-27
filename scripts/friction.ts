@@ -149,7 +149,7 @@ export function carryLists(text: string, file: string, park: readonly number[] =
     return `- ${n}. ${p.title.replace(/\.$/, "")}.`;
   });
   out.push("## Parked", "", ...(head.length ? head : ["A new report that hits one brings it back with its full text from there."]));
-  if (parkedNow.length) out.push("", `This backlog's point${park.length > 1 ? "s" : ""} ${park.join(", ")} (full text in ${file} under the same number), carried twice without a new report:`, "", ...parkedNow);
+  if (parkedNow.length) out.push("", `Point${park.length > 1 ? "s" : ""} ${park.join(", ")} of ${file} (full text there under the same number), carried twice without a new report:`, "", ...parkedNow);
   out.push(...rest, "");
   const list = section(text, ACCURACY_LIST);
   if (list) {

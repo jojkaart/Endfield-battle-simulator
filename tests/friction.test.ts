@@ -83,7 +83,7 @@ describe("friction.ts carry --lists (round 16's own report point 1)", () => {
 
   it("prints the Parked section with the parked points on top, and the accuracy list without the closed or dropped entries", () => {
     const out = carryLists(backlog, "docs/friction-done/b.md", [1], ["Arcane's bursts"]);
-    expect(out).toContain("## Parked\n\nA new report that hits one brings it back with its full text from there.\n\nThis backlog's point 1 (full text in docs/friction-done/b.md under the same number), carried twice without a new report:\n\n- 1. Stagger starts.\n\nRound 9's points:\n\n- 2. A kit value.\n");
+    expect(out).toContain("## Parked\n\nA new report that hits one brings it back with its full text from there.\n\nPoint 1 of docs/friction-done/b.md (full text there under the same number), carried twice without a new report:\n\n- 1. Stagger starts.\n\nRound 9's points:\n\n- 2. A kit value.\n");
     expect(out).toContain("## Needs an accuracy or search task (not friction work)\n\n- **Holds per stretch** (round 12): one problem\n  over the fight.\n");
     expect(out).not.toMatch(/A batch's Lift|Arcane's bursts|What worked well/);
     expect(() => carryLists(backlog, "b.md", [], ["no such entry"])).toThrow(/no accuracy-list entry/);

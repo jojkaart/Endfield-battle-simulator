@@ -23,7 +23,10 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    own report point 2: `share operator <id>`) when `npm run
    snapshots:update` prints "keys added only in n log(s)" and "No log's
    verdicts moved", and docs/accuracy.md's existing numbers stay the same;
-   the round's summary names the keys added.
+   the round's summary names the keys added. A new kind of describing key
+   goes into scripts/accuracy.ts `isDescribingKey` (round 17: `other-hit
+   operator <id>`, `stage`), so `direction` leaves it out and a hold-out's
+   moved key is printed by its kind, never its operator.
 4. **The backlog stays short** (round 6): a branch that closes a backlog
    point (any task, not only an improvement round) adds one line under it
    in the same branch: "Closed by <branch>, <commit>: how". A point carried
@@ -33,7 +36,12 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
 5. **The paperwork, in this order** (round 11): the new backlog first,
    `node scripts/friction.ts carry <backlog.md> <n,…> --start <k> --label
    "<name>,"` (the points carried into it, renumbered, their **From:**
-   lines extended), then the new points with their **From:** lines; then
+   lines extended; `--lists [--park <n,…>] [--drop <text>]…` also prints
+   its Parked section with the newly parked points on top and its
+   accuracy list without the closed or dropped entries, round 17; `none`
+   for the points when every one is closed or parked), then the new points
+   with their **From:** lines (a point done but one part: "point n (the
+   part carried)", which the outcomes fill as "done but …"); then
    `node scripts/friction.ts outcomes <report.md…> --round <n> --backlog
    <new backlog.md>`, each report's "Outcome (round n)" skeleton (a line
    per numbered point) with the carried ones filled in ("carried (<file>
