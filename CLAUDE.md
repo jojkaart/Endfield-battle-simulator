@@ -110,7 +110,9 @@ options, checked before it queues; with no reference named and stale
 snapshots it measures against the merge base with main (`--against-snapshots`
 keeps the snapshots). Diagnosis views: `efsim zmdlogs
 groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
-(each clock's lateness by stop kind), `holds --dropped --all`, `ends
+(each clock's lateness by stop kind), `holds --dropped --all`, `away
+<fixture…|--all>` (an away stretch's clocks: a pause or a phase), `hits
+<fixture> --against-hit <s>` (a hit's zones against a neighbour's), `ends
 <fixture> [--at <s>]` (which listed buffs end at a moment, which go on),
 `hits <fixture> --same-listing <s>` (the nearest hits with the same
 listing: check a listing lead there first), `boundaries` (a boundary
@@ -121,7 +123,8 @@ assume: `zmdlogs assumed --operator <op>`; what a reading changes: `zmdlogs deci
 <fixture…|--all> --assume <id>=<r>` (the replay's decisions) and `hits
 <fixture> --against <id>=<r>` (the hits); one command at two
 commits' code, the lines that differ: `node scripts/cli-ab.ts <ref> --
-<efsim args>` (`--holds <fixture>`: which bounds a change moved). A new
+<efsim args>` (`--holds <fixture>`: which bounds a change moved;
+`--placement`: every log's cast placement and the rules that moved). A new
 test that should fail before the change: `node scripts/verify-at.ts <base>
 --test <file> -t <name>`. A build offset: `efsim zmdlogs offsets --all`
 finds them, `efsim zmdlogs fit-build <fixture> --operator <op>` fits one,
@@ -151,7 +154,8 @@ another operator has it too, it's shared.
 
 After a batch's kits are in, repeat the pattern review in
 [docs/kit-abstractions.md](docs/kit-abstractions.md#repeating-the-review)
-(`efsim kit-census`).
+(`efsim kit-census`; its last section names a kit buff only disabled
+create actions make).
 
 ## Worktrees and sub-agents
 
@@ -295,7 +299,9 @@ sub-agent to read them, deduce the overall improvements and implement them,
 then move the reports to [docs/friction-done/](docs/friction-done/README.md)
 (docs/friction/ only holds what still needs doing). A tooling round may add
 a snapshot key that only describes, when snapshots:update says "keys added
-only" and "No log's verdicts moved"; its summary names the keys.
+only" and "No log's verdicts moved"; its summary names the keys. The new
+backlog: `node scripts/friction.ts carry <backlog> <n,…|none> --lists
+[--park <n,…>]`.
 
 ## Data and reference code
 
