@@ -279,6 +279,17 @@ describe("Rossi's ultimate", () => {
     expect(data.enemies["eny_0104_hsrogue2"]?.rank).toBe(1);
     expect(control(elite).map((e) => [e.frame - castAt(elite, "ultimate_skill"), e.kind === "control" ? [e.status, e.frames, e.freezes] : null])).toEqual([[57, ["rossi_ultimate_stop", 93, true]]]);
   });
+
+  it("her bleed runs on through that freeze, a tick a second (runsThroughFreeze: 99fb 51.44–54.44 s, 2fd9 53.08–56.11 s)", () => {
+    const control = (s: TimelineState) => s.reactions.filter((e) => e.kind === "control" && e.operator === R);
+    const elite = run(scenario({}, "never", { target: { enemy: "eny_0104_hsrogue2", level: 90 } }), [r("normal_skill"), r("normal_skill"), r("ultimate_skill")]);
+    const freeze = control(elite)[0];
+    expect(freeze?.kind).toBe("control");
+    const from = freeze?.frame ?? NaN;
+    const ticks = mine(elite).filter((h) => h.hitId === "bleed" && h.frame > from && h.frame < from + 93).map((h) => h.frame);
+    expect(ticks.length).toBeGreaterThanOrEqual(3);
+    expect(ticks.slice(1).map((f, i) => f - (ticks[i] as number))).toEqual(ticks.slice(1).map(() => 30));
+  });
 });
 
 describe("Rossi's equipment kits", () => {

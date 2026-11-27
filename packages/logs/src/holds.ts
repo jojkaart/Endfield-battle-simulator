@@ -4,7 +4,7 @@
 // log shows bounds it: a listed buff's run against the replay's own expiry, an enemy tick series against its period.
 // The replay (buffreplay.ts) then holds the world there once, for every timer.
 
-import { FPS, type KitBuff } from "@efsim/engine";
+import { breakHoldFrames, FPS, type KitBuff } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { worldMs, type TimeStop } from "./logcasts.ts";
 
@@ -222,11 +222,43 @@ export const HOLD_SERIES: Readonly<Record<string, { readonly period: number; rea
 const TICK_GAP_MS = 1500;
 
 /**
+ * The log's Stagger breaks (ms): the first moment (the hits at one ms) whose hits leave the bar at 0 after a moment that
+ * left it above 0 (the hits at one ms in the log's order aren't theirs: d4fb69b036fe at 145.02 s lists the breaking
+ * hit before one that leaves 12).
+ */
+export function loggedBreaks(fx: Pick<LogFixture, "hits">): number[] {
+  const bars = new Map<number, number>();
+  for (const h of fx.hits) if (h.poise) bars.set(h.t, Math.min(bars.get(h.t) ?? Infinity, h.poise.bar));
+  const out: number[] = [];
+  let prev = Infinity;
+  for (const [t, bar] of [...bars].sort((a, b) => a[0] - b[0])) {
+    if (bar === 0 && prev > 0) out.push(t);
+    prev = bar;
+  }
+  return out;
+}
+
+/**
+ * The engine's holds at the log's Stagger breaks (engine assumption break-hold, timeline/clock.ts breakHold) as time
+ * stops: `frames` at scale 0 from each break, not one inside an ultimate's stop of `stops` (as the engine).
+ */
+export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[], frames: number): TimeStop[] {
+  if (frames <= 0) return [];
+  return loggedBreaks(fx).flatMap((t) => {
+    const f = Math.round((t * FPS) / 1000);
+    if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) return [];
+    return [{ start: f, scales: new Array<number>(frames).fill(0), operator: "", skillId: "stagger-break", kind: null }];
+  });
+}
+
+/**
  * The bounds an enemy tick series gives (HOLD_SERIES): its chains of consecutive ticks (a gap of half a period to a
  * period and TICK_GAP_MS), each pair's hold and each tick's against its chain's first (a tick's jitter doesn't add up
  * along a chain).
  */
-export function tickBounds(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[]): HoldBound[] {
+export function tickBounds(fx: Pick<LogFixture, "hits">, placed: readonly TimeStop[], breakFrames = breakHoldFrames()): HoldBound[] {
+  // The breaks' holds are the engine's (break-hold), not hidden ones.
+  const stops = [...placed, ...breakStops(fx, placed, breakFrames)];
   const series = new Map<string, number[]>();
   for (const h of fx.hits) {
     if (!HOLD_SERIES[h.event]) continue;

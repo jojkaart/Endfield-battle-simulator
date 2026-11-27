@@ -27,6 +27,9 @@ presses round) by general rules: the replay's enemy away (engine assumption enem
 inferred from the listing (`hitless-presses` `inferred`), the totals' leaving frame and a kill read from the last
 life's damage ([open-problems.md](../open-problems.md), "The damage factors"). Their diffs are deleted.
 
+- [2026-11-27-break-window-start.diff](2026-11-27-break-window-start.diff): the replay's Stagger window recorded from
+  its break, not 14 frames later (replayrecord.ts, after engine assumption break-hold); hold-outs 2 better without it
+  (plain +8, mismatch −5), development mixed: the late start lets a hidden hold top up the break's 14 frames.
 - [2026-11-27-jump-launched-landings.diff](2026-11-27-jump-launched-landings.diff): the replay's JUMPDROP leaving out
   a logged landing launched before the jump (KitHit.launch: f879's Magma Fragment ticks across Laevatain's empowered
   jump 30 → 80); no development log moves, one hold-out −23 plain: not explained without opening it.

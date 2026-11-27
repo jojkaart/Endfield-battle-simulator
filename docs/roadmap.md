@@ -35,6 +35,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   the Hot Work loadout) and in-game tests 106, 108 (dives); next a cheaper
   variance for the guided search (most of a day's runs), the gear ascent
   on the new lists, a cheaper worth for timeline-moving stats.
+- **Stagger breaks:** done 2026-11-27: every clock held 14 frames at a
+  break (`break-hold`; owner's team −0.9%); next the hold's position
+  against the breaking hit's ms and a `stagger-recovery` refit.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast; Liino's
   Medicant layers on Arcane in 1d91 (beats from 44.9 s give none); Zhuang

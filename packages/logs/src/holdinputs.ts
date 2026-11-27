@@ -232,7 +232,9 @@ export const PURGE_GAP_MS = 1500;
  * debuffs (a debuff's per-element affixes count once) from at least two operators, with the next logged moment within
  * PURGE_GAP_MS. Its frame is the one after the moment's. Not pending/zmdlogs-3aa6ab93bad4.json at 25.42 s (Arcane's
  * Doubles Susceptibility, both affixes, and Perlica's Electrification: two debuffs ending together, the replay's own
- * statuses running on as the log's hits after it say). Hard 33's slug (eny_0129_slwood_hdg033) does it at its phase changes: pending/zmdlogs-63398339803e.json
+ * statuses running on as the log's hits after it say). Hard 33's Woodcraft Slugs (eny_0129_slwood_hdg033, eight under
+ * one enemy id) show it where one slug is killed and the next takes the hits, its debuffs gone with the dead one, not
+ * a phase change (docs/open-problems.md "Hard 33's Woodcraft Slugs: eight targets under one id"): pending/zmdlogs-63398339803e.json
  * at 10.35 s (Jade Vessel, Arcane's Tactical Doubles Susceptibility and her weapon's two lines, none listed from 10.91
  * s; every hit after 11.27 s reads exactly with the log's listing and ×1.40 low with the replay's) and at 29.38 s
  * (Camille's Susceptibility, Arcane's: her Doubles one gone before Si's combo final at 29.57 s). No kit's rule ends

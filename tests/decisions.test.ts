@@ -105,7 +105,10 @@ describe("totals --by crit", () => {
     const text = totalsView(data, fx, { byCrit: true, operators: ["chr_0028_wulfa"] });
     expect(text).toMatch(/Rossi: matched [\d,]+ vs [\d,]+/);
     expect(text).toMatch(/ {6}exact +\d+ {2}([\d,]+) vs \1 \(\+0\.0%/);
-    expect(text).toMatch(/ {6}expected +\d+ /);
+    // The kinds' landings add up to the matched ones (since break-hold, 2026-11-27, none of Rossi's is `expected`).
+    const matched = Number(/Rossi: matched [\d,]+ vs [\d,]+ \([^,]+, (\d+) landing/.exec(text)?.[1]);
+    const kinds = [...text.matchAll(/ {6}(?:known|exact|read|expected) +(\d+) /g)].reduce((t, m) => t + Number(m[1]), 0);
+    expect(kinds).toBe(matched);
   });
 });
 

@@ -17,7 +17,10 @@ import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resourc
 import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
 import { ofKind, schedule } from "./schedule.ts";
-import { holdNewStatuses, operatorClockDue } from "./clock.ts";
+import { breakHold, holdNewStatuses, operatorClockDue } from "./clock.ts";
+
+/** Whether a Stagger dealt broke the bar (dealPoise's `staggered` event). */
+const broken = (r: { readonly events: readonly BattleEvent[] }) => r.events.some((e) => e.type === "staggered");
 import { windowKey } from "./timing.ts";
 import { engineReading } from "./assumptions.ts";
 
@@ -371,7 +374,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   if (kitHit.poiseOnly) {
     if (kitHit.poise === undefined || away || (kitHit.poiseControlledOnly && controlled !== hit.operator)) return spEvents.length ? runTriggers(ctx, st, spEvents, { operator: hit.operator, kind }) : st;
     const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, before), hit.frame);
-    return runTriggers(ctx, r.state, [...r.events, ...spEvents], { operator: hit.operator, kind });
+    return runTriggers(ctx, broken(r) ? breakHold(ctx, r.state, hit.frame) : r.state, [...r.events, ...spEvents], { operator: hit.operator, kind });
   }
   // What the hit applies comes first: its own damage and a reaction's initial hit already see the new status.
   // Applications marked afterDamage run after the damage instead (KitApplication.afterDamage).
@@ -544,7 +547,8 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       ...(castIndex !== undefined ? { cast: castIndex } : {}),
     };
     const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, at(consumed)) * landedScale, hit.frame, landing);
-    st = r.state;
+    // The break holds every clock (engine assumption break-hold).
+    st = broken(r) ? breakHold(ctx, r.state, hit.frame) : r.state;
     poiseEvents.push(...r.events);
   }
   const hitEvent: BattleEvent = {

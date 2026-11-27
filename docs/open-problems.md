@@ -66,6 +66,57 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## The hold at a Stagger break (2026-11-27)
+
+**Shows** (scripts/probes/stagger/break-hold.ts, on the code before the fix): across a logged break (a bar-0 hit
+after a bar above 0) every clock runs late by about half a second: the placed casts' first landings 0.6 s or more
+after it 0.41–0.61 s late but two (26 rows: other operators' casts, the breaker's own, Combustion, Rossi's bleed and
+Snowshine's ultimate ticks; median 0.54 s), against +10 ms for clocks with no break. Every operator, the breaker
+included (04d4 298.00 s Catcher's own ultimate +0.54 s; c83c 55.83 s Si's combo +0.56 s), on every enemy of the
+development logs (klbear, kltdcap, bigents, jsspsi, rodin, fdcentur). The next logged moment after a break comes
+0.45 s or more later in 58 of 72 breaks (median 0.68 s); the others are inside a stop or among the cases below.
+**Found and fixed** (docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md):
+engine assumption `break-hold` `14f` (timeline/clock.ts breakHold, landing.ts at dealPoise's `staggered`): the
+breaking hit holds the world, the enemy and every operator 14 frames at scale 0; not inside an ultimate's stop. The
+replay's tick bounds take the logged breaks as stops (holds.ts breakStops), so the hidden holds don't place it again;
+the replay holds only at the breaks the log shows (TimelineScenario.loggedBreaks). 5082 45.06 s: Yvonne's press
+continues her chain. Tried and dropped: the replay's Stagger window recorded from the break rather than 14 frames
+later (docs/tried/2026-11-27-break-window-start.diff: hold-outs 2 better without it, development mixed).
+**The parts, measured** (against f96757f; `measure --split hunks`, and leave-one-out variants of each part on the
+branch; hold-outs as aggregates):
+
+| Part | Development plain | Hold-outs plain | Earlier pending plain |
+|---|---|---|---|
+| Rossi's bleed alone | 83.9 → 84.0% | 82.9% (1 mixed) | 81.9% (1 better, 1 mixed) |
+| the engine hold (with the tick stops and the gate) alone | 83.9 → 84.1% | 82.9 → 82.4% (2 worse) | 81.9 → 82.0% |
+| without the gate | 84.2% | 82.4%, mismatch 5.4 → 5.5% | 82.2 → 82.1% |
+| without the tick stops | 84.2% | 82.4% (1 better) | 82.2 → 82.0% |
+| without the window start (dropped) | 84.2% (mixed) | 82.4 → 82.5% | 82.2% |
+| the hold's Stagger end not held | no verdict moves in any group | | |
+| no hold (`none`), the rest kept | 84.2 → 84.0% | 82.4 → 82.9% | 82.2 → 81.9% |
+
+So the hold-outs' loss is the hold itself; no other part carries it.
+**Ruled out:** a length in the data (every one of the 1514 damage units carries enablePoiseBreakTimeDilation true; no
+table or BuffData file gives the break's dilation; BattleConst has none); the Stagger Node's buff
+(buff_common_mini_poise_break, its own 0.5 s layer-1 dilation) holding any clock: 86 node crossings, casts and ticks
+across them on time (median +3 ms, NODES=1); a hold of the breaker only.
+**Still possible:** the exact length and curve (12f–18f measure alike in plain matches; 14f is the Node buff's curve,
+0.46 s held, and the lowest damage error; 16f, the logs' median, keeps Si's combo final in c83c, a tail cut's
+threshold); where the hold sits against the logged ms of the breaking hit (9090 128.92 s, c4f3 33.58 s, 3aa6
+145.63 s: the late clocks sit *before* the logged break, as if the log stamped the breaking hit at the hold's end;
+the next hits 0.1–0.35 s after it); whether a break inside a combo's slow-down holds (4360 49.14 s, d4fb 97.05 s,
+c4f3 82.65 s: hits 0.13–0.25 s after, all three Lifts or combos inside a combo's stop); breaks inside an ultimate's
+stop (4d60 56.29 s, 9a80 34.94 s: hits 0.08–0.23 s after; `16f-all` measured worse). The hold-outs: plain 82.7 →
+82.2% under every length (82.9 → 82.5% at the final commit; 2 logs, about 30 hits plain → assumed, still matched).
+Ruled out for them: the Stagger's end moved by the hold (the replay's Stagger follows the log's listing; holding the
+Stagger's end or not moves no verdict anywhere); the gate, the tick stops (table). The Stagger's end in a simulation:
+against the development logs' bracketed Stagger ends (`zmdlogs stagger`, 35 runs), the engine's own end with the hold
+is a median 0.32 s late (19 long, 16 short), without it 0.33 s early (16 / 19): the logs don't choose; a
+`stagger-recovery` of about 1.7 s with the hold would centre it.
+**Next check:** the hold's position against the breaking hit's logged ms (the three "before" cases against the
+others: the gap before the break); a `stagger-recovery` refit with the hold on the enemy's clock (`zmdlogs stagger`:
+the engine's own runs short in 18 of 71, quartiles 0.43 / 0.84 / 1.62 s, against 20, 0.60 / 1.53 / 3.32 s without).
+
 ## The placement cases the one-sided rounds left (2026-11-27)
 
 **Shows** (docs/journal/2026-11-27-05-…, -06-…; `zmdlogs totals <fixture> --kinds`): f879 95.94 s (−2.12%), 3aa6
@@ -102,6 +153,8 @@ hidden holds (Yvonne, below): the holds near 44.23 s are spread over 1.5 s, most
 window gains 3 frames of the 15 the log shows (not measured).
 
 **Diagnosed, not fixed:**
+- Fixed: 5082 45.06 s, Yvonne's chain: the hold at the Stagger break (above, "The hold at a Stagger break") —
+  docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis:
 - **5082 45.06 s, Yvonne's enhanced attack made as enhanced attack 1** (replay MADE): her 43.98 s ult_attack3_2's shots
   4–8 land 0.22–0.51 s late (44.43 → 44.88 s between shots 5 and 6, two frames apart in the kit): her own timeline
   was held about 0.5 s at her combo's Stagger-breaking explosion (44.43 s; the log's first Staggered hit 44.88 s, as
@@ -123,6 +176,10 @@ window gains 3 frames of the 15 the log shows (not measured).
   path, kit "Not modelled") and its teleport (TeleportAction at frames 0–3) are the candidates for the 0.6–1.3 s
   against the kit's 0.3 s; d4fb's 88.55 s harass and 89.82 s Assault are those paired the wrong way by the 16-frame
   nearest pairing. Not built.
+- Fixed: 99fb's bleed ticks: her ultimate's freeze of an Elite held her bleed in the replay (+93 frames at 51.03 s),
+  and the log's ticks run on through it in every Elite log (99fb, 2fd9, 207f): Razor Clawmark `runsThroughFreeze` —
+  docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis (the
+  "ended" bleed was a held one):
 - **99fb's bleed ticks at 51.44–55.43 s:** five ticks of the 47.43 s battle skill's bleed after Rossi's 49.12 s
   ultimate (one per second, held by its stop); the replay's bleed lands two (47.43, 48.43 s), so the placement's
   "a landing whose order the kit doesn't give" is a bleed the replay ended, the statuses' side (buffreplay.ts, not this

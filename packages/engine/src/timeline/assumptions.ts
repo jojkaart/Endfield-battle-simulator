@@ -14,6 +14,9 @@ import type { TimelineScenario } from "./state.ts";
 /** An engine reading: like a kit's (id, the in-game test that decides it, question, default, readings), with no operator. */
 export type EngineAssumption = KitAssumption;
 
+/** The default reading of engine assumption break-hold (a constant, so a measure can set it: measure --variant <file>:BREAK_HOLD_READING=…). */
+const BREAK_HOLD_READING = "14f";
+
 export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "control-immunity",
@@ -106,6 +109,19 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       none: "no longer: PoiseRecTime on the enemy's clock (the data)",
       "2s": "2 s more on the enemy's clock, a recovery the data doesn't give (the logs' median past PoiseRecTime and the stops, 2026-11-18)",
+    },
+  },
+  {
+    id: "break-hold",
+    question: "How long does a Stagger break hold every clock (timeline/clock.ts breakHold)? Every damage unit in the data carries enablePoiseBreakTimeDilation (true on all 1514), and no table gives the dilation's length or curve; a Stagger Node's buff (buff_common_mini_poise_break) has its own 0.5 s layer-1 dilation, which holds no clock the logs show (86 node crossings: casts and ticks across them on time, median +3 ms).",
+    default: BREAK_HOLD_READING,
+    readings: {
+      none: "no hold at a break (the engine until 2026-11-27)",
+      "12f": "12 frames (0.4 s) at scale 0, every clock (the world's, the enemy's, every operator's, the breaker's too), not inside an ultimate's time stop. Measured 2026-11-27 against none: development plain 82.7 → 82.9%, mean |damage error| 2.9 → 2.9%; earlier pending 81.8 → 82.0%; hold-outs plain 82.7 → 82.2% (2 worse, about 30 hits plain → assumed), |damage error| 6.3 → 6.3%",
+      "14f": "14 frames (0.47 s), as 12f (2026-11-27): the Stagger Node's own dilation holds as much (buff_common_mini_poise_break: 0.5 s, scale 1 → 0.01 at 7% → 0.1: 0.46 s), within the logs' spread (scripts/probes/stagger/break-hold.ts: the casts' landings and enemy ticks 0.6 s or more past a break, 26 rows, 0.41–0.61 s but two, median 0.54 s); measured as 12f (hold-outs mismatch 5.4 → 5.5%); 5082ceaffad1's Yvonne keeps her chain at 45.06 s",
+      "16f": "16 frames (0.53 s), as 12f: the logs' median; measured as 12f but development mean |damage error| 2.9 → 3.1% (c83c75d02a85 1.7 → 6.7%: Si's 55.83 s combo keeps its final, a tail cut's threshold), hold-outs 6.3 → 6.5%",
+      "18f": "18 frames (0.6 s), as 12f; measured as 16f, hold-outs mismatch 5.4 → 5.6%",
+      "16f-all": "16 frames, inside an ultimate's time stop too (measured: development plain 82.8%, otherwise as 16f)",
     },
   },
   {

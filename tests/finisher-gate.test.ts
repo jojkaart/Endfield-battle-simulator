@@ -76,12 +76,13 @@ describe("the Finisher's gate: the attack input's state", () => {
     const b = build("laevatain-forgeborn.json");
     const op = b.operator;
     const kit = data.kits.operators[op] as OperatorKit;
-    // attack1 deals 300 Stagger here: Rhodagn's bar is 280, so its first hit (frame 6) breaks it, for 10 s + the 2 s recovery.
+    // attack1 deals 300 Stagger here: Rhodagn's bar is 280, so its first hit (frame 6) breaks it, for 10 s + the 2 s
+    // recovery + the break's own 14-frame hold on the enemy's clock (engine assumption break-hold).
     const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === `${op}_attack1` ? { ...s, hits: s.hits.map((h) => ({ ...h, poise: 300 })) } : s)) } } } };
     const ctx = createContext(d, solo(b));
     const first = apply(ctx, init(ctx), { operator: op, skill: `${op}_attack1` });
     const broken = advance(ctx, first, 7).stagger;
-    expect(broken).toEqual({ poise: 0, until: 6 + 360, finisherUsed: false });
+    expect(broken).toEqual({ poise: 0, until: 6 + 360 + 14, finisherUsed: false });
     // attack1 again at 200, its 300 Stagger landing inside the window: the Stagger is as it was.
     const again = apply(ctx, first, { operator: op, skill: `${op}_attack1`, at: 200 });
     expect(again.hits.some((h) => h.skillId === `${op}_attack1` && h.frame > 200) || advance(ctx, again, 220).hits.some((h) => h.skillId === `${op}_attack1` && h.frame > 200)).toBe(true);

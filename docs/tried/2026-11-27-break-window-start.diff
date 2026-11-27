@@ -1,0 +1,27 @@
+The replay's Stagger window starting at its break (2026-11-27, the hold-at-a-break round; dropped)
+
+replayrecord.ts derives a window's start as its end less its length; with engine assumption break-hold the break's
+own hold moves the end at once, so the recorded start is the break + 14 frames. This clamps it to the sample that
+first sees it (the break's frame). Measured as a leave-one-out variant on the break-hold branch (measure --base
+f96757f, variant WINDOW_AT_BREAK=false, scratch switch): without it, against the branch with it, development 2 better,
+3 worse, 2 mixed (plain 84.2% either way), earlier pending unchanged, hold-outs 2 better (plain 82.4 -> 82.5%,
+mismatch 5.4 -> 5.3%: plain +8, mismatch -5). Dropped on the hold-outs: the start feeds the hidden holds' still spans
+(buffreplay.ts staggerStill), and the late start lets a hidden hold rise in the hold's 14 frames, where the logs put
+the break's hold at 0.54 s (16 frames) at the median, more than the engine's 14. The recorded start (views'
+STAGGER lines, BuffReplay.staggers) is then 14 frames after the break. Would work once the still span is taken
+from the break's own end (buffreplay.ts) or the hold's length is settled.
+
+diff --git a/packages/logs/src/replayrecord.ts b/packages/logs/src/replayrecord.ts
+index 3765645..7e58b97 100644
+--- a/packages/logs/src/replayrecord.ts
++++ b/packages/logs/src/replayrecord.ts
+@@ -273,7 +273,8 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
+       if (until !== null && staggerOpen) staggerOpen.until = until;
+       // Its start: its end less its length, but not before the last sample, which had none (a Stagger the log's listing
+       // held, holdStagger, ends at the listing's next moment: pending/zmdlogs-d4fb69b036fe.json's from 97.26 s read 86.50 s).
+-      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, lastSample, until - o.staggerFrames()), until };
++      // Nor after this sample: a break's own hold (engine assumption break-hold) moved its end at once.
++      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, lastSample, Math.min(frame, until - o.staggerFrames())), until };
+       lastSample = frame;
+       for (const [k, rec] of open) {
+         if (seen.has(k)) continue;
