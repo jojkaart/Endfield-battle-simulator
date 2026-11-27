@@ -66,6 +66,64 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## The placement cases the one-sided rounds left (2026-11-27)
+
+**Shows** (docs/journal/2026-11-27-05-…, -06-…; `zmdlogs totals <fixture> --kinds`): f879 95.94 s (−2.12%), 3aa6
+148.68 s (−2.71%), 5082 45.32–45.53 s (−1.93%), Arcane's INT lasers (8915, 00ae, a7a7, about −2.4% each), 9a80
+34.94 / 36.10 s, Pogranichnik's harasses (0.06% each), 99fb's bleed ticks (0.54%).
+
+**Found and fixed** (docs/journal/ entry of this round, tests/placement-cases.test.ts):
+- **An ability entity's landings are due within the slots' span** (logcasts.ts onEntityClock): the placement joined a
+  key's next landing to the open cast while it had slots to come within the skill's whole duration (toCome), and a
+  battle skill lasts 9.4 s. An entity's landings (`launch`, no flight, no buff timeline, no enemy delay) come at their
+  frames whatever the cast does, so a later one is a new cast's. f879: the 94.71 s explosion (23,961, the 87.12 s
+  cast's ticks unlogged) was taken for the 87.12 s cast's first tick, so the 95.94 s empowered hit made a battle skill
+  at 92.48 s, before her final strike's Heat absorption at 92.49 s, with no empowered hit; now one cast at 93.98 s, the
+  162,889 lands. Also 6339 31.62 s (Laevatain), Zhuang Fangyi's attack 2 / 4 ranges in 3aa6 and 4bfc (a 10.4 s late
+  "slot" of an 80.24 s attack 2). Not a buff's timeline: Rossi's combo afterhits (buff_chr_0028_wulfa_combo_2_damage,
+  9a80 29.20 s, 3.7 s after the second) stay their cast's.
+- **A slot press whose first landing is due in an away stretch is `unseen`** (castassembly.ts withLoggedCasts,
+  awayWindows) **and made as the button's variant the kit's state holds** (replayrun.ts replayedSkill): 3aa6 125.65 s,
+  Zhuang Fangyi's battle skill in her Empyrean, 0.08 s after Perlica's last hit, then no hit by anyone to 139.57 s,
+  was skipped (the ±1 s quiet test saw Perlica's hit); as normal_skill_ult its Sunderblade (made without a hit) is the
+  145.74 s cast's ninth, and the 148.68 s final of 9 lands (158,900).
+- **A second landing at a used-up cast's last ms is no second enemy's when the values say so** (logcasts.ts
+  nextByValue: both non-crits, in the ratio of the key's slot 0 to the last landing's slot, where those multipliers
+  differ by more than SAME_VALUE_TOLERANCE; by the values' ratio alone 9c6e's two targets lost 36 plain): 9a80 34.94 s,
+  Si's 25.00 s combo's final (349,888) and her 32.51 s combo's first slash (28,396), ×12; the slash had been the final
+  "on another enemy", every
+  later slash a slot early and the 36.10 s final (495,353) on a slash's slot (the round before's unknown-crit case:
+  docs/tried/2026-11-27-unknown-crit-slots.diff is no longer needed for it).
+
+**Tried and dropped:** a kit jump not contradicted by a logged landing launched before it (engine drivers.ts
+replayCast; f879's empowered jump 30 → 80 dropped by the Magma Fragment's ticks): no development log moves, one
+hold-out −23 plain: docs/tried/2026-11-27-jump-launched-landings.diff. The basic-attack chain's window held by the
+hidden holds (Yvonne, below): the holds near 44.23 s are spread over 1.5 s, most before her 43.98 s cast, so its
+window gains 3 frames of the 15 the log shows (not measured).
+
+**Diagnosed, not fixed:**
+- **5082 45.06 s, Yvonne's enhanced attack made as enhanced attack 1** (replay MADE): her 43.98 s ult_attack3_2's shots
+  4–8 land 0.22–0.51 s late (44.43 → 44.88 s between shots 5 and 6, two frames apart in the kit): her own timeline
+  was held about 0.5 s at her combo's Stagger-breaking explosion (44.43 s; the log's first Staggered hit 44.88 s, as
+  in "The replay's Stagger windows": no logged hit between a break and the first Staggered one, median 0.65 s). Its
+  window for the next repeat (frames 16–24) had closed in the engine's time by the 45.06 s press, so the chain
+  restarted (five shots unlanded). Still possible: a hold at the Stagger break (the data's damage units carry
+  enablePoiseBreakTimeDilation; no table gives its length) of the operators' timelines; the chain window measured
+  from the cast's own logged landings. Next check: the lateness of every operator's landings right after a logged
+  break, over every development log (a probe), then a rule for one of the two.
+- **Arcane's INT lasers** (8915, 00ae, a7a7): a7a7 48.89 s, the lasers logged at 49.37 (×2), 49.79 (×2) and 50.01 s,
+  each at a ms that batches every hit then, around Wulfgard's 49.50–50.10 s stop; the replay's at 48.97–49.47 s from
+  the event. The log's grain can't place the start better (as the 2026-11-22 entry found); 00ae's 0.29 s with no stop
+  listed stays a hold no clock places.
+- **Pogranichnik's harasses 0.2–2 s off:** the harass entity's own slow-downs (TimeDilationAction layer 1, 0.4 s per
+  path, kit "Not modelled") and its teleport (TeleportAction at frames 0–3) are the candidates for the 0.6–1.3 s
+  against the kit's 0.3 s; d4fb's 88.55 s harass and 89.82 s Assault are those paired the wrong way by the 16-frame
+  nearest pairing. Not built.
+- **99fb's bleed ticks at 51.44–55.43 s:** five ticks of the 47.43 s battle skill's bleed after Rossi's 49.12 s
+  ultimate (one per second, held by its stop); the replay's bleed lands two (47.43, 48.43 s), so the placement's
+  "a landing whose order the kit doesn't give" is a bleed the replay ended, the statuses' side (buffreplay.ts, not this
+  round's files): the open "Rossi's bleed tick series" item.
+
 ## Replay-only landings: what the replay makes and the log never shows (2026-11-27)
 
 **Shows** (`zmdlogs totals --all --kinds`, `--json`; the shares per fight from the `totals --all` table): development
@@ -115,8 +173,8 @@ a gap's length alone).
 - Si's combo final of unknown crit on a slash's slot (9a80 36.10 s, +6.6% replay-only).
 - Basic-tail cut's knock-on: 4a64 16.93 s, two logged attack-4 hits that matched the cut tail's landings 0.30 s later
   now Arcane's first attack 4's, with its set's Nature DMG (−2 plain).
-- The log-only round's placement cases not reached here: f879 95.10 s, 5082 45.06 s, 9a80 34.94 s, 3aa6 125.65 s,
-  Pogranichnik's harasses, 99fb's bleed ticks, Arcane's INT lasers.
+- The log-only round's placement cases: worked in "The placement cases the one-sided rounds left" above (f879, 3aa6,
+  9a80 fixed; 5082, the INT lasers, Pogranichnik, 99fb diagnosed).
 
 ## Log-only landings: what the log shows and the replay never makes (2026-11-27)
 

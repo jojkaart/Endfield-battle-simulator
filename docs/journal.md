@@ -4,9 +4,56 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 171 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 172 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Placement cases: entity landings by their span, presses in away stretches, used-up casts by value
+
+**Goal:** the placement and cast-assembly cases the two one-sided rounds left (docs/open-problems.md "Log-only
+landings", "Replay-only landings"): f879 95.10 s, 5082 45.06 s, 3aa6 125.65 s, Pogranichnik's harasses, 99fb's bleed
+ticks, Arcane's INT lasers, 9a80 34.94 s; beside an agent on status pairing (buffreplay.ts theirs).
+
+**Done** (docs/open-problems.md "The placement cases the one-sided rounds left"; tests/placement-cases.test.ts):
+- **An ability entity's landings are due within the slots' span** (logcasts.ts onEntityClock): a key's next landing
+  joined the open cast while it had slots to come within the skill's whole duration (9.4 s for Laevatain's battle
+  skill). An entity's landings (`launch`; no flight, buff timeline, enemy delay or random count; not a buff's key) come
+  at their own frames whatever the cast does. f879: the 94.71 s Magma Fragment explosion had been the 87.12 s cast's
+  first tick (that cast's ticks unlogged; their radius, 2.5 against the explosion's 3, is one possible reason), so the 95.94 s empowered hit made a
+  battle skill at 92.48 s, before her final strike's Heat absorption at 92.49 s; now one cast at 93.98 s with 4 Melting
+  Flame, and the 162,889 lands. Also 6339 31.62 s, Zhuang Fangyi's attack 2 / 4 ranges in 3aa6 and 4bfc. Rossi's
+  combo afterhits (a buff's timeline, 9a80 29.20 s) are left out: measured first without that, 9a80 lost 64 plain.
+- **A slot press whose first landing is due in an away stretch is `unseen`** (castassembly.ts, awayWindows), **made as
+  the button's variant the kit holds** (replayrun.ts replayedSkill): 3aa6 125.65 s, Zhuang Fangyi's Empyrean battle
+  skill 0.08 s after the last hit before a 14 s gap; its Sunderblade is the 145.74 s cast's ninth, the 148.68 s final
+  of 9 lands.
+- **A second landing at a used-up cast's last ms isn't the same landing on a second enemy when both are non-crits in
+  the ratio of slot 0's multiplier to its slot's** (logcasts.ts nextByValue): 9a80 34.94 s, Si's final (349,888) and
+  her next combo's first slash (28,396); the 36.10 s final now on its slot. First by the values' ratio alone: 9c6e (two
+  targets under one id, their values ×1.3+ apart by their own debuffs) lost 36 plain while its total went −20.6 →
+  −0.9%, the second target's landings made as casts of their own: the wrong mechanism.
+- A press made in an away stretch takes what a cast takes: 7b54's Si at 24.81 s (21.06–26.98 s without a hit, the
+  slug) is made as Initial Stroke and takes the team's Link stack her 29.00 s cast had (7b54 +40.3 → +40.4%).
+
+**Scoreboard** (`npm run snapshots:update`): development plain 81.5 → 81.7%, mismatch 6.3%, mean |damage error| 3.4%,
+as other kit hit 96 → 93, |matched| 2.4 → 2.3%, replay-only 3.6 → 3.3%, log-only 3.1 → 2.9%; earlier pending plain
+81.6 → 81.7%, log-only 0.9 → 0.7%, as other kit hit 58 → 50; hold-out and verified unchanged. Better: f879 (plain
+793 → 821, mismatch 15 → 6, per hit 1.86 → 0.62%; total 0 → +1.5%: the missing 162,889 had cancelled over-predictions),
+6339 (−14.1 → −12.6%), 9a80 (277 → 279), 3aa6 (413 → 416, per hit 3.56 → 2.70%), 4bfc (856 → 861). Worse: 7b54 +40.3 →
++40.4% (below). Log tools only: no simulation reads them, no team-ab.
+
+**Decisions:** the entity rule as "no toCome" rather than a new bound: the slots' span plus CAST_SLACK_MS is the bound
+the pass already has for every other landing. The away test beside the ±1 s quiet test, not instead of it.
+
+**Dead ends:** the replay's JUMPDROP leaving out landings launched before the jump (engine drivers.ts; f879's ticks
+dropped her empowered jump): no development log moved, one hold-out −23 plain, dropped
+(docs/tried/2026-11-27-jump-launched-landings.diff). Yvonne's chain window held by the hidden holds: they sit spread
+over 1.5 s mostly before her cast (3 of 15 frames), not built.
+
+**Left:** 5082's Yvonne (her timeline held ~0.5 s at her combo's Stagger break, 44.43 s; a break dilation the data
+names, enablePoiseBreakTimeDilation, with no length), Arcane's INT lasers (the log's batched ms), Pogranichnik's
+harasses (the entity's own 0.4 s slow-downs and teleport, not modelled), 99fb's bleed after Rossi's ultimate (the
+statuses' side).
 
 ## 2026-11-27: Replay-only landings: kill gaps, basic tails, tails kept by another cast's buff, finals by value
 
@@ -378,52 +425,3 @@ engine rule simulations read changed.
 **Left:** e82d −8.9% (a log with a second touch inside an Imprisonment decides it); 7b54's partial ends (16.48,
 19.59, 47.48 s: other debuffs listed on); 6339's Laevatain hits 14.6–19.2 s (the replay ×1.28) and Si's combo final
 slots at 11.31 s.
-
-## 2026-11-26: A stop's batched landings: the log's Stagger bars give their order; Pogranichnik's Morale before the damage
-
-**Goal:** the order of the landings the log batches at a stop's end (c4f3 7.05 s: Chen Qianyu's combo shattered the
-Solidification in the replay, Estella's in the game), as a general rule; the Vulnerable stacks c4f3's 13.07 s Breach
-consumed (three in the replay, four by the next combo's path); if time, d4fb 86.67 s (Pogranichnik's bank 0.3 s late)
-and 7910's early rogue wave.
-
-**Done:**
-- **A logged ms is a batch, its order the Stagger bars'.** The log flushes every ~100 ms and at a stop's end, so one ms
-  holds hits up to three frames apart; each Stagger event's bar (the one before it less its dealt) falls in the game's
-  order. c4f3 7049 ms: Estella's combo 274 → 264 (the Shatter credited to it), her ultimate 254 → 234, Chen's combo and
-  the Lifts 234 → 224 (open-problems had read the bars backwards). Over the development logs' 60 pairs of two operators'
-  events at one ms the bars follow neither the operator IDs (28 right), the team's order (39) nor the casts' starts (29
-  of 44: why docs/tried/2026-11-24-same-ms-cast-order.diff was mixed): the game's time order inside the batch, which only
-  the bars keep (scripts/probes/physical/batch-rules.ts). The replay now lands pinned landings at one logged ms in the
-  bars' order (castassembly.ts `batchOrder` → landings' `order` → engine `ScheduledHeader.loggedOrder`, schedule.ts
-  `dueBefore`). Simulations keep the ID order: no rule from cast data fits.
-- **Lead 2 was a knock-on of lead 1.** With the batch's order Estella's Lift adds the Vulnerable stack Chen's Shatter
-  had not, and c4f3's 13.07 s Breach consumes four; every Breach or Crush before a Pogranichnik combo whose path its
-  values decide now consumes the path's stacks (25 combos; at cbe7d5b c4f3 13.67 s alone differed:
-  scripts/probes/physical/breach-path.ts). c4f3's hits from 7.05 to 14.43 s replay exact.
-- **Fervent Morale before the damage of the hit that makes it** (lead 3, d4fb 86.67 s): the layer the logs list since a
-  Breach's ms is talent 2's, from his ultimate's follow-up on his own physical status, which comes with the data's
-  FractureAction before the battle skill's DamageAction: `beforeDamage` on oath_harass_status_self / _mate (d4fb 86.67,
-  161.59 s, c4f3 71.15 s, a9d7 205.06 s, de6a 26.03 s exact). And a hit's stacks gained with its SP before the damage
-  raise their stacks event then (landing.ts; only Pogranichnik's hits have both): the bank's layer counts for the slash
-  that filled it (d4fb 47.92 s).
-
-**Scoreboard** (`npm run snapshots:update` after merging main at f05036d, the logged purges; `measure --base f05036d`
-for this change alone): development plain 74.3 → 76.2%, mismatch 10.4 → 10.2%, mean |damage error| 5.1 → 4.9%; hold-out plain 82.1 → 82.2%, 7.4 → 7.1% (2 better, none worse); earlier pending plain 73.0 → 77.7%,
-mismatch 11.7 → 11.3%, 3.5 → 3.4%. Chen 43.0 → 74.3% plain, Pogranichnik 52.1 → 75.3%, Estella 59.9 → 81.0%, the male
-Endministrator 52.9 → 88.7%, Lifeng 43.5 → 91.2%. Better c4f3 (275 → 464, −3.4 → −0.8%), 3f78 (91 → 147, −3.7 →
-0.0%), a9d7 (265 → 333, −3.3 → −1.5%), d4fb (516 → 844), de6a (71 → 287), 458b, 7e19 and four by a hit or two. Mixed
-b7b3 (0.4 → 0.7%: Tangtang's battle-skill shot before Last Rite's combo by the bars, now an exact read crit, which had
-hidden her expected-crit landings' +12%; Arcane's touch at 7.15 s now exact) and 4bfc (−1.0 → −1.2%: Arclight's burst at
-88.82 s matched, Zhuang Fangyi's replay-only 19,584 gone). The per-operator total errors that rose (Arclight 4.8 → 5.7%,
-Tangtang 3.6 → 4.0%, Lifeng 0.9 → 1.3%) are those hits turning exact. team-ab: unchanged (both teams' own fights the same,
-the owner's Estella team included). The example pogranichnik-chen moved (+1.5%, the Morale timing), snapshot updated.
-
-**Decisions:** the bars are read only where the batch has two Stagger origins and two bars; several events at bar 0
-(a break) share a place, as do events without Stagger (the ID order then). schedule.ts, state.ts and planning/search.ts
-(a key field) were outside the brief's file list: one line each for `loggedOrder`. No assumption: the bars are the log's
-own record of the order.
-
-**Left:** Estella's weapon ATK at 7.05 s (her combo, Shatter and Lift with it, her ultimate after them without it: one
-batch, not built); the harasses' logged delays (0.6–1.3 s, the kit's 0.3 s) and d4fb's 88.55 s harass and 89.82 s
-Assault placed as an ultimate the replay doesn't cast; c4f3 92.93 / 147.41 s and a9d7 239.40 s Morale layers; 7910's
-early rogue wave (not attempted).
