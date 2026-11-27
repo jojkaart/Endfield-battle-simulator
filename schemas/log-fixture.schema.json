@@ -105,6 +105,13 @@
         }
       }
     },
+    "severalTargets": {
+      "type": "object",
+      "description": "Hand-written: the fight is against several enemies of one template the log names by one enemy id (the import couldn't put it under fixtures/multi-target/), with the evidence: one operator's status event twice within a frame (one enemy can't burst twice at once), kills (hits capped at the HP left) before the fight's end with hits going on. The check runs it as one target; the scoreboard gives it its own row (scripts/accuracy.ts). Found with scripts/probes/targets/two-targets.ts.",
+      "required": ["why"],
+      "additionalProperties": false,
+      "properties": { "why": { "type": "string" } }
+    },
     "absent": {
       "type": "array",
       "description": "Hand-written: the replay's landings the log doesn't have and can't (a hit that didn't reach the logged enemy, or one ZMDLogs dropped), judged from the log, each with why. The totals leave each out (enginecheck.ts fightTotals): the landing of the operator's skill and hit nearest t, within 1 s.",

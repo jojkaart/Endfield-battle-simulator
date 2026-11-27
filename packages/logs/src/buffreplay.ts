@@ -35,6 +35,7 @@ import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits
 import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { awayWindows } from "./enginecheck.ts";
+import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
 
 /** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
 const NEAR_FRAMES = 16;
@@ -125,7 +126,8 @@ export interface BuffReplay {
   critSource(hit: LogHit): CritSource;
   /**
    * A logged status hit's landing (a burst, reaction, physical status or Combustion tick): the replay's status damage of
-   * its operator, kind and element nearest it within NEAR_FRAMES (each landing once), or why there is none.
+   * its operator, kind and element paired with it (statuspairs.ts pairStatusLandings: one assignment over the fight,
+   * within NEAR_FRAMES, or STATUS_WIDE_FRAMES where the value fits; each landing once), or why there is none.
    */
   statusLanding(hit: LogHit): LandedHit | { readonly unknown: string };
   /**
@@ -516,25 +518,17 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     if ((r.changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack)) return null;
     return (r.instances.get(key) ?? []).filter((i) => i.start <= f && f < i.end).length;
   };
-  // Status landings matched to the log's status hits: per logged hit, its operator's status damage of its kind and element nearest it.
-  const statusLanded = new Map<LogHit, LandedHit>();
+  // Status landings matched to the log's status hits: its operator's status damage of its kind and element, paired as
+  // one assignment by value and time (statuspairs.ts; engine assumption status-pairing).
+  let statusLanded = new Map<LogHit, LandedHit>();
   if (main) {
-    const free = main.st.hits.filter((h) => h.skillId.startsWith("reaction:"));
-    const taken = new Set<LandedHit>();
-    for (const h of [...fx.hits].sort((a, b) => a.t - b.t)) {
+    const queries = fx.hits.flatMap((h) => {
       const r = parseReactionEvent(h.event);
-      if (!r) continue;
-      const f = batchedFrame(casts, h) ?? frameOf(h.t);
-      let best: LandedHit | null = null;
-      for (const x of free) {
-        if (taken.has(x) || x.operator !== h.operator || x.skillId !== `reaction:${r.kind}` || x.element !== r.element || Math.abs(x.frame - f) > NEAR_FRAMES) continue;
-        if (!best || Math.abs(x.frame - f) < Math.abs(best.frame - f)) best = x;
-      }
-      if (best) {
-        taken.add(best);
-        statusLanded.set(h, best);
-      }
-    }
+      return r ? [{ hit: h, frame: batchedFrame(casts, h) ?? frameOf(h.t), key: `${h.operator}|reaction:${r.kind}|${r.element}` }] : [];
+    });
+    const free = main.st.hits.filter((h) => h.skillId.startsWith("reaction:"));
+    const reading = (opts.assume?.["status-pairing"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "status-pairing")?.default) === "nearest" ? "nearest" : "assignment";
+    statusLanded = pairStatusLandings(queries, free, { reading, near: NEAR_FRAMES, keyOf: (x) => `${x.operator}|${x.skillId}|${x.element}`, fits: (h, x) => statusValueFits(data, fx, h, x) });
   }
   const nearIn = (changes: ReadonlyMap<string, readonly Change[]>, key: string, f: number) => (changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack);
   // Why a placed hit has no pinned landing (replayedCasts), made on the first question (droppedLanding).

@@ -82,6 +82,12 @@ export const otherHitKey = (operator: string) => `other-hit operator ${operator}
 /** The totals key of a stage fight (enginecheck.ts stageFight; 1, present only there): the scoreboard's by-operator mean without them. */
 export const STAGE_KEY = "stage";
 
+/**
+ * The totals key of a fight against several enemies under one id (the fixture's severalTargets; 1, present only
+ * there): the scoreboard's own group for it (scripts/accuracy.ts), out of the development and earlier-pending means.
+ */
+export const SEVERAL_TARGETS_KEY = "several targets";
+
 /** Per operator, its hits that matched only as their event's other kit hit (otherHitKey), the operators with none left out. */
 export function otherKitHitCounts(verdicts: readonly HitVerdict[]): Record<string, number> {
   const out: Record<string, number> = {};
@@ -115,6 +121,6 @@ export function snapshotEntry(raw: GameData, fx: LogFixture, opts: Pick<ReplayOp
   const logged = report.totals.logged;
   const operatorShares = Object.fromEntries(Object.keys(logged.perOperator).map((op) => [operatorShareKey(op), logged.damage ? r1((100 * (logged.perOperator[op] ?? 0)) / logged.damage) : null]));
   const otherHits = Object.fromEntries(Object.entries(otherKitHitCounts(verdicts)).map(([op, n]) => [otherHitKey(op), n]));
-  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares, ...otherHits, ...(stageFight(fx) !== null ? { [STAGE_KEY]: 1 } : {}) };
+  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares, ...otherHits, ...(stageFight(fx) !== null ? { [STAGE_KEY]: 1 } : {}), ...(fx.severalTargets ? { [SEVERAL_TARGETS_KEY]: 1 } : {}) };
   return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares, oneSided: report.totals.oneSided, replay, byHit, verdicts };
 }
