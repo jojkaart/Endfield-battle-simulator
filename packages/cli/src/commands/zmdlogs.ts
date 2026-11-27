@@ -22,6 +22,7 @@ import {
   cadenceView,
   census,
   decisionsView,
+  whyKeptView,
   clockView,
   endsView,
   controlView,
@@ -240,6 +241,9 @@ export default command({
                                           (two replays per log, seconds each); without --assume every decision;
                                           --operator: only these operators'; --all takes about 3 min, past the
                                           2-minute foreground limit: run it in the background, output to a file
+                [--why-kept]              Instead (one fixture): per TAILKEPT line, the replay with that tail cut and
+                                          the logged hits whose landing, class or primary reading moved, a count per
+                                          class change: what the kept tail stands for (one check per kept tail)
   efsim zmdlogs stops <fixture…|--all>    replay --stops' STOP lines over several logs (default: every verified and
                                           pending development log with --all), then a count per kind (as listed,
                                           covered, length, timeline only, list only) and how many logs have each
@@ -427,6 +431,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "same-listing": { type: "string" },
     "against-hit": { type: "string" },
     "against-lanes": { type: "boolean", default: false },
+    "why-kept": { type: "boolean", default: false },
     pairs: { type: "boolean", default: false },
     listed: { type: "string" },
     all: { type: "boolean", default: false },
@@ -667,6 +672,11 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     }
     if (sub === "decisions") {
       const named = args.slice(1);
+      // Round 21 (the tail-cut report point 2): the counterfactual per kept tail.
+      if (values["why-kept"]) {
+        if (named.length !== 1 || values.all) throw new Error("zmdlogs decisions --why-kept takes one fixture (an id such as 6339; --assume id=reading, --operator op)");
+        return whyKeptView(data(), readDevFixture(named[0] as string), { ...(Object.keys(assume).length ? { assume } : {}), operators, progress });
+      }
       if (!named.length && !values.all) throw new Error("zmdlogs decisions takes fixtures (ids such as 0c14) or --all (every verified and pending development log), with --assume <id>=<reading> (without it: every decision)");
       if (named.length && values.all) throw new Error("zmdlogs decisions: fixtures or --all, not both");
       // With --operator, only the logs whose team has one of them.

@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { advance, createContext, effectiveKit, init, replayCast, targetDies, targetEnemy, type TimelineScenario, type TimelineState } from "@efsim/engine";
-import { deathDecisions, devFixtures, logBuffReplay, statusesView, type LogFixture } from "@efsim/logs";
+import { deathDecisions, devFixtures, hitRecords, logBuffReplay, statusesView, targetMismatches, type LogFixture } from "@efsim/logs";
 
 const data = loadGameData();
 const fixture = (id: string) => (devFixtures({ ids: [id] })[0] as { fx: LogFixture }).fx;
@@ -98,5 +98,19 @@ describe("DEATH lines: every death the replay made (6339), not only the moves", 
     const lines = deathDecisions(data, r);
     expect(lines.map((l) => Math.round(l.t / 10) / 100)).toEqual([10.33, 11.3, 19.6, 20.37, 24.03, 29.27, 31.63]);
     expect(lines.filter((l) => /pinned at the logged hit/.test(l.text))).toHaveLength(5);
+  });
+});
+
+// Round 21 (the statuses-per-target report point 2): the check's target ids against the replay's landings' targets
+// (HitRecord.target `landing`, `≠ landing` in `zmdlogs hits`). 7b54 is on the backlog's accuracy list: its second
+// assignment (SECOND_PASS_TARGETS `free`) numbers 147 of 210 hits' targets otherwise than their landings.
+describe("the check's targets are the replay's landings' targets (hits --json target.landing)", () => {
+  it("6339: every hit with both; 9c6e: all but one", () => {
+    const one = targetMismatches(hitRecords(data, fixture("6339")));
+    expect(one.both).toBeGreaterThan(100);
+    expect(one.differ).toHaveLength(0);
+    const two = targetMismatches(hitRecords(data, fixture("9c6e")));
+    expect(two.both).toBeGreaterThan(300);
+    expect(two.differ.length).toBeLessThanOrEqual(1);
   });
 });

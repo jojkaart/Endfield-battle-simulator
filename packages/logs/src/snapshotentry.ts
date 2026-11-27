@@ -27,11 +27,13 @@ export interface CheckComposition {
 }
 
 /** The check of a fight under `assume`'s readings: placement, replay, the engine's readings and the verdicts. */
-export function composeCheck(raw: GameData, fx: LogFixture, opts: Pick<ReplayOptions, "assume"> = {}): CheckComposition {
+export function composeCheck(raw: GameData, fx: LogFixture, opts: Pick<ReplayOptions, "assume" | "cutCasts"> = {}): CheckComposition {
   // Engine assumption combo-curve: the log tools' stop lists and the replay's timeline on the same resampled curve.
   const data = withCurveReading(raw, opts.assume);
   const placement = placeHits(data, fx, opts.assume);
-  const replay = opts.assume && Object.keys(opts.assume).length ? logBuffReplay(data, fx, placement, { assume: opts.assume }) : logBuffReplay(data, fx, placement);
+  // A counterfactual's cuts (ReplayOptions.cutCasts: counterfactual.ts) go to the replay with the readings.
+  const more = { ...(opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {}), ...(opts.cutCasts?.length ? { cutCasts: opts.cutCasts } : {}) };
+  const replay = Object.keys(more).length ? logBuffReplay(data, fx, placement, more) : logBuffReplay(data, fx, placement);
   const byHit = engineHits(data, fx, replay, placement);
   const verdicts = checkLog(data, fx, { replay, engineHits: byHit, placement });
   let c: EngineCheck | undefined;

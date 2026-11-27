@@ -10,7 +10,7 @@
 // primary with one disagreement taken the log's way (hitCounterfactuals).
 
 import { basename } from "node:path";
-import { activeAt, FPS, landingDamage, parseReactionEvent, readingDoesNotApply, reaches, roundDamage, type ActiveBuff, type AttrType, type GameData, type KitHit, type LandingInputs, type Situation, type StatPanel, type Zones } from "@efsim/engine";
+import { activeAt, FPS, landingDamage, parseReactionEvent, readingDoesNotApply, reaches, roundDamage, type ActiveBuff, type AttrType, type GameData, type KitHit, type LandedHit, type LandingInputs, type Situation, type StatPanel, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { fightTargets, logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
@@ -87,8 +87,12 @@ export interface HitRecord {
    * In a fight read per target (fixture severalTargets, several-targets `targets`: enginecheck.ts fightTargets), the
    * hit's target: its index (in order of first hit), how it was chosen (targets.ts HitTarget.how), the enemy-side units
    * its reading leaves out (`drop`: `owner:buff`, `status:corrosion`, …) and whether it killed it. Text lines: `T<n>`.
+   * `landing`: the targets the replay's landing was on (LandedHit.target, then its otherTargets: a landing logged on
+   * several; target-statuses `per-target`, the second replay's ids from the first assignment), where it has them; the
+   * text line flags a hit whose target isn't among them (`≠ landing T<m>`: the check read the hit at another target's
+   * statuses than the replay landed it on; round 21, the statuses-per-target report point 2).
    */
-  readonly target?: { readonly index: number; readonly how: string; readonly drop: readonly string[]; readonly kills: boolean };
+  readonly target?: { readonly index: number; readonly how: string; readonly drop: readonly string[]; readonly kills: boolean; readonly landing?: readonly number[] };
   /** The crit the replay's landing took (LandedHit.crit; null where the hit can't crit), with a landing. */
   readonly replayCrit?: boolean | null;
   /** Where that crit comes from (replaycrits.ts CritSource: the log, an inference from the log, or none). */
@@ -225,7 +229,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       ...listedSincesOf(hit.effects),
       critSource: replay.replay.critSource(hit),
       ...(facts.get(hit.operator) ? { unknownFacts: facts.get(hit.operator) as readonly string[] } : {}),
-      ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills } } : {}),
+      ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills, ...landingTarget(byHit.get(hit)?.landing) } } : {}),
     };
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;
@@ -423,7 +427,7 @@ export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "
   const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
   const log = reading === "log" ? `  log reading ${r.logReading ?? "-"}  ${pct(r.logError)}` : "";
   const z = zones && r.landing ? `  ${zoneWords(r)}` : "";
-  const target = r.target ? `  T${r.target.index}${r.target.how === "fits" ? "" : ` (${r.target.how})`}${r.target.drop.length ? ` without ${r.target.drop.join(", ")}` : ""}${r.target.kills ? " killed" : ""}` : "";
+  const target = r.target ? `  T${r.target.index}${r.target.how === "fits" ? "" : ` (${r.target.how})`}${r.target.landing !== undefined && !r.target.landing.includes(r.target.index) ? ` ≠ landing ${r.target.landing.map((t) => `T${t}`).join("+")}` : ""}${r.target.drop.length ? ` without ${r.target.drop.join(", ")}` : ""}${r.target.kills ? " killed" : ""}` : "";
   return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}${target}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}${z}`;
 }
 
@@ -460,7 +464,10 @@ export function recordChanges(before: readonly HitRecord[], after: readonly HitR
       const added = [...my].filter((m) => !mx.has(m));
       const diff = gone.length || added.length ? `; modifiers ${[...added.map((m) => `+${m}`), ...gone.map((m) => `-${m}`)].join(", ")}` : "";
       const why = y.unknown && y.unknown !== x.unknown ? `; now: ${y.unknown}` : "";
-      out.push(`${name}  t=${x.t}  ${x.operator}  ${x.event}  logged ${x.value}: ${x.class} ${x.predicted ?? "-"} (${pct(x.error)}) → ${y.class} ${y.predicted ?? "-"} (${pct(y.error)})${diff}${why}`);
+      // In a fight read per target, its target on each side (round 21, the statuses-per-target report point 3).
+      const [tx, ty] = [x.target ? `T${x.target.index}` : "", y.target ? `T${y.target.index}` : ""];
+      const tg = tx || ty ? `  ${tx === ty ? tx : `${tx || "-"} → ${ty || "-"}`}` : "";
+      out.push(`${name}  t=${x.t}${tg}  ${x.operator}  ${x.event}  logged ${x.value}: ${x.class} ${x.predicted ?? "-"} (${pct(x.error)}) → ${y.class} ${y.predicted ?? "-"} (${pct(y.error)})${diff}${why}`);
       const k = `${x.class} → ${y.class}`;
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
@@ -556,4 +563,15 @@ export async function exportHitsParallel(files: readonly string[], workers: numb
     });
   await Promise.all(Array.from({ length: Math.max(1, Math.min(workers, files.length)) }, one));
   return n;
+}
+
+/** The targets a hit's landing was on (LandedHit.target, otherTargets), as HitRecord.target's `landing`; none without one. */
+function landingTarget(landing: LandedHit | { readonly unknown: string } | undefined): { landing?: readonly number[] } {
+  return landing && !("unknown" in landing) && landing.target !== undefined ? { landing: [landing.target, ...(landing.otherTargets ?? []).map((o) => o.target)] } : {};
+}
+
+/** The hits whose check target isn't among their landing's targets (HitRecord.target `landing`), of those with both. */
+export function targetMismatches(records: readonly HitRecord[]): { readonly both: number; readonly differ: readonly HitRecord[] } {
+  const both = records.filter((r) => r.target?.landing !== undefined);
+  return { both: both.length, differ: both.filter((r) => !(r.target?.landing ?? []).includes(r.target?.index ?? -1)) };
 }

@@ -317,6 +317,13 @@ export interface ReplayOptions {
    */
   readonly holdBounds?: readonly HoldBound[];
   /**
+   * A counterfactual (round 21, the tail-cut report point 2): these made casts ended after their last logged landing on
+   * top of the replay's own tail cuts, the replay made again with them (TAILCUT lines name them), so a view can ask what
+   * the log loses without a tail (counterfactual.ts, `zmdlogs decisions --why-kept`). A cast by its operator, skill and
+   * start (ms, ±1). Absent: the replay's own cuts only.
+   */
+  readonly cutCasts?: readonly { readonly operator: string; readonly skillId: string; readonly start: number }[];
+  /**
    * The statuses per target (target-statuses `per-target`): each logged landing's targets and each kill's, from the
    * first replay's assignment (logcheck.ts logBuffReplay's second pass; enginecheck.ts replayTargets). Absent: one enemy.
    */
@@ -465,6 +472,21 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   let cuts = new Map<ReplayedCast, number>();
   let tailsKept: TailKept[] = [];
   if (main) ({ main, casts, cuts, kept: tailsKept } = cutTails(main, casts, (list) => run("never", list), fx, placement, tailsReading));
+  // The counterfactual's cuts (ReplayOptions.cutCasts), each at its cast's last logged landing as tailCuts would.
+  if (main && opts.cutCasts?.length) {
+    const wanted = (c: ReplayedCast) => opts.cutCasts?.some((x) => x.operator === c.operator && x.skillId === c.skillId && Math.abs(x.start - c.start) <= 1);
+    let changed = false;
+    casts = casts.map((c) => {
+      if (c.cutAt !== undefined || !c.landings.length || !wanted(c)) return c;
+      const frame = Math.max(...c.landings.map((l) => l.frame));
+      const cut = { ...c, cutAt: frame };
+      cuts.set(cut, frame);
+      tailsKept = tailsKept.filter((k) => k.cast !== c);
+      changed = true;
+      return cut;
+    });
+    if (changed) main = run("never");
+  }
   if (main && placing) {
     // The holds from the replay without them (its buffs' expiries against the log's runs, the enemy's ticks), then the replay with them.
     // On the replay's own casts' stops, the views' list too (castassembly.ts replayStops): the placed casts' miss an

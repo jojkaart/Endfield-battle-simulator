@@ -672,7 +672,7 @@ export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: 
   return out;
 }
 
-export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: Placement | LogReplayOptions, opts: Pick<ReplayOptions, "assume" | "trace"> = {}): LogBuffReplay {
+export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: Placement | LogReplayOptions, opts: Pick<ReplayOptions, "assume" | "trace" | "cutCasts"> = {}): LogBuffReplay {
   // Either form (away-and-presses report point 5: `logBuffReplay(data, fx, { assume })` passed the readings as the
   // placement, and the replay ran on the defaults without a word): an options object as the third argument is taken
   // as such; with a placement, the options come fourth, as before.
@@ -719,7 +719,7 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
 }
 
 /** logBuffReplay's options in one object (its third argument): the placement (default placeHits), the readings and the traces. */
-export interface LogReplayOptions extends Pick<ReplayOptions, "assume" | "trace"> {
+export interface LogReplayOptions extends Pick<ReplayOptions, "assume" | "trace" | "cutCasts"> {
   readonly placement?: Placement;
 }
 
