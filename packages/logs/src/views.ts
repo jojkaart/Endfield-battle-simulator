@@ -19,6 +19,7 @@ import { effectiveKit, FPS, parseReactionEvent, type GameData } from "@efsim/eng
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
+import { FACTOR_STRETCH, factorStretches } from "./buildoffsets.ts";
 import { clockAt, clockReaches, holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
 import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast } from "./logcasts.ts";
@@ -720,11 +721,16 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
   for (const r of records) byFixture.set(r.fixture, [...(byFixture.get(r.fixture) ?? []), r]);
   const own: { r: HitRecord; q: number | null }[] = [];
   const perLog: string[] = [];
-  let [hits, mism, team, noLanding] = [0, 0, 0, 0];
+  let [hits, mism, team, noLanding, wide] = [0, 0, 0, 0, 0];
   for (const [fixture, rs] of byFixture) {
     const ops = rs.filter((r) => r.operator === operator);
     if (!ops.length) continue;
-    let [m, tw, nl] = [0, 0, 0];
+    // A fight-wide factor the fixture doesn't hold (buildoffsets.ts factorStretches: every operator's hits at one ratio
+    // over a stretch, a stage's shield or phase; round 17, the Zhuang Fangyi and Liino report point 3: c6d8's ×0.1 was
+    // 122 of her 225 mismatches, listed first as her own).
+    const stretches = factorStretches(rs);
+    const inStretch = (r: HitRecord, q: number | null) => q !== null && stretches.some((st) => r.t >= st.from && r.t <= st.to && Math.abs(q / st.factor - 1) <= FACTOR_STRETCH.tol);
+    let [m, tw, nl, fw] = [0, 0, 0, 0];
     for (const r of ops) {
       if (r.class !== "mismatch") continue;
       m++;
@@ -732,6 +738,10 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
       if (!r.landing) {
         nl++;
         own.push({ r, q });
+        continue;
+      }
+      if (inStretch(r, q)) {
+        fw++;
         continue;
       }
       const shared = q !== null && rs.some((o) => o.operator !== operator && o.class === "mismatch" && Math.abs(o.t - r.t) <= NEAR_MS && (ratioOf(o) ?? 0) > 0 && Math.abs((ratioOf(o) as number) / q - 1) < SAME_RATIO);
@@ -742,7 +752,8 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     mism += m;
     team += tw;
     noLanding += nl;
-    perLog.push(`  ${fxLabel(fixture)}  ${String(ops.length).padStart(5)} hits  ${String(m).padStart(4)} mismatches  ${String(tw).padStart(4)} team-wide  ${String(nl).padStart(4)} no landing  ${String(m - tw - nl).padStart(4)} own`);
+    wide += fw;
+    perLog.push(`  ${fxLabel(fixture)}  ${String(ops.length).padStart(5)} hits  ${String(m).padStart(4)} mismatches  ${String(fw).padStart(4)} fight-wide  ${String(tw).padStart(4)} team-wide  ${String(nl).padStart(4)} no landing  ${String(m - fw - tw - nl).padStart(4)} own${stretches.length ? `  (factor stretches: ${stretches.map((st) => `${s(st.from)}–${s(st.to)} ×${st.factor.toFixed(3)}`).join(", ")})` : ""}`);
   }
   const median = (xs: number[]) => (xs.length ? ([...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) / 2)] as number).toFixed(3) : "-");
   const by = (key: (x: { r: HitRecord; q: number | null }) => string[]) => {
@@ -760,7 +771,7 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
   const mine = records.filter((r) => r.operator === operator);
   const asOther = mine.filter((r) => r.assumptions?.some((a) => a.kind === "kitHit")).length;
   const out = [
-    `${operator}: ${hits} hits in ${perLog.length} logs, ${mism} mismatches: ${team} team-wide (a teammate mismatches at the same ratio ±${100 * SAME_RATIO}% within ${NEAR_MS / 1000} s), ${noLanding} without a landing, ${mism - team - noLanding} own`,
+    `${operator}: ${hits} hits in ${perLog.length} logs, ${mism} mismatches: ${wide} fight-wide (inside a stretch where two or more operators' hits sit at one ratio: a stage factor no fixture holds or one shared cause, zmdlogs offsets --all lists them), ${team} team-wide (a teammate mismatches at the same ratio ±${100 * SAME_RATIO}% within ${NEAR_MS / 1000} s), ${noLanding} without a landing, ${mism - wide - team - noLanding} own`,
     // First (round 17, the Zhuang Fangyi and Liino report point 1): a cast on the wrong step matches as the key's other
     // kit hit and moves no mismatch count (her attack 4 as attack 2: 125 hits ×3.125, "fallback" in five logs).
     `  ${asOther} hit(s) matched only as their event's other kit hit (the scoreboard's "as other kit hit")${asOther ? "; the casts every landing of which matched so, after the logs" : ""}`,
@@ -772,6 +783,15 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     "",
     "Own mismatches by where the log and the replay disagree (none: they agree on every buff they both model):",
     ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
+    "",
+    // What the replay can't verify (round 17, the exposed-totals report point 1: 207f's stage Electrification on
+    // physical hits, ×0.847 on 41 hits, was one `log buff` among forty modifiers): the buffs the check takes from the
+    // log alone, by their zone and element.
+    "Own mismatches by the log-only buffs on them (the check adds them from the listing, no kit models them: an element or a skill type they don't reach is a whole-fight factor no difference line shows):",
+    ...by(({ r }) => {
+      const logged = [...new Set((r.landing?.modifiers ?? []).filter((m) => m.source.startsWith("log buff ")).map((m) => `${m.source.replace(/^log buff /, "")} ${m.zone}${m.element ? ` ${m.element}` : ""}`))];
+      return logged.length ? logged : ["none"];
+    }),
     "",
     ...fallbackGroups(mine),
   ];

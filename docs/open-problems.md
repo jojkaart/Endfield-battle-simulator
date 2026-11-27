@@ -41,6 +41,16 @@ listing difference that reads plain next door is no cause. An early end:
 with everything else listed there, and the moment spacing (an end within
 one grain of an event has no order against it).
 
+An effect no table has but the log shows on every operator's hits at once
+(a stage's shield or phase factor, a build input the export omits) is a
+fixture field with its evidence, not out of scope (round 17, the Arcane
+stage-factors report point 2: 8915's and c6d8's factors were "out of
+scope" in four docs for months; one `stageFactors` field took an hour
+and development mismatch 10.2 → 6.9%): `stageFactors` or `buildOverrides`
+([docs/design/data.md](design/data.md), the fixture paragraphs). `efsim
+zmdlogs offsets --all` ends with the fight-wide factors no fixture holds
+yet (every operator's hits at one ratio over a stretch).
+
 **A fixed item** (round 16, the batched-landings report point 4) shrinks
 to one line naming the journal entry that fixed it ("Fixed: … —
 docs/journal/<file>.md"); its points still open move to its round's

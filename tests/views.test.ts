@@ -125,7 +125,7 @@ describe("hit records grouped by cause", () => {
 
   it("sorts an operator's mismatches into team-wide and own, by event and by difference", () => {
     const text = groupsReport(records, "a");
-    expect(text).toMatch(/^a: 4 hits in 1 logs, 3 mismatches: 1 team-wide .*, 0 without a landing, 2 own/);
+    expect(text).toMatch(/^a: 4 hits in 1 logs, 3 mismatches: 0 fight-wide .*, 1 team-wide .*, 0 without a landing, 2 own/);
     expect(text).toMatch(/2 {2}attack {2}median ratio 1\.300/);
     expect(text).toMatch(/2 {2}Stagger \(log only\) {2}median ratio 1\.300/);
     expect(text).toContain("Matches only by the log's listing (fallback): none");

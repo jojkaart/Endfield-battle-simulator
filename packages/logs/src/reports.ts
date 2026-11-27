@@ -17,7 +17,7 @@ import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { BUILD_PAIR_TOLERANCE, buildChanges, fitBuild, type BuildCandidate } from "./buildfit.ts";
-import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
+import { factorStretches, factorStretchLines, isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
 import { assumedView } from "./assumedview.ts";
 import { hitOfRecord, listedEntryWords, sameListingLines } from "./listingview.ts";
@@ -419,7 +419,9 @@ export async function offsetsReport(data: () => GameData, sel: LogSelection, opt
       return { short: shortId(fixtureLabel(f)), fx, offset, ...(fits.length ? { fits } : {}) };
     });
   });
-  return offsetsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) });
+  // The fight-wide factors the fixtures don't hold yet (the Arcane stage-factors report point 2): every operator's hits.
+  const stretches = files.map((f) => ({ short: shortId(fixtureLabel(f)), stretches: factorStretches(byFile.get(f) ?? []) }));
+  return [offsetsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) }), ...factorStretchLines(data(), stretches)].join("\n");
 }
 
 /** A fight's totals as `zmdlogs totals --all` caches them: the shares and the one-sided landings. */

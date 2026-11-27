@@ -315,9 +315,11 @@ listed buff marks, is the fixture's hand-written `stageFactors`
 replay's landings then in the totals, take its factor in the
 multiplicative zone (enginecheck.ts `stageModifiers`, in every reading and
 the log-listing ones); its evidence is every operator's hits there at that
-one round factor (scripts/probes/stage/stage-factors.ts on `zmdlogs hits
---json`), and the `replay` view's LAND lines show the staged damage beside
-the replay's own. Not a fudge per hit: one factor per window, from all
+one round factor (`efsim zmdlogs offsets --all`'s last section, buildoffsets.ts
+`factorStretches`, since round 17; before, scripts/probes/stage/stage-factors.ts
+on `zmdlogs hits --json`), and the `replay` view's LAND lines and the `bursts`
+rows show the staged damage beside the replay's own (enginecheck.ts
+`stageNote`). Not a fudge per hit: one factor per window, from all
 four operators' hits at once, as a build override is one input from many.
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
