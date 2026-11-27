@@ -107,7 +107,7 @@ export interface TimelineScenario {
    * (engine assumption break-hold) only within LOGGED_BREAK_FRAMES of one of them; one the log doesn't show holds
    * nothing (its bar broke on hits the log lists differently).
    */
-  readonly loggedBreaks?: readonly number[]; // split:gating
+  readonly loggedBreaks?: readonly number[];
 }
 
 /** The scenario with a fight `seconds` long (whole frames at FPS, rounded): the one way to set a length in seconds. */

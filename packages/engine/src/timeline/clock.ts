@@ -7,7 +7,7 @@ import { rampElapsed, type EnemyStatus } from "../status.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
-import { ENGINE_ASSUMPTIONS, engineReading } from "./assumptions.ts"; // split:engine-hold
+import { ENGINE_ASSUMPTIONS, engineReading } from "./assumptions.ts";
 import { COMBO_CURVE, curveScales } from "./curves.ts";
 
 /**
@@ -91,11 +91,6 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   return rebaseCooldowns(ctx, st, s, frame);
 }
 
-// split:engine-hold
-/** Measure switches (temporary, the hold-out split): the replay's gate at the logged breaks; the hold holding the Stagger's end. */
-export const BREAK_GATE = true;
-export const BREAK_HOLDS_STAGGER = true;
-
 /** The frames a Stagger break holds every clock (engine assumption break-hold: "none" or "<n>f"; 0 for none). */
 export function breakHoldFrames(assume?: Readonly<Record<string, string>>): number {
   const m = /^(\d+)f/.exec(assume?.["break-hold"] ?? (ENGINE_ASSUMPTIONS.find((a) => a.id === "break-hold")?.default as string));
@@ -118,10 +113,9 @@ export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number
   if (!all && st.slowdowns.some((x) => x.ultimate && frame >= x.start && frame < x.start + x.scales.length)) return st;
   // A replay holds only at the breaks its log shows (TimelineScenario.loggedBreaks).
   const logged = ctx.scenario.loggedBreaks;
-  if (BREAK_GATE && logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
+  if (logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
   const timing: SkillTiming = { durationFrames: 0, exclusiveFrames: 0, windows: [], channels: [], specification: 0, keepsChain: true, slowdowns: [{ from: 0, scales: new Array<number>(n).fill(0) }], jumps: [], ends: [] };
-  const held = slowDown(ctx, st, BREAK_HOLDER, timing, frame);
-  return BREAK_HOLDS_STAGGER ? held : { ...held, stagger: st.stagger };
+  return slowDown(ctx, st, BREAK_HOLDER, timing, frame);
 }
 
 /** The caster of a break's hold (breakHold): no operator, so it holds every one. */

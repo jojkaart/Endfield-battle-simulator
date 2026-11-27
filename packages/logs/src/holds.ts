@@ -4,7 +4,7 @@
 // log shows bounds it: a listed buff's run against the replay's own expiry, an enemy tick series against its period.
 // The replay (buffreplay.ts) then holds the world there once, for every timer.
 
-import { breakHoldFrames, FPS, type KitBuff } from "@efsim/engine"; // split:tick-stops
+import { breakHoldFrames, FPS, type KitBuff } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { worldMs, type TimeStop } from "./logcasts.ts";
 
@@ -226,10 +226,6 @@ const TICK_GAP_MS = 1500;
  * left it above 0 (the hits at one ms in the log's order aren't theirs: d4fb69b036fe at 145.02 s lists the breaking
  * hit before one that leaves 12).
  */
-// split:tick-stops
-/** Measure switch (temporary, the hold-out split): the tick bounds take the logged breaks' holds as stops. */
-export const BREAK_TICK_STOPS = true;
-
 export function loggedBreaks(fx: Pick<LogFixture, "hits">): number[] {
   const bars = new Map<number, number>();
   for (const h of fx.hits) if (h.poise) bars.set(h.t, Math.min(bars.get(h.t) ?? Infinity, h.poise.bar));
@@ -262,7 +258,7 @@ export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeSto
  */
 export function tickBounds(fx: Pick<LogFixture, "hits">, placed: readonly TimeStop[], breakFrames = breakHoldFrames()): HoldBound[] {
   // The breaks' holds are the engine's (break-hold), not hidden ones.
-  const stops = BREAK_TICK_STOPS ? [...placed, ...breakStops(fx, placed, breakFrames)] : placed; // split:tick-stops
+  const stops = [...placed, ...breakStops(fx, placed, breakFrames)];
   const series = new Map<string, number[]>();
   for (const h of fx.hits) {
     if (!HOLD_SERIES[h.event]) continue;
