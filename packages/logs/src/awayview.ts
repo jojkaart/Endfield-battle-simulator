@@ -8,7 +8,7 @@
 // (4d60's two stretches, engine assumption pause-holds `paused`); a phase the world runs through asks about nothing.
 
 import { ENGINE_ASSUMPTIONS, withCurveReading, type GameData } from "@efsim/engine";
-import { awayWindows } from "./enginecheck.ts";
+import { awayWindows, killGaps } from "./enginecheck.ts";
 import { clockAt, type ClockWhy } from "./holds.ts";
 import { msOfFrame } from "./holdinputs.ts";
 import { operatorLabel, secondsText as s, shortSkill } from "./labels.ts";
@@ -91,6 +91,10 @@ export function awayView(data: GameData, logs: readonly DevFixture[], opts: { re
       }
       for (const b of st.basics) out.push(`  basic ${operatorLabel(data, b.operator)}: ${shortSkill(b.before.event)} ${s(b.before.t)} → ${shortSkill(b.after.event)} ${s(b.after.t)}`);
     }
+    // The logged kills before the fight's end beside the away stretches (round 18, the replay-only report point 4: a
+    // kill mid-fight showed only in a jq dump of the hits): after a capped hit, to the next logged hit.
+    const kills = killGaps(d.fx);
+    if (kills.length) out.push("", `${d.short} logged kills before the fight's end (a capped hit; enginecheck.ts killGaps, engine assumption kill-gaps): ${kills.map((k) => `${s(k.from)}–${s(k.to)}`).join(", ")}`);
   }
   const order: AwayStretch["verdict"][] = ["pause", "runs on", "mixed", "no clock"];
   const total = [...counts.values()].reduce((a, b) => a + b, 0);

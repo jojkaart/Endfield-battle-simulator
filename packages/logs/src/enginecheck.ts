@@ -868,7 +868,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
-  const oneSided = oneSidedLandings(data, fx, c.replay, countedLandings, away, uncounted);
+  const oneSided = oneSidedLandings(data, fx, c.replay, countedLandings, away, uncounted, killGaps(fx));
   return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts, oneSided, kill: { kind: killKind, maxHp: hp !== undefined && hp > 0 ? hp : null } };
 }
 

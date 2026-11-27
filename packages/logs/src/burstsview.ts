@@ -15,12 +15,15 @@
 //   casts' stops out: query.ts replayTimeStops);
 // - the time stops between the cause and the burst (whose, which skill, frames): a burst delayed across a stop.
 // Then per operator: logged bursts, those with a replay landing (the offsets' median), log only, replay only.
+// A LOG ONLY and a REPLAY ONLY burst of one operator and element within TWIN_MS are marked as twins (round 18, the
+// log-only report point 4: one timing question, read as two one-sided bursts), and the header names the pairing's rule.
 
 import { allActions, effectiveKit, FPS, parseReactionEvent, type ArtsElement, type GameData, type KitHit, type LandedHit, type OperatorKit } from "@efsim/engine";
 import { stageNote } from "./enginecheck.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import { placeHits, worldMs } from "./logcasts.ts";
 import { replayTimeStops, type ReplayTimeStop } from "./query.ts";
+import { STATUS_NEAR_FRAMES, STATUS_VALUE_FIT, STATUS_WIDE_FRAMES } from "./statuspairs.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { operatorLabel, secondsText as s, shortSkill } from "./labels.ts";
 
@@ -48,6 +51,35 @@ export interface BurstRow {
   readonly afterLog?: boolean;
   /** The stops between the (earliest) cause and the burst: operator, skill, frames. */
   readonly stops: readonly string[];
+  /** A one-sided burst's twin: the other side's one-sided burst of its operator and element within TWIN_MS (its time, ms). */
+  readonly twin?: number;
+}
+
+/** How near (ms) a LOG ONLY and a REPLAY ONLY burst of one operator and element are marked as twins (onesided.ts TWIN_MS). */
+export const BURST_TWIN_MS = 1500;
+
+/**
+ * The one-sided rows with their twins marked: each LOG ONLY row and the nearest REPLAY ONLY row of its operator and
+ * element within BURST_TWIN_MS, one to one, nearest first (the replay's after-the-log ones left out).
+ */
+export function withBurstTwins(rows: readonly BurstRow[]): BurstRow[] {
+  const logOnly = rows.filter((r) => r.logged && !r.replay);
+  const replayOnly = rows.filter((r) => r.replay && !r.logged && !r.afterLog);
+  const pairs: { a: BurstRow; b: BurstRow; d: number }[] = [];
+  for (const a of logOnly)
+    for (const b of replayOnly) {
+      if (a.operator !== b.operator || a.element !== b.element) continue;
+      const d = Math.abs((a.logged as NonNullable<BurstRow["logged"]>).t - (b.replay as NonNullable<BurstRow["replay"]>).t);
+      if (d <= BURST_TWIN_MS) pairs.push({ a, b, d });
+    }
+  pairs.sort((x, y) => x.d - y.d);
+  const twin = new Map<BurstRow, number>();
+  for (const p of pairs) {
+    if (twin.has(p.a) || twin.has(p.b)) continue;
+    twin.set(p.a, (p.b.replay as NonNullable<BurstRow["replay"]>).t);
+    twin.set(p.b, (p.a.logged as NonNullable<BurstRow["logged"]>).t);
+  }
+  return rows.map((r) => (twin.has(r) ? { ...r, twin: twin.get(r) as number } : r));
 }
 
 /** Whether a kit hit inflicts (an `infliction` application, whatever element it resolves to). */
@@ -138,7 +170,7 @@ export function burstRows(data: GameData, fx: LogFixture, opts: { readonly opera
     const stage = stageNote(fx, l.damage, t);
     rows.push({ operator: l.operator, element: l.element, replay: { t, damage: l.damage, cause: rc, ...(stage ? { stage } : {}) }, ...(t > lastLogged ? { afterLog: true } : {}), stops: rc ? between(rc.t, t) : [] });
   }
-  return rows.sort((a, b) => (a.logged?.t ?? a.replay?.t ?? 0) - (b.logged?.t ?? b.replay?.t ?? 0));
+  return withBurstTwins(rows.sort((a, b) => (a.logged?.t ?? a.replay?.t ?? 0) - (b.logged?.t ?? b.replay?.t ?? 0)));
 }
 
 const cause = (c: BurstCause | null) => (c ? `${c.what} at ${s(c.t)} (${s(c.world)} s of world time before${c.recorded ? "" : "; nearest"})` : "none found");
@@ -147,13 +179,14 @@ const cause = (c: BurstCause | null) => (c ? `${c.what} at ${s(c.t)} (${s(c.worl
 export function burstLine(data: GameData, r: BurstRow): string {
   const who = `${operatorLabel(data, r.operator)} ${r.element}`;
   const stops = r.stops.length ? `; stops between: ${r.stops.join(", ")}` : "";
+  const twin = r.twin !== undefined ? `; twin: the ${r.logged ? "REPLAY ONLY" : "LOG ONLY"} burst at ${s(r.twin)} (${Math.round(Math.abs(r.twin - (r.logged?.t ?? r.replay?.t ?? 0)))} ms apart, outside the pairing)` : "";
   if (r.logged && r.replay) {
     const off = Math.round(r.replay.t - r.logged.t);
     return `${s(r.logged.t).padStart(7)}  ${who}: logged ${r.logged.value}, replay ${r.replay.damage}${r.replay.stage ?? ""} at ${s(r.replay.t)} (${off >= 0 ? "+" : ""}${off} ms); cause: log ${cause(r.logged.cause)}, replay ${cause(r.replay.cause)}${stops}`;
   }
-  if (r.logged) return `${s(r.logged.t).padStart(7)}  ${who}: logged ${r.logged.value}, LOG ONLY (${r.unknown ?? "no replay landing"}); cause: log ${cause(r.logged.cause)}${stops}`;
+  if (r.logged) return `${s(r.logged.t).padStart(7)}  ${who}: logged ${r.logged.value}, LOG ONLY (${r.unknown ?? "no replay landing"}); cause: log ${cause(r.logged.cause)}${stops}${twin}`;
   const rp = r.replay as NonNullable<BurstRow["replay"]>;
-  return `${s(rp.t).padStart(7)}  ${who}: REPLAY ONLY ${rp.damage}${rp.stage ?? ""}${r.afterLog ? " (after the log's last hit)" : ""}; cause: replay ${cause(rp.cause)}${stops}`;
+  return `${s(rp.t).padStart(7)}  ${who}: REPLAY ONLY ${rp.damage}${rp.stage ?? ""}${r.afterLog ? " (after the log's last hit)" : ""}; cause: replay ${cause(rp.cause)}${stops}${twin}`;
 }
 
 /** The per-operator counts of some rows: logged, paired (median offset), log only, replay only (in the log's span). */
@@ -166,14 +199,15 @@ export function burstCounts(data: GameData, rows: readonly BurstRow[]): string[]
     const median = offs.length ? Math.round(offs[Math.floor((offs.length - 1) / 2)] as number) : null;
     const logged = rs.filter((r) => r.logged).length;
     const replayOnly = rs.filter((r) => !r.logged && !r.afterLog).length;
-    return `  ${operatorLabel(data, op)}: ${logged} logged, ${paired.length} with a replay landing${median !== null ? ` (median offset ${median >= 0 ? "+" : ""}${median} ms)` : ""}, ${logged - paired.length} log only, ${replayOnly} replay only${rs.some((r) => r.afterLog) ? ` (+${rs.filter((r) => r.afterLog).length} after the log's last hit)` : ""}`;
+    const twins = rs.filter((r) => r.logged && !r.replay && r.twin !== undefined).length;
+    return `  ${operatorLabel(data, op)}: ${logged} logged, ${paired.length} with a replay landing${median !== null ? ` (median offset ${median >= 0 ? "+" : ""}${median} ms)` : ""}, ${logged - paired.length} log only, ${replayOnly} replay only${twins ? ` (${twins} pair(s) of them twins)` : ""}${rs.some((r) => r.afterLog) ? ` (+${rs.filter((r) => r.afterLog).length} after the log's last hit)` : ""}`;
   });
 }
 
 /** `zmdlogs bursts`: per log its bursts' lines, then the counts per operator (over every log given, too). */
 export function burstsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly operators?: readonly string[]; readonly from?: number; readonly to?: number; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void } = {}): string {
   const out = [
-    "Arts Bursts, logged against replayed (BuffReplay.statusLanding pairs them; offset = replay − log). cause: the replay's landing whose infliction set the burst off (its record) and the logged hit standing for it; marked nearest where there is none: the operator's latest hit with an infliction at least the element's burst delay of world time before it (the log records no infliction: a candidate); stops between: the replay's casts' time stops from the cause to the burst. Times in s.",
+    `Arts Bursts, logged against replayed (BuffReplay.statusLanding pairs them as the check does, statuspairs.ts: per operator and element one assignment, the most pairs, then the closest in value and time, a landing within ${STATUS_NEAR_FRAMES} frames whatever its value, up to ${STATUS_WIDE_FRAMES} where its value fits within ${100 * STATUS_VALUE_FIT}%; engine assumption status-pairing; offset = replay − log). cause: the replay's landing whose infliction set the burst off (its record) and the logged hit standing for it; marked nearest where there is none: the operator's latest hit with an infliction at least the element's burst delay of world time before it (the log records no infliction: a candidate); stops between: the replay's casts' time stops from the cause to the burst; twin: a LOG ONLY and a REPLAY ONLY burst of one operator and element within ${BURST_TWIN_MS / 1000} s (outside the pairing's window or value fit). Times in s.`,
   ];
   const all: BurstRow[] = [];
   for (const { short, fx } of logs) {
