@@ -392,6 +392,33 @@ function zoneWords(r: HitRecord): string {
   return `zones ${zs}; ${crit}; modifiers ${mods || "none"}`;
 }
 
+/**
+ * A hit's zones, crit and modifiers as their difference from another hit's (`zmdlogs hits --against-hit <s>`; round 17,
+ * the exposed-totals report point 4: 3f78's +1.7% from 58.90 s was Corrosion's ignoreResistance 18.27 against 20.23,
+ * found by diffing two `--zones` lines by hand): only what differs, "<this> vs <the reference's>", a modifier by its kit
+ * buff (or source) and zone; "same zones and modifiers" when nothing does, "no landing" for either side without one.
+ */
+export function zoneDifference(r: HitRecord, ref: HitRecord): string {
+  if (!r.landing || !ref.landing) return "no landing";
+  const n = (v: number | undefined) => (v === undefined ? "-" : String(Number(v.toPrecision(4))));
+  const out: string[] = [];
+  const [za, zb] = [Object.fromEntries(Object.entries(r.landing.zones)) as Readonly<Record<string, number>>, Object.fromEntries(Object.entries(ref.landing.zones)) as Readonly<Record<string, number>>];
+  for (const k of new Set([...Object.keys(za), ...Object.keys(zb)])) if (n(za[k]) !== n(zb[k])) out.push(`${k} ${n(za[k])} vs ${n(zb[k])}`);
+  const crit = (x: HitRecord) => (x.replayCrit === null || x.replayCrit === undefined ? "-" : x.replayCrit ? "yes" : "no");
+  if (crit(r) !== crit(ref)) out.push(`crit ${crit(r)} vs ${crit(ref)}`);
+  const mods = (x: HitRecord) => {
+    const m = new Map<string, number[]>();
+    for (const y of x.landing?.modifiers ?? []) m.set(`${y.kitBuff ?? y.source}:${y.zone}`, [...(m.get(`${y.kitBuff ?? y.source}:${y.zone}`) ?? []), y.value]);
+    return m;
+  };
+  const [ma, mb] = [mods(r), mods(ref)];
+  for (const k of [...new Set([...ma.keys(), ...mb.keys()])].sort()) {
+    const [a, b] = [(ma.get(k) ?? []).map(n).sort().join("+"), (mb.get(k) ?? []).map(n).sort().join("+")];
+    if (a !== b) out.push(`${k} ${a || "none"} vs ${b || "none"}`);
+  }
+  return out.length ? out.join("; ") : "same zones and modifiers";
+}
+
 /** The hits of a list of fixtures, read one at a time (readFixture), each record handed to `out` as it's made. */
 export function exportHits(data: GameData, files: readonly string[], readFixture: (file: string) => LogFixture, out: (r: HitRecord) => void, opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void; readonly assume?: Readonly<Record<string, string>> } = {}): number {
   let n = 0;

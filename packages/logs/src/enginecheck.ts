@@ -622,7 +622,17 @@ export interface TotalsComparison {
   readonly parts: readonly TotalPart[];
   /** Every replay-only landing and log-only hit of the parts, classified by kind (onesided.ts: `zmdlogs totals --kinds`). */
   readonly oneSided: readonly OneSided[];
+  /**
+   * How the fight's kill was found (round 17, the exposed-totals report point 2: 207f's ×5.7600 Max HP read as a −6.9%
+   * over-prediction of Rossi's ultimate final for a while): the log's total is the data's Max HP (`max-hp`), its last
+   * hit capped (`capped`: its uncapped value above it), its last life's (`lives`), a stage-scaled Max HP
+   * (`stage-scaled`), or no kill (`none`); and the data's Max HP at the enemy's level (null: not in the data).
+   */
+  readonly kill: { readonly kind: KillKind; readonly maxHp: number | null };
 }
+
+/** How a fight's kill was found (TotalsComparison.kill). */
+export type KillKind = "max-hp" | "capped" | "lives" | "stage-scaled" | "none";
 
 /** One landing the simulated total counted (TotalsComparison.parts). */
 export interface TotalPart {
@@ -748,7 +758,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // the data's HP: tower016 ×5.5, tower015 ×7.6, Si's phases ×2; 4360's four returning lances after the kill counted,
   // +6.5% of the fight, while the last hit was capped), the log's total then being the HP.
   const lastCapped = fx.hits.some((h) => h.t === logged.last && h.uncapped !== undefined && h.uncapped > h.value);
-  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : lastCapped || lastLifeKilled(data, fx) || stageScaledKill(data, fx) ? logged.damage : null;
+  const killKind: KillKind = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? "max-hp" : lastCapped ? "capped" : lastLifeKilled(data, fx) ? "lives" : stageScaledKill(data, fx) ? "stage-scaled" : "none";
+  const kill = killKind === "max-hp" ? (hp as number) : killKind !== "none" ? logged.damage : null;
   let simKill: number | null = null;
   // Landings the log can't have (the fixture's `absent`, judged by hand): each the nearest of its operator's skill and hit.
   const absent = new Set<LandedHit>();
@@ -846,7 +857,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
   const oneSided = oneSidedLandings(data, fx, c.replay, countedLandings, away, uncounted);
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts, oneSided };
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts, oneSided, kill: { kind: killKind, maxHp: hp !== undefined && hp > 0 ? hp : null } };
 }
 
 /** A stretch with no logged hit at least this long is the enemy out of reach (engine assumption enemy-away). */

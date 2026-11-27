@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, engineHits, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
-import { filterRecords, formatRecord, hitRecords } from "../packages/logs/src/hitexport.ts";
+import { filterRecords, formatRecord, hitRecords, zoneDifference, type HitRecord } from "../packages/logs/src/hitexport.ts";
 import { devFixtures, readDevFixture, resolveFixture, shortId } from "../packages/logs/src/logs.ts";
 import { ROOT } from "./logverdicts.ts";
 
@@ -152,5 +152,17 @@ describe("fixture arguments", () => {
     const op = fx.team[0]?.operator as string;
     expect(devFixtures({ withOperators: [op] }).every((d) => d.fx.team.some((b) => b.operator === op))).toBe(true);
     expect(devFixtures({ ids: ["0eef"] }).map((d) => d.id)).toEqual([fx.id]);
+  });
+});
+
+describe("zmdlogs hits --against-hit (round 17, the exposed-totals report point 4)", () => {
+  // Only the fields zoneDifference reads: a landing's zones and modifiers, the replay's crit.
+  const record = (resistance: number, ignore: number, crit: boolean): HitRecord =>
+    ({ replayCrit: crit, landing: { zones: { atk: 100, resistance }, modifiers: [{ source: "Corrosion level 2", zone: "ignoreResistance", value: ignore }, { kitBuff: "op:a", zone: "damageBonus", value: 0.2 }] } }) as unknown as HitRecord;
+
+  it("prints only what differs from the reference hit: a zone, the crit, a modifier's value", () => {
+    expect(zoneDifference(record(1.183, 18.27, false), record(1.202, 20.23, true))).toBe("resistance 1.183 vs 1.202; crit no vs yes; Corrosion level 2:ignoreResistance 18.27 vs 20.23");
+    expect(zoneDifference(record(1.2, 20, true), record(1.2, 20, true))).toBe("same zones and modifiers");
+    expect(zoneDifference({ landing: undefined } as unknown as HitRecord, record(1, 1, true))).toBe("no landing");
   });
 });

@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import { basename, dirname, join, resolve } from "node:path";
 import type { GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
-import { exportHits, exportHitsParallel, filterRecords, formatRecord, recordChanges, type HitRecord } from "./hitexport.ts";
+import { exportHits, exportHitsParallel, filterRecords, formatRecord, recordChanges, zoneDifference, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
 import { gameDataCacheKey, mainCheckoutOf, operatorId, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
@@ -92,7 +92,7 @@ export interface RecordFilter {
  * `listed`: only the hits listing a matching buff (effects or boundary), each text line with those entries' sources,
  * sinces and values (round 16, arcane-will report point 1).
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly listed?: RegExp; readonly progress: (line: string) => void }): Promise<string> {
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly againstHit?: number; readonly listed?: RegExp; readonly progress: (line: string) => void }): Promise<string> {
   // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
   const assume = opts.assume ?? {};
   const under = Object.keys(assume).length > 0;
@@ -104,6 +104,17 @@ export async function hitsReport(data: () => GameData, sel: LogSelection, opts: 
     const all = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !under, assume);
     const pick = (r: HitRecord) => filterRecords([r], { ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.event ? { event: opts.event } : {}) }).length > 0;
     return sameListingLines(all, readLogFixture(file), opts.sameListing, pick).join("\n");
+  }
+  if (opts.againstHit !== undefined) {
+    const [file] = files;
+    if (files.length !== 1 || file === undefined) throw new Error("zmdlogs hits --against-hit <s> takes one fixture (--operator, --event pick the reference hit at that moment and the hits shown)");
+    const all = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !under, assume);
+    const shown = filterRecords(all, opts);
+    const at = all.filter((r) => Math.abs(r.t - (opts.againstHit as number)) <= 1);
+    const picked = at.length > 1 ? at.filter((r) => filterRecords([r], { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.event ? { event: opts.event } : {}) }).length) : at;
+    if (picked.length !== 1) throw new Error(`zmdlogs hits --against-hit: ${picked.length ? `${picked.length} hits` : "no hit"} at ${(opts.againstHit / 1000).toFixed(3)} s${picked.length ? ` (${picked.map((r) => `${r.operator} ${r.event}`).join(", ")}): --operator / --event pick one` : ""}`);
+    const ref = picked[0] as HitRecord;
+    return [`${basename(file)}: each hit's zones, crit and modifiers as their difference from the hit at ${(ref.t / 1000).toFixed(3)} s (${ref.operator} ${ref.event}, ${ref.class}, logged ${ref.value}): this hit's vs the reference's`, ...shown.map((r) => `${formatRecord(r, false, opts.reading)}  vs ${(ref.t / 1000).toFixed(2)}: ${r === ref ? "(the reference)" : zoneDifference(r, ref)}`)].join("\n");
   }
   const records = await collectRecords(data, files, opts.workers, opts, opts.progress, (opts.cache ?? true) && !under, assume);
   // --against: the hits another reading (on top of --assume) changes, paired with these (recordChanges).

@@ -232,6 +232,8 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     const final = t.parts.find((p) => p.logged?.t === 42848 && p.logged.event === "chr_0028_wulfa_ultimate_skill");
     expect(final?.damage).toBe(1134403);
     expect(t.logged.killMs).toBe(42848);
+    // How the kill was found, as `zmdlogs totals` prints it beside the total ÷ Max HP (round 17, the exposed-totals report point 2).
+    expect(t.kill).toEqual({ kind: "stage-scaled", maxHp: 825447 });
   });
 });
 

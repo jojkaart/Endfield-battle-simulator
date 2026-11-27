@@ -25,7 +25,7 @@ import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoic
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { stageModifiers, teamBuffNames, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
+import { stageModifiers, teamBuffNames, type KillKind, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
 import { kindsAggregate, type KindShare } from "./onesided.ts";
 import { decisionText, replayDecisions } from "./decisionsview.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
@@ -852,6 +852,15 @@ export function otherKitHitCasts(records: readonly HitRecord[], fxLabel: (fixtur
   return ["", "Casts whose every landing matched only as the event's other kit hit (a path the replay didn't take, the log's key shared by both: the kit's jumps, a chance or control path; zmdlogs decisions has the replay's PATH and JUMPDROP lines):", ...rows.sort((a, b) => a.t - b.t).map((x) => x.text)];
 }
 
+/** totalsView's words for how the kill was found (TotalsComparison.kill.kind). */
+const KILL_TEXT: Readonly<Record<KillKind, string>> = {
+  "max-hp": "the data's Max HP",
+  capped: "the last hit capped (its uncapped value above it)",
+  lives: "the last life's (lastLifeKilled)",
+  "stage-scaled": "a stage-scaled Max HP (stageScaledKill)",
+  none: "none found (a whole multiple of the Max HP is a kill the log didn't mark)",
+};
+
 /** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */
 const HOLD_UNIT_MS = 512;
 
@@ -1065,7 +1074,7 @@ export function totalsView(data: GameData, fx: LogFixture, f: { readonly operato
   const ops = [...new Set([...Object.keys(t.logged.perOperator), ...Object.keys(t.simulated.perOperator)])].filter((op) => !f.operators?.length || f.operators.includes(op));
   const out = [
     `${fx.id}: the simulated total's parts (enginecheck.ts fightTotals; damage simulated vs logged). matched: the landings standing for logged hits, predicted vs their logged values; replay only: landings no logged hit stands for (counted to the log's last hit); log only: logged hits the total has no landing for; shifts: recorded bursts' teammate shares taken as logged.`,
-    `  team: ${n(t.simulated.damage)} vs ${n(t.logged.damage)} (${pct(t.simulated.damage, t.logged.damage)})`,
+    `  team: ${n(t.simulated.damage)} vs ${n(t.logged.damage)} (${pct(t.simulated.damage, t.logged.damage)}); logged total ${t.kill.maxHp ? `×${(t.logged.damage / t.kill.maxHp).toFixed(4)} the data's Max HP (${n(t.kill.maxHp)})` : "- (no Max HP in the data)"}, kill: ${KILL_TEXT[t.kill.kind]}`,
     ...(t.away.windows.length ? [`  enemy away (engine assumption enemy-away; no logged hit for 6 s or more): ${t.away.windows.map((w) => `${s(w.from)}–${s(w.to)} s`).join(", ")}; ${t.away.leftOut} replay-only landing(s) there not counted`] : []),
   ];
   for (const op of ops) {

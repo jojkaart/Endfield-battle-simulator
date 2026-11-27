@@ -68,7 +68,7 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
-export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime"]);
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away"]);
 export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
 
 export default command({
@@ -99,6 +99,9 @@ export default command({
                                           very same listing (buff, source, value), with their verdicts and a count by
                                           class: a listing difference that reads plain next door is no cause
                                           (--operator, --event, --kind pick the hit at the moment)
+                [--against-hit s]         Instead (one fixture): each hit's zones, crit and modifiers as the
+                                          difference from the hit at that moment (a plain neighbour: what one
+                                          modifier the off hit has otherwise); --operator / --event pick it there
                 [--listed <regex>]        Only hits listing a matching buff (effects or boundary); text lines end with
                                           those entries' sources, sinces and values (--all --event: one hit key's
                                           listings across logs)
@@ -379,6 +382,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     against: { type: "string", multiple: true, default: [] },
     "no-foods": { type: "boolean", default: false },
     "same-listing": { type: "string" },
+    "against-hit": { type: "string" },
     "against-lanes": { type: "boolean", default: false },
     pairs: { type: "boolean", default: false },
     listed: { type: "string" },
@@ -560,7 +564,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const sameAt = values["same-listing"] !== undefined ? Number(values["same-listing"]) * 1000 : undefined;
       if (sameAt !== undefined && !Number.isFinite(sameAt)) throw new Error("zmdlogs hits --same-listing takes seconds");
       if (sameAt !== undefined && (values.against.length || values.json || values.listed !== undefined)) throw new Error("zmdlogs hits --same-listing prints text lines alone (no --against, --json or --listed)");
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
+      const againstHit = values["against-hit"] !== undefined ? Number(values["against-hit"]) * 1000 : undefined;
+      if (againstHit !== undefined && !Number.isFinite(againstHit)) throw new Error("zmdlogs hits --against-hit takes seconds");
+      if (againstHit !== undefined && (sameAt !== undefined || values.against.length || values.json || values.listed !== undefined)) throw new Error("zmdlogs hits --against-hit prints text lines alone (no --same-listing, --against, --json or --listed)");
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });
