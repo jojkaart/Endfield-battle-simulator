@@ -17,6 +17,7 @@ import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
 import { type ReplayedCast, frameOf } from "./castassembly.ts";
 import { endedWithTick, loggedTick } from "./holdinputs.ts";
+import { loggedBreaks } from "./holds.ts";
 
 /** A logged cast the replay made against its kit (BuffReplay.castFlags). */
 export interface CastFlag {
@@ -800,6 +801,8 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
       return modifiers.length ? [{ operator: h.operator, event: h.event, frame: frameOf(h.t), modifiers }] : [];
     }) } : {}),
     ...(opts.reactionLevels?.length ? { loggedReactionLevels: opts.reactionLevels } : {}),
+    // The breaks the log shows: only they hold every clock (engine assumption break-hold).
+    loggedBreaks: loggedBreaks(fx).map(frameOf),
   };
   const ctx = createContext(data, scenario);
   // Engine assumption hitless-presses: with `inferred`, a press the log shows no hit of is made where its listing shows what only it gives.

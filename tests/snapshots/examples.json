@@ -177,43 +177,44 @@
   ]
  },
  "estella-si-akekuri-arcane-zero.scenario.json": {
-  "total": 2274478.538,
-  "hits": 361,
-  "casts": 192,
+  "total": 2264521.867,
+  "hits": 359,
+  "casts": 190,
   "perOperator": {
-   "chr_0019_karin": 194136.04,
+   "chr_0019_karin": 190863.272,
    "chr_0036_jsspsi": 836118.976,
-   "chr_0021_whiten": 1065016.808,
+   "chr_0021_whiten": 1058332.906,
    "chr_0032_lizhiyan": 179206.714
   },
-  "digest": "1ab6e928f28f",
+  "digest": "4fd71fbd343f",
   "windows": [
    "40bbe38068ae",
    "97b7ab8a6641",
    "1ea9a1c8ed2e",
    "81732e672ca1",
    "4af66562a9c6",
-   "7f962fc02e3a"
+   "f46094bf9357",
+   "9e2977695839"
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {
-  "total": 3638386.937,
+  "total": 3673910.917,
   "hits": 390,
-  "casts": 199,
+  "casts": 200,
   "perOperator": {
-   "chr_0019_karin": 264487.276,
-   "chr_0036_jsspsi": 1659852.915,
-   "chr_0021_whiten": 1440618.847,
-   "chr_0032_lizhiyan": 273427.899
+   "chr_0019_karin": 265014.926,
+   "chr_0036_jsspsi": 1664191.55,
+   "chr_0021_whiten": 1468104.204,
+   "chr_0032_lizhiyan": 276600.237
   },
-  "digest": "1beb8235619c",
+  "digest": "2c4fd7c6e88d",
   "windows": [
    "642b67bcd049",
    "4ec080c55221",
    "abec5cdd0ace",
    "06b9ea1c1f7c",
-   "f55393a4031f",
-   "7a113be037d3"
+   "e367ed8aca37",
+   "c21fd675bf89"
   ]
  },
  "estella-solidification.scenario.json": {
@@ -261,44 +262,44 @@
   ]
  },
  "ink-melt-zero.scenario.json": {
-  "total": 2861755.869,
+  "total": 2861659.125,
   "hits": 456,
   "casts": 194,
   "perOperator": {
    "chr_0016_laevat": 1343940.513,
-   "chr_0036_jsspsi": 979663.029,
+   "chr_0036_jsspsi": 979566.285,
    "chr_0006_wolfgd": 281895.662,
    "chr_0025_ardelia": 256256.666
   },
-  "digest": "6d2a95441462",
+  "digest": "3f643dcb1f7d",
   "windows": [
    "bc98614510cc",
    "5395613fee08",
    "9e9797ce1c3a",
    "298351068fed",
-   "08b1553c641d",
-   "4469a05b70dd"
+   "685e202cb5a9",
+   "73f21932880b"
   ]
  },
  "ink-melt.scenario.json": {
-  "total": 3432399.784,
-  "hits": 461,
-  "casts": 169,
+  "total": 3417866.678,
+  "hits": 457,
+  "casts": 168,
   "perOperator": {
    "chr_0016_laevat": 2050587.801,
-   "chr_0036_jsspsi": 782841.688,
-   "chr_0006_wolfgd": 376790.961,
-   "chr_0025_ardelia": 222179.334
+   "chr_0036_jsspsi": 769144.183,
+   "chr_0006_wolfgd": 375521.983,
+   "chr_0025_ardelia": 222612.711
   },
-  "digest": "ff3024dfb23b",
+  "digest": "102e63a600bc",
   "windows": [
    "7a3269d28882",
    "2622807fa351",
    "2328901c660b",
-   "eccc290cc2a4",
-   "0de21f4d89c1",
-   "451a7da4d003",
-   "945c79502ae1"
+   "94274ddbe505",
+   "214bf8677713",
+   "49b366e8b7f4",
+   "f4d0e0a62362"
   ]
  },
  "laevatain-solo.scenario.json": {
@@ -493,44 +494,43 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4885248.742,
-  "hits": 516,
+  "total": 4859450.767,
+  "hits": 507,
   "casts": 167,
   "perOperator": {
-   "chr_0034_typhoea": 3760432.302,
+   "chr_0034_typhoea": 3752804.57,
    "chr_0032_lizhiyan": 192483.21,
-   "chr_0035_liino": 319814.161,
+   "chr_0035_liino": 301643.918,
    "chr_0004_pelica": 612519.069
   },
-  "digest": "70cfaa7c615f",
+  "digest": "ca9dd137167d",
   "windows": [
    "17591050110c",
    "efd04bfbdbe1",
    "5743d42d6a91",
    "192272ea43f3",
-   "ee599cd8e9c3",
-   "fa517db90fea",
-   "16559fd12ceb"
+   "2837bd01135d",
+   "8f24464946d2"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5602835.787,
+  "total": 5603600.231,
   "hits": 443,
-  "casts": 166,
+  "casts": 165,
   "perOperator": {
-   "chr_0034_typhoea": 4182014.893,
-   "chr_0032_lizhiyan": 383777.145,
-   "chr_0035_liino": 317283.796,
-   "chr_0004_pelica": 719759.953
+   "chr_0034_typhoea": 4184006.818,
+   "chr_0032_lizhiyan": 383678.605,
+   "chr_0035_liino": 317633.373,
+   "chr_0004_pelica": 718281.436
   },
-  "digest": "bf10a2b41c14",
+  "digest": "d600c7d7f1b2",
   "windows": [
    "8d6f9985b4a5",
    "e7bf682434b9",
    "6f97eaed1425",
-   "778b0cc947b6",
-   "ff1ccb142212",
-   "fc5117d0b2a5"
+   "e49b39628c0f",
+   "689a13af8b70",
+   "6c0715678957"
   ]
  },
  "typhoeus-gilberta.scenario.json": {

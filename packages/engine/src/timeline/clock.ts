@@ -111,12 +111,18 @@ export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number
   if (n <= 0) return st;
   const all = engineReading(ctx.scenario, "break-hold").endsWith("-all");
   if (!all && st.slowdowns.some((x) => x.ultimate && frame >= x.start && frame < x.start + x.scales.length)) return st;
+  // A replay holds only at the breaks its log shows (TimelineScenario.loggedBreaks).
+  const logged = ctx.scenario.loggedBreaks;
+  if (logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
   const timing: SkillTiming = { durationFrames: 0, exclusiveFrames: 0, windows: [], channels: [], specification: 0, keepsChain: true, slowdowns: [{ from: 0, scales: new Array<number>(n).fill(0) }], jumps: [], ends: [] };
   return slowDown(ctx, st, BREAK_HOLDER, timing, frame);
 }
 
 /** The caster of a break's hold (breakHold): no operator, so it holds every one. */
 const BREAK_HOLDER = "stagger-break";
+
+/** How far (frames) a replay's break may be from a logged one and hold (TimelineScenario.loggedBreaks): a batch of the log's ms apart. */
+export const LOGGED_BREAK_FRAMES = 4;
 
 /** The frames a combo's slow-down holds each operator it holds beyond its own scales (engine assumption combo-operator-hold: "none" or "<n>f"). */
 function comboOperatorHold(ctx: TimelineContext): number {

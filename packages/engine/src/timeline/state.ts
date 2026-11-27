@@ -102,6 +102,12 @@ export interface TimelineScenario {
    * `level` stacks of it, whatever the replay's enemy holds, so the reaction (its hit and its status) is of that level.
    */
   readonly loggedReactionLevels?: readonly { readonly operator: string; readonly element: ArtsElement; readonly frame: number; readonly level: number }[];
+  /**
+   * A logged fight's Stagger breaks (frames; the log check's replay only): a break of the replay's holds every clock
+   * (engine assumption break-hold) only within LOGGED_BREAK_FRAMES of one of them; one the log doesn't show holds
+   * nothing (its bar broke on hits the log lists differently).
+   */
+  readonly loggedBreaks?: readonly number[];
 }
 
 /** The scenario with a fight `seconds` long (whole frames at FPS, rounded): the one way to set a length in seconds. */

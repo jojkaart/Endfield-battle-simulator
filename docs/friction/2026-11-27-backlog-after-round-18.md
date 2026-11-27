@@ -256,6 +256,8 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
   44.43 s (her ultimate's shots 0.47 s of kit frames apart, logged 0.98 s apart). The data's
   enablePoiseBreakTimeDilation suggests a break dilation the stop list lacks; a reading for it moves the placement
   and the holds: measure, smoke, team-ab where the engine's timing changes.
+  Closed by worktree-agent-aef72dfd574eeedc4, 222f093: engine assumption `break-hold` `14f` (every clock held 14 frames
+  at a break, not inside an ultimate's stop; docs/open-problems.md "The hold at a Stagger break").
 
 ## What worked well
 
