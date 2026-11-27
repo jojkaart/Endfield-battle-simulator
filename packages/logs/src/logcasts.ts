@@ -949,7 +949,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     /** One pass over the operator's logged hits; `starts` (by skill) picks among groups sharing a key. */
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {
       const placed = new Map<LogHit, PlacedHit>();
-      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean; scales: ReadonlyMap<KitHit, number> }>();
+      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean; scales: ReadonlyMap<KitHit, number>; ranges: ReadonlyMap<KitHit, readonly number[]> }>();
       // Casts placed so far, per group: a key's first landing within an earlier cast's reach is that cast's (joinable).
       const opened = new Map<string, LoggedCast[]>();
       // The operator's casts of skills so far, for a key several chain steps share (choose: the step after the latest
@@ -1006,10 +1006,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // at its last one's time whose value is that landing's and not the next slot's (sameByValue: 9c6e's Liino combo
         // at 47.72 s, hit 1 on both enemies, 6368 and 6035, took the second for hit 2 and her 48.49 s hit 2 for a new
         // combo's hit 1; 40d9a3c1da37's Si combo slashes, which the log batches at one ms, are alike in value, undecided).
-        // Not one whose value, both of known crit, is no second enemy's of the same landing (SAME_VALUE_TOLERANCE): a
-        // next cast's first landing at that ms (9a8097fcf351 34.94 s: Si's 25.00 s combo's final, 349,888, and her 32.51 s
-        // combo's first slash, 28,396; taken for the final on a second enemy, the slash's cast lost it).
-        if (cur && ((used && !unlikeByValue(cur.last, h)) || sameByValue(cur, h)) && h.t === cur.last.t) {
+        // Not one whose value, both of known crit, is a next cast's first landing's and not the same landing's
+        // (nextByValue): 9a8097fcf351 34.94 s, Si's 25.00 s combo's final, 349,888, and her 32.51 s combo's first slash,
+        // 28,396; taken for the final on a second enemy, the slash's cast lost it.
+        if (cur && ((used && !nextByValue(cur, h)) || sameByValue(cur, h)) && h.t === cur.last.t) {
           const slot = cur.slots?.[cur.index];
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last });
           continue;
@@ -1084,7 +1084,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
-        current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: s, exact: exactSlots(g, h.event), scales: g.scales });
+        current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: s, exact: exactSlots(g, h.event), scales: g.scales, ranges: g.ranges });
         placed.set(h, { cast, index: firstIndex, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}) });
       }
       return placed;
@@ -1213,11 +1213,30 @@ function sameByValue(cur: { readonly last: LogHit; readonly index: number; reado
   return !(b as number[]).some((y) => (a as number[]).some((x) => Math.abs(r - Math.log(y / x)) <= tolerance));
 }
 
-/** Two landings at one ms, both of known crit (not crits), whose values are further apart than one landing's on two enemies (SAME_VALUE_TOLERANCE). */
-function unlikeByValue(a: LogHit, b: LogHit): boolean {
-  if (a.crit !== false || b.crit !== false) return false;
-  const r = Math.log((b.uncapped ?? b.value) / (a.uncapped ?? a.value));
-  return Number.isFinite(r) && Math.abs(r) > Math.log(SAME_VALUE_TOLERANCE);
+/**
+ * A landing `h` at a used-up cast's last landing's ms whose value is a next cast's first landing's, not that landing's
+ * again: both non-crits, the key's slot 0 and the last landing's slot differing in multiplier by more than
+ * SAME_VALUE_TOLERANCE, and the two values in that ratio (within it), not alike (9a8097fcf351 34.94 s: Si's final and
+ * her next combo's first slash, ×12 apart as their multipliers). Two enemies' values of one landing differ by their
+ * debuffs, not by the slots' multipliers: 9c6e97486a9d's two targets, read by value alone (2026-11-27), lost 36 plain.
+ */
+function nextByValue(cur: { readonly last: LogHit; readonly index: number; readonly slots: readonly Slot[] | null; readonly scales: ReadonlyMap<KitHit, number>; readonly ranges: ReadonlyMap<KitHit, readonly number[]> }, h: LogHit): boolean {
+  const here = cur.slots?.[cur.index];
+  const head = cur.slots?.[0];
+  if (h.crit !== false || cur.last.crit !== false || !here || !head || cur.index === 0) return false;
+  // Each hit's multipliers: its one nominal scale, else those of its value expression over event counts (nominalScales).
+  const of = (k: KitHit) => {
+    const one = cur.scales.get(k);
+    return one !== undefined ? [one] : cur.ranges.get(k);
+  };
+  const a = here.hits.map(of);
+  const b = head.hits.map(of);
+  if ([...a, ...b].some((m) => m === undefined)) return false;
+  const r = Math.log((h.uncapped ?? h.value) / (cur.last.uncapped ?? cur.last.value));
+  const tolerance = Math.log(SAME_VALUE_TOLERANCE);
+  if (!Number.isFinite(r) || Math.abs(r) <= tolerance) return false;
+  const [xs, ys] = [(a as (readonly number[])[]).flat(), (b as (readonly number[])[]).flat()];
+  return ys.some((y) => xs.some((x) => Math.abs(Math.log(y / x)) > tolerance && Math.abs(r - Math.log(y / x)) <= tolerance));
 }
 
 /** How close (×, either way) a second enemy's landing's value is to the first's (sameByValue): the enemies' own debuffs differ a little (9c6e ×0.95). */
