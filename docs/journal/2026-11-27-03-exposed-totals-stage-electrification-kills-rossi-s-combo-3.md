@@ -21,8 +21,9 @@ uncuttable frames (docs/journal/2026-11-27-01-zhuang-fangyi-s-attack-4-and-liino
   twin's slot only where the skipped path's start is before the operator's previous cast lets the skill start.
 - tests/logcasts.test.ts (three tests).
 
-**Scoreboard** (`npm run snapshots:update`): development plain 80.0 → 80.4%, mismatch 6.8 → 6.7%, mean |damage error|
-3.3 → 3.1%, within 5% 27 → 28; hold-out unchanged (82.6%, 5.5%, 7.1%); earlier pending unchanged (81.4%, 7.6%, 1.6%;
+**Scoreboard** (`npm run snapshots:update` after merging main at 0b68614, the away stretches; `measure --base 0b68614`
+for this branch alone): development plain 81.0 → 81.4%, mismatch 6.4 → 6.3%, mean |damage error| 3.3 → 3.1%, within 5%
+27 → 28; hold-out unchanged (82.6%, 5.5%, 7.1%); earlier pending unchanged (81.4%, 7.6%, 1.6%;
 abfd mismatch 2 → 1). Better: 207f (plain 269 → 308, mismatch 16 → 3, +5.5 → +1.6%), 3f78 (plain 114 → 151, 0.9 →
 0.2%); 5082 adds a time to kill. No log worse. Rossi's row: plain 74.2 → 76.6%, mismatch 5.1 → 4.6%, mean |damage
 error| 1.8 → 1.3%. No engine or kit rule changed (log tools only): no team-ab.
