@@ -1,7 +1,7 @@
 // `efsim gamedata tree / who` (packages/cli/src/gamedata.ts): the compact tree of a raw data file and the reverse
 // index of who names a buff.
 import { describe, expect, it } from "vitest";
-import { atJsonPath, buffCreators, dataTree, findActions, formatFound, gamedataTree, parseJsonPath, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
+import { atJsonPath, buffCreators, dataTree, eventHandlers, findActions, formatFound, formatHandlers, gamedataTree, parseJsonPath, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
 import { deadKitBuffs } from "../packages/cli/src/commands/kit-census.ts";
 import { loadGameData } from "@efsim/data";
 import type { GameData } from "@efsim/engine";
@@ -103,6 +103,26 @@ describe("finding actions by type", () => {
     expect(gamedataTree("buff_chr_0032_lizhiyan_combo_skill_seal")).toContain("abilityEvent 8 (owner defeated?)");
     // A buff's stacking type with the engine's reading of it (round 16, docs/game-data-format.md "stackingType readings").
     expect(gamedataTree("buff_chr_0032_lizhiyan_combo_skill_seal")).toMatch(/stackingType 0 \(instances add up/);
+  });
+
+  // Round 21 (the target-statuses report point 3): an action under a disabled IfElseAction is switched off too.
+  it("says an action a disabled parent switches off is off, and --enabled leaves it out", () => {
+    const all = findActions({ type: "CreateBuff", file: "lizhiyan_combo_skill_spell_vulnerable" });
+    const off = all.filter((x) => x.disabledBy === "IfElseAction");
+    expect(off.length).toBeGreaterThan(0);
+    expect(formatFound(off)).toMatch(/DISABLED \(by a disabled IfElseAction above it\)/);
+    expect(findActions({ type: "CreateBuff", file: "lizhiyan_combo_skill_spell_vulnerable", enabled: true }).some((x) => off.some((y) => y.path === x.path))).toBe(false);
+  });
+});
+
+describe("gamedata handlers (round 21, the target-statuses report point 3)", () => {
+  it("lists every handler of a target's death (abilityEvent 1), Laevatain's passive_enemy live, Arcane's all disabled", () => {
+    const hs = eventHandlers("abilityEvent", 1);
+    const laev = hs.find((h) => h.file === "buff_chr_0016_laevat_passive_enemy");
+    expect(laev?.enabled.get("CreateBuffAction")).toBeGreaterThan(0);
+    const arcane = hs.find((h) => h.file === "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable");
+    expect(arcane?.enabled.size).toBe(0);
+    expect(formatHandlers("abilityEvent", 1, hs)).toMatch(/buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable {2}ALL DISABLED; switched off: /);
   });
 });
 

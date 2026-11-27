@@ -365,6 +365,23 @@ export interface Found {
   readonly fields: Readonly<Record<string, string>>;
   /** The buff event, ability event or frame it sits under. */
   readonly context: string | null;
+  /**
+   * Why it does nothing in the game, where it doesn't: its own isEnable false ("itself"), or a disabled action above it
+   * (its short type: "IfElseAction", round 21, the target-statuses report point 3: Arcane's spell_vulnerable CreateBuffAction
+   * read as enabled under a disabled IfElseAction). Absent: it runs.
+   */
+  readonly disabledBy?: string;
+}
+
+/** The context an object of a data file gives what sits under it (its buff event, ability event or frame), else the parent's. */
+function contextOf(v: Record<string, unknown>, context: string | null): string | null {
+  return typeof v["buffEvent"] === "number"
+    ? `buffEvent ${v["buffEvent"]}${ENUMS["buffEvent"]?.[v["buffEvent"]] ? ` (${ENUMS["buffEvent"][v["buffEvent"]]})` : ""}`
+    : typeof v["abilityEvent"] === "number"
+      ? `abilityEvent ${v["abilityEvent"]}${ENUMS["abilityEvent"]?.[v["abilityEvent"]] ? ` (${ENUMS["abilityEvent"][v["abilityEvent"]]})` : ""}`
+      : typeof v["_startFrame"] === "number"
+        ? `frame ${v["_startFrame"]}`
+        : context;
 }
 
 /**
@@ -381,22 +398,18 @@ export function findActions(opts: { readonly type: string; readonly file?: strin
     for (const name of readdirSync(dir).sort()) {
       if (!name.endsWith(".json") || (fileRe && !fileRe.test(name))) continue;
       const file = name.replace(/\.json$/, "");
-      const visit = (v: unknown, path: string, context: string | null) => {
-        if (Array.isArray(v)) return v.forEach((x, i) => visit(x, `${path}[${i}]`, context));
+      // `off`: the disabled action above (its short type), which switches off everything under it.
+      const visit = (v: unknown, path: string, context: string | null, off: string | null) => {
+        if (Array.isArray(v)) return v.forEach((x, i) => visit(x, `${path}[${i}]`, context, off));
         if (!isObj(v)) return;
-        const c =
-          typeof v["buffEvent"] === "number"
-            ? `buffEvent ${v["buffEvent"]}${ENUMS["buffEvent"]?.[v["buffEvent"]] ? ` (${ENUMS["buffEvent"][v["buffEvent"]]})` : ""}`
-            : typeof v["abilityEvent"] === "number"
-              ? `abilityEvent ${v["abilityEvent"]}${ENUMS["abilityEvent"]?.[v["abilityEvent"]] ? ` (${ENUMS["abilityEvent"][v["abilityEvent"]]})` : ""}`
-              : typeof v["_startFrame"] === "number"
-                ? `frame ${v["_startFrame"]}`
-                : context;
+        const c = contextOf(v, context);
         const t = typeof v["$type"] === "string" ? shortType(v["$type"]) : null;
-        if (t && type.test(t) && !(opts.enabled && v["isEnable"] === false)) out.push({ folder: f, file, path, fields: ownFields(v), context: c });
-        for (const [k, x] of Object.entries(v)) visit(x, `${path}.${k}`, c);
+        const disabledBy = off ?? (t && v["isEnable"] === false ? "itself" : null);
+        if (t && type.test(t) && !(opts.enabled && disabledBy)) out.push({ folder: f, file, path, fields: ownFields(v), context: c, ...(disabledBy ? { disabledBy } : {}) });
+        const below = off ?? (t && v["isEnable"] === false ? t : null);
+        for (const [k, x] of Object.entries(v)) visit(x, `${path}.${k}`, c, below);
       };
-      visit(parseJsonExact(readFileSync(join(dir, name), "utf8")), "", null);
+      visit(parseJsonExact(readFileSync(join(dir, name), "utf8")), "", null, null);
     }
   }
   return out;
@@ -469,7 +482,67 @@ export function formatFound(found: readonly Found[], opts: { readonly fields?: r
   }
   const lines = found.map((x) => {
     const fs = Object.entries(x.fields).filter(([k]) => !opts.fields?.length || opts.fields.includes(k));
-    return `  ${x.folder}/${x.file}${x.context ? `  [${x.context}]` : ""}  ${fs.map(([, v]) => v).join(", ")}  ${x.path}`;
+    // Switched off by a parent (its own isEnable false shows among its fields).
+    const off = x.disabledBy && x.disabledBy !== "itself" ? `  DISABLED (by a disabled ${x.disabledBy} above it)` : "";
+    return `  ${x.folder}/${x.file}${x.context ? `  [${x.context}]` : ""}${off}  ${fs.map(([, v]) => v).join(", ")}  ${x.path}`;
   });
   return [`${found.length} action(s) in ${new Set(found.map((x) => x.file)).size} file(s):`, ...lines].join("\n");
+}
+
+/** One handler of an event in a data file (eventHandlers): where, and the action types under it that run and that don't. */
+export interface EventHandler {
+  readonly folder: DataFolder;
+  readonly file: string;
+  readonly path: string;
+  /** The short types of the actions under it that run, and of those switched off (themselves or by a parent), with counts. */
+  readonly enabled: ReadonlyMap<string, number>;
+  readonly disabled: ReadonlyMap<string, number>;
+}
+
+/**
+ * `efsim gamedata handlers <abilityEvent|buffEvent> <n>`: every object of the BuffData / SkillData files whose
+ * `abilityEvent` (or `buffEvent`) is n, with the action types under it that run and those switched off (round 21, the
+ * target-statuses report point 3: the listeners on a target's death, abilityEvent 1, took 21 `find` runs, one per action
+ * type, and read a disabled handler as live).
+ */
+export function eventHandlers(kind: "abilityEvent" | "buffEvent", n: number, opts: { readonly file?: string; readonly folder?: DataFolder } = {}): EventHandler[] {
+  const fileRe = opts.file ? new RegExp(opts.file) : null;
+  const out: EventHandler[] = [];
+  for (const f of opts.folder ? [opts.folder] : (["BuffData", "SkillData"] as const)) {
+    const dir = folder(f);
+    for (const name of readdirSync(dir).sort()) {
+      if (!name.endsWith(".json") || (fileRe && !fileRe.test(name))) continue;
+      const file = name.replace(/\.json$/, "");
+      const actions = (v: unknown, off: boolean, en: Map<string, number>, dis: Map<string, number>) => {
+        if (Array.isArray(v)) return v.forEach((x) => actions(x, off, en, dis));
+        if (!isObj(v)) return;
+        const t = typeof v["$type"] === "string" ? shortType(v["$type"]) : null;
+        const isOff = off || (t !== null && v["isEnable"] === false);
+        if (t) (isOff ? dis : en).set(t, ((isOff ? dis : en).get(t) ?? 0) + 1);
+        for (const x of Object.values(v)) actions(x, isOff, en, dis);
+      };
+      const visit = (v: unknown, path: string) => {
+        if (Array.isArray(v)) return v.forEach((x, i) => visit(x, `${path}[${i}]`));
+        if (!isObj(v)) return;
+        if (v[kind] === n) {
+          const [en, dis] = [new Map<string, number>(), new Map<string, number>()];
+          for (const [k, x] of Object.entries(v)) if (k !== kind) actions(x, v["isEnable"] === false, en, dis);
+          out.push({ folder: f, file, path, enabled: en, disabled: dis });
+          return;
+        }
+        for (const [k, x] of Object.entries(v)) visit(x, `${path}.${k}`);
+      };
+      visit(parseJsonExact(readFileSync(join(dir, name), "utf8")), "");
+    }
+  }
+  return out;
+}
+
+/** eventHandlers as lines: per handler its enabled action types (×count), its switched-off ones, "all disabled" where nothing runs. */
+export function formatHandlers(kind: string, n: number, hs: readonly EventHandler[]): string {
+  const name = ENUMS[kind]?.[n];
+  const words = (m: ReadonlyMap<string, number>) => [...m].map(([t, c]) => (c > 1 ? `${t} ×${c}` : t)).join(", ");
+  const dead = hs.filter((h) => h.enabled.size === 0 && h.disabled.size > 0).length;
+  const lines = hs.map((h) => `  ${h.folder}/${h.file}  ${h.enabled.size ? `runs: ${words(h.enabled)}` : h.disabled.size ? "ALL DISABLED" : "no actions"}${h.disabled.size ? `; switched off: ${words(h.disabled)}` : ""}  ${h.path}`);
+  return [`${hs.length} handler(s) of ${kind} ${n}${name ? ` (${name})` : ""} in ${new Set(hs.map((h) => h.file)).size} file(s)${dead ? `, ${dead} with nothing that runs` : ""}:`, ...lines].join("\n");
 }
