@@ -31,8 +31,8 @@ commit, and how many logs got better or worse.
 | Development (fixtures/pending, holdout.json `development`) | 29 | 15724 | 84.3% | 92.6% | 4.7% | 1.3% | 28 | 63 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.5% | 93.2% | 5.1% | 5.8% | 9 | 20 |
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 84.4% | 95.4% | 4.4% | 1.2% | 22 | 49 |
-| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 771 | 68.5% | 82.9% | 15.4% | 16.1% | 0 | 20 |
-| All but the hold-outs | 61 | 29035 | 83.8% | 93.6% | 4.8% | 2.0% | 56 | 133 |
+| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 771 | 70.6% | 82.7% | 15.3% | 8.3% | 1 | 16 |
+| All but the hold-outs | 61 | 29035 | 83.8% | 93.6% | 4.8% | 1.7% | 57 | 129 |
 
 ## Where the total's error lives
 
@@ -47,7 +47,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | Development (fixtures/pending, holdout.json `development`) | 29 | 1.3% | 1.1% | 0.4% | 17 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 1.7% | 2.4% | 4.7% | 9 |
 | Earlier pending (imported before the hold-out split) | 23 | 1.1% | 0.9% | 0.5% | 16 |
-| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 4.2% | 22.2% | 17.9% | 3 |
+| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 5.5% | 17.6% | 24.6% | 3 |
 
 ## By operator (every log but the hold-outs)
 
@@ -72,7 +72,7 @@ stageFight); **As other kit hit**: its hits matched only as their event's other 
 | chr_0013_aglina (Gilberta) | 15 | 1174 | 90.5% | 4.5% | 0 | 2.9% | 0.9% | 2.2% | 3.1% | 4.5% |
 | chr_0014_aurora (Snowshine) | 2 | 250 | 9.6% | 88.8% | 0 | 2.0% | 2.0% | 3.6% | 3.8% | 3.3% |
 | chr_0015_lifeng (Lifeng) | 2 | 260 | 91.5% | 0.4% | 1 | 1.9% | 1.9% | 1.8% | 1.9% | 12.1% |
-| chr_0016_laevat (Laevatain) | 13 | 1497 | 85.0% | 3.1% | 1 | 6.6% | 1.3% | 3.6% | 1.1% | 53.3% |
+| chr_0016_laevat (Laevatain) | 13 | 1497 | 85.0% | 3.2% | 1 | 6.6% | 1.3% | 3.6% | 1.1% | 53.3% |
 | chr_0017_yvonne (Yvonne) | 2 | 323 | 73.1% | 0.0% | 0 | 3.3% | 3.3% | 2.7% | 3.3% | 63.4% |
 | chr_0019_karin (Akekuri) | 2 | 202 | 94.6% | 0.0% | 0 | 0.9% | 0.9% | 0.9% | 0.9% | 1.4% |
 | chr_0020_meurs (Catcher) | 1 | 252 | 82.1% | 6.0% | 0 | 0.6% | 0.6% | 0.6% | 0.6% | 5.2% |
@@ -87,8 +87,8 @@ stageFight); **As other kit hit**: its hits matched only as their event's other 
 | chr_0030_zhuangfy (Zhuang Fangyi) | 5 | 1392 | 88.4% | 3.1% | 2 | 0.9% | 1.1% | 0.9% | 1.0% | 86.3% |
 | chr_0031_mifu (Mi Fu) | 5 | 471 | 92.4% | 0.8% | 8 | 1.2% | 0.7% | 1.2% | 1.7% | 48.1% |
 | chr_0032_lizhiyan (Arcane) | 40 | 5688 | 87.5% | 3.5% | 25 | 3.6% | 1.6% | 2.4% | 3.5% | 10.2% |
-| chr_0033_camille (Camille) | 10 | 1004 | 93.8% | 1.4% | 1 | 5.1% | 0.4% | 4.1% | 1.9% | 6.3% |
+| chr_0033_camille (Camille) | 10 | 1004 | 94.3% | 1.3% | 1 | 4.8% | 0.4% | 3.9% | 1.9% | 6.3% |
 | chr_0034_typhoea (Typhoeus) | 12 | 2081 | 83.2% | 6.4% | 15 | 2.1% | 0.8% | 2.2% | 2.1% | 75.5% |
 | chr_0035_liino (Liino) | 19 | 1469 | 84.8% | 4.7% | 7 | 8.5% | 3.1% | 6.8% | 8.9% | 3.7% |
-| chr_0036_jsspsi (Si) | 29 | 3060 | 81.1% | 2.9% | 5 | 3.4% | 0.7% | 4.8% | 1.4% | 40.3% |
+| chr_0036_jsspsi (Si) | 29 | 3060 | 81.5% | 2.9% | 1 | 3.2% | 0.7% | 4.4% | 1.4% | 40.3% |
 | chr_0038_purrche (Purrchena) | 3 | 290 | 63.8% | 29.7% | 12 | 26.0% | 26.0% | 13.2% | 9.4% | 3.5% |

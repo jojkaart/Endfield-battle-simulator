@@ -110,6 +110,7 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
       targets: "per target (packages/logs targets.ts): each logged hit on a target (a landing's twins on others, else the alive target its value fits), each its own debuffs and kill; the replay's enemy keeps the debuffs at kills and stays in a kill gap with targets left; a landing counts once per target whose hit fits",
       "targets-once": "as `targets`, but the totals count a landing once, as for one target (its logged hits on other targets log-only)",
       "targets-gaps-away": "as `targets`, but a kill gap holds the replay's enemy away whatever targets are left",
+      "targets-ungated": "as `targets`, but a landing counts once per target its logged hits are on, whether or not the hit's value fits its target's state",
     },
   },
   {

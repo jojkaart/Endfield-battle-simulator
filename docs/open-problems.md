@@ -2271,27 +2271,53 @@ mean |damage error| 20.0 → 16.1%; 6339 108 → 115 plain, −19.7 → −10.3%
 314, −24.5 → −11.3%. Jade Vessel, which the replay's one enemy has from 3.4 s in 7b54, is on one slug only (the
 values: every Camille and Laevatain hit at 11–16 s and 27–31 s reads without it).
 
-**What remains one-sided, and why** (`zmdlogs totals <fixture> --kinds`, after the change):
-- **7b54 replay-only +29.5%:** the placement (logcasts.ts placeWith) spreads Si's combo slashes logged on several
-  slugs at one ms over the kit's slash slots (15.60 s: 2 slashes × 4 slugs took eight of ten), so the final's slot
-  takes two slugs' slashes at 15.80 s and a second combo is opened: its 16.6–17.7 s slashes and 17.67 s final are
-  replay-only (+5.7% the final, +4.7% the slashes); the same at 47.29 s. Next: a twin rule for severalTargets in the
-  placement (the friction report 2026-11-27-several-targets point 1; the other agent's file). Si's 26.47 s burst mark
-  (+7.2%) and Laevatain's 38.20 s combo (+5.7%) in stretches without a logged hit: hits on shielded slugs (0, unlogged).
-- **6339 log-only −21.1%:** Laevatain's 35.70 s final (−9.6%, a landing the replay didn't land) and Si's 19.91 s ink
-  hit on two slugs (−11.5%: its cast isn't one the replay makes); replay-only +24.8%: Laevatain's 21.60 s hit_2
-  (+10.2%, a cast tail TAILKEPT keeps), her 32.97 s battle skill, Si's 10.83 s burst mark. Camille's battle-skill hits
-  (`normal_skill_abilityrange`, 19.68 / 20.60 / 24.56 / 29.67 / 32.16 s) are uncovered: the placement doesn't place
-  them (her `_first` key elsewhere).
-- **9c6e log-only −22.9%:** twins whose value fits no target's state stay log-only (−13.8%, "a landing a teammate's
-  hit's"): Typhoeus's Nature bursts on the second Wanderer (52.80, 79.85, 94.32 s), whose own inflictions, Corrosion
-  level and Stagger the replay's one enemy can't give; replay-only +12.3%: Typhoeus's 77.70 s burst (cast tail).
+**Fixed (2026-11-27, docs/journal/2026-11-27-16-twins-on-several-targets.md): the placement's twins.** 7b54's Si
+combos: the slashes logged on two or three slugs at one ms took one slot per slug (15.60 s: 2 slashes × 4 slugs
+took eight of ten), the final's slot two slugs' slashes, and a second combo was opened for the rest (16.6–17.7 s
+replay-only; the same at 47.29 s). Now a batch of alike hits is `targets` hits per landing (targets.ts batchTargets,
+logcasts.ts placeWith `batch`; `later`: a third slug's final 125 ms after two slugs'): 7b54 +26.8 → −3.3%, plain
+99 → 115. `zmdlogs casts --choices` names each twin's rule; `zmdlogs hits --json` each hit's target.
+
+**What remains one-sided, and why** (`zmdlogs totals <fixture> --kinds`, after the twins):
+- **7b54:** the twins of its 47.2–48.1 s combo (three slugs) are log-only "a landing a teammate's hit's": every slug's
+  slash reads ×1.26 high (5445 against 6840: Si's gear set's Yinglung's Edge ×3 and Arcane's Doubles Susceptibility in
+  the replay, which the log lists otherwise), so no target's state fits and the gated totals don't copy them
+  (`targets-ungated` copies them: 7b54 −3.3 → +21.5%). Not a placement error: the 47 s slashes mismatched as single
+  landings before too. Si's 26.47 s burst mark and Laevatain's 38.20 s combo in stretches without a logged hit: hits on
+  shielded slugs (0, unlogged).
+- **6339 log-only:** Laevatain's 35.70 s empowered hit (−9.6%): the replay's battle skill at 32.24 s takes the
+  unempowered path (its Melting Flame 3 of 4, `--trace-stack chr_0016_laevat:melting_flame`), so its explosion and
+  dots at 32.97–34.43 s are replay-only; the stack short is likely a Heat infliction from Camille's Vesperwings moving
+  to the next slug (below), which the replay lacks between its kills. Si's 19.91 s ink hit on two slugs (−11.5%): her
+  Final Stroke at 19.08 s is SKIPped (Artful Intent not on: its 10.91 / 14.67 / 18.40 s presses have no logged hit and
+  the log never lists her Artful Intent, both on a shielded slug's side; the hitless-press listing evidence can't
+  show a debuff on a target no one else hits). Replay-only: Laevatain's 21.60 s finisher hit_2 (+10.2%), kept by
+  TAILKEPT's "logged hit no other cast holds" guard, which passes the cast's own killing hit (logged 0.3 ms after its
+  frame's time); the guard without that pass measured worse over every log (docs/tried/2026-11-27-tail-own-landing.diff).
+- **Camille's `normal_skill_abilityrange`** (6339 19.68 / 20.60 / 24.56 / 29.67 / 32.16 s, 7b54 16.59 s): not a
+  placement error but a kit gap. The game data: her battle skill's entity (abilityrange_first, 2000 frames) puts
+  listen_target_dead on its target; at its death reset_target launches projhit_sub, which casts
+  normal_skill_abilityrange on the next target: the battle skill's damage (the logged 9287 is the `_first` value),
+  Heat infliction, the Susceptibility (listed since each hit's ms on the next hits). Five of six follow a logged kill
+  by 0.23–0.54 s; ZMDLogs logs a normal_skill event at four of the six, which the replay makes as presses, standing in
+  for the move (their landing 0.4 s later, the same damage and debuff). Reading those events as no press measured
+  worse (6339 −10.3 → −15.2%: docs/tried/2026-11-27-sub-skill-events.diff). What it needs: a kit hit for the move
+  (packages/data, Camille's kit) and a replay-side landing with no press, at each logged move or at a logged kill of
+  the target carrying her Vesperwings (targets.ts's units say which).
+- **9c6e:** its twins are the placement's already (`used` / `value`; the batch rule moves none of its casts); the
+  log-only twins whose value fits no target (Typhoeus's Nature bursts on the second Wanderer, 52.80, 79.85, 94.32 s)
+  need that target's own inflictions, Corrosion level and Stagger: statuses per target, not a placement error.
 
 **Still possible / left:** statuses per target (Corrosion and Electrification levels, a target's own inflictions and
-bursts, its Stagger: only on/off per target now); a landing on a shielded slug as "there, 0 damage, no infliction,
-buffs applied" (6339 14.09 s: Camille's Vesperwings reached the next slug, her weapon's Heat DMG, which needs an
-infliction, didn't; `targets-gaps-away` measured 6339 plain +1, total −2.3 points: no engine state for it yet); the
-placement's twins (above). Not a kit or timing question: such logs are to be avoided for kit work.
+bursts, its Stagger: only on/off per target now); Camille's Vesperwings moving to the next target (above); a landing
+on a shielded slug as "there, 0 damage, no infliction, buffs applied" (6339 14.09 s: Camille's Vesperwings reached
+the next slug, her weapon's Heat DMG, which needs an infliction, didn't; `targets-gaps-away` measured 6339 plain +1,
+total −2.3 points). What an engine state for it would need: a span kind beside TimelineScenario.enemyAway in which a
+landing deals 0 and applies no infliction or status but its kit buffs on hit, read only by the replay; its spans
+are the log's own (a press with no logged hit while the log shows another slug hit, Si's 10.91–18.40 s presses in
+6339; the kill gaps with targets left); and the hitless-press rule would then make such presses rather than
+read the listing, which can't show a shielded slug's debuffs. Not built: one stage (Hard 33), the evidence per press
+indirect. Not a kit or timing question: such logs are to be avoided for kit work.
 
 ## Liino's battle-skill presses during Vocalist Stance (every Liino log)
 

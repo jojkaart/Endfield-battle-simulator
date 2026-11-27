@@ -22,7 +22,7 @@ import type { HitRecord } from "./hitexport.ts";
 import { FACTOR_STRETCH, factorStretches } from "./buildoffsets.ts";
 import { clockAt, clockReaches, holdPins, loggedBreaks, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, KitWindow, TracedStatus, TriggerTrace } from "./replayrecord.ts";
-import { CAST_SLACK_MS, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast, type PlacedJoin } from "./logcasts.ts";
+import { CAST_SLACK_MS, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast, type PlacedJoin, type PlacedTwin } from "./logcasts.ts";
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote, type BuffLane } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -102,7 +102,7 @@ export interface CastsRecord {
   readonly rule?: string;
   /** HIT: the value, and the cast and slot it was placed at (absent: unplaced or a status event). */
   readonly value?: number;
-  readonly cast?: { readonly skill: string; readonly start: number; readonly index: number; readonly frame?: number; readonly sameAs?: boolean };
+  readonly cast?: { readonly skill: string; readonly start: number; readonly index: number; readonly frame?: number; readonly sameAs?: boolean; readonly twin?: PlacedTwin };
   /** HIT: why it joined a cast placed before it (PlacedHit.joined), where it did. */
   readonly joined?: PlacedJoin;
   readonly text: string;
@@ -148,8 +148,9 @@ export function castsRecords(data: GameData, fx: LogFixture, f: ViewFilter & { r
     const origin = h.poise?.origin;
     const credited = origin !== undefined && origin !== h.event && !h.event.startsWith(origin) && origin !== p?.cast.skillId ? ` (origin ${shortSkill(origin)})` : "";
     const joined = f.rules && p?.joined && lateJoin(p.joined) ? `  [${joinWords(p.joined)}]` : "";
-    const cast = p ? { skill: p.cast.group, start: p.cast.start, index: p.index, ...(p.frame !== undefined ? { frame: p.frame } : {}), ...(p.sameAs ? { sameAs: true } : {}) } : undefined;
-    lines.push({ kind: "HIT", t: h.t, order: 3, operator: h.operator, name: label(data, h.operator), skill: h.event, value: h.value, ...(cast ? { cast } : {}), ...(p?.joined ? { joined: p.joined } : {}), text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}${bar(h)}${joined}` });
+    const twin = f.rules && p?.twin ? `  [${twinWords(p.twin)}]` : "";
+    const cast = p ? { skill: p.cast.group, start: p.cast.start, index: p.index, ...(p.frame !== undefined ? { frame: p.frame } : {}), ...(p.sameAs ? { sameAs: true } : {}), ...(p.twin ? { twin: p.twin } : {}) } : undefined;
+    lines.push({ kind: "HIT", t: h.t, order: 3, operator: h.operator, name: label(data, h.operator), skill: h.event, value: h.value, ...(cast ? { cast } : {}), ...(p?.joined ? { joined: p.joined } : {}), text: `HIT    ${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} → ${where}${credited}${batched(h.t)}${bar(h)}${joined}${twin}` });
   }
   const header = `${fx.id}: placement (logcasts.ts placeHits); times in s, EVENT the log's cast events, CAST the casts as placed (start = first landing less its frame)${f.rules ? `; [the rule that chose the skill among those sharing its key: logcasts.ts choose, LoggedCast.chosen]; a HIT's [joined: …] where it joined its cast more than ${CAST_SLACK_MS / 1000} s after its slot's frame (PlacedHit.joined: the rule and the times); REALIGN what the realignment by value did with a cast's key` : ""}`;
   const records = lines.sort((a, b) => a.t - b.t || a.order - b.order).map(({ order: _o, ...r }) => r);
@@ -169,6 +170,14 @@ export function castsJson(data: GameData, fx: LogFixture, f: ViewFilter & { read
 
 /** Whether a join came later than its slot's frame by more than CAST_SLACK_MS (where the slot's frame is unknown: than the slack itself). */
 export const lateJoin = (j: PlacedJoin) => j.elapsed > (j.due ?? 0) + CAST_SLACK_MS;
+
+/** The rule that made a hit another target's landing of its slot (PlacedHit.twin), in words. */
+function twinWords(t: PlacedTwin): string {
+  if (t.rule === "batch") return `twin: batch, ${t.targets} targets per landing of the ${t.batch} alike hits at this ms (by ${t.by}: targets.ts batchTargets)`;
+  if (t.rule === "later") return "twin: later, the used-up cast's last landing on another target, one flush after it";
+  if (t.rule === "used") return "twin: used, the cast's landings of its key all logged";
+  return "twin: value, its value the slot's again, not the next slot's";
+}
 
 /** A late join (PlacedHit.joined) in words: the rule and the times. */
 function joinWords(j: PlacedJoin): string {

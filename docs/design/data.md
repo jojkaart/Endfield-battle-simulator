@@ -350,6 +350,20 @@ targets.ts):
   and `fromStart`, all of them there from the fight's start (the slugs:
   none arrives later, so a kill leaves the others); without them, two at
   once, arriving as others die.
+- **Which logged hits one landing stands for** (the placement's twins,
+  logcasts.ts placeWith, 2026-11-27): ZMDLogs logs a landing once per
+  target it reached, a stop's batched landings one after another, each
+  with its targets in one order (7b54 15.60 s: Si's slashes 6040 6569 6040
+  9853* … = 4 slashes × 2 slugs). Where value can't tell a twin from the
+  next slot (the slots' multipliers alike), the batch's targets do
+  (targets.ts batchTargets: the least count k with hit i and i + k of one
+  target by value for every i, one target's two hits having one value, a
+  crit and a non-crit the crit factor apart; a batch at least two landings
+  long, else the count an earlier batch of the cast read); a used-up
+  combo's landing one flush (150 ms) after its last, of its value and with
+  no cast event between, is its last landing on another target (7b54
+  16.48 s, a third slug's final). `zmdlogs casts --choices` names the rule
+  of each twin (`batch` with its targets, `later`, `value`, `used`).
 - **Which target a logged hit is on**, in time order: two logged hits that
   one replay landing stands for (one hit's key at one ms, twice in the log)
   are on two targets while there are targets for both; a capped hit kills
@@ -380,10 +394,20 @@ targets.ts):
 - **The totals:** a replay landing counts once for each logged hit on
   another target that it stands for (9c6e's second Wanderer: "a landing a
   teammate's hit's"), each at its own primary reading, where that hit's
-  value fits its target's state: a twin no state fits stays log-only, so a
-  pairing the placement made wrong (7b54 15.80 s: Si's combo final paired
-  with two slugs' slashes, its slots used up by the slashes' twins) isn't
-  counted once more per target.
+  value fits its target's state: a twin no state fits stays log-only
+  (`targets-ungated` counts it too: 7b54 −3.3 → +21.5%, its 47.2–48.1 s
+  combo read ×1.26 high on every slug, 9c6e −11.3 → +7.4%; the row's mean
+  8.3 → 13.1%, measured 2026-11-27 with the twins above).
+- **Camille's Vesperwings moving to the next target** when its own dies
+  (listen_target_dead → reset_target → projhit_sub →
+  normal_skill_abilityrange: the battle skill's damage, Heat infliction
+  and Susceptibility again, on the next slug) has no kit hit: its logged
+  hits are unplaced, and ZMDLogs logs a normal_skill event at four of its
+  six (6339, 7b54), which the replay makes as a press standing in for it
+  (its landing 0.4 s later, the same damage and debuff). Reading those
+  events as no press without the move's landing measured worse
+  ([tried](../tried/2026-11-27-sub-skill-events.diff)); what the landing
+  needs: open problems, "Hard 33's Woodcraft Slugs".
 Only these fixtures read it (no simulation, no hold-out without the mark),
 and statuses' levels and the Stagger per target, a target's own bursts
 and the shielded slugs' landings are still the one enemy's.
