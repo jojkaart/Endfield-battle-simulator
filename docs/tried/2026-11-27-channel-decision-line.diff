@@ -1,0 +1,27 @@
+channel decision line (2026-11-27): held back, not dropped: the casts view's line for a cast the channel-end rule opened.
+
+What it does: views.ts castsRecords prints LoggedCast.pastChannel (logcasts.ts placeWith `pastChannel`) on the CAST
+line of `zmdlogs casts --choices`: "[past channel: 1.81 s after attack4@61.79's first landing, its channel's end at
+1.17 s (past the slack)]" (abfd 63.61 s; c3c7 60.47 s "a press between").
+
+Measured: a view only, no verdict moves.
+
+Why held back: views.ts was the parallel statuses-per-target agent's file in round 22; for the lead to apply after the
+merge (`git apply` this diff).
+
+diff --git a/packages/logs/src/views.ts b/packages/logs/src/views.ts
+index 29f7c64..c2fd626 100644
+--- a/packages/logs/src/views.ts
++++ b/packages/logs/src/views.ts
+@@ -120,7 +120,10 @@ export function castsRecords(data: GameData, fx: LogFixture, f: ViewFilter & { r
+     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
+     // The first landing's other paths (LoggedCast.paths): each start it would give and whether the previous cast allows it.
+     const paths = f.rules && c.paths?.length ? `  [paths: ${c.paths.map((p) => `${p.hitId}@${p.frame}${p.jump ? ` on ${p.jump.at}→${p.jump.to}` : " (no jump)"}: start ${s(p.start)}${p.allowed ? ", allowed" : ", not allowed"}${Math.abs(p.start - c.start) < 1 ? " (taken)" : ""}`).join("; ")}]` : "";
+-    lines.push({ kind: "CAST", t: c.start, order: 1, operator: c.operator, name: label(data, c.operator), skill: c.group, castKind: c.kind, key: c.key, rule: c.chosen?.rule ?? "-", text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}` });
++    // Opened past the channel's end of the cast before (LoggedCast.pastChannel: logcasts.ts placeWith).
++    const pc = c.pastChannel;
++    const channel = f.rules && pc ? `  [past channel: ${s(pc.elapsed)} s after ${shortSkill(c.group)}@${s(pc.cast)}'s first landing, its channel's end at ${s(pc.end)} s (${pc.by === "slack" ? "past the slack" : "a press between"})]` : "";
++    lines.push({ kind: "CAST", t: c.start, order: 1, operator: c.operator, name: label(data, c.operator), skill: c.group, castKind: c.kind, key: c.key, rule: c.chosen?.rule ?? "-", text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}${channel}` });
+   }
+   // What the realignment by value decided for a cast's key (Placement.realign, round 18): moved, or left and why.
+   if (f.rules)

@@ -527,6 +527,13 @@ export interface LoggedCast {
    * each start (a record: `zmdlogs casts --choices` prints it on the CAST line; jumpedFirst decides).
    */
   readonly paths?: readonly PathAlternative[];
+  /**
+   * Opened because its first landing came past the channel's end of the operator's cast of its key before (logcasts.ts
+   * placeWith `pastChannel`; a record for `zmdlogs casts --choices`): that cast's start, the world ms from its first
+   * landing, the channel's end from there (ms), and which bound: past CHANNEL_SLACK_MS, or past ON_TIME_MS with a press
+   * between. split:channel-end
+   */
+  readonly pastChannel?: { readonly cast: number; readonly elapsed: number; readonly end: number; readonly by: "slack" | "press" };
 }
 
 /**
@@ -1237,7 +1244,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const paths = joined === null && s ? pathAlternatives(data, g, h, s, skillCasts, others) : [];
         const firstIndex = jumped?.index ?? 0;
         const first = s?.[firstIndex];
-        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}) };
+        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}), ...(pastChannel && cur ? { pastChannel: { cast: cur.cast.start, elapsed, end: channelEnd, by: elapsed > channelEnd + CHANNEL_SLACK_MS ? ("slack" as const) : ("press" as const) } } : {}) }; // split:channel-end
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
