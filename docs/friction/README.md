@@ -38,7 +38,10 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    "<name>,"` (the points carried into it, renumbered, their **From:**
    lines extended; `--lists [--park <n,…>] [--drop <text>]…` also prints
    its Parked section with the newly parked points on top and its
-   accuracy list without the closed or dropped entries, round 17; `none`
+   accuracy list without the closed or dropped entries, round 17;
+   `--unpark <words>` (repeatable) drops a parked entry a new report
+   brought back and prints its full text on stderr, for the new point or
+   accuracy entry, round 20; `none`
    for the points when every one is closed or parked), then the new points
    with their **From:** lines (a point done but one part: "point n (the
    part carried)", which the outcomes fill as "done but …"); then

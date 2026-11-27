@@ -2,7 +2,7 @@
 // --listed`; round 16, arcane-will report point 1): the nearest hits with the very same listing and their verdicts, so
 // "the log lists X n times" is checked against the hit next door before it becomes a lead.
 import { describe, expect, it } from "vitest";
-import { listedEntryWords, listingKey, sameListingLines, type HitRecord, type LogEffect } from "@efsim/logs";
+import { listedEntryWords, listingKey, sameListingLines, valueSplit, type HitRecord, type LogEffect } from "@efsim/logs";
 import { logHitOf, syntheticFixture } from "./helpers/synthetic.ts";
 
 const effect = (buff: string, value: number, since = 1000): LogEffect => ({ buff, zone: "susceptibility", element: null, value, source: "op_a", since });
@@ -31,6 +31,18 @@ describe("the same listing next door", () => {
     expect(text).toMatch(/SAME {4}1\.30 .* plain/);
     expect(text).not.toMatch(/SAME {4}1\.10/);
     expect(text).toMatch(/2 other hit\(s\) of the fight with this listing: plain 2/);
+  });
+
+  // Round 20 (round 19's backlog point 2): 7b54's Laevatain attack 1, one listing, 1,927 and 1,608: two targets.
+  it("flags a hit of the same key and listing at a value the listing can't give (VALUE)", () => {
+    expect(valueSplit({ value: 1927, crit: false }, { value: 1608, crit: false })).toBeCloseTo(1608 / 1927, 6);
+    expect(valueSplit({ value: 1927, crit: false }, { value: 1928, crit: false })).toBeNull();
+    expect(valueSplit({ value: 1000, crit: null }, { value: 1400, crit: false })).toBeNull();
+    expect(valueSplit({ value: 1000, crit: null }, { value: 1600, crit: false })).toBeCloseTo(1.6, 6);
+    const two = [logHitOf("op_a", 1000, "combo", 1927, { effects: five }), logHitOf("op_a", 2000, "combo", 1608, { effects: five })].map((h) => ({ ...h, crit: false }));
+    const text = sameListingLines([{ ...record(1000, "plain", 1927) }, { ...record(2000, "plain", 1608) }], syntheticFixture(two, [], { enemy: "e", level: 1 }), 1000).join("\n");
+    expect(text).toMatch(/^\S+: the hit\(s\) at 1\.00 s .*\. VALUE: 1 hit\(s\) of the same key and listing at another value/);
+    expect(text).toMatch(/SAME {4}2\.00 .* \[VALUE ×0\.834 the AT hit's: one key, one listing\]/);
   });
 
   it("prints a hit's matching entries with source, since and value (--listed)", () => {
