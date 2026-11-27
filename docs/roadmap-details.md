@@ -327,6 +327,17 @@ end-boundary hits as past the run measured mixed (docs/tried/2026-11-26-boundary
 chain's data for the doubles' end; a hold bound only where the end-boundary hit's value decides; the batch order at a
 stop's end.
 
+**Log-only landings (2026-11-27, [journal](journal/2026-11-27-05-log-only-landings-typhoeus-s-signs-zhuang-fangyi-s.md)):**
+development log-only 3.2% is two thirds 9c6e (two targets) and 6339 (the slug); the rest −1.0% a fight, spread. Kit
+side fixed: Typhoeus's own and teammates' Nature bursts each with their own 0.2 s Sign cooldown (kit assumption
+`typhoeus-sign-cooldown` `by-source`: 1d91's 28.68 s combo has its 8 Signs), Zhuang Fangyi's battle skills keep every
+Sunderblade at least 3 s (d774: 8 blades at 68.21 s). Next ([open-problems](open-problems.md) "Log-only landings"):
+the status landings' pairing as an assignment by value (bursts 0.55–0.85 s off, held by a stop starting just after
+the replay's, both ways: scripts/probes/bursts/burst-before-stop.ts); Arcane's INT lasers' start against the logged
+combo event (00ae 66.32 s, a7a7 48.89 s); the placement's casts that leave hits log-only (fc63 87.87, f879 95.10, 5082
+45.06, 9a80 34.94, 3aa6 125.65 s: the replay-only agent's files); the hold-outs' physical statuses (2.08% of their
+log-only, none of the development logs').
+
 **Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
 the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only
 (207f's physical hits ×0.847), a kill read from a total that is a two-decimal multiple of Max HP (207f, 5082: no
