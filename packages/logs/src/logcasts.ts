@@ -623,7 +623,7 @@ const NOMINAL_EVENT_COUNTS = [1, 2, 3, 4];
  * count (KitHit.scaleValue's `eventCount`), one per count of NOMINAL_EVENT_COUNTS, times its `scale` keys and factor; null
  * for any other hit (nominalScale's, or one the expression needs more for). Si's combo final (atk_scale2 + count ×
  * atk_scale2_1: ×11–20 a slash) was a slot the values couldn't place (pending/zmdlogs-63398339803e.json 11.31 s, the logged
- * final, 121,248 before the slug's cap, on a slash's slot and the replay's final unlogged; 9a8097fcf351 36.10 s).
+ * final, 121,248 before the slug's cap, on a slash's slot and the replay's final unlogged).
  */
 function nominalScales(data: GameData, build: Build, panel: StatPanel, skillId: string, h: KitHit): readonly number[] | null {
   if (h.scaleValue === undefined || h.reaction || h.status || h.fixedDamage !== undefined || h.extraScale?.length) return null;
@@ -1241,21 +1241,16 @@ function realignByValue(
       const list = [...hits].sort((a, b) => a.t - b.t);
       const now = list.map((h) => (placed.get(h) as PlacedHit).index);
       if (now.some((j, i) => j >= s.length || (i > 0 && j <= (now[i - 1] as number)))) continue;
-      // A crit's value isn't compared, nor does a value whose crit the log doesn't say set the scale; such a value fits a
-      // slot up to a crit's factor above it (UNKNOWN_CRIT_FACTOR: 9a8097fcf351's Si combo final at 36.10 s, 495,353 of
-      // unknown crit, ×16.25 the slashes' 30,483 as a non-crit final is in 6339, sat on a slash's slot).
+      // A crit's value, or a hit's whose crit the log doesn't say, isn't compared (a value of unknown crit fitting a slot
+      // up to a crit's factor above it measured worse on a hold-out's total: docs/tried/2026-11-27-unknown-crit-slots.diff).
       const value = (h: LogHit) => (h.crit === false ? (h.uncapped ?? h.value) : null);
-      const unknown = (h: LogHit) => (h.crit === null ? (h.uncapped ?? h.value) : null);
       const refs = list.flatMap((h) => {
         const v = value(h);
         return v !== null && v > 0 ? all.map((m) => v / m) : [];
       });
       if (refs.length === 0) continue;
       const off = (i: number, j: number, ref: number) => {
-        const h = list[i] as LogHit;
-        const u = unknown(h);
-        if (u !== null && u > 0) return (ms[j] as number[]).some((m) => Math.log(u / (m * ref)) >= -tolerance && Math.log(u / (m * ref)) <= tolerance + Math.log(UNKNOWN_CRIT_FACTOR)) ? 0 : 1;
-        const v = value(h);
+        const v = value(list[i] as LogHit);
         return v === null || v <= 0 || (ms[j] as number[]).some((m) => Math.abs(Math.log(v / (m * ref))) <= tolerance) ? 0 : 1;
       };
       const offOf = (at: readonly number[]) => Math.min(...refs.map((r) => at.reduce((a, j, i) => a + off(i, j, r), 0)));
@@ -1331,9 +1326,6 @@ function realignByValue(
  * 13,050 → 20,160, ×1.54) stay inside it, a final's or a wave's ×5–10 doesn't.
  */
 const VALUE_TOLERANCE = 2;
-
-/** The most a crit multiplies a hit (1 + Critical DMG; the teams' panels have 1.5–2.5): a value of unknown crit fits a slot up to this above its scale (realignByValue). */
-const UNKNOWN_CRIT_FACTOR = 3;
 
 /**
  * The cast of the same skill, placed from another key, that a key's first logged landing belongs to: the latest that
