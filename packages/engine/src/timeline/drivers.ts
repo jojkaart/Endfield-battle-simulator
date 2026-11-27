@@ -172,6 +172,22 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
       const h = own.get(l.hitId)?.[l.nth];
       if (h) moved.set(h, pinAt(frame, l));
     }
+    // A channel's ticks (KitHit.latestFrame) come in turn, at their spacing: one after a pinned late tick comes as much
+    // later, and none past the channel's end (an enemy in reach late takes them late; the per-target cap, not the time,
+    // ends them). c3c735dbb022 32.33 s: Si's attack 4's 6th tick at its kit frame, beside the 5th pinned 3 frames late,
+    // which the tail cut couldn't take for a tail. split:channel-turn
+    const turned = new Map<PendingHit, number>();
+    const pastChannel = new Set<PendingHit>();
+    for (const k of skill.hits) {
+      if (k.latestFrame === undefined) continue;
+      let late = 0;
+      for (const h of own.get(k.id) ?? []) {
+        const m = moved.get(h);
+        if (m) late = Math.max(0, m.frame - h.frame);
+        else if (late > 0 && h.frame + late > frame + k.latestFrame) pastChannel.add(h);
+        else if (late > 0) turned.set(h, h.frame + late);
+      }
+    }
     // A delayed hit's logged frame is its damage's (KitHit.enemyDelay): its landing stays at its kit frame (pinLanding).
     const delayed = new Set(skill.hits.filter((h) => h.enemyDelay !== undefined).map((h) => h.id));
     const pin = (h: PendingHit, m: PinAt): PendingHit => pinLanding(h, m, delayed.has(h.hitId));
@@ -202,7 +218,7 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     });
     const jumpedTo = new Set(contradicted.flatMap((j) => [...own.values()].flat().filter((h) => !moved.has(h) && h.frame >= j.frame + (j.to - j.from))));
     const taken = eventJumps(ctx, st, operator, skillId, index, frame, moved);
-    st = { ...st, scheduled: [...st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }), ...taken] };
+    st = { ...st, scheduled: [...st.scheduled.filter((h) => !(h.kind === "jump" && contradicted.includes(h)) && (h.kind !== "hit" || (!unlanded.has(h) && !jumpedTo.has(h) && !pastChannel.has(h)))).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; const t = h.kind === "hit" ? turned.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : t !== undefined ? { ...h, frame: t } : h; }), ...taken] };
   }
   if (opts.endsAt !== undefined && opts.endsAt > frame) {
     const end: PendingJump = { kind: "jump", frame: opts.endsAt, clock: { operator }, cast: { operator, index }, operator, from: opts.endsAt - frame, to: opts.endsAt - frame, end: true, pinned: true };
