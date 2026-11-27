@@ -69,7 +69,7 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       there: "yes: only the enemy-away stretches hold the replay's enemy away (the replay until 2026-11-27)",
       tight: "as `absent`, from the frame after the kill's ms to the frame before the next logged hit",
-      absent: "no: from 0.15 s after the kill's ms to 0.15 s before the next logged hit (replayrun.ts KILL_EDGE_MS: a landing logged at either may come a few frames off it in the replay) the replay's enemy is away, as in an enemy-away stretch under `absent`",
+      absent: "no: from 0.15 s after the kill's ms to 0.15 s before the next logged hit (enginecheck.ts KILL_EDGE_MS: a landing logged at either may come a few frames off it in the replay) the replay's enemy is away, as in an enemy-away stretch under `absent`",
     },
   },
   {

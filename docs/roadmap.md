@@ -121,7 +121,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   entity's own slow-downs; the slugs and status pairs 2026-11-27: Hard 33's "slug" is eight slugs under one id
   (6339, 7b54 `severalTargets`, a reclassification), a kill purges in such a fight (`logged-purges` `log-kills`),
   status pairs fit by the check's reading, at the logged frame where only that fits (`status-pairing` `check`):
-  next an engine with several targets; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
+  several targets read per target 2026-11-27 (`several-targets` `targets`: each hit's target by its value, each
+  target its own debuffs and kill; the row plain 54.1 → 68.5%, |damage error| 20.0 → 16.1%): next the placement's
+  twins on several targets (7b54's Si combos), statuses per target; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
   ends at its entity's check when the enemy leaves (`vesperwings-target-loss` `listed`, e989 plain 260 → 267, one
   hold-out 6.4 → 5.8%), his harasses on the world's clock with their own slow-down (frame 18; d4fb, de6a, c4f3, 7e19
   better): next his Decisive Assault, logged 0.21–0.44 s after its event against the data's frame 25.

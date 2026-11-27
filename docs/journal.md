@@ -4,9 +4,50 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 179 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 180 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Several targets read per target
+
+**Goal:** the scoreboard's worst row, the three fights against several targets under one id (6339, 7b54: Hard 33's
+eight slugs; 9c6e: Hard 31's two Wanderers), on main at 0366a35 beside an agent on casts across a Stagger break: the
+per-target state the log check needs, built for the replay, and what stays one-sided.
+
+**Done:**
+- **Design** (docs/design/data.md "Several targets"): the simulation keeps one enemy; the check holds the targets. A
+  probe first (scratch, not kept): of 7b54's 204 hits with a landing, 65 fit their primary reading and 115 fit with
+  some of its enemy-side units left out, and the trial assignment's targets held their states over later hits
+  (Camille's 26.98–29.36 s hits all without Jade Vessel).
+- **packages/logs targets.ts** `assignTargets`, read through enginecheck.ts `fightTargets` (engine assumption
+  `several-targets`, default `targets`): each logged hit on a target (two hits one landing stands for at one ms on
+  two; else the alive target its value fits, the one hit last first, a new one only when none fits; a capped hit kills
+  its own); each target's units (enemy kit buffs, Corrosion / Electrification / Breach) as the replay's instances: one
+  it got kept to its expiry, one it was read without never later, an open one decided by the first hit that only one
+  choice fits. `readingBasis` drops the units a hit's target lacks; `killPurges` none (a kill ends its own target's:
+  buffreplay.ts's one line, committed alone); the replay's enemy stays through a kill gap with targets left
+  (fixture fields `severalTargets.atOnce`, `fromStart`; schema), whose landings the totals leave out; the totals count
+  a landing once more for each twin on another target whose value fits it.
+- tests/several-targets.test.ts; tests/slug-targets.test.ts under `one`; the evidence in docs/design/assumptions.md.
+
+**Scoreboard** (`npm run snapshots:update`): the several-targets row plain 54.1 → 68.5%, mismatch 27.6 → 15.4%, mean
+|damage error| 20.0 → 16.1%; 6339 better (plain 108 → 115, −19.7 → −10.3%), 9c6e better (244 → 314, mismatch 94 →
+33, −24.5 → −11.3%), 7b54 mixed (65 → 99, mismatch 116 → 83, +15.7 → +26.8%: its replay-only landings read with the
+one enemy's debuffs, which no kill purges now). Development, earlier pending, verified and hold-outs unchanged (no
+other log is marked); no simulation reads it: no team-ab.
+
+**Decisions:** the values decide a hit's target, as they decide a crit the log leaves out: the log has no target per
+hit and lists every target's debuffs under the one id; the persistence (an instance kept, one missed never had
+later) is what makes it evidence rather than a fit per hit. The totals' copies are gated on the twin's fit: ungated
+the row's mean was 26.3% (7b54 +61.3%: Si's combo finals the placement paired with slashes, once per slug), as one
+target 20.9%. Kill gaps kept: 6339 gets Camille's Vesperwings at 14.09 s as the log lists, and her weapon's Heat DMG,
+which it doesn't (a shielded slug takes no infliction): measured `targets-gaps-away` (one plain, 2.3 points of total
+the other way), kept for the log's listing.
+
+**Left** (docs/open-problems.md "Hard 33's Woodcraft Slugs"): the placement's twins (7b54's Si combos: logcasts.ts,
+the other agent's; friction report point 1), statuses' levels, bursts and Stagger per target (9c6e's second
+Wanderer's bursts), a shielded slug's landing (0 damage, no infliction, buffs applied), Camille's uncovered battle
+skill hits in 6339.
 
 ## 2026-11-27: Friction round 19: one reader of a reading, the follow-ups view, an enemy's stage text
 
@@ -373,58 +414,3 @@ away (no rule from length alone: 21 of 119 have replay-only landings, mostly sma
 **Left:** the slug's unlogged hits (6339's hit_2 at 21.60 s, 7b54's Laevatain combo and overlapping Si combos: a shield
 no log lists), 9c6e's second target, 9a80's final; the log-only round's placement cases f879 95.10, 5082 45.06, 3aa6
 125.65 s, Pogranichnik's harasses, 99fb's bleed ticks, Arcane's INT lasers (not reached).
-
-## 2026-11-27: Log-only landings: Typhoeus's Signs, Zhuang Fangyi's Sunderblades
-
-**Goal:** the log-only side of the fight totals (development 3.2% of a fight's logged total, hold-outs 5.1%): the
-landings the log shows that the replay never makes, sorted by kind, operator and skill, fixed by mechanisms; beside
-an agent on the replay-only side (placement and cast-assembly files theirs).
-
-**Found** (docs/open-problems.md "Log-only landings"): two thirds of the development log-only mean is 9c6e (−37.8%,
-two targets under one enemy id) and 6339 (−25.6%, the slug); the other 54 fights −1.0% each, spread. By cause: a
-counted resource one short (fixed below); bursts and Combustion ticks 0.55–0.85 s later in the game than in the
-replay, held there by a stop starting 0–300 ms after the replay's burst about half the time, both ways at the same
-offsets (scripts/probes/bursts/burst-before-stop.ts: 13 held, 16 not, 11 unclear): the replay's precision, no rule;
-placement and cast-assembly choices (fc63 87.87 s, f879 95.10 s, 5082 45.06 s, 9a80 34.94 s, 3aa6 125.65 s,
-Pogranichnik's harasses, 99fb's bleed ticks); Arcane's INT lasers started from the logged combo event (8915, 00ae,
-a7a7). The hold-outs' largest log-only kind is physical statuses the replay never deals (2.08%); every development
-one but 5 of 335 has a landing, so it is not reachable from these logs.
-
-**Done:**
-- **Typhoeus's burst Signs by source** (kit assumption `typhoeus-sign-cooldown`, default `by-source`):
-  passitive_enemy_listennaturalspellbrust makes arrow_energy_buffer_1 or _3 by a tag only her files use, two identical
-  buffers each with its own 0.2 s adding cooldown. 1d91: Arcane's burst at 11.79 s and hers at 11.90 s both give a
-  Sign, so her 28.68 s combo has the 8 it needs (7 under `shared`, the old kit), four Hunting Arrows, and the 4th shot
-  at 39.72 s is a Power Shot with its 40.03 s burst, as logged. Every other Typhoeus log has 8 Signs at each combo under
-  both readings, but dbae (7, its fight-start Signs), fc63 101.87 s (a burst placed 0.48 s early) and 9c6e.
-- **Zhuang Fangyi's 3 s Sunderblade floor** (trigger bs_floor; engine `extendBuff` `atLeast`): both battle skills'
-  frames 0–3 set every Sunderblade with less than 3 s left to 3 s (SetAbilityEntityDuration, batch-4 G6). d774 68.21 s:
-  the 29.57 s blade, 1.15 s left at the 64.72 s cast, strikes in the next one: 7 strikes and the 97,192 final, exact.
-- tests/kit-zhuangfy.test.ts, tests/buffreplay-typhoeus.test.ts; tests/logcasts.test.ts's d774 bound under `away`
-  8 → 9% (the three hits now landed).
-
-**Scoreboard** (`npm run snapshots:update`): development plain 81.4 → 81.5%, mismatch 6.3%, mean |damage error| 3.1 →
-3.2%, one-sided fights 25 → 24, log-only 3.2%; earlier pending plain 81.4 → 81.5%, mismatch 7.6 → 7.5%, 1.6%, within 5%
-22 → 21; verified and hold-out unchanged. Mixed: 1d91 (plain 352 → 354, mismatch 194 → 193, per hit 3.97 → 3.86%,
-total +0.3 → +2.6%) and d774 (388 → 392, 13 → 10, per hit 2.98 → 2.78%, +4.9 → +5.8%): in both the log-only hits had
-cancelled over-predictions elsewhere (d774's 103.28 s Empyrean cast, open). Typhoeus's row: median |damage error|
-1.4 → 0.8%; Zhuang Fangyi's plain 86.7 → 87.0%, mismatch 3.7 → 3.4%.
-team-ab against 896bb86: Estella, Si, Akekuri, Arcane unchanged (both energies); Typhoeus's team sustained full −0.38%,
-zero +0.44% (within one sd), its zero bot −4.0%.
-**The bot's −4.0% is the Sign reading's, and a correct consequence** (`efsim rules … --seeds 1 --assume
-typhoeus-sign-cooldown=shared` gives the base's 58,952 exactly; no Zhuang Fangyi in the team, so not the floor): the bot
-(reaction 0) is one deterministic 300 s run. Its presses are identical to 137.17 s; there Arcane's Nature burst at
-136.43 s and Typhoeus's at 136.57 s both give a Sign, her 8th one shot sooner, so her combo window opens and rule 3
-casts the combo at 137.17 s instead of after her 3rd shot at 137.43 s (one shot fewer, Perlica's ultimate 0.26 s
-sooner). The run then drifts: damage is the same to 120 s, −3.7% in 120–180 s, unchanged 180–240 s, −14% in 240–300 s,
-where Liino's ultimate at 276.97 s no longer comes before the fight's end (Liino −21%, Typhoeus −3.6%). The same pair
-at 75.87 / 76.00 s changes nothing (her Signs were already at 8). The bot choosing differently there is the mechanism
-(the rule list casts the combo as soon as it opens); the −4% is one path's fight-end luck, not the reading's value: the
-32-seed means move +0.44 / −0.38%, within one sd (scratch/bot.ts, not kept: a single-run trace).
-
-**Decisions:** `by-source` the default: the one log that decides between the readings decides for it, and nothing in
-the data says the tag is the enemy's. The floor as a kit trigger on the cast at frame 0, the data's own clip.
-
-**Left / not done:** the status landings' pairing (nearest in time order, 16 frames) as an assignment by value
-(buffreplay.ts, neither agent's file this round); Arcane's INT lasers' start; the placement cases above (the other
-agent's).
