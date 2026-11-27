@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { readLogFixture, type LogHit } from "@efsim/logs";
 import { placeHits } from "../packages/logs/src/logcasts.ts";
-import { castsView, lateJoin } from "../packages/logs/src/views.ts";
+import { castsView } from "../packages/logs/src/views.ts";
+import { lateJoin } from "../packages/logs/src/placementwords.ts";
 
 const data = loadGameData();
 const fixture = (path: string) => readLogFixture(new URL(`../fixtures/${path}.json`, import.meta.url).pathname);

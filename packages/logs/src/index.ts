@@ -25,6 +25,7 @@ export * from "./replaykeys.ts";
 export * from "./buffreplay.ts";
 export * from "./landingpairs.ts";
 export * from "./counterfactual.ts";
+export * from "./placementwords.ts";
 export * from "./replayedhits.ts";
 export * from "./recordedburst.ts";
 export * from "./reactioncheck.ts";
