@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-27: Exposed totals: stage Electrification, kills, Rossi's combo 3](2026-11-27-02-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)
 - [2026-11-27: Zhuang Fangyi's attack 4 and Liino's silent stance ends](2026-11-27-01-zhuang-fangyi-s-attack-4-and-liino-s-silent-stance-ends.md)
 - [2026-11-26: Arcane's mismatches: a stage's damage factor from the fixture](2026-11-26-15-arcane-s-mismatches-a-stage-s-damage-factor-from-the-fixture.md)
 - [2026-11-26: Improvement round 16: views per moment, neighbours, base rates and records](2026-11-26-14-improvement-round-16-views-per-moment-neighbours-base-rates.md)

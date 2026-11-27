@@ -95,7 +95,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   7910's early rogue wave with no logged dive, other whole-game pauses outside a Stagger, 0c14's Stagger at its
   breaking hit; Arcane's mismatches 2026-11-26: a stage's round damage factor as the fixture's `stageFactors` (8915,
   c6d8; Arcane 697 → 233 mismatches): next 8915's Corrosion step and Hot Work end after two combos pressed together,
-  fc63's Corrosion under `window-reaction`.
+  fc63's Corrosion under `window-reaction`; exposed totals 2026-11-27: a stage Electrification is Arts-only, a kill
+  from a stage-scaled total (207f +5.5 → +1.6%), Rossi's combo 3 on its jumped path (3f78 plain 114 → 151): next d774's
+  first Empyrean battle skill (3 strikes, no final, 103.28 s), 3f78's Corrosion ramp ×1.017, a9d7's Chen.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
