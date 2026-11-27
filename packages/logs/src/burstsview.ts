@@ -17,6 +17,7 @@
 // Then per operator: logged bursts, those with a replay landing (the offsets' median), log only, replay only.
 
 import { allActions, effectiveKit, FPS, parseReactionEvent, type ArtsElement, type GameData, type KitHit, type LandedHit, type OperatorKit } from "@efsim/engine";
+import { stageNote } from "./enginecheck.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import { placeHits, worldMs } from "./logcasts.ts";
 import { replayTimeStops, type ReplayTimeStop } from "./query.ts";
@@ -39,7 +40,8 @@ export interface BurstRow {
   readonly operator: string;
   readonly element: string;
   readonly logged?: { readonly t: number; readonly value: number; readonly cause: BurstCause | null };
-  readonly replay?: { readonly t: number; readonly damage: number; readonly cause: BurstCause | null };
+  /** `stage`: the damage under the fixture's stage factor there, as the check reads it (enginecheck.ts stageNote). */
+  readonly replay?: { readonly t: number; readonly damage: number; readonly cause: BurstCause | null; readonly stage?: string };
   /** Why a logged burst has no replay landing (BuffReplay.statusLanding). */
   readonly unknown?: string;
   /** The replay's burst comes after the log's last hit (the replay runs on; the totals don't count it). */
@@ -126,13 +128,15 @@ export function burstRows(data: GameData, fx: LogFixture, opts: { readonly opera
     taken.add(l);
     const rc = replayCause(l);
     const from = Math.min(lc?.t ?? Infinity, rc?.t ?? Infinity);
-    rows.push({ operator: h.operator, element: r.element, logged: { t: h.t, value: h.value, cause: lc }, replay: { t: msOf(l.frame), damage: l.damage, cause: rc }, stops: Number.isFinite(from) ? between(from, Math.max(h.t, msOf(l.frame))) : [] });
+    const stage = stageNote(fx, l.damage, h.t);
+    rows.push({ operator: h.operator, element: r.element, logged: { t: h.t, value: h.value, cause: lc }, replay: { t: msOf(l.frame), damage: l.damage, cause: rc, ...(stage ? { stage } : {}) }, stops: Number.isFinite(from) ? between(from, Math.max(h.t, msOf(l.frame))) : [] });
   }
   for (const l of landings) {
     if (l.skillId !== "reaction:burst" || taken.has(l) || !mine(l.operator)) continue;
     const rc = replayCause(l);
     const t = msOf(l.frame);
-    rows.push({ operator: l.operator, element: l.element, replay: { t, damage: l.damage, cause: rc }, ...(t > lastLogged ? { afterLog: true } : {}), stops: rc ? between(rc.t, t) : [] });
+    const stage = stageNote(fx, l.damage, t);
+    rows.push({ operator: l.operator, element: l.element, replay: { t, damage: l.damage, cause: rc, ...(stage ? { stage } : {}) }, ...(t > lastLogged ? { afterLog: true } : {}), stops: rc ? between(rc.t, t) : [] });
   }
   return rows.sort((a, b) => (a.logged?.t ?? a.replay?.t ?? 0) - (b.logged?.t ?? b.replay?.t ?? 0));
 }
@@ -145,11 +149,11 @@ export function burstLine(data: GameData, r: BurstRow): string {
   const stops = r.stops.length ? `; stops between: ${r.stops.join(", ")}` : "";
   if (r.logged && r.replay) {
     const off = Math.round(r.replay.t - r.logged.t);
-    return `${s(r.logged.t).padStart(7)}  ${who}: logged ${r.logged.value}, replay ${r.replay.damage} at ${s(r.replay.t)} (${off >= 0 ? "+" : ""}${off} ms); cause: log ${cause(r.logged.cause)}, replay ${cause(r.replay.cause)}${stops}`;
+    return `${s(r.logged.t).padStart(7)}  ${who}: logged ${r.logged.value}, replay ${r.replay.damage}${r.replay.stage ?? ""} at ${s(r.replay.t)} (${off >= 0 ? "+" : ""}${off} ms); cause: log ${cause(r.logged.cause)}, replay ${cause(r.replay.cause)}${stops}`;
   }
   if (r.logged) return `${s(r.logged.t).padStart(7)}  ${who}: logged ${r.logged.value}, LOG ONLY (${r.unknown ?? "no replay landing"}); cause: log ${cause(r.logged.cause)}${stops}`;
   const rp = r.replay as NonNullable<BurstRow["replay"]>;
-  return `${s(rp.t).padStart(7)}  ${who}: REPLAY ONLY ${rp.damage}${r.afterLog ? " (after the log's last hit)" : ""}; cause: replay ${cause(rp.cause)}${stops}`;
+  return `${s(rp.t).padStart(7)}  ${who}: REPLAY ONLY ${rp.damage}${rp.stage ?? ""}${r.afterLog ? " (after the log's last hit)" : ""}; cause: replay ${cause(rp.cause)}${stops}`;
 }
 
 /** The per-operator counts of some rows: logged, paired (median offset), log only, replay only (in the log's span). */

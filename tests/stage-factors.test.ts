@@ -3,7 +3,7 @@
 // buff marks; the fixture's window puts it into every reading and the fight's totals.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { hitRecords, stageModifiers } from "@efsim/logs";
+import { devFixtures, hitRecords, stageFight, stageModifiers, stageNote } from "@efsim/logs";
 import { readLogFixture } from "@efsim/cli";
 
 const data = loadGameData();
@@ -27,5 +27,20 @@ describe("stage factors", () => {
     expect(withIt.length).toBeGreaterThan(400);
     expect(plain(withIt)).toBeGreaterThan(0.75 * withIt.length);
     expect(plain(without)).toBeLessThan(0.05 * without.length);
+  });
+});
+
+describe("a stage factor in the views and the scoreboard (round 17)", () => {
+  it("prints a replay landing's damage as the check reads it there (the Arcane stage-factors report point 3)", () => {
+    expect(stageNote(c6d8, 67014, 20000)).toBe(" (×0.1 stage: 6701)");
+    expect(stageNote(c6d8, 67014, 10000)).toBe("");
+  });
+
+  it("tells a stage fight by its stageFactors, a stage status or its enemy (the snapshots' `stage` key)", () => {
+    expect(stageFight(c6d8)).toMatch(/stageFactors/);
+    const by = (id: string) => stageFight((devFixtures({ ids: [id] })[0] as { fx: typeof c6d8 }).fx);
+    expect(by("207f")).toMatch(/stage status/);
+    expect(by("6339")).toMatch(/shield and phase/);
+    expect(by("4d60")).toBeNull();
   });
 });

@@ -25,7 +25,7 @@ import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoic
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { stageModifiers, teamBuffNames, type KillKind, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
+import { stageNote, teamBuffNames, type KillKind, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
 import { kindsAggregate, type KindShare } from "./onesided.ts";
 import { batchDecision, batchDisagreements, decisionText, landingsOf, replayDecisions } from "./decisionsview.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
@@ -267,8 +267,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const crit = h && h.crit === null && l.loggedCrit !== undefined ? ` [crit ${l.loggedCrit ? "yes" : "no"}: ${replay.critSource(h)}]` : "";
     const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}${bar(h)}${crit}` : "replay only";
     // The stage's factor there (LogFixture.stageFactors): the replay's own damage doesn't have it, the check's does.
-    const stage = stageModifiers(fx, h?.t ?? t)[0];
-    const staged = stage ? ` (×${1 + stage.value} stage: ${Math.round(l.damage * (1 + stage.value))})` : "";
+    const staged = stageNote(fx, l.damage, h?.t ?? t);
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${staged}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
   }
   // A batched ms the replay landed in another order than the log's bars (round 16, batched-landings report point 2).

@@ -198,6 +198,18 @@ export function stageModifiers(fx: Pick<LogFixture, "stageFactors">, t: number):
   return s ? [{ zone: "multiplicative", value: s.factor - 1, source: `stage factor ×${s.factor}` }] : [];
 }
 
+/**
+ * A replay landing's damage as the check reads it under the fixture's stage factor at `t` (ms), for a view that prints
+ * the replay's own value (round 17, the Arcane stage-factors report point 3: `replay 8915` printed 67014 beside a
+ * logged 32458 the check matched plain): " (×0.5 stage: 33507)", or "" outside every stage factor. The views' one
+ * place for it: `zmdlogs replay`'s LAND lines and `zmdlogs bursts`' rows (the totals' parts carry it already).
+ */
+export function stageNote(fx: Pick<LogFixture, "stageFactors">, damage: number, t: number): string {
+  // The factor as the fixture has it (1 + (0.2 − 1) printed ×0.19999999999999996 before).
+  const w = fx.stageFactors?.find((x) => t >= x.from && t < x.to);
+  return w ? ` (×${w.factor} stage: ${Math.round(damage * w.factor)})` : "";
+}
+
 const LINK = /^Link \(\d+\)$/;
 const isLog = (m: Modifier) => m.source.startsWith("log buff ");
 const near = (a: number, b: number) => Math.abs(a - b) <= 1e-3 * Math.max(1, Math.abs(a), Math.abs(b));
