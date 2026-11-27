@@ -990,6 +990,13 @@ describe("timeline: stagger and finishers", () => {
     };
     expect(inStop({})).toBe(true);
     expect(inStop({ "break-hold": "16f-all" })).toBe(false);
+    // A replay holds only near a logged break (TimelineScenario.loggedBreaks), unless the replay placed the hold itself
+    // (`placed`: a break the log stamped inside its hold, packages/logs holds.ts breakHoldStarts).
+    const ctx = createContext(d, { ...scenario([]), loggedBreaks: [100] });
+    const st = init(ctx);
+    expect(breakHold(ctx, st, 50)).toBe(st);
+    expect(breakHold(ctx, st, 50, true).slowdowns.at(-1)).toMatchObject({ start: 50, scales: new Array<number>(14).fill(0) });
+    expect(breakHold(ctx, st, 98).slowdowns.length).toBe(st.slowdowns.length + 1);
   });
 
   it("a finisher needs a Staggered enemy, once per stagger, and is multiplied by its finisher multiplier with its SP", () => {

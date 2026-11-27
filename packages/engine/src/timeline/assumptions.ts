@@ -125,6 +125,15 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "break-hold-place",
+    question: "Where does the hold at a logged Stagger break (break-hold) start against the breaking hit's logged ms? The log stamps most breaking hits at the hold's start (the next moment 0.45 s or more later), some inside it or at its end (scripts/probes/stagger/break-place.ts: 9090afbacec9 128.92 s, the clocks 0.32 s late at the break's ms and on time after, the next moment 0.10 s after it; c4f307cd039a 33.58 s, 0.38 s before and 0.12 s after; 3aa6ab93bad4 145.63 s, the breaker's battle skill pressed 0.10 s after her combo's breaking hit). Read only by the log check's replay (packages/logs holds.ts breakHoldStarts, replayrun.ts), not by simulations, whose breaks hold at the breaking hit.",
+    default: "ms",
+    readings: {
+      moments: "from the log's moments: no logged moment falls inside a hold, so where the next comes sooner after the break's ms than the hold lasts, the hold ends at it (not before the moment before the break), else it starts at the break's ms; 12 of 71 development breaks move, 3 to 12 frames (three into an ultimate's stop, so not held: 4d60e7fe92c2 56.30 s, 9a8097fcf351 34.93 s, 4e3651100056 56.07 s). The enemy's tick bounds (holds.ts tickBounds, called without the replay's options) take the default reading. Measured 2026-11-27 as the default, its tick bounds too, against `ms`: development plain 84.2% either way (4d60e7fe92c2 +2: its INSIDE at 56.60 s gone; 9090afbacec9 −2: Liino's two volleys due at 128.57–128.60 s, logged at 128.50 s, held past their landing, the replay's clock 0.07–0.10 s late there; hidden holds placed elsewhere), earlier pending d4fb69b036fe −1 (hidden holds), verified and hold-outs unchanged: not adopted, the log's evidence real but the replay's clocks around a break too loose for it",
+      ms: "at the breaking hit's logged ms (the replay's default; most breaking hits are logged at their hold's start)",
+    },
+  },
+  {
     id: "combo-window-count",
     test: "10",
     question: "When several events open (or refresh) a combo window, which count does the combo read (ValueExpr eventCount; Si's final hit: the infliction stacks consumed): the highest or the latest (timeline/actions.ts openCombo)?",

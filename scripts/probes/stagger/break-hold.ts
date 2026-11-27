@@ -5,6 +5,7 @@
 // 0.54 s), the breaker's own casts too; NODES=1 the same at the Stagger Nodes' crossings (no hold: median +3 ms).
 //   node scripts/probes/stagger/break-hold.ts [ms after the break, default 1500] [fixture id]
 // The probe ran on the code before break-hold: under it the hold is in the engine, not the replay's stop list here.
+// Where the hold sits against the break's ms (before it, after it, or both: the log's moments): break-place.ts beside it.
 import { loadGameData } from "@efsim/data";
 import { FPS } from "@efsim/engine";
 import { devFixtures, placeHits, replayTimeStops, worldMs, HOLD_SERIES, operatorLabel } from "@efsim/logs";

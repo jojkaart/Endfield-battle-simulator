@@ -105,7 +105,8 @@ export interface TimelineScenario {
   /**
    * A logged fight's Stagger breaks (frames; the log check's replay only): a break of the replay's holds every clock
    * (engine assumption break-hold) only within LOGGED_BREAK_FRAMES of one of them; one the log doesn't show holds
-   * nothing (its bar broke on hits the log lists differently).
+   * nothing (its bar broke on hits the log lists differently). A break the replay holds at a placed frame of its own
+   * (breakHold `placed`: the log stamped it inside its hold) isn't among them.
    */
   readonly loggedBreaks?: readonly number[];
 }

@@ -374,7 +374,13 @@ the logs' 0.41–0.61 s, the Stagger Node buff's curve 0.46 s); the replay holds
 runs through her ultimate's freeze (99fb's ticks). Owner's team −0.9% (within one sd). Next ([open-problems](open-problems.md)
 "The hold at a Stagger break"): the hold's position against the breaking hit's logged ms (9090, c4f3, 3aa6), breaks
 inside a combo's slow-down, a `stagger-recovery` refit with the hold on the enemy's clock, the two hold-outs' 30 hits
-plain → assumed.
+plain → assumed. Round 2 (2026-11-27, [journal](journal/2026-11-27-12-the-break-s-open-points-the-hold-s-place-combos-the-stagger.md)):
+the log stamps a breaking hit at its hold's start, inside it or at its end; the replay's hold ends at the next moment
+where that comes sooner (`break-hold-place` `moments`, registered, not the default: development flat, hold-outs
+unchanged, 9090's Liino volleys held past their landing); a break inside a combo's slow-down holds
+unscaled (a7a7, f879, c83c); `stagger-recovery` stays 2 s (a −0.3 s refit centres the median, within its error).
+Next: the 2 hold-outs' INSIDE under the hold (an action held past the next press: 3aa6's breaker, fc63's cast across
+a break; two placement diffs in docs/tried measured flat or worse).
 
 **Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
 the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only

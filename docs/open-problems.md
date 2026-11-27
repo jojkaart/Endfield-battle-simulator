@@ -102,20 +102,46 @@ table or BuffData file gives the break's dilation; BattleConst has none); the St
 across them on time (median +3 ms, NODES=1); a hold of the breaker only.
 **Still possible:** the exact length and curve (12f–18f measure alike in plain matches; 14f is the Node buff's curve,
 0.46 s held, and the lowest damage error; 16f, the logs' median, keeps Si's combo final in c83c, a tail cut's
-threshold); where the hold sits against the logged ms of the breaking hit (9090 128.92 s, c4f3 33.58 s, 3aa6
-145.63 s: the late clocks sit *before* the logged break, as if the log stamped the breaking hit at the hold's end;
-the next hits 0.1–0.35 s after it); whether a break inside a combo's slow-down holds (4360 49.14 s, d4fb 97.05 s,
-c4f3 82.65 s: hits 0.13–0.25 s after, all three Lifts or combos inside a combo's stop); breaks inside an ultimate's
-stop (4d60 56.29 s, 9a80 34.94 s: hits 0.08–0.23 s after; `16f-all` measured worse). The hold-outs: plain 82.7 →
-82.2% under every length (82.9 → 82.5% at the final commit; 2 logs, about 30 hits plain → assumed, still matched).
-Ruled out for them: the Stagger's end moved by the hold (the replay's Stagger follows the log's listing; holding the
-Stagger's end or not moves no verdict anywhere); the gate, the tick stops (table). The Stagger's end in a simulation:
-against the development logs' bracketed Stagger ends (`zmdlogs stagger`, 35 runs), the engine's own end with the hold
-is a median 0.32 s late (19 long, 16 short), without it 0.33 s early (16 / 19): the logs don't choose; a
-`stagger-recovery` of about 1.7 s with the hold would centre it.
-**Next check:** the hold's position against the breaking hit's logged ms (the three "before" cases against the
-others: the gap before the break); a `stagger-recovery` refit with the hold on the enemy's clock (`zmdlogs stagger`:
-the engine's own runs short in 18 of 71, quartiles 0.43 / 0.84 / 1.62 s, against 20, 0.60 / 1.53 / 3.32 s without).
+threshold).
+**The open points, 2026-11-27 (round 2; docs/journal/2026-11-27-12-the-break-s-open-points-the-hold-s-place-combos-the-stagger.md):**
+- **Where the hold sits against the breaking hit's ms** (scripts/probes/stagger/break-place.ts: each clock's lateness
+  up to the break's ms and after it): of the 22 breaks a clock reads, 16 are late after the ms only (pre −149 … +93
+  ms); 9090 128.92 s late before it only (pre +320, post −15; the moment before 0.42 s earlier, the next 0.10 s
+  later), c4f3 33.58 s and 5082 44.43 s on both sides (+381 / +124, +210 / +289): the log stamps a breaking hit at
+  the hold's start, inside it or at its end. No logged moment falls inside a hold, so the log's next moment bounds
+  it: engine assumption `break-hold-place` reading `moments` (holds.ts breakHoldStarts, a replay step at the hold's
+  start: replaysteps.ts, clock.ts breakHold `placed`): where the next moment comes sooner after the ms than the hold
+  lasts, the hold ends at it. 12 of 71 development breaks move (3–12 frames; 4d60 56.30 s, 9a80 34.93 s, 4e36
+  56.07 s into an ultimate's stop, so not held: 4d60's INSIDE at 56.60 s gone). Measured as the default against `ms`:
+  development plain 84.2% either way (4d60 +2; 9090 −2: Liino's two volleys due at 128.57–128.60 s, logged at
+  128.50 s, held past their landing, the replay's clock 0.07–0.10 s late there; d4fb −1, hidden holds placed
+  elsewhere), hold-outs unchanged; tests/buffreplay-typhoeus.test.ts's 58 volleys in 9090 fail. Not adopted (the
+  default stays `ms`): the evidence is the log's, but the replay's clocks around a break are too loose for it.
+  **Ruled out** as the hold-outs' 30 hits: the hold's start as the log's moments place it (unchanged); the
+  placement's stops with the breaks' holds ([tried](tried/2026-11-27-placement-break-stops.diff): hold-outs
+  unchanged) and a cast's start held back by them without a cast event
+  ([tried](tried/2026-11-27-break-held-cast-starts.diff): fc63's and 3aa6's INSIDE, hold-outs 2 worse, plain −12). Under `break-hold=none` the 2 better
+  hold-outs lose one INSIDE decision (measure's decision counts): an action the hold lengthens past the next press.
+- **Inside a combo's slow-down the hold applies, unscaled** (break-place.ts STRADDLE=1): a7a7 48.14 s and f879
+  57.12 s (Wulfgard's combo breaking in its own stop) +468–501 ms after the ms, c83c 55.83 s (in Si's combo) +458
+  ms, as outside one. The three with hits 0.13–0.25 s after (4360 49.14 s, c4f3 82.65 s, d4fb 97.05 s) are the
+  stamped-inside case: `moments` would hold them 6, 11 and 7 frames before the ms. Inside an ultimate's stop no hold
+  stands (as the engine).
+- **The Stagger's end in a simulation** (scripts/probes/stagger/stagger-end-fit.ts on `zmdlogs stagger`): 38
+  bracketed runs (the last Staggered hit and the next hit), the engine's own end with the hold at the 2 s recovery 21
+  late / 17 early, the median +0.32 s past the bracket's middle (+0.20 s over the 27 within 2 s, a standard error of
+  about 0.24 s); −0.3 s centres it (18 / 18) and moves the mean |error| 2.74 → 2.72 s. The logs don't choose:
+  `stagger-recovery` stays `2s` (no fight moved, so no team-ab).
+
+**Still possible:** the stamp's place inside the hold from something else than the moments (c4f3 33.58 s's +381 and
+5082's +210 before the ms, where the next moment allows the hold at the ms; the log's ~100 ms flush on the world's
+clock would put the stamp anywhere in it); what the 2 hold-outs' INSIDE is (an action held past the next press: a
+breaker's own cast logged inside its hold, as 3aa6 145.63 s, or a cast across a break placed without it, as fc63
+99.03 s); the length (above); `moments` once the replay's landings around a break are tighter (9090's volleys).
+**Next check:** the casts' starts across a break against their logged events where they have one (a narrower
+version of the held-starts diff); `moments` with its hold not starting before the replay's own landings logged at
+the moment before (9090 128.50 s); a `stagger-recovery` refit once more Staggers are bracketed (the median's error is
+as large as its offset).
 
 ## The placement cases the one-sided rounds left (2026-11-27)
 
