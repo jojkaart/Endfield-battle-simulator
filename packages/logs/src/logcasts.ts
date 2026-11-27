@@ -497,6 +497,25 @@ export interface LoggedCast {
   readonly fromEvent?: true;
   /** Which rule chose its skill among the several its first key's candidates were (choose; `zmdlogs casts --choices`). */
   readonly chosen?: CastChoice;
+  /**
+   * A new cast's first landing on its skill's other paths (pathAlternatives): where it lies in the part a conditional
+   * jump skips, its twin past the jump with the start that would give, and whether the operator's previous cast allows
+   * each start (a record: `zmdlogs casts --choices` prints it on the CAST line; jumpedFirst decides).
+   */
+  readonly paths?: readonly PathAlternative[];
+}
+
+/**
+ * One start a new cast's first landing could have (LoggedCast.paths): on the skipped part's slot (`jump` null: slot 0,
+ * its frame) or on a conditional jump's path (its `at` → `to`, the twin hit past it, its slot's frame less the jump);
+ * `allowed`: the operator's previous cast's windows let the skill start there (jumpedFirst's test).
+ */
+export interface PathAlternative {
+  readonly jump: { readonly at: number; readonly to: number } | null;
+  readonly hitId: string;
+  readonly frame: number;
+  readonly start: number;
+  readonly allowed: boolean;
 }
 
 /**
@@ -997,9 +1016,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // A new cast's first landing on the path a conditional jump goes to, where the skipped path's start is one its
         // operator's previous cast doesn't allow (jumpedFirst): the twin's slot, the start by its frame on that path.
         const jumped = joined === null && s ? jumpedFirst(data, g, h, s, skillCasts, others) : null;
+        // The other paths' starts it had, as a record (the exposed-totals report point 3: 3f78's combo 3 at 49.59 s had
+        // the late hit at 227 on the jumped path, 50.05 s, and nothing said so).
+        const paths = joined === null && s ? pathAlternatives(data, g, h, s, skillCasts, others) : [];
         const firstIndex = jumped?.index ?? 0;
         const first = s?.[firstIndex];
-        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}) };
+        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
@@ -1334,6 +1356,38 @@ function jumpedFirst(data: GameData, g: Group, h: LogHit, s: readonly Slot[], pr
     }
   }
   return null;
+}
+
+/**
+ * Every start a new cast's first landing `h` had on its skill's paths (LoggedCast.paths): slot 0's, and for each
+ * conditional jump whose skipped part holds slot 0's hits, the twin's past it (pathTwin) with the start by its frame on
+ * the jumped path, each with whether the operator's latest cast's windows allow it (jumpedFirst's test). Empty where no
+ * conditional jump skips slot 0 or the previous cast has no window for the skill: no choice of path to show.
+ */
+function pathAlternatives(data: GameData, g: Group, h: LogHit, s: readonly Slot[], prevs: readonly LoggedCast[], held: readonly TimeStop[]): PathAlternative[] {
+  const timing = data.skills[g.skillId]?.timing;
+  const head = s[0];
+  if (!timing || !head || g.kind === null) return [];
+  const prev = prevs.filter((c) => c.kind !== null && c.start <= h.t).reduce<LoggedCast | null>((m, c) => (!m || c.start > m.start ? c : m), null);
+  const windows = prev ? (data.skills[prev.skillId]?.timing?.windows ?? []).filter((w) => w.skills.includes(g.skillId)) : [];
+  if (!prev || windows.length === 0) return [];
+  const opens = Math.min(...windows.map((w) => w.from));
+  const allowed = (start: number) => start >= prev.start && worldMs(prev.start, start, held) >= msOf(opens) - ON_TIME_MS;
+  const out: PathAlternative[] = [];
+  for (const j of timing.jumps) {
+    if (!j.conditional || !head.hits.every((x) => (x.frames ?? []).length > 0 && (x.frames ?? []).every((f) => f >= j.at && f < j.to))) continue;
+    for (const x of head.hits) {
+      const twin = pathTwin({ hits: g.hits }, x, j.at, j.to);
+      const index = twin ? s.findIndex((slot, i) => i > 0 && slot.hits.includes(twin)) : -1;
+      if (!twin || index < 0) continue;
+      const slot = s[index] as Slot;
+      const start = h.t - msOf(slot.frame - (j.to - j.at));
+      out.push({ jump: { at: j.at, to: j.to }, hitId: twin.id, frame: slot.frame, start, allowed: allowed(start) });
+    }
+  }
+  if (!out.length) return [];
+  const skipStart = h.t - msOf(head.frame);
+  return [{ jump: null, hitId: head.hits.map((x) => x.id).join("+"), frame: head.frame, start: skipStart, allowed: allowed(skipStart) }, ...out];
 }
 
 /** Casts of one skill placed from different keys this close are one cast. */

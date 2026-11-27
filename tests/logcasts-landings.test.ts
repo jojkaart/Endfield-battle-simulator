@@ -51,6 +51,9 @@ describe("a later landing of a cast across time stops", () => {
     expect(placed?.cast.skillId).toBe(`${W}_combo_3_skill`);
     expect(placed?.hits.map((h) => h.id)).toEqual(["late"]);
     expect(Math.round(placed?.cast.start ?? 0)).toBe(50052);
+    // The record of the paths it had (LoggedCast.paths; round 17, the exposed-totals report point 3): slot 0 at frame 29,
+    // not allowed by sequence 1's window; the late hit at 227 on the jump 0 → 212, allowed.
+    expect(placed?.cast.paths?.map((x) => [x.hitId, x.frame, x.jump, Math.round(x.start), x.allowed])).toEqual([["perfect", 29, null, 49585, false], ["late", 227, { at: 0, to: 212 }, 50052, true]]);
     // The replay takes the jump by the kit's own condition: no perfect hit, no extra Vulnerable, no cast inside sequence 1.
     const { logBuffReplay } = await import("@efsim/cli");
     const r = logBuffReplay(data, fx).replay;
