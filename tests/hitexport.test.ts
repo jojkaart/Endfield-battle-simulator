@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { checkLog, engineHits, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
-import { filterRecords, formatRecord, hitRecords, zoneDifference, type HitRecord } from "../packages/logs/src/hitexport.ts";
+import { baseBreakdown, filterRecords, formatRecord, hitRecords, listedSincesOf, zoneDifference, type HitRecord } from "../packages/logs/src/hitexport.ts";
+import type { ActiveBuff, KitHit, LandingInputs } from "@efsim/engine";
 import { devFixtures, readDevFixture, resolveFixture, shortId } from "../packages/logs/src/logs.ts";
 import { ROOT } from "./logverdicts.ts";
 
@@ -68,6 +69,28 @@ describe("per-hit records of the log check", () => {
     const differing = records.filter((r) => r.differences?.length);
     expect(differing.length).toBeGreaterThan(0);
     expect(differing.every((r) => r.kind === "skill" && r.landing && r.differences?.every((d) => ["engine", "log", "values"].includes(d.kind)))).toBe(true);
+  });
+
+  // Round 20 (the Liino report point 3): a buff listed several times, each entry's lane start.
+  it("gives the lane starts of a buff the log lists more than once (listedSinces)", () => {
+    expect(listedSincesOf([{ buff: "a", since: 10 }, { buff: "b", since: 5 }, { buff: "a" }])).toEqual({ listedSinces: { a: [10, null] } });
+    expect(listedSincesOf([{ buff: "a", since: 10 }])).toEqual({});
+    for (const [i, h] of fx.hits.entries()) {
+      const many = [...new Set(h.effects.map((e) => e.buff))].filter((b) => h.effects.filter((e) => e.buff === b).length > 1);
+      expect(Object.keys(records[i]?.listedSinces ?? {}).sort()).toEqual(many.sort());
+    }
+  });
+
+  // Round 20 (the build-fits report point 4): 04d4's Catcher strikes at 300 + 5 × DEF, DEF = 160 + 31.2 + 25.2% of the line.
+  it("takes a base other than ATK apart: the attributes it reads, their panel lines and the fight's buffs on them", () => {
+    const line = { attr: 3, name: "Def", base: 0, add: 160, percent: 0, flat: 0, multiply: 1, total: 160, contributions: [{ source: "gear", slot: 5, value: 160 }] };
+    const inputs = { kind: "hit", operator: "chr_x", panel: { attrs: { 3: line } } } as unknown as LandingInputs;
+    const hit = { id: "strike", base: { sum: ["dmg_base", { product: [{ attr: 3 }, "def_scale"] }] } } as unknown as KitHit;
+    const buffs = [{ id: "talent", owner: "chr_x", target: "self", appliedAt: 0, expiresAt: 100, modifiers: [], attrs: [{ attr: 3, value: 31.2 }] }, { id: "other", owner: "chr_x", target: "self", appliedAt: 0, expiresAt: 100, modifiers: [], attrs: [{ attr: 1, value: 9 }] }] as unknown as ActiveBuff[];
+    const b = baseBreakdown(inputs, hit, { attrBonus: (a) => (a === 3 ? 79.4 : 0) }, 50, 1457.6, buffs);
+    expect(b?.value).toBe(1457.6);
+    expect(b?.attrs).toEqual([{ attr: 3, name: "Def", value: 239.4, panel: { base: 0, add: 160, percent: 0, flat: 0, multiply: 1, total: 160, contributions: [{ source: "gear", value: 160 }] }, inFight: 79.4, buffs: [{ buff: "chr_x:talent", value: 31.2 }] }]);
+    expect(baseBreakdown(inputs, { id: "atk" } as unknown as KitHit, undefined, 50, 1000, null)).toBeUndefined();
   });
 
   it("filters by kind and operator, and prints JSON lines or a row", () => {

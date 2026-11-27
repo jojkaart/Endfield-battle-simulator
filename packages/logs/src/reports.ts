@@ -17,7 +17,7 @@ import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
 import type { LogFixture } from "./zmdlogs.ts";
 import { BUILD_PAIR_TOLERANCE, buildChanges, fitBuild, type BuildCandidate } from "./buildfit.ts";
-import { factorStretches, factorStretchLines, isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
+import { factorBoundLines, factorBounds, factorStretches, factorStretchLines, isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets } from "./buildoffsets.ts";
 import { loggedAsLines, loggedAsPairs } from "./loggedas.ts";
 import { assumedView } from "./assumedview.ts";
 import { hitOfRecord, listedEntryWords, sameListingLines } from "./listingview.ts";
@@ -416,7 +416,7 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
  * logs' hit records (from the per-fixture cache where the code and the fixture are unchanged, else checked on
  * `workers` threads). Multi-target logs are left out (their verdicts mean nothing); never a hold-out.
  */
-export async function offsetsReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void }): Promise<string> {
+export async function offsetsReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly bound?: boolean; readonly progress?: (line: string) => void }): Promise<string> {
   const files = selectedFiles(sel, "offsets").filter((f) => !isMultiTarget(f));
   const assume = opts.assume ?? {};
   const records = await collectRecords(data, files, opts.workers, {}, opts.progress, (opts.cache ?? true) && !Object.keys(assume).length, assume);
@@ -433,7 +433,9 @@ export async function offsetsReport(data: () => GameData, sel: LogSelection, opt
   });
   // The fight-wide factors the fixtures don't hold yet (the Arcane stage-factors report point 2): every operator's hits.
   const stretches = files.map((f) => ({ short: shortId(fixtureLabel(f)), stretches: factorStretches(byFile.get(f) ?? []) }));
-  return [offsetsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) }), ...factorStretchLines(data(), stretches)].join("\n");
+  // --bound (round 20, the build-fits report point 3): the factor interval that fits every clean hit within ±1.
+  const bounds = opts.bound ? factorBoundLines(data(), files.map((f) => ({ short: shortId(fixtureLabel(f)), bounds: factorBounds(byFile.get(f) ?? []) })), opts.operators ? { operators: opts.operators } : {}) : [];
+  return [offsetsView(data(), rows, { ...(opts.operators ? { operators: opts.operators } : {}), ...(opts.top !== undefined ? { top: opts.top } : {}) }), ...factorStretchLines(data(), stretches), ...bounds].join("\n");
 }
 
 /** A fight's totals as `zmdlogs totals --all` caches them: the shares and the one-sided landings. */
@@ -565,7 +567,7 @@ export function operatorNamed(data: GameData, operator: string): string {
 export function fitBuildReport(data: GameData, fx: LogFixture, operator: string, opts: { readonly top?: number; readonly foods?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly pairs?: boolean } = {}): string {
   const id = operatorNamed(data, operator);
   const fit = fitBuild(data, fx, id, opts);
-  const line = (c: BuildCandidate) => `  ${String(c.fits).padStart(4)} of ${fit.landed} fit (${c.cleanFits} of ${fit.clean} clean)  median ×${c.median.toFixed(4)}  ${c.label}${Object.keys(c.set).length ? `  set ${JSON.stringify(c.set)}` : ""}`;
+  const line = (c: BuildCandidate) => `  ${String(c.fits).padStart(4)} of ${fit.landed} fit (${c.cleanFits} of ${fit.clean} clean)  median ×${c.median.toFixed(4)}  ${c.inputs ? `[${c.inputs} input${c.inputs > 1 ? "s" : ""}] ` : ""}${c.label}${Object.keys(c.set).length ? `  set ${JSON.stringify(c.set)}` : ""}`;
   const overrides = fx.buildOverrides?.filter((o) => o.operator === id) ?? [];
   const pairLines = () => {
     const base = fx.team.find((b) => b.operator === id);

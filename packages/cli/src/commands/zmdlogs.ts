@@ -180,11 +180,14 @@ export default command({
                                           the offset, with how many do: one constant, many explanations?
   efsim zmdlogs offsets <fixture…|--all>  The build-offset screen: per log and operator, the median of logged ÷ the
                                           primary reading over non-crit kit hits and the share within 1% of it; a
-                                          tight median off by 3% or more (*) is one factor all fight (a food, a node,
-                                          a weapon level): fit-build's next candidate (tests/slow/ fails on one
-                                          nothing accounts for). From scratch/hits-cache/ as hits
+                                          tight median off by 0.3% and 2 damage or more (*) is one factor all fight
+                                          (a food, a node, a weapon level; the check's ±1 makes it cost every hit):
+                                          fit-build's next candidate (tests/slow/ fails on one nothing accounts
+                                          for), candidates by mismatches. From scratch/hits-cache/ as hits
                 [--operator <op>] [--top n] [--workers n] [--no-cache]  Only these operators; rows (default 25, 0
                                           every one)
+                [--bound]                 Also per operator and event the factor interval that puts every clean
+                                          hit within ±1 (empty: no one factor; the factor fitting most)
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim zmdlogs casts <fixture>           The placement in time order: each logged hit with the cast, slot and
@@ -449,6 +452,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "at-cast": { type: "string" },
     side: { type: "string" },
     min: { type: "string" },
+    bound: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args } = ctx;
@@ -688,7 +692,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (values.operator.length !== 1) throw new Error("zmdlogs assumed takes one --operator <op> (an id, its name or part of the id) and optional fixtures (--kind <set>, --top n)");
       return assumedCliReport(data, values.operator[0] as string, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], assume, progress });
     }
-    if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], assume, progress });
+    if (sub === "offsets") return offsetsReport(data, selection, { workers: values.workers, operators, ...(values.top !== undefined ? { top: Number(values.top) } : {}), cache: !values["no-cache"], assume, bound: values.bound, progress });
     if (sub === "fit-build") {
       if (args.length !== 2 || !arg || values.operator.length !== 1) throw new Error("zmdlogs fit-build takes one fixture file and one --operator <op> (--top n, --no-foods)");
       return fitBuildReport(data(), readDevFixture(arg), values.operator[0] as string, { ...(values.top !== undefined ? { top: Number(values.top) } : {}), foods: !values["no-foods"], assume, pairs: values.pairs });

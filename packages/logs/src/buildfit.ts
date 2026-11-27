@@ -6,8 +6,11 @@
 // build is scored too: an override (LogFixture.buildOverrides) is worth writing only when a candidate fits clearly more.
 //
 // It replaces hand fits in notes (docs/open-problems.md, "build offsets"): the counts are the evidence an override's
-// `why` cites. Not searched: gear artifice, weapon skill levels, potential, skill levels (the log gives those), operator
-// level; `--pairs` (buildChanges, round 16) counts the single changes and pairs of that wider space whose ATK gives the
+// `why` cites. Not searched together: gear artifice, skill levels (the log gives those), operator level; each weapon
+// skill level and each potential is scored as a single change beside the combinations (round 20, the build-fits report
+// point 2: 04d4's Ember fit exactly at weapon skill 1 level 9, which only `--pairs` named, unscored), with its panel's
+// lines only (a weapon skill's or a potential's kit buff isn't replayed again); `--pairs` (buildChanges, round 16)
+// counts the single changes and pairs of that wider space whose ATK gives the
 // operator's offset, so "one constant, many explanations" shows before an override is written. The weapon's level isn't
 // bounded by its logged skill levels yet (WeaponBreakThroughTemplateTable's skillLevelBounds aren't loaded): check a
 // fitted level against them by hand.
@@ -25,16 +28,19 @@ interface FitHit {
   readonly clean: boolean;
 }
 
-/** The fields a candidate changes from the exported build (`food: null`: none). */
+/** The fields a candidate changes from the exported build (`food: null`: none); the shape of a fixture's BuildOverride.set. */
 export interface BuildFitSet {
   readonly attributeNodes?: number;
-  readonly weapon?: { readonly level: number };
+  readonly weapon?: { readonly level?: number; readonly skillLevels?: readonly number[] };
   readonly food?: string | null;
+  readonly potential?: number;
 }
 
 export interface BuildCandidate {
   readonly set: BuildFitSet;
   readonly label: string;
+  /** How many inputs it changes from the exported build (a weapon's level and its skill levels count apart). */
+  readonly inputs: number;
   /** Landed hits within ±1 of the candidate's reading. */
   readonly fits: number;
   /** Of them, clean hits. */
@@ -148,14 +154,16 @@ export function fitBuild(data: GameData, fx: LogFixture, operator: string, opts:
   const describe = (set: BuildFitSet) =>
     [
       set.attributeNodes !== undefined ? `attributeNodes ${set.attributeNodes}` : null,
-      set.weapon ? `weapon level ${set.weapon.level}` : null,
+      set.weapon?.level !== undefined ? `weapon level ${set.weapon.level}` : null,
+      ...(set.weapon?.skillLevels && weapon ? set.weapon.skillLevels.flatMap((l, i) => (l !== weapon.skillLevels[i] ? [`weapon skill ${i + 1} level ${l}`] : [])) : []),
+      set.potential !== undefined ? `potential ${set.potential}` : null,
       set.food !== undefined ? (set.food === null ? "no food" : `food ${set.food} (${data.foods?.[set.food]?.name ?? "?"})`) : null,
     ]
       .filter(Boolean)
       .join(", ") || "as exported";
   const buildOf = (set: BuildFitSet): Build => {
     const { food, weapon: w, ...rest } = set;
-    const b: Build = { ...base, ...rest, ...(w && weapon ? { weapon: { ...weapon, level: w.level } } : {}) };
+    const b: Build = { ...base, ...rest, ...(w && weapon ? { weapon: { ...weapon, ...(w.level !== undefined ? { level: w.level } : {}), ...(w.skillLevels ? { skillLevels: [...w.skillLevels] } : {}) } } : {}) };
     if (food === null) {
       const { food: _dropped, ...noFood } = b;
       void _dropped;
@@ -163,9 +171,9 @@ export function fitBuild(data: GameData, fx: LogFixture, operator: string, opts:
     }
     return food !== undefined ? { ...b, food } : b;
   };
-  const changes = (set: BuildFitSet) => Object.keys(set).length;
+  const changes = (set: BuildFitSet) => Object.keys(set).length - (set.weapon ? 1 : 0) + Object.keys(set.weapon ?? {}).length;
 
-  const exported: BuildCandidate = { set: {}, label: "as exported", ...score(base, hits) };
+  const exported: BuildCandidate = { set: {}, label: "as exported", inputs: 0, ...score(base, hits) };
   // A sample (about 24 hits, clean ones first) screens the combinations; those within a margin of the best are scored on all.
   const ordered = [...hits.filter((h) => h.clean), ...hits.filter((h) => !h.clean)];
   const step = Math.max(1, Math.floor(ordered.length / 24));
@@ -184,7 +192,15 @@ export function fitBuild(data: GameData, fx: LogFixture, operator: string, opts:
   }
   const bestSample = Math.max(...screened.map((s) => s.fits));
   const finalists = screened.filter((s) => s.fits > 0 && s.fits >= bestSample - Math.max(1, Math.ceil(sample.length / 8)));
-  const scored = finalists.map((s): BuildCandidate => ({ set: s.set, label: describe(s.set), ...score(buildOf(s.set), hits) }));
+  const scored = finalists.map((s): BuildCandidate => ({ set: s.set, label: describe(s.set), inputs: changes(s.set), ...score(buildOf(s.set), hits) }));
+  // The wider space's single changes, scored by the same test on every hit (round 20): each weapon skill's level, the potential.
+  const singles: BuildFitSet[] = [];
+  if (weapon) for (const [i, cur] of weapon.skillLevels.entries()) for (let l = 1; l <= 9; l++) if (l !== cur) singles.push({ weapon: { skillLevels: weapon.skillLevels.map((x, j) => (j === i ? l : x)) } });
+  for (let p = 0; p <= 5; p++) if (p !== base.potential) singles.push({ potential: p });
+  for (const set of singles) {
+    const s = score(buildOf(set), hits);
+    if (s.fits > 0) scored.push({ set, label: describe(set), inputs: changes(set), ...s });
+  }
   scored.sort((a, b) => b.fits - a.fits || b.cleanFits - a.cleanFits || changes(a.set) - changes(b.set) || Math.abs(a.median - 1) - Math.abs(b.median - 1));
   // A candidate that reads every hit as a simpler one does (a food without a line these hits see) says nothing more.
   const seen = new Set<string>();

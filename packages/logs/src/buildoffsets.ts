@@ -13,11 +13,16 @@ import type { HitRecord } from "./hitexport.ts";
 import type { EngineHits, HitVerdict, VerdictCount } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
-/** One hit's part in the screen: its operator, logged ÷ primary, and (where known) logged ÷ the log's own reading. */
+/**
+ * One hit's part in the screen: its operator, logged ÷ primary, and (where known) logged ÷ the log's own reading, the
+ * logged value and whether the hit is a mismatch.
+ */
 export interface OffsetHit {
   readonly operator: string;
   readonly ratio: number;
   readonly logRatio?: number;
+  readonly value?: number;
+  readonly mismatch?: boolean;
 }
 
 /** An operator's offset in one log. */
@@ -31,10 +36,19 @@ export interface OperatorOffset {
   readonly tight: number;
   /** Median logged ÷ the log's reading (the log's listing in place of the replay's buffs), where the records have it. */
   readonly logMedian?: number;
+  /** The median logged value of the counted hits, and how many of them are mismatches, where the hits have them. */
+  readonly medianValue?: number;
+  readonly mismatched?: number;
 }
 
-/** The screen's thresholds: a candidate has at least `minHits`, its median off by `minOff` or more, `minTight` of its hits within `tight` of it. */
-export const OFFSET_SCREEN = { minHits: 20, minOff: 0.03, minTight: 0.6, tight: 0.01 } as const;
+/**
+ * The screen's thresholds: a candidate has at least `minHits`, its median off by `minOff` or more, `minTight` of its
+ * hits within `tight` of it, and the median's offset worth `minDamage` or more on its median hit (where the hits carry
+ * their values). Round 20 (the build-fits report point 1): `minOff` was 3%, but the check's tolerance is ±1 damage, so
+ * any offset over a few tenths of a percent on a tight row makes most of its hits mismatches: 04d4's Ember (×1.0226,
+ * 80% mismatched) and 4e36's Alesh (×0.9745, 100%) sat under it for weeks, each fitted in minutes once looked at.
+ */
+export const OFFSET_SCREEN = { minHits: 20, minOff: 0.003, minTight: 0.6, tight: 0.01, minDamage: 2 } as const;
 
 /** The verdict classes whose primary reading means something for a build (not an unvalued or unquantified listing's). */
 const COUNTED: ReadonlySet<VerdictCount> = new Set(["plain", "assumed", "fallback", "mismatch"]);
@@ -48,7 +62,7 @@ export function countsForOffset(hit: LogHit, verdictClass: VerdictCount, primary
 export function offsetHitsOfRecords(records: readonly HitRecord[]): OffsetHit[] {
   return records.flatMap((r) =>
     r.crit === false && r.kind === "skill" && COUNTED.has(r.class) && typeof r.predicted === "number" && r.predicted > 0
-      ? [{ operator: r.operator, ratio: r.value / r.predicted, ...(typeof r.logReading === "number" && r.logReading > 0 ? { logRatio: r.value / r.logReading } : {}) }]
+      ? [{ operator: r.operator, ratio: r.value / r.predicted, value: r.value, mismatch: r.class === "mismatch", ...(typeof r.logReading === "number" && r.logReading > 0 ? { logRatio: r.value / r.logReading } : {}) }]
       : [],
   );
 }
@@ -59,7 +73,7 @@ export function offsetHits(fx: LogFixture, byHit: EngineHits, verdicts: readonly
   return fx.hits.flatMap((h) => {
     const p = byHit.get(h)?.primary;
     const c = cls.get(h);
-    return c !== undefined && countsForOffset(h, c, p) ? [{ operator: h.operator, ratio: h.value / p }] : [];
+    return c !== undefined && countsForOffset(h, c, p) ? [{ operator: h.operator, ratio: h.value / p, value: h.value, mismatch: c === "mismatch" }] : [];
   });
 }
 
@@ -76,19 +90,105 @@ export function screenOffsets(hits: readonly OffsetHit[]): OperatorOffset[] {
   return [...by].map(([operator, hs]) => {
     const m = median(hs.map((h) => h.ratio));
     const logs = hs.flatMap((h) => (h.logRatio !== undefined ? [h.logRatio] : []));
+    const values = hs.flatMap((h) => (h.value !== undefined ? [h.value] : []));
+    const flagged = hs.filter((h) => h.mismatch !== undefined);
     return {
       operator,
       n: hs.length,
       median: m,
       tight: hs.filter((h) => Math.abs(h.ratio / m - 1) <= OFFSET_SCREEN.tight).length / hs.length,
       ...(logs.length ? { logMedian: median(logs) } : {}),
+      ...(values.length === hs.length ? { medianValue: median(values) } : {}),
+      ...(flagged.length === hs.length ? { mismatched: flagged.filter((h) => h.mismatch).length } : {}),
     };
   });
 }
 
 /** Whether an offset is a fit-build candidate by the screen's thresholds. */
 export function isOffsetCandidate(o: OperatorOffset): boolean {
-  return o.n >= OFFSET_SCREEN.minHits && Math.abs(o.median - 1) >= OFFSET_SCREEN.minOff && o.tight >= OFFSET_SCREEN.minTight;
+  const off = Math.abs(o.median - 1);
+  return o.n >= OFFSET_SCREEN.minHits && off >= OFFSET_SCREEN.minOff && o.tight >= OFFSET_SCREEN.minTight && (o.medianValue === undefined || off * o.medianValue >= OFFSET_SCREEN.minDamage);
+}
+
+/** One operator's (or one event's) factor interval: the factors that put every clean hit within ±1 of its log value. */
+export interface FactorBound {
+  readonly operator: string;
+  /** null: every event of the operator together. */
+  readonly event: string | null;
+  readonly n: number;
+  /** The interval every hit allows (null: empty, no one factor fits them all). */
+  readonly bound: readonly [number, number] | null;
+  /** The factor that fits most hits within ±1, and how many it fits (the best overlap of their intervals). */
+  readonly best: { readonly factor: number; readonly fits: number };
+}
+
+/** The check's tolerance on a logged value (±1 damage: a value is the game's rounding of the exact one). */
+export const BOUND_TOLERANCE = 1;
+
+/** Per hit [lo, hi]: the factors f with |f × exact − value| ≤ BOUND_TOLERANCE. */
+function hitInterval(value: number, exact: number): [number, number] {
+  return [(value - BOUND_TOLERANCE) / exact, (value + BOUND_TOLERANCE) / exact];
+}
+
+/** The best overlap of intervals (a sweep over their ends): the point most intervals hold, and how many. */
+function bestOverlap(intervals: readonly (readonly [number, number])[]): { factor: number; fits: number } {
+  const ends = intervals.flatMap(([a, b]) => [{ x: a, d: 1 }, { x: b, d: -1 }]).sort((p, q) => p.x - q.x || q.d - p.d);
+  let [cur, best, at] = [0, 0, 1];
+  for (const [i, e] of ends.entries()) {
+    cur += e.d;
+    if (cur > best) {
+      best = cur;
+      const next = ends[i + 1];
+      at = next ? (e.x + next.x) / 2 : e.x;
+    }
+  }
+  return { factor: at, fits: best };
+}
+
+/**
+ * `zmdlogs offsets --bound` (round 20, the build-fits report point 3: Snowshine's [0.96232, 0.96258] and Catcher's DEF
+ * strikes [1.02649, 1.02786] came from a scratch script over `hits --json`): per operator and per event, the interval of
+ * factors that put every clean hit (non-crit kit hits with a primary reading the verdict rests on: plain, assumed,
+ * fallback, mismatch) within ±1 of its logged value, from the primary reading's unrounded damage; empty when no one
+ * factor fits them all, with the factor that fits most. A build candidate is checked against one interval.
+ */
+export function factorBounds(records: readonly Pick<HitRecord, "operator" | "event" | "kind" | "value" | "crit" | "class" | "landing">[]): FactorBound[] {
+  const clean = records.filter((r) => r.crit === false && r.kind === "skill" && COUNTED.has(r.class) && (r.landing?.exact ?? 0) > 0);
+  const groups = new Map<string, { operator: string; event: string | null; iv: [number, number][] }>();
+  for (const r of clean) {
+    const iv = hitInterval(r.value, (r.landing as { exact: number }).exact);
+    for (const event of [null, r.event]) {
+      const k = `${r.operator}|${event ?? ""}`;
+      const g = groups.get(k) ?? { operator: r.operator, event, iv: [] };
+      g.iv.push(iv);
+      groups.set(k, g);
+    }
+  }
+  // Per operator (in order of first hit) its whole set, then its events by hit count.
+  const order = [...new Set(clean.map((r) => r.operator))];
+  const sorted = [...groups.values()].sort((a, b) => order.indexOf(a.operator) - order.indexOf(b.operator) || (a.event === null ? -1 : b.event === null ? 1 : b.iv.length - a.iv.length || a.event.localeCompare(b.event)));
+  return sorted.map((g) => {
+    const lo = Math.max(...g.iv.map((x) => x[0]));
+    const hi = Math.min(...g.iv.map((x) => x[1]));
+    return { operator: g.operator, event: g.event, n: g.iv.length, bound: lo <= hi ? ([lo, hi] as const) : null, best: bestOverlap(g.iv) };
+  });
+}
+
+/** The `--bound` section: per operator its interval over every event, then each event's (events with `minHits` or fewer hits too). */
+export function factorBoundLines(data: { readonly operators: Readonly<Record<string, { readonly name?: string } | undefined>> }, logs: readonly { readonly short: string; readonly bounds: readonly FactorBound[] }[], opts: { readonly operators?: readonly string[] } = {}): string[] {
+  const name = (op: string) => data.operators[op]?.name ?? op;
+  const f5 = (x: number) => x.toFixed(5);
+  const out = ["", `Factor bounds (--bound): per log and operator, then per event, the factors that put every clean hit (non-crit kit hits with a primary reading: plain, assumed, fallback, mismatch) within ±${BOUND_TOLERANCE} of its logged value, from the primary reading's unrounded damage; empty: no one factor, with the factor that fits most:`];
+  for (const l of logs) {
+    const mine = l.bounds.filter((b) => !opts.operators?.length || opts.operators.includes(b.operator));
+    for (const b of mine) {
+      const what = b.event === null ? `${l.short.padEnd(5)} ${name(b.operator)}` : `        ${b.event}`;
+      const iv = b.bound ? `[${f5(b.bound[0])}, ${f5(b.bound[1])}]` : "empty";
+      out.push(`  ${what}  n ${b.n}  ${iv}  best ×${f5(b.best.factor)} fits ${b.best.fits} of ${b.n}`);
+    }
+  }
+  if (out.length === 2) out.push("  none");
+  return out;
 }
 
 /**
@@ -190,7 +290,7 @@ export interface OffsetRow {
 
 /**
  * `efsim zmdlogs offsets`: every (log, operator) with at least OFFSET_SCREEN.minHits counted hits, the candidates
- * first (`*`: a tight median off by 3% or more), then by |median − 1| × tightness; `top` rows (0: every one). Each says
+ * first (`*`: a tight median off by OFFSET_SCREEN's share and damage, by mismatches), then by |median − 1| × tightness; `top` rows (0: every one). Each says
  * what accounts for it (a buildOverride, an OFFSETS_EXPLAINED entry) or that fit-build is the next step, and when most
  * of a log's operators are off together (a team-wide factor: a food, the stage).
  */
@@ -198,7 +298,8 @@ export function offsetsView(data: { readonly operators: Readonly<Record<string, 
   const name = (op: string) => data.operators[op]?.name ?? op;
   const pct = (x: number) => `${x >= 1 ? "+" : ""}${(100 * (x - 1)).toFixed(1)}%`;
   const shown = rows.filter((r) => r.offset.n >= OFFSET_SCREEN.minHits && (!opts.operators?.length || opts.operators.includes(r.offset.operator)));
-  const score = (o: OperatorOffset) => (isOffsetCandidate(o) ? 10 : 0) + Math.abs(o.median - 1) * o.tight;
+  // Candidates by the hits they cost (round 20: a 2% offset on a tight row costs as many as a 20% one), then by size.
+  const score = (o: OperatorOffset) => (isOffsetCandidate(o) ? 10 + (o.mismatched ?? 0) / 1e4 : 0) + Math.abs(o.median - 1) * o.tight;
   const sorted = [...shown].sort((a, b) => score(b.offset) - score(a.offset) || a.short.localeCompare(b.short));
   const top = opts.top ?? 25;
   const teamOff = (short: string) => {
@@ -207,8 +308,8 @@ export function offsetsView(data: { readonly operators: Readonly<Record<string, 
     return of.length >= 2 && off.length >= Math.max(2, Math.ceil((of.length * 3) / 4)) ? ` (${off.length} of ${of.length} operators off: a team-wide factor? a food, the stage)` : "";
   };
   const out = [
-    `Build offsets: per log and operator, the median of logged ÷ the primary reading over non-crit kit hits with a reading (n), and the share within ${100 * OFFSET_SCREEN.tight}% of it (tight); log: the same under the log's reading. * a fit-build candidate (n ≥ ${OFFSET_SCREEN.minHits}, off ≥ ${100 * OFFSET_SCREEN.minOff}%, tight ≥ ${100 * OFFSET_SCREEN.minTight}%): one factor on every hit (a food, a node, a weapon level); a loose median is timing or a stage.`,
-    "  id    operator                    n   median   tight     log  ",
+    `Build offsets: per log and operator, the median of logged ÷ the primary reading over non-crit kit hits with a reading (n), and the share within ${100 * OFFSET_SCREEN.tight}% of it (tight); log: the same under the log's reading; mism: the counted hits that are mismatches. * a fit-build candidate (n ≥ ${OFFSET_SCREEN.minHits}, off ≥ ${100 * OFFSET_SCREEN.minOff}% and ≥ ${OFFSET_SCREEN.minDamage} on its median hit, tight ≥ ${100 * OFFSET_SCREEN.minTight}%; candidates by mism first): one factor on every hit (a food, a node, a weapon level); a loose median is timing or a stage.`,
+    "  id    operator                    n   median   tight     log  mism",
   ];
   const lines = top > 0 ? sorted.slice(0, top) : sorted;
   for (const r of lines) {
@@ -218,7 +319,7 @@ export function offsetsView(data: { readonly operators: Readonly<Record<string, 
     const explained = OFFSETS_EXPLAINED[`${r.short} ${o.operator}`];
     const fits = r.fits?.length ? ` (its ATK fits ${r.fits.join(" or ")})` : "";
     const note = cand ? (overridden ? "  buildOverrides set (fit-build again?)" : explained !== undefined ? `  explained: ${explained}` : `  → zmdlogs fit-build ${r.short} --operator ${o.operator}${fits}`) : overridden ? "  (buildOverrides set)" : "";
-    out.push(`${cand ? "*" : " "} ${r.short.padEnd(5)} ${name(o.operator).slice(0, 24).padEnd(24)} ${String(o.n).padStart(4)}  ${pct(o.median).padStart(7)}  ${`${(100 * o.tight).toFixed(0)}%`.padStart(5)}  ${o.logMedian !== undefined ? pct(o.logMedian).padStart(7) : "      -"}${note}${cand ? teamOff(r.short) : ""}`);
+    out.push(`${cand ? "*" : " "} ${r.short.padEnd(5)} ${name(o.operator).slice(0, 24).padEnd(24)} ${String(o.n).padStart(4)}  ${pct(o.median).padStart(7)}  ${`${(100 * o.tight).toFixed(0)}%`.padStart(5)}  ${o.logMedian !== undefined ? pct(o.logMedian).padStart(7) : "      -"}  ${o.mismatched !== undefined ? String(o.mismatched).padStart(4) : "   -"}${note}${cand ? teamOff(r.short) : ""}`);
   }
   if (top > 0 && sorted.length > top) out.push(`  … ${sorted.length - top} more (--top 0 for every row)`);
   const cands = shown.filter((r) => isOffsetCandidate(r.offset));
