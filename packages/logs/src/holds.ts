@@ -240,14 +240,14 @@ export function loggedBreaks(fx: Pick<LogFixture, "hits">): number[] {
 
 /**
  * Where the hold at each of the log's Stagger breaks (loggedBreaks) starts (frames; engine assumption break-hold):
- * at the break's ms, unless the log's next moment comes sooner after it than the hold lasts (`frames`). No logged
- * moment falls inside a hold (nothing lands while every clock stands), so there the log stamped the breaking hit
- * inside the hold or at its end, and the hold ends at that next moment, not before the moment before the break
- * (scripts/probes/stagger/break-hold.ts PLACE=1: 9090afbacec9 128.92 s, the next moment 0.10 s after it, the clocks
+ * at the break's ms (engine assumption break-hold-place `ms`, the default); under `moments`, unless the log's next
+ * moment comes sooner after it than the hold lasts (`frames`). No logged moment falls inside a hold (nothing lands
+ * while every clock stands), so there the log stamped the breaking hit inside the hold or at its end, and the hold
+ * ends at that next moment, not before the moment before the break
+ * (scripts/probes/stagger/break-place.ts: 9090afbacec9 128.92 s, the next moment 0.10 s after it, the clocks
  * 0.32 s late at it and on time after; 3aa6ab93bad4 145.63 s, Zhuang Fangyi's battle skill pressed 0.10 s after her
  * combo's breaking hit; the breaks inside a combo's slow-down, 4360447193ac 49.14 s, c4f307cd039a 82.65 s,
- * d4fb69b036fe 97.05 s, hits 0.13–0.25 s after). `at` is the break's own frame, `from` the hold's first. Engine
- * assumption break-hold-place: `moments` (the default) so, `ms` every hold at its break's ms.
+ * d4fb69b036fe 97.05 s, hits 0.13–0.25 s after). `at` is the break's own frame, `from` the hold's first.
  */
 export function breakHoldStarts(fx: Pick<LogFixture, "hits">, frames: number, assume?: Readonly<Record<string, string>>): { readonly at: number; readonly from: number }[] {
   const moments = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);

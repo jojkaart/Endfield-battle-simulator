@@ -4,9 +4,41 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 176 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 177 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: The break's open points: the hold's place, combos, the Stagger end
+
+**Goal:** the open points of the hold at a Stagger break (docs/open-problems.md "The hold at a Stagger break"): where
+the hold sits against the breaking hit's logged ms, breaks inside a combo's slow-down, a `stagger-recovery` refit,
+and the two hold-outs whose ~30 hits went plain → assumed.
+
+**Done:**
+- **The hold's place** (scripts/probes/stagger/break-place.ts): of the 22 breaks a clock reads, 16 are late after the
+  ms only; 9090 128.92 s before it only, c4f3 33.58 s and 5082 44.43 s on both sides. The log stamps a breaking hit at
+  its hold's start, inside it or at its end. No logged moment falls inside a hold, so the next moment bounds it:
+  engine assumption `break-hold-place`, reading `moments` (holds.ts breakHoldStarts, a replay step that holds from
+  the hold's start: replaysteps.ts, clock.ts breakHold `placed`), registered with the default `ms`.
+- **Combos:** the hold applies inside a combo's slow-down, unscaled (a7a7 48.14 s, f879 57.12 s, c83c 55.83 s:
+  +458–501 ms after the ms); the three with hits 0.13–0.25 s after are the stamped-inside case.
+- **The Stagger end:** scripts/probes/stagger/stagger-end-fit.ts over `zmdlogs stagger`'s 38 bracketed runs: the
+  engine's own end +0.32 s past the bracket's middle at the median; −0.3 s centres it, the mean |error| 2.74 → 2.72 s.
+- Two placement diffs measured and kept in docs/tried (logcasts.ts is another agent's file): the pass-2 stops with the
+  breaks' holds (hold-outs unchanged), and a cast's start held back by them without a cast event (development 3
+  better, hold-outs 2 worse, plain −12).
+
+**Scoreboard:** unchanged (the defaults are the old behaviour; `npm run measure` with `moments` as the default:
+development plain 84.2% either way, 4d60 +2, 9090 −2, d4fb −1; hold-outs unchanged).
+
+**Decisions:** `moments` not the default: flat on every group, and in 9090 it holds Liino's two volleys due at
+128.57–128.60 s (logged at 128.50 s, the replay's clock 0.07–0.10 s late there) past their landing
+(tests/buffreplay-typhoeus.test.ts). `stagger-recovery` stays `2s`: the shift that centres the median is within its
+error. No simulated fight moved (the new reading is the replay's only), so no team-ab.
+
+**Ruled out for the hold-outs:** the hold's start as the moments place it; the placement's stops with the breaks'
+holds; the held cast starts made them worse. Under `break-hold=none` they lose one INSIDE decision: an action the hold
+lengthens past the next press (as 3aa6's breaker logged inside its hold, fc63's combo across a break) is the lead.
 
 ## 2026-11-27: The hold at a Stagger break; Rossi's bleed through her freeze
 
@@ -414,43 +446,3 @@ docs/open-problems.md "The totals that rose once hits read right").
 
 **Left:** d774 103.28 s; 3f78's team-wide ×1.017 after 50.55 s (Corrosion's ramp late in the replay: the enemy's
 clock); a9d7's Chen −3.0% (spread, Pogranichnik's team buffs on her combo); 207f's Rossi attack 4 hit_ai tail (+1.3%).
-
-## 2026-11-27: Away stretches: a whole-game pause holds every timer, a boss phase none
-
-**Goal:** three leads on the enemy's clock: do enemy statuses run on, pause or something else while the enemy is away
-(4d60 43–60 s, Zhuang Fangyi's Sunderblades); Liino's stance ending before its last beat (4d60 66–73 s); 8915's
-Corrosion step and Hot Work end early after two combos pressed together (7.07–8.90 s).
-
-**Done:**
-- **Every away stretch of the development logs read by its clocks** (scripts/probes/away/away-clocks.ts: the hold
-  placement's clocks listed on both sides of each stretch, their asks, the basic strings across it). 31 stretches in
-  11 logs. 4d60's two are whole-game pauses: Arcane's string goes on across both (attack 2 → attack 3 after 9.6 and
-  7.2 s) and every clock spanning them, the enemy's statuses and the team's buffs alike, runs past its end by most of
-  the stretch. The other 29 (Si's phases, eny_0125_fdcentur, eny_0128_babyents_hdg031) run on: asks −2.8 to +3.2 s,
-  no string goes on. No difference between enemy statuses and team buffs in either kind, and no enemy-kind rule (4d60's
-  enemy is in 16 other logs with no away stretch): the pauses are the player's.
-- **Engine assumption `pause-holds`, new default `paused`** (holdinputs.ts runBounds, holds.ts statusBounds,
-  pausedBound, gapsWithin): a clock's run across an away stretch may ask the stretch's length past HIDDEN_HOLD_SHARE of
-  its life, and a bound asking past its share is laid inside the stretch, so the least total sits in the pause (8.4 s
-  in 27.67–36.46 s), not spread over 21–46 s as the bare relaxation placed it. Perlica's Electrification is then on for
-  Zhuang Fangyi's 37.00 s combo, and her battle skills strike 6, 8, 8 times as logged. Liino's stance is held by the same
-  pause and runs to her 73.37 s event: lead 2 was this pause too. tests/holds.test.ts, tests/replayrecord.test.ts.
-- **8915's lead at the log's grain:** the game's first Corrosion step comes ≥ 0.15 s before the stop list allows (0.08 s
-  from the battle skill's cast event: its hit sits in a batch), later steps 0.00–0.08 s, Hot Work's end ≥ 0.05 s.
-  Pressed-together combos elsewhere don't hold less: 16 clocks across two combos within 0.3 s run late as single ones
-  (+347 ms median, Σ residual ÷ Σ held 0.82 against 0.86; scripts/probes/combo-hold/combo-pairs.ts). Not built.
-
-**Scoreboard** (`npm run snapshots:update`): development plain 80.0 → 81.0%, mismatch 6.8 → 6.4%, mean |damage error|
-3.3%; hold-out, verified and earlier pending unchanged. Only 4d60 moved (mixed): plain 822 → 987, mismatch 108 → 54,
-per-hit |error| 4.97 → 1.71%, total −1.2 → +1.7% (Zhuang Fangyi's matched +8.1% had cancelled her 0.59M of log-only
-blade hits; now +1.5% with none). The log check's replay only: no simulation reads `pause-holds`, so no team-ab.
-
-**Decisions:** the clocks decide a pause, not the enemy or a flag: a pause holds what spans it, a phase holds nothing,
-and the placement places only what the clocks ask, so the Si phases need no exception. The bound past its share goes
-into the stretch because nothing else can hold a clock that long; within its share a bound stays as it was (the 117 s
-pause was already placed there by 13 clocks).
-
-**Left** (docs/open-problems.md "Away stretches: a pause or a phase", "Zhuang Fangyi's and Liino's mismatches"):
-4d60 69.35–69.84 s, Zhuang Fangyi's Xiranflow layers held 3.0 s by the stops in 43–69 s where the game holds them
-0.6–1.2 s (exposed by the pause: the 43.17 s consumption now takes level 2); her 73.37 s combo with the stance's ATK
-one frame too long; 8915's step (the two combos' placement, the batch's application time).

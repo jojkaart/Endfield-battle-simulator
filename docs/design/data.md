@@ -516,6 +516,11 @@ detail):
   placement starts such a cast from the stop's end (logcasts.ts
   `ownStopLoggedFrame`, a scale of 0.05 or less at the hit's frame: today
   Liino's combo and Last Rite's ultimate slash).
+- **A Stagger-breaking hit** (2026-11-27, engine assumption `break-hold-place`) is logged at the break's hold's
+  start mostly, but some inside it or at its end (9090afbacec9 128.92 s: the clocks 0.32 s late at its ms, the next
+  moment 0.10 s later). No moment falls inside a hold, so under the reading `moments` the replay ends the hold at the
+  next moment where that comes sooner than the hold lasts (holds.ts `breakHoldStarts`;
+  scripts/probes/stagger/break-place.ts); the default, `ms`, holds at the breaking hit's ms.
 - **Holds no cast explains** (2026-11-22, open-problems "The buff clock"):
   the log's ms run through world holds it records nothing of (perfect
   dodges' 0.512 s slow-down each, never while the enemy is Staggered;
