@@ -3,7 +3,7 @@
 // order the replay takes them at one frame (stepRank). Its own module (improvement round 8, round 5's parked point 12):
 // a new kind of step is an edit here and one branch in replayOnce.
 
-import { FPS, type BattleEvent, type EventLanding, type TimelineState } from "@efsim/engine";
+import { FPS, replayEvent, targetDies, type BattleEvent, type EventLanding, type TargetDeathOptions, type TimelineContext, type TimelineState } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import type { ReplayedCast } from "./castassembly.ts";
 
@@ -145,11 +145,18 @@ export interface ReplayEventStep {
   readonly words: string;
   readonly make: (st: TimelineState) => BattleEvent;
   readonly landings: readonly EventLanding[];
+  /** A target's death (engine targetDies): the triggers that don't run at it, and whether its statuses end with it. */
+  readonly death?: TargetDeathOptions;
 }
 
-/** A target's death as a replay event (targets.ts deathMoves: its landings the trigger's logged hits). */
-export function deathEvent(frame: number, why: string, landings: readonly EventLanding[]): { readonly frame: number; readonly event: ReplayEventStep } {
-  return { frame, event: { words: `a target's death (${why})`, make: (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings } };
+/** A target's death as a replay event (targets.ts targetDeaths: its landings the moves' logged hits). */
+export function deathEvent(frame: number, why: string, landings: readonly EventLanding[], death: TargetDeathOptions = {}): { readonly frame: number; readonly event: ReplayEventStep } {
+  return { frame, event: { words: `a target's death (${why})`, make: (st) => ({ type: "targetDeath", frame, operator: st.controlled }), landings, death } };
+}
+
+/** Runs a log-driven event step at the state's frame: a death by targetDies (its options), any other by replayEvent. */
+export function runEventStep(ctx: TimelineContext, st: TimelineState, e: ReplayEventStep): TimelineState {
+  return e.death ? targetDies(ctx, st, st.frame, e.landings, e.death) : replayEvent(ctx, st, st.frame, e.make, e.landings);
 }
 
 /**
@@ -164,7 +171,7 @@ export function stepRank(s: ReplayStep): number {
 /**
  * Every step of one replay in frame order (stepRank at one frame): the log's Stagger, the holds (the hidden ones; the
  * breaks' placed before their ms, `breakHolds`), the casts (not those before the log), the log-driven events (`events`:
- * the deaths of several targets' ones, targets.ts deathMoves; deathEvent) and the samples.
+ * the deaths of several targets' ones, targets.ts targetDeaths; deathEvent) and the samples.
  */
 export function replaySteps(logged: LoggedStagger, worldHolds: readonly { readonly frame: number; readonly frames: number }[], casts: readonly ReplayedCast[], sampleFrames: readonly number[], breakHolds: readonly number[] = [], events: readonly { readonly frame: number; readonly event: ReplayEventStep }[] = []): ReplayStep[] {
   return [

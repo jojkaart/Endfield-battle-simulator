@@ -413,6 +413,46 @@ targets.ts):
   the move is a battle-skill cast for the team's cast triggers (castEvent:
   Si's Yinglung's Edge). `zmdlogs replay` prints each as a DEATH line.
   A move onto a shielded slug deals 0 and isn't logged, so it isn't made.
+- **Every logged kill a death** (2026-11-27, replay assumption
+  target-deaths, default `kills`; targets.ts targetDeaths): in a fight
+  read per target the replay makes a death at each logged kill before the
+  log's last ms (two at one ms one death: one enemy), and at a move no kill
+  is the death of. Every kit's targetDeath triggers run there, as the data
+  has them on the dead target: Laevatain's passive_enemy (abilityEvent 1)
+  absorbs its Heat layers as Melting Flame (kit trigger death_absorb), so
+  the next target's Heat is its own (6339: no Heat burst after Camille's
+  moves, Melting Flame 4 at 32.24 s). An operator whose trigger lands a hit
+  (Camille) runs its targetDeath triggers only at the deaths its landing is
+  logged from (engine TargetDeathOptions.except): elsewhere its listener was
+  on another target or it moved onto a shielded slug. Of the other listeners
+  the data has (BuffData abilityEvent 1 on a buff on the target), Arcane's
+  spell_vulnerable's are all disabled and Typhoeus's combo_trigger_combo has
+  none; Si's inkhurteffect and normal_skill_check move her Artful Intent's
+  record onto an ink phantom (SpawnAbilityEntity inkphantom, linkline), an
+  entity the kit doesn't model (not built); Zhuang Fangyi's, Seraph's and
+  Yvonne's are in no several-targets fight.
+- **Statuses per target: the design, not built.** The replay's enemy
+  holds one EnemyStatus (an infliction, the reactions, physical statuses,
+  Vulnerable), so a target's statuses are on every target. What a check-side
+  model needs, as the debuffs have it: (1) each landing's target before the
+  replay runs, since an infliction's burst or reaction is the replay's to
+  make, not the check's to read: a first pass assigns the logged hits
+  (assignTargets) and a second replays with each landing's target, the
+  engine's enemy state per target id (TimelineState.enemy keyed by target,
+  a landing's `target` from the logged hit it stands for, a replay-only
+  landing on the target hit last); (2) a status level per target in the
+  reading (Corrosion's shred, Electrification's Arts DMG Taken: values, not
+  units on or off, so readingBasis recomputes the modifier at the target's
+  level rather than dropping it); (3) the Stagger per target, from the
+  log's per-hit `poise.bar` if that is its target's bar (not yet checked:
+  9c6e 52.49 s logs bars 73 and 83 at one ms, Arcane's 10 and Typhoeus's 20
+  dealt, which one bar also gives). The one-enemy approximation measured
+  instead (target-deaths `statuses`: a death ends the replay's enemy's
+  statuses) is worse: a status kept stood for the next target's own (6339's
+  29.26 s combo hit needs Combustion or Corrosion on its slug). 9c6e's
+  log-only Nature bursts on its second Wanderer (52.80, 79.85, 94.32 s) are
+  the case (1)–(3) are for: ×1.35 between the two targets' Typhoeus hits
+  at 49–51 s, a burst's two values no one state gives.
 Only these fixtures read it (no simulation, no hold-out without the mark),
 and statuses' levels and the Stagger per target, a target's own bursts
 and the shielded slugs' landings are still the one enemy's.

@@ -397,6 +397,7 @@ describe("timeline: kit triggers", () => {
       ["twilight_paused_by_combo", "cast", "self"],
       ["twilight_clock_excess", "cast", "self"],
       ["final_strike_absorb", "hit", "controlled"],
+      ["death_absorb", "targetDeath", "anyone"],
       ["combo_window", "reaction", "anyone"],
       ["scorching_heart", "stackAtLeast", "self"],
     ]);

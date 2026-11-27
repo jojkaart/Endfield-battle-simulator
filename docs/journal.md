@@ -4,9 +4,53 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 187 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 188 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Target deaths: Laevatain absorbs the dead slug's Heat
+
+**Goal:** on main at 14fe159, beside the tail-cuts agent: the several-targets row's replay-only Heat bursts after
+Camille's Vesperwings moves (6339 21.60, 25.57, 33.17 s) and statuses per target; the kits' listeners on a target's
+death (docs/open-problems.md "Hard 33's Woodcraft Slugs").
+
+**Found:**
+- **Laevatain's passive_enemy** (BuffData abilityEvent 1, HP 0, on every enemy her talent-0 aura reaches): at the
+  enemy's death it counts its Heat Infliction layers, absorbs each and gives her as many Melting Flame (no room check,
+  no cooldown). Not in the brief's list, found by a census of every abilityEvent 1 handler (scratch/hpzero.ts). Each
+  of 6339's three bursts is a move's Heat on a slug the replay's one enemy still held the dead slug's Heat for: the
+  kill's absorption takes it, and the 31.62 s kill's gives the fourth Melting Flame the 35.70 s empowered hit needs.
+- **The other listeners:** Arcane's spell_vulnerable handler is all disabled (nothing to build), Typhoeus's
+  combo_trigger_combo empty; Si's inkhurteffect and normal_skill_check carry her Artful Intent's record onto an ink
+  phantom entity (not built); Zhuang Fangyi's, Seraph's, Tangtang's, Yvonne's are in no several-targets fight.
+
+**Done:** engine targetDies takes TargetDeathOptions (`except`: triggers that don't run; `endsStatuses`: the replay's
+enemy's statuses and due bursts end), replayEvent an `only` predicate; replay assumption **`target-deaths`** (default
+`kills`: a death at every logged kill of a fight read per target, an operator whose death trigger lands a hit, Camille,
+running its triggers only where its landing is logged; `moves`, the old; `statuses`); targets.ts targetDeaths,
+replaysteps.ts runEventStep, replayrun.ts's death steps (one function, committed alone, its message naming the
+tail-cuts agent); kit trigger `death_absorb`; tests/target-deaths.test.ts; the design of statuses per target in
+docs/design/data.md (a second replay pass with each landing's target, levels as values, the Stagger per hit).
+
+**Scoreboard** (`npm run snapshots:update`; measure against 14fe159): the several-targets row plain 71.3 → 71.6%,
+mismatch 15.3 → 15.2%, mean |damage error| 6.3 → 4.6%, within 5% 1 → 2, replay-only 17.8 → 16.4%, log-only 22.9 →
+19.7%; 6339 plain 120 → 121, −6.3 → +0.1%; 7b54 mixed (plain 116 → 117, mismatch 82 → 81, per hit closer, −1.2 →
+−2.3%: Si's replay-only 30.50 s burst gone, which had offset its log-only twins). Development, earlier pending and
+verified unchanged. **One hold-out worse** (|damage error| 5.8 → 5.9%, totals and battle-skill keys, the same under
+every reading): the one unmarked log whose replay makes a death (round 20: a logged Vesperwings move), where the
+death now runs the team's death_absorb too. By operator, Laevatain's mean 6.6 → 9.0% (6339's 21.60 s replay-only
+hit_2, TAILKEPT, no longer offset by the missing empowered hit), Camille's 9.1 → 5.0%. Team fights unchanged
+(team-ab identity at 14fe159: no simulated fight has a death).
+
+**Decisions:** `kills` over `moves` (row 4.2% under `moves`): every death runs the triggers the data puts on the dead
+target, not only those where Camille's move happens to be logged; its 7b54 total moves only because a replay-only
+burst it removes was offsetting. `statuses` rejected (6339 −5.0%): its 29.26 s Laevatain combo hit needs Combustion
+or Corrosion on its slug, which only the one enemy's kept 24.03 s Combustion gives; 9c6e −1 plain. Laevatain's trigger
+without an assumption: the data's handler is enabled and unconditional.
+
+**Left:** statuses per target as designed (9c6e's second Wanderer's Nature bursts); 6339's 25.03–28.47 s Combustion
+ticks against its 29.26 s combo hit; Si's ink phantom; the DEATH lines list only the moves (decisionsview.ts, the
+other agent's file: friction report point 2).
 
 ## 2026-11-27: Tail cuts: what the shown-hit guard stands for
 
@@ -374,35 +418,3 @@ accuracy list, not this round.
 
 Checks: `npm run snapshots:update`: no log's verdicts moved, nothing changed; team-ab identical at both engine
 changes (the move, and the replay-only firing record).
-
-## 2026-11-27: The break's open points: the hold's place, combos, the Stagger end
-
-**Goal:** the open points of the hold at a Stagger break (docs/open-problems.md "The hold at a Stagger break"): where
-the hold sits against the breaking hit's logged ms, breaks inside a combo's slow-down, a `stagger-recovery` refit,
-and the two hold-outs whose ~30 hits went plain → assumed.
-
-**Done:**
-- **The hold's place** (scripts/probes/stagger/break-place.ts): of the 22 breaks a clock reads, 16 are late after the
-  ms only; 9090 128.92 s before it only, c4f3 33.58 s and 5082 44.43 s on both sides. The log stamps a breaking hit at
-  its hold's start, inside it or at its end. No logged moment falls inside a hold, so the next moment bounds it:
-  engine assumption `break-hold-place`, reading `moments` (holds.ts breakHoldStarts, a replay step that holds from
-  the hold's start: replaysteps.ts, clock.ts breakHold `placed`), registered with the default `ms`.
-- **Combos:** the hold applies inside a combo's slow-down, unscaled (a7a7 48.14 s, f879 57.12 s, c83c 55.83 s:
-  +458–501 ms after the ms); the three with hits 0.13–0.25 s after are the stamped-inside case.
-- **The Stagger end:** scripts/probes/stagger/stagger-end-fit.ts over `zmdlogs stagger`'s 38 bracketed runs: the
-  engine's own end +0.32 s past the bracket's middle at the median; −0.3 s centres it, the mean |error| 2.74 → 2.72 s.
-- Two placement diffs measured and kept in docs/tried (logcasts.ts is another agent's file): the pass-2 stops with the
-  breaks' holds (hold-outs unchanged), and a cast's start held back by them without a cast event (development 3
-  better, hold-outs 2 worse, plain −12).
-
-**Scoreboard:** unchanged (the defaults are the old behaviour; `npm run measure` with `moments` as the default:
-development plain 84.2% either way, 4d60 +2, 9090 −2, d4fb −1; hold-outs unchanged).
-
-**Decisions:** `moments` not the default: flat on every group, and in 9090 it holds Liino's two volleys due at
-128.57–128.60 s (logged at 128.50 s, the replay's clock 0.07–0.10 s late there) past their landing
-(tests/buffreplay-typhoeus.test.ts). `stagger-recovery` stays `2s`: the shift that centres the median is within its
-error. No simulated fight moved (the new reading is the replay's only), so no team-ab.
-
-**Ruled out for the hold-outs:** the hold's start as the moments place it; the placement's stops with the breaks'
-holds; the held cast starts made them worse. Under `break-hold=none` they lose one INSIDE decision: an action the hold
-lengthens past the next press (as 3aa6's breaker logged inside its hold, fc63's combo across a break) is the lead.

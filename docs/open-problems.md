@@ -2334,7 +2334,8 @@ logcasts.ts placeWith `batch`; `later`: a third slug's final 125 ms after two sl
   (`targets-ungated` copies them: 7b54 −3.3 → +21.5%). Not a placement error: the 47 s slashes mismatched as single
   landings before too. Si's 26.47 s burst mark and Laevatain's 38.20 s combo in stretches without a logged hit: hits on
   shielded slugs (0, unlogged).
-- **6339 log-only:** Laevatain's 35.70 s empowered hit (−9.6%): the replay's battle skill at 32.24 s takes the
+- **6339 log-only:** (fixed 2026-11-27 below: the 29.26 and 31.62 s kills' Heat, absorbed at the slugs' deaths) Laevatain's
+  35.70 s empowered hit (−9.6%): the replay's battle skill at 32.24 s takes the
   unempowered path (its Melting Flame 3 of 4, `--trace-stack chr_0016_laevat:melting_flame`), so its explosion and
   dots at 32.97–34.43 s are replay-only. **Not the move's Heat alone** (2026-11-27, with the move landed): the replay
   now has the 29.67 s move's Heat infliction, but nothing of Laevatain's absorbs it before the cast (her Melting Flame
@@ -2354,18 +2355,34 @@ logcasts.ts placeWith `batch`; `later`: a third slug's final 125 ms after two sl
   error| 8.3 → 6.3%; 6339 −10.3 → −6.3%, 7b54 −3.3 → −1.2%. **Still possible:** what moved it at 6339's 19.68 s (no
   logged kill within 8 s before; every slug's kill is logged: a burrow?); moves onto shielded slugs (7b54's
   normal_skill event at 19.90 s, 0.31 s after the 19.59 s kill, no hit: a move dealing 0, not made, its debuff and
-  cast event missing); the moves' Heat on the replay's one enemy (6339's replay-only Heat bursts at 21.60, 25.57 and
-  33.17 s: the next slug's own infliction, statuses per target).
+  cast event missing); the moves' Heat bursts (6339 21.60, 25.57, 33.17 s) fixed by
+  Laevatain's absorption at each death (below).
 - **9c6e:** its twins are the placement's already (`used` / `value`; the batch rule moves none of its casts); the
   log-only twins whose value fits no target (Typhoeus's Nature bursts on the second Wanderer, 52.80, 79.85, 94.32 s)
   need that target's own inflictions, Corrosion level and Stagger: statuses per target, not a placement error.
 
+**Fixed 2026-11-27 (docs/journal/2026-11-27-19-target-deaths-laevatain-absorbs-the-dead-slug-s-heat.md): the moves'
+Heat bursts and Laevatain's 35.70 s empowered hit.** Laevatain's passive_enemy (abilityEvent 1 on the enemy) absorbs
+a dying target's Heat layers as Melting Flame (kit trigger death_absorb), and the replay makes a death at every logged
+kill of a fight read per target (replay assumption target-deaths `kills`; Camille's triggers only where her move is
+logged). 6339: the 21.60, 25.57, 33.17 s bursts gone (the next slug's Heat is its own), Melting Flame 4 at 32.24 s,
+−6.3 → +0.1%; 7b54 Si's 30.50 s burst gone. The row (scoreboard) |damage error| 6.3 → 4.6%. **Ruled out:** a death
+ending the replay's enemy's statuses (target-deaths `statuses`, 6339 −5.0%: its 29.26 s Laevatain combo hit needs
+Combustion or Corrosion on its slug, which the one enemy's kept 24.03 s Combustion stood for). **Still possible:**
+6339's replay-only Combustion ticks at 25.03–28.47 s (the 24.03 s Combustion was its dying slug's) against that combo
+hit: the slug it killed at 29.26 s had a Combustion or Corrosion the replay doesn't make (an unlogged reaction on it
+shortly before, or the 24.02 s empowered hit's Combustion on a slug shielded then, whose ticks dealt 0); Si's ink
+(below).
+
 **Still possible / left:** statuses per target (Corrosion and Electrification levels, a target's own inflictions and
-bursts, its Stagger: only on/off per target now); other kits' listeners on a target's death, now the engine's
-`targetDeath` (BuffData abilityEvent 1 on a buff on the target): Arcane's buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable
-(an early seal finisher in INT mode), Si's buff_chr_0036_jsspsi_xianjing_inkhurteffect (kill damage into her ink) and
-normal_skill_check, Zhuang Fangyi's normal_skill_trigger_sword_tar, Seraph's finishball, Tangtang's ultskill_buff,
-Typhoeus's combo_trigger_combo, Yvonne's ultimate (none built; Si and Arcane are in both slug fights); a landing
+bursts, its Stagger: only on/off per target now; the design in docs/design/data.md "Statuses per target"); the other
+listeners on a target's death (BuffData abilityEvent 1 on a buff on the target): Arcane's
+buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable has every action disabled (no early seal finisher: nothing to
+build), Typhoeus's combo_trigger_combo none; Si's buff_chr_0036_jsspsi_xianjing_inkhurteffect (kill_damage × rate into
+EntityBB_ink_damage, then an ink phantom entity with linkline carrying her Artful Intent's time left) and
+normal_skill_check (ends the phantom and the inkhurteffect) need the phantom entity, not built (6339's 19.91 s ink
+burst is SKIPped for its shielded-slug presses first); Zhuang Fangyi's normal_skill_trigger_sword_tar, Seraph's
+finishball, Tangtang's ultskill_buff, Yvonne's ultimate are in no several-targets fight; a landing
 on a shielded slug as "there, 0 damage, no infliction, buffs applied" (6339 14.09 s: Camille's Vesperwings reached
 the next slug, her weapon's Heat DMG, which needs an infliction, didn't; `targets-gaps-away` measured 6339 plain +1,
 total −2.3 points). What an engine state for it would need: a span kind beside TimelineScenario.enemyAway in which a

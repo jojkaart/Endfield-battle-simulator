@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-27: Target deaths: Laevatain absorbs the dead slug's Heat](2026-11-27-19-target-deaths-laevatain-absorbs-the-dead-slug-s-heat.md)
 - [2026-11-27: Tail cuts: what the shown-hit guard stands for](2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md)
 - [2026-11-27: Friction round 20: guards that say what they cite, tried diffs by function, the build screen by the check's tolerance](2026-11-27-18-friction-round-20-guards-that-say-what-they-cite-tried-diffs.md)
 - [2026-11-27: Liino's damage error and her weapon's Medicant layers](2026-11-27-17-liino-s-damage-error-and-her-weapon-s-medicant-layers.md)

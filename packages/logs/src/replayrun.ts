@@ -6,14 +6,14 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayEvent, replayWindowCount, kitHitEntries, parseReactionEvent,
+  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, kitHitEntries, parseReactionEvent,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { awayWindows, enemyAwaySpans, KILL_EDGE_MS, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
-import { deathMoves, gapsWithTargetsLeft, keepsKillGaps } from "./targets.ts";
+import { gapsWithTargetsLeft, keepsKillGaps, targetDeaths } from "./targets.ts";
 import { buttonVariants, loggedFrames, type Placement } from "./logcasts.ts";
-import { deathEvent, replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
+import { deathEvent, replaySteps, runEventStep, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
 import { type ReplayedCast, frameOf } from "./castassembly.ts";
@@ -965,13 +965,13 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });
-  // A target's death where a kit's targetDeath trigger's hit is logged (targets.ts deathMoves: Camille's Vesperwings
-  // moving to the next slug), at the logged kill before it (else the trigger's lead before it); the landing pinned at
-  // its logged frame.
-  const moves = deathMoves(fx, [...ctx.kits.values()]);
-  // The moves of each death frame, pinned at their logged landings (the hit's index the ref, as a cast's landings').
-  const movesAt = (frame: number) => moves.filter((m) => m.frame === frame).map((m) => ({ trigger: m.trigger, hitId: m.hitId, frame: m.landing, ref: String(fx.hits.indexOf(m.hit)), ms: m.hit.t }));
-  const deaths = moves.map((m) => deathEvent(m.frame, `${m.trigger}: its landing logged at ${(m.hit.t / 1000).toFixed(2)} s${m.kill ? `, after the kill at ${(m.kill.t / 1000).toFixed(2)} s` : ""}`, movesAt(m.frame)));
+  // The targets' deaths (targets.ts targetDeaths, replay assumption target-deaths): where a kit's targetDeath trigger's
+  // hit is logged (Camille's Vesperwings moving to the next slug), at the logged kill before it (else the trigger's lead
+  // before it), and under `kills` / `statuses` at each logged kill of a fight read per target; the moves' landings
+  // pinned at their logged frames (the hit's index the ref, as a cast's landings').
+  const deaths = targetDeaths(fx, [...ctx.kits.values()], opts.assume).map((d) =>
+    deathEvent(d.frame, d.why, d.moves.map((m) => ({ trigger: m.trigger, hitId: m.hitId, frame: m.landing, ref: String(fx.hits.indexOf(m.hit)), ms: m.hit.t })), { except: d.except, endsStatuses: d.endsStatuses }),
+  );
   const steps = replaySteps(input.stagger, pass.worldHolds, list, sampleFrames, breaks.filter((b) => b.from !== b.at).map((b) => b.from), deaths);
   const checkpoints: TimelineState[] = [st];
   const made: Made[] = [];
@@ -1028,7 +1028,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
       }
       // A log-driven event (a target's death): its triggers run, their logged landings pinned (engine replayEvent).
       if (s.event !== undefined) {
-        st = replayEvent(ctx, st, st.frame, s.event.make, s.event.landings);
+        st = runEventStep(ctx, st, s.event);
         continue;
       }
       if (s.bar !== undefined) {
