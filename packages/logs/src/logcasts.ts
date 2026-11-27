@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, evalContext, evaluate, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, evalContext, evaluate, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type Readings, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
 import { breakStops } from "./holds.ts";
@@ -854,17 +854,21 @@ function exactSlots(g: Group, key: string): boolean {
  *
  * ultimateOverlaps lists the ultimate stops still overlapping after pass 3 (tests/logcasts-stops.test.ts pins them).
  */
-export function placeHits(data: GameData, fx: LogFixture): Placement {
-  return placementPasses(data, fx).placed;
+export function placeHits(data: GameData, fx: LogFixture, assume?: Readings): Placement {
+  return placementPasses(data, fx, assume).placed;
 }
 
-/** placeHits' passes (its comment): the first placement, the second (from the first's stops), and the placement after the rules over the settled one. */
-export function placementPasses(data: GameData, fx: LogFixture): { readonly first: Placement; readonly second: Placement; readonly placed: Placement } {
-  const firstPlacement = placeWith(data, fx, []);
+/**
+ * placeHits' passes (its comment): the first placement, the second (from the first's stops), and the placement after
+ * the rules over the settled one. `assume`: the run's readings (the holds at the log's Stagger breaks: engine
+ * assumptions break-hold, break-hold-place), as the replay's.
+ */
+export function placementPasses(data: GameData, fx: LogFixture, assume?: Readings): { readonly first: Placement; readonly second: Placement; readonly placed: Placement } {
+  const firstPlacement = placeWith(data, fx, [], assume);
   // The placed casts' stops cut at their resets, and the unplaced cast events' stops as they are: an event's time is the
   // press, not the cast, so its reset is no time to cut at (1cd1657bc305: Arcane's combo event at 34.70 s, cast at
   // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
-  const second = placeWith(data, fx, passStops(data, fx, firstPlacement));
+  const second = placeWith(data, fx, passStops(data, fx, firstPlacement), assume);
   const placed = inTurn(data, fx, second);
   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
@@ -884,8 +888,8 @@ function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[
  * cast gone or new counts too). Non-empty: the casts whose start rests on a stop that pass 2 itself moved, where a rule
  * reading other casts' stops cascades. A diagnosis (`zmdlogs casts --settle`), never part of the placement.
  */
-export function settleCheck(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): { readonly operator: string; readonly skillId: string; readonly now: number | null; readonly third: number | null }[] {
-  const third = inTurn(data, fx, placeWith(data, fx, passStops(data, fx, placement)));
+export function settleCheck(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), assume?: Readings): { readonly operator: string; readonly skillId: string; readonly now: number | null; readonly third: number | null }[] {
+  const third = inTurn(data, fx, placeWith(data, fx, passStops(data, fx, placement), assume));
   // One pairing (castpairs.ts, round 13's backlog point 1): the casts that stay first, then the moved ones by nearest.
   const pairs = pairCasts(placement.casts, third.casts);
   const out: { operator: string; skillId: string; now: number | null; third: number | null }[] = [
@@ -947,7 +951,7 @@ function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly Logg
   return out;
 }
 
-function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): Placement {
+function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], assume: Readings | undefined): Placement {
   const hits = new Map<LogHit, PlacedHit>();
   const casts: LoggedCast[] = [];
   const realign: RealignRecord[] = [];
@@ -960,7 +964,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     const mine = sorted.filter((h) => h.operator === build.operator);
     const others = stops.filter((x) => x.operator !== build.operator);
     // The holds at the log's Stagger breaks, from a pass with stops (not inside an ultimate's: breakStops).
-    const breaks = stops.length ? breakStops(fx, stops, undefined) : [];
+    const breaks = stops.length ? breakStops(fx, stops, assume) : [];
     const slotCache = new Map<string, Slot[] | null>();
     const slots = (g: Group, key: string) => {
       const k = `${g.id}|${key}`;

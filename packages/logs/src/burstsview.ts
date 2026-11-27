@@ -95,7 +95,7 @@ function kitHitOf(kit: OperatorKit | undefined, l: LandedHit): KitHit | undefine
 
 /** Every Arts Burst of a fight, logged against replayed, with each side's likely cause and the stops between. */
 export function burstRows(data: GameData, fx: LogFixture, opts: { readonly operators?: readonly string[]; readonly assume?: Readonly<Record<string, string>> } = {}): BurstRow[] {
-  const placement = placeHits(data, fx);
+  const placement = placeHits(data, fx, opts.assume);
   const { replay } = logBuffReplay(data, fx, placement, opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {});
   const stops = replayTimeStops(data, fx, placement);
   const kits = new Map(fx.team.map((b) => [b.operator, effectiveKit(data, b)]));

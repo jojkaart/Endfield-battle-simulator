@@ -484,7 +484,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (args.length !== 4 || !arg || !Number.isFinite(from) || !Number.isFinite(to)) throw new Error("zmdlogs worldtime takes one fixture and two times in seconds: <fixture> <from s> <to s>");
       // The replay's own stops (an event it read as a buff's tick holds nothing: round 15), under --assume.
       const fx = readDevFixture(arg);
-      const placement = placeHits(data(), fx);
+      const placement = placeHits(data(), fx, assume);
       return worldTimeView(data(), fx, from * 1000, to * 1000, logBuffReplay(data(), fx, placement, { assume }).replay, placement);
     }
     if (sub === "ramp") {

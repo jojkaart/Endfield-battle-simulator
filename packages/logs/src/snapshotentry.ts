@@ -30,10 +30,10 @@ export interface CheckComposition {
 export function composeCheck(raw: GameData, fx: LogFixture, opts: Pick<ReplayOptions, "assume"> = {}): CheckComposition {
   // Engine assumption combo-curve: the log tools' stop lists and the replay's timeline on the same resampled curve.
   const data = withCurveReading(raw, opts.assume);
-  const placement = placeHits(data, fx);
+  const placement = placeHits(data, fx, opts.assume);
   const replay = opts.assume && Object.keys(opts.assume).length ? logBuffReplay(data, fx, placement, { assume: opts.assume }) : logBuffReplay(data, fx, placement);
   const byHit = engineHits(data, fx, replay, placement);
-  const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
+  const verdicts = checkLog(data, fx, { replay, engineHits: byHit, placement });
   let c: EngineCheck | undefined;
   const bases = new Map<LogHit, ReturnType<typeof readingBasis>>();
   const check = () => (c ??= engineCheck(data, fx, replay.replay));
