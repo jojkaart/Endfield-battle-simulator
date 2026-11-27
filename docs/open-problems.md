@@ -75,7 +75,7 @@ Snowshine's ultimate ticks; median 0.54 s), against +10 ms for clocks with no br
 included (04d4 298.00 s Catcher's own ultimate +0.54 s; c83c 55.83 s Si's combo +0.56 s), on every enemy of the
 development logs (klbear, kltdcap, bigents, jsspsi, rodin, fdcentur). The next logged moment after a break comes
 0.45 s or more later in 58 of 72 breaks (median 0.68 s); the others are inside a stop or among the cases below.
-**Found and fixed** (docs/journal/2026-11-27-09-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md):
+**Found and fixed** (docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md):
 engine assumption `break-hold` `14f` (timeline/clock.ts breakHold, landing.ts at dealPoise's `staggered`): the
 breaking hit holds the world, the enemy and every operator 14 frames at scale 0; not inside an ultimate's stop. The
 replay's tick bounds take the logged breaks as stops (holds.ts breakStops), so the hidden holds don't place it again;
@@ -134,7 +134,7 @@ window gains 3 frames of the 15 the log shows (not measured).
 
 **Diagnosed, not fixed:**
 - Fixed: 5082 45.06 s, Yvonne's chain: the hold at the Stagger break (above, "The hold at a Stagger break") —
-  docs/journal/2026-11-27-09-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis:
+  docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis:
 - **5082 45.06 s, Yvonne's enhanced attack made as enhanced attack 1** (replay MADE): her 43.98 s ult_attack3_2's shots
   4–8 land 0.22–0.51 s late (44.43 → 44.88 s between shots 5 and 6, two frames apart in the kit): her own timeline
   was held about 0.5 s at her combo's Stagger-breaking explosion (44.43 s; the log's first Staggered hit 44.88 s, as
@@ -158,7 +158,7 @@ window gains 3 frames of the 15 the log shows (not measured).
   nearest pairing. Not built.
 - Fixed: 99fb's bleed ticks: her ultimate's freeze of an Elite held her bleed in the replay (+93 frames at 51.03 s),
   and the log's ticks run on through it in every Elite log (99fb, 2fd9, 207f): Razor Clawmark `runsThroughFreeze` —
-  docs/journal/2026-11-27-09-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis (the
+  docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis (the
   "ended" bleed was a held one):
 - **99fb's bleed ticks at 51.44–55.43 s:** five ticks of the 47.43 s battle skill's bleed after Rossi's 49.12 s
   ultimate (one per second, held by its stop); the replay's bleed lands two (47.43, 48.43 s), so the placement's
