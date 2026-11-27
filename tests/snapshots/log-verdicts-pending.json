@@ -128,9 +128,9 @@
  "pending/zmdlogs-63398339803e.json": {
   "chr_0016_laevat": {"plain":31,"assumed":0,"fallback":15,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":37,"assumed":2,"fallback":0,"mismatch":2,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0033_camille": {"plain":6,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":5},
+  "chr_0033_camille": {"plain":11,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":41,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-10.3,"operator chr_0016_laevat":31.6,"operator chr_0036_jsspsi":-32.2,"operator chr_0032_lizhiyan":0,"operator chr_0033_camille":-10.8,"kind basic":81.2,"kind battle":-39.1,"kind combo":-19.4,"kind status":218.1,"kind uncovered":-100,"hits":10.7,"status hits":500,"staggered hits":100,"last hit":-0.9,"time to kill":null,"crit share (points)":0.3,"share matched":-9.5,"share replay-only":24.8,"share log-only":-25.6,"share operator chr_0016_laevat":29.7,"share operator chr_0036_jsspsi":58.3,"share operator chr_0032_lizhiyan":4.1,"share operator chr_0033_camille":7.8,"other-hit operator chr_0036_jsspsi":1,"stage":1,"several targets":1}
+  "totals": {"damage":-6.3,"operator chr_0016_laevat":31.6,"operator chr_0036_jsspsi":-32.2,"operator chr_0032_lizhiyan":0,"operator chr_0033_camille":40.5,"kind basic":81.2,"kind battle":-41.8,"kind combo":-19.4,"kind status":330.2,"hits":13.6,"status hits":700,"staggered hits":100,"last hit":-0.9,"time to kill":null,"crit share (points)":0.1,"share matched":-9.5,"share replay-only":24.3,"share log-only":-21.1,"share operator chr_0016_laevat":29.7,"share operator chr_0036_jsspsi":58.3,"share operator chr_0032_lizhiyan":4.1,"share operator chr_0033_camille":7.8,"other-hit operator chr_0036_jsspsi":1,"stage":1,"several targets":1}
  },
  "pending/zmdlogs-791020039384.json": {
   "chr_0025_ardelia": {"plain":83,"assumed":5,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":7,"uncovered":0},
@@ -147,11 +147,11 @@
   "totals": {"damage":0,"operator chr_0032_lizhiyan":-0.1,"operator chr_0025_ardelia":0.7,"operator chr_0036_jsspsi":0.1,"operator chr_0016_laevat":-0.1,"kind basic":-0.8,"kind battle":0.2,"kind combo":0.3,"kind status":2.6,"kind ultimate":-0.1,"hits":1.3,"status hits":6.3,"staggered hits":4.8,"last hit":0,"time to kill":0.9,"crit share (points)":0.1,"share matched":-0.3,"share replay-only":0.6,"share log-only":-0.3,"share operator chr_0032_lizhiyan":4.8,"share operator chr_0025_ardelia":4.2,"share operator chr_0036_jsspsi":36.9,"share operator chr_0016_laevat":54.1,"other-hit operator chr_0032_lizhiyan":2}
  },
  "pending/zmdlogs-7b54dc249bcd.json": {
-  "chr_0033_camille": {"plain":29,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1},
+  "chr_0033_camille": {"plain":30,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0016_laevat": {"plain":13,"assumed":1,"fallback":0,"mismatch":43,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":31,"assumed":11,"fallback":0,"mismatch":30,"unvalued":0,"unquantified":2,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":42,"assumed":2,"fallback":0,"mismatch":9,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-3.3,"operator chr_0016_laevat":42.1,"operator chr_0033_camille":22.2,"operator chr_0032_lizhiyan":-15.9,"operator chr_0036_jsspsi":-19.2,"kind basic":1.7,"kind battle":53.3,"kind combo":-18.1,"kind status":146,"kind ultimate":-62.6,"kind uncovered":-100,"hits":-7.4,"status hits":150,"staggered hits":0,"last hit":0,"time to kill":null,"crit share (points)":0.1,"share matched":6.4,"share replay-only":15.6,"share log-only":-25.4,"share operator chr_0016_laevat":22.2,"share operator chr_0033_camille":5.1,"share operator chr_0032_lizhiyan":6.7,"share operator chr_0036_jsspsi":66,"stage":1,"several targets":1}
+  "totals": {"damage":-1.2,"operator chr_0016_laevat":42.1,"operator chr_0033_camille":35.1,"operator chr_0032_lizhiyan":-15.9,"operator chr_0036_jsspsi":-17,"kind basic":1.7,"kind battle":51.8,"kind combo":-17.8,"kind status":191.7,"kind ultimate":-62.6,"hits":-6.5,"status hits":175,"staggered hits":0,"last hit":0,"time to kill":null,"crit share (points)":0.1,"share matched":6.7,"share replay-only":16.9,"share log-only":-24.8,"share operator chr_0016_laevat":22.2,"share operator chr_0033_camille":5.1,"share operator chr_0032_lizhiyan":6.7,"share operator chr_0036_jsspsi":66,"stage":1,"several targets":1}
  },
  "pending/zmdlogs-7e19489ae503.json": {
   "chr_0009_azrila": {"plain":17,"assumed":3,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
