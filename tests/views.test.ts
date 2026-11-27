@@ -55,6 +55,12 @@ describe("the placement and replay views", () => {
     expect(replayView(data, s6339, { from: 19900, to: 19920 })).toMatch(/NOLAND Si normal_skill_inkmove_2 \d+: .*a trigger's landing \(trigger:artful_intent_end\): the replay lands it from the trigger's event/);
   });
 
+  // Round 20 (the several-targets report point 1): the placement's twin rule on the replay's LAND line.
+  it("marks a landing whose logged hit the placement took as another target's (7b54's Si combo at 15.60 s)", () => {
+    const s7b54 = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-7b54dc249bcd.json"));
+    expect(replayView(data, s7b54, { from: 15590, to: 15610 })).toMatch(/LAND {3}Si combo_skill slash\S* \d+ \[pinned\] = logged .* \[twin: batch, 2 targets per landing of the 8 alike hits at this ms/);
+  });
+
   it("says what the replay made of each of the log's cast events (EVENT lines)", () => {
     // a7a7: Arcane's INT lasers' events at 42.13 and 48.89 s are ticks of her Imprisonment, not her combo's own events.
     const pending = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-a7a7a40c97ed.json"));

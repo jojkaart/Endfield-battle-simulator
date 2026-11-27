@@ -621,6 +621,12 @@ export interface LogBuffReplay {
   readonly replay: BuffReplay;
   readonly replayed: ReplayedHits;
   readonly runs: readonly DisagreementRun[];
+  /**
+   * The placement the replay was made from (under its readings): checkLog and engineHits take it when given the replay
+   * and no placement of their own (round 20, the break-placement report point 1: checkLog placed the fight again under
+   * the defaults beside a replay made under other readings, found only by a hand-made trace).
+   */
+  readonly placement?: Placement;
 }
 
 /** A logged arts reaction's level, at the replay's landing of it (TimelineScenario.loggedReactionLevels). */
@@ -696,7 +702,7 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
     if (bounds.length) replay = replayKitBuffs(data, fx, placement, { ...opts, reactionLevels: [...levels.values()], holdBounds: bounds });
   }
   const replayed = replayedHits(fx, replay);
-  return { replay, replayed, runs: disagreementRuns(fx, replayed) };
+  return { replay, replayed, runs: disagreementRuns(fx, replayed), placement };
 }
 
 /** logBuffReplay's options in one object (its third argument): the placement (default placeHits), the readings and the traces. */
@@ -748,7 +754,7 @@ export type EngineHit = ReturnType<typeof engineReadings>;
 export type EngineHits = ReadonlyMap<LogHit, EngineHit>;
 
 /** The engine's readings of every logged hit of a fixture, at their landings in the replay. */
-export function engineHits(data: GameData, fx: LogFixture, replay: LogBuffReplay, placement: Placement = placeHits(data, fx)): EngineHits {
+export function engineHits(data: GameData, fx: LogFixture, replay: LogBuffReplay, placement: Placement = replay.placement ?? placeHits(data, fx)): EngineHits {
   const c = engineCheck(data, fx, replay.replay);
   return new Map(fx.hits.map((h) => [h, engineReadings(c, h, hitPlace(data, fx, placement, replay, h))]));
 }
@@ -768,7 +774,8 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
   const caps = kitStackCaps(data, panels);
   const auras = unloggedEnemyAuras(data, fx, panels);
   const finisher = finisherModifier(data, fx.enemy.id);
-  const placement = opts.placement ?? placeHits(data, fx);
+  // The replay's own placement where only the replay is given (LogBuffReplay.placement): one placement of the fight.
+  const placement = opts.placement ?? opts.replay?.placement ?? placeHits(data, fx);
   // The hits as the replay decides their kit buffs; with `buffs: "log"`, as logged.
   const replay = opts.buffs === "log" ? null : (opts.replay ?? logBuffReplay(data, fx, placement));
   const byEngineHit = replay && opts.engine !== false ? (opts.engineHits ?? engineHits(data, fx, replay, placement)) : null;
@@ -1482,7 +1489,7 @@ export interface SimulatedHit {
  * only the crit, the effects no kit models, the enemy's HP, and what the replay can't judge). A plain match of the check
  * is this reading within ±1 (tests/logs.test.ts holds it to that). Hits the replay doesn't land have no value.
  */
-export function simulateLog(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx), replay: LogBuffReplay = logBuffReplay(data, fx, placement), byHit: EngineHits = engineHits(data, fx, replay, placement)): SimulatedHit[] {
+export function simulateLog(data: GameData, fx: LogFixture, placement?: Placement, replay: LogBuffReplay = logBuffReplay(data, fx, placement ?? placeHits(data, fx)), byHit: EngineHits = engineHits(data, fx, replay, placement ?? replay.placement ?? placeHits(data, fx))): SimulatedHit[] {
   return fx.hits.map((hit) => {
     const r = byHit.get(hit) as EngineHit;
     if ("unknown" in r.landing) return { hit, simulated: r.landing };

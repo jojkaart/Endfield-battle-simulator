@@ -12,6 +12,14 @@
 //   worktree (restored after) and should FAIL there. Exit 0 when it fails at <base> (the test tells the change
 //   apart), 1 when it passes there too, 2 when it can't run there (an import the base lacks: say so, or test through
 //   what the base has). Seconds; no lock (one file).
+//
+//        node scripts/verify-at.ts --snapshot [--steps …] [--files <test file,…>]
+//   The working tree as it is now, at a snapshot commit (scripts/at-commit.ts snapshotCommit: tracked changes and new
+//   files; the branch and index untouched) in its own worktree: a plain background `npx vitest run` reads the tree as
+//   its workers reach each file, so an edit meanwhile fails a test at random (round 20, round 19's own report point
+//   1). With --files only those test files run there (npx vitest run, the progress reporter; no lock), else
+//   premerge's steps (the default typecheck,lint,test). Keep editing while it runs; it ends with `EFSIM-DONE
+//   verify-at pass|fail`.
 
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, rmSync } from "node:fs";
@@ -19,7 +27,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { printHelp } from "./usage.ts";
-import { atCommit } from "./at-commit.ts";
+import { atCommit, snapshotCommit } from "./at-commit.ts";
 import { endRun, startRun } from "./runstate.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -54,13 +62,26 @@ function testAtBase(ref: string, tree: string, file: string, name: string | unde
 }
 
 function main(argv: string[]): number {
-  const { values, positionals } = parseArgs({ args: argv, allowPositionals: true, options: { steps: { type: "string", default: "typecheck,lint,test" }, test: { type: "string" }, name: { type: "string", short: "t" } } });
-  const ref = positionals[0] ?? "HEAD";
+  const { values, positionals } = parseArgs({ args: argv, allowPositionals: true, options: { steps: { type: "string", default: "typecheck,lint,test" }, test: { type: "string" }, name: { type: "string", short: "t" }, snapshot: { type: "boolean", default: false }, files: { type: "string" } } });
+  if (values.snapshot && positionals.length) throw new Error("verify-at: --snapshot takes no ref (it is the working tree as it is now)");
+  if (values.files !== undefined && !values.snapshot) throw new Error("verify-at: --files goes with --snapshot");
+  const snap = values.snapshot ? snapshotCommit(ROOT) : null;
+  if (snap) process.stdout.write(`verify-at: the working tree as it is now: ${snap.dirty ? `snapshot ${snap.commit.slice(0, 9)} on HEAD` : "HEAD (the tree is clean)"}\n`);
+  const ref = snap ? snap.commit : (positionals[0] ?? "HEAD");
   const short = spawnSync("git", ["rev-parse", "--short=9", "--verify", `${ref}^{commit}`], { cwd: ROOT, encoding: "utf8" });
   if (short.status !== 0) throw new Error(`verify-at: no commit ${ref}`);
   const tree = join(ROOT, "scratch", "at", short.stdout.trim());
   atCommit(ref, tree);
   if (values.test !== undefined) return testAtBase(ref, tree, values.test, values.name);
+  if (values.files !== undefined) {
+    const files = values.files.split(",").filter(Boolean);
+    startRun("verify-at", `the working tree's snapshot (${short.stdout.trim()}): ${files.join(", ")}`);
+    const r = spawnSync("npx", ["vitest", "run", ...files, "--reporter=default", "--reporter=./scripts/vitest-progress.ts"], { cwd: tree, stdio: "inherit" });
+    const ok = r.status === 0;
+    endRun("verify-at", ok ? "pass" : "fail");
+    process.stdout.write(`EFSIM-DONE verify-at ${ok ? "pass" : "fail"}\n`);
+    return ok ? 0 : 1;
+  }
   if (!existsSync(join(tree, "scripts/premerge.ts"))) throw new Error(`verify-at: ${ref} has no scripts/premerge.ts`);
   startRun("verify-at", `${ref} (${short.stdout.trim()}): ${values.steps}`);
   process.stdout.write(`verify-at: ${ref} (${short.stdout.trim()}) in ${tree}: ${values.steps}\n`);
