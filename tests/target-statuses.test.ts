@@ -114,3 +114,12 @@ describe("the check's targets are the replay's landings' targets (hits --json ta
     expect(two.differ.length).toBeLessThanOrEqual(1);
   });
 });
+
+// Round 21 (the target-statuses report point 1): a stack's arrival, from the replay's states.
+describe("`zmdlogs statuses --inflictions` (6339)", () => {
+  it("prints each target's infliction change at a frame of kit landings, with them", () => {
+    const text = statusesView(data, fixture("6339"), { from: 19000, to: 21000, inflictions: true });
+    expect(text).toMatch(/19\.70 {2}T3 {2}infliction none → fire×1 {2}\(landings: Camille normal_skill /);
+    expect(text).toMatch(/20\.37 {2}T3 {2}infliction fire×1 → none/);
+  });
+});

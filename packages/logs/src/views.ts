@@ -15,7 +15,7 @@
 //   whether a teammate mismatches at the same ratio nearby (team-wide, so not this operator's kit).
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
-import { effectiveKit, expireStatus, FPS, kitHitEntries, parseReactionEvent, targetEnemy, type EnemyStatus, type GameData, type ReactionRecord } from "@efsim/engine";
+import { effectiveKit, everyTarget, expireStatus, FPS, kitHitEntries, parseReactionEvent, targetEnemy, type EnemyStatus, type GameData, type ReactionRecord } from "@efsim/engine";
 import { NO_LANDING } from "./replaykeys.ts";
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
@@ -689,7 +689,7 @@ function enemyWords(e: EnemyStatus | null, frame: number): string {
  * it; the replay's deaths (BuffReplay.deaths) between. The target-statuses report point 1: a burst too many or a
  * reaction a kit hit's `if` needs, answered without a probe.
  */
-export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly assume?: Readonly<Record<string, string>>; readonly targets?: readonly number[] } = {}): string {
+export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly assume?: Readonly<Record<string, string>>; readonly targets?: readonly number[]; readonly inflictions?: boolean } = {}): string {
   const { replay } = logBuffReplay(data, fx, underReadings(f.assume));
   const perTarget = replay.targets !== undefined;
   const lines: { t: number; text: string }[] = [];
@@ -703,6 +703,31 @@ export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { r
     const st = replay.stateAt(e.frame);
     const after = st ? (e.target !== undefined ? targetEnemy(st, e.target) : st.enemy) : null;
     lines.push({ t, text: `${s(t).padStart(7)}  ${e.target !== undefined ? `T${e.target}`.padEnd(4) : "    "}${label(data, e.operator).padEnd(12)} ${statusEventWords(e)}${d !== undefined ? `: ${Math.round(d)}` : ""}  → ${enemyWords(after, e.frame)}` });
+  }
+  // With inflictions (round 21, the target-statuses report point 1: a stack's arrival wasn't in any view): at each frame
+  // a kit landing landed, each target whose infliction (element × stacks) differs from the frame before, the landings
+  // there. From the replay's states (stateAt), no record of the engine's.
+  if (f.inflictions) {
+    const byFrame = new Map<number, typeof replay.hits>();
+    for (const l of replay.hits) if (!l.skillId.startsWith("reaction:") && inWindow(f, msOf(l.frame))) byFrame.set(l.frame, [...(byFrame.get(l.frame) ?? []), l]);
+    const inf = (e: EnemyStatus, frame: number) => {
+      const x = expireStatus(e, frame).infliction;
+      return x ? `${x.element}×${x.stacks}` : "none";
+    };
+    for (const [frame, ls] of [...byFrame].sort((a, b) => a[0] - b[0])) {
+      const [was, now] = [replay.stateAt(Math.max(0, frame - 1)), replay.stateAt(frame)];
+      if (!was || !now) continue;
+      const ids = perTarget ? [...new Set([...everyTarget(was), ...everyTarget(now)].map((x) => x.target as number))] : [undefined];
+      for (const id of ids) {
+        if (!shown(id)) continue;
+        const [a, b] = id === undefined ? [inf(was.enemy, frame - 1), inf(now.enemy, frame)] : [inf(targetEnemy(was, id), frame - 1), inf(targetEnemy(now, id), frame)];
+        if (a === b) continue;
+        const mine = ls.filter((l) => (id === undefined || l.target === id || (l.otherTargets ?? []).some((o) => o.target === id)) && (!f.operators?.length || f.operators.includes(l.operator)));
+        if (!mine.length && f.operators?.length) continue;
+        const t = msOf(frame);
+        lines.push({ t, text: `${s(t).padStart(7)}  ${id !== undefined ? `T${id}`.padEnd(4) : "    "}infliction ${a} → ${b}  (landings: ${(mine.length ? mine : ls).map((l) => `${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId}`).join(", ")})` });
+      }
+    }
   }
   for (const d of replay.deaths) {
     const t = msOf(d.frame);

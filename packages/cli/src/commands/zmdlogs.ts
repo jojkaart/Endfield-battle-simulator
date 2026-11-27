@@ -166,6 +166,8 @@ export default command({
                                           read per target), its damage and the target's statuses after it; the
                                           replay's deaths between
                 [--target n] [--operator <op>] [--from s] [--to s]  Only these targets (repeatable), operators, window
+                [--inflictions]           Also each target's infliction (element×stacks) where a frame of kit
+                                          landings changed it, with those landings (a stack's arrival)
   efsim zmdlogs bursts <fixture…|--all>   Each Arts Burst, logged against the check's replay (paired as the check
                                           pairs them, the offset; log only with the reason; replay only), each
                                           side's likely cause (the operator's latest inflicting hit at least the
@@ -432,6 +434,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "against-hit": { type: "string" },
     "against-lanes": { type: "boolean", default: false },
     "why-kept": { type: "boolean", default: false },
+    inflictions: { type: "boolean", default: false },
     pairs: { type: "boolean", default: false },
     listed: { type: "string" },
     all: { type: "boolean", default: false },
@@ -698,7 +701,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
         if (!Number.isInteger(n) || n < 0) throw new Error(`zmdlogs statuses --target ${x}: a target number (0, 1, …: the T<n> of its lines)`);
         return n;
       });
-      return statusesView(data(), readDevFixture(arg), { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators, assume, targets });
+      return statusesView(data(), readDevFixture(arg), { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators, assume, targets, inflictions: values.inflictions });
     }
     if (sub === "bursts") {
       const named = args.slice(1);
