@@ -18,10 +18,16 @@
 // The whole run holds the test lock once (scripts/testlock.ts, kind "tests": a queue with a heartbeat line while
 // waiting), so parallel worktrees' suites queue instead of timing out; EFSIM_NO_TEST_LOCK=1 skips it.
 //
+// It reads the working tree, so the tree must stay as queued (round 21, backlog after round 20 point 2): the code's key
+// (codeKey: HEAD, the tracked changes and the untracked files, its own outputs left out) is taken at queue time and
+// checked when the lock comes and at the end; a tree edited meanwhile fails the run, its files put back, with the
+// paths that changed. Edit docs only while it waits, or commit and run it from a worktree of its own.
+//
 // Usage: node scripts/snapshots.ts [--costs] [ref]     (several minutes: the pending logs' checks run in full)
 //   --costs   also rewrite tests/slow/pending-costs.json (the pending logs' check times that balance the test:logs
 //             shards): machine- and load-dependent, so only when rebalancing, on a quiet machine
 
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -60,7 +66,43 @@ export function testsNaming(logs: readonly string[], files: readonly { readonly 
   return files.filter((f) => ids.some((id) => f.text.includes(id))).map((f) => f.path);
 }
 
+/** The paths this run writes itself, left out of codeKey. */
+const OWN_OUTPUTS = ["tests/snapshots", "docs/accuracy.md", "tests/slow/pending-costs.json"];
+
+/**
+ * The key of the code a run reads (round 21): HEAD's commit, the tracked changes against it and the untracked files'
+ * contents, the run's own outputs (OWN_OUTPUTS) and docs (*.md) left out; with the paths it covers, to name what moved.
+ */
+export function codeKey(root = ROOT): { readonly key: string; readonly paths: ReadonlyMap<string, string> } {
+  const git = (...args: string[]) => spawnSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 256 << 20 }).stdout ?? "";
+  const skip = (p: string) => OWN_OUTPUTS.some((o) => p === o || p.startsWith(`${o}/`)) || p.endsWith(".md");
+  const paths = new Map<string, string>();
+  const hash = (s: string) => createHash("sha1").update(s).digest("hex");
+  for (const p of git("diff", "HEAD", "--name-only").split("\n").filter((x) => x && !skip(x))) paths.set(p, hash(git("diff", "HEAD", "--binary", "--", p)));
+  for (const p of git("ls-files", "--others", "--exclude-standard").split("\n").filter((x) => x && !skip(x))) paths.set(p, existsSync(join(root, p)) ? hash(readFileSync(join(root, p), "latin1")) : "gone");
+  const head = git("rev-parse", "HEAD").trim();
+  return { key: hash([head, ...[...paths].sort().map(([p, h]) => `${p} ${h}`)].join("\n")), paths: new Map([["HEAD", head], ...paths]) };
+}
+
+/** The paths whose code differs between two codeKey results (HEAD among them), sorted. */
+export function codeMoved(a: ReturnType<typeof codeKey>, b: ReturnType<typeof codeKey>): string[] {
+  return [...new Set([...a.paths.keys(), ...b.paths.keys()])].filter((p) => a.paths.get(p) !== b.paths.get(p)).sort();
+}
+
+/** The queued code's key, passed to the run under the lock (EFSIM_SNAPSHOTS_CODE). */
+const QUEUED_ENV = "EFSIM_SNAPSHOTS_CODE";
+
 async function regenerate(costs: boolean, ref: string, run: Runner, onKill: (f: () => void) => void): Promise<number> {
+  // The code as queued (codeKey): checked now and after the suites (a tree edited during the wait or the run).
+  const queued = process.env[QUEUED_ENV] ? (JSON.parse(process.env[QUEUED_ENV]) as { key: string; paths: [string, string][] }) : null;
+  const queuedKey = queued ? { key: queued.key, paths: new Map(queued.paths) } : codeKey();
+  const unmoved = (when: string): boolean => {
+    const now = codeKey();
+    if (now.key === queuedKey.key) return true;
+    process.stderr.write(`snapshots: the code changed ${when} (${codeMoved(queuedKey, now).join(", ")}): the run would mix two trees. Commit or set the edits aside, then run it again (docs may change meanwhile)\n`);
+    return false;
+  };
+  if (!unmoved("since the run was queued")) return 1;
   // Kept to put back if a run fails (a failed test may record nothing: the files would be left empty).
   const backup = mkdtempSync(join(tmpdir(), "efsim-snapshots-"));
   const snapshotFiles = readdirSync(SNAPSHOTS).filter((f) => f.endsWith(".json"));
@@ -95,6 +137,10 @@ async function regenerate(costs: boolean, ref: string, run: Runner, onKill: (f: 
       restore();
       return 1;
     }
+  }
+  if (!unmoved("while the suites ran")) {
+    restore();
+    return 1;
   }
   restored = true; // kept from here on
   rmSync(backup, { recursive: true, force: true });
@@ -137,7 +183,12 @@ async function main(argv: string[]): Promise<number> {
     return 2;
   }
   // The whole run under the lock, once: this script again, with EFSIM_TEST_LOCK_HELD=1 (testLockFile is then undefined).
-  if (testLockFile()) return runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...argv], { kind: "tests", who: "snapshots", done: "snapshots", label: "snapshots" });
+  if (testLockFile()) {
+    const k = codeKey();
+    process.env[QUEUED_ENV] = JSON.stringify({ key: k.key, paths: [...k.paths] });
+    process.stderr.write(`snapshots: the code is checked against the tree as queued (${k.paths.size - 1} changed or untracked file(s) on HEAD ${(k.paths.get("HEAD") ?? "").slice(0, 9)}): don't edit code while it waits or runs (docs may change)\n`);
+    return runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...argv], { kind: "tests", who: "snapshots", done: "snapshots", label: "snapshots" });
+  }
   return doneJob("snapshots", `against ${ref}`, (run, onKill) => regenerate(costs, ref, run, onKill));
 }
 

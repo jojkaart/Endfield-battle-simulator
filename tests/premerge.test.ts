@@ -1,6 +1,10 @@
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GATES, locked, missingJournal, slowest, STEPS, table, timeoutOnlyFiles, type VitestReport } from "../scripts/premerge.ts";
-import { testsNaming } from "../scripts/snapshots.ts";
+import { codeKey, codeMoved, testsNaming } from "../scripts/snapshots.ts";
 
 const file = (name: string, results: { status: string; failureMessages?: string[] }[], status = results.some((r) => r.status === "failed") ? "failed" : "passed", message = ""): VitestReport["testResults"][number] => ({
   name,
@@ -94,5 +98,34 @@ describe("snapshots' knock-on tests (misprediction-stats report point 6)", () =>
     expect(testsNaming(["pending/zmdlogs-d774d0ce7bd3.json"], files)).toEqual(["tests/logcasts.test.ts"]);
     expect(testsNaming(["zmdlogs-0eef2474a26f.json", "pending/zmdlogs-d774d0ce7bd3.json"], files)).toEqual(["tests/logcasts.test.ts", "tests/other.test.ts"]);
     expect(testsNaming([], files)).toEqual([]);
+  });
+});
+
+// Round 21 (backlog after round 20 point 2): snapshots:update refuses a tree whose code changed since it was queued.
+describe("snapshots' code key", () => {
+  it("moves with a code edit or a new file, not with its own outputs or a doc", () => {
+    const dir = mkdtempSync(join(tmpdir(), "snapshots-key-"));
+    const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, encoding: "utf8" });
+    try {
+      git("init", "-q");
+      git("config", "user.email", "t@example.invalid");
+      git("config", "user.name", "t");
+      mkdirSync(join(dir, "tests/snapshots"), { recursive: true });
+      writeFileSync(join(dir, "a.ts"), "export const A = 1;\n");
+      writeFileSync(join(dir, "tests/snapshots/x.json"), "{}\n");
+      git("add", ".");
+      git("commit", "-q", "-m", "base");
+      const k0 = codeKey(dir);
+      writeFileSync(join(dir, "tests/snapshots/x.json"), "{\"a\": 1}\n");
+      writeFileSync(join(dir, "notes.md"), "a doc\n");
+      expect(codeKey(dir).key).toBe(k0.key);
+      writeFileSync(join(dir, "a.ts"), "export const A = 2;\n");
+      writeFileSync(join(dir, "b.ts"), "export const B = 1;\n");
+      const k1 = codeKey(dir);
+      expect(k1.key).not.toBe(k0.key);
+      expect(codeMoved(k0, k1)).toEqual(["a.ts", "b.ts"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
