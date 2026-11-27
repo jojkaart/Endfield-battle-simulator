@@ -1,7 +1,10 @@
 // `efsim gamedata tree / who` (packages/cli/src/gamedata.ts): the compact tree of a raw data file and the reverse
 // index of who names a buff.
 import { describe, expect, it } from "vitest";
-import { atJsonPath, dataTree, findActions, formatFound, gamedataTree, parseJsonPath, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
+import { atJsonPath, buffCreators, dataTree, findActions, formatFound, gamedataTree, parseJsonPath, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
+import { deadKitBuffs } from "../packages/cli/src/commands/kit-census.ts";
+import { loadGameData } from "@efsim/data";
+import type { GameData } from "@efsim/engine";
 
 describe("the data-file tree", () => {
   const file = {
@@ -75,5 +78,20 @@ describe("finding actions by type", () => {
     expect(gamedataTree("buff_chr_0032_lizhiyan_combo_skill_seal")).toContain("abilityEvent 8 (owner defeated?)");
     // A buff's stacking type with the engine's reading of it (round 16, docs/game-data-format.md "stackingType readings").
     expect(gamedataTree("buff_chr_0032_lizhiyan_combo_skill_seal")).toMatch(/stackingType 0 \(instances add up/);
+  });
+});
+
+describe("kit buffs the data only creates in disabled actions (kit-census; round 17, the Zhuang Fangyi and Liino report point 4)", () => {
+  const creators = buffCreators();
+
+  it("finds Liino's linger: its only CreateBuffAction is isEnable false", () => {
+    expect(creators.get("buff_chr_0035_liino_atkup_finishtime")).toEqual({ enabled: 0, disabled: ["BuffData/buff_chr_0035_liino_normalskill_buff_atkup"] });
+    expect(creators.get("buff_chr_0035_liino_atkup")?.enabled).toBeGreaterThan(0);
+    const kit = { kits: { operators: { chr_x: { buffs: [{ id: "linger", gameBuff: "buff_chr_0035_liino_atkup_finishtime" }, { id: "stance", gameBuff: "buff_chr_0035_liino_atkup" }] } }, equipment: {} } } as unknown as GameData;
+    expect(deadKitBuffs(kit, creators).map((d) => d.buff)).toEqual(["linger"]);
+  });
+
+  it("no kit has one now", () => {
+    expect(deadKitBuffs(loadGameData(), creators)).toEqual([]);
   });
 });
