@@ -66,3 +66,18 @@ the logs what a press during the hold does, implement and measure; branch worktr
   a minute, before any measure.
 - `--variant <file>:<CONST>=<value>` measured four shapes of a rule against one plain tree in one queue.
 - The run check (tests/assumption-readers.test.ts) caught the defaulted reads at once.
+
+## Outcome (round 20)
+
+- 1 (The placement had no way to take a reading, and the readers test only says which id was defaulted): done
+  (01dd011): tests/helpers/readings.ts defaultedReads names each defaulted read's caller (`id ← path:line
+  (function)`, readSite); LogBuffReplay carries the placement it was made from, which checkLog, engineHits and
+  simulateLog take when given only the replay (one placement of the fight).
+- 2 (The same hold-out moved by every variant, and nothing a blind agent can do about it): done but the breaks and
+  stops near the moved casts (carried: 2026-11-27-backlog-after-round-20.md point 4): f6d4a8f, measure's summary
+  pairs the moved hold-outs' replayed casts across both sides (the worker hashes operator and skill) and counts them
+  by cast kind and shift bucket (castShiftLines), or says every cast stayed (the change is in what they do).
+- 3 (A variant's numbers must be derived by hand when the reference isn't the plain tree): done (f6d4a8f): with
+  `--variant` the plain tree's own summary against the reference comes first.
+- 4 (`--set` takes a string constant only with quotes inside the argument): done (f6d4a8f): measure's usage and
+  docs/design/tests.md say the value is source text (`--set 'x.ts:MODE="any"'`).

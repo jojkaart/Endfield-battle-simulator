@@ -56,3 +56,14 @@ accuracy agent beside the Stagger-break placement agent.
 - scripts/probes/targets/ and the open-problems entry gave the evidence (kills at whole slugs, one listing for every
   slug) without re-deriving it.
 - `node scripts/edit.ts` for the fixtures' fields and multi-line edits: no shell quoting trouble.
+
+## Outcome (round 20)
+
+- 1 (The placement spreads a several-targets cast's twins over its slots, and nothing says so): done: the rule by the
+  twins round (ef9ecdb, PlacedHit.twin `batch`, `casts --choices`' [twin: …]); round 20 (01dd011) puts the twin's rule
+  on `zmdlogs replay`'s LAND line too.
+- 2 (No view prints the per-target assignment): done by the twins round (ef9ecdb): `hits --json` `target` and the
+  text lines' `T<n>`.
+- 3 (A kill gap's landing on a shielded target isn't a state the engine has): not done: it moves verdicts (Hard 33
+  only so far); on the accuracy list of docs/friction/2026-11-27-backlog-after-round-20.md ("A shielded target's
+  landing").

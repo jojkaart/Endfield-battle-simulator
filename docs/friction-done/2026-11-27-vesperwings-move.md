@@ -51,3 +51,15 @@ press) and measure it on the several-targets fights; branch worktree-agent-a7179
   section answered the question directly.
 - `--trace-buff` / `--trace-trigger` named the step that ended the debuff and the trigger's firings.
 - `team-ab`'s identity check settled "no simulated fight moves" in minutes.
+
+## Outcome (round 20)
+
+- 1 (No way for the replay to make a non-cast event in the engine): done (7be8b2d): engine replayEvent (a log-driven
+  event's triggers, their logged landings pinned) and pinLanding / pinAt (the one pin rule; replayCast uses it);
+  targetDies is replayEvent's; ReplayStep.event (ReplayEventStep, deathEvent) in place of `death`, one arm in
+  replayOnce. Snapshots and team-ab unchanged.
+- 2 (A trigger's hit keys turn into a placement group silently): done (7be8b2d): a trigger group's NOLAND detail says
+  "a trigger's landing (trigger:<id>): the replay lands it from the trigger's event and matches it by time";
+  logcasts.ts groupsOf's doc says why such a group exists.
+- 3 (A press that stood in for a missing kit feature hid a second effect): done (01dd011): `node scripts/cli-ab.ts
+  <ref> --hits-zones <fixture>` (per moved hit, the modifiers that differ by kit buff and zone).

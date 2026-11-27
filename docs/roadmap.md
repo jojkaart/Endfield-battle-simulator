@@ -16,18 +16,20 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–19
-  done (round 19, 2026-11-27: the assumption registry out of timeline/
-  with its evidence in [design/assumptions.md](design/assumptions.md),
-  every reader through `readingOf` and a trace test, `zmdlogs
-  followups`, `--against-lanes` ends, `holds --steps`, `gamedata enemy`
-  and an entity's tree, the hold-outs' key test and a blindness test
-  over every printer); the backlog
-  ([2026-11-27-backlog-after-round-19.md](friction/2026-11-27-backlog-after-round-19.md),
-  2 points: clocks around a non-cast hold, the same-listing flag for two
-  targets; on its accuracy list the element mask of log-only buffs, 14
-  factor stretches and the recorded Stagger start) joins the next round
-  once about five new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–20
+  done (round 20, 2026-11-27: TAILKEPT names its guard and the hit it
+  cites, `scripts/tried.ts` finds tried diffs by file and function, the
+  offset screen by the check's ±1 with `--bound` and fit-build's single
+  changes, the by-operator table's largest fight and own split, one
+  replay event driver and pin rule, `TimelineContext.replayed`, measure
+  `--several-targets` and the hold-outs' cast shifts, `verify-at
+  --snapshot`, smoke at a snapshot); the backlog
+  ([2026-11-27-backlog-after-round-20.md](friction/2026-11-27-backlog-after-round-20.md),
+  4 points: clocks around a non-cast hold, snapshots:update at queue time,
+  a layered buff's layers, a moved hold-out's casts by the break near
+  them; on its accuracy list a better tail-cut test and a shielded
+  target's landing among the older entries) joins the next round once
+  about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

@@ -56,3 +56,17 @@ repeated.
 - `node scripts/team-ab.ts --base <ref>`: an identity answer for an engine change in about 3 minutes, twice.
 - The reports' own episodes as tests: each new tool had its case (tickBounds, splitLines, e989, d4fb, 6339, 5082).
 - `node scripts/edit.ts` for every multi-line change, and the bash-guard hook catching a sed with backticks.
+
+## Outcome (round 20)
+
+- 1 (A background test run reads the tree as it goes, so editing meanwhile fails files at random): done but
+  snapshots:update at queue time (carried: 2026-11-27-backlog-after-round-20.md point 2): 01dd011, `node
+  scripts/verify-at.ts --snapshot [--files a,b]` runs premerge's steps or the named test files at a snapshot commit
+  of the tree; 0f486ef, smoke fixes its code at queue time (round 6's parked point 14, brought back). The CLAUDE.md
+  clause is proposed for the lead.
+- 2 (friction.ts carry can park a point but not bring one back or close one): done (df024bb): `carry --lists --unpark
+  <words>` drops the parked entry (its paragraph too when it was the last) and prints its full text on stderr; the
+  README's step 5 names it; round 20's own paperwork used it twice.
+- 3 ("Is this a replayed fight?" has no flag of its own in the engine): done (7be8b2d): TimelineContext.replayed (from
+  loggedCrits or TimelineScenario.replayed), read by facts, fired, keepInputs and landedCounts; docs/design/timeline.md
+  lists the record-only fields; team-ab identical.

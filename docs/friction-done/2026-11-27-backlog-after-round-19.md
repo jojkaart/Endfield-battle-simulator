@@ -244,3 +244,11 @@ Each report's episode was a ready test: the tickBounds call for the readers' tra
 Vesperwings under `kept` for the lane ends, d4fb's harasses for `followups`, 6339's stage text for `gamedata enemy`,
 Camille's entity for the entity tree, 5082's break for `holds --steps`, and round 18's splitLines leak for the
 blindness test.
+
+## Outcome (round 20)
+
+- 1 (A hold that isn't a cast's stop has no clock view): carried (2026-11-27-backlog-after-round-20.md point 1)
+- 2 (Two targets under one id behind one listing aren't flagged): done (0da7459): `zmdlogs hits --same-listing` flags
+  a hit of the same key and listing at a value the listing can't give (listingview.ts valueSplit: over 1% and 2 points
+  with alike crits, ×1.5 otherwise) on its SAME line and in the head line; 7b54's Laevatain attack 1 (5.27 / 10.99 s,
+  ×0.834) is its test. Closed by round 20, 0da7459.

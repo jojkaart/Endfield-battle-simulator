@@ -56,3 +56,15 @@ accuracy agent beside the build-fit agent.
 - `--variant several-targets=targets-ungated` measured a reading and the plain tree in one run.
 - `node scripts/edit.ts` with reversed blocks (a scratch script swapping old and new) took a measured change back
   out cleanly to keep it in docs/tried.
+
+## Outcome (round 20)
+
+- 1 (A replay rule's guard passes by rounding, and nothing shows that it did): done (df024bb): TAILKEPT names its guard
+  (`[shown-own]` when the hit it cites is the cast's own landing, with how far into the frame it was logged) and
+  `zmdlogs decisions --all` counts the TAILKEPT lines by guard; the guard's own fix is on the accuracy list of
+  docs/friction/2026-11-27-backlog-after-round-20.md ("A tail-cut test better than the own-landing pass").
+- 2 (The several-targets row is three logs, but a measure always runs all 74): done (f6d4a8f): `npm run measure --
+  --several-targets`, and a line in docs/design/tests.md.
+- 3 (A kit gap looks like a placement error until the game data is read): done (7be8b2d): a NOLAND line for a key no
+  kit hit or trigger hit of the team lists says so ("a kit gap, not a placement error: `efsim gamedata who <key>`");
+  the NO_LANDING text (a snapshot key) is unchanged, the detail is the view's.
