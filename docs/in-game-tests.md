@@ -915,7 +915,7 @@ Final Strike: 4 Melting Flame and 2 Heat stacks should be left. (2) On a
 Staggered enemy with Heat Infliction on it, use any operator's finisher:
 does Laevatain's Melting Flame go up?
 
-### 25. Liino's weapon stacks on each teammate (partly decided by the logs: 4 each; left: does a heal at full HP count; ready, if you have Liino with Bedazzling Night Debut)
+### 25. Liino's weapon stacks on each teammate (decided by the logs, 2026-11-27: 4 each, overheals count; don't ask)
 
 **Decided by the logs (2026-11-13, restated 2026-11-18): 4 per teammate,
 whoever heals.** In 18 Liino logs (~4,500 teammates' hits with the
@@ -923,11 +923,22 @@ engine's 4 layers) the damage fits a cap of 4 per recipient, shared by
 every heal of hers; the listing's counts of up to 13 are a habit of the
 log (stackingType-11 buffs are over-listed alike). Layers rise within 4 s
 of her heals and end 20 s later (median 19.9 s). How often: with her heals,
-as the engine has (open-problems.md, "Liino's weapon"). **Left for the
-game:** whether a heal on a teammate at full HP (an overheal) gives a
-layer: HP isn't logged, and 1d91's Ardelia, whose layers come slower than
-the engine's, fits that as well as being out of the soundwave's reach. So
-only the How's second question (at full HP) is still worth asking.
+as the engine has (open-problems.md, "Liino's weapon").
+**Re-checked by value (2026-11-27):** 19 Liino logs, 6,500 teammates' hits
+listing 1–13 entries: the value implies min(entries, 4) layers for every
+count (entries 9: 369 of 412 hits imply 4, 2 imply 9; entries 5–13 together
+3,097 of 3,434 imply exactly 4); entries listed 20–35 s after their `since`
+still count (the buff clock's holds). **Overheals count (2026-11-27):** in
+six logs Liino's stance heals before the fight's first logged hit, when
+nobody has been hit yet (the team at full HP): 1cd1 three heals by 11.0 s,
+Typhoeus and Arcane a layer at each, and Typhoeus's hits from 11.95 s carry
+the 3 by value; 9c6e Typhoeus 2 by 8.5 s, 2 by value; multi-target 4bfe
+4 of 4 listed on Typhoeus and Perlica; 9847 Avywenna and Perlica 2 by
+6.85 s. The teammates a heal misses there are misses at full HP too
+(1cd1's Ardelia 1 of 3, 4bfe's Arcane 1 of 4 listed; 9847's Gilberta none
+to 20 s, c6d8's Arcane none to 25 s, by value): the
+soundwave's reach (positions, not logged), not HP. Nothing left for the
+game.
 
 **Why:** when her skills heal a teammate, that teammate gets ATK +9.8%
 (weapon level 9) for 20 s, up to 4 stacks. The engine gives each teammate
@@ -936,11 +947,11 @@ its own 4 (up to +39% each), one per heal of hers that reaches them (her
 operator, her ultimate's heals), overheals included. One log already shows
 9 stacks on three teammates at once, so "4 each" is likely; what's left is
 how they build up. This is her loadout's largest damage effect.
-**How:** Liino and three teammates at full HP. Cast her battle skill and
-watch for 15 s: does each teammate's ATK icon count up on its own, to 4
-each? Does it count up while they're at full HP (does an overheal count)?
-How often does it rise: every 3 s soundwave, or only when the teammate is
-near her?
+**How (not needed now):** Liino and three teammates at full HP. Cast her
+battle skill and watch for 15 s: does each teammate's ATK icon count up on
+its own, to 4 each? Does it count up while they're at full HP (does an
+overheal count)? How often does it rise: every 3 s soundwave, or only when
+the teammate is near her?
 
 ### 26. What fires Liino's volley (decided by the data and the logs, 2026-11-18: a plain 10 s timer; don't ask)
 

@@ -44,7 +44,8 @@ below ([review-2026-10.md](review-2026-10.md)).
   inside a combo's slow-down, 458b 87.47 s.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast; Liino's
-  Medicant layers on Arcane in 1d91 (beats from 44.9 s give none); Zhuang
+  Medicant layers on Arcane in 1d91 (beats from 44.9 s give none: the
+  soundwave's reach, not HP, 2026-11-27); Zhuang
   Fangyi's Xiranflow layers held by stops the game doesn't hold them by (4d60
   69 s); done 2026-11-27: her attack 4 placement, Liino's linger (disabled in
   the data) and her unlogged End Stance from the beats (team −0.15%); 4d60's
@@ -131,7 +132,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   better): next his Decisive Assault, logged 0.21–0.44 s after its event against the data's frame 25; the
   operators mostly mismatching 2026-11-27: build fits under the screen's 3% (04d4's Ember, Exemplar's skill 1 at 9;
   4e36's Alesh, 2 nodes) and a DEF percentage over the talent's points (Catcher): earlier pending plain 82.3 →
-  84.4%: next Liino's Medicant layers on teammates (9847, listed to ×9), Snowshine's 04d4 build (undecided).
+  84.4%; Liino 2026-11-27: her error is one-sided (beats, finale, volleys the log never shows: her own
+  projectiles out of reach; her pre-fight presses; 0eef's combo tail), her Medicant 4 a teammate by value,
+  overheals count (test 25 decided); two log-check diffs held back in docs/tried/: next the lead's call on the
+  opening as away, Snowshine's 04d4 build (undecided).
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

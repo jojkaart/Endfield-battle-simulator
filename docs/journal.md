@@ -4,9 +4,49 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 183 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 184 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Liino's damage error and her weapon's Medicant layers
+
+**Goal:** Liino has the largest by-operator mean |damage error| (8.5% over 19 fights, median 3.1%): which of her
+hits carry it; and her weapon's Medicant layers (buff_wpn_lance_0014_damageup) listed up to ×9 on one teammate
+against the kit's 4 (in-game test 25).
+
+**Found:**
+- **Her error is all one-sided.** Her matched landings are within ±0.5% in every fight; every fight's error is
+  replay-only landings (`zmdlogs totals --all --json`, her parts as % of her own total): 0eef's combo hit2 tail
+  (+57.8% of a 0.9% share: 3.0 points of the mean alone), her stance pressed before the fight's first logged hit
+  (1cd1 +8.2 points, c6d8 +6.5, 9c6e +5.7, 9847 +2.7), and Cosmovoice beats, finales and volleys the log never shows
+  (1cd1, 1d91, af7b +15–18 points each). Every Cosmovoice logs its Pyrotechnics and bomb, but 0–10 of its 10 beats
+  and its finale in 5 of 24; the beats are projectiles launched from Liino (her reach; by controlled operator 67% of
+  beats land, Typhoeus controlled 13 of 30): positions, which no log records. docs/open-problems.md "Liino's own
+  damage error".
+- **Medicant: 4 per teammate, by value, at every listed count.** 6,500 teammates' hits in 19 logs: the value reads
+  min(entries, 4) (entries 5–13: 3,097 of 3,434 imply exactly 4); the listing also under-counts (9847's Avywenna at
+  57.64–64.75 s: 2, 3, 4 layers where 0, 2, 3 are listed, the ×1.033 of the last round). No kit change.
+- **Overheals count (test 25 decided).** Liino's stance heals before a fight's first logged hit, when nobody has
+  been hit, give layers the damage carries (1cd1: three on Typhoeus by 11.95 s, by value; 9c6e, 9847, c6d8, 8318,
+  4bfe). The teammates a heal misses there (1cd1's Ardelia, 9847's Gilberta, c6d8's Arcane) miss it at full HP too:
+  the soundwave's reach, which also explains 1d91's Arcane and Ardelia.
+
+**Held back / tried (log-check files of the parallel several-targets agent):**
+docs/tried/2026-11-27-opening-away.diff (the opening as an away stretch for the totals and the replay's enemy:
+hold-outs unchanged, 9c0b better, 1cd1, 9847, db87 0.1–0.4 points worse where the opening's landings covered a low
+matched part; Liino 8.5 → 8.1% with a 6 s floor; for the lead) and, found again after the several-targets round
+had tried it, docs/tried/2026-11-27-tail-own-landing.diff (tailCuts' shown-hit guard takes a cast's own last
+landing for another hit; with a 0.5 s end guard as well: 0eef right, Liino 8.5 → 5.5%, but 15 better / 5 worse,
+c4f3 plain 468 → 402, hold-out |damage error| 5.8 → 5.9%: dropped; its header has the round's numbers).
+
+**Scoreboard:** unchanged (docs only: no kit or engine change; no snapshot moved). Team numbers unchanged (no
+simulated fight changed; team-ab not run).
+
+**Decisions:** no "drop the unlogged beats" reading: it would fit the log by construction; the reach is an input,
+and for simulations an expected beat share (about 0.7) is the honest model, left for the planning side. Test 25
+marked decided on the premise that a stage fight starts at full HP.
+
+**Probes:** scripts/probes/kits/liino-medicant-layers.ts, liino-opening-layers.ts, liino-cosmovoice-beats.ts.
 
 ## 2026-11-27: Twins on several targets
 
@@ -362,42 +402,3 @@ b7b3, c779, c6d8: Arcane's WILL burst line a frame off): the log's time is the b
 
 **Left:** e989's Camille Firefang Weakness (replay-only run 69–89 s); per-target state for several-targets fights;
 the slugs' replay-only landings (hits on shielded slugs).
-
-## 2026-11-27: Improvement round 18: records of rules that decline, one run for several answers
-
-**Goal:** the five open friction reports and round 17's backlog (docs/friction-done/2026-11-27-round-18.md), on main
-at 5cf680e, every file this round's; no number to move.
-
-**Done:**
-- **Rules that decline leave a record:** TAILKEPT decisions (replayrun.ts tailCuts' kept tails and their guard),
-  PlacedHit.joined (the rule that joined a landing to its cast and its times: `zmdlogs casts --choices` prints the
-  joins over 1 s late, 399 HIT lines over the development logs, 204 `to come`), REALIGN lines (Placement.realign), the
-  one-sided `kill` flag and `zmdlogs away`'s logged kills.
-- **One run, several answers:** `measure --set <file>:<CONST>=<value>` and as a `--variant` entry (its own patched
-  worktree; two STATUS_WIDE_FRAMES values in one run), `measure --split hunks` (`split:<name>` markers), `node
-  scripts/accuracy.ts --compare <ref> --regroup` (against 107766a it gives the status-pairing journal's scratch numbers:
-  development plain 81.5 → 82.4% by the 9c6e mark alone, log-only 3.13 → 2.02%), the shares' groups in --compare.
-- **Blind-safe hold-out traces:** the moved hold-outs' replay decisions by kind, net per direction, and per split part
-  how many of the whole change's moved hold-outs it moves the same way.
-- **Structured output:** `totals --all --json`'s `share`, `logged`, `fightError`, `stage`, `severalTargets`,
-  `totals --skip`; `zmdlogs casts --json` (castsRecords), compared by field in `cli-ab --placement`.
-- **Across logs:** `zmdlogs stack <owner:stack> [--at-cast]`, the bursts header's pairing rule and twin bursts,
-  clocks' Stagger-break rows (cast clocks with a break inside run +186 ms at the median, 40 rows, against +10 ms in
-  4,785 without: docs/open-problems.md's Yvonne paragraph); bash-guard refuses a stale `git commit -F` message.
-
-**Checked:** `npm run snapshots:update` at the final code: "No log's verdicts moved", the snapshot files and
-docs/accuracy.md byte for byte the same; `node scripts/cli-ab.ts 5cf680e --placement`: every log's placement the
-same; no engine file touched (no team-ab); premerge at the final commit.
-
-**Decisions:** no stable label per hold-out (replay-only report point 1): with `--with <operator>` choosing which
-hold-outs a measure runs, a label that persists would tell which hold-outs have which operator; the per-part counts
-answer "is it this part's hold-out" within one run. The casts' skill kind beside the hold-outs' decision counts isn't
-printed either (a split per mechanism class, docs/design/tests.md's "never" list). The assumptions' evidence text
-stays in the engine's source this round: comments alone don't cover it and a string-blind digest could miss a real
-change (backlog point 2).
-
-**Found on the way:** measure's splitLines named a hold-out moved by the whole change and by no part, and splitParts
-counted every hold-out as moved (allLogs keys a hold-out under pending/; the code tested the key): fixed, with a test.
-
-**Left:** docs/friction/2026-11-27-backlog-after-round-18.md: the per-layer clock (carried), an assumption's
-evidence text out of the engine's source, `holds --steps`; the accuracy list gained a hold at a Stagger break.
