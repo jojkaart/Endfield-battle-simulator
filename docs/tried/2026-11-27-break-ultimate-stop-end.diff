@@ -1,0 +1,81 @@
+No hold at a break on an ultimate stop's end frame (2026-11-27, the break placement round; dropped)
+
+The engine's breakHold (timeline/clock.ts) and the replay's breakStops (holds.ts) leave out a break inside an
+ultimate's time stop; this counts the stop's end frame as inside it too (inUltimateStop, ULTIMATE_STOP_END_FRAMES = 1).
+The case: 4d60e7fe92c2 56.29 s, Arcane's ultimate breaks at its frame 47, the stop's 47 frames just over (frame 1689 =
+its end); Zhuang Fangyi's Sunderblade #7 at 56.36 s, 6 frames after #6 at 54.65 s across the 1.57 s stop, and Arcane's
+combo event at 56.90 s (its 9-frame stop's end) both on time: no hold there (scripts/probes/stagger/ult-edge.ts lists
+the breaks near an ultimate stop: only 4d60 and 04d401ad257e 458.25 s, a frame after its stop, are held at one under `ms`). Measured
+(measure --variant clock.ts:ULTIMATE_STOP_END_FRAMES=0 against the tree with it, on top of break-hold-place
+`moments`, which already moves 4d60's hold into the stop): development unchanged, hold-outs 1 mixed (plain −1, assumed
++1 with the rule). Dropped: one log's evidence, the replay already right there under `moments`, and an engine change
+(simulated fights) for no development gain. Worth again if a second log shows a break at an ultimate's stop end.
+
+diff --git a/packages/engine/src/timeline.ts b/packages/engine/src/timeline.ts
+index 3034971..774b8a6 100644
+--- a/packages/engine/src/timeline.ts
++++ b/packages/engine/src/timeline.ts
+@@ -18,7 +18,7 @@ export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, div
+ export { createContext, kitAssumptions, allAssumptions, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
+ export type { EnergyGrantOptions } from "./timeline/resources.ts";
+ export { setPoise, refillPoise, holdStagger, staggerFrames } from "./timeline/resources.ts";
+-export { breakHold, breakHoldFrames, cutAtResets, holdWorld, pathSlowdowns } from "./timeline/clock.ts";
++export { breakHold, breakHoldFrames, cutAtResets, holdWorld, inUltimateStop, pathSlowdowns } from "./timeline/clock.ts";
+ export { COMBO_CURVE, COMBO_CURVES, curveScales, withCurveReading } from "./timeline/curves.ts";
+ export { exclusiveUntil, earliestStart, enhancedBasic, ownHitsLanded, skillAvailable } from "./timeline/timing.ts";
+ export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
+diff --git a/packages/engine/src/timeline/clock.ts b/packages/engine/src/timeline/clock.ts
+index 8d16105..83f7520 100644
+--- a/packages/engine/src/timeline/clock.ts
++++ b/packages/engine/src/timeline/clock.ts
+@@ -111,7 +111,7 @@ export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number
+   const n = breakHoldFrames(ctx.scenario.options.assume);
+   if (n <= 0) return st;
+   const all = engineReading(ctx.scenario, "break-hold").endsWith("-all");
+-  if (!all && st.slowdowns.some((x) => x.ultimate && frame >= x.start && frame < x.start + x.scales.length)) return st;
++  if (!all && st.slowdowns.some((x) => x.ultimate && inUltimateStop(frame, x.start, x.scales.length))) return st;
+   // A replay holds only at the breaks its log shows (TimelineScenario.loggedBreaks).
+   const logged = ctx.scenario.loggedBreaks;
+   if (!placed && logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
+@@ -119,6 +119,19 @@ export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number
+   return slowDown(ctx, st, BREAK_HOLDER, timing, frame);
+ }
+ 
++/**
++ * Whether a break at `frame` is inside an ultimate's stop from `start` lasting `frames` (breakHold: no hold there),
++ * its end frame included: a hit due as the stop ends lands with it (4d60e7fe92c2 56.29 s: Arcane's ultimate breaks at
++ * its frame 47, the stop's 47 frames just over; Zhuang Fangyi's Sunderblade 0.07 s later and Arcane's combo event come
++ * on time, no hold).
++ */
++export function inUltimateStop(frame: number, start: number, frames: number): boolean {
++  return frame >= start && frame < start + frames + ULTIMATE_STOP_END_FRAMES;
++}
++
++/** How many frames past an ultimate's stop a break is still inside it (inUltimateStop). */
++const ULTIMATE_STOP_END_FRAMES = 1;
++
+ /** The caster of a break's hold (breakHold): no operator, so it holds every one. */
+ const BREAK_HOLDER = "stagger-break";
+ 
+diff --git a/packages/logs/src/holds.ts b/packages/logs/src/holds.ts
+index b1b6d29..b2ed0f1 100644
+--- a/packages/logs/src/holds.ts
++++ b/packages/logs/src/holds.ts
+@@ -4,7 +4,7 @@
+ // log shows bounds it: a listed buff's run against the replay's own expiry, an enemy tick series against its period.
+ // The replay (buffreplay.ts) then holds the world there once, for every timer.
+ 
+-import { breakHoldFrames, readingOf, FPS, type KitBuff, type Readings } from "@efsim/engine";
++import { breakHoldFrames, inUltimateStop, readingOf, FPS, type KitBuff, type Readings } from "@efsim/engine";
+ import type { LogFixture } from "./zmdlogs.ts";
+ import { worldMs, type TimeStop } from "./logcasts.ts";
+ 
+@@ -281,7 +281,7 @@ export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeSto
+   const frames = breakHoldFrames(assume);
+   if (frames <= 0) return [];
+   return breakHoldStarts(fx, frames, assume).flatMap(({ from: f }) => {
+-    if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) return [];
++    if (stops.some((st) => st.kind === "ultimate" && inUltimateStop(f, st.start, st.scales.length))) return [];
+     return [{ start: f, scales: new Array<number>(frames).fill(0), operator: "", skillId: "stagger-break", kind: null }];
+   });
+ }
