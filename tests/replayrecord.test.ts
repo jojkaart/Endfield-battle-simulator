@@ -88,6 +88,23 @@ describe("the replay's record", () => {
     expect(Number(bound?.[1])).toBeGreaterThan(53);
   });
 
+  it("holds every timer across an away stretch the log shows as a pause (4d60 27.38–37.00 s; pause-holds `paused`)", () => {
+    // Arcane's string goes on across it (attack 2 → attack 3) and every clock spanning it runs past its end by most of
+    // its length: the holds go there, so Perlica's Electrification from 21.37 s is still on for Zhuang Fangyi's combo at
+    // 37.00 s, and her battle skill at 42.98 s strikes 6 times, as logged (3 without the pause).
+    const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-4d60e7fe92c2.json"));
+    const strikes = (assume?: Record<string, string>) => {
+      const { replay } = logBuffReplay(data, fx, assume ? { assume } : {});
+      const inStretch = (replay.hiddenHolds?.holds ?? []).filter((h) => h.frame >= 821 && h.frame <= 1110).reduce((t, h) => t + h.frames, 0);
+      const n = replay.hits.filter((h) => h.operator === "chr_0030_zhuangfy" && /^(strike|final)_/.test(h.hitId) && h.frame >= 1289 && h.frame < 1400).length;
+      return { inStretch, n };
+    };
+    const paused = strikes();
+    expect(paused.n).toBe(6);
+    expect(paused.inStretch).toBeGreaterThan(240);
+    expect(strikes({ "pause-holds": "away" })).toEqual({ inStretch: 0, n: 3 });
+  });
+
   it("says why an instance wasn't kept to the log's end (holds --why, the log-end side)", () => {
     // 5082: Xaihi's weapon team ATK is an instance buff: never taken to the log's end (round 8: it fell out silently).
     const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-5082ceaffad1.json"));

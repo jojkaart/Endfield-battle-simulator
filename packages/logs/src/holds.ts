@@ -159,7 +159,7 @@ export function statusLanes(fx: Pick<LogFixture, "hits">): StatusLanes {
  * doesn't list it at most, but only for a status no kit of the team consumes (`consumable`: a consumed status ends early
  * in the log, which says nothing of its clock: d774's Electrification, taken by Zhuang Fangyi's battle skill at 97.44 s).
  */
-export function statusBounds(instances: readonly StatusInstance[], lanes: StatusLanes, stops: readonly TimeStop[], consumable: ReadonlySet<string>, share: number, why?: ClockWhy[]): HoldBound[] {
+export function statusBounds(instances: readonly StatusInstance[], lanes: StatusLanes, stops: readonly TimeStop[], consumable: ReadonlySet<string>, share: number, why?: ClockWhy[], paused: readonly Gap[] = []): HoldBound[] {
   const out: HoldBound[] = [];
   const ms = (f: number) => (f * 1000) / FPS;
   for (const w of instances) {
@@ -187,12 +187,12 @@ export function statusBounds(instances: readonly StatusInstance[], lanes: Status
         note(`ends ${(-hi / 1000).toFixed(2)} s before the replay's expiry (a cut the replay doesn't make: not a clock)`, run);
         continue;
       }
-      if (lo > share * (E - S)) {
-        note(`asks ${(lo / 1000).toFixed(2)} s, over ${share} of its life (a refresh the replay missed, or a kit's error)`, run, lo / 1000);
+      if (lo > share * (E - S) + gapsWithin(S, r.lastListed, paused)) {
+        note(`asks ${(lo / 1000).toFixed(2)} s, over ${share} of its life${paused.length ? " and the away stretches inside its run" : ""} (a refresh the replay missed, or a kit's error)`, run, lo / 1000);
         continue;
       }
       const tag = `status ${key} ${Math.round(S)}→${r.lastListed}${off ? `–${off.t}` : consumable.has(w.status) ? "–(consumable)" : "–end"} ms over ${Math.round(E)}`;
-      if (lo > -STATUS_END_TOL_MS) out.push({ a: Math.round(S), b: r.lastListed, min: lo - STATUS_END_TOL_MS, max: Infinity, kind: "status", tag, ex: lo / 1000 });
+      if (lo > -STATUS_END_TOL_MS) out.push(pausedBound({ a: Math.round(S), b: r.lastListed, min: lo - STATUS_END_TOL_MS, max: Infinity, kind: "status", tag, ex: lo / 1000 }, share * (E - S), paused));
       if (off) out.push({ a: Math.round(S), b: off.t, min: -Infinity, max: hi + HOLD_BOUND_TOL_MS, kind: "status", tag, ex: hi / 1000 });
       note(lo > -STATUS_END_TOL_MS || off ? `bound: ${tag}` : "no bound (listed only before its expiry, and no later hit without it: consumable or the fight's end)", run, lo / 1000);
     }
@@ -391,11 +391,36 @@ export function comboHoldSpans(stops: readonly TimeStop[], share: number): HoldS
     .map((s) => ({ a: (s.start * 1000) / FPS, b: ((s.start + s.scales.length) * 1000) / FPS, rate: (share * s.scales.reduce((t, x) => t + (1 - x), 0)) / s.scales.length }));
 }
 
+/** A stretch of the log (ms): an away stretch (enginecheck.ts awayWindows). */
+export interface Gap {
+  readonly from: number;
+  readonly to: number;
+}
+
+/** How much of the gaps lies inside [a, b] (ms). */
+export function gapsWithin(a: number, b: number, gaps: readonly Gap[]): number {
+  return gaps.reduce((t, g) => t + Math.max(0, Math.min(b, g.to) - Math.max(a, g.from)), 0);
+}
+
+/**
+ * A run's lower bound on the holds (P(b) − P(a) ≥ min) with what it asks past `cap` (its share of its life) laid inside
+ * the gaps within [a, b] (engine assumption pause-holds `paused`): from the first such gap's start to the last one's end.
+ * Only the pause can hold a clock that long, so the bound holds there, not wherever the least total may put it. Within
+ * its cap, the bound as it is.
+ */
+export function pausedBound(b: HoldBound, cap: number, gaps: readonly Gap[]): HoldBound {
+  if (b.min <= cap) return b;
+  const inside = gaps.filter((g) => g.to > b.a && g.from < b.b);
+  if (inside.length === 0) return b;
+  const [a, z] = [Math.max(b.a, Math.min(...inside.map((g) => g.from))), Math.min(b.b, Math.max(...inside.map((g) => g.to)))];
+  return { ...b, a: Math.round(a), b: Math.round(z), tag: `${b.tag} (in the away stretch ${(a / 1000).toFixed(2)}–${(z / 1000).toFixed(2)} s)` };
+}
+
 /**
  * The still spans (ms) less the gaps cut out of them (engine assumption pause-holds, reading `away`: the away
  * stretches, a whole-game pause the log's clock runs through may fall in a Stagger): each span split around each gap.
  */
-export function withoutGaps(still: readonly (readonly [number, number])[], gaps: readonly { readonly from: number; readonly to: number }[]): [number, number][] {
+export function withoutGaps(still: readonly (readonly [number, number])[], gaps: readonly Gap[]): [number, number][] {
   let out: [number, number][] = still.map(([a, b]) => [a, b]);
   for (const g of gaps) out = out.flatMap(([a, b]): [number, number][] => (g.to <= a || g.from >= b ? [[a, b]] : [...(g.from > a ? [[a, g.from] as [number, number]] : []), ...(g.to < b ? [[g.to, b] as [number, number]] : [])]));
   return out;

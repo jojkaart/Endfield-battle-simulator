@@ -4,9 +4,49 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 166 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 167 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Away stretches: a whole-game pause holds every timer, a boss phase none
+
+**Goal:** three leads on the enemy's clock: do enemy statuses run on, pause or something else while the enemy is away
+(4d60 43–60 s, Zhuang Fangyi's Sunderblades); Liino's stance ending before its last beat (4d60 66–73 s); 8915's
+Corrosion step and Hot Work end early after two combos pressed together (7.07–8.90 s).
+
+**Done:**
+- **Every away stretch of the development logs read by its clocks** (scripts/probes/away/away-clocks.ts: the hold
+  placement's clocks listed on both sides of each stretch, their asks, the basic strings across it). 31 stretches in
+  11 logs. 4d60's two are whole-game pauses: Arcane's string goes on across both (attack 2 → attack 3 after 9.6 and
+  7.2 s) and every clock spanning them, the enemy's statuses and the team's buffs alike, runs past its end by most of
+  the stretch. The other 29 (Si's phases, eny_0125_fdcentur, eny_0128_babyents_hdg031) run on: asks −2.8 to +3.2 s,
+  no string goes on. No difference between enemy statuses and team buffs in either kind, and no enemy-kind rule (4d60's
+  enemy is in 16 other logs with no away stretch): the pauses are the player's.
+- **Engine assumption `pause-holds`, new default `paused`** (holdinputs.ts runBounds, holds.ts statusBounds,
+  pausedBound, gapsWithin): a clock's run across an away stretch may ask the stretch's length past HIDDEN_HOLD_SHARE of
+  its life, and a bound asking past its share is laid inside the stretch, so the least total sits in the pause (8.4 s
+  in 27.67–36.46 s), not spread over 21–46 s as the bare relaxation placed it. Perlica's Electrification is then on for
+  Zhuang Fangyi's 37.00 s combo, and her battle skills strike 6, 8, 8 times as logged. Liino's stance is held by the same
+  pause and runs to her 73.37 s event: lead 2 was this pause too. tests/holds.test.ts, tests/replayrecord.test.ts.
+- **8915's lead at the log's grain:** the game's first Corrosion step comes ≥ 0.15 s before the stop list allows (0.08 s
+  from the battle skill's cast event: its hit sits in a batch), later steps 0.00–0.08 s, Hot Work's end ≥ 0.05 s.
+  Pressed-together combos elsewhere don't hold less: 16 clocks across two combos within 0.3 s run late as single ones
+  (+347 ms median, Σ residual ÷ Σ held 0.82 against 0.86; scripts/probes/combo-hold/combo-pairs.ts). Not built.
+
+**Scoreboard** (`npm run snapshots:update`): development plain 80.0 → 81.0%, mismatch 6.8 → 6.4%, mean |damage error|
+3.3%; hold-out, verified and earlier pending unchanged. Only 4d60 moved (mixed): plain 822 → 987, mismatch 108 → 54,
+per-hit |error| 4.97 → 1.71%, total −1.2 → +1.7% (Zhuang Fangyi's matched +8.1% had cancelled her 0.59M of log-only
+blade hits; now +1.5% with none). The log check's replay only: no simulation reads `pause-holds`, so no team-ab.
+
+**Decisions:** the clocks decide a pause, not the enemy or a flag: a pause holds what spans it, a phase holds nothing,
+and the placement places only what the clocks ask, so the Si phases need no exception. The bound past its share goes
+into the stretch because nothing else can hold a clock that long; within its share a bound stays as it was (the 117 s
+pause was already placed there by 13 clocks).
+
+**Left** (docs/open-problems.md "Away stretches: a pause or a phase", "Zhuang Fangyi's and Liino's mismatches"):
+4d60 69.35–69.84 s, Zhuang Fangyi's Xiranflow layers held 3.0 s by the stops in 43–69 s where the game holds them
+0.6–1.2 s (exposed by the pause: the 43.17 s consumption now takes level 2); her 73.37 s combo with the stance's ATK
+one frame too long; 8915's step (the two combos' placement, the batch's application time).
 
 ## 2026-11-27: Zhuang Fangyi's attack 4 and Liino's silent stance ends
 
@@ -346,40 +386,3 @@ kit buffs changing within 500 ms, Link the replay can't say, crits no inference 
 
 **Next / open:** Pogranichnik's Thermite Cutter and Fervent Morale, both on SP the log doesn't record, behind most of
 Chen's, Lifeng's, Pogranichnik's and the Endministrator's fallbacks; c4f3's Wolven Blood final end (a clock).
-
-## 2026-11-26: Fights outside 5%: a variant's cast event, detached tails, a carried Corrosion
-
-**Goal:** the development and earlier-pending fights whose totals are off by more than 5% (8915, 7b54, 6339, c6d8:
-stage logs; 9c6e, c83c, 7910, db87, e82d), split by operator and landing kind, fixed by mechanisms (open-problems
-"Fight totals", round 5).
-
-**Done:**
-- **db87 (−6.0 → −1.2%): a cast event logged as its button's other variant.** Every Twilight battle-skill hit was
-  ×1.3000, Link (1) from Camille's combo: the log records the presses as `normal_skill`, and the replay made each as a
-  forced normal_skill besides the placed normal_skill_during_ult; that phantom took the Link and landed an explosion
-  and ticks the log never shows. logcasts.ts `buttonVariants` (one castable only without a buff the other needs,
-  neither giving it on its cast: Purrchena's battle skill readies her counter, so it isn't one), castassembly.ts
-  `variantCastOf`; the placement times the variant from that event (the 27.13 s press before Si's ultimate stop).
-- **c83c (+7.9 → +1.9%): a tail cut takes detached landings.** Si's combo final (an ability entity's detached hit,
-  374k) a frame after her last logged slash survived the cut (at lastLogged + 1, after that frame's hits, detached
-  ones exempt). Now at the last logged landing's frame, dropping the cast's later hits, detached too (drivers.ts
-  `endsAt`). The hold-outs moved most from this.
-- **7910 (−6.1 → 0.0%): a carried Corrosion above its cap stays.** Hits 51–62 s ×1.099 (one resistance step, the same
-  +11.35 points for everyone) after Ardelia's forced level-1 Corrosion replaced Arcane's level 4: the data's tick
-  adds and clamps only below the cap (reactions.ts corrosionShred; combat-mechanics §3.5).
-
-**Scoreboard** (`measure --base 9e1904d` after merging main, then `npm run snapshots:update`): development mean
-|damage error| 6.8 → 6.3%, within 5% 25 → 28, plain 71.8 → 72.7%, mismatch 11.2 → 10.6%; hold-out 8.4 → 7.4% (4
-better, 1 mixed: plain −1, assumed +1), plain 82.1%; earlier pending plain 72.9 → 73.0%, 3.4 → 3.5% (4bfc −0.8 →
-−1.0%, 3aa6 mixed: plain +6, total 0.2 → 0.6%, d4fb better). Worse: 79cc 0.0 → −0.1%, 4bfc: replay-only tail
-landings removed from fights the replay under-predicts. team-ab (against 36e3bc8): only estella-si-akekuri-arcane
-(zero energy)'s 60 s timeline moved, +0.83% (the Corrosion rule); sustained DPS unchanged.
-
-**Decisions:** the Corrosion rule isn't an assumption (the data's gate is explicit and 7910's 143 hits fit it); the
-variant rule needs complementary availability, not the same kind alone (04d4 and 99fb lost 91 and 30 plain with
-kind only). Stage logs left (no enemy data for hsbear_hdg018 or wgabyss_hdg011). By-operator means are each
-operator's own total, mostly the stage logs and small totals (Liino's unlogged beats).
-
-**Left:** slots by value (9c0b's Hunter Pursuit, whose misplaced first landing sends its Link to the wrong cast;
-7910's rogue wave), e82d's Si combo final (Arcane's weapon WILL lines ×5 listed, ×2 in the engine), 9c6e (two
-targets). Friction report docs/friction/2026-11-26-totals-off.md.

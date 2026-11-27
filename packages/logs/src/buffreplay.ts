@@ -385,16 +385,18 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // no cast made): 4d60e7fe92c2's late ultimate_skill events, the end of Zhuang Fangyi's Empyrean 30–35 s after her
     // ultimate, held the world 78 frames each in the hold placement.
     const { stops } = replayStops(data, kits, assembled, main.made.map((m) => m.c));
-    const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks);
+    // Engine assumption pause-holds: with `paused`, a clock's run across an away stretch may ask its length on top of HIDDEN_HOLD_SHARE.
+    const pauseHolds = opts.assume?.["pause-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "pause-holds")?.default;
+    const paused = pauseHolds === "paused" ? awayWindows(fx) : [];
+    const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks, paused);
     // Engine assumption stagger-holds: inside the Stagger, holds only at the combos' stops (holds.ts comboHoldSpans).
     const staggerHolds = opts.assume?.["stagger-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "stagger-holds")?.default;
     const comboShare = staggerHolds === "combos" ? 0.5 : staggerHolds === "combos-full" ? 1 : 0;
-    // Engine assumption pause-holds: with `away`, the away stretches aren't still though a Stagger covers them (holds.ts withoutGaps).
-    const pauseHolds = opts.assume?.["pause-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "pause-holds")?.default;
+    // Engine assumption pause-holds: with `away` (and `paused`), the away stretches aren't still though a Stagger covers them (holds.ts withoutGaps).
     const staggerStill = main.staggerWindows.map((w) => [msOfFrame(w.start), msOfFrame(Number.isFinite(w.end) ? w.end : frameOf(Math.max(0, ...fx.hits.map((h) => h.t))))] as const);
-    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
+    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks, paused), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),
-      still: pauseHolds === "away" ? withoutGaps(staggerStill, awayWindows(fx)) : staggerStill,
+      still: pauseHolds === "away" || pauseHolds === "paused" ? withoutGaps(staggerStill, awayWindows(fx)) : staggerStill,
       ...(comboShare > 0 ? { slow: comboHoldSpans(stops, comboShare) } : {}),
     });
     worldHolds = placedHolds.holds;
