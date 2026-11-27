@@ -4,7 +4,33 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { addedKeysOnly, addsKeysOnly, changedLogs, compare, direction, directionSummary, fieldChange, formatFieldChange, groupOf, operatorNames, perOperator, readSnapshots, readSplit, render, ROOT, SCOREBOARD, type Entry, type Snapshots } from "../scripts/accuracy.ts";
+import { addedKeysOnly, addsKeysOnly, changedLogs, compare, direction, directionSummary, fieldChange, formatFieldChange, groupOf, operatorNames, perOperator, readSnapshots, readSplit, regrouped, render, ROOT, SCOREBOARD, sharesCompare, type Entry, type Snapshots } from "../scripts/accuracy.ts";
+
+// Round 18 (the status-pairing report points 1 and 4): a reclassification apart from a code change, the shares' change
+// per group, and a group read from the entry's describing key.
+describe("accuracy --compare --regroup and the shares' change", () => {
+  const e = (plain: number, shares: [number, number, number], several = false): Entry => ({ a: { plain, mismatch: 1 }, totals: { damage: 1, "share matched": shares[0], "share replay-only": shares[1], "share log-only": shares[2], ...(several ? { "several targets": 1 } : {}) } });
+  const split = { development: new Set(["zmdlogs-aaaa", "zmdlogs-bbbb"]), holdout: new Set<string>() };
+  const then: Snapshots = { verified: {}, pending: { "pending/zmdlogs-aaaa.json": e(10, [1, 2, -3]), "pending/zmdlogs-bbbb.json": e(5, [2, 10, -30]) }, split };
+  const now: Snapshots = { verified: {}, pending: { "pending/zmdlogs-aaaa.json": e(11, [1, 2, -3]), "pending/zmdlogs-bbbb.json": e(5, [2, 10, -30], true) }, split: { ...split, severalTargets: new Set(["zmdlogs-bbbb"]) } };
+
+  it("reads a group from the entry's describing key, without a marked split", () => {
+    expect(groupOf("pending/zmdlogs-bbbb.json", split, now.pending["pending/zmdlogs-bbbb.json"])).toBe("targets");
+    expect(groupOf("pending/zmdlogs-bbbb.json", split, then.pending["pending/zmdlogs-bbbb.json"])).toBe("development");
+  });
+
+  it("splits a comparison into the reclassification and the change", () => {
+    const mid = regrouped(then, now);
+    const re = compare(then, mid).join("\n");
+    expect(re).toMatch(/^Development .*: fights 2 → 1, plain .*$/m);
+    expect(re).toMatch(/No log's verdicts moved\./);
+    const change = compare(mid, now).join("\n");
+    expect(change).toMatch(/^Development .*: fights 1 → 1, plain 90\.9% → 91\.7%/m);
+    expect(change).toMatch(/better: pending\/zmdlogs-aaaa\.json \(plain 10 → 11\)/);
+    expect(sharesCompare(then, mid).join("\n")).toMatch(/Development .*: fights 2 → 1, \|matched\| 1\.50 → 1\.00%, replay-only 6\.00 → 2\.00%, log-only 16\.50 → 3\.00%/);
+    expect(sharesCompare(mid, now)).toEqual([]);
+  });
+});
 
 describe("accuracy scoreboard", () => {
   it("is what the log verdict snapshots give (after a snapshot change: npm run accuracy, or npm run snapshots:update)", async () => {

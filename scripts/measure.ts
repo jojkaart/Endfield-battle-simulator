@@ -469,10 +469,13 @@ async function main(argv: string[]): Promise<number> {
   };
   const variants = values.variant.length ? values.variant.map((v) => ({ text: v, readings: { ...assume, ...parseReadings(v.split(",").filter((x) => !isSetEntry(x))) }, sets: v.split(",").filter(isSetEntry) })) : [{ text: "", readings: assume, sets: [] as string[] }];
   // A variant with --set entries: the measured code with them, in a worktree of its own (removed after).
+  const variantPatches = new Map<number, string>();
   const variantTree = (sets: readonly string[], vi: number): string => {
     if (!sets.length) return tree;
     const dir = resolve(ROOT, "scratch/at", `measure-${short(codeRef)}-set${vi + 1}-${process.pid}`);
-    atCommit(codeRef, dir, setsPatch([...values.set, ...sets], `variant-${vi + 1}`));
+    const patch = setsPatch([...values.set, ...sets], `variant-${vi + 1}`);
+    variantPatches.set(vi, patch);
+    atCommit(codeRef, dir, patch);
     process.on("exit", () => removeAtCommit(dir));
     return dir;
   };
@@ -576,6 +579,7 @@ async function main(argv: string[]): Promise<number> {
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
       ...(values.patch !== undefined && values.set.length && vi === 0 ? [`The --set patch (for docs/tried/): ${values.patch}`] : []),
+      ...(variantPatches.has(vi) ? [`Variant ${vi + 1}'s --set patch (for docs/tried/): ${variantPatches.get(vi) as string}`] : []),
     ];
     if (keys.length === logKeys(tree).length && !baseTree) {
       const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(dir, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
