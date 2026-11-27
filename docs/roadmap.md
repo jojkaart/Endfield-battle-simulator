@@ -36,13 +36,13 @@ below ([review-2026-10.md](review-2026-10.md)).
   variance for the guided search (most of a day's runs), the gear ascent
   on the new lists, a cheaper worth for timeline-moving stats.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
-  the found rotations); fc63's 4th shot anchored to her 5th's cast;
-  Liino's stance running out ~7 s before its last logged beat (4d60 66–73 s:
-  the stance's 60 s on the beats' clock); her Medicant layers on Arcane in
-  1d91 (beats from 44.9 s give none); Zhuang Fangyi's Sunderblades in 4d60
-  43–60 s (Electrification across the enemy-away stretch 27.4–37.0 s); done
-  2026-11-27: her attack 4 placement, Liino's linger (disabled in the data)
-  and her unlogged End Stance from the beats (team −0.15%).
+  the found rotations); fc63's 4th shot anchored to her 5th's cast; Liino's
+  Medicant layers on Arcane in 1d91 (beats from 44.9 s give none); Zhuang
+  Fangyi's Xiranflow layers held by stops the game doesn't hold them by (4d60
+  69 s); done 2026-11-27: her attack 4 placement, Liino's linger (disabled in
+  the data) and her unlogged End Stance from the beats (team −0.15%); 4d60's
+  away stretch 27.4–37.0 s a whole-game pause (`pause-holds` `paused`: her
+  Sunderblades and Liino's stance to its last beat, 822 → 987 plain).
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't
@@ -95,7 +95,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   7910's early rogue wave with no logged dive, other whole-game pauses outside a Stagger, 0c14's Stagger at its
   breaking hit; Arcane's mismatches 2026-11-26: a stage's round damage factor as the fixture's `stageFactors` (8915,
   c6d8; Arcane 697 → 233 mismatches): next 8915's Corrosion step and Hot Work end after two combos pressed together,
-  fc63's Corrosion under `window-reaction`.
+  fc63's Corrosion under `window-reaction`; away stretches 2026-11-27: a pause (4d60, both stretches: every clock held,
+  the team's and the enemy's) or a phase (the other 29: every clock runs on), told by the clocks (`pause-holds`
+  `paused`); 8915's early Corrosion step is at the log's grain, combos pressed together elsewhere run late as single
+  ones.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

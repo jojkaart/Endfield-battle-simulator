@@ -290,6 +290,17 @@ is a Lift that breaks the bar (one case, not built); Snowshine's offset and test
 from the logs. Next: whole-game pauses outside a Stagger (9c0b's 7.5 s after Laevatain's ultimate: does the placement
 already take it?), the world-time view without tick-read stops (query.ts replayTimeStops), Alesh's combo paths.
 
+**Away stretches (2026-11-27, [journal](journal/2026-11-27-02-away-stretches-a-whole-game-pause-holds-every-timer-a-boss.md)):**
+of the development logs' 31 away stretches, 4d60's two are whole-game pauses (Arcane's string goes on across them;
+every clock spanning them, the enemy's statuses and the team's buffs alike, runs past its end by most of the stretch),
+the other 29 boss phases or retreats where every clock runs on ([open-problems](open-problems.md#away-stretches-a-pause-or-a-phase-2026-11-27)).
+The hold placement now lets a clock's run ask an away stretch's length past its share and lays that bound in the
+stretch (`pause-holds` `paused`): 4d60 plain 822 → 987, Zhuang Fangyi's Sunderblades and Liino's stance as logged.
+8915's early Corrosion step after two pressed-together combos is 0.08–0.15 s, at the log's grain; such pairs elsewhere
+run late as single combos (scripts/probes/combo-hold/combo-pairs.ts). Next: Zhuang Fangyi's Xiranflow layers, held
+3.0 s by the stops in 4d60 43–69 s where the game holds them 0.6–1.2 s (an ultimate's stop among them); 4d60's End
+Stance one frame after its 73.37 s event.
+
 **Alesh's Rare Fin (2026-11-26, [journal](journal/2026-11-26-09-alesh-s-rare-fin-chance-paths-and-a-cast-from-the-listing.md)):**
 a chance jump's path read from the listing (her P3, which only the Rare Fin slam gives, listed from exactly the
 slam's ms: castassembly.ts listedPaths, drivers.ts replayCast `chanceJumps`), and a cast the log shows only by a buff
