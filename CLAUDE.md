@@ -93,12 +93,17 @@ snapshots:update` regenerates them all from the current code (it prints
 the scoreboard's change and which logs got better or worse). On a merge
 conflict in any of them, take either side and run it; never merge them by
 hand. Quote the scoreboard's numbers, not scratch sums, in the journal.
+A reclassification apart from a change: `node scripts/accuracy.ts
+--compare <ref> --regroup`.
 To try an idea, measure instead: `npm run measure [-- --with <op>]`
 (about a minute for every log, writes only `scratch/measure/`; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
 an open reading, `--variant <id>=<r>` (repeatable) for several in one run
-instead of chained measures (each also against the same code without it),
-`--split files|commits` for which part of a batch moved which log (its
+instead of chained measures (each also against the same code without it;
+`--set <file>:<CONST>=<value>` for a constant's value, also as a variant),
+`--split files|commits|hunks` for which part of a batch moved which log
+(`hunks`: each diff hunk alone, a `split:<name>` comment joining a rule's
+hunks; its
 first line says when the snapshots compared against aren't the code's
 own: `--base HEAD` is then this tree's change alone),
 `--patch <diff>` for a change that is none:
@@ -114,6 +119,9 @@ groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
 <fixture…|--all>` (an away stretch's clocks: a pause or a phase), `hits
 <fixture> --against-hit <s>` (a hit's zones against a neighbour's), `ends
 <fixture> [--at <s>]` (which listed buffs end at a moment, which go on),
+`stack <owner:stack> <fixture…|--all> [--at-cast <re>]` (a kit stack's
+value at each cast), `casts --choices` (a late join's rule, REALIGN),
+`replay` (TAILKEPT: a tail a guard kept),
 `hits <fixture> --same-listing <s>` (the nearest hits with the same
 listing: check a listing lead there first), `boundaries` (a boundary
 rule's base rate), `replay --trace-stack owner:stack`, `replay --kit-buff
