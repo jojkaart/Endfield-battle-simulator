@@ -15,7 +15,10 @@
 //     also its "Parked" section, the points --park names added at its top as one-line entries (title, where the full
 //     text is), and its "Needs an accuracy or search task" list without the entries that carry a "Closed by" line or
 //     whose first line holds a --drop text (round 16's own report point 1: both were copied by hand); the round adds
-//     its new entries to them.
+//     its new entries to them. --unpark <words> (repeatable) drops the parked entry whose line holds the words (a
+//     paragraph left with no entry goes with it) and prints its full text, from the backlog file its paragraph names,
+//     on stderr, for the new backlog's point or accuracy entry (round 20, round 19's own report point 2: a point a
+//     new report brought back was removed by hand).
 //   node scripts/friction.ts check <report.md…>
 //     the numbered points without a `**Files:**` line (a backlog's: `**Needs:**`), which the lead splits a round by
 //     (round 13's own report point 1); exit 1 when any. tests/friction.test.ts runs it over docs/friction/.
@@ -23,9 +26,11 @@
 // All print to stdout and write nothing.
 
 import { readFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** A report's numbered points: `## N. title` headings and the text up to the next heading. */
 export interface Point {
@@ -147,14 +152,14 @@ export const ACCURACY_LIST = /^## Needs an accuracy or search task/;
  * one-line entries ("- n. title", under a line naming where their full text is), and its accuracy list without the
  * entries that carry a "Closed by" line or whose first line holds a `drop` text. Throws for a --drop text no entry has.
  */
-export function carryLists(text: string, file: string, park: readonly number[] = [], drop: readonly string[] = []): string {
+export function carryLists(text: string, file: string, park: readonly number[] = [], drop: readonly string[] = [], unpark: readonly string[] = []): string {
   const out: string[] = [];
   const ps = points(text);
   const parked = section(text, PARKED) ?? [];
   while (parked.length && (parked[0] as string).trim() === "") parked.shift();
   const intro = parked.findIndex((l, i) => i > 0 && l.trim() === "" && (parked[i - 1] as string).trim() !== "");
   const head = intro < 0 ? parked : parked.slice(0, intro);
-  const rest = intro < 0 ? [] : parked.slice(intro);
+  const rest = withoutParked(intro < 0 ? [] : parked.slice(intro), unpark);
   const parkedNow = park.map((n) => {
     const p = ps.find((x) => x.n === n);
     if (!p) throw new Error(`--park ${n}: no point ${n} (the file has ${ps.map((x) => x.n).join(", ")})`);
@@ -181,6 +186,80 @@ export function carryLists(text: string, file: string, park: readonly number[] =
     out.push(heading, ...lines, "");
   }
   return out.join("\n");
+}
+
+/** A parked entry --unpark brought back: its line, the backlog file its paragraph names and the point's number there. */
+export interface Unparked {
+  readonly line: string;
+  readonly file: string | null;
+  readonly n: number | null;
+}
+
+/** The paragraphs of a Parked section's lines (split at blank lines), each with its entries. */
+function paragraphs(lines: readonly string[]): string[][] {
+  const out: string[][] = [];
+  let cur: string[] = [];
+  for (const l of lines) {
+    if (l.trim() === "") {
+      if (cur.length) out.push(cur);
+      cur = [];
+    } else cur.push(l);
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+
+/**
+ * The parked entries --unpark's words name (each must name exactly one), with the backlog file the paragraph before
+ * them names ("… of docs/friction-done/<file> …", "full text in docs/friction-done/<file> …") and their number.
+ */
+export function unparked(text: string, unpark: readonly string[]): Unparked[] {
+  const ps = paragraphs(section(text, PARKED) ?? []);
+  return unpark.map((words) => {
+    const found: Unparked[] = [];
+    let file: string | null = null;
+    for (const p of ps) {
+      const named = /docs\/friction-done\/[\w.-]+\.md/.exec(p.join(" "));
+      const list = entries(p);
+      if (!list.some((e) => e.entry)) {
+        file = named ? named[0] : file;
+        continue;
+      }
+      for (const e of list) {
+        if (!e.entry || !e.lines.join(" ").includes(words)) continue;
+        const n = /^- (\d+)/.exec(e.lines[0] as string);
+        found.push({ line: e.lines.join(" "), file, n: n ? Number(n[1]) : null });
+      }
+    }
+    if (found.length !== 1) throw new Error(`--unpark "${words}": ${found.length} parked entries hold it (one wanted)`);
+    return found[0] as Unparked;
+  });
+}
+
+/** The Parked section's later paragraphs without the entries --unpark names, and without an intro left with none. */
+function withoutParked(rest: readonly string[], unpark: readonly string[]): string[] {
+  if (!unpark.length) return [...rest];
+  const out: string[] = [];
+  const ps = paragraphs(rest);
+  const isList = (p: readonly string[]) => entries(p).some((e) => e.entry);
+  const left = ps.map((p) => (isList(p) ? entries(p).filter((e) => !(e.entry && unpark.some((w) => e.lines.join(" ").includes(w)))).flatMap((e) => e.lines) : [...p]));
+  ps.forEach((p, i) => {
+    const l = left[i] as string[];
+    if (!l.length) return;
+    // An intro whose list after it lost every entry goes too.
+    const next = ps[i + 1];
+    if (!isList(p) && next !== undefined && isList(next) && !(left[i + 1] as string[]).length) return;
+    out.push("", ...l);
+  });
+  return out;
+}
+
+/** An unparked point's full text from its backlog file (its `## n.` section), or a note why there is none. */
+export function unparkedText(u: Unparked, read: (file: string) => string): string {
+  if (u.file === null || u.n === null) return `${u.line}\n(no backlog file or number named: copy its text by hand)\n`;
+  const p = points(read(u.file)).find((x) => x.n === u.n);
+  if (!p) return `${u.line}\n(${u.file} has no point ${u.n})\n`;
+  return [`From ${u.file} point ${u.n}:`, "", `## ${p.n}. ${p.title}`, ...p.body, ""].join("\n");
 }
 
 export function carry(text: string, wanted: readonly number[], start: number, label: string): string {
@@ -213,7 +292,7 @@ function main(argv: readonly string[]): number {
   const { values, positionals } = parseArgs({
     args: [...argv],
     allowPositionals: true,
-    options: { round: { type: "string" }, start: { type: "string" }, label: { type: "string" }, backlog: { type: "string" }, lists: { type: "boolean" }, park: { type: "string" }, drop: { type: "string", multiple: true } },
+    options: { round: { type: "string" }, start: { type: "string" }, label: { type: "string" }, backlog: { type: "string" }, lists: { type: "boolean" }, park: { type: "string" }, drop: { type: "string", multiple: true }, unpark: { type: "string", multiple: true } },
   });
   const [cmd, ...rest] = positionals;
   if (cmd === "outcomes" && rest.length) {
@@ -235,8 +314,11 @@ function main(argv: readonly string[]): number {
     if (values.lists) {
       const park = values.park !== undefined ? values.park.split(",").map(Number) : [];
       if (park.some((n) => !Number.isInteger(n))) throw new Error("--park takes point numbers: 1,4");
-      process.stdout.write(`\n${carryLists(text, `docs/friction-done/${basename(file)}`, park, values.drop ?? [])}`);
-    } else if (values.park !== undefined || values.drop) throw new Error("--park and --drop go with --lists");
+      const unpark = values.unpark ?? [];
+      const back = unparked(text, unpark);
+      process.stdout.write(`\n${carryLists(text, `docs/friction-done/${basename(file)}`, park, values.drop ?? [], unpark)}`);
+      for (const u of back) process.stderr.write(`\nUnparked (for the new backlog's point or accuracy entry):\n${unparkedText(u, (f) => readFileSync(resolve(ROOT, f), "utf8"))}`);
+    } else if (values.park !== undefined || values.drop || values.unpark) throw new Error("--park, --drop and --unpark go with --lists");
     return 0;
   }
   if (cmd === "check" && rest.length) {
@@ -248,7 +330,7 @@ function main(argv: readonly string[]): number {
     }
     return bad ? 1 : 0;
   }
-  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] [--backlog <new backlog.md>] | carry <backlog.md> <n,…> [--start k] [--label text] [--lists [--park n,…] [--drop text]…] | check <report.md…>\n");
+  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] [--backlog <new backlog.md>] | carry <backlog.md> <n,…> [--start k] [--label text] [--lists [--park n,…] [--drop text]… [--unpark text]…] | check <report.md…>\n");
   return 2;
 }
 
