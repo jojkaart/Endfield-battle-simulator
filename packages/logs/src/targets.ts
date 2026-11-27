@@ -275,8 +275,11 @@ export interface TargetHitInput {
   /** Its frame (the landing's, else the logged ms's). */
   readonly frame: number;
   readonly units: readonly TargetUnit[];
-  /** Whether its primary reading without these units' modifiers fits its value (±1; the uncapped value where capped). */
-  readonly fits: (drop: ReadonlySet<string>) => boolean;
+  /**
+   * Whether its primary reading without these units' modifiers fits its value (±1; the uncapped value where capped), on
+   * target `target` (the second replay of the statuses per target reads each candidate at its own statuses).
+   */
+  readonly fits: (drop: ReadonlySet<string>, target: number) => boolean;
 }
 
 /** A logged hit's target: its index (in order of first hit), the units its reading leaves out, and how it was chosen. */
@@ -318,9 +321,11 @@ const killed = (h: LogHit) => h.uncapped !== undefined && h.uncapped !== null &&
  * the hit decides each open unit that is on in every fitting choice, or off in every one. The preference: a target
  * that fits with every open unit on, then one that fits by leaving some off, then a new target (while atOnce allows,
  * and with fromStart no more than atOnce in all); among equals the one hit last. Where nothing fits, the one hit last
- * (a new one if none is alive), read with what it is known to lack, decided by nothing.
+ * (a new one if none is alive), read with what it is known to lack, decided by nothing. With `fixed` (the second replay
+ * of the statuses per target: the first assignment's target of each hit, whose ids the replay's targets have), each hit
+ * goes to that target, its units decided there as above, `none fits` where no choice of them fits.
  */
-export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: readonly TargetHitInput[]): TargetAssignment {
+export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: readonly TargetHitInput[], fixed?: ReadonlyMap<LogHit, number>): TargetAssignment {
   const atOnce = fx.severalTargets?.atOnce ?? DEFAULT_AT_ONCE;
   const fromStart = fx.severalTargets?.fromStart === true;
   const targets: Target[] = [];
@@ -333,8 +338,10 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     const used = landing ? (twins.get(landing)?.get(hit.t) ?? new Set<number>()) : new Set<number>();
     const alive = targets.filter((t) => t.alive).sort((a, b) => b.last - a.last);
     const canNew = alive.length < atOnce && (!fromStart || targets.length < atOnce);
-    const fresh: Target = { id: targets.length, alive: true, last: -1, got: new Map(), missed: new Map() };
-    const candidates = [...alive.filter((t) => !used.has(t.id)), ...(canNew ? [fresh] : [])];
+    const pinned = fixed?.get(hit);
+    const fresh: Target = { id: pinned ?? targets.length, alive: true, last: -1, got: new Map(), missed: new Map() };
+    const own = pinned !== undefined ? targets.find((t) => t.id === pinned) : undefined;
+    const candidates = pinned !== undefined ? [own ?? fresh] : [...alive.filter((t) => !used.has(t.id)), ...(canNew ? [fresh] : [])];
     const state = (t: Target) => {
       const off: string[] = [];
       const open: string[] = [];
@@ -351,7 +358,7 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     for (const t of candidates) {
       const { off, open } = state(t);
       const masks = 1 << open.length <= MAX_OPEN_SUBSETS ? Array.from({ length: 1 << open.length }, (_, m) => m) : [0, ...open.map((_, i) => 1 << i)];
-      const fitting = masks.map((m) => new Set([...off, ...open.filter((_, i) => m & (1 << i))])).filter((d) => x.fits(d)).sort((a, b) => a.size - b.size);
+      const fitting = masks.map((m) => new Set([...off, ...open.filter((_, i) => m & (1 << i))])).filter((d) => x.fits(d, t.id)).sort((a, b) => a.size - b.size);
       const best = fitting[0];
       if (!best) continue;
       const decided = new Map<string, boolean>();
@@ -366,7 +373,7 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     let how: HitTarget["how"] = "fits";
     if (!chosen) {
       how = "none fits";
-      const t = alive.find((y) => !used.has(y.id)) ?? (canNew ? fresh : (alive[0] ?? fresh));
+      const t = candidates.length === 1 && pinned !== undefined ? (candidates[0] as Target) : (alive.find((y) => !used.has(y.id)) ?? (canNew ? fresh : (alive[0] ?? fresh)));
       chosen = { t, drop: new Set(state(t).off), decided: new Map(), cost: Infinity };
     }
     const t = chosen.t;
@@ -392,7 +399,7 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     if (kills) t.alive = false;
     of.set(hit, { target: t.id, drop: chosen.drop, how, kills });
   }
-  return { of, count: targets.length };
+  return { of, count: new Set(targets.map((t) => t.id)).size };
 }
 
 /**

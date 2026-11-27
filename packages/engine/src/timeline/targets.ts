@@ -62,3 +62,9 @@ export function endTarget(st: TimelineState, id: number): TimelineState {
   const { [id]: _gone, ...rest } = st.targets.others;
   return { ...st, targets: { ...st.targets, others: rest }, scheduled };
 }
+
+/** Every target's statuses (the current one first), or the one enemy's (target undefined): for a record of the enemy side whatever target it is on (the log lists every target's under one id). */
+export function everyTarget(st: TimelineState): { readonly target?: number; readonly enemy: EnemyStatus }[] {
+  if (!st.targets) return [{ enemy: st.enemy }];
+  return [{ target: st.targets.current, enemy: st.enemy }, ...Object.entries(st.targets.others).map(([k, e]) => ({ target: Number(k), enemy: e }))];
+}

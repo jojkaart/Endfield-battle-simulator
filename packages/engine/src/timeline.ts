@@ -36,7 +36,7 @@ export { kitSkill, skillCosts, maxPoise } from "./timeline/context.ts";
 export { spAt, spCostAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
 export { windowKey, windowOpen, needsWindow } from "./timeline/timing.ts";
 export { nextChangeAfter } from "./timeline/wake.ts";
-export { targetEnemy } from "./timeline/targets.ts";
+export { everyTarget, targetEnemy } from "./timeline/targets.ts";
 
 // What the planning code (planning/: search, payoffs, the rule driver) reads beyond the stepping API: it imports the
 // timeline only through this façade (and core.ts), never timeline/* (lint). Probes and keys of planning states.
