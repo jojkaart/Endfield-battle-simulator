@@ -10,6 +10,15 @@
 //                                                     each bound's placement before and after, the bounds that pin
 //                                                     each unit (holds.ts holdPins) and what each dropped bound
 //                                                     conflicted with
+//   node scripts/cli-ab.ts <ref> --placement [<fixture id>…] [--operator <name>] [--summary]
+//                                                     every development log's placement with its rules (`zmdlogs
+//                                                     casts <fixture> --choices`, scripts/placement-lines.ts, one
+//                                                     process per side): per log the CAST and HIT lines that
+//                                                     differ, paired by a HIT's logged hit and a CAST's start and
+//                                                     operator, then counts per log, per rule (this tree's ← the
+//                                                     ref's) and per operator; --summary only the counts, --operator
+//                                                     only its lines (round 17, the Zhuang Fangyi and Liino report
+//                                                     point 2: a placement rule's false positives before a measure)
 //   … --patch <diff>                                  the patch applied on <ref>'s code first (git apply, in its own
 //                                                     worktree scratch/at/<hash>-patched, made afresh): a view this
 //                                                     tree added, run on the old code too (`git diff <base> --
@@ -29,7 +38,7 @@ import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
-import { atCommit, removeAtCommit } from "./at-commit.ts";
+import { atCommit, outputInTree, removeAtCommit } from "./at-commit.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -90,6 +99,104 @@ export function outputDiff(was: string, now: string, opts: { readonly key?: RegE
   return out;
 }
 
+/**
+ * The key of a placement line (`zmdlogs casts --choices`): a HIT line by its logged hit (time, operator, event, value:
+ * the text before " → "), a CAST line by its start and its operator's name (the words before the skill id).
+ */
+export const PLACEMENT_KEY = String.raw`^(\s*[0-9.]+\s+(?:HIT\s+.*?(?= → )|CAST\s+.+?(?= \S+ \([a-z]+\))))`;
+
+/** A placement output's logs: the lines of each, by the `zmdlogs-<id>: placement` header line each starts with. */
+export function placementLogs(text: string): Map<string, string> {
+  const out = new Map<string, string[]>();
+  let cur: string[] | undefined;
+  for (const l of text.split("\n")) {
+    const m = /^(zmdlogs-[0-9a-f]+): placement/.exec(l);
+    if (m) out.set(m[1] as string, (cur = [l]));
+    else cur?.push(l);
+  }
+  return new Map([...out].map(([k, ls]) => [k, ls.join("\n").replace(/\n+$/, "")]));
+}
+
+/** A CAST line's rule ("anchor", "window", …: the bracket logcasts.ts choose writes), operator and skill. */
+function castFacts(line: string): { readonly rule: string; readonly operator: string; readonly skill: string } | null {
+  const m = /^\s*[0-9.]+\s+CAST\s+(.+?) (\S+) \([a-z]+\).*?(?:\[(\w+)[:\]]|$)/.exec(line);
+  return m ? { operator: (m[1] as string).trim(), skill: m[2] as string, rule: m[3] ?? "-" } : null;
+}
+
+/** A HIT line's operator (the words before its event id). */
+const hitOperator = (line: string) => /^\s*[0-9.]+\s+HIT\s+(.+?) \S+ \d+ → /.exec(line)?.[1]?.trim() ?? "?";
+
+/**
+ * cli-ab --placement's report: per log the placement lines that differ (outputDiff by PLACEMENT_KEY), then the counts
+ * per log, per rule of a CAST that differs (this tree's ← the ref's, "new"/"gone" for an unpaired one) and per operator.
+ */
+export function placementDiff(was: string, now: string, opts: { readonly summary?: boolean; readonly operator?: string } = {}): string[] {
+  const [a, b] = [placementLogs(was), placementLogs(now)];
+  const key = new RegExp(PLACEMENT_KEY);
+  const perLog: string[] = [];
+  const detail: string[] = [];
+  const rules = new Map<string, number>();
+  const ops = new Map<string, { casts: number; hits: number }>();
+  const op = (name: string) => ops.get(name) ?? (ops.set(name, { casts: 0, hits: 0 }).get(name) as { casts: number; hits: number });
+  for (const [id, text] of b) {
+    const before = a.get(id);
+    if (before === undefined) {
+      perLog.push(`  ${id.slice(8, 12)}  only in this tree`);
+      continue;
+    }
+    if (before === text) continue;
+    let lines = outputDiff(before, text, { key });
+    // Only CAST and HIT lines (a `~` keeps its was / now lines), of the operator if one is named.
+    const groups: string[][] = [];
+    for (const l of lines) if (/^ {4}(was|now): /.test(l)) groups.at(-1)?.push(l);
+    else groups.push([l]);
+    const kept = groups.filter((g) => /\b(CAST|HIT)\b/.test(g.join(" ")) && (!opts.operator || g.join(" ").includes(` ${opts.operator} `)));
+    if (!kept.length) continue;
+    lines = kept.flat();
+    let hits = 0;
+    const casts: { was: ReturnType<typeof castFacts>; now: ReturnType<typeof castFacts> }[] = [];
+    for (const g of kept) {
+      if (/\bCAST\b/.test(g[0] as string)) {
+        const was = g.find((l) => /^ {4}was: |^- /.test(l));
+        const now = g.find((l) => /^ {4}now: |^\+ /.test(l));
+        casts.push({ was: was ? castFacts(was.replace(/^ {4}was: |^- /, "   ")) : null, now: now ? castFacts(now.replace(/^ {4}now: |^\+ /, "   ")) : null });
+      } else {
+        hits++;
+        const l = (g.find((x) => /^ {4}now: |^\+ /.test(x)) ?? g.find((x) => /^ {4}was: |^- /.test(x)) ?? "").replace(/^ {4}(was|now): |^[-+] /, "   ");
+        op(hitOperator(l)).hits++;
+      }
+    }
+    // A cast gone at one start and new at another, of one operator and skill: one cast moved.
+    const paired: typeof casts = [];
+    for (const c of casts) {
+      const twin = c.now && !c.was ? paired.find((p) => p.was && !p.now && p.was.operator === c.now?.operator && p.was.skill === c.now?.skill) : c.was && !c.now ? paired.find((p) => p.now && !p.was && p.now.operator === c.was?.operator && p.now.skill === c.was?.skill) : undefined;
+      if (twin) {
+        twin.was ??= c.was;
+        twin.now ??= c.now;
+      } else paired.push({ ...c });
+    }
+    for (const c of paired) {
+      const k = `${c.now?.rule ?? "gone"} ← ${c.was?.rule ?? "new"}${c.now && c.was && c.now.skill === c.was.skill ? " (same skill)" : ""}`;
+      rules.set(k, (rules.get(k) ?? 0) + 1);
+      op((c.now ?? c.was)?.operator ?? "?").casts++;
+    }
+    perLog.push(`  ${id.slice(8, 12)}  ${paired.length} cast(s), ${hits} HIT line(s) differ`);
+    detail.push(`${id}:`, ...lines);
+  }
+  for (const id of a.keys()) if (!b.has(id)) perLog.push(`  ${id.slice(8, 12)}  only at the ref`);
+  if (!perLog.length) return [`the placement of every log (${b.size}) is the same`];
+  const sorted = (m: Map<string, number>) => [...m].sort((x, y) => y[1] - x[1]);
+  return [
+    `Logs whose placement differs (${perLog.length} of ${b.size}):`,
+    ...perLog,
+    "By rule (a cast that differs, paired by its start or as one operator's same skill gone at one start and new at another: this tree's rule ← the ref's; new / gone: on one side only; `-`: no rule, the key names one skill):",
+    ...sorted(rules).map(([k, n]) => `  ${String(n).padStart(4)}  ${k}`),
+    "By operator (casts and HIT lines that differ):",
+    ...[...ops].sort((x, y) => y[1].casts + y[1].hits - (x[1].casts + x[1].hits)).map(([name, c]) => `  ${name.padEnd(16)} ${String(c.casts).padStart(4)} casts ${String(c.hits).padStart(5)} hits`),
+    ...(opts.summary ? [] : ["", ...detail]),
+  ];
+}
+
 function main(argv: string[]): number {
   const dash = argv.indexOf("--");
   const own = dash >= 0 ? argv.slice(0, dash) : argv;
@@ -105,8 +212,9 @@ function main(argv: string[]): number {
     efsim = ["zmdlogs", "holds", holds, "--verbose"];
     key ??= HOLDS_KEY;
   }
-  if (!ref || ref.startsWith("--") || efsim.length === 0) {
-    process.stderr.write("usage: node scripts/cli-ab.ts <ref> [--key <regex>] [--all] [--raw] [--patch <diff>] -- <efsim args…> | <ref> [--patch <diff>] --holds <fixture>\n");
+  const placement = own.includes("--placement");
+  if (!ref || ref.startsWith("--") || (efsim.length === 0 && !placement)) {
+    process.stderr.write("usage: node scripts/cli-ab.ts <ref> [--key <regex>] [--all] [--raw] [--patch <diff>] -- <efsim args…> | <ref> [--patch <diff>] --holds <fixture> | <ref> --placement [<fixture id>…] [--operator <name>] [--summary]\n");
     return 2;
   }
   const short = spawnSync("git", ["rev-parse", "--short=9", "--verify", `${ref}^{commit}`], { cwd: ROOT, encoding: "utf8" });
@@ -116,6 +224,19 @@ function main(argv: string[]): number {
   // A patched tree is made afresh: the patch may have changed since the last run.
   if (patch !== undefined && existsSync(join(tree, ".git"))) removeAtCommit(tree);
   atCommit(ref, tree, patch);
+  if (placement) {
+    // The fixture ids: own's positionals after the ref, not an option's value.
+    const valued = new Set(["--patch", "--operator", "--key"]);
+    const ids = own.slice(1).filter((x, i, all) => !x.startsWith("--") && !valued.has(all[i - 1] ?? ""));
+    const script = join(ROOT, "scripts", "placement-lines.ts");
+    const now = spawnSync(process.execPath, [script, ...ids], { cwd: ROOT, encoding: "utf8", maxBuffer: 256 << 20 });
+    if (now.status !== 0) throw new Error(`cli-ab: placement-lines failed in this tree: ${(now.stderr || now.stdout).trim().split("\n").slice(-5).join("\n")}`);
+    const was = outputInTree(tree, script, ids);
+    process.stdout.write(`cli-ab --placement: zmdlogs casts --choices for ${ids.length ? ids.join(", ") : "every development log"}: ${ref} (${short.stdout.trim()}, -) against this tree (+), lines paired by a HIT's logged hit and a CAST's start and operator (~)\n`);
+    const operator = opt("--operator");
+    for (const l of placementDiff(was, now.stdout, { summary: own.includes("--summary"), ...(operator !== undefined ? { operator } : {}) })) process.stdout.write(l + "\n");
+    return 0;
+  }
   const run = (root: string) => {
     const r = spawnSync(process.execPath, [join(root, "packages/cli/src/main.ts"), ...efsim], { cwd: root, encoding: "utf8", maxBuffer: 256 << 20 });
     if (r.status !== 0) throw new Error(`cli-ab: efsim ${efsim.join(" ")} failed at ${root === ROOT ? "this tree" : ref}: ${(r.stderr || r.stdout).trim().split("\n").slice(-5).join("\n")}`);

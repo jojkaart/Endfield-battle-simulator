@@ -104,6 +104,19 @@ export function snapshotCommit(root = ROOT): { readonly commit: string; readonly
  * reach the tree's packages), run with the tree as cwd, then the tree's own file put back (or removed). The exit code.
  */
 export function runInTree(dir: string, script: string, args: readonly string[], root = ROOT): number {
+  return withScriptInTree(dir, script, root, (target) => spawnSync(process.execPath, [target, ...args], { cwd: dir, stdio: "inherit" }).status ?? 1);
+}
+
+/** runInTree with the script's stdout returned (throws on a non-zero exit, with its stderr's last lines): scripts/cli-ab.ts --placement. */
+export function outputInTree(dir: string, script: string, args: readonly string[], root = ROOT): string {
+  return withScriptInTree(dir, script, root, (target) => {
+    const r = spawnSync(process.execPath, [target, ...args], { cwd: dir, encoding: "utf8", maxBuffer: 256 << 20 });
+    if (r.status !== 0) throw new Error(`${script} failed in ${dir}: ${(r.stderr || r.stdout).trim().split("\n").slice(-5).join("\n")}`);
+    return r.stdout;
+  });
+}
+
+function withScriptInTree<T>(dir: string, script: string, root: string, run: (target: string) => T): T {
   const rel = relative(root, resolve(script));
   if (rel.startsWith("..")) throw new Error(`--run ${script}: not a file of this checkout`);
   const target = join(dir, rel);
@@ -111,7 +124,7 @@ export function runInTree(dir: string, script: string, args: readonly string[], 
   mkdirSync(dirname(target), { recursive: true });
   copyFileSync(resolve(script), target);
   try {
-    return spawnSync(process.execPath, [target, ...args], { cwd: dir, stdio: "inherit" }).status ?? 1;
+    return run(target);
   } finally {
     if (before !== undefined) writeFileSync(target, before);
     else rmSync(target, { force: true });
