@@ -244,9 +244,12 @@ export default command({
                                           skill kind) per group, then by operator and key (hold-outs: measure's
                                           summary, by kind only)
                 [--json]                  Instead: every one-sided landing, a JSON line each (fight, group, side,
-                                          operator, t, damage, key, skill, nature, context, flags, twin), cached
-                                          with the shares: a new ranking question is a jq line, not a replay of
-                                          every log
+                                          operator, t, damage, key, skill, nature, context, flags, twin; share: %
+                                          of the fight's logged total; logged, fightError, stage, severalTargets:
+                                          the fight's), cached with the shares: a new ranking question is a jq
+                                          line, not a replay of every log
+                [--skip <id|stage|several>,…]  Leave these fights out of the table, --kinds and --json: short ids,
+                                          every stage fight, every fight against several targets under one id
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
                                           windows and where the engine's own would have ended; with several logs
                                           (default: every development log) a summary of the shortfalls
@@ -408,6 +411,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     by: { type: "string" },
     differ: { type: "boolean", default: false },
     kinds: { type: "boolean", default: false },
+    skip: { type: "string", multiple: true, default: [] },
     clock: { type: "string" },
     rows: { type: "boolean", default: false },
     choices: { type: "boolean", default: false },
@@ -583,7 +587,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
-      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume, kinds: values.kinds, json: values.json, progress });
+      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume, kinds: values.kinds, json: values.json, skip: values.skip, progress });
+      if (values.skip.length) throw new Error("zmdlogs totals --skip goes with several fixtures or --all");
       if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event|crit, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
       if (values.by !== undefined && values.by !== "event" && values.by !== "crit") throw new Error("zmdlogs totals --by takes event or crit");
       return totalsView(data(), readDevFixture(arg), { operators, ...top, assume, byEvent: values.by === "event", byCrit: values.by === "crit", kinds: values.kinds });

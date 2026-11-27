@@ -13,9 +13,14 @@
 // --check-file <file> for a command written to a file with the Write tool (round 16, round 15's own report point 1: a
 // forbidden form passed to --check as an argument gets the whole call refused by the harness before the guard runs).
 // A refused call runs nothing, its other commands included: the refusal says so for a chained one.
+//
+// It also refuses `git commit -F <file>` while the file still holds HEAD's own message (round 18, round 17's own report
+// point 1: the file-based commit form committed a change under the previous commit's message, the next one written
+// only in the agent's head). One `git log -1` per commit; nothing else runs git.
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SAFE = "Write the text with the Write tool into scratch/ and run that file with one plain command (node scratch/x.ts, python3 -I scratch/x.py); text replacements: node scripts/edit.ts <edits file> (its header has the format). CLAUDE.md, \"Worktrees and sub-agents\".";
@@ -55,6 +60,29 @@ export function refusal(command: string): string | undefined {
   return undefined;
 }
 
+/** The message file of a `git commit -F <file>` (or `--file <file>`, `--file=<file>`) in the command, or undefined. */
+export function commitMessageFile(command: string): string | undefined {
+  if (!/(?:^|[\s;&|])git\s+commit\b/.test(command)) return undefined;
+  const m = /\s(?:-[a-zA-Z]*F|--file)(?:=|\s+)('[^']+'|"[^"]+"|[^\s;&|]+)/.exec(command);
+  return m ? (m[1] as string).replace(/^['"]|['"]$/g, "") : undefined;
+}
+
+/** Why a commit's message file is refused: its text is the last commit's message (both trimmed), or undefined. */
+export function staleMessage(file: string, text: string, head: string): string | undefined {
+  const norm = (x: string) => x.replace(/\r/g, "").trim();
+  return norm(text) && norm(text) === norm(head) ? `git commit -F ${file}: ${file} still holds the last commit's message (git log -1): write this commit's message into it first (the Write tool), then commit again.` : undefined;
+}
+
+/** The stale-message refusal of a command run in `cwd`: reads the message file and HEAD's message there (none: undefined). */
+function staleCommit(command: string, cwd: string): string | undefined {
+  const file = commitMessageFile(command);
+  if (file === undefined || file === "-") return undefined;
+  const path = isAbsolute(file) ? file : join(cwd, file);
+  if (!existsSync(path)) return undefined;
+  const head = spawnSync("git", ["log", "-1", "--format=%B"], { cwd, encoding: "utf8" });
+  return head.status === 0 ? staleMessage(file, readFileSync(path, "utf8"), head.stdout) : undefined;
+}
+
 /** A command of several (`&&`, `||`, `;`, a pipe or a newline outside quotes, roughly): its refusal says none of them ran. */
 export function chained(command: string): boolean {
   return /&&|\|\||;|\n|(?:^|[^|])\|(?!\|)/.test(command.replace(/'[^']*'|"(?:[^"\\]|\\.)*"/g, "''"));
@@ -68,11 +96,11 @@ export function refusalText(command: string, why: string): string {
 function main(argv: readonly string[]): number {
   if (argv[0] === "--check" || argv[0] === "--check-file") {
     const command = argv[0] === "--check-file" ? readFileSync(argv[1] ?? "", "utf8").replace(/\n$/, "") : argv.slice(1).join(" ");
-    const why = refusal(command);
+    const why = refusal(command) ?? staleCommit(command, process.cwd());
     process.stdout.write(why ? `refused: ${why}\n` : "ok\n");
     return why ? 1 : 0;
   }
-  let input: { tool_name?: string; tool_input?: { command?: unknown } };
+  let input: { tool_name?: string; cwd?: string; tool_input?: { command?: unknown } };
   try {
     input = JSON.parse(readFileSync(0, "utf8")) as typeof input;
   } catch {
@@ -80,7 +108,12 @@ function main(argv: readonly string[]): number {
   }
   const command = input.tool_input?.command;
   if ((input.tool_name !== undefined && input.tool_name !== "Bash") || typeof command !== "string") return 0;
-  const why = refusal(command);
+  let why = refusal(command);
+  try {
+    why ??= staleCommit(command, typeof input.cwd === "string" ? input.cwd : process.cwd());
+  } catch {
+    // never block on the guard's own failure
+  }
   if (!why) return 0;
   process.stderr.write(refusalText(command, why));
   return 2;

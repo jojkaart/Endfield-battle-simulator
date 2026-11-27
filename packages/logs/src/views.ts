@@ -1160,8 +1160,11 @@ export interface TotalsRow {
   readonly group: TotalsGroup;
   readonly shares: TotalsShares;
 }
-export type TotalsGroup = "verified" | "development" | "earlier" | "multi";
-const TOTALS_GROUPS: readonly TotalsGroup[] = ["verified", "development", "earlier", "multi"];
+/** `targets`: a pending fight against several enemies under one id (the fixture's severalTargets), the scoreboard's own row. */
+export type TotalsGroup = "verified" | "development" | "earlier" | "targets" | "multi";
+const TOTALS_GROUPS: readonly TotalsGroup[] = ["verified", "development", "earlier", "targets", "multi"];
+/** The groups whose fights the combined rows and the by-key ranking leave out: multi-target imports, several targets under one id. */
+const APART: ReadonlySet<TotalsGroup> = new Set(["multi", "targets"]);
 
 const sharePct = (x: number) => `${x >= 0 ? "+" : ""}${x.toFixed(2)}%`;
 
@@ -1209,8 +1212,8 @@ export function totalsKindsView(data: GameData, rows: readonly TotalsRow[], f: {
     "The one-sided landings by kind (onesided.ts), as mean % of a fight's logged total: gross (replay-only + |log-only|), replay-only, log-only, net, the fights with any, and the flags' gross shares (stop: inside a slow-down; cut: after a cast made as a cut; next cast: past the operator's next logged cast; end: within 1.5 s of the log's last hit; away: at a stretch without logged hits). Where they sit: unread (a logged hit's own landing without a reading), twin like / other (an opposite-side landing of the operator within 1.5 s, values within ×1.5 or ×3), then the replay's cast (no cast, cast unlogged / tail / head / gap) or the log's reason (no landing: …).",
   ];
   const groups: { name: string; rows: TotalsRow[] }[] = [
-    { name: "development, earlier pending and verified", rows: rows.filter((r) => r.group !== "multi") },
-    ...TOTALS_GROUPS.filter((g) => g !== "multi").map((g) => ({ name: g, rows: rows.filter((r) => r.group === g) })),
+    { name: "development, earlier pending and verified", rows: rows.filter((r) => !APART.has(r.group)) },
+    ...TOTALS_GROUPS.filter((g) => g !== "multi").map((g) => ({ name: g === "targets" ? "several targets under one id" : g, rows: rows.filter((r) => r.group === g) })),
   ];
   for (const g of groups) {
     if (!g.rows.length) continue;
@@ -1219,7 +1222,7 @@ export function totalsKindsView(data: GameData, rows: readonly TotalsRow[], f: {
     out.push(`  by nature:`, ...formatKindLines(kindsAggregate(fights, (k) => k.nature), top));
     out.push(`  by where they sit · nature · skill kind:`, ...formatKindLines(kindsAggregate(fights), top));
   }
-  const all = rows.filter((r) => r.group !== "multi");
+  const all = rows.filter((r) => !APART.has(r.group));
   const keys = new Map<string, { operator: string; side: string; key: string; context: string; share: number; n: number; fights: Map<string, number> }>();
   for (const r of all)
     for (const k of r.shares.keys ?? []) {
