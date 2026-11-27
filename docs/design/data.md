@@ -754,6 +754,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Every one-sided landing across fights, for a question of your own | `efsim zmdlogs totals --all --json` (a JSON line each, cached; then `jq`) |
 | Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
 | Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
+| How long after its event each of a kit trigger's own landings (an entity's follow-ups, harasses, lasers) lands, in the replay and in the log; the follow-ups one side has | `efsim zmdlogs followups <fixture…\|--all> --operator <op> [--trigger <re>]` (LandedHit.fired, a replay's record; takes `--kit`, `--assume`; round 19) |
 | What an ability entity (`abilityentity_…`, no file of its own in the export) does: the actions that spawn it and the skill it runs | `efsim gamedata tree <entity id>` (round 19) |
 | An enemy's tables and its stage's own text (several targets, shields, phases: read it first for a stage log), a fight's total in Max HPs | `efsim gamedata enemy <enemy id\|fixture>` (round 19: Hard 33's "They are legion") |
 | The open assumptions `--assume` takes, their readings and their evidence | `efsim assumptions [<re>]` (evidence: [assumptions.md](assumptions.md)) |

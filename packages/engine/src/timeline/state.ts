@@ -209,6 +209,8 @@ export interface PendingHit extends ScheduledHeader {
    * source); inside a `choose`, `nested` goes on from there (triggerActionAt).
    */
   readonly trigger?: { readonly id: string; readonly action: number; readonly nested?: readonly number[] };
+  /** A replayed fight's triggered hit: the firing behind it (TriggerFiring; its LandedHit carries it). */
+  readonly fired?: TriggerFiring;
   /** Alternatives of one landing (KitHit.branch): the same key for each, judged together when the first lands. */
   readonly branch?: string;
   /** A triggered Fixed DMG hit's value, judged when its trigger fired. */
@@ -315,9 +317,22 @@ export interface Cast {
   readonly teammate?: true;
 }
 
+/**
+ * A trigger's firing behind a landing it made (record only, a replayed fight's: TimelineContext.loggedCrits; round 19,
+ * the Camille report point 1: `zmdlogs followups` pairs a follow-up's landings with the events that made them): the
+ * trigger, the frame of the event it fired on, and what that event was (firingLabel).
+ */
+export interface TriggerFiring {
+  readonly trigger: string;
+  readonly frame: number;
+  readonly event: string;
+}
+
 export interface LandedHit extends HitDamage {
   readonly frame: number;
   readonly operator: string;
+  /** A replayed fight's triggered landing: the trigger's firing behind it (record only). */
+  readonly fired?: TriggerFiring;
   /** The cast it belongs to (an index into TimelineState.casts), when a cast made it (not a trigger's own hit). */
   readonly cast?: number;
   /** Fixed DMG (KitHit.fixedDamage): recording buffs don't record it. */
