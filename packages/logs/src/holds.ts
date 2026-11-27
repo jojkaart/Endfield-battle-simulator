@@ -4,7 +4,7 @@
 // log shows bounds it: a listed buff's run against the replay's own expiry, an enemy tick series against its period.
 // The replay (buffreplay.ts) then holds the world there once, for every timer.
 
-import { breakHoldFrames, inUltimateStop, readingOf, FPS, type KitBuff, type Readings } from "@efsim/engine";
+import { breakHoldFrames, readingOf, FPS, type KitBuff, type Readings } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { worldMs, type TimeStop } from "./logcasts.ts";
 
@@ -281,7 +281,7 @@ export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeSto
   const frames = breakHoldFrames(assume);
   if (frames <= 0) return [];
   return breakHoldStarts(fx, frames, assume).flatMap(({ from: f }) => {
-    if (stops.some((st) => st.kind === "ultimate" && inUltimateStop(f, st.start, st.scales.length))) return [];
+    if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) return [];
     return [{ start: f, scales: new Array<number>(frames).fill(0), operator: "", skillId: "stagger-break", kind: null }];
   });
 }

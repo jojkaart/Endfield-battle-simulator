@@ -15,8 +15,17 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
     question: "Where does the hold at a logged Stagger break (break-hold) start against the breaking hit's logged ms?",
     default: "moments",
     readings: {
-      moments: "from the log's moments: no logged moment falls inside a hold, so where the next comes sooner after the break's ms than the hold lasts, the hold ends at it",
-      ms: "at the breaking hit's logged ms (the replay's default; most breaking hits are logged at their hold's start)",
+      moments: "from the log's moments: no logged moment falls inside a hold, so where the next comes sooner after the break's ms than the hold lasts, the hold ends at it, starting no sooner than 134 ms after the moment before (the landings logged there, the replay's clock a few frames late; 9090afbacec9 128.50 s)",
+      ms: "at the breaking hit's logged ms (the replay's default until 2026-11-27; most breaking hits are logged at their hold's start)",
+    },
+  },
+  {
+    id: "break-held-starts",
+    question: "Does a new cast's start, placed from its first landing, read the holds at the logged Stagger breaks it ran through?",
+    default: "unheld",
+    readings: {
+      unheld: "no: its start is its landing less the frame and the other casts' stops; the replay then holds it at the break again (fc63a2001251 102.33 s: the battle skill inside Typhoeus's combo's uncuttable frames)",
+      held: "yes: a break between the start the landing gives and the landing (not inside another operator's combo slow-down) moves it that many frames earlier (fc63's combo to 98.57 s, its event at 98.42 s; one hold-out −6 plain, no decision moved)",
     },
   },
   {
