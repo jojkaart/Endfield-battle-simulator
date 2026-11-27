@@ -1491,7 +1491,7 @@ hit 2.2%, twin like 2.3%, no cast 2.3% (no cast · Fixed DMG 1.0%: Si's bursts),
     (through the Inksoul, inkmove_2; as the mark, inkmark_projhit), the same damage (the record) either way; a log of
     one path didn't take the replay's landing of the other (c779 60.37 s: the log's through an Inksoul the replay
     lacked: its Final Stroke there is FORCED), and the replay's record can end 0.9 s from the game's (4e36). Now a
-    trigger's hits actions under complementary conditions share their events (buffreplay.ts `alternativeEvents`: Si's
+    trigger's hits actions under complementary conditions share their events (landingpairs.ts `alternativeEvents`: Si's
     burst, Typhoeus's arrow rain sub1 / sub2, Last Rite's phantom), and a recorded burst looks 60 frames either way.
     The hold-outs 9.1 → 8.2% (1 better, 1 mixed; their "no cast · Fixed DMG" 1.0% gone).
 12. **Typhoeus's Barrage Array tick as a combo** (fc63). Her combo's field ticks 18 times every 1/3 s while the enemy
