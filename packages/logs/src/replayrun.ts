@@ -10,7 +10,7 @@ import {
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { awayWindows, enemyAwaySpans, lastLifeKilled } from "./enginecheck.ts";
+import { awayWindows, enemyAwaySpans, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
 import { loggedFrames, type Placement } from "./logcasts.ts";
 import { replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
@@ -54,7 +54,8 @@ export interface ConsumedBuffs {
 /**
  * The enemy's HP over the fight from the logged damage (TimelineScenario.enemyHp), in steps of 1% of its HP, under the
  * engine assumption enemy-hp. `max-hp`: only when the logged damage is the data's Max HP. `kill` (the default): also
- * a fight that ends in a kill (its last logged hit capped at the enemy's remaining HP), whose logged total is the
+ * a fight that ends in a kill (its last logged hit capped at the enemy's remaining HP, or its total a stage-scaled Max
+ * HP: stageScaledKill), whose logged total is the
  * enemy's HP, the stage's scaling of Max HP included (tower015 ×7.6, tower016 ×5.5), split into lives of about Max HP
  * where the enemy went away (ENEMY_AWAY_MS) as the damage reached a multiple of Max HP (Si, eny_0134_jsspsi: two
  * lives, the 20–24 s away stretch starting at 1.000–1.074 × Max HP dealt in all eight development fights, the excess
@@ -68,7 +69,7 @@ export function loggedEnemyHp(data: GameData, fx: LogFixture, reading: string): 
   const total = hits.reduce((s, h) => s + h.value, 0);
   const last = (hits.at(-1) as LogHit).t;
   const capped = hits.some((h) => h.t === last && h.uncapped !== undefined && h.uncapped > h.value);
-  if (Math.abs(total / max - 1) > 1e-3 && (reading !== "kill" || !(capped || lastLifeKilled(data, fx)))) return undefined;
+  if (Math.abs(total / max - 1) > 1e-3 && (reading !== "kill" || !(capped || lastLifeKilled(data, fx) || stageScaledKill(data, fx)))) return undefined;
   // Each life's first dealt damage (as a sum of the hits before it): an away stretch that starts once the damage has
   // reached j × Max HP, within the fight's excess over its whole lives (under 10% of Max HP).
   const lives = Math.floor(total / max + 1e-3);

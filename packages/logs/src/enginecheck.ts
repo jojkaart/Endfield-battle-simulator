@@ -8,7 +8,7 @@
 // replacing them: where they differ is reported (logDifferences). docs/design/data.md, "The log check's rule".
 
 import {
-  Attr, activeModifiers, corrosionModifier, effectiveKit, ENGINE_ASSUMPTIONS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
+  ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, ENGINE_ASSUMPTIONS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
 import { affixesAsChild } from "@efsim/data";
@@ -74,7 +74,21 @@ export function logOnly(data: GameData, fx: LogFixture, names: TeamBuffNames, hi
   const h = withoutOwnFood(data, fx, hit);
   const staged = listsGivers(fx);
   const keep = (e: LogEffect) => !engineModels(names, e.buff) || (staged && stageStatus(e));
-  return { effects: h.effects.filter(keep), boundary: h.boundaryEffects.filter(keep) };
+  const asStage = (effects: readonly LogEffect[]) => effects.filter(keep).flatMap(stageElements);
+  return { effects: asStage(h.effects), boundary: asStage(h.boundaryEffects) };
+}
+
+/**
+ * A stage Electrification's entry as the engine's own Electrification acts: Arts DMG Taken, one entry per Arts element
+ * (status.ts statusModifiers). The log lists it without an element; buff_common_pulse_pulse_conduct_triggered_do's
+ * damageModifier reaches CheckDamageTypeMask 92 (Heat, Electric, Cryo, Nature), and Physical (mask 129) only where its
+ * dynamic `if_contain_physicdamage` is 1, which nothing in the data sets. 207f's physical hits under it read ×0.847
+ * (1.33 ÷ 1.57) with it taken for every element, plain without it.
+ */
+function stageElements(e: LogEffect): LogEffect[] {
+  if (e.element !== null && e.element !== undefined) return [e];
+  if (!/^buff_common_pulse_pulse_conduct_triggered_do$/.test(e.buff) || e.source != null) return [e];
+  return ARTS_ELEMENTS.map((element) => ({ ...e, element }));
 }
 
 /**
@@ -713,7 +727,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // the data's HP: tower016 ×5.5, tower015 ×7.6, Si's phases ×2; 4360's four returning lances after the kill counted,
   // +6.5% of the fight, while the last hit was capped), the log's total then being the HP.
   const lastCapped = fx.hits.some((h) => h.t === logged.last && h.uncapped !== undefined && h.uncapped > h.value);
-  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : lastCapped || lastLifeKilled(data, fx) ? logged.damage : null;
+  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : lastCapped || lastLifeKilled(data, fx) || stageScaledKill(data, fx) ? logged.damage : null;
   let simKill: number | null = null;
   // Landings the log can't have (the fixture's `absent`, judged by hand): each the nearest of its operator's skill and hit.
   const absent = new Set<LandedHit>();
@@ -866,6 +880,26 @@ export function lastLifeKilled(data: GameData, fx: LogFixture): boolean {
     if (lives >= 1 && dealt - lives * max < 0.1 * max) lastLife = dealt;
   }
   return lastLife >= 0 && Math.abs(total - lastLife - max) <= 0.005 * max;
+}
+
+/** How near (× the logged total) the total must be to a stage-scaled Max HP for stageScaledKill: the hits' rounding (458b: 1.3e-5). */
+const STAGE_KILL_NEAR = 2e-5;
+
+/**
+ * Whether a fight ends in a kill its last hit's cap doesn't show: its logged total is the data's Max HP times a stage
+ * factor of two decimals (tower015 ×7.60, tower016 ×5.50, tower019 ×5.10, hdg016 ×5.85, hdg027 ×5.28 and ×5.76), to
+ * within the hits' rounding. Every development fight with a capped last hit at one life sits within 1.3e-5 of its
+ * total from such a multiple; two carry no uncapped value: pending/zmdlogs-207fff414d82.json (×5.7600, Rossi's
+ * ultimate final 1,134,403 against a predicted 1,218,124) and pending/zmdlogs-5082ceaffad1.json (×7.6000, Yvonne's
+ * last charged shot). A fight not ending in one lands that near a multiple by chance about once in 50 (the window is
+ * 4e-5 of the total wide, the multiples 0.01 × Max HP apart).
+ */
+export function stageScaledKill(data: GameData, fx: LogFixture): boolean {
+  const max = data.enemies[fx.enemy.id]?.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
+  if (!max || fx.hits.length === 0) return false;
+  const total = fx.hits.reduce((s, h) => s + h.value, 0);
+  const factor = Math.round((total / max) * 100) / 100;
+  return factor >= 1 && Math.abs(total - factor * max) <= STAGE_KILL_NEAR * total;
 }
 
 /** Whether a reading of engine assumption enemy-away leaves the away stretches' landings out of the totals. */
