@@ -30,9 +30,9 @@ commit, and how many logs got better or worse.
 | Verified (fixtures/) | 6 | 804 | 78.5% | 99.3% | 0.0% | 1.6% | 6 | 1 |
 | Development (fixtures/pending, holdout.json `development`) | 29 | 15724 | 84.3% | 92.6% | 4.7% | 1.3% | 28 | 63 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.5% | 93.2% | 5.1% | 5.8% | 9 | 20 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 82.3% | 92.2% | 7.5% | 1.3% | 22 | 47 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 84.4% | 95.4% | 4.4% | 1.2% | 22 | 49 |
 | Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 771 | 68.5% | 82.9% | 15.4% | 16.1% | 0 | 20 |
-| All but the hold-outs | 61 | 29035 | 82.9% | 92.4% | 6.0% | 2.1% | 56 | 131 |
+| All but the hold-outs | 61 | 29035 | 83.8% | 93.6% | 4.8% | 2.0% | 56 | 133 |
 
 ## Where the total's error lives
 
@@ -46,7 +46,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | Verified (fixtures/) | 6 | 1.5% | 0.5% | 0.0% | 1 |
 | Development (fixtures/pending, holdout.json `development`) | 29 | 1.3% | 1.1% | 0.4% | 17 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 1.7% | 2.4% | 4.7% | 9 |
-| Earlier pending (imported before the hold-out split) | 23 | 1.2% | 1.0% | 0.5% | 15 |
+| Earlier pending (imported before the hold-out split) | 23 | 1.1% | 0.9% | 0.5% | 16 |
 | Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 3 | 4.2% | 22.2% | 17.9% | 3 |
 
 ## By operator (every log but the hold-outs)
@@ -66,7 +66,7 @@ stageFight); **As other kit hit**: its hits matched only as their event's other 
 | chr_0005_chen (Chen Qianyu) | 6 | 810 | 74.8% | 3.2% | 0 | 1.1% | 0.8% | 1.4% | 1.1% | 36.4% |
 | chr_0006_wolfgd (Wulfgard) | 7 | 808 | 91.0% | 2.7% | 0 | 0.8% | 0.5% | 0.7% | 0.8% | 15.6% |
 | chr_0007_ikut (Arclight) | 2 | 257 | 93.8% | 1.9% | 0 | 4.7% | 4.7% | 4.5% | 4.7% | 3.0% |
-| chr_0009_azrila (Ember) | 4 | 388 | 13.7% | 80.2% | 0 | 2.5% | 2.2% | 3.8% | 4.4% | 27.6% |
+| chr_0009_azrila (Ember) | 4 | 388 | 64.7% | 2.6% | 2 | 1.9% | 1.1% | 2.2% | 3.3% | 27.6% |
 | chr_0011_seraph (Xaihi) | 7 | 266 | 88.7% | 0.0% | 0 | 1.0% | 0.6% | 0.9% | 1.0% | 1.3% |
 | chr_0012_avywen (Avywenna) | 2 | 186 | 79.6% | 19.9% | 0 | 0.5% | 0.5% | 0.5% | 0.5% | 62.3% |
 | chr_0013_aglina (Gilberta) | 15 | 1174 | 90.5% | 4.5% | 0 | 2.9% | 0.9% | 2.2% | 3.1% | 4.5% |
@@ -75,10 +75,10 @@ stageFight); **As other kit hit**: its hits matched only as their event's other 
 | chr_0016_laevat (Laevatain) | 13 | 1497 | 85.0% | 3.1% | 1 | 6.6% | 1.3% | 3.6% | 1.1% | 53.3% |
 | chr_0017_yvonne (Yvonne) | 2 | 323 | 73.1% | 0.0% | 0 | 3.3% | 3.3% | 2.7% | 3.3% | 63.4% |
 | chr_0019_karin (Akekuri) | 2 | 202 | 94.6% | 0.0% | 0 | 0.9% | 0.9% | 0.9% | 0.9% | 1.4% |
-| chr_0020_meurs (Catcher) | 1 | 252 | 75.4% | 13.9% | 0 | 0.9% | 0.9% | 0.9% | 0.9% | 5.2% |
+| chr_0020_meurs (Catcher) | 1 | 252 | 82.1% | 6.0% | 0 | 0.6% | 0.6% | 0.6% | 0.6% | 5.2% |
 | chr_0021_whiten (Estella) | 5 | 289 | 80.3% | 2.1% | 1 | 2.5% | 2.4% | 2.3% | 2.5% | 20.7% |
 | chr_0022_bounda (Fluorite) | 1 | 56 | 89.3% | 0.0% | 0 | 4.3% | 4.3% | 4.3% | 4.3% | 2.0% |
-| chr_0024_deepfin (Alesh) | 4 | 169 | 71.0% | 20.1% | 0 | 4.2% | 2.8% | 3.9% | 4.2% | 5.5% |
+| chr_0024_deepfin (Alesh) | 4 | 169 | 90.5% | 0.6% | 0 | 3.5% | 2.3% | 2.9% | 3.5% | 5.5% |
 | chr_0025_ardelia (Ardelia) | 11 | 1470 | 83.8% | 9.7% | 2 | 2.7% | 2.2% | 2.3% | 2.7% | 8.0% |
 | chr_0026_lastrite (Last Rite) | 4 | 156 | 69.2% | 0.6% | 5 | 1.5% | 1.3% | 1.7% | 1.5% | 38.5% |
 | chr_0027_tangtang (Tangtang) | 2 | 265 | 74.7% | 1.5% | 25 | 4.3% | 4.3% | 4.3% | 4.3% | 35.0% |
