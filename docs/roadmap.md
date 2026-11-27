@@ -91,7 +91,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   second one decides it), 7b54's partial purges, a hold bound from an end-boundary hit's value (c4f3's Wolven Blood),
   Pogranichnik's harasses' logged delays (0.6–1.3 s, d4fb 88.55 s), Estella's weapon ATK in c4f3's 7.05 s batch,
   7910's early rogue wave with no logged dive, other whole-game pauses outside a Stagger, 0c14's Stagger at its
-  breaking hit.
+  breaking hit; Arcane's mismatches 2026-11-26: a stage's round damage factor as the fixture's `stageFactors` (8915,
+  c6d8; Arcane 697 → 233 mismatches): next 8915's Corrosion step and Hot Work end after two combos pressed together,
+  fc63's Corrosion under `window-reaction`.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

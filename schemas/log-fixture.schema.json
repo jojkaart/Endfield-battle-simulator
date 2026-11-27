@@ -90,6 +90,21 @@
         }
       }
     },
+    "stageFactors": {
+      "type": "array",
+      "description": "Hand-written: a stage's damage factor no table the project reads has and the log doesn't list (a stage's shield phases), on every hit logged in [from, to) ms and the replay's landings then, in the multiplicative zone (enginecheck.ts stageModifiers), each with the evidence: every operator's hits there at that one factor. Found with scripts/probes/stage/stage-factors.ts.",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "factor", "why"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "number", "minimum": 0 },
+          "to": { "type": "number" },
+          "factor": { "type": "number", "exclusiveMinimum": 0 },
+          "why": { "type": "string" }
+        }
+      }
+    },
     "absent": {
       "type": "array",
       "description": "Hand-written: the replay's landings the log doesn't have and can't (a hit that didn't reach the logged enemy, or one ZMDLogs dropped), judged from the log, each with why. The totals leave each out (enginecheck.ts fightTotals): the landing of the operator's skill and hit nearest t, within 1 s.",
