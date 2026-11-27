@@ -4,6 +4,7 @@
 // The logic is @efsim/logs' (reports.ts and the modules it calls); this module checks the arguments and calls it.
 
 import {
+  awayView,
   battleIdOf,
   buffsView,
   burstsView,
@@ -304,6 +305,11 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                 [--at s]                  Instead: that moment's runs ending (each with its next unlisted moment),
                                           going on and starting, and the cast events within its grain
                 [--from s] [--to s] [--operator <op>]  This window; runs from these sources only
+  efsim zmdlogs away <fixture…|--all>     Per away stretch (no logged hit for 6 s or more): the hold placement's
+                                          clocks listed on both sides of it (team and enemy) with their asks, the
+                                          hold placed inside it, each operator's basic step across it, and a
+                                          verdict (pause: the clocks ask half its length or more; runs on: about
+                                          nothing); a count over the logs (--assume: under another reading)
   efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the time
                                           stops of the replay's casts (placed, from cast events, inferred), and the
                                           stops between (operator, skill, frames, lowest scale): the hold
@@ -468,6 +474,12 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (bad.length || !kinds.length) throw new Error(`--clock takes ${CLOCK_KINDS.join(", ")} (comma-separated)`);
       if (values.by !== undefined && values.by !== "operator" && values.by !== "kind") throw new Error("zmdlogs clocks --by takes operator (or kind, the default)");
       return clocksView(data(), devFixtures(named.length ? { ids: named } : {}), { kinds: kinds as ClockKind[], ...(values.by === "operator" ? { by: "operator" as const } : {}), rows: values.rows, assume, progress });
+    }
+    if (sub === "away") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs away takes fixtures (ids such as 4d60) or --all (every verified and pending development log; --assume id=reading)");
+      if (named.length && values.all) throw new Error("zmdlogs away: fixtures or --all, not both");
+      return awayView(data(), devFixtures(named.length ? { ids: named } : {}), { assume, progress });
     }
     if (sub === "ends") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs ends takes one fixture (a path or an id such as 6339; --at s, --min n, --side enemy|team, --from s, --to s, --operator op)");

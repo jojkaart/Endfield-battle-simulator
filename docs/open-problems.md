@@ -156,9 +156,10 @@ ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
 ## Away stretches: a pause or a phase (2026-11-27)
 
 **Shows:** do the enemy's statuses (and the team's buffs) run on, stop, or something else while the enemy is away (no
-logged hit by anyone for 6 s or more: 31 stretches in 11 development logs)? scripts/probes/away/away-clocks.ts lists,
-per stretch, every clock of the hold placement listed on both sides of it with what it asks past the replay's expiry,
-and each operator's basic string across it.
+logged hit by anyone for 6 s or more: 31 stretches in 11 development logs)? `efsim zmdlogs away <fixture…|--all>`
+(round 17; the probe scripts/probes/away/away-clocks.ts before) lists, per stretch, every clock of the hold placement
+listed on both sides of it with what it asks past the replay's expiry, the hold placed inside it, each operator's
+basic string across it and a verdict (at 44a72be: 2 pause, 11 runs on, 4 mixed, 14 no clock).
 **Found and fixed: two kinds, told apart by the clocks, not by the enemy.** 4d60's two stretches (27.38–37.00 and
 117.22–124.45 s, eny_0120_klbear_tower015) are whole-game pauses: Arcane's basic string goes on across both (attack 2
 → attack 3, no reset after 9.6 and 7.2 s), and every clock spanning them runs past its end by most of the stretch, the

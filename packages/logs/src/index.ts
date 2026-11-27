@@ -39,6 +39,7 @@ export * from "./query.ts";
 export * from "./labels.ts";
 export * from "./clockview.ts";
 export * from "./endsview.ts";
+export * from "./awayview.ts";
 export * from "./listingview.ts";
 export * from "./boundaryview.ts";
 export * from "./burstsview.ts";

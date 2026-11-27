@@ -19,7 +19,7 @@ import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } 
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
-import { holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
+import { clockAt, clockReaches, holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
 import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast } from "./logcasts.ts";
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
@@ -858,19 +858,6 @@ const HOLD_UNIT_MS = 512;
 /** How many of the bounds pinning a unit `holds --verbose` names (nearest first; the rest counted). */
 const PIN_TAGS = 4;
 
-/** A clock's earliest or latest P at a time (ms, linear between nodes), and the time P first reaches a mass. */
-function clockAt(h: PlacedHolds, P: readonly number[], t: number): number {
-  let i = 1;
-  while (i < h.times.length - 1 && (h.times[i] as number) < t) i++;
-  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
-  return t1 === t0 ? p1 : p0 + (p1 - p0) * Math.max(0, Math.min(1, (t - t0) / (t1 - t0)));
-}
-function clockReaches(h: PlacedHolds, P: readonly number[], m: number): number {
-  const i = P.findIndex((x) => x >= m - 1e-6);
-  if (i <= 0) return h.times[0] as number;
-  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
-  return p1 === p0 ? t1 : t0 + ((m - p0) / (p1 - p0)) * (t1 - t0);
-}
 
 /**
  * `zmdlogs holds`: the fight's hidden holds the replay places (engine assumption hidden-holds, reading `placed`:
