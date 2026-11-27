@@ -20,7 +20,7 @@ import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { FACTOR_STRETCH, factorStretches } from "./buildoffsets.ts";
-import { clockAt, clockReaches, holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
+import { clockAt, clockReaches, holdPins, loggedBreaks, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, KitWindow, TracedStatus, TriggerTrace } from "./replayrecord.ts";
 import { CAST_SLACK_MS, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast, type PlacedJoin } from "./logcasts.ts";
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote, type BuffLane } from "./query.ts";
@@ -1003,6 +1003,38 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
   }
   if (opts.verbose) for (const b of h.kept) lines.push(`  bound: ${b.tag}: P(${s(b.b)}) − P(${s(b.a)}) in [${Number.isFinite(b.min) ? s(b.min) : "−∞"}, ${Number.isFinite(b.max) ? s(b.max) : "∞"}] s; placed ${s(clockAt(h, h.mid, b.b) - clockAt(h, h.mid, b.a))}`);
   return lines.join("\n");
+}
+
+/**
+ * `zmdlogs holds <fixture> --steps <from>-<to>`: the hidden holds' per-frame steps the replay applies in a window (ms),
+ * beside the slow-downs the timeline applied there and the log's Stagger breaks (round 19, backlog after round 18 point 3:
+ * 5082's holds around Yvonne's break turned out spread over 1.5 s in 1-frame steps, which only a debug print showed).
+ * Each step: its frame and time, the frames it holds the world, and the hold so far (from the fight's start and from
+ * the window's); each applied stop: its frames and the world frames it holds (Σ 1 − scale).
+ */
+export function holdsSteps(data: GameData, fx: LogFixture, from: number, to: number, opts: { readonly assume?: Readonly<Record<string, string>> } = {}): string {
+  const r = logBuffReplay(data, fx, placeHits(data, fx), { assume: { ...opts.assume, "hidden-holds": "placed" } }).replay;
+  const h = r.hiddenHolds;
+  if (!h) return `${fx.id}: no holds placed (no kit to replay)`;
+  const ms = (f: number) => (f * 1000) / FPS;
+  const before = h.holds.filter((x) => ms(x.frame) < from).reduce((n, x) => n + x.frames, 0);
+  const lines: { t: number; text: string }[] = [];
+  let sum = 0;
+  for (const x of h.holds) {
+    const t = ms(x.frame);
+    if (t < from || t > to) continue;
+    sum += x.frames;
+    lines.push({ t, text: `  ${s(t).padStart(7)}  HOLD  frame ${x.frame}: ${x.frames} frame(s), ${sum} in the window, ${before + sum} from the start` });
+  }
+  for (const st of r.appliedStops) {
+    const [a, b] = [ms(st.start), ms(st.start + st.scales.length)];
+    if (b < from || a > to) continue;
+    const held = st.scales.reduce((n, x) => n + (1 - x), 0);
+    lines.push({ t: a, text: `  ${s(a).padStart(7)}  STOP  ${st.operator ? label(data, st.operator) : "the world"}${st.ultimate ? " ultimate" : ""} ${st.scales.length} frame(s) to ${s(b)}, holds ${held.toFixed(1)} world frame(s)` });
+  }
+  for (const t of loggedBreaks(fx)) if (t >= from && t <= to) lines.push({ t, text: `  ${s(t).padStart(7)}  BREAK the log's Stagger break (its hold: engine assumption break-hold)` });
+  lines.sort((p, q) => p.t - q.t);
+  return [`${fx.id}: the hidden holds' steps ${s(from)}–${s(to)} s (HOLD: frames the world is held at a frame, a frame at a time where the placed hold rises), the slow-downs the timeline applied there (STOP) and the log's Stagger breaks (BREAK); ${before} frame(s) held before the window, ${sum} in it; times in s`, ...lines.map((l) => l.text)].join("\n");
 }
 
 /** What covers a hold bound's span (droppedView): the log's Stagger, and which kinds of the replay's casts' stops lie in it. */

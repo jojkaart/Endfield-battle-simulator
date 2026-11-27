@@ -8,6 +8,7 @@ import {
   castsJson,
   stackView,
   followUpsView,
+  holdsSteps,
   awayView,
   battleIdOf,
   buffsView,
@@ -356,6 +357,8 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                 [--why <regex>]           Instead: each replayed instance of the matching kit buffs (owner:id) and
                                           enemy statuses (status:<name>), the log's run paired with it, and why it
                                           is a clock or not (the rule that skipped it), kept or dropped
+                [--steps <from>-<to>]     Instead: the holds' per-frame steps in that window (seconds), each with
+                                          the hold so far, beside the slow-downs applied there and the log's breaks
                 [--assume <id>=<reading>] Under another reading of an open assumption
                                           Between two commits' code: node scripts/cli-ab.ts <ref> --holds <fixture>
   efsim zmdlogs holds --dropped <fixture…|--all>  The placement's dropped bounds over the logs, grouped by bound kind
@@ -401,6 +404,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "trace-buff": { type: "string", multiple: true, default: [] },
     "trace-trigger": { type: "string", multiple: true, default: [] },
     trigger: { type: "string" },
+    steps: { type: "string" },
     "trace-stack": { type: "string", multiple: true, default: [] },
     what: { type: "string" },
     hits: { type: "boolean", default: false },
@@ -492,6 +496,11 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (!named.length && !values.all) throw new Error("zmdlogs holds --dropped takes fixtures (ids such as 0c14) or --all (every verified and pending development log)");
       if (named.length && values.all) throw new Error("zmdlogs holds --dropped: fixtures or --all, not both");
       return droppedView(data(), devFixtures(named.length ? { ids: named } : {}), { assume, verbose: values.verbose, progress });
+    }
+    if (sub === "holds" && values.steps !== undefined) {
+      const m = /^([\d.]+)-([\d.]+)$/.exec(values.steps);
+      if (args.length !== 2 || !arg || !m) throw new Error("zmdlogs holds --steps takes one fixture and a window in seconds: --steps 43-46");
+      return holdsSteps(data(), readDevFixture(arg), Number(m[1]) * 1000, Number(m[2]) * 1000, { assume });
     }
     if (sub === "holds") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14); --dropped for several or --all");
