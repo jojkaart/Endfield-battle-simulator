@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Snapshots } from "../scripts/accuracy.ts";
-import { applySets, combinedPatch, decisionLines, diffHunks, hunkParts, isSetEntry, measureOptions, MAX_HUNK_PARTS, overlay, parseSet, replacementDiff, setsProblem, splitLines } from "../scripts/measure.ts";
+import { applySets, castShiftLines, combinedPatch, decisionLines, diffHunks, hunkParts, isSetEntry, measureOptions, MAX_HUNK_PARTS, overlay, parseSet, replacementDiff, setsProblem, splitLines } from "../scripts/measure.ts";
 
 const SOURCE = ["// a module", "import x from \"y\";", "", "/** The window. */", "export const WIDE = 60;", "const NARROW: number = 16; // frames", "", "export function f() {", "  return WIDE + NARROW;", "}", ""].join("\n");
 
@@ -142,5 +142,20 @@ describe("the hold-outs in a split's parts and the replay's decisions (round 18)
     expect(lines).toContain("  worse (2): JUMPDROP −3, MADE +1");
     expect(lines).toContain("  better (1): no decision kind's count moved (1 without decisions on a side: that commit's code has none)");
     expect(decisionLines([])).toEqual([]);
+  });
+
+  // Round 20 (the break-placement report point 2): a hold-out whose decisions didn't move, its casts' moves by kind.
+  it("sums the moved hold-outs' replayed casts by kind and shift, with no key", () => {
+    const lines = castShiftLines([
+      { direction: "worse", before: [["a", "combo", 100], ["b", "basic", 200], ["c", "battle", 300]], after: [["a", "combo", 114], ["b", "basic", 200]] },
+      { direction: "worse", before: [["a", "combo", 50]], after: [["a", "combo", 52], ["d", "ultimate", 90]] },
+      { direction: "better", before: [["a", "combo", 50]], after: [["a", "combo", 50]] },
+      { direction: "better", before: undefined, after: [] },
+    ], "against the plain tree");
+    expect(lines[0]).toMatch(/^The moved hold-outs' replayed casts, against the plain tree/);
+    expect(lines).toContain("  worse (2): battle only before 1, combo moved 1–3 f 1, combo moved 11–30 f 1, ultimate only now 1");
+    expect(lines).toContain("  better (2): no cast moved (1 with every cast where it was: the change is in what the casts do) (1 without casts on a side: that commit's code has none)");
+    expect(castShiftLines([])).toEqual([]);
+    expect(measureOptions(["--several-targets"]).values["several-targets"]).toBe(true);
   });
 });

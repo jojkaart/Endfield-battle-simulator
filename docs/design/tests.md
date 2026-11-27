@@ -147,7 +147,14 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   fixing its own snapshot (round 7). Since round 11 the same code without
   any variant is measured too, and each variant's summary also gives its
   moves against that plain tree: the variant's own effect, apart from what
-  the tree changed since the snapshots (`--no-plain` skips that run).
+  the tree changed since the snapshots (`--no-plain` skips that run). Since
+  round 20 the plain tree's own summary against the reference comes first
+  (the break-placement report point 3: "what does my tree do" was derived
+  from the two variant blocks, and misread once).
+- **A change gated on a fixture mark** (round 20, the twins report point
+  2): `--several-targets` measures only the fixtures marked
+  `severalTargets` (6339, 7b54, 9c6e), a minute per iteration in place
+  of every log; the final measure stays full.
 - **Which part of a batch moved which log** (round 11; a batch of four
   changes took three more measures and a wrong claim to split):
   `--split files [--group a,b]` measures the whole change against
@@ -183,7 +190,9 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   that variant on its own patched worktree, so `--variant
   x.ts:WIDE=30 --variant x.ts:WIDE=16` compares two values against the
   plain tree in one run. Not with `--live`; with `--patch`, only on
-  other files.
+  other files. The value is source text pasted as it is: a string
+  constant needs its quotes inside the argument, `--set
+  'x.ts:MODE="any"'` (round 20).
 - **What a moved hold-out's replay did** (round 18, the placement-cases
   report point 2: a data-right change cost one hold-out 23 plain and was
   dropped unexplained): the summary counts the moved hold-outs' replay
@@ -192,7 +201,14 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   direction ("worse (1): JUMPDROP −3"), against `--base`, the plain tree
   (a variant) or the snapshots' writer's code, measured for those
   hold-outs alone. Kinds and counts, never a log, an operator or a skill:
-  "What a hold-out output may say" below.
+  "What a hold-out output may say" below. Round 20 (the break-placement
+  report point 2: four shapes of a placement rule moved one hold-out by
+  −6 plain with no decision kind's count moved) adds the moved hold-outs'
+  replayed casts, paired across the two sides by an operator-and-skill
+  hash the worker makes (no name reaches the parent): per direction, the
+  casts moved by cast kind and shift in frames (1–3, 4–10, 11–30, over
+  30), made only before or only now ("worse (1): combo moved 11–30 f 2"),
+  or "every cast where it was": the change is in what the casts do.
 - **Two measures that change the same logs** (round 12, cooldown-clock
   report point 1: b7b3 better under each of two changes alone, mixed
   under both): each run writes `moved.json` (when it was queued, its code,
