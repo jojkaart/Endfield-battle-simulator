@@ -137,7 +137,7 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
     default: "cut-all",
     readings: {
       kept: "the cast plays its whole path (the replay until 2026-11-26)",
-      cut: "a battle skill, combo or ultimate ends the frame after its last logged landing, under its guards (no later hit of its operator's casts, outside the away stretches and the fight's last 1.5 s, no new run of a buff its tail gives: the evidence's first paragraph)",
+      cut: "a battle skill, combo or ultimate ends the frame after its last logged landing, under its guards (no logged hit standing for a tail landing or a status it set off, no later hit of its operator's casts no cast holds, outside the away stretches and the fight's last 0.5 s, no new run of a buff its tail gives, and the replay with it cut losing no logged hit's landing: the evidence's first paragraph)",
       "cut-all": "as `cut`, basic attacks too: a basic attack's later hits are cut by the same inputs no log records, and more often",
     },
   },

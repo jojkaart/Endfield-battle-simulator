@@ -15,7 +15,8 @@ const SKILL = `${ROSSI}_normal_skill`;
 describe("unlogged tails (0c14's Rossi)", () => {
   const { replay } = logBuffReplay(data, fx);
   it("cuts her 35.40 s battle skill after its last logged landing, and only casts the rule names", () => {
-    const rossi = replay.tailCuts.filter((x) => x.cast.operator === ROSSI);
+    // Her basic attacks' tails are cut too (`cut-all`); of her skills, only this one.
+    const rossi = replay.tailCuts.filter((x) => x.cast.operator === ROSSI && x.cast.kind !== "basic");
     expect(rossi.map((x) => [x.cast.skillId, Math.round(x.cast.start / 10) * 10])).toEqual([[SKILL, 35400]]);
     const last = Math.max(...(rossi[0]?.cast.landings ?? []).map((l) => l.frame));
     expect(rossi[0]?.frame).toBe(last);
@@ -32,11 +33,11 @@ describe("unlogged tails (0c14's Rossi)", () => {
 
   // Round 18 (the replay-only report point 3): a guard that keeps a tail says so (TAILKEPT), as a cut does (TAILCUT).
   it("records the tails its guards kept, with the guard (TAILKEPT)", () => {
-    const kept = replay.tailsKept.filter((x) => x.cast.operator === ROSSI);
+    const kept = replay.tailsKept;
     expect(kept.length).toBeGreaterThan(0);
     for (const k of kept) {
       expect(replay.tailCuts.some((c) => c.cast === k.cast)).toBe(false);
-      expect(k.why).toMatch(/logged hit|away stretch|last hit|another cast's|new run of/);
+      expect(k.why).toMatch(/logged hit|away stretch|last hit|another cast's|new run of|lost the landing/);
     }
     // Under `kept` the cut's rule doesn't run: no guard to report.
     expect(logBuffReplay(data, fx, undefined, { assume: { "unlogged-tails": "kept" } }).replay.tailsKept).toEqual([]);
@@ -44,16 +45,30 @@ describe("unlogged tails (0c14's Rossi)", () => {
 
   // Round 20 (three reports: twins point 1, Liino point 4, the backlog's tail-own-landing diff): the "logged hit no other
   // cast holds" guard kept 6339's 21.60 s Laevatain tail on the cast's own killing hit at 20.37 s, logged 0.3 ms into
-  // its frame. The record names the guard and says the hit it cites is the cast's own.
-  it("says when the hit a guard cites is the cast's own landing (6339's Laevatain at 21.60 s)", () => {
+  // its frame. Round 21: the cast's own landings are no evidence; the tail is cut (its 105,356 hit_2 no log line has).
+  it("takes none of the cast's own landings for the log showing its tail (6339's Laevatain at 21.60 s)", () => {
     const f6339 = (devFixtures({ ids: ["6339"] })[0] as { fx: Parameters<typeof logBuffReplay>[1] }).fx;
-    const kept = logBuffReplay(data, f6339).replay.tailsKept.find((x) => x.cast.operator === "chr_0016_laevat" && Math.abs(x.frame * (1000 / 30) - 21600) < 50);
-    expect(kept?.guard).toBe("shown-own");
-    expect(kept?.cites?.heldBy).toBe("own");
-    expect(kept?.cites?.hit.t).toBe(20367);
-    expect(kept?.cites?.afterMs).toBeLessThan(1000 / 30);
-    expect(kept?.why).toMatch(/held by this cast: its own landing/);
-    for (const k of replay.tailsKept) expect(k.guard).toMatch(/^(variant|fight-end|away|no-enemy|shown-own|shown-free|effect)$/);
+    const r = logBuffReplay(data, f6339).replay;
+    const at = (frame: number) => Math.abs(frame * (1000 / 30) - 20370) < 50;
+    expect(r.tailCuts.some((x) => x.cast.operator === "chr_0016_laevat" && x.cast.skillId === "chr_0016_laevat_power_attack" && at(x.frame))).toBe(true);
+    expect(r.hits.filter((h) => h.operator === "chr_0016_laevat" && h.skillId === "chr_0016_laevat_power_attack" && Math.abs(h.frame * (1000 / 30) - 21600) < 50)).toEqual([]);
+    for (const k of replay.tailsKept) expect(k.guard).toMatch(/^(variant|fight-end|away|no-enemy|landed|status|shown-free|effect|needed|rounds)$/);
+  });
+
+  // Round 21: a tail is kept where the log shows what it set off. c4f3: Pogranichnik's battle skill at 108.08 s, its
+  // hit_2 at 109.33 s the Breach the log has at 109.01 s (`status`); 9847: Liino's battle skill at 75.44 s, the volley
+  // timer it opens at its frame 45, after its last logged projectile: cut, the replay loses the volley logged at 78.36 s
+  // (`needed`).
+  it("keeps a tail whose status or later landings the log has (c4f3's Pogranichnik, 9847's Liino)", () => {
+    const one = (id: string) => logBuffReplay(data, (devFixtures({ ids: [id] })[0] as { fx: Parameters<typeof logBuffReplay>[1] }).fx).replay;
+    const pog = one("c4f3").tailsKept.find((x) => x.cast.skillId === "chr_0029_pograni_normal_skill" && Math.abs(x.cast.start - 108080) < 50);
+    expect(pog?.guard).toBe("status");
+    expect(pog?.cites?.hit.event).toBe("buff_physical_do_fracture");
+    const liino = one("9847");
+    const stance = liino.tailsKept.find((x) => x.cast.skillId === "chr_0035_liino_normal_skill" && Math.abs(x.cast.start - 75440) < 50);
+    expect(stance?.guard).toBe("needed");
+    expect(stance?.cites?.hit.event).toBe("chr_0035_liino_normal_skill_projhit_hit");
+    expect(liino.tailCuts.some((x) => x.cast.skillId === "chr_0035_liino_normal_skill" && Math.abs(x.cast.start - 75440) < 50)).toBe(false);
   });
 
   it("lands none of its Lift, wolves or bleed; under `kept` they come back", () => {
