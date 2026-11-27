@@ -76,6 +76,7 @@ const NOT_PRINTERS: Record<string, string> = {
   groupAggregates: "numbers", sharesAggregate: "numbers", operatorNames: "names", operatorLabel: "an operator", addsKeysOnly: "a boolean",
   snapshotsAt: "reads a ref", isDescribingKey: "a boolean", pairKey: "a key", isHoldoutKey: "the test itself",
   logKeys: "keys for the caller, which filters them", interactLines: "development keys from moved.json (MovedRecord.moved: the hold-outs as a count)",
+  isHoldoutOmittedKey: "a boolean", withoutHoldoutOmitted: "a totals record", holdoutEntry: "an entry",
   selectLogs: "refuses a hold-out", measureOptions: "options", decisionLines: "kinds and counts, no key", isSetEntry: "a boolean",
   parseSet: "a constant", applySets: "a source", replacementDiff: "a diff", combinedPatch: "a diff", setsProblem: "a constant's problem",
   diffHunks: "a diff", hunkParts: "a diff", readingsProblem: "an assumption's problem", defaultReference: "a commit", referenceNote: "a commit",
@@ -115,5 +116,21 @@ describe("the hold-outs' blindness over every printing function (accuracy.ts, me
     expect(accuracy.isHoldoutKey(accuracy.pairKey(HK), split)).toBe(true);
     expect(accuracy.isHoldoutKey(DK, split)).toBe(false);
     expect([...accuracy.allLogs(base).keys()]).toContain(accuracy.pairKey(HK));
+  });
+
+  // Round 20 (the lead): a hold-out's entry carries no operator's own matched / one-sided split, which its moved keys'
+  // summed kinds would print as a split of the hold-outs' change.
+  it("a hold-out entry carries neither `share own matched operator` nor `share own one-sided operator` keys", () => {
+    const own: Entry = { chr_0001_x: { plain: 1 }, totals: { damage: 1, "share operator chr_0001_x": 50, "share own matched operator chr_0001_x": 0.4, "share own one-sided operator chr_0001_x": 2 } };
+    expect(Object.keys(accuracy.holdoutEntry(own).totals ?? {}).sort()).toEqual(["damage", "share operator chr_0001_x"]);
+    expect(accuracy.withoutHoldoutOmitted({ a: 1, "share own matched operator x": 2 })).toEqual({ a: 1 });
+    // The committed hold-out snapshot: counted, never printed.
+    const stored = accuracy.readSnapshots();
+    const holdouts = Object.entries(stored.pending).filter(([k]) => accuracy.isHoldoutKey(k, stored.split));
+    expect(holdouts.length).toBeGreaterThan(0);
+    const carrying = holdouts.filter(([, x]) => Object.keys(x.totals ?? {}).some((k) => k.startsWith("share own matched operator ") || k.startsWith("share own one-sided operator "))).length;
+    expect(carrying, "hold-out entries carrying an operator's own split: npm run snapshots:update").toBe(0);
+    const dev = Object.entries(stored.pending).filter(([k]) => !accuracy.isHoldoutKey(k, stored.split));
+    expect(dev.some(([, x]) => Object.keys(x.totals ?? {}).some((k) => k.startsWith("share own one-sided operator ")))).toBe(true);
   });
 });

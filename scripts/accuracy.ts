@@ -356,6 +356,23 @@ const median = (xs: readonly number[]) => {
 const ownKeys = (op: string) => ({ matched: `share own matched operator ${op}`, oneSided: `share own one-sided operator ${op}` });
 
 /**
+ * The totals keys a hold-out's entry never carries (round 20, the lead): an operator's own matched / one-sided split,
+ * `share own … operator <id>`, written for the other groups only. A hold-out's moved keys are printed summed by kind,
+ * and this pair would split the hold-outs' change by where each operator's error lives.
+ */
+export const isHoldoutOmittedKey = (k: string) => k.startsWith("share own ");
+
+/** A totals record without the keys a hold-out's entry never carries (isHoldoutOmittedKey). */
+export function withoutHoldoutOmitted<T>(totals: Readonly<Record<string, T>>): Record<string, T> {
+  return Object.fromEntries(Object.entries(totals).filter(([k]) => !isHoldoutOmittedKey(k)));
+}
+
+/** A hold-out's entry as its snapshot holds it: its totals without the omitted keys. */
+export function holdoutEntry(e: Entry): Entry {
+  return e[TOTALS] ? { ...e, [TOTALS]: withoutHoldoutOmitted(e[TOTALS]) } : e;
+}
+
+/**
  * Per operator, over the given logs: its hits' verdicts and the |error| of its total damage (mean, median, by its share
  * of the fight), its own split, and with `labels` (one per entry) the fight carrying most of its mean.
  */

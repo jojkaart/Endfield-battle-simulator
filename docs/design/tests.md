@@ -379,7 +379,10 @@ split of a hold-out's change by cast, skill, operator or rule kind: the
 moved hold-outs' replayed casts counted by cast kind and shift (round 20,
 the break-placement report point 2) were built and removed (the lead): such
 a split points a blind agent at which kind of rule to tune against the
-hold-outs, hashed names or not.
+hold-outs, hashed names or not. For the same reason a hold-out's snapshot
+entry carries no operator's own matched / one-sided split (the `share own
+… operator <id>` keys, written for the other groups only: scripts/accuracy.ts
+`isHoldoutOmittedKey`, tests/holdout-blindness.test.ts).
 
 How a tool tells a hold-out (round 19, round 18's own report point 1): a
 hold-out has two key forms, `holdout/…` (the snapshot files, measure's

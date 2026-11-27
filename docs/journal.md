@@ -32,7 +32,8 @@ OFFSETS_EXPLAINED entry. Two parked points came back with `--unpark` (round 6's 
 layers): smoke's half is done, snapshots' and the layers views are the backlog's points 2 and 3. The moved hold-outs'
 replayed casts by kind and shift, built for the break-placement report, were removed at the lead's word: a split of
 the hold-outs' change by mechanism class (hashed names or not) is what blindness forbids; the backlog's new Declined
-section keeps it from being rebuilt, and docs/design/tests.md "What a hold-out output may say" names it.
+section keeps it from being rebuilt, and docs/design/tests.md "What a hold-out output may say" names it. For the same
+reason the two `share own … operator` keys are left out of the hold-out snapshot (accuracy.ts isHoldoutOmittedKey).
 
 Checks: `npm run snapshots:update`: no log's verdicts moved, every group unchanged, keys added only (`share own matched
 operator <id>`, `share own one-sided operator <id>`); team-ab identical at the engine change (7be8b2d).

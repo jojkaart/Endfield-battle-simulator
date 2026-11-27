@@ -75,7 +75,8 @@ export const operatorShareKey = (operator: string) => `share operator ${operator
  * error (predicted − logged, signed) and its one-sided landings' (|replay-only| + |log-only|), round 20 (the Liino
  * report point 1: her 8.5% by-operator mean was one-sided landings in one 10 s fight, none of it her kit, which a
  * scratch join of the totals with the snapshots found). They describe, never a verdict (`share ` keys); the
- * scoreboard's by-operator table shows their means.
+ * scoreboard's by-operator table shows their means. A hold-out's snapshot entry never carries them (scripts/accuracy.ts
+ * isHoldoutOmittedKey, applied where hold-out entries are recorded: tests/slow/pending.ts, measure).
  */
 export const operatorOwnKeys = (operator: string) => ({ matched: `share own matched operator ${operator}`, oneSided: `share own one-sided operator ${operator}` }) as const;
 

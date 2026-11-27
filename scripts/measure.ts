@@ -121,7 +121,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { allLogs, compare, direction, GROUPS, groupOf, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, holdoutEntry, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 type DecisionCounts = Readonly<Record<string, number>>;
@@ -461,7 +461,8 @@ async function main(argv: string[]): Promise<number> {
       }
       if ("error" in a) throw new Error(`${isHoldout(a.key) ? "a hold-out log" : a.key}: ${a.error}`);
       if (!("entry" in a)) return;
-      got.set(a.key, a.entry);
+      // A hold-out's entry as its snapshot holds it (accuracy.ts holdoutEntry: no operator's own split).
+      got.set(a.key, isHoldout(a.key) ? holdoutEntry(a.entry) : a.entry);
       if (a.untimed) untimed.add(a.key);
       if (a.perHit) fits.set(a.key, a.perHit);
       if (a.hits) rows.set(a.key, a.hits);
