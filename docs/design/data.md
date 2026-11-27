@@ -398,16 +398,21 @@ targets.ts):
   (`targets-ungated` counts it too: 7b54 −3.3 → +21.5%, its 47.2–48.1 s
   combo read ×1.26 high on every slug, 9c6e −11.3 → +7.4%; the row's mean
   8.3 → 13.1%, measured 2026-11-27 with the twins above).
-- **Camille's Vesperwings moving to the next target** when its own dies
-  (listen_target_dead → reset_target → projhit_sub →
-  normal_skill_abilityrange: the battle skill's damage, Heat infliction
-  and Susceptibility again, on the next slug) has no kit hit: its logged
-  hits are unplaced, and ZMDLogs logs a normal_skill event at four of its
-  six (6339, 7b54), which the replay makes as a press standing in for it
-  (its landing 0.4 s later, the same damage and debuff). Reading those
-  events as no press without the move's landing measured worse
-  ([tried](../tried/2026-11-27-sub-skill-events.diff)); what the landing
-  needs: open problems, "Hard 33's Woodcraft Slugs".
+- **A target's death in the replay** (2026-11-27): a kit trigger on the
+  engine's `targetDeath` event (Camille's `vesperwings_move`:
+  listen_target_dead → reset_target → projhit_sub →
+  normal_skill_abilityrange, the battle skill's damage, Heat infliction
+  and the debuff with the time it had left on the next slug) runs where
+  the log shows its hit (targets.ts deathMoves: 6339 ×5, 7b54 ×1): the
+  replay makes the death at the logged kill before it (within 1 s; else
+  the trigger's lead before the landing) and pins the landing at its
+  logged frame (engine targetDies `landings`: the projectile's travel,
+  0.23–0.54 s after a kill, isn't in the data). The normal_skill event
+  ZMDLogs logs at four of the six is the move's record (moveEvent), no
+  press; under Camille's kit assumption `vesperwings-move-cast` `battle`
+  the move is a battle-skill cast for the team's cast triggers (castEvent:
+  Si's Yinglung's Edge). `zmdlogs replay` prints each as a DEATH line.
+  A move onto a shielded slug deals 0 and isn't logged, so it isn't made.
 Only these fixtures read it (no simulation, no hold-out without the mark),
 and statuses' levels and the Stagger per target, a target's own bursts
 and the shielded slugs' landings are still the one enemy's.

@@ -4,9 +4,50 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 183 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 184 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Camille's Vesperwings moving to the next target
+
+**Goal:** on main at e4a1e36, beside the Liino agent: Camille's `normal_skill_abilityrange` hits (6339 ×5, 7b54 ×1),
+never placed: her Vesperwings moving to the next slug when its own dies (docs/open-problems.md "Hard 33's Woodcraft
+Slugs"; docs/tried/2026-11-27-sub-skill-events.diff).
+
+**The data:** abilityrange_first (and abilityrange) put buff_chr_0033_camille_normal_skill_listen_target_dead on the
+target; at its death (abilityEvent 1) reset_target (0.1 s) finds the next target, launches projhit_sub
+(skillSpecification 3, castSkillOnHit), which casts abilityrange on it: frame 0 the debuff (with the bat_duration
+icon's time left: SaveBuffLifeTime), Heat infliction, the battle skill's atk_scale and poise; no team energy.
+
+**Done:**
+- **Engine:** trigger event `targetDeath` (events.ts), made only by `targetDies` (drivers.ts), which the replay calls;
+  its `landings` pin the triggers' hits at logged frames as replayCast's do. BuffApplication `keepEnd` (a new instance
+  ending where the active one does). Trigger action `castEvent` (a cast event of a skill an entity casts, no action).
+- **Kit:** trigger `vesperwings_move` (frame 3 on the world's clock, the travel not in the data), and
+  `vesperwings_move_cast` behind the new kit assumption `vesperwings-move-cast` (`battle`, default; `none`).
+- **Replay:** targets.ts `deathMoves` (each logged landing of a targetDeath trigger's hit; the death at the logged
+  kill within MOVE_AFTER_KILL_MS before it, else the lead before the landing) and `moveEvent` (a cast event at a
+  move's ms, key the skill's id with a suffix, is no press: castassembly.ts assembleCasts, loggedCastFates `move`);
+  replaysteps.ts / replayrun.ts death steps; `zmdlogs replay` / decisions DEATH lines. tests/vesperwings-move.test.ts.
+
+**Decisions:** the death at the logged kill, not at the landing less the lead: 6339's 29.26 s kill purges her
+Susceptibility from the listing (`logged-purges`) before the 29.67 s move, so a death at the landing found no debuff
+and made nothing. The cast event: the plain move made 6339 mixed (plain 115 → 109): Si's 28.39–29.57 s combo slashes
+need 3 Yinglung's Edge layers and the replay had 2 once the presses standing in for the moves were gone; the move as
+a battle-skill cast (projhit_sub is one; ZMDLogs logs a normal_skill event at four of six) gives the third. Registered
+as a reading: the data doesn't say whether ability event 30's CheckSkillType sees an entity's cast.
+
+**Numbers** (measure against e4a1e36; snapshots:update for the scoreboard): only the several-targets row moves: plain
+70.6 → 71.3%, mismatch 15.3%, mean |damage error| 8.3 → 6.3%; 6339 plain 115 → 120, −10.3 → −6.3%; 7b54 plain
+115 → 116, −3.3 → −1.2%. Development, earlier pending, verified unchanged; hold-outs' aggregates unchanged (one
+hold-out has a logged move: 2 hits uncovered → fallback, DEATH +2, SKIP −2). Team fights unchanged (team-ab identity:
+no simulated fight has a death; the one enemy never dies).
+
+**Checked:** every Camille log: only 6339 and 7b54 have the move's key (the multi-target fixtures none, the others no
+mid-fight kill). **Left open:** 6339's 19.68 s move follows no logged kill; 7b54's 19.90 s normal_skill event, 0.31 s
+after a kill with no hit, a likely move onto a shielded slug (not made); 6339's Laevatain 35.70 s empowered hit is not
+the move's Heat alone (nothing of hers absorbs it in time); the moves' Heat on the replay's one enemy gives replay-only
+bursts (statuses per target); other kits' listeners on a target's death (open-problems).
 
 ## 2026-11-27: Twins on several targets
 
@@ -362,42 +403,3 @@ b7b3, c779, c6d8: Arcane's WILL burst line a frame off): the log's time is the b
 
 **Left:** e989's Camille Firefang Weakness (replay-only run 69–89 s); per-target state for several-targets fights;
 the slugs' replay-only landings (hits on shielded slugs).
-
-## 2026-11-27: Improvement round 18: records of rules that decline, one run for several answers
-
-**Goal:** the five open friction reports and round 17's backlog (docs/friction-done/2026-11-27-round-18.md), on main
-at 5cf680e, every file this round's; no number to move.
-
-**Done:**
-- **Rules that decline leave a record:** TAILKEPT decisions (replayrun.ts tailCuts' kept tails and their guard),
-  PlacedHit.joined (the rule that joined a landing to its cast and its times: `zmdlogs casts --choices` prints the
-  joins over 1 s late, 399 HIT lines over the development logs, 204 `to come`), REALIGN lines (Placement.realign), the
-  one-sided `kill` flag and `zmdlogs away`'s logged kills.
-- **One run, several answers:** `measure --set <file>:<CONST>=<value>` and as a `--variant` entry (its own patched
-  worktree; two STATUS_WIDE_FRAMES values in one run), `measure --split hunks` (`split:<name>` markers), `node
-  scripts/accuracy.ts --compare <ref> --regroup` (against 107766a it gives the status-pairing journal's scratch numbers:
-  development plain 81.5 → 82.4% by the 9c6e mark alone, log-only 3.13 → 2.02%), the shares' groups in --compare.
-- **Blind-safe hold-out traces:** the moved hold-outs' replay decisions by kind, net per direction, and per split part
-  how many of the whole change's moved hold-outs it moves the same way.
-- **Structured output:** `totals --all --json`'s `share`, `logged`, `fightError`, `stage`, `severalTargets`,
-  `totals --skip`; `zmdlogs casts --json` (castsRecords), compared by field in `cli-ab --placement`.
-- **Across logs:** `zmdlogs stack <owner:stack> [--at-cast]`, the bursts header's pairing rule and twin bursts,
-  clocks' Stagger-break rows (cast clocks with a break inside run +186 ms at the median, 40 rows, against +10 ms in
-  4,785 without: docs/open-problems.md's Yvonne paragraph); bash-guard refuses a stale `git commit -F` message.
-
-**Checked:** `npm run snapshots:update` at the final code: "No log's verdicts moved", the snapshot files and
-docs/accuracy.md byte for byte the same; `node scripts/cli-ab.ts 5cf680e --placement`: every log's placement the
-same; no engine file touched (no team-ab); premerge at the final commit.
-
-**Decisions:** no stable label per hold-out (replay-only report point 1): with `--with <operator>` choosing which
-hold-outs a measure runs, a label that persists would tell which hold-outs have which operator; the per-part counts
-answer "is it this part's hold-out" within one run. The casts' skill kind beside the hold-outs' decision counts isn't
-printed either (a split per mechanism class, docs/design/tests.md's "never" list). The assumptions' evidence text
-stays in the engine's source this round: comments alone don't cover it and a string-blind digest could miss a real
-change (backlog point 2).
-
-**Found on the way:** measure's splitLines named a hold-out moved by the whole change and by no part, and splitParts
-counted every hold-out as moved (allLogs keys a hold-out under pending/; the code tested the key): fixed, with a test.
-
-**Left:** docs/friction/2026-11-27-backlog-after-round-18.md: the per-layer clock (carried), an assumption's
-evidence text out of the engine's source, `holds --steps`; the accuracy list gained a hold at a Stagger break.
