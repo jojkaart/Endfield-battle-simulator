@@ -7,7 +7,7 @@
 // Arcane attack 2 → attack 3); and a verdict. A whole-game pause asks most of its length on every clock across it
 // (4d60's two stretches, engine assumption pause-holds `paused`); a phase the world runs through asks about nothing.
 
-import { ENGINE_ASSUMPTIONS, withCurveReading, type GameData } from "@efsim/engine";
+import { readingOf, withCurveReading, type GameData } from "@efsim/engine";
 import { awayWindows, killGaps } from "./enginecheck.ts";
 import { clockAt, type ClockWhy } from "./holds.ts";
 import { msOfFrame } from "./holdinputs.ts";
@@ -68,7 +68,7 @@ export function awayStretches(data: GameData, fx: LogFixture, assume: Readonly<R
 /** `efsim zmdlogs away [<fixture…>|--all]`: each log's away stretches (awayStretches) and a count of the verdicts. */
 export function awayView(data: GameData, logs: readonly DevFixture[], opts: { readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void } = {}): string {
   const assume = opts.assume ?? {};
-  const reading = assume["pause-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "pause-holds")?.default ?? "-";
+  const reading = readingOf(assume, "pause-holds");
   const out = [
     `Away stretches (no logged hit for 6 s or more: enginecheck.ts awayWindows) and the hold placement's clocks listed on both sides of each, with their asks (world s past the replayed expiry; a pause asks most of the stretch, a phase about nothing), the hold placed inside it and each operator's basic step across it; engine assumption pause-holds ${reading}; times in s:`,
   ];

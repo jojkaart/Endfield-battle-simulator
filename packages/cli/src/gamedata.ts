@@ -252,6 +252,7 @@ export function renderTree(node: TreeNode, opts: { readonly grep?: RegExp; reado
 
 /** `efsim gamedata tree <id>`. */
 export function gamedataTree(id: string, opts: { readonly grep?: string; readonly depth?: number; readonly path?: string } = {}): string {
+  if (!["BuffData", "SkillData"].some((d) => existsSync(join(folder(d as DataFolder), `${id}.json`)))) return noFileView(id);
   const { folder: f, file } = dataFile(id);
   const parsed = parseJsonExact(readFileSync(file, "utf8"));
   const tree = opts.path !== undefined ? dataTree(atJsonPath(parsed, opts.path), `${id} (${f}) ${opts.path}`) : dataTree(parsed, `${id} (${f})`);
@@ -392,23 +393,68 @@ export function findActions(opts: { readonly type: string; readonly file?: strin
                 ? `frame ${v["_startFrame"]}`
                 : context;
         const t = typeof v["$type"] === "string" ? shortType(v["$type"]) : null;
-        if (t && type.test(t) && !(opts.enabled && v["isEnable"] === false)) {
-          const fields: Record<string, string> = {};
-          for (const [k, x] of Object.entries(v)) {
-            if (k === "$type" || SKIP_KEY.test(k)) continue;
-            if (isObj(x)) {
-              const val = valueField(x);
-              if (val !== null) fields[k] = val;
-            } else if (!Array.isArray(x)) fields[k] = scalar(k, x);
-          }
-          out.push({ folder: f, file, path, fields, context: c });
-        }
+        if (t && type.test(t) && !(opts.enabled && v["isEnable"] === false)) out.push({ folder: f, file, path, fields: ownFields(v), context: c });
         for (const [k, x] of Object.entries(v)) visit(x, `${path}.${k}`, c);
       };
       visit(parseJsonExact(readFileSync(join(dir, name), "utf8")), "", null);
     }
   }
   return out;
+}
+
+/** The BuffData and SkillData files whose name contains `part` (an enemy's short name: `slwood`), as folder/file. */
+export function filesNamed(part: string): string[] {
+  return (["BuffData", "SkillData"] as const).flatMap((f) =>
+    readdirSync(folder(f))
+      .filter((n) => n.endsWith(".json") && n.includes(part))
+      .sort()
+      .map((n) => `${f}/${n.replace(/\.json$/, "")}`),
+  );
+}
+
+/** An action's own scalar and value fields (selectors and nested actions left out), as the tree shows them. */
+function ownFields(v: Record<string, unknown>): Record<string, string> {
+  const fields: Record<string, string> = {};
+  for (const [k, x] of Object.entries(v)) {
+    if (k === "$type" || SKIP_KEY.test(k)) continue;
+    if (isObj(x)) {
+      const val = valueField(x);
+      if (val !== null) fields[k] = val;
+    } else if (!Array.isArray(x)) fields[k] = scalar(k, x);
+  }
+  return fields;
+}
+
+/**
+ * What `gamedata tree` prints for an id with no BuffData or SkillData file of its own (round 19, the Camille report
+ * point 5: `tree abilityentity_chr_0033_camille_normal_skill` said only "no file"): an ability entity's definition
+ * (life, duration, passives) isn't in the export, so the actions that name it (SpawnAbilityEntity: its skill, the
+ * blackboard it's handed, its duration key), with their own fields, and the skill each spawn runs (its file, and how
+ * many files name that skill) say what it does.
+ */
+export function noFileView(id: string): string {
+  const entity = id.startsWith("abilityentity_");
+  const head = `${id}: no BuffData or SkillData file of that name${entity ? " (an ability entity: its own definition, life, duration and passives, isn't in the export; the actions that spawn it and the skill it runs say what it does)" : ""}`;
+  const ms = whoMentions(id);
+  if (!ms.length) return `${head}; no file names it either (in ${join(sourceDir("rmxlinux"), "Json")})`;
+  const files = new Map<string, unknown>();
+  const lines: string[] = [];
+  const skills = new Set<string>();
+  for (const m of ms) {
+    const key = `${m.folder}/${m.file}`;
+    if (!files.has(key)) files.set(key, parseJsonExact(readFileSync(join(folder(m.folder), `${m.file}.json`), "utf8")));
+    const parent = m.path.replace(/(\.[^.[\]]+|\[\d+\])$/, "");
+    const action = atJsonPath(files.get(key), parent);
+    const fields = isObj(action) ? ownFields(action) : {};
+    if (isObj(action) && typeof action["abilityEntitySkillId"] === "string" && action["abilityEntitySkillId"]) skills.add(action["abilityEntitySkillId"]);
+    lines.push(`  ${key}  ${m.action ?? "-"}${m.context ? `  [${m.context}]` : ""}  ${Object.values(fields).join(", ")}  ${parent}`);
+  }
+  const skillLines = [...skills].map((s) => {
+    const own = ["BuffData", "SkillData"].some((f) => existsSync(join(folder(f as DataFolder), `${s}.json`)));
+    const named = new Set(whoMentions(s).map((x) => `${x.folder}/${x.file}`));
+    return `  its skill ${s}: ${own ? `a file of its own (gamedata tree ${s})` : "no file of its own"}; named in ${named.size} file(s)${named.size ? ` (gamedata who ${s})` : ""}`;
+  });
+  return [`${head}. Named in ${files.size} file(s), ${ms.length} place(s), each action with its own fields:`, ...lines, ...skillLines].join("\n");
 }
 
 /** `efsim gamedata find`: one line per action found (its fields, or only `fields`), or with `count` the counts of a field's values. */

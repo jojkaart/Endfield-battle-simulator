@@ -14,7 +14,7 @@ import type { Clock, Origin, PendingHit, Stacks, TimelineContext, TimelineState 
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
 import { controlImmune, heldFromNow, holdNewStatuses, rampRunsOn, shiftDebuffs, shiftEnemy, statusesRunOn } from "./clock.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
@@ -405,6 +405,8 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
           (typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, ec()))).forEach((f, i) => {
             const p: PendingHit = {
               kind: "hit", frame: frame + f, clock, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index, ...(nested.length ? { nested } : {}) },
+              // A replayed fight's record of the firing (LandedHit.fired): nothing reads it to decide.
+              ...(ctx.loggedCrits ? { fired: { trigger: t.id, frame: e.frame, event: firingLabel(e) } } : {}),
               ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}), ...(h.fixedDamage !== undefined ? { fixed: evaluate(h.fixedDamage, ec()) } : {}),
               // A tick's hit with an ATK snapshot keeps the attacker side its buff took when applied.
               ...(h.atkSnapshot && e.type === "buffTick" && e.snapshot ? { snapshot: e.snapshot } : {}),
@@ -449,6 +451,13 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
  * (Antal's combo): eventSourceOf, with a reaction's own element instead of the one it consumed under engine
  * assumption `window-reaction` `applied` (fc63a2001251 81.47 s; in-game test 33).
  */
+/** What a trigger fired on, for its landings' record (TriggerFiring.event): the event's type, operator and skill or status. */
+export function firingLabel(e: BattleEvent): string {
+  if (e.type === "hit" || e.type === "cast") return `${e.type} ${e.operator} ${e.skillId}`;
+  if (e.type === "status") return `status ${e.operator} ${e.event.kind}${"element" in e.event ? ` ${e.event.element}` : ""}`;
+  return "operator" in e && typeof e.operator === "string" ? `${e.type} ${e.operator}` : e.type;
+}
+
 function windowSourceOf(ctx: TimelineContext, e: BattleEvent): ReturnType<typeof eventSourceOf> {
   if (e.type === "status" && e.event.kind === "reaction" && e.event.consumed && engineReading(ctx.scenario, "window-reaction") === "applied") return { kind: "infliction", element: e.event.element };
   return eventSourceOf(e);

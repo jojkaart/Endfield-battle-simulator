@@ -64,3 +64,17 @@ a buff's edge put off (1d91, a7a7, e989, 7910, abfd); worktree branch off main a
   question; the hits lists named the modifier each changed verdict lost or gained.
 - `--assume` on every view: the new readings could be checked on single logs before any measure.
 - scripts/edit.ts for the long assumption texts with backticks.
+
+## Outcome (round 19)
+
+- 1 (A wrong premise lived in open-problems.md for weeks: one enemy where the stage text says "legion"): done
+  (616475a): `efsim gamedata enemy <enemy id|fixture>` (packages/cli/src/enemyview.ts): the EnemyTable row, Max HP,
+  ATK, DEF at the fight's level, resistances and rank, every stage naming it or its template with its English name,
+  description and features, the files naming it or carrying its short name; a fixture adds its total in Max HPs
+  (6339: 9.600, "They are legion"); docs/design/data.md's question table names it.
+- 2 (The listing's meaning for several targets is nowhere): done but its second half (carried: 2026-11-27-backlog-after-round-19.md point 2):
+  the doc line was in docs/design/data.md already (the slug round); the same-listing flag is the backlog's point 2.
+- 3 (A reading that needs the replay's state at another frame had no handle): done (b7cc3ec): replayrun.ts runStateAt
+  / runOptionsAt (both copies in buffreplay.ts call them) and BuffReplay.stateAt / optionsAt.
+- 4 (Several measures in a row because the variant code is fixed at queue time): done (ca62ffc): the note in
+  docs/design/tests.md's "The code is fixed at queue time".

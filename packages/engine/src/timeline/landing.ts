@@ -22,7 +22,7 @@ import { breakHold, holdNewStatuses, operatorClockDue } from "./clock.ts";
 /** Whether a Stagger dealt broke the bar (dealPoise's `staggered` event). */
 const broken = (r: { readonly events: readonly BattleEvent[] }) => r.events.some((e) => e.type === "staggered");
 import { windowKey } from "./timing.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 
 /** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
 function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {
@@ -514,7 +514,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       buffLayers: layers, staggered: before.staggered ?? false, enemyHp: before.enemyHp ?? 1,
     };
   };
-  if (result) st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(castIndex !== undefined ? { cast: castIndex } : {}), ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}),
+  if (result) st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(castIndex !== undefined ? { cast: castIndex } : {}), ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}), ...(hit.fired ? { fired: hit.fired } : {}),
     // A replay's landings carry their facts (a pinned one with its reference; one a trigger lands, matched to the log by time).
     ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}), ...(ctx.keepInputs && inputs ? { inputs } : {}),
     ...(landedCounts && castIndex !== undefined ? { landed: { cast: castIndex, of: hit.landedOf as number, counts: landedCounts, scale: landedScale } } : {}) }]);

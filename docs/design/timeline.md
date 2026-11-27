@@ -99,6 +99,13 @@ all operator SkillData files; Zero Sanity's 120 and old Endaxis's 60 are
 tool choices). Seconds appear only for cooldowns, buff durations and table
 values, and are converted once at load with a documented rounding rule.
 
+A time stop or hold moves what is scheduled (hits on the way, delayed
+actions, timers, a current action's end); the presses of a pre-planned
+rotation (`simulate`'s list) keep their frames, since each is applied at
+once, before earlier landings: a test of a stop's effect on the next press
+uses rules or the search, which decide at the time (round 19, the
+break-hold report point 4).
+
 **Slow-downs** (engine `slowDown`; rules from Endaxis's time runtime, read
 not copied, 2026-10-18): an ultimate's `UltimateTimeAction` (time stop) and
 global-layer `TimeDilationAction`s (a combo's slow-down) scale time for
@@ -290,7 +297,8 @@ stepping API as `@efsim/engine` exports it) is split by concern under
 |---|---|
 | `state.ts` | the types: scenario, context, state, scheduled items (`Scheduled`), casts, landed hits |
 | `rules.ts` | fixed rules: team SP, energy, combo windows, dives, priorities, Link, `TIMELINE_ASSUMPTIONS` |
-| `assumptions.ts` | the engine's own open readings (`ENGINE_ASSUMPTIONS`: control-immunity, buff-in-stop, status-in-stop, combo-reset, freeze-ramp, teammate-pause, stagger-recovery, hidden-holds (read by the log check's replay only: it places the hidden holds with clock.ts `holdWorld`), stagger-holds (the same: whether they may rise in a Stagger, at combos' stops), pause-holds (the same: in an away stretch a Stagger covers), stagger-freeze, combo-window-count, window-reaction, …), switched by `TimelineOptions.assume` |
+
+| (outside timeline/) | the engine's own open readings, switched by `TimelineOptions.assume`: `packages/engine/src/assumptions.ts` (`SIMULATION_ASSUMPTIONS`, read here through `engineReading`; `ENGINE_ASSUMPTIONS`, both lists; `readingOf` for any other reader, `traceReadings` for tests) and `replay-assumptions.ts` (`REPLAY_ASSUMPTIONS`: hidden-holds, stagger-holds, pause-holds, break-hold-place, enemy-away, …, read only by the log check), their evidence in [assumptions.md](assumptions.md) (round 19) |
 | `context.ts` | `createContext` (the build stage), panels, kit and skill lookups, skill costs and timing, the enemy's attributes |
 | `schedule.ts` | the scheduled list: the order within a frame (`IN_FRAME`, `dueBefore`) and one pass each to shift a clock, end a cast and jump on a cast's timeline |
 | `clock.ts` | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`; `holdWorld`, the world's clock alone held, for the log check's hidden holds), control immunity |

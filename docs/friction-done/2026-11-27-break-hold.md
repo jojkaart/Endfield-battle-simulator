@@ -68,3 +68,17 @@ her ultimate had no landing; branch worktree-agent-aef72dfd574eeedc4.
 `measure --variant <file>:<CONST>=<v>` ran five lengths and the none reading in one queue; `zmdlogs replay
 --trace-buff` showed the bleed's +93 frames at the freeze in one run; `zmdlogs hits --against` and `holds
 --assume` explained a mixed log (8915: a WIDE unit re-placed) without a measure.
+
+## Outcome (round 19)
+
+- 1 (A log-side helper can't see the reading a measure variant sets): done (b70bddf): readingOf(assume, id) in the
+  engine's registry (the default only when the run's readings don't set it), every log-side reader through it with
+  the replay's `assume`; tests/assumption-readers.test.ts: no `ENGINE_ASSUMPTIONS.find(` or `assume?.[` read outside
+  readingOf, and a run's trace with no default read (6339 in the default suite, 9090 and 4d60 in tests/slow/). The
+  BREAK_HOLD_READING constant stays (a measure's `--set`), not needed for a variant any more.
+- 2 (The clock views can't show a hold that isn't a cast's stop): carried (2026-11-27-backlog-after-round-19.md point 1)
+- 3 (The replay's Stagger window start was derived, and an engine stop broke it): moved to the accuracy list of
+  docs/friction/2026-11-27-backlog-after-round-19.md (with round 16's parked point 1): the recorded start moves the
+  still spans and the holds, so a measure decides it, not a tooling round.
+- 4 (Pre-planned rotations decide cast frames before earlier landings): done (ca62ffc): docs/design/timeline.md
+  "Time": a stop moves what is scheduled; a pre-planned rotation's presses keep their frames.

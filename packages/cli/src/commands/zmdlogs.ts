@@ -7,6 +7,8 @@ import {
   kitBuffKey,
   castsJson,
   stackView,
+  followUpsView,
+  holdsSteps,
   awayView,
   battleIdOf,
   buffsView,
@@ -71,7 +73,7 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
-export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away", "stack"]);
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away", "stack", "followups"]);
 export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
 
 export default command({
@@ -325,6 +327,13 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                                           value before (--all: every development log with the owner)
                 [--at-cast <regex>]       Instead: the casts whose made skill matches, any operator's (the casts
                                           that read or spend it: a combo's conversion)
+  efsim zmdlogs followups <fixture…|--all> --operator <op>  An operator's kit triggers' own landings (an entity's
+                                          follow-ups, harasses, lasers) against the events that fired them: each
+                                          landing's delay after its event, the logged hit it stands for (Δ) and
+                                          the log's delay after the event's logged hit; the triggers' log-only
+                                          hits with the nearest replay-only landing; per trigger the counts and
+                                          medians (--all: every development log with the operator; --kit, --assume)
+                [--trigger <regex>]       Only the triggers whose id matches
   efsim zmdlogs away <fixture…|--all>     Per away stretch (no logged hit for 6 s or more): the hold placement's
                                           clocks listed on both sides of it (team and enemy) with their asks, the
                                           hold placed inside it, each operator's basic step across it, and a
@@ -348,6 +357,8 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                 [--why <regex>]           Instead: each replayed instance of the matching kit buffs (owner:id) and
                                           enemy statuses (status:<name>), the log's run paired with it, and why it
                                           is a clock or not (the rule that skipped it), kept or dropped
+                [--steps <from>-<to>]     Instead: the holds' per-frame steps in that window (seconds), each with
+                                          the hold so far, beside the slow-downs applied there and the log's breaks
                 [--assume <id>=<reading>] Under another reading of an open assumption
                                           Between two commits' code: node scripts/cli-ab.ts <ref> --holds <fixture>
   efsim zmdlogs holds --dropped <fixture…|--all>  The placement's dropped bounds over the logs, grouped by bound kind
@@ -392,6 +403,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "kit-buff": { type: "string", multiple: true, default: [] },
     "trace-buff": { type: "string", multiple: true, default: [] },
     "trace-trigger": { type: "string", multiple: true, default: [] },
+    trigger: { type: "string" },
+    steps: { type: "string" },
     "trace-stack": { type: "string", multiple: true, default: [] },
     what: { type: "string" },
     hits: { type: "boolean", default: false },
@@ -484,6 +497,11 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (named.length && values.all) throw new Error("zmdlogs holds --dropped: fixtures or --all, not both");
       return droppedView(data(), devFixtures(named.length ? { ids: named } : {}), { assume, verbose: values.verbose, progress });
     }
+    if (sub === "holds" && values.steps !== undefined) {
+      const m = /^([\d.]+)-([\d.]+)$/.exec(values.steps);
+      if (args.length !== 2 || !arg || !m) throw new Error("zmdlogs holds --steps takes one fixture and a window in seconds: --steps 43-46");
+      return holdsSteps(data(), readDevFixture(arg), Number(m[1]) * 1000, Number(m[2]) * 1000, { assume });
+    }
     if (sub === "holds") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs holds takes one fixture (a path or an id such as 0c14); --dropped for several or --all");
       return holdsView(data(), readDevFixture(arg), { verbose: values.verbose, ...(values.why !== undefined ? { why: new RegExp(values.why) } : {}), assume });
@@ -497,6 +515,15 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (bad.length || !kinds.length) throw new Error(`--clock takes ${CLOCK_KINDS.join(", ")} (comma-separated)`);
       if (values.by !== undefined && values.by !== "operator" && values.by !== "kind") throw new Error("zmdlogs clocks --by takes operator (or kind, the default)");
       return clocksView(data(), devFixtures(named.length ? { ids: named } : {}), { kinds: kinds as ClockKind[], ...(values.by === "operator" ? { by: "operator" as const } : {}), rows: values.rows, assume, progress });
+    }
+    if (sub === "followups") {
+      const named = args.slice(1);
+      if (values.operator.length !== 1) throw new Error("zmdlogs followups takes one --operator <op> (an id, its name or part of the id), then fixtures or --all (--trigger <regex>, --assume id=reading, --kit)");
+      if (!named.length && !values.all) throw new Error("zmdlogs followups takes fixtures (ids such as d4fb) or --all");
+      if (named.length && values.all) throw new Error("zmdlogs followups: fixtures or --all, not both");
+      const op = operatorNamed(data(), values.operator[0] as string);
+      const logs = devFixtures(named.length ? { ids: named } : { withOperators: [op] });
+      return followUpsView(data(), logs, op, { ...(values.trigger !== undefined ? { trigger: new RegExp(values.trigger) } : {}), assume, progress });
     }
     if (sub === "stack") {
       const [spec, ...named] = args.slice(1);

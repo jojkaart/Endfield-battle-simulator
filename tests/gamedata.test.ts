@@ -5,6 +5,31 @@ import { atJsonPath, buffCreators, dataTree, findActions, formatFound, gamedataT
 import { deadKitBuffs } from "../packages/cli/src/commands/kit-census.ts";
 import { loadGameData } from "@efsim/data";
 import type { GameData } from "@efsim/engine";
+import { enemyView } from "../packages/cli/src/enemyview.ts";
+
+// Round 19 (the slug report point 1, the Camille report point 5): an enemy's tables and its stage's text; an id with no
+// file of its own (an ability entity) answered by the actions that name it.
+describe("gamedata enemy and an ability entity's tree", () => {
+  const data = loadGameData();
+  it("prints Hard 33's stage text (several slugs: 'They are legion') and the log's total in Max HPs", () => {
+    const v = enemyView(data, "6339");
+    expect(v).toMatch(/^eny_0129_slwood_hdg033 \(Woodcraft Slug\), the enemy of 6339 at level 90$/m);
+    expect(v).toMatch(/EnemyTable: template eny_0129_slwood/);
+    expect(v).toMatch(/the log's total: \d+ = 9\.600 × Max HP/);
+    expect(v).toMatch(/indie_hard033_s "Critters That Dig: Agony" \(level 90/);
+    expect(v).toMatch(/description: .*They are legion/);
+    expect(v).toMatch(/features: .*Mist/);
+    expect(v).toMatch(/with "slwood" in their name: BuffData\/buff_common_mini_poise_break_slwood/);
+  });
+
+  it("answers an ability entity's id with its spawn actions and the skill each runs", () => {
+    const v = gamedataTree("abilityentity_chr_0033_camille_normal_skill");
+    expect(v).toMatch(/no BuffData or SkillData file of that name \(an ability entity/);
+    expect(v).toMatch(/SkillData\/chr_0033_camille_normal_skill_projhit {2}SpawnAbilityEntity {2}\[frame 0\] {2}.*abilityEntitySkillId chr_0033_camille_normal_skill_abilityrange_first/);
+    expect(v).toMatch(/its skill chr_0033_camille_normal_skill_abilityrange_first: a file of its own/);
+    expect(gamedataTree("no_such_id_anywhere")).toMatch(/no file names it either/);
+  });
+});
 
 describe("the data-file tree", () => {
   const file = {

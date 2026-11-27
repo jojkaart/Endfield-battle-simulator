@@ -1,4 +1,4 @@
-// The engine's own open readings (packages/engine/src/timeline/assumptions.ts), switched like the kits' assumptions
+// The engine's own open readings (packages/engine/src/assumptions.ts, replay-assumptions.ts), switched like the kits' assumptions
 // through TimelineOptions.assume: unique IDs, the defaults are the engine's rules, and each other reading does what it
 // says.
 import { readFileSync } from "node:fs";
@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { advance, allAssumptions, apply, COMBO_CURVE, COMBO_CURVES, createContext, curveScales, ENGINE_ASSUMPTIONS, engineReading, init, kitAssumptions, TEAMMATE_PAUSE_FRAMES, withCurveReading, type Build, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { parseAssume } from "../packages/cli/src/assume.ts";
+import { assumptionNotes } from "../packages/cli/src/commands/assumptions.ts";
 
 const data = loadGameData();
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../examples/${f}`, import.meta.url), "utf8")) as Build;
@@ -36,6 +37,20 @@ describe("the engine's assumptions", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(kitAssumptions(data).length + ENGINE_ASSUMPTIONS.length).toBe(ids.length);
     for (const a of ENGINE_ASSUMPTIONS) expect(Object.keys(a.readings)).toContain(a.default);
+  });
+
+  // Round 19 (backlog after round 18, point 2): the evidence is in docs/design/assumptions.md, by id and reading.
+  it("have their evidence in docs/design/assumptions.md under their own ids and readings, the registry one sentence each", () => {
+    const notes = assumptionNotes();
+    expect(notes.size).toBeGreaterThan(10);
+    for (const [id, note] of notes) {
+      const a = ENGINE_ASSUMPTIONS.find((x) => x.id === id);
+      expect(a, `docs/design/assumptions.md: ## ${id} names no engine assumption`).toBeDefined();
+      for (const r of note.readings.keys()) expect(Object.keys(a?.readings ?? {}), `## ${id}: no reading ${r}`).toContain(r);
+    }
+    // A reading's evidence belongs in the notes: the registry keeps a sentence (the longest at the split: 300 characters).
+    const long = ENGINE_ASSUMPTIONS.flatMap((a) => Object.entries(a.readings).filter(([, t]) => t.length > 320).map(([r]) => `${a.id} ${r}`));
+    expect(long).toEqual([]);
   });
 
   it("run under their defaults unless a scenario chooses", () => {

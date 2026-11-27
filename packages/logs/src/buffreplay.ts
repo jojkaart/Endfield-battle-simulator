@@ -20,7 +20,7 @@
 // file is the one named here.
 
 import {
-  activeAt, advance, allActions, damageOptions, ENGINE_ASSUMPTIONS, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
+  activeAt, advance, allActions, readingOf, LINK_FRAMES, skillCosts, spAt, spCostAt, kitHitEntries, parseReactionEvent, effectiveKit, FPS, reaches,
   type GameData, type KitHit, type LandedHit, type LandingInputs, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -32,7 +32,7 @@ import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tic
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
-import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, tailCuts } from "./replayrun.ts";
+import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, TAIL_CUT_ROUNDS, type TailKept, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt, tailCuts } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { type CheckSide, awayWindows, checkSide, killPurges, loggedNames, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
@@ -89,8 +89,22 @@ export interface BuffReplay {
    * its start in ms, and the logged cast that needs it.
    */
   readonly missed: readonly MissedCast[];
-  /** Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null near a change (REPLAY_EDGE_MS). */
+  /**
+   * Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null where the
+   * replay doesn't answer: near a change (REPLAY_EDGE_MS), after the replay broke, where a crit the log doesn't give
+   * decides it, and for a game buff the replay doesn't decide (BuffReplay.undecided; a kit buff's windows: kitWindows).
+   * instancesWhy says which.
+   */
   instances(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | null;
+  /** As instances, with why there is no answer in place of null (round 19, the Camille report point 3: a test read null at every hit of an undecided buff). */
+  instancesWhy(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | { readonly unknown: string };
+  /**
+   * The main run's state at a frame (replayrun.ts runStateAt), and the timeline's damage options for an operator there
+   * (runOptionsAt: modifiers with their sources, Stagger, the situation); null without a run. A view's or a reading's
+   * "the replay at the log's time" (round 19, the slug report point 3).
+   */
+  stateAt(frame: number): TimelineState | null;
+  optionsAt(operator: string, frame: number): ReturnType<typeof runOptionsAt> | null;
   /** What the replay knows of a logged cast (placed: logcasts.ts), or why it knows nothing. */
   castFacts(cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { readonly unknown: string };
   /** A logged hit's landing in the replay (its damage, modifiers and LandingFacts), or why there is none. */
@@ -278,7 +292,7 @@ export const ENEMY_HP_UNKNOWN = "enemy HP unknown";
  */
 export function unknownFacts(data: GameData, fx: LogFixture, assume: Readonly<Record<string, string>> = {}): ReadonlyMap<string, readonly string[]> {
   const out = new Map<string, string[]>();
-  const hp = loggedEnemyHp(data, fx, assume["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
+  const hp = loggedEnemyHp(data, fx, readingOf(assume, "enemy-hp"));
   if (hp?.length) return out;
   for (const b of fx.team) {
     const kit = effectiveKit(data, b);
@@ -300,7 +314,7 @@ export interface ReplayOptions {
   readonly reactionLevels?: TimelineScenario["loggedReactionLevels"];
   /**
    * Readings of open assumptions to replay under (TimelineOptions.assume): the kits' and the engine's own
-   * (timeline/assumptions.ts, e.g. control-immunity), for measuring a reading on the logs. Absent: the defaults.
+   * (packages/engine/src/assumptions.ts, e.g. control-immunity), for measuring a reading on the logs. Absent: the defaults.
    */
   readonly assume?: Readonly<Record<string, string>>;
   /**
@@ -349,8 +363,7 @@ export function targetLosses(kits: readonly OperatorKit[], fx: LogFixture, assum
   for (const kit of kits) {
     for (const def of kit.buffs) {
       if (!def.targetCheck || def.target !== "enemy") continue;
-      const a = (kit.assumptions ?? []).find((x) => x.id === def.targetCheck?.assumption);
-      const reading = assume?.[def.targetCheck.assumption] ?? a?.default ?? "kept";
+      const reading = readingOf(assume, def.targetCheck.assumption, kit.assumptions ?? []);
       if (reading !== "away" && reading !== "listed") continue;
       const names = new Set(loggedNames(def));
       // Its listings (a boundary effect at a run's own start says nothing of its end), in time order.
@@ -412,7 +425,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // With the casts that hit nothing the log needs (missedCasts), added below.
   let casts: readonly ReplayedCast[] = logged;
   // Engine assumption hidden-holds: with `log`, the buffs the log lists past their expiry run on to its end (heldToLoggedEnds).
-  const holdsReading = opts.assume?.["hidden-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "hidden-holds")?.default;
+  const holdsReading = readingOf(opts.assume, "hidden-holds");
   const hiddenHolds = holdsReading === "log" || holdsReading === "placed";
   // With `placed` (and `holds`, the placed holds alone), the world holds placed once for every timer (holds.ts), from a first replay without them.
   const placing = holdsReading === "placed" || holdsReading === "holds";
@@ -428,7 +441,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Engine assumption logged-purges: with `log`, the enemy-side kit buffs end where the log shows the enemy shedding
   // the team's debuffs (purgedByLog); with `log-kills`, also at each logged kill of a fight against several targets
   // under one id (killPurges).
-  const purgeReading = opts.assume?.["logged-purges"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "logged-purges")?.default;
+  const purgeReading = readingOf(opts.assume, "logged-purges");
   const purges = purgeReading === "log" || purgeReading === "log-kills" ? [...new Set([...loggedPurges(fx), ...(purgeReading === "log-kills" ? killPurges(fx) : [])])].sort((a, b) => a - b) : [];
   // Kit assumptions on KitBuff.targetCheck: an entity-held debuff ends at its entity's check after the enemy left (targetLosses).
   const losses = targetLosses(kits, fx, opts.assume);
@@ -454,7 +467,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // logged one (tailCuts), and the replay is made again.
   // The earliest first, the replay made again after each (a cut changes what follows: 0c14's Rossi at 35.40 s takes the
   // Vulnerable stack that her 52.04 s battle skill's follow-up needed), at most TAIL_CUT_ROUNDS.
-  const tailsReading = opts.assume?.["unlogged-tails"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "unlogged-tails")?.default ?? "kept";
+  const tailsReading = readingOf(opts.assume, "unlogged-tails");
   const cuts = new Map<ReplayedCast, number>();
   for (let round = 0; main && round < TAIL_CUT_ROUNDS; round++) {
     const next = [...tailCuts(main, fx, placement, tailsReading)].sort((a, b) => a[1] - b[1])[0];
@@ -476,15 +489,15 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // ultimate, held the world 78 frames each in the hold placement.
     const { stops } = replayStops(data, kits, assembled, main.made.map((m) => m.c));
     // Engine assumption pause-holds: with `paused`, a clock's run across an away stretch may ask its length on top of HIDDEN_HOLD_SHARE.
-    const pauseHolds = opts.assume?.["pause-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "pause-holds")?.default;
+    const pauseHolds = readingOf(opts.assume, "pause-holds");
     const paused = pauseHolds === "paused" ? awayWindows(fx) : [];
     const statuses = statusBounds(statusInstances(main.checkpoints, main.st.reactions, main.brokenAt), statusLanes(fx), stops, consumedStatuses(kits), HIDDEN_HOLD_SHARE, holdClocks, paused);
     // Engine assumption stagger-holds: inside the Stagger, holds only at the combos' stops (holds.ts comboHoldSpans).
-    const staggerHolds = opts.assume?.["stagger-holds"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "stagger-holds")?.default;
+    const staggerHolds = readingOf(opts.assume, "stagger-holds");
     const comboShare = staggerHolds === "combos" ? 0.5 : staggerHolds === "combos-full" ? 1 : 0;
     // Engine assumption pause-holds: with `away` (and `paused`), the away stretches aren't still though a Stagger covers them (holds.ts withoutGaps).
     const staggerStill = main.staggerWindows.map((w) => [msOfFrame(w.start), msOfFrame(Number.isFinite(w.end) ? w.end : frameOf(Math.max(0, ...fx.hits.map((h) => h.t))))] as const);
-    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks, paused), ...statuses, ...tickBounds(fx, stops), ...(opts.holdBounds ?? [])], {
+    placedHolds = placeHolds([...runBounds(main.kitInstances, kitDefs, clockEnds, stops, holdClocks, paused), ...statuses, ...tickBounds(fx, stops, opts.assume), ...(opts.holdBounds ?? [])], {
       end: Math.max(0, ...fx.hits.map((h) => h.t)),
       still: pauseHolds === "away" || pauseHolds === "paused" ? withoutGaps(staggerStill, awayWindows(fx)) : staggerStill,
       ...(comboShare > 0 ? { slow: comboHoldSpans(stops, comboShare) } : {}),
@@ -545,12 +558,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
         landed.set(String(i), best);
       }
     }
-    /** The replay's state at a frame: its latest step at or before it, advanced (pure). */
-    const stateAt = (frame: number): TimelineState => {
-      let cp = checkpoints[0] as TimelineState;
-      for (const x of checkpoints) if (x.frame <= frame) cp = x;
-      return cp.frame === frame ? cp : advance(ctx, cp, frame);
-    };
+    /** The replay's state at a frame (runStateAt). */
+    const stateAt = (frame: number): TimelineState => runStateAt({ ctx, checkpoints }, frame);
     const linkLive = (x: TimelineState, op: string, frame: number) =>
       x.link.filter((e) => e > frame).length + x.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, op) && activeAt(b, frame)).length;
     const consumable = (x: TimelineState, op: string, kind: SkillType | "none", frame: number) =>
@@ -616,14 +625,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return r ? [{ hit: h, frame: batchedFrame(casts, h) ?? frameOf(h.t), key: `${h.operator}|reaction:${r.kind}|${r.element}` }] : [];
     });
     const free = main.st.hits.filter((h) => h.skillId.startsWith("reaction:"));
-    const pairing = opts.assume?.["status-pairing"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "status-pairing")?.default;
+    const pairing = readingOf(opts.assume, "status-pairing");
     const reading = pairing === "nearest" ? "nearest" : "assignment";
-    const { ctx, checkpoints } = main;
-    const stateAt = (frame: number): TimelineState => {
-      let cp = checkpoints[0] as TimelineState;
-      for (const x of checkpoints) if (x.frame <= frame) cp = x;
-      return cp.frame === frame ? cp : advance(ctx, cp, frame);
-    };
+
     const queryFrame = new Map(queries.map((q) => [q.hit, q.frame]));
     // Under `check`, a landing of a burst or a status the replay made on the other side of a buff's edge than the
     // game's (a stop held one and not the other) fits as well with its damage again from the replay's modifiers at the
@@ -632,8 +636,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       const inputs = x.inputs;
       const f = queryFrame.get(h) ?? frameOf(h.t);
       if (!inputs || inputs.kind !== "status" || inputs.reaction.kind === "combustionTick" || f === x.frame) return null;
-      const st = stateAt(f);
-      const o = damageOptions(ctx, st, x.operator, st.enemy, f);
+      const o = runOptionsAt(main, x.operator, f);
       return { ...x, inputs: { ...inputs, options: { ...inputs.options, staggered: o.staggered, situation: o.situation, modifiers: o.modifiers } } };
     };
     let sideMemo: CheckSide | undefined;
@@ -669,6 +672,21 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const nearIn = (changes: ReadonlyMap<string, readonly Change[]>, key: string, f: number) => (changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack);
   // Why a placed hit has no pinned landing (replayedCasts), made on the first question (droppedLanding).
   let unpinned: Map<string, string> | undefined;
+  const instancesWhy = (hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | { readonly unknown: string } => {
+    if (!main) return { unknown: "no replay" };
+    if (!decided.has(gameBuff)) {
+      const why = undecided.get(gameBuff);
+      return { unknown: why !== undefined ? `${gameBuff} isn't decided by the replay: ${why}` : `${gameBuff} isn't a game buff the replay decides (no kit buff of the team stands for one the log lists; a kit buff's windows: kitWindows)` };
+    }
+    const f = frameOf(hit.t);
+    if (brokenAt !== null && f >= brokenAt - edge) return { unknown: `the replay broke at frame ${brokenAt}` };
+    const key = `${gameBuff}|${hit.operator}`;
+    const n = countIn(main, key, f);
+    if (n === null) return { unknown: `within ${REPLAY_EDGE_MS} ms of one of its changes` };
+    // A buff a trigger on crits is behind: decided only where the landings whose crit the log doesn't give don't matter.
+    if (bound && critDependent.has(gameBuff) && countIn(bound, key, f) !== n) return { unknown: "a trigger on crits is behind it, and the crits the log doesn't give decide it here" };
+    return n;
+  };
   return {
     assume: opts.assume ?? {},
     decided,
@@ -748,15 +766,12 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       return main.staggerWindows.some((w) => Math.abs(w.start - f) <= edge || (Number.isFinite(w.end) && Math.abs(w.end - f) <= edge));
     },
     instances(hit, gameBuff) {
-      if (!decided.has(gameBuff) || !main) return null;
-      const f = frameOf(hit.t);
-      if (brokenAt !== null && f >= brokenAt - edge) return null;
-      const key = `${gameBuff}|${hit.operator}`;
-      const n = countIn(main, key, f);
-      // A buff a trigger on crits is behind: decided only where the landings whose crit the log doesn't give don't matter.
-      if (n !== null && bound && critDependent.has(gameBuff) && countIn(bound, key, f) !== n) return null;
-      return n;
+      const n = instancesWhy(hit, gameBuff);
+      return typeof n === "number" ? n : null;
     },
+    instancesWhy,
+    stateAt: (frame) => (main ? runStateAt(main, frame) : null),
+    optionsAt: (operator, frame) => (main ? runOptionsAt(main, operator, frame) : null),
     castFacts,
     critSource(hit) {
       if (hit.crit !== null) return "log";

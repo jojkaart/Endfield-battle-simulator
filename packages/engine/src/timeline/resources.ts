@@ -13,7 +13,7 @@ import { FPS } from "../units.ts";
 import type { TimelineContext, TimelineState } from "./state.ts";
 import { SP } from "./rules.ts";
 import { attrTotal, enemyAttr, maxPoise, panelAt, skillCosts, skillGroup } from "./context.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 
 /** SP at a later frame, with regeneration (whole frames, no fractions lost): from the state's frame, after its pause, outside its stops. */
 export function spAt(state: TimelineState, frame: number): number {

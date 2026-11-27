@@ -107,7 +107,12 @@ export function runInTree(dir: string, script: string, args: readonly string[], 
   return withScriptInTree(dir, script, root, (target) => spawnSync(process.execPath, [target, ...args], { cwd: dir, stdio: "inherit" }).status ?? 1);
 }
 
-/** runInTree with the script's stdout returned (throws on a non-zero exit, with its stderr's last lines): scripts/cli-ab.ts --placement. */
+/**
+ * runInTree with the script's stdout returned (throws on a non-zero exit, with its stderr's last lines): scripts/cli-ab.ts
+ * --placement. The script links against the tree's packages, not this checkout's: it imports by namespace (`import * as
+ * logs`) and checks for a name newer than the ref before calling it (a named import of one fails to link there; round
+ * 18's own report point 3, scripts/placement-lines.ts).
+ */
 export function outputInTree(dir: string, script: string, args: readonly string[], root = ROOT): string {
   return withScriptInTree(dir, script, root, (target) => {
     const r = spawnSync(process.execPath, [target, ...args], { cwd: dir, encoding: "utf8", maxBuffer: 256 << 20 });

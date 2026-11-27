@@ -3,6 +3,7 @@
 import { command } from "../command.ts";
 import { isSkillFileListed, readSkillFile } from "@efsim/data";
 import type { GameData } from "@efsim/engine";
+import { enemyView } from "../enemyview.ts";
 import { findActions, formatFound, formatMentions, gamedataTree, heldFrames, whoMentions } from "../gamedata.ts";
 
 /** `gamedata dilations`: each skill's time-dilation actions and what the compiler made of them (RawSkillFile.dilations). */
@@ -41,6 +42,13 @@ export default command({
                 [--grep <regex>] [--depth n]  Only matching lines (with their ancestors and subtrees); levels shown
                 [--path <json path>]      Only the subtree there (a path as \`who\` prints it: .a.b[3].c); a list of
                                           nothing but presentation says "(presentation only, left out: …)"
+                                          An id with no file of its own (an ability entity's: abilityentity_…): the
+                                          actions that name it with their fields, and the skill each spawn runs
+  efsim gamedata enemy <enemy id|fixture> An enemy's tables: its EnemyTable row (template, AI, born buffs), Max HP,
+                                          ATK, DEF at the fight's level, resistances and rank, every stage naming it
+                                          or its template with the stage's English name, description and features
+                                          (I18nTextTable_EN: several targets, shields, phases are written there),
+                                          the files naming it; a fixture adds its logged total ÷ Max HP
   efsim gamedata who <id>                 Every BuffData / SkillData file that names a buff or skill id: the action
                                           around it (who creates, finishes or checks it), its buff event or frame
   efsim gamedata find <type>              Every action of a type (regex on the short $type: HitStop, TimeDilation,
@@ -61,7 +69,8 @@ export default command({
     const { values, args } = ctx;
     const [sub, id] = args;
     if (sub === "dilations") return dilationsView(ctx.data(), id === undefined ? undefined : new RegExp(id), values.dropped);
-    if (args.length !== 2 || !id || (sub !== "tree" && sub !== "who" && sub !== "find")) throw new Error(`gamedata takes tree <id>, who <id>, find <type> or dilations [<skill regex>]\n\n${ctx.usage}`);
+    if (args.length !== 2 || !id || (sub !== "tree" && sub !== "who" && sub !== "find" && sub !== "enemy")) throw new Error(`gamedata takes tree <id>, who <id>, find <type>, enemy <enemy id|fixture> or dilations [<skill regex>]\n\n${ctx.usage}`);
+    if (sub === "enemy") return enemyView(ctx.data(), id);
     if (sub === "find") {
       if (values.folder !== undefined && values.folder !== "BuffData" && values.folder !== "SkillData") throw new Error("--folder takes BuffData or SkillData");
       const found = findActions({ type: id, ...(values.file !== undefined ? { file: values.file } : {}), ...(values.folder !== undefined ? { folder: values.folder } : {}), enabled: values.enabled });

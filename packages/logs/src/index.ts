@@ -41,6 +41,7 @@ export * from "./clockview.ts";
 export * from "./endsview.ts";
 export * from "./awayview.ts";
 export * from "./stackview.ts";
+export * from "./followupsview.ts";
 export * from "./listingview.ts";
 export * from "./boundaryview.ts";
 export * from "./burstsview.ts";

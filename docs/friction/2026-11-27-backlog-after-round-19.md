@@ -1,84 +1,63 @@
-# Backlog after improvement round 18 (2026-11-27)
+# Backlog after improvement round 19 (2026-11-27)
 
-Task: the points of the reports round 18 read (docs/friction-done/2026-11-27-round-18.md lists them) that round 18
-didn't do. Each point is complete on its own; the originals are in docs/friction-done/ with an "Outcome (round 18)"
-section. Round 17's backlog point 1 (a layered buff's per-layer clock) is carried (its first carry); points 2 and 3
-are new. Round 18 had every file to itself. The parked list and the accuracy list follow; the accuracy list gained
-one entry (the last: a hold at a Stagger break).
+Task: the points of the reports round 19 read (docs/friction-done/2026-11-27-round-19.md lists them) that round 19
+didn't do. Each point is complete on its own; the originals are in docs/friction-done/ with an "Outcome (round 19)"
+section. Both points are new; round 18's backlog points 2 and 3 were closed by this round, its point 1 (the per-layer
+clock) is parked (carried twice without a new report). Round 19 had every file to itself. The parked list and the
+accuracy list follow: the parked list lost round 16's point 1 (the Stagger window's recorded start, brought back by
+the break-hold report point 3 and moved to the accuracy list: it moves the holds) and round 14's / 15's log context
+(brought back by the break reports' replay-only readings and closed by round 19's readingOf and its trace test); the
+accuracy list lost its closed entry (the hold at a Stagger break) and gained the recorded Stagger start (the last).
 
 A branch that closes a point adds a line under it: "Closed by <branch>, <commit>: how".
 
-## 1. A layered buff's layers have no clock view
+## 1. A hold that isn't a cast's stop has no clock view
 
-- **What happened:** the away-statuses round exposed Zhuang Fangyi's Xiranflow layers
-  (`chr_0030_zhuangfy:suit_expend_spell01.spell_dmg`, a `maxStacks` gear buff) held 3.0 s by the stops where the game
-  holds them 0.6–1.2 s (4d60 43–69 s). `zmdlogs holds --why` says only "not a clock: maxStacks", and `zmdlogs clock
-  --kit-buff` pairs instances with log runs, not layers with their applications; the only view was `replay
-  --trace-buff`, layer by layer by hand. Round 17 made the owner's name work in `--kit-buff` / `--trace-buff`
-  (clockview.ts kitBuffKey) and the refusal name the team's keys with that id; the per-layer view is left.
-- **Cause:** layered buffs are skipped by the hold placement (holds.ts NOT_A_CLOCK `maxStacks`) and by the clock view,
-  which reads BuffTrace instances, one per buff, not one per layer.
-- **Suggestion:** a per-layer mode of `zmdlogs clock` for a `maxStacks` buff (`--layers`): each layer's application
-  (the trace's stack count rising) against the log's listed layer count at each hit (`hits --zones`' layered
-  entries), with the layer's own expiry and the lateness past it, as for instances.
-- **Needs:** packages/logs/src/clockview.ts, packages/logs/src/replayrecord.ts (the trace's layer count per step),
-  packages/cli/src/commands/zmdlogs.ts, tests/clockview.test.ts. A view: no verdict moves.
-- **Why it helps:** gear layers (Xiranflow, Swordmancer-type sets) are a recurring buff-clock question; each agent
-  rebuilt the layer timeline by hand.
-- **From:** docs/friction-done/2026-11-27-away-statuses.md point 2 (its per-layer clock); backlog after round 17, point 1.
+- **What happened:** the break-hold round's `zmdlogs clocks --rows` marked rows with a break inside, but their
+  residuals mix the placement's mistakes (Si's combo +2.5 s) with the hold, and the tick chains are cut at the
+  Stagger's edges, so no tick row spans a break; the agent wrote scripts/probes/stagger/break-hold.ts for per-break
+  rows (each cast's landings after the break against its last before, the landings at the break's own ms, the tick
+  pair spanning it). With the hold in the engine (`break-hold` `14f`), the views' world time (replayTimeStops) still
+  doesn't list it, so they show the same 0.5 s lateness after the fix as before. Round 19's `zmdlogs holds --steps`
+  shows the break's applied stop beside the hidden holds' steps, one window at a time; the clocks still don't
+  subtract it.
+- **Cause:** the views' world time is the replay's casts' stops only (castassembly.ts replayStops); engine holds that
+  come from events (a break, a dodge, a freeze) have no place in that list.
+- **Suggestion:** a `--around break` mode for `zmdlogs clocks` (the probe's rows: per event, each clock's pair
+  spanning it, no Stagger cut), and replayStops taking an `events` list of non-cast stops (the logged breaks under
+  `break-hold`, holds.ts breakStops) so the views subtract them.
+- **Needs:** packages/logs/src/clocksview.ts, packages/logs/src/castassembly.ts, packages/logs/src/query.ts,
+  tests/clocksview.test.ts. A view, but replayStops also feeds the placement: check `node scripts/cli-ab.ts <base>
+  --placement` (the list's use there must stay as it is) and measure if it moves.
+- **Why it helps:** the next event-borne hold (a Lift, a Knock Down, a perfect dodge) is a view away, and a fixed hold
+  stops showing as lateness.
+- **From:** docs/friction-done/2026-11-27-break-hold.md point 2.
 
-## 2. An assumption's evidence text lives in the engine's source
+## 2. Two targets under one id behind one listing aren't flagged
 
-- **What happened:** round 17 replaced a probe's path by the new view's name in engine assumption `pause-holds`'s
-  reading text (packages/engine/src/timeline/assumptions.ts). The next CLI call rebuilt the game-data cache
-  ("inputs changed since the last entry written: …assumptions.ts", about 10 s, in every checkout sharing the cache),
-  and the brief's engine-change rule asked for a team-ab identity run (3 min with the lock's queue) for a change of
-  prose.
-- **Cause:** the readings' long evidence texts (each reading's description past its first sentence: measures, logs,
-  dates) live in the engine's own source, which the data cache keys on (packages/data/src/cache.ts engineSources
-  traces assumptions.ts through the data build's run-time imports) and the engine-change rules cover. Round 18
-  looked at a comment- and string-insensitive digest: comments alone don't cover the case (the text is a string
-  literal), and a digest that skips string literals could miss a real change (an id is a string).
-- **Suggestion:** each reading keeps one sentence in assumptions.ts; the evidence goes to a notes file the CLI reads
-  for `efsim assumptions` (packages/engine/src/timeline/assumption-notes.json, keyed by id and reading, or
-  docs/design/assumptions.md), outside engineSources' trace; a test that every reading has a note and every note a
-  reading. Behaviour-preserving (the readings' ids and defaults stay in the source): team-ab's identity check once.
-- **Needs:** packages/engine/src/timeline/assumptions.ts, packages/cli/src/commands/assumptions.ts,
-  packages/data/src/cache.ts (only to confirm the notes file isn't traced), tests/engine-assumptions.test.ts.
-- **Why it helps:** the open-problems prose of a reading follows the views as they change, without a cache rebuild in
-  every checkout and an engine identity run.
-- **From:** docs/friction-done/2026-11-27-round-17-friction.md point 3.
+- **What happened:** in 7b54 (Hard 33's eight slugs under one id) the check's log reading was −10 to −30% off, which
+  read as debuffs listed but not acting; it was the listing being every slug's under the one id (Laevatain's attack 1
+  at 5.27 and 10.99 s: one listing, 1,927 and 1,608). docs/design/data.md now says what the listing means for several
+  targets (the slug round), and `efsim gamedata enemy <fixture>` (round 19) prints the stage's text and the total in
+  Max HPs; nothing flags the hits themselves.
+- **Cause:** `zmdlogs hits --same-listing` lists the nearest hits with the very same listing, but doesn't compare their
+  values.
+- **Suggestion:** `hits --same-listing` flags hits of one key and one listing whose values differ by more than a crit
+  (×1.5) and the hit's jitter: two targets (or an unlisted buff), and says so in its head line.
+- **Needs:** packages/logs/src/listingview.ts (the same-listing view), tests/listing-view.test.ts or the nearest test.
+  A view: no verdict moves.
+- **Why it helps:** the next multi-target stage under one id is recognised from two hits in minutes.
+- **From:** docs/friction-done/2026-11-27-slug-status-pairs.md point 2 (its second half).
 
-## 3. A hold's per-frame steps have no view
-
-- **What happened:** 5082's Yvonne case (her own timeline held about 0.5 s at a Stagger break: shots two frames apart
-  logged 0.45 s apart) needed the replay, the stagger view and `zmdlogs holds` side by side, and the hidden holds
-  around it turned out spread over 1.5 s in 1-frame steps, which only a debug print showed. Round 18 marked the
-  clocks a logged Stagger break falls inside (`zmdlogs clocks --rows`: "a Stagger break inside"; the cast clocks
-  with one run 186 ms late at the median against 10 ms without), so the break shows; the steps the placement puts
-  around it still don't.
-- **Cause:** `zmdlogs holds` prints the 0.512 s units and their placements, not the frames each step holds.
-- **Suggestion:** `zmdlogs holds <fixture> --steps <from>-<to>`: the per-frame hold steps the replay applies in that
-  window (PlacedHolds' times and the cumulative hold, as frames held per frame), beside the stops there.
-- **Needs:** packages/logs/src/holds.ts (PlacedHolds), packages/logs/src/views.ts (holdsView),
-  packages/cli/src/commands/zmdlogs.ts, tests/replayrecord.test.ts or a new test. A view: no verdict moves.
-- **Why it helps:** a hold the model lacks (a break dilation) or one the placement spreads reads as one table, not a
-  debug print.
-- **From:** docs/friction-done/2026-11-27-placement-cases.md point 3 (holds --steps).
 
 ## Parked
 
 A new report that hits one brings it back with its full text from there.
 
-Point 1 of docs/friction-done/2026-11-26-backlog-after-round-16.md (full text there under the same number), carried twice without a new report:
+Point 1 of docs/friction-done/2026-11-27-backlog-after-round-18.md (full text there under the same number), carried twice without a new report:
 
-- 1. The replay's Stagger window starts are derived, not recorded.
+- 1. A layered buff's layers have no clock view.
 
-Round 14's backlog point 1, round 15's point 1 (full text in docs/friction-done/2026-11-26-backlog-after-round-15.md
-under point 1), carried twice without a new report:
-
-- 1. The log tools take the game data without the readings of it (a log context `{ data, assume }` that placeHits,
-  the stop builders and the replay take; a mix is an error since round 14).
 
 Round 12's backlog point 5 (holds per stretch) moved to the accuracy list below: it moves verdicts.
 
@@ -250,18 +229,18 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
   (×1.04). Each is a stage factor for the fixture's `stageFactors` (7b54 first: the slug's phases) or one shared
   cause (a team debuff the replay lacks); `zmdlogs groups` counts their mismatches as fight-wide. A stageFactors entry
   moves verdicts: measure, snapshots:update.
-- **A hold at a Stagger break** (docs/friction-done/2026-11-27-placement-cases.md point 3; round 18's `zmdlogs clocks
-  --all --clock tick,cast`): the cast clocks whose span holds a logged Stagger break run late, 40 rows at a median of
-  186 ms (Σ held 45.4 s in them), against 4,785 rows without at 10 ms; 5082's Yvonne +0.51 s across the break at
-  44.43 s (her ultimate's shots 0.47 s of kit frames apart, logged 0.98 s apart). The data's
-  enablePoiseBreakTimeDilation suggests a break dilation the stop list lacks; a reading for it moves the placement
-  and the holds: measure, smoke, team-ab where the engine's timing changes.
-  Closed by worktree-agent-aef72dfd574eeedc4, 222f093: engine assumption `break-hold` `14f` (every clock held 14 frames
-  at a break, not inside an ultimate's stop; docs/open-problems.md "The hold at a Stagger break").
+- **The replay's Stagger window starts recorded, not derived** (round 16's backlog point 1, parked, brought back by
+  docs/friction-done/2026-11-27-break-hold.md point 3): replayrecord.ts derives a window's start as its end less the
+  Stagger's length, which a stop at the break moves: with `break-hold` the replay's windows started 15–17 frames after
+  every break, and the hidden holds' still spans let holds rise in those frames (the break-hold round dropped its fix
+  on the hold-outs). A `since` frame on TimelineState.stagger, set where resources.ts dealPoise breaks the bar and
+  where holdStagger starts one, read by replayrecord.ts in place of the derivation. A record for the engine
+  (team-ab), but the still spans, the windows' edges (kitBuffNearChange) and the holds read the windows: measure,
+  snapshots:update.
 
 ## What worked well
 
-Each report's episode was a ready test: c779's crossed bursts for the twin marks, d774's guard for TAILKEPT, 40d9's
-Gilberta projectile for a late join, 6339's Si combo for REALIGN, 5082's Yvonne for the break rows, 107766a's
-snapshots for `--compare --regroup` (the journal's scratch sums came out the same), and two STATUS_WIDE_FRAMES values
-for `--variant <file>:<CONST>=<v>` in one run.
+Each report's episode was a ready test: the tickBounds call for the readers' trace (it fails with the old call), e989's
+Vesperwings under `kept` for the lane ends, d4fb's harasses for `followups`, 6339's stage text for `gamedata enemy`,
+Camille's entity for the entity tree, 5082's break for `holds --steps`, and round 18's splitLines leak for the
+blindness test.

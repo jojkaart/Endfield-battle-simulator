@@ -111,6 +111,7 @@ The design by subsystem (2026-11-16: design.md was one 2,700-line file; its sect
 
 - [Data layer](design/data.md): DataBundle (sketch); Skills and buffs from SkillData / BuffData
 - [The timeline engine](design/timeline.md): Input: Scenario; Rotation; Stepping API; Time; Skill timing; Simulation model; Engine modules; Order within a frame; Output: Result
+- [Engine assumptions: the evidence](design/assumptions.md): each engine reading's measures and logs, by id and reading
 - [Rotation search](design/search.md): Payoffs and chains; Pruning the search
 - [Gear from the logs](design/gear.md)
 - [Rule-based rotations](design/rules.md)

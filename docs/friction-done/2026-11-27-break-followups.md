@@ -52,3 +52,18 @@ worktree-agent-a2188a63d84a8d377.
   hold-outs' decision counts (the INSIDE −1 under `none` was the lead to the cause).
 - `zmdlogs decisions --all --assume <id>=<r>` and `scripts/cli-ab.ts HEAD -- zmdlogs decisions --all` named the
   replay's decisions a reading or a change moves, in minutes.
+
+## Outcome (round 19)
+
+- 1 (The fix the evidence points at lives in a file split off to another agent): done (ca62ffc) as a tool and lines for
+  the lead: `node scripts/lead-files.ts <term>… --split <agent>=<files|family:x>,…` names per lead whose files its
+  earlier fixes touched and flags a lead spanning two agents SHARED; the brief rule ("may touch with a note": one
+  function, its own commit naming the other agent) is in the round summary's "For the lead" (CLAUDE.md is the lead's).
+- 2 (The replay view's LAND times hide which landings a hold can move): done (376773d): a LAND line pinned to its
+  logged frame (LandedHit.ref) carries `[pinned]`; docs/design/data.md's replay paragraph says what a stop still
+  moves.
+- 3 (A replay-only reading doesn't reach every consumer of the rule): done (b70bddf): every reader goes through the
+  registry's readingOf with the run's readings (holds.ts tickBounds, breakStops and breakHoldStarts take `assume`,
+  buffreplay.ts passes the replay's); tests/assumption-readers.test.ts fails a reading read by hand and traces a log's
+  whole check under every assumption given at its default (traceReadings): a reader that took a default fails (it
+  fails with the old tickBounds call: break-hold and break-hold-place).

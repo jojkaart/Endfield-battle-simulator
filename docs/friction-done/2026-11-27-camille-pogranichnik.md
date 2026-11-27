@@ -77,3 +77,26 @@ off (docs/open-problems.md); worktree branch off main at e2e6f3f.
 - `zmdlogs ends --at` and `zmdlogs away` answered "what ends here, what goes on" and "which stretches" at once.
 - `--kit <file>` let me try harass frames and clocks without touching the kit.
 - `gamedata tree` printed the inline Unity curve keys, enough to integrate the slow-down exactly.
+
+## Outcome (round 19)
+
+- 1 (No view of a trigger's follow-up hits against the events that make them): done (6d07463): `efsim zmdlogs
+  followups <fixture…|--all> --operator <op> [--trigger <re>]` (followupsview.ts), from a replay's record of each
+  triggered landing's firing (LandedHit.fired: the trigger, its event's frame and kind; record only, set only in a
+  replayed fight, team-ab identical): each landing's delay after its event, the logged hit and Δ, the log's delay
+  after the event's logged hit, a kit hit's log-only hits with the nearest replay-only landing, per trigger counts and
+  medians; takes `--kit` and `--assume`.
+- 2 (A replay-only rule needs an engine assumption, and the registry sits in another agent's folder): done
+  (b70bddf): the registry is packages/engine/src/assumptions.ts (outside timeline/), and the readings only the log
+  check reads are in packages/engine/src/replay-assumptions.ts (14 of them), which no timing file imports; the
+  kit-assumption alternative (a buff's field naming a reading) not built: a replay rule's reading is a line there.
+- 3 (BuffReplay.instances answers null for a buff the replay doesn't decide, without saying so): done (376773d):
+  BuffReplay.instancesWhy gives the reason (not decided and why, near a change, after the break, a crit the log
+  doesn't give deciding it), instances' comment names it and kitWindows.
+- 4 (`--against-lanes` compares the runs' starts only): done (ea2254d): each pair's ends (the log's last listing and
+  next hit without it, the replay chain's end and why: ran out, ended early, refreshed where the log starts its next
+  run, the fight's end), ENDS DIFFER past 300 ms; a refresh where the log starts a run pairs that run (e989 under
+  `vesperwings-target-loss=kept` flags the 3.54 s and 61.69 s runs).
+- 5 (Ability-entity files are missing from the data, and the tree says only "no file"): done (616475a): `gamedata
+  tree <id>` for an id with no file names the actions that name it with their fields (SpawnAbilityEntity: its skill,
+  blackboard, duration key) and the skill each spawn runs.

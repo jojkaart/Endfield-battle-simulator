@@ -13,7 +13,7 @@ import { shiftOperator, slowDown } from "./clock.ts";
 import { gainEnergy, gainSp, rebaseCooldowns, refillPoise, spAt } from "./resources.ts";
 import { actionFrame, counters } from "./timing.ts";
 import { retakeTickSnapshots, situationAt } from "./situation.ts";
-import { engineReading } from "./assumptions.ts";
+import { engineReading } from "../assumptions.ts";
 import { runActions, runTriggers } from "./actions.ts";
 import { asEvents, draw, landBurst, landHit, recordStatus, type StatusCrits } from "./landing.ts";
 import { castSkill, endCurrentSkill, settleCastBuffs, takeJump } from "./casting.ts";

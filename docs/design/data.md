@@ -165,7 +165,10 @@ output is an edit there, a rule's in the part it belongs to; the reason
 strings the snapshots' kinds group by are replaykeys.ts's constants): each placed cast
 (logcasts.ts) starts at its logged frame without a rotation's checks, its
 logged landings land at their logged frames (pinned: later time stops
-don't move them, the log's time has them in), an operator's earlier cast
+don't move them, the log's time has them in; a stop or hold still moves an
+action's end, the landings nothing pinned, triggers' delayed hits and the
+world's timers; `zmdlogs replay` marks the pinned LAND lines `[pinned]`,
+round 19), an operator's earlier cast
 keeps its hits when the log shows them after the next cast started, and a
 jump of the cast that would skip a pinned landing of a hit only the
 skipped part has isn't taken, nor the path it jumps to (2026-11-22:
@@ -475,7 +478,10 @@ replay and the log's listing still disagree.
 
 Readings of the engine's own open rules (control immunity, ...) switch with
 `--assume` (`zmdlogs check --assume`, `scripts/measure.ts --assume`;
-packages/engine/src/timeline/assumptions.ts), as the kits' do.
+packages/engine/src/assumptions.ts, the simulation's; replay-assumptions.ts, the replay's own; their evidence in
+[assumptions.md](assumptions.md)), as the kits' do. Every reader takes the run's readings through `readingOf`
+(`@efsim/engine`): a helper that reads one is handed the replay's `assume`, never left to its default
+(tests/assumption-readers.test.ts traces every read of a log's check and fails a default the run didn't give).
 
 **What the log records** (round 3, 2026-11-18: facts agents measured and
 left in code comments or reports). ZMDLogs' battle detail, as the importer
@@ -732,6 +738,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |
 | The world's time between two log moments, the stops between | `efsim zmdlogs worldtime <fixture> <from s> <to s> [--assume …]` (the stops of the replay's casts: placed, from a cast event, inferred; the hold placement's own list since round 15, castassembly.ts `replayStops`: an event the replay read as a buff's tick is a line without frames; `replayTimeStops(data, fx, placement, replay)` in a script, never without the replay for a count, nor `castTimeStops`, which has the placed casts' only) |
 | The fight's hidden holds (unlogged dodges, pauses) the replay places: each 0.512 s unit, its earliest and latest time, the clocks spanning it | `efsim zmdlogs holds <fixture> [--verbose]` |
+| The frames the holds actually hold in a window, step by step, beside the slow-downs applied there and the log's breaks | `efsim zmdlogs holds <fixture> --steps <from>-<to>` (seconds; round 19) |
 | Why a buff's or status's run is (not) a clock of the holds: the run paired with each instance, the rule that skipped it, kept or dropped | `efsim zmdlogs holds <fixture> --why <re>` (`owner:id`, `Perlica:wpn`, `status:corrosion`); its last lines: whether each instance was kept to the log's end, and why not (heldToLoggedEnds) |
 | Which bounds and holds a change moved (bounds added, removed, each unit and bound before and after) | `node scripts/cli-ab.ts <ref> --holds <fixture>`; any command at two commits: `node scripts/cli-ab.ts <ref> [--key <re>] -- <efsim args>` |
 | Corrosion's ramp as the hits read it: each hit's fitting step against the replay's, the hidden hold that allows against the one placed | `efsim zmdlogs ramp <fixture> [--verbose]`; `--held`: what held the replay's ramp (each stop's share, placed holds, the rest) |
@@ -748,7 +755,10 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Every one-sided landing across fights, for a question of your own | `efsim zmdlogs totals --all --json` (a JSON line each, cached; then `jq`) |
 | Which game-data files use an action type, with its fields | `efsim gamedata find <type>` (e.g. `SwitchModeAction`) |
 | Who creates a buff or casts a skill in the game data | `efsim gamedata who <id>`; its actions: `efsim gamedata tree <id>` |
-| The open assumptions `--assume` takes, their readings | `efsim assumptions [<re>]` |
+| How long after its event each of a kit trigger's own landings (an entity's follow-ups, harasses, lasers) lands, in the replay and in the log; the follow-ups one side has | `efsim zmdlogs followups <fixture…\|--all> --operator <op> [--trigger <re>]` (LandedHit.fired, a replay's record; takes `--kit`, `--assume`; round 19) |
+| What an ability entity (`abilityentity_…`, no file of its own in the export) does: the actions that spawn it and the skill it runs | `efsim gamedata tree <entity id>` (round 19) |
+| An enemy's tables and its stage's own text (several targets, shields, phases: read it first for a stage log), a fight's total in Max HPs | `efsim gamedata enemy <enemy id\|fixture>` (round 19: Hard 33's "They are legion") |
+| The open assumptions `--assume` takes, their readings and their evidence | `efsim assumptions [<re>]` (evidence: [assumptions.md](assumptions.md)) |
 | Operator ids and weapon names of the logs | `efsim zmdlogs list --ids [--with <op>]` |
 | Where the placement put each hit and cast | `efsim zmdlogs casts <fixture> [--from --to]` |
 | The replay's landings, casts made against the kit, what it made of each cast event | `efsim zmdlogs replay <fixture>` (FORCED, INSIDE: uncuttable frames; CUTS: a legal interrupt cancelling pending hits; EVENT; `[crit …: source]` on a landing the log gives no crit) |
