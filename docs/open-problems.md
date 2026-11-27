@@ -2208,11 +2208,35 @@ total −20.6 → −24.5% (its second target's log-only share left uncancelled)
 **Ruled out:** one enemy with lives or phases (two kills at one ms, a hit's key at two values at one ms); a
 damage-scaling shield (the number shield zeroes whole hits); the debuffs' end by the shield or by tag (round 5).
 
-**Still possible / left:** which slug each hit lands on (the log can't say; an engine with several targets could
-carry each one's debuffs); the replay-only landings (7b54 +24.0%: Si's burst mark at 26.47 s in 21.06–26.98 s, her
-overlapping combos at 16.6–17.7 s, Laevatain's combo at 38.20 s; 6339 +19.0%: Laevatain's hit_2 at 21.60 s, her
-32.97 s battle skill) as hits on shielded slugs (0, unlogged) or on a slug the shield hid; 6339's log-only (35.70 s
-final −9.6%, Si's 19.91 s ink hit twice). Not a kit or timing question: such logs are to be avoided.
+**Done (2026-11-27, per target: docs/journal/2026-11-27-14-several-targets-read-per-target.md):** engine assumption
+`several-targets` `targets` (packages/logs targets.ts; docs/design/data.md "Several targets"): each logged hit on a
+target (a landing's twins on others, else the alive target its value fits), each target its own enemy-side units, a
+kill its own; the fixtures' `atOnce` / `fromStart`. The row (scoreboard): plain 54.1 → 68.5%, mismatch 27.6 → 15.4%,
+mean |damage error| 20.0 → 16.1%; 6339 108 → 115 plain, −19.7 → −10.3%; 7b54 65 → 99, +15.7 → +26.8%; 9c6e 244 →
+314, −24.5 → −11.3%. Jade Vessel, which the replay's one enemy has from 3.4 s in 7b54, is on one slug only (the
+values: every Camille and Laevatain hit at 11–16 s and 27–31 s reads without it).
+
+**What remains one-sided, and why** (`zmdlogs totals <fixture> --kinds`, after the change):
+- **7b54 replay-only +29.5%:** the placement (logcasts.ts placeWith) spreads Si's combo slashes logged on several
+  slugs at one ms over the kit's slash slots (15.60 s: 2 slashes × 4 slugs took eight of ten), so the final's slot
+  takes two slugs' slashes at 15.80 s and a second combo is opened: its 16.6–17.7 s slashes and 17.67 s final are
+  replay-only (+5.7% the final, +4.7% the slashes); the same at 47.29 s. Next: a twin rule for severalTargets in the
+  placement (the friction report 2026-11-27-several-targets point 1; the other agent's file). Si's 26.47 s burst mark
+  (+7.2%) and Laevatain's 38.20 s combo (+5.7%) in stretches without a logged hit: hits on shielded slugs (0, unlogged).
+- **6339 log-only −21.1%:** Laevatain's 35.70 s final (−9.6%, a landing the replay didn't land) and Si's 19.91 s ink
+  hit on two slugs (−11.5%: its cast isn't one the replay makes); replay-only +24.8%: Laevatain's 21.60 s hit_2
+  (+10.2%, a cast tail TAILKEPT keeps), her 32.97 s battle skill, Si's 10.83 s burst mark. Camille's battle-skill hits
+  (`normal_skill_abilityrange`, 19.68 / 20.60 / 24.56 / 29.67 / 32.16 s) are uncovered: the placement doesn't place
+  them (her `_first` key elsewhere).
+- **9c6e log-only −22.9%:** twins whose value fits no target's state stay log-only (−13.8%, "a landing a teammate's
+  hit's"): Typhoeus's Nature bursts on the second Wanderer (52.80, 79.85, 94.32 s), whose own inflictions, Corrosion
+  level and Stagger the replay's one enemy can't give; replay-only +12.3%: Typhoeus's 77.70 s burst (cast tail).
+
+**Still possible / left:** statuses per target (Corrosion and Electrification levels, a target's own inflictions and
+bursts, its Stagger: only on/off per target now); a landing on a shielded slug as "there, 0 damage, no infliction,
+buffs applied" (6339 14.09 s: Camille's Vesperwings reached the next slug, her weapon's Heat DMG, which needs an
+infliction, didn't; `targets-gaps-away` measured 6339 plain +1, total −2.3 points: no engine state for it yet); the
+placement's twins (above). Not a kit or timing question: such logs are to be avoided for kit work.
 
 ## Liino's battle-skill presses during Vocalist Stance (every Liino log)
 

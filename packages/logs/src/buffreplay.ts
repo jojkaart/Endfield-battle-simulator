@@ -440,9 +440,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const kitDefs = new Map(kits.flatMap((k) => k.buffs.map((d) => [`${k.operator}:${d.id}`, d] as const)));
   // Engine assumption logged-purges: with `log`, the enemy-side kit buffs end where the log shows the enemy shedding
   // the team's debuffs (purgedByLog); with `log-kills`, also at each logged kill of a fight against several targets
-  // under one id (killPurges).
+  // under one id (killPurges; none where several-targets reads `targets`: a kill ends its own target's only).
   const purgeReading = readingOf(opts.assume, "logged-purges");
-  const purges = purgeReading === "log" || purgeReading === "log-kills" ? [...new Set([...loggedPurges(fx), ...(purgeReading === "log-kills" ? killPurges(fx) : [])])].sort((a, b) => a - b) : [];
+  const purges = purgeReading === "log" || purgeReading === "log-kills" ? [...new Set([...loggedPurges(fx), ...(purgeReading === "log-kills" ? killPurges(fx, opts.assume) : [])])].sort((a, b) => a - b) : [];
   // Kit assumptions on KitBuff.targetCheck: an entity-held debuff ends at its entity's check after the enemy left (targetLosses).
   const losses = targetLosses(kits, fx, opts.assume);
   const held = (st: TimelineState, frame: number) => lostTargets(purgedByLog(heldToLoggedEnds(heldTicks(st, frame, tickEvents), frame, laneEnds, kitDefs), frame, purges), frame, losses);

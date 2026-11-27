@@ -107,10 +107,14 @@
     },
     "severalTargets": {
       "type": "object",
-      "description": "Hand-written: the fight is against several enemies of one template the log names by one enemy id (the import couldn't put it under fixtures/multi-target/), with the evidence: one operator's status event twice within a frame (one enemy can't burst twice at once), kills (hits capped at the HP left) before the fight's end with hits going on. The check runs it as one target; the scoreboard gives it its own row (scripts/accuracy.ts). Found with scripts/probes/targets/two-targets.ts.",
+      "description": "Hand-written: the fight is against several enemies of one template the log names by one enemy id (the import couldn't put it under fixtures/multi-target/), with the evidence: one operator's status event twice within a frame (one enemy can't burst twice at once), kills (hits capped at the HP left) before the fight's end with hits going on. The check reads it per target (engine assumption several-targets `targets`: packages/logs targets.ts, docs/design/data.md \"Several targets\"); the scoreboard gives it its own row (scripts/accuracy.ts). Found with scripts/probes/targets/two-targets.ts.",
       "required": ["why"],
       "additionalProperties": false,
-      "properties": { "why": { "type": "string" } }
+      "properties": {
+        "why": { "type": "string" },
+        "atOnce": { "type": "integer", "minimum": 2, "description": "The most targets alive at once (the stage's: Hard 33's eight slugs, Hard 31's two Wanderers); without it, two." },
+        "fromStart": { "const": true, "description": "Every target is there from the fight's start and none arrives later (Hard 33's slugs): a kill leaves atOnce minus the kills so far, so a kill gap then has targets left." }
+      }
     },
     "absent": {
       "type": "array",

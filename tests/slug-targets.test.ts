@@ -1,7 +1,8 @@
 // Hard 33's Woodcraft Slugs (pending/zmdlogs-63398339803e.json, pending/zmdlogs-7b54dc249bcd.json): eight slugs of
 // 1.2 Max HP under the one id, the fixtures' severalTargets (scripts/probes/targets/slugs.ts), and the replay's enemy
-// shedding the team's debuffs at each logged kill of such a fight (engine assumption logged-purges `log-kills`:
-// enginecheck.ts killPurges).
+// shedding the team's debuffs at each logged kill of such a fight when the check reads it as one target (engine
+// assumption logged-purges `log-kills`: enginecheck.ts killPurges, under several-targets `one`; read per target, a kill
+// ends its own target's debuffs only: tests/several-targets.test.ts).
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { Attr } from "@efsim/engine";
@@ -9,6 +10,8 @@ import { checkLog, devFixtures, engineHits, killGaps, killPurges, logBuffReplay,
 import { snapshotEntry, SEVERAL_TARGETS_KEY } from "../packages/logs/src/snapshotentry.ts";
 
 const data = loadGameData();
+/** The check before per-target reading (engine assumption several-targets `one`). */
+const ONE = { "several-targets": "one" };
 const fixture = (id: string) => (devFixtures({ ids: [id] })[0] as { fx: LogFixture }).fx;
 
 describe("Hard 33's Woodcraft Slugs", () => {
@@ -31,13 +34,15 @@ describe("Hard 33's Woodcraft Slugs", () => {
     expect(kills.map((t) => Math.round(upTo(t) * 100) / 100)).toEqual([1, 3, 4.46, 5, 6, 7, 8]);
   });
 
-  it("purges at each kill of a several-targets fight only", () => {
+  it("purges at each kill of a several-targets fight read as one target only", () => {
     const fx = fixture("7b54");
     const kills = killGaps(fx).map((k) => k.from);
     expect(kills).toEqual([16360, 19592, 32944, 47477]);
-    expect(killPurges(fx)).toEqual([492, 589, 989, 1425]);
+    expect(killPurges(fx, ONE)).toEqual([492, 589, 989, 1425]);
+    // Read per target (the default), the replay's enemy keeps them: a kill ends its own target's only.
+    expect(killPurges(fx)).toEqual([]);
     const { severalTargets: _, ...unmarked } = fx;
-    expect(killPurges(unmarked as LogFixture)).toEqual([]);
+    expect(killPurges(unmarked as LogFixture, ONE)).toEqual([]);
   });
 
   // 7b54 19.00 s: Si's attack 1 on the slug after the 16.36 s kills, without the killed slugs' debuffs (Arcane's WILL
@@ -46,7 +51,7 @@ describe("Hard 33's Woodcraft Slugs", () => {
     const fx = fixture("7b54");
     const hit = fx.hits.find((h) => h.t === 18999 && h.event === "chr_0036_jsspsi_attack1") as LogHit;
     const verdictUnder = (reading: string) => {
-      const replay = logBuffReplay(data, fx, { assume: { "logged-purges": reading } });
+      const replay = logBuffReplay(data, fx, { assume: { "logged-purges": reading, ...ONE } });
       const v = checkLog(data, fx, { replay, engineHits: engineHits(data, fx, replay) }).find((x) => x.hit === hit);
       return v?.kind === "match" ? v.class : v?.kind;
     };

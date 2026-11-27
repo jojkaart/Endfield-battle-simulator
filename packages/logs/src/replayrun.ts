@@ -10,7 +10,8 @@ import {
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { awayWindows, enemyAwaySpans, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
+import { awayWindows, enemyAwaySpans, KILL_EDGE_MS, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
+import { gapsWithTargetsLeft, keepsKillGaps } from "./targets.ts";
 import { buttonVariants, loggedFrames, type Placement } from "./logcasts.ts";
 import { replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
@@ -349,12 +350,6 @@ function missedStep(ctx: TimelineContext, st: TimelineState, operator: string, f
 
 /** How far (ms) around a cast's unlogged tail a logged hit of its operator with one of its skill's events keeps it whole, and a logged hit of anyone after its first landing shows the enemy there (tailCuts). */
 const TAIL_NEAR_MS = 1500;
-/**
- * How far inside a kill gap (enginecheck.ts killGaps) the replay's enemy is away: a landing logged with the kill or
- * with the next hit may come a few frames off its logged ms in the replay (the log flushes about every 100 ms:
- * pending/zmdlogs-9c6e97486a9d.json 55.20 s, Arcane's combo boom at the kill, 0.12 s before the next logged hit).
- */
-const KILL_EDGE_MS = 150;
 
 /** How many frames after one of a tail's landings a buff run it started may begin (tailCuts: a trigger on the landing). */
 const TAIL_EFFECT_FRAMES = 1;
@@ -789,7 +784,11 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   // Engine assumption kill-gaps: with `absent`, from KILL_EDGE_MS after a logged kill to KILL_EDGE_MS before the next logged hit too.
   const killReading = readingOf(opts.assume, "kill-gaps");
   const [killStart, killEnd] = killReading === "tight" ? [1000 / FPS, 1000 / FPS] : [KILL_EDGE_MS, KILL_EDGE_MS];
-  const killed = killReading === "absent" || killReading === "tight" ? killGaps(fx) : [];
+  // Engine assumption several-targets `targets`: not where targets are left (targets.ts gapsWithTargetsLeft), whom the
+  // landings there reach unlogged (a shielded slug's hit deals 0) with their debuffs.
+  const gaps = killGaps(fx);
+  const kept = new Set(keepsKillGaps(fx, opts.assume) ? gapsWithTargetsLeft(fx, gaps) : []);
+  const killed = killReading === "absent" || killReading === "tight" ? gaps.filter((g) => !kept.has(g)) : [];
   const enemyAway = [
     ...enemyAwaySpans(fx, readingOf(opts.assume, "enemy-away")),
     ...killed.flatMap((w) => {
