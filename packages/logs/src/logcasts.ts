@@ -429,6 +429,9 @@ function newCastStart(t: number, frame: number, stops: readonly TimeStop[], even
 /** Whether a new cast's start reads the holds at the log's Stagger breaks (newCastStart). */
 const BREAK_HELD_STARTS = true;
 
+/** Which combos' slow-downs leave the breaks inside them out of those holds (placeWith): "any", "others" (another operator's), "none". */
+const BREAK_HELD_OUTSIDE_COMBOS: string = "others";
+
 /**
  * Whether the log's cast event of `eventSkill` (LogFixture.casts) is one of the kit skill `skillId`: the same skill, or,
  * for an event of a skill the operator's kit doesn't have, the kit's skill in its slot (the log names the slot:
@@ -963,8 +966,11 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
     if (groups.length === 0) continue;
     const mine = sorted.filter((h) => h.operator === build.operator);
     const others = stops.filter((x) => x.operator !== build.operator);
-    // The holds at the log's Stagger breaks, from a pass with stops (not inside an ultimate's: breakStops).
-    const breaks = stops.length ? breakStops(fx, stops, assume) : [];
+    // The holds at the log's Stagger breaks, from a pass with stops (not inside an ultimate's: breakStops), and not one
+    // inside a combo's slow-down, where the log's next moments often come sooner than a hold allows (4360447193ac
+    // 49.14 s, c4f307cd039a 82.65 s, d4fb69b036fe 97.05 s: 0.13–0.25 s after) and whether it holds is open.
+    const combos = BREAK_HELD_OUTSIDE_COMBOS === "none" ? [] : (BREAK_HELD_OUTSIDE_COMBOS === "others" ? others : stops).filter((s) => s.kind === "combo");
+    const breaks = stops.length ? breakStops(fx, stops, assume).filter((b) => !combos.some((s) => b.start >= s.start && b.start <= s.start + s.scales.findLastIndex((x) => x < 1))) : [];
     const slotCache = new Map<string, Slot[] | null>();
     const slots = (g: Group, key: string) => {
       const k = `${g.id}|${key}`;
