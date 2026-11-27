@@ -28,7 +28,9 @@ Each entry is a file under docs/journal/; add one with
 **Scoreboard** (measure against the snapshots of de528c7; snapshots:update for the final commit): earlier pending
 plain 82.3 → 84.4%, mismatch 7.5 → 4.4%, |damage error| 1.3 → 1.2% (04d4 plain 375 → 590, mismatch 614 → 293,
 −3.2 → −1.4%; 4e36 plain 368 → 401, mismatch 37 → 4); verified, development, hold-outs and several-targets
-unchanged; no log worse.
+unchanged; no log worse. By operator: Ember mismatch 80.2 → 2.6%, Alesh 20.1 → 0.6%, Catcher 13.9 → 6.0%.
+`node scripts/team-ab.ts --base de528c7`: every team's own fight the same (no team has Catcher with OBJ Heavy
+Burden), so the team numbers are unchanged.
 
 **Decisions:** fits only where one input explains the hits (Ember, Alesh), as the earlier fits did. Snowshine's
 ×0.9624 (04d4) stays out of scope: one factor in [0.96232, 0.96258] fits all 157 clean hits, but no build of nodes,
