@@ -177,7 +177,7 @@ export const ENGINE_ASSUMPTIONS: readonly EngineAssumption[] = [
     default: "assignment",
     readings: {
       nearest: "per logged hit in time order, its operator's free landing of its kind and element nearest it within 16 frames (the replay until 2026-11-27): a burst held late leaves both sides one-sided, and pending/zmdlogs-c7790d76a4f0.json's logged 9.68 s took the replay's 10.03 s, so 9.27 and 10.08 s stayed unpaired",
-      assignment: "per operator, kind and element, one assignment over the fight: the most pairs, then the least frames apart (a landing whose value doesn't fit counts 30 frames more), a landing 16–30 frames away only where its value fits the logged one within 1% (under the log's crit flag and the fixture's stage factor)",
+      assignment: "per operator, kind and element, one assignment over the fight: the most pairs, then the least frames apart (a landing whose value doesn't fit counts 60 frames more), a landing 16–60 frames away only where its value fits the logged one within 1% (under the log's crit flag and the fixture's stage factor). Measured 2026-11-27 against `nearest`: development plain 81.5 → 81.6%, hold-out 82.6 → 82.7%, earlier pending 81.6 → 81.7% with a 30-frame window (14 logs and 3 hold-outs better, 3 mixed: more plain, their totals 0.1–0.2 points further; none worse: pending/zmdlogs-c7790d76a4f0.json's 9.27 / 10.08 s bursts both paired, Wulfgard's and Laevatain's Combustion ticks a stop held paired with their own); 60 frames then 7 logs and 2 hold-outs more better, none worse",
     },
   },
   {

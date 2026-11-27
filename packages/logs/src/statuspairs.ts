@@ -4,17 +4,24 @@
 // can't say which: scripts/probes/bursts/burst-before-stop.ts), so the nearest landing within NEAR_FRAMES, taken in
 // time order, left both sides one-sided and once paired them crosswise (pending/zmdlogs-c7790d76a4f0.json 9.27–10.08 s).
 // Engine assumption status-pairing: `assignment` pairs each operator's landings of one kind and element with its
-// logged hits as one assignment (the most pairs, then the closest in value and time), a landing up to WIDE_FRAMES
-// away paired only where its value fits the logged one; `nearest` is the old pairing.
+// logged hits as one assignment (the most pairs, then the closest in value and time), a landing up to
+// STATUS_WIDE_FRAMES away paired only where its value fits the logged one; `nearest` is the old pairing.
 
 import { landingDamage, type LandedHit } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /** How far (frames) a status landing may be from the logged hit it stands for, whatever its value (the old window). */
 export const STATUS_NEAR_FRAMES = 16;
-/** How far (frames) a status landing whose value fits the logged hit's may be from it (a burst a stop held: up to 0.85 s, and a few frames of the replay's own precision). */
-export const STATUS_WIDE_FRAMES = 30;
-/** A value fits within this share of the logged one (the replay's landing under the log's crit flag and the fixture's stage factor). */
+/**
+ * How far (frames) a status landing whose value fits the logged hit's may be from it: a burst a stop held (0.55–0.85
+ * s), or several (c3c7 22.32 s, c83c 32.31 s: 1.5–1.6 s, 79cc 24.23 s and 3aa6 12.31 s 1.8–2.1 s, the same value
+ * each). Measured 2026-11-27 against 30 frames (1 s): 7 logs better, none worse (docs/journal/2026-11-27-07-*.md).
+ */
+export const STATUS_WIDE_FRAMES = 60;
+/**
+ * A value fits within this share of the logged one (the replay's landing under the log's crit flag and the fixture's
+ * stage factor). 10% tried and dropped (docs/tried/2026-11-27-status-value-fit-10.diff).
+ */
 export const STATUS_VALUE_FIT = 0.01;
 
 /** A logged status hit to pair: the hit, its frame on the replay's clock, and the landings' key it pairs within (operator, kind, element). */

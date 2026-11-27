@@ -5,7 +5,9 @@
 // Typhoeus's at one ms, 143,320 and 33,858, both capped from one uncapped 412,733) and 8 kills; the slug's 6339 and
 // 7b54 kills only (lives and phases of one enemy, "Hard 33's slug"); db87 one twin (14.01 s, 24,377 / 36,565: a crit and
 // a plain one of one burst at one ms; Hard 19's bigents, whose template has a second entity in the Hard 32 multi-target
-// logs), b7b3 one (10.91 s, 15,274 twice); no other log either.
+// logs), b7b3 one (10.91 s, 15,274 twice), c4f3 one (7.05 s, a Lift 4,353 / 2,902); no other log either. One twin
+// alone isn't the shape: two status hits at one ms may be one target's (a double infliction), and none of the three
+// has a kill.
 //
 //   node scripts/probes/targets/two-targets.ts
 //
