@@ -298,6 +298,17 @@
       "note": "Talent 0 (buff_chr_0016_laevat_passive_teammate): the controlled operator's Final Strike or Finisher absorbs Heat Infliction, one Melting Flame per layer, only while MF < 4 and only as many layers as there's room for (the rest stays); passive_teammate_cd 1 s. cooldownClock world: the cooldown is that buff (buff_chr_0016_laevat_passive_teammate_cd, duration 1, created by the talent buff's handler), and buffs run on the world's time; the compiler can't reach it from the trigger, which has no value source for its literal 1 s."
     },
     {
+      "id": "death_absorb",
+      "on": { "event": "targetDeath" },
+      "by": "anyone",
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [
+        { "kind": "apply", "applies": [{ "kind": "consumeInfliction", "elements": ["fire"] }] },
+        { "kind": "gain", "gains": [{ "stack": "melting_flame", "amount": { "consumed": true } }] }
+      ],
+      "note": "Talent 0's enemy side (buff_chr_0016_laevat_passive's AuraAction puts buff_chr_0016_laevat_passive_enemy on the enemies): at the enemy's death (abilityEvent 1, HP 0) SaveBuffStackNumAdvanced counts its Heat Infliction layers (tag -1558844517), CreateBuffAction puts that many buff_chr_0016_laevat_absorb_fire_inflict on it (each absorbs a layer: FinishBuffAdvanced isAbsorbed, and launches the absorb projectile) and that many buff_chr_0016_laevat_energy (Melting Flame, up to its max 4) on her; the FinishBuffAdvanced of her energy there is disabled. No room check and no cooldown, unlike final_strike_absorb. The simulation's one enemy never dies; the log check's replay makes a death at each logged kill of a fight against several targets (replay assumption target-deaths `kills` / `statuses`: 6339's 31.62 s kill, the slug with the 29.67 s Vesperwings move's Heat)."
+    },
+    {
       "id": "combo_window",
       "on": {
         "event": "reaction",
