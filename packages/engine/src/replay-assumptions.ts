@@ -13,7 +13,7 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "break-hold-place",
     question: "Where does the hold at a logged Stagger break (break-hold) start against the breaking hit's logged ms?",
-    default: "ms",
+    default: "moments",
     readings: {
       moments: "from the log's moments: no logged moment falls inside a hold, so where the next comes sooner after the break's ms than the hold lasts, the hold ends at it",
       ms: "at the breaking hit's logged ms (the replay's default; most breaking hits are logged at their hold's start)",

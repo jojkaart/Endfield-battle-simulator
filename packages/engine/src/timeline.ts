@@ -18,7 +18,7 @@ export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, div
 export { createContext, kitAssumptions, allAssumptions, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { setPoise, refillPoise, holdStagger, staggerFrames } from "./timeline/resources.ts";
-export { breakHold, breakHoldFrames, cutAtResets, holdWorld, pathSlowdowns } from "./timeline/clock.ts";
+export { breakHold, breakHoldFrames, cutAtResets, holdWorld, inUltimateStop, pathSlowdowns } from "./timeline/clock.ts";
 export { COMBO_CURVE, COMBO_CURVES, curveScales, withCurveReading } from "./timeline/curves.ts";
 export { exclusiveUntil, earliestStart, enhancedBasic, ownHitsLanded, skillAvailable } from "./timeline/timing.ts";
 export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";

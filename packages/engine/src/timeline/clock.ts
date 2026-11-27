@@ -111,13 +111,26 @@ export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number
   const n = breakHoldFrames(ctx.scenario.options.assume);
   if (n <= 0) return st;
   const all = engineReading(ctx.scenario, "break-hold").endsWith("-all");
-  if (!all && st.slowdowns.some((x) => x.ultimate && frame >= x.start && frame < x.start + x.scales.length)) return st;
+  if (!all && st.slowdowns.some((x) => x.ultimate && inUltimateStop(frame, x.start, x.scales.length))) return st;
   // A replay holds only at the breaks its log shows (TimelineScenario.loggedBreaks).
   const logged = ctx.scenario.loggedBreaks;
   if (!placed && logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
   const timing: SkillTiming = { durationFrames: 0, exclusiveFrames: 0, windows: [], channels: [], specification: 0, keepsChain: true, slowdowns: [{ from: 0, scales: new Array<number>(n).fill(0) }], jumps: [], ends: [] };
   return slowDown(ctx, st, BREAK_HOLDER, timing, frame);
 }
+
+/**
+ * Whether a break at `frame` is inside an ultimate's stop from `start` lasting `frames` (breakHold: no hold there),
+ * its end frame included: a hit due as the stop ends lands with it (4d60e7fe92c2 56.29 s: Arcane's ultimate breaks at
+ * its frame 47, the stop's 47 frames just over; Zhuang Fangyi's Sunderblade 0.07 s later and Arcane's combo event come
+ * on time, no hold).
+ */
+export function inUltimateStop(frame: number, start: number, frames: number): boolean {
+  return frame >= start && frame < start + frames + ULTIMATE_STOP_END_FRAMES;
+}
+
+/** How many frames past an ultimate's stop a break is still inside it (inUltimateStop). */
+const ULTIMATE_STOP_END_FRAMES = 1;
 
 /** The caster of a break's hold (breakHold): no operator, so it holds every one. */
 const BREAK_HOLDER = "stagger-break";
