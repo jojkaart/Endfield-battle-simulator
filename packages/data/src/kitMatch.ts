@@ -474,6 +474,8 @@ export interface HitFacts {
   readonly sp?: unknown;
   /** Whether that SP comes before the landing's damage. */
   readonly spBeforeDamage?: boolean;
+  /** The last frame a channel's capped ticks can land at (CompiledLanding.latest), the same for all its landings. split:channel-end */
+  readonly latest?: number;
 }
 
 /**
@@ -498,6 +500,8 @@ export function hitFacts(folded: CompiledSkill, m: HitMatch | undefined): HitFac
   if (ctl !== undefined) out.poiseControlledOnly = ctl;
   const detached = same(ls.map((l) => l.detached));
   if (detached !== undefined) out.detached = detached;
+  const latest = same(ls.map((l) => l.latest));
+  if (latest !== undefined) out.latest = latest; // split:channel-end
   // Energy: one grant going with each landing, with no condition of its own.
   const grants = ls.map((l) => {
     const i = folded.landings.indexOf(l);

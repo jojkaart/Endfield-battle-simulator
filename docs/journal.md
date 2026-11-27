@@ -4,9 +4,59 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 189 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 190 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Casts their operator's next press interrupts: a channel's end
+
+Goal: the tail-cut round's open part (docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md):
+abfd 64.10 s, two logged Si attack-4 hits cut with an attack 4 her next one interrupted at 64.07 s; more generally,
+logged hits that land after their operator's next cast started.
+
+Survey (a scratch pass over every development and multi-target log's placement, then every replay's NOLAND lines):
+of the logged hits placed into a cast after another of their operator's casts started, nearly all are as they should
+be (detached hits, combos beside, a chain step's hit at its own frame that the next step's placed start precedes:
+keepPrevious keeps them). The replay cut a logged landing with the next cast in 10 places in 6 logs: abfd 64.10 s
+(the channel below), fc63 94.79 s and c779 70.73 s (a hitless event cast between, below), and three multi-target
+logs (69e7, 7b4e, b74c: Si's batched several-target hits, not followed).
+
+Found and done:
+- **A channel's end.** Si's attack 4 is a ChannelingAction from frame 5 to 40, at most 6 ticks per target 0.1 s apart
+  (the kit's frames 5–20 are the earliest; an enemy in reach late takes them up to frame 40), and its skill lasts
+  552 frames, so the placement's "slots to come within the skill's action" joined ticks 1.8 s late: abfd's six ticks
+  at 63.77–64.35 s (the cap's six) took the 61.79 s cast's four slots left and made a second cast the replay then cut.
+  The kit compiler now records a capped channel's end on its ticks (CompiledLanding.latest → KitHit.latestFrame, not on
+  what a tick's buff deals later: Rossi's combo afterhits); placeWith joins no tick of one channel past it
+  (`pastChannel`: by CHANNEL_SLACK_MS 400 ms, or by ON_TIME_MS with a press of the operator's between; not across an
+  ultimate's event, whose stop the pass doesn't have yet: c83c 92.48 s). abfd 63.77 s and c3c7 33.64 s (past by
+  0.63 s) and 60.64 s (0.17 s, a battle press between) are new casts; Liino's attack 2 (9090 93.91 s) and Arclight's
+  attack 4 (4bfc 52.23 s), 0.21–0.23 s past with no press, stay. LoggedCast.pastChannel records it; its casts-view
+  line is held back (docs/tried/2026-11-27-channel-decision-line.diff: views.ts was the statuses agent's file).
+- **A channel's ticks in turn** (drivers.ts replayCast): an unpinned tick after a pinned late one comes as late, and
+  none past the channel's end. c3c7 32.33 s: the 6th tick sat at its kit frame beside the 5th, pinned 3 frames late,
+  so the tail cut didn't take it for a tail; 7910's Tangtang shots past their channel are gone.
+- **The previous cast past a hitless one** (castassembly.ts ordered): keepPrevious compared each cast with the one
+  just before it, a cast made from a log event alone too (a press that did nothing, a kit buff's tick the replay
+  skips), so the cast before that lost its later logged hits: fc63 94.79 s (Arcane's combo event, an Imprisonment
+  tick), c779 70.73 s.
+
+Measured (`npm run measure -- --at HEAD --base 5b08218 --split hunks`) and the scoreboard (`npm run
+snapshots:update`): development plain 84.3%, |damage error| 1.2 → 1.3% (7910 −0.8 → −1.2%, c779 0.8 → 0.9%, +1
+plain); verified 1.5 → 1.4% (0eef 1.3 → 1.1%); earlier pending plain 84.4%, 1.2% (abfd 412 → 414 plain, 2.2 → 2.1%;
+4e36 better; c3c7 2.1 → 2.2%); several targets unchanged; hold-out unchanged (one log's totals moved, no verdict).
+Worse, explained: 7910 is under-predicted and the replay-only Tangtang shots that offset part of it were past their
+channel; c3c7's three new attack-4 tail cuts use up the tail cut's 8 rounds, so its 101.77 s attack 1 tail stays
+(TAILKEPT `rounds`, the known limit); c779's newly landed hit is matched, its total over by 0.1 point more.
+
+Dead ends: the first version marked every landing a channel's tick body made, a buff's later ticks too (Rossi's
+afterhits got frame 25 as their end: 9a80 280 → 206 plain, 0c14 −54) and applied the bound to a skill's separate
+one-tick channels (Laevatain's normal_skill_during_ult: db87 236 → 199); a slack of 150 ms split Liino's and
+Arclight's channels, and a 400 ms one alone split c3c7's five ticks at their fourth (a cascade into the next cast).
+
+Still open: the multi-target cut landings; the CUTS record still flags an interrupt whose hits keepPrevious keeps
+(c779 70.67 s; replayrun.ts castFlag, the other agent's file); 4a64 16.93 s (Arcane's batched attack 4s, a value
+question, not this shape); the tail cut's round limit.
 
 ## 2026-11-27: Statuses per target: a second replay with each landing on its target
 
@@ -406,44 +456,3 @@ unheld presses).
 0.13–0.25 s after); 458b 87.47 s. Not taken up: the several-targets agent's 7b54 lead (Si's combo slashes on several
 slugs at one ms spread over the slots; a placement counting same-ms twins on several targets as one slot), left for
 the next round.
-
-## 2026-11-27: Several targets read per target
-
-**Goal:** the scoreboard's worst row, the three fights against several targets under one id (6339, 7b54: Hard 33's
-eight slugs; 9c6e: Hard 31's two Wanderers), on main at 0366a35 beside an agent on casts across a Stagger break: the
-per-target state the log check needs, built for the replay, and what stays one-sided.
-
-**Done:**
-- **Design** (docs/design/data.md "Several targets"): the simulation keeps one enemy; the check holds the targets. A
-  probe first (scratch, not kept): of 7b54's 204 hits with a landing, 65 fit their primary reading and 115 fit with
-  some of its enemy-side units left out, and the trial assignment's targets held their states over later hits
-  (Camille's 26.98–29.36 s hits all without Jade Vessel).
-- **packages/logs targets.ts** `assignTargets`, read through enginecheck.ts `fightTargets` (engine assumption
-  `several-targets`, default `targets`): each logged hit on a target (two hits one landing stands for at one ms on
-  two; else the alive target its value fits, the one hit last first, a new one only when none fits; a capped hit kills
-  its own); each target's units (enemy kit buffs, Corrosion / Electrification / Breach) as the replay's instances: one
-  it got kept to its expiry, one it was read without never later, an open one decided by the first hit that only one
-  choice fits. `readingBasis` drops the units a hit's target lacks; `killPurges` none (a kill ends its own target's:
-  buffreplay.ts's one line, committed alone); the replay's enemy stays through a kill gap with targets left
-  (fixture fields `severalTargets.atOnce`, `fromStart`; schema), whose landings the totals leave out; the totals count
-  a landing once more for each twin on another target whose value fits it.
-- tests/several-targets.test.ts; tests/slug-targets.test.ts under `one`; the evidence in docs/design/assumptions.md.
-
-**Scoreboard** (`npm run snapshots:update`): the several-targets row plain 54.1 → 68.5%, mismatch 27.6 → 15.4%, mean
-|damage error| 20.0 → 16.1%; 6339 better (plain 108 → 115, −19.7 → −10.3%), 9c6e better (244 → 314, mismatch 94 →
-33, −24.5 → −11.3%), 7b54 mixed (65 → 99, mismatch 116 → 83, +15.7 → +26.8%: its replay-only landings read with the
-one enemy's debuffs, which no kill purges now). Development, earlier pending, verified and hold-outs unchanged (no
-other log is marked); no simulation reads it: no team-ab.
-
-**Decisions:** the values decide a hit's target, as they decide a crit the log leaves out: the log has no target per
-hit and lists every target's debuffs under the one id; the persistence (an instance kept, one missed never had
-later) is what makes it evidence rather than a fit per hit. The totals' copies are gated on the twin's fit: ungated
-the row's mean was 26.3% (7b54 +61.3%: Si's combo finals the placement paired with slashes, once per slug), as one
-target 20.9%. Kill gaps kept: 6339 gets Camille's Vesperwings at 14.09 s as the log lists, and her weapon's Heat DMG,
-which it doesn't (a shielded slug takes no infliction): measured `targets-gaps-away` (one plain, 2.3 points of total
-the other way), kept for the log's listing.
-
-**Left** (docs/open-problems.md "Hard 33's Woodcraft Slugs"): the placement's twins (7b54's Si combos: logcasts.ts,
-the other agent's; friction report point 1), statuses' levels, bursts and Stagger per target (9c6e's second
-Wanderer's bursts), a shielded slug's landing (0 damage, no infliction, buffs applied), Camille's uncovered battle
-skill hits in 6339.

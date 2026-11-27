@@ -44,6 +44,8 @@ interface RawHit {
   heals?: "self" | "controlled" | "team";
   detached?: boolean;
   launch?: number;
+  /** From the data only (HitFacts.latest): never written in a kit. split:channel-end */
+  latestFrame?: number;
   world?: true;
   enemyDelay?: number;
   poise?: ValueExpr;
@@ -679,6 +681,7 @@ function kitChecker(scope: KitScope) {
         // Logged under a skill its skill launches as a projectile: it flies to the enemy after its frame.
         ...(events.length > 0 && events.every((e) => projectileSkills(src.skillId).has(e)) ? { travels: true as const } : {}),
         ...(h.launch !== undefined ? { launch: h.launch } : {}),
+        ...(h.latestFrame !== undefined ? { latestFrame: h.latestFrame } : {}), // split:channel-end
         ...(h.world ? { world: true as const } : {}),
         ...(h.enemyDelay !== undefined ? { enemyDelay: h.enemyDelay } : {}),
         ...(h.if ? { if: h.if } : {}),
@@ -997,6 +1000,7 @@ function withDataFacts(h: RawHit, all: HitFacts, kitElement: Element | undefined
     ...(h.poise === undefined && poise !== undefined ? { poise } : {}),
     ...(h.poiseControlledOnly === undefined && poise !== undefined && f.poiseControlledOnly ? { poiseControlledOnly: true } : {}),
     ...(h.detached === undefined && f.detached !== undefined ? { detached: f.detached } : {}),
+    ...(f.latest !== undefined ? { latestFrame: f.latest } : {}), // split:channel-end
     ...(h.energy === undefined && f.energy !== undefined && f.energy !== null ? { energy: f.energy as ValueExpr } : {}),
     ...(h.sp === undefined && f.sp !== undefined && f.sp !== null ? { sp: f.sp as ValueExpr, ...(h.spBeforeDamage === undefined && f.spBeforeDamage ? { spBeforeDamage: true as const } : {}) } : {}),
   };

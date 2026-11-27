@@ -460,13 +460,21 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
   return added.length ? ordered([...casts, ...added]) : [...casts];
 }
 
-/** Casts in time order, each keeping its operator's previous cast's hits when the log shows them after it started. */
+/**
+ * Casts in time order, each keeping its operator's previous cast's hits when the log shows them after it started. The
+ * previous cast is the latest with a logged landing: a cast made from a log event alone (no landing; the replay may
+ * skip it, as a press that did nothing or a kit buff's tick) isn't the one whose hits the next cast would cut
+ * (fc63a2001251 94.79 s: Arcane's attack 2 hit 3, logged after her attack 3 started, was cut because her combo event
+ * at 94.49 s, a tick of her Imprisonment that the replay skips, stood between; c7790d76a4f0 70.73 s, her attack 3's
+ * second hit, at her battle skill's event).
+ */
+// split:keep-past-hitless
 function ordered(casts: readonly ReplayedCast[]): ReplayedCast[] {
   const previous = new Map<string, ReplayedCast>();
   return [...casts].sort((x, y) => x.start - y.start).map((c) => {
     const prev = previous.get(c.operator);
     const r = { ...c, keepPrevious: prev !== undefined && prev.lastHit > c.start };
-    previous.set(c.operator, r);
+    if (!prev || c.landings.length > 0 || c.lastHit > c.start || prev.lastHit <= c.start) previous.set(c.operator, r);
     return r;
   });
 }

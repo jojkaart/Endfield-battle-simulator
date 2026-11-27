@@ -22,6 +22,15 @@ export const CAST_SLACK_MS = 1000;
 /** A cast's next landing of a key logged this close to its slot's frame (from the key's first landing) is that landing (ms). */
 const ON_TIME_MS = 150;
 
+/**
+ * How far past its channel's end (KitHit.latestFrame) a tick may land and still be its cast's, with no logged press of
+ * its operator since the cast's last landing (ms; split:channel-end):
+ * the logs run channels up to 0.23 s past the data's end (9090afbacec9 93.91 s Liino's attack 2, 4bfc6f3e84b8 52.23 s
+ * Arclight's attack 4, c3c735dbb022 60.94 s Si's attack 4: holds the replay doesn't know of, or a later start), while a
+ * new cast's ticks come 0.63 s or more past it (abfd4b7478ec 63.77 s, c3c735dbb022 33.64 s).
+ */
+const CHANNEL_SLACK_MS = 400;
+
 /** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
 export interface TimeStop {
   /** A frame (30 a second), not ms as the log's times; it lasts `scales.length` frames. */
@@ -518,6 +527,13 @@ export interface LoggedCast {
    * each start (a record: `zmdlogs casts --choices` prints it on the CAST line; jumpedFirst decides).
    */
   readonly paths?: readonly PathAlternative[];
+  /**
+   * Opened because its first landing came past the channel's end of the operator's cast of its key before (logcasts.ts
+   * placeWith `pastChannel`; a record for `zmdlogs casts --choices`): that cast's start, the world ms from its first
+   * landing, the channel's end from there (ms), and which bound: past CHANNEL_SLACK_MS, or past ON_TIME_MS with a press
+   * between. split:channel-end
+   */
+  readonly pastChannel?: { readonly cast: number; readonly elapsed: number; readonly end: number; readonly by: "slack" | "press" };
 }
 
 /**
@@ -1115,6 +1131,24 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // landing starts a new cast (3aa6ab93bad4: a cast of two strikes doesn't take the next cast's seven; d774d0ce7bd3:
         // a battle skill's strikes 2.6 s apart, no press between, are one cast's).
         const pressed = next?.variant === true && cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.first && c.t <= h.t && groups.find((x) => x.id === c.skill)?.kind === cur.cast.kind);
+        // A channel's tick lands by the channel's end (KitHit.latestFrame: its per-target cap, not the channel, ends its
+        // ticks; an enemy in reach late takes them up to there), so a landing of its key later than that from the cast's
+        // first landing is a new cast's, however long the skill's whole action (abfd4b7478ec 63.77 s: Si's attack 4 has
+        // 552 frames and a channel to frame 40; two ticks at 61.96 / 62.08 s, a battle press, then six at 63.77–64.35 s,
+        // which took the first cast's four slots left and cut the second's at 64.10 s; c3c735dbb022 33.64 s). Only one
+        // channel's own ticks, from its first (head and next slot the same kit hit): a skill of several one-tick channels
+        // (Laevatain's normal_skill_during_ult, frames 13 / 23 / 98) keeps the slack its stops need (db8711232de9 30.01 s).
+        const channel = next?.hits.find((x) => x.latestFrame !== undefined && head?.hits.includes(x)); // split:channel-end
+        // Past it by more than CHANNEL_SLACK_MS; or by more than ON_TIME_MS with a logged press of the operator's between
+        // the cast's last landing and this one (c3c735dbb022 60.64 s: one tick at 59.30 s, a battle press at 59.50 s,
+        // five ticks 0.1 s apart from 60.64 s, 1.34 s on; without the press the five would split at the slack).
+        const channelEnd = channel !== undefined && head !== undefined ? msOf((channel.latestFrame as number) - head.frame) : Infinity; // split:channel-end
+        const pressedBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.last.t && c.t < h.t); // split:channel-end
+        // Not across an ultimate's event: logged at its stop's end, its stop isn't among this pass's (unplacedCastStops
+        // start it at the event), and it held the channel (c83c75d02a85 92.48 s: Si's attack 4's third tick 0.01 s after
+        // Laevatain's 90.43–92.47 s ultimate stop, its event at 92.48 s, 0.1 s of world time after the second).
+        const ultimateBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.t > cur.last.t && c.t <= h.t && data.kits.operators[c.operator]?.skills.find((s) => s.skillId === c.skill)?.kind === "ultimate"); // split:channel-end
+        const pastChannel = !ultimateBetween && (elapsed > channelEnd + CHANNEL_SLACK_MS || (pressedBetween && elapsed > channelEnd + ON_TIME_MS)); // split:channel-end
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
@@ -1155,7 +1189,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // 0.34 s after the 17th, was placed as a combo of its own, whose hovering conversion gave three Hunting Arrows).
         const atSlot = cur?.slots?.[cur.index];
         const paced = cur !== undefined && next !== undefined && atSlot !== undefined && next.hits.every((x) => x.detached) && worldMs(cur.last.t, h.t, others) <= msOf(next.frame - atSlot.frame) + ON_TIME_MS;
-        if (cur && !used && (sameUltimate || (!superseded && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) {
+        if (cur && !used && (sameUltimate || (!superseded && !pressed && !pastChannel && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) { // split:channel-end
           cur.index++;
           cur.last = h;
           const s = cur.slots;
@@ -1210,7 +1244,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const paths = joined === null && s ? pathAlternatives(data, g, h, s, skillCasts, others) : [];
         const firstIndex = jumped?.index ?? 0;
         const first = s?.[firstIndex];
-        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}) };
+        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}), ...(pastChannel && cur ? { pastChannel: { cast: cur.cast.start, elapsed, end: channelEnd, by: elapsed > channelEnd + CHANNEL_SLACK_MS ? ("slack" as const) : ("press" as const) } } : {}) }; // split:channel-end
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;

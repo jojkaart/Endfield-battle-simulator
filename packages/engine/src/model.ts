@@ -496,6 +496,14 @@ export interface KitHit {
    */
   readonly launch?: number;
   /**
+   * A channel's ticks capped per target before the channel ends (SkillData ChannelingAction maxCountPerTarget; the kit
+   * compiler sets it from the data): `frames` are the earliest, for an enemy in reach from the channel's start, which
+   * is where the engine lands them; an enemy that comes into reach later takes them later, up to this skill frame (the
+   * channel's end). Si's attack 4: 6 ticks at frames 5–20 of a channel to frame 40. The log placement reads it
+   * (logcasts.ts: no landing of a cast's channel past it). split:channel-end
+   */
+  readonly latestFrame?: number;
+  /**
    * A detached hit a buff's timeline deals (a buff the cast puts on its operator whose triggers strike): on the
    * world's clock, so every slow-down holds it, the operator's own ultimate stop too (Zhuang Fangyi's Thunder Strikes
    * from buff_chr_0030_zhuangfy_normal_skill_trigger_sword: the logs resume them at her ultimate's end, d774 102.17 s,
