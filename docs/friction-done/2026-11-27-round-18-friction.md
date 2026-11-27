@@ -58,3 +58,15 @@ repeated.
 - `node scripts/cli-ab.ts 5cf680e --placement` answered "do the new placement records move a slot" for every log in
   two minutes; `npm run measure -- --logs … --variant <file>:<CONST>=…` checked the new --set end to end on three logs.
 - The reports' episodes as tests (d774, 40d9, 6339, 1d91, 5082, 107766a): each tool had its first case ready.
+
+## Outcome (round 19)
+
+- 1 (A hold-out has two key forms, and code that tests the key prefix leaks or miscounts): done (662d8e3):
+  scripts/accuracy.ts isHoldoutKey (either form, the snapshots' split) and pairKey; tests/holdout-blindness.test.ts
+  runs every printer of accuracy.ts and measure.ts on synthetic snapshots whose hold-out moves (alone, beside a
+  development log, new, gone) and fails if its id appears; every exported function of the two is classified there (a
+  printer it runs, or why it prints no log). It fails with splitLines' round-18 prefix test.
+- 2 (friction.ts outcomes misses a carried backlog point when the label isn't the file name): done (ca62ffc):
+  carriedFrom matches a backlog by the label carry writes ("backlog after round N") as well as its file name.
+- 3 (A script run at an older commit's code can't import a name that commit lacks): done (ca62ffc): at-commit.ts
+  outputInTree's comment and docs/design/tests.md: import by namespace and check for a newer name.

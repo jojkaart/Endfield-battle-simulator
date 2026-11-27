@@ -16,18 +16,18 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–18
-  done (round 18, 2026-11-27: TAILKEPT, a late join's rule and REALIGN
-  on the casts view, the `kill` flag, `measure --set` and `--split
-  hunks`, the moved hold-outs' decisions by kind, `accuracy.ts --compare
-  --regroup`, `totals --json`'s share and `--skip`, `casts --json` and
-  cli-ab by field, `zmdlogs stack`, twin bursts, clocks' Stagger-break
-  rows, bash-guard's stale commit message); the backlog
-  ([2026-11-27-backlog-after-round-18.md](friction/2026-11-27-backlog-after-round-18.md),
-  3 points: the per-layer clock, an assumption's evidence text out of the
-  engine's source, `holds --steps`; on its accuracy list the element mask
-  of log-only buffs, 14 factor stretches and a hold at a Stagger break)
-  joins the next round once about five new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–19
+  done (round 19, 2026-11-27: the assumption registry out of timeline/
+  with its evidence in [design/assumptions.md](design/assumptions.md),
+  every reader through `readingOf` and a trace test, `zmdlogs
+  followups`, `--against-lanes` ends, `holds --steps`, `gamedata enemy`
+  and an entity's tree, the hold-outs' key test and a blindness test
+  over every printer); the backlog
+  ([2026-11-27-backlog-after-round-19.md](friction/2026-11-27-backlog-after-round-19.md),
+  2 points: clocks around a non-cast hold, the same-listing flag for two
+  targets; on its accuracy list the element mask of log-only buffs, 14
+  factor stretches and the recorded Stagger start) joins the next round
+  once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's
