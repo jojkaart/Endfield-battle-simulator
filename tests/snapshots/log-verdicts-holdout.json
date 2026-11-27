@@ -70,11 +70,11 @@
   "totals": {"damage":0.3,"operator chr_0036_jsspsi":-1,"operator chr_0028_wulfa":0.7,"operator chr_0032_lizhiyan":1.4,"operator chr_0013_aglina":0.2,"kind basic":0.8,"kind battle":2.3,"kind combo":-1.7,"kind none":0.5,"kind status":-1.5,"kind ultimate":0,"hits":-0.2,"status hits":0,"staggered hits":-0.5,"last hit":0,"time to kill":-0.1,"crit share (points)":-0.1,"share matched":0.4,"share replay-only":0.1,"share log-only":-0.2,"share operator chr_0036_jsspsi":29.8,"share operator chr_0028_wulfa":59.6,"share operator chr_0032_lizhiyan":8.2,"share operator chr_0013_aglina":2.3}
  },
  "holdout/zmdlogs-890bcadb4933.json": {
-  "chr_0030_zhuangfy": {"plain":150,"assumed":10,"fallback":28,"mismatch":21,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0030_zhuangfy": {"plain":173,"assumed":10,"fallback":9,"mismatch":17,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0004_pelica": {"plain":51,"assumed":0,"fallback":2,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":74,"assumed":5,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":183,"assumed":9,"fallback":13,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-2.7,"operator chr_0032_lizhiyan":-1.6,"operator chr_0004_pelica":-0.4,"operator chr_0035_liino":-0.7,"operator chr_0030_zhuangfy":-2.9,"kind basic":-4.6,"kind battle":-1.9,"kind combo":-4.3,"kind status":1.4,"kind ultimate":-8,"hits":3.6,"status hits":0,"staggered hits":-5.7,"last hit":0,"time to kill":null,"crit share (points)":-0.1,"share matched":-1.8,"share replay-only":0.8,"share log-only":-1.7,"share operator chr_0032_lizhiyan":6.3,"share operator chr_0004_pelica":1.2,"share operator chr_0035_liino":2.7,"share operator chr_0030_zhuangfy":89.8}
+  "totals": {"damage":-2.3,"operator chr_0032_lizhiyan":-1.6,"operator chr_0004_pelica":-0.4,"operator chr_0035_liino":-0.7,"operator chr_0030_zhuangfy":-2.5,"kind basic":-2.3,"kind battle":-1.9,"kind combo":-4.3,"kind status":1.4,"kind ultimate":-8,"hits":1.5,"status hits":0,"staggered hits":-5.7,"last hit":0,"time to kill":null,"crit share (points)":-0.1,"share matched":-1.2,"share replay-only":0.6,"share log-only":-1.7,"share operator chr_0032_lizhiyan":6.3,"share operator chr_0004_pelica":1.2,"share operator chr_0035_liino":2.7,"share operator chr_0030_zhuangfy":89.8}
  },
  "holdout/zmdlogs-c421e6ed4a3b.json": {
   "chr_0016_laevat": {"plain":87,"assumed":4,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0},
@@ -88,6 +88,6 @@
   "chr_0036_jsspsi": {"plain":12,"assumed":17,"fallback":21,"mismatch":14,"unvalued":0,"unquantified":3,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":20,"assumed":17,"fallback":51,"mismatch":9,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0006_wolfgd": {"plain":0,"assumed":0,"fallback":0,"mismatch":68,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":16,"operator chr_0006_wolfgd":72.9,"operator chr_0016_laevat":13.2,"operator chr_0036_jsspsi":18.7,"operator chr_0032_lizhiyan":13.2,"kind basic":18.4,"kind battle":7.2,"kind combo":3.7,"kind status":167.4,"kind ultimate":36.7,"hits":7,"status hits":95,"staggered hits":0,"last hit":0,"time to kill":-6.3,"crit share (points)":0.4,"share matched":4.5,"share replay-only":18.3,"share log-only":-6.9,"share operator chr_0006_wolfgd":1.5,"share operator chr_0016_laevat":62.2,"share operator chr_0036_jsspsi":32.8,"share operator chr_0032_lizhiyan":3.5}
+  "totals": {"damage":15.9,"operator chr_0006_wolfgd":72.9,"operator chr_0016_laevat":13.2,"operator chr_0036_jsspsi":18.7,"operator chr_0032_lizhiyan":13.2,"kind basic":18.3,"kind battle":7.1,"kind combo":3.7,"kind status":167.4,"kind ultimate":36.7,"hits":7,"status hits":95,"staggered hits":0,"last hit":0,"time to kill":-6.3,"crit share (points)":0.4,"share matched":4.5,"share replay-only":18.3,"share log-only":-6.9,"share operator chr_0006_wolfgd":1.5,"share operator chr_0016_laevat":62.2,"share operator chr_0036_jsspsi":32.8,"share operator chr_0032_lizhiyan":3.5}
  }
 }
