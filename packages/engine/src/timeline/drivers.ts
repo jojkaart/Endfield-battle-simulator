@@ -223,6 +223,28 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
 }
 
 /**
+ * One of several targets dies at `frame` (the log check's replay: a fight against several targets under one enemy id,
+ * packages/logs targets.ts deathMoves): the team's `targetDeath` triggers run (Camille's Vesperwings moving to the next
+ * target). The replay's one enemy stays, with its state: which target carries what is the log check's to read.
+ * `landings`: the hits the triggers schedule at their logged frames, as replayCast's (pinned: the log's time has the
+ * travel the data doesn't give in it); the first not yet pinned landing of trigger `trigger`'s hit `hitId` lands at
+ * `frame`, with `ref` (its LandedHit carries it and its facts).
+ */
+export function targetDies(ctx: TimelineContext, state: TimelineState, frame: number, landings: readonly { readonly trigger: string; readonly hitId: string; readonly frame: number; readonly ref?: string; readonly ms?: number }[] = []): TimelineState {
+  const st = advance(ctx, state, frame);
+  const before = new Set(st.scheduled);
+  const out = runTriggers(ctx, st, [{ type: "targetDeath", frame, operator: st.controlled }], null);
+  if (landings.length === 0) return out;
+  const fresh = ofKind(out.scheduled, "hit").filter((h) => !before.has(h) && h.trigger !== undefined);
+  const moved = new Map<PendingHit, PendingHit>();
+  for (const l of landings) {
+    const h = fresh.find((x) => !moved.has(x) && x.trigger?.id === l.trigger && x.hitId === l.hitId);
+    if (h) moved.set(h, { ...h, frame: Math.max(frame, l.frame), pinned: true, ...(l.ref !== undefined ? { ref: l.ref } : {}), ...(l.ms !== undefined && l.frame >= frame ? { loggedMs: l.ms } : {}) });
+  }
+  return { ...out, scheduled: out.scheduled.map((x) => (x.kind === "hit" ? (moved.get(x) ?? x) : x)) };
+}
+
+/**
  * The jumps a replayed cast's logged landings show its triggers took (replayCast): an end of the cast that would drop a
  * landing the log shows wasn't reached, because a kit trigger's `jump` on the skill to past that end was taken on an
  * event the replay doesn't see (Snowshine's battle skill: attacked in frames 0–51, the counter jumps to 107; not

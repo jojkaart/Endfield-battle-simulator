@@ -4,7 +4,7 @@
   "sources": [
     "Camille (Heat, polearm, 6-star). Hits, frames, log keys, poise, energy and SP from efsim kit-draft (rmxlinux Json/SkillData chr_0033_camille_* and the files they reach; values at each skill's level from SkillPatchTable); hand-written: the combo trigger, the hovering Vesperwings debuff, the Vesperwings explosion (an ability entity's passive the compiler doesn't reach), Link (ComboAction), the heals, Hunter Pursuit's state and talents 1 and 2. Report: docs/kit-batches/batch-4/chr_0033_camille.md.",
     "Talent 1 (Hunter of Transgression, talent index 0) sets talent_0 = 1, heal_base / heal_sub_multi and combo_duration 15 on combo_skill and combo_skill_2 (CharGrowthTable talent node effects): its branches are gated by talentAtLeast [0, 1]. Talent 2 (Bloodfount Revival, index 1) attaches chr_0033_camille_passive_talent1 (atk_up, duration, teammate_rate). Potentials (CharacterPotentialTable) come from the data as skill values and skillParams: P1 weak_scale / vulnerable_scale +0.05 and bat_duration +15; P2 Agility and Intellect +20 (panel); P3 combo cooldown -2 s, combo and Hunter Pursuit multipliers x1.3 and their atb / atb_ex x1.15; P4 ultimate cost x0.85; P5 talent-2 atk_up +0.06.",
-    "Interims (report section 'Kit (2026-10-21)'): Hunter Pursuit (comboWindow false) is cast by its own skill ID; the combo's and ultimate's windows list normal_skill_2 (the button), and the loader opens them for combo_skill_2 too (the button's switchToBuffConfig casts it), so it starts at 51 / 125. Projectile travel (Ti2) and hit-stops (Ti1b) aren't modelled. One enemy: the battle skill's retarget path (listen_target_dead → projhit_sub → abilityrange) never runs."
+    "Interims (report section 'Kit (2026-10-21)'): Hunter Pursuit (comboWindow false) is cast by its own skill ID; the combo's and ultimate's windows list normal_skill_2 (the button), and the loader opens them for combo_skill_2 too (the button's switchToBuffConfig casts it), so it starts at 51 / 125. Projectile travel (Ti2) and hit-stops (Ti1b) aren't modelled. The battle skill's retarget path (listen_target_dead → reset_target → projhit_sub → abilityrange) is trigger vesperwings_move on a target's death, which only the log check's replay of a fight against several targets makes (2026-11-27)."
   ],
   "assumptions": [
     {
@@ -179,6 +179,34 @@
         { "kind": "buff", "buff": "bloodfount_team", "layers": 2 }
       ],
       "note": "chr_0033_camille_passive_talent1 abilityEvent 45 (OnReceiveHeal: heals Camille receives, from anyone) + CheckHealTag (battle −320297214, combo −1517158118, ultimate −1499119779): a layer for Camille and each teammate, and a second one if CheckOverHeal (already at Max HP: always, operators count as topped up, batch-3 N2). Logs: two layers at every own combo heal. A teammate's skill heal counting too is the data's reading (OnReceiveHeal; the healer's own heals are abilityEvent 50); in-game test 93 checks it."
+    },
+    {
+      "id": "vesperwings_move",
+      "on": { "event": "targetDeath" },
+      "by": "anyone",
+      "if": { "enemyBuff": "buff_chr_0033_camille_normal_skill_weak" },
+      "skill": "chr_0033_camille_normal_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "world": true,
+          "hits": [
+            {
+              "id": "move",
+              "label": "Vesperwings moving to the next target",
+              "scale": ["atk_scale"],
+              "frames": [3],
+              "damageType": "battle",
+              "element": "fire",
+              "poise": "poise",
+              "events": ["chr_0033_camille_normal_skill_abilityrange"],
+              "applies": [{ "kind": "infliction", "element": "fire" }],
+              "buffs": [{ "buff": "vesperwings", "beforeDamage": true, "keepEnd": true }]
+            }
+          ]
+        }
+      ],
+      "note": "The Vesperwings entity puts buff_chr_0033_camille_normal_skill_listen_target_dead on its target (abilityrange_first and abilityrange, frames 0–2000, a child of the entity). At the target's death (abilityEvent 1, HP 0) it creates buff_chr_0033_camille_normal_skill_reset_target on the entity (0.1 s: frame 3), whose end finds the next target (the highest priority, not the dead one; none: FinishOwnerAction, the entity and its debuff end), launches projectile_chr_0033_camille_normal_skill_last → normal_skill_projhit_sub (its target dead by then: reset_target again) → CastSkill normal_skill_abilityrange on it, with EntityBB_bat_duration = the time left of the bat_duration_icon buff (SaveBuffLifeTime remain_time: keepEnd). abilityrange frame 0: the debuff (weak, before the damage, as the first's), Heat infliction and DamageAction EntityBB_atk_scale (the battle skill's atk_scale; logged 9287 in 6339 as the `_first` hits) with EntityBB_poise; no team energy (that is the battle skill's projhit). The projectile's travel isn't in the data (Ti2, as the battle skill's own): logged 0.23–0.54 s after a kill. On the world's clock (an entity's timeline). The simulation's one enemy never dies; the log check's replay lands it at each logged move (packages/logs targets.ts deathMoves: 6339 ×5, 7b54 ×1), its normal_skill event there no press."
     },
     {
       "id": "hunter_on",

@@ -28,7 +28,7 @@ import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { stageNote, teamBuffNames, type KillKind, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
 import { kindsAggregate, type KindShare } from "./onesided.ts";
-import { batchDecision, batchDisagreements, decisionText, landingsOf, replayDecisions } from "./decisionsview.ts";
+import { batchDecision, batchDisagreements, deathDecisions, decisionText, landingsOf, replayDecisions } from "./decisionsview.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
@@ -355,7 +355,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   // The replay's own decisions (decisionsview.ts replayDecisions, from BuffReplay's records): SKIP the logged casts it
   // didn't make and why, TAILCUT those it ended after their last logged landing, FAILED / MISSED, INFER the hitless
   // presses it made from the listing, MADE a cast made as another skill than the placement's, FORCED / INSIDE / CUTS.
-  for (const d of replayDecisions(data, replay)) if (inWindow(f, d.t) && mine(f, d.operator)) lines.push({ t: d.t, order: 1, text: decisionText(d) });
+  for (const d of [...replayDecisions(data, replay), ...deathDecisions(data, fx)]) if (inWindow(f, d.t) && mine(f, d.operator)) lines.push({ t: d.t, order: 1, text: decisionText(d) });
   // The log's cast events and what the cast assembly made of each (loggedCastFates), with where the event sits in its
   // skill's stop (castEventPlace; placement leads report point 1: "0.02 s of world time apart" hid 1.76 s of log time).
   const hitTimes = fx.hits.map((h) => h.t).sort((a, b) => a - b);
@@ -415,8 +415,10 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
               ? "a cast of its own (no hit of the skill in the log)"
               : e.fate === "follow-up"
                 ? "a follow-up-only skill: left to the engine"
-                : "no kit skill of that id: ignored";
-    const fate = e.fate === "tick" ? null : replayFate(e);
+                : e.fate === "move"
+                  ? `the log's record of ${e.move ?? "a kit trigger"}'s landing at a target's death (targets.ts moveEvent: the entity's cast logged under the skill): no press; the replay lands the move itself (a death step, DEATH)`
+                  : "no kit skill of that id: ignored";
+    const fate = e.fate === "tick" || e.fate === "move" ? null : replayFate(e);
     lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}${fate ? `; ${fate}` : ""}${place ? `; ${eventPlaceText(place)}` : ""}` });
   }
   for (const x of replay.traces) {
@@ -498,7 +500,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame), DEATH a target's death made where a kit's move at one is logged (Camille's Vesperwings)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
   return [head, render(lines), ...pairs].join("\n");
 }
 

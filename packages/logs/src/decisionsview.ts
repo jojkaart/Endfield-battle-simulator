@@ -6,12 +6,13 @@
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
 
-import { FPS, parseReactionEvent, withCurveReading, type GameData, type LandedHit } from "@efsim/engine";
+import { effectiveKit, FPS, parseReactionEvent, withCurveReading, type GameData, type LandedHit, type OperatorKit } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder } from "./castassembly.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
+import { deathMoves } from "./targets.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.replace(/^chr_\d+_/, "");
@@ -19,13 +20,30 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
+  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "FORCED" | "INSIDE" | "CUTS" | "DEATH";
   readonly operator: string;
   readonly text: string;
 }
 
+/**
+ * The targets' deaths the replay makes (replayrun.ts, engine targetDies) where a kit's targetDeath trigger's hit is
+ * logged (targets.ts deathMoves: Camille's Vesperwings moving to the next slug): DEATH lines.
+ */
+export function deathDecisions(data: GameData, fx: LogFixture): DecisionLine[] {
+  const kits = fx.team.flatMap((b): OperatorKit[] => {
+    const k = effectiveKit(data, b);
+    return k ? [k] : [];
+  });
+  return deathMoves(fx, kits).map((m) => ({
+    t: msOf(m.frame),
+    kind: "DEATH",
+    operator: m.operator,
+    text: `a target's death made at ${s(msOf(m.frame))} (${m.kill ? `the logged kill, ${shortSkill(m.kill.event)} at ${s(m.kill.t)}` : "no logged kill within 1 s before: the trigger's lead before its landing"}) for ${label(data, m.operator)}'s ${m.trigger}, its landing pinned at the logged ${shortSkill(m.hit.event)} ${m.hit.value} at ${s(m.hit.t)} (targets.ts deathMoves); a cast event of its operator at that ms is no press (moveEvent)`,
+  }));
+}
+
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "FORCED", "INSIDE", "CUTS"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "FORCED", "INSIDE", "CUTS", "DEATH"];
 
 /** The replay's landing of each logged hit (the hit it stands for), as the log check finds it, and why the others have none. */
 export function landingsOf(replay: Pick<BuffReplay, "landing" | "statusLanding">, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
@@ -87,6 +105,7 @@ export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixt
   const out: DecisionLine[] = [];
   const who = (op: string) => label(data, op);
   if (fx) for (const b of batchDisagreements(fx, replay.hits, landingsOf(replay, fx).byLanding)) out.push(batchDecision(data, b));
+  if (fx) out.push(...deathDecisions(data, fx));
   for (const x of replay.skipped) out.push({ t: msOf(x.frame), kind: "SKIP", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
   for (const x of replay.tailCuts) out.push({ t: msOf(x.frame), kind: "TAILCUT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): ended after its last logged landing, none of its later ones in the log (unlogged-tails)` });
   // A tail the cut's guards kept (replayrun.ts tailCuts' `kept`): which guard, and what it found.

@@ -894,6 +894,19 @@
                 "additionalProperties": false,
                 "properties": {
                   "event": {
+                    "const": "targetDeath"
+                  }
+                },
+                "description": "One of several targets dies (BuffData abilityEvent 1 on a buff the target carries; `if` reads the enemy then, `enemyBuff`: the dead target carried it). Only the log check's replay has one (at the logged landings of the trigger's hits): a simulation's one enemy lives to the fight's end."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
                     "const": "perfectDodge"
                   }
                 },
@@ -3373,6 +3386,10 @@
                 "type": "integer",
                 "minimum": 1,
                 "description": "It ends at this skill frame of the operator's current skill, or when that skill ends sooner (CreateBuffAction autoFinishByAction in a clip shorter than the cast)."
+              },
+              "keepEnd": {
+                "const": true,
+                "description": "A new instance that ends where the operator's active one ends (it replaces that one; with none active, the buff's own duration): SaveBuffLifeTime remain_time passed on as the new buff's duration (Camille's Vesperwings moving to the next target)."
               }
             }
           }

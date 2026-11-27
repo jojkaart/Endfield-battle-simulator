@@ -8,6 +8,7 @@
 import { allActions, applyBuff, chanceJumpsOf, hitLandingFrames, pathTwin, skippedHits, takenPathLandings, computeStats, readingOf, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { awayWindows, loggedNames } from "./enginecheck.ts";
+import { deathMoves, moveEvent } from "./targets.ts";
 import { buttonVariants, castFrames, excludes, neededBuffs, nominalScale, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /** The game buffs the log lists with values somewhere (effects or boundary effects). */
@@ -842,9 +843,13 @@ export interface LoggedCastFate {
   /**
    * "placed": a placed cast's own event (`cast`: its start and the world time between, ms); "tick": a tick of a buff
    * (KitBuff.ticksLoggedAs) or "press" / "cast": added as a cast of its own (a slot press when the skill's hits show
-   * elsewhere); "follow-up": a follow-up-only skill, left to the engine; "unknown": no kit skill of that id.
+   * elsewhere); "follow-up": a follow-up-only skill, left to the engine; "move": the log's record of a kit's move at a
+   * target's death (targets.ts moveEvent: Camille's Vesperwings), no press, its trigger `move`; "unknown": no kit skill
+   * of that id.
    */
-  readonly fate: "placed" | "tick" | "press" | "cast" | "follow-up" | "unknown";
+  readonly fate: "placed" | "tick" | "press" | "cast" | "follow-up" | "move" | "unknown";
+  /** "move": the targetDeath trigger whose landing the event is at. */
+  readonly move?: string;
   readonly cast?: { readonly start: number; readonly world: number };
   /** "placed" as a cast of another skill of its kind, the variant the kit casts in its place (variantCastOf). */
   readonly variant?: string;
@@ -865,12 +870,15 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
   const placed = replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`));
   const stops = castTimeStops(data, placement.casts, castFrames(placement));
   const near = loggedCastMatcher(kits, stops);
+  const moves = deathMoves(fx, kits);
   return (fx.casts ?? []).map((lc): LoggedCastFate => {
     const base = { t: lc.t, operator: lc.operator, skill: lc.skill };
     const kit = kits.find((k) => k.operator === lc.operator);
     const skill = kit?.skills.find((x) => x.skillId === lc.skill);
     if (!skill) return { ...base, fate: "unknown" };
     if (skill.followUpOnly) return { ...base, fate: "follow-up" };
+    const move = moveEvent(moves, lc);
+    if (move) return { ...base, fate: "move", move: move.trigger };
     const c = placed.find((x) => near(x, lc, lc.skill));
     if (c) return { ...base, fate: "placed", cast: { start: c.start, world: Math.max(0, worldMs(Math.min(c.start, lc.t), Math.max(c.start, lc.t), stops)) } };
     const tick = kit?.buffs.find((d) => d.ticksLoggedAs === lc.skill);
@@ -943,8 +951,13 @@ export function replayStops(data: GameData, kits: readonly OperatorKit[], casts:
  * hits, buff ends and exits (castsFromBuffLanes, castsFromTriggerHits, castsFromBuffEnds, exitPresses), and the presses
  * that pull a buff (pullingPresses).
  */
-export function assembleCasts(data: GameData, fx: LogFixture, placement: Placement, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> = {}): ReplayedCast[] {
+export function assembleCasts(data: GameData, logged: LogFixture, placement: Placement, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> = {}): ReplayedCast[] {
   if (kits.length === 0) return [];
+  // The log's record of a kit's move at a target's death (targets.ts moveEvent: Camille's normal_skill event at her
+  // Vesperwings' landing on the next slug) is no press: left out of every pass; the replay lands the move itself
+  // (replayrun.ts, a death step at each logged move).
+  const moves = deathMoves(logged, kits);
+  const fx: LogFixture = moves.length ? { ...logged, casts: (logged.casts ?? []).filter((lc) => !moveEvent(moves, lc)) } : logged;
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
   // Engine assumption listed-casts: with `inferred`, the casts the log shows only by a buff one of their hits alone gives.
   const listedCasts = readingOf(assume, "listed-casts") === "inferred";
