@@ -42,7 +42,8 @@ her ultimate had no landing; branch worktree-agent-aef72dfd574eeedc4.
 ## 3. The replay's Stagger window start was derived, and an engine stop broke it
 
 - **What happened:** after the hold, the replay's Stagger windows started 16 frames after every break (my probe of
-  window starts against logged breaks: most at +15–17 frames): replayrecord.ts derived a window's start as `until −
+  window starts against logged breaks: most at +15–17 frames; the fix was later dropped on the hold-outs, the late
+  start feeding the hidden holds' still spans): replayrecord.ts derived a window's start as `until −
   staggerFrames`, which a stop at the break moves. The hidden holds' still spans then let holds rise in those frames.
 - **Cause:** the engine's Stagger state has no start (TimelineState.stagger: poise, until, finisherUsed), so the
   recorder reconstructs it.

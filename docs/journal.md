@@ -24,18 +24,20 @@ ultimate placed as battle-skill hits.
   0.46 s, and 12f–18f match alike while 16f/18f put c83c's total 5 points off (a tail cut's threshold).
 - The replay: its tick bounds take the logged breaks as stops (holds.ts loggedBreaks, breakStops), so the hidden
   holds don't place the hold again; it holds only at the breaks the log shows (TimelineScenario.loggedBreaks, ±4
-  frames: 6339, d4fb, f978 and 0c14 break the replay's own bar where the log has none); its Stagger window starts at the
-  break, not after the hold (replayrecord.ts). 5082's Yvonne keeps her chain at 45.06 s.
+  frames: 6339, d4fb, f978 and 0c14 break the replay's own bar where the log has none). 5082's Yvonne keeps her chain
+  at 45.06 s. Dropped after the split: the replay's Stagger window recorded from the break, not 14 frames later
+  (docs/tried/2026-11-27-break-window-start.diff; the hold-outs 2 better without it).
 - **Rossi's bleed runs through her ultimate's freeze** (kit `runsThroughFreeze` on Razor Clawmark): the replay held it
   +93 frames at the freeze (frames 57–150 of her ultimate on an Elite), and the log's ticks run a second apart there in
   every Elite log (99fb, 2fd9, 207f). Nothing ended the bleed: the "ended" one was held, so its logged ticks had no
   replayed landing and the placement took them for a battle skill's.
 
-**Scoreboard** (`npm run snapshots:update` after merging main at f96757f): development plain 83.9 → 84.2%, mismatch
-4.8 → 4.7%, mean |damage error| 1.2 → 1.3%; earlier pending plain 81.9 → 82.2%; verified unchanged; hold-outs plain
-82.9 → 82.4%, |damage error| 6.3 → 6.4% (2 logs worse, about 30 hits plain → assumed: still matched, under every hold
-length; the cause isn't known, a candidate is in open-problems). Rossi's bleed alone: 207f, 489c, 9a80, 2fd9, 99fb
-plain up, one hold-out better.
+**Scoreboard** (`npm run snapshots:update` at the final commit, against f96757f): development plain 83.9 → 84.2%,
+mismatch 4.8 → 4.7%, mean |damage error| 1.2 → 1.3%; earlier pending plain 81.9 → 82.2%; verified unchanged;
+hold-outs plain 82.9 → 82.5%, mismatch 5.4 → 5.3%, |damage error| 6.3 → 6.4% (2 logs, about 30 hits plain → assumed:
+still matched, under every hold length). The split (open-problems' table): the hold itself carries the hold-outs'
+loss; the gate, the tick stops and the Stagger end don't; Rossi's bleed alone moves no hold-out aggregate (development
+plain +0.1, and its fights' totals 207f 0.4 → 1.1%, 99fb −0.1 → 0.5%: more of the logged ticks land).
 
 **Team numbers** (`node scripts/team-ab.ts --base a6c425f`, 32 seeds): the owner's team (estella-si-akekuri-arcane)
 sustained DPS −0.89% (full energy, sd 2.9%) and −0.90% (zero); Typhoeus's team −0.60% / −0.36%: every break now costs

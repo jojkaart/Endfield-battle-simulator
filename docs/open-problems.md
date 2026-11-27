@@ -79,7 +79,23 @@ development logs (klbear, kltdcap, bigents, jsspsi, rodin, fdcentur). The next l
 engine assumption `break-hold` `14f` (timeline/clock.ts breakHold, landing.ts at dealPoise's `staggered`): the
 breaking hit holds the world, the enemy and every operator 14 frames at scale 0; not inside an ultimate's stop. The
 replay's tick bounds take the logged breaks as stops (holds.ts breakStops), so the hidden holds don't place it again;
-the replay's Stagger window starts at the break (replayrecord.ts). 5082 45.06 s: Yvonne's press continues her chain.
+the replay holds only at the breaks the log shows (TimelineScenario.loggedBreaks). 5082 45.06 s: Yvonne's press
+continues her chain. Tried and dropped: the replay's Stagger window recorded from the break rather than 14 frames
+later (docs/tried/2026-11-27-break-window-start.diff: hold-outs 2 better without it, development mixed).
+**The parts, measured** (against f96757f; `measure --split hunks`, and leave-one-out variants of each part on the
+branch; hold-outs as aggregates):
+
+| Part | Development plain | Hold-outs plain | Earlier pending plain |
+|---|---|---|---|
+| Rossi's bleed alone | 83.9 → 84.0% | 82.9% (1 mixed) | 81.9% (1 better, 1 mixed) |
+| the engine hold (with the tick stops and the gate) alone | 83.9 → 84.1% | 82.9 → 82.4% (2 worse) | 81.9 → 82.0% |
+| without the gate | 84.2% | 82.4%, mismatch 5.4 → 5.5% | 82.2 → 82.1% |
+| without the tick stops | 84.2% | 82.4% (1 better) | 82.2 → 82.0% |
+| without the window start (dropped) | 84.2% (mixed) | 82.4 → 82.5% | 82.2% |
+| the hold's Stagger end not held | no verdict moves in any group | | |
+| no hold (`none`), the rest kept | 84.2 → 84.0% | 82.4 → 82.9% | 82.2 → 81.9% |
+
+So the hold-outs' loss is the hold itself; no other part carries it.
 **Ruled out:** a length in the data (every one of the 1514 damage units carries enablePoiseBreakTimeDilation true; no
 table or BuffData file gives the break's dilation; BattleConst has none); the Stagger Node's buff
 (buff_common_mini_poise_break, its own 0.5 s layer-1 dilation) holding any clock: 86 node crossings, casts and ticks
@@ -91,8 +107,12 @@ threshold); where the hold sits against the logged ms of the breaking hit (9090 
 the next hits 0.1–0.35 s after it); whether a break inside a combo's slow-down holds (4360 49.14 s, d4fb 97.05 s,
 c4f3 82.65 s: hits 0.13–0.25 s after, all three Lifts or combos inside a combo's stop); breaks inside an ultimate's
 stop (4d60 56.29 s, 9a80 34.94 s: hits 0.08–0.23 s after; `16f-all` measured worse). The hold-outs: plain 82.7 →
-82.2% under every length (82.9 → 82.4% after main at f96757f; 2 logs, about 30 hits plain → assumed, still matched); one candidate, a replay whose Stagger
-is the engine's own (no listing) and now ends 0.47 s later, so hits at its end read on the Stagger's other side (no development log shows it: those with no listing never move).
+82.2% under every length (82.9 → 82.5% at the final commit; 2 logs, about 30 hits plain → assumed, still matched).
+Ruled out for them: the Stagger's end moved by the hold (the replay's Stagger follows the log's listing; holding the
+Stagger's end or not moves no verdict anywhere); the gate, the tick stops (table). The Stagger's end in a simulation:
+against the development logs' bracketed Stagger ends (`zmdlogs stagger`, 35 runs), the engine's own end with the hold
+is a median 0.32 s late (19 long, 16 short), without it 0.33 s early (16 / 19): the logs don't choose; a
+`stagger-recovery` of about 1.7 s with the hold would centre it.
 **Next check:** the hold's position against the breaking hit's logged ms (the three "before" cases against the
 others: the gap before the break); a `stagger-recovery` refit with the hold on the enemy's clock (`zmdlogs stagger`:
 the engine's own runs short in 18 of 71, quartiles 0.43 / 0.84 / 1.62 s, against 20, 0.60 / 1.53 / 3.32 s without).
