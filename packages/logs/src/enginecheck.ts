@@ -8,8 +8,8 @@
 // replacing them: where they differ is reported (logDifferences). docs/design/data.md, "The log check's rule".
 
 import {
-  ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, readingOf, FPS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
-  type CritMode, type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
+  ARTS_ELEMENTS, Attr, activeModifiers, corrosionModifier, effectiveKit, readingOf, FPS, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES, statusModifiers, targetEnemy,
+  type CritMode, type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type LandingTarget, type Modifier, type SkillType,
 } from "@efsim/engine";
 import { affixesAsChild } from "@efsim/data";
 import { type AbsentLanding, type LogEffect, type LogFixture, type LogHit } from "./zmdlogs.ts";
@@ -18,7 +18,7 @@ import type { Assumption } from "./assumptions.ts";
 import { isRecordedBurst, recordedBurst, replayRecord } from "./recordedburst.ts";
 import { kindShares, oneSidedLandings, type CountedLanding, type KeyShare, type KindShare, type OneSided } from "./onesided.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
-import { assignTargets, enemyUnit, gapsWithTargetsLeft, keepsKillGaps, landingPerTarget, landingPerTargetUngated, readsTargets, unitsAt, type TargetAssignment, type TargetHitInput } from "./targets.ts";
+import { assignTargets, enemyUnit, gapsWithTargetsLeft, isStatusModifier, keepsKillGaps, landingPerTarget, landingPerTargetUngated, readsTargets, unitsAt, type ReplayTargets, type TargetAssignment, type TargetHitInput } from "./targets.ts";
 
 /**
  * The game buffs a battle log lists a kit buff's effects under: its gameBuff, its loggedAs, and the affix buffs those
@@ -386,11 +386,61 @@ function withoutUnits(c: Pick<EngineCheck, "names">, inputs: LandingInputs, drop
   return { ...inputs, options: { ...inputs.options, modifiers: (inputs.options.modifiers ?? []).filter((m) => !drop.has(enemyUnit(m, enemy) ?? "")) } };
 }
 
-/** A logged hit's inputs and its primary reading's options (readingBasis's, without a Combustion tick's snapshot hit), or null without a landing. */
-function primaryOf(c: EngineCheck, hit: LogHit): { readonly landing: LandedHit & { readonly inputs: LandingInputs }; readonly inputs: LandingInputs; readonly options: DamageOptions } | null {
+/**
+ * A logged hit's inputs at target `t`'s statuses (target-statuses `per-target`: the second replay keeps them per target,
+ * BuffReplay.targets): a landing on another target than `t` (its twin on a second target, or a landing the replay put
+ * elsewhere) reads `t`'s Corrosion, Electrification and Breach, at their levels (engine statusModifiers), in place of
+ * its own: as the landing recorded them (LandedHit.otherTargets), else as the replay holds them at its frame. Unchanged
+ * with one enemy or without a target.
+ */
+function atItsTarget(c: EngineCheck, landing: LandedHit, inputs: LandingInputs, t: number | undefined): LandingInputs {
+  if (t === undefined || c.replay.targets === undefined || landing.target === undefined || landing.target === t) return inputs;
+  const st = landing.otherTargets?.some((x) => x.target === t) ? null : c.replay.stateAt(landing.frame);
+  const enemy = landing.otherTargets?.find((x) => x.target === t)?.enemy ?? (st ? targetEnemy(st, t) : null);
+  if (!enemy) return inputs;
+  const kept = (inputs.options.modifiers ?? []).filter((m) => !isStatusModifier(m));
+  return { ...inputs, options: { ...inputs.options, modifiers: [...kept, ...statusModifiers(enemy, landing.frame)] } };
+}
+
+/**
+ * What the second replay of a fight read per target takes from the first one (target-statuses `per-target`; logcheck.ts
+ * logBuffReplay): each kit-hit landing's targets, those fightTargets put the logged hits it stands for on (the hit its
+ * ref names first, else in time order), each logged kill's target, and the assignment. Null: not read per target.
+ */
+export function replayTargets(c: EngineCheck): ReplayTargets | null {
+  const assignment = fightTargets(c);
+  if (!assignment) return null;
+  const by = new Map<LandedHit, { operator: string; event: string; frame: number; ref?: string; targets: number[] }>();
+  const kills = new Map<LogHit, number>();
+  for (const [i, hit] of [...c.fx.hits.entries()].sort((a, b) => a[1].t - b[1].t || a[0] - b[0])) {
+    const t = assignment.of.get(hit);
+    if (!t) continue;
+    if (t.kills) kills.set(hit, t.target);
+    const l = landingOf(c, hit);
+    if ("unknown" in l || l.inputs.kind !== "hit") continue;
+    const e = by.get(l) ?? { operator: l.operator, event: hit.event, frame: l.frame, ...(l.ref !== undefined ? { ref: l.ref } : {}), targets: [] };
+    if (!e.targets.includes(t.target)) {
+      if (l.ref === String(i)) e.targets.unshift(t.target);
+      else e.targets.push(t.target);
+    }
+    by.set(l, e);
+  }
+  const landings: LandingTarget[] = [...by.values()];
+  return { landings, kills, assignment };
+}
+
+/**
+ * How the second replay's assignment puts each hit (target-statuses `per-target`): `free`, as the first one does, each
+ * candidate target read at its own statuses in the replay (the replay's target of that id: atItsTarget); `fixed`, on its
+ * first-pass target (the replay's targets' ids), only its kit-buff units decided there.
+ */
+export const SECOND_PASS_TARGETS: "free" | "fixed" = "free";
+
+/** A logged hit's inputs and its primary reading's options (readingBasis's, without a Combustion tick's snapshot hit) at target `t`'s statuses (atItsTarget), or null without a landing. */
+function primaryOf(c: EngineCheck, hit: LogHit, t?: number): { readonly landing: LandedHit & { readonly inputs: LandingInputs }; readonly inputs: LandingInputs; readonly options: DamageOptions } | null {
   const landing = landingOf(c, hit);
   if ("unknown" in landing) return null;
-  const inputs = (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs;
+  const inputs = atItsTarget(c, landing, (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs, t);
   const { category, judged, withLog } = primaryParts(c, c.replay.unjudgedKitBuffs, hit, inputs, null);
   const crit = hit.crit === null ? (primaryCritRead(c, hit) ? "always" : "never") : hit.crit ? "always" : "never";
   const { critRoll: _roll, ...options } = { ...inputs.options, crit, modifiers: withLog(judged, category) } as DamageOptions & { critRoll?: number };
@@ -404,24 +454,37 @@ const assignments = new WeakMap<BuffReplay, TargetAssignment | null>();
  * assumption several-targets `targets`), or null: not such a fight, or read as one target. Each hit's units are its
  * primary reading's enemy-side ones as the replay has them at its landing; a choice of units fits where the reading
  * without them is within ±1 of its value (its uncapped value where capped), under its crit or, the log not giving it,
- * the other. Once per replay.
+ * the other. Once per replay. In the second replay (target-statuses `per-target`, BuffReplay.targets), a hit is read on
+ * a candidate target at that target's statuses in the replay (atItsTarget: values there, not units; only the enemy-side
+ * kit buffs are on or off per target), or on its first-pass target alone (SECOND_PASS_TARGETS `fixed`).
  */
 export function fightTargets(c: EngineCheck): TargetAssignment | null {
   if (!readsTargets(c.fx, c.replay.assume)) return null;
   const known = assignments.get(c.replay);
   if (known !== undefined) return known;
   const enemy = enemyKitBuffs(c);
+  const second = c.replay.targets !== undefined;
   const inputs: TargetHitInput[] = c.fx.hits.map((hit) => {
     const p = primaryOf(c, hit);
     if (!p) return { hit, landing: null, frame: Math.round((hit.t * FPS) / 1000), units: [], fits: () => false };
-    const mods = p.options.modifiers ?? [];
-    const keys = [...new Set(mods.map((m) => enemyUnit(m, enemy)).filter((k): k is string => k !== null))];
+    const keys = [...new Set((p.options.modifiers ?? []).map((m) => enemyUnit(m, enemy)).filter((k): k is string => k !== null && !(second && k.startsWith("status:"))))];
     const value = hit.uncapped ?? hit.value;
     const crits: CritMode[] = hit.crit === null ? [p.options.crit ?? "never", p.options.crit === "always" ? "never" : "always"] : [p.options.crit ?? "never"];
-    const fits = (drop: ReadonlySet<string>) =>
+    // In the second replay, at the candidate's own statuses (once per target).
+    const at = new Map<number, NonNullable<ReturnType<typeof primaryOf>>>();
+    const onTarget = (t: number) => {
+      if (!second) return p;
+      const known = at.get(t);
+      if (known) return known;
+      const q = primaryOf(c, hit, t) ?? p;
+      at.set(t, q);
+      return q;
+    };
+    const fits = (drop: ReadonlySet<string>, t: number) =>
       crits.some((crit) => {
         try {
-          const d = landingDamage(c.data, c.target, p.inputs, { ...p.options, crit, modifiers: mods.filter((m) => !drop.has(enemyUnit(m, enemy) ?? "")) }, undefined);
+          const q = onTarget(t);
+          const d = landingDamage(c.data, c.target, q.inputs, { ...q.options, crit, modifiers: (q.options.modifiers ?? []).filter((m) => !drop.has(enemyUnit(m, enemy) ?? "")) }, undefined);
           return Math.abs(roundDamage(d.exact) - value) <= 1;
         } catch (e) {
           if (!readingDoesNotApply(e)) throw e;
@@ -430,7 +493,9 @@ export function fightTargets(c: EngineCheck): TargetAssignment | null {
       });
     return { hit, landing: p.landing, frame: p.landing.frame, units: unitsAt(c.replay.stateAt(p.landing.frame), p.landing.frame, keys), fits };
   });
-  const a = assignTargets(c.fx, inputs);
+  // The second replay: each hit on its first-pass target (the replay's target ids), its kit-buff units decided there.
+  const first = c.replay.targets?.assignment;
+  const a = assignTargets(c.fx, inputs, first && SECOND_PASS_TARGETS === "fixed" ? new Map([...first.of].map(([h, t]) => [h, t.target])) : undefined);
   assignments.set(c.replay, a);
   return a;
 }
@@ -440,8 +505,9 @@ export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): Read
   if ("unknown" in landing) return { landing };
   // A status pair that fits only at the logged hit's frame is read there (BuffReplay.statusInputs). In a fight against
   // several targets, without the enemy-side units its target lacks (fightTargets).
-  const landed = (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs;
-  const inputs = withoutUnits(c, landed, fightTargets(c)?.of.get(hit)?.drop ?? new Set());
+  const target = fightTargets(c)?.of.get(hit);
+  const landed = atItsTarget(c, landing, (parseReactionEvent(hit.event) ? c.replay.statusInputs?.(hit) : null) ?? landing.inputs, target?.target);
+  const inputs = withoutUnits(c, landed, target?.drop ?? new Set());
   const op = hit.operator;
   const { category, own, logMods, engine, judged, unjudgedNames, withLog } = primaryParts(c, c.replay.unjudgedKitBuffs, hit, inputs, place.snapshotOf);
   // Where the log doesn't give the crit: the crit the replay read from the log (engine assumption check-crits `replay`:

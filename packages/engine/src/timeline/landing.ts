@@ -18,6 +18,7 @@ import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, 
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
 import { ofKind, schedule } from "./schedule.ts";
 import { breakHold, holdNewStatuses, operatorClockDue } from "./clock.ts";
+import { landingTargetsOf, onTarget, targetEnemy, withTarget } from "./targets.ts";
 
 /** Whether a Stagger dealt broke the bar (dealPoise's `staggered` event). */
 const broken = (r: { readonly events: readonly BattleEvent[] }) => r.events.some((e) => e.type === "staggered");
@@ -208,9 +209,11 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
   const records: ReactionRecord[] = [];
   const landed: LandedHit[] = [];
   let next = st;
+  // Several targets (TimelineScenario.landingTargets): the record names the target they happened on (the current one).
+  const target = st.targets?.current;
   for (const e of events) {
     if (e.kind === "inflicted") continue;
-    records.push(e);
+    records.push(target !== undefined ? { ...e, target } : e);
     // Every damaging event draws its crit roll (a tick that can't crit too: the stream doesn't depend on what crits).
     let roll: number | undefined;
     if (ctx.scenario.options.crit === "rolled" && dealsDamage(e)) ({ value: roll, state: next } = draw(ctx, next, "crit"));
@@ -223,7 +226,7 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
     const own = beforeTriggers && e.kind === "reaction" && e.status === "corrosion" && e.initialHit ? beforeTriggers : st;
     const side = beforeTriggers && e.kind === "reaction" && e.status !== "corrosion" && e.initialHit ? reactionHitSide(st, beforeTriggers, e.operator, e.frame) : undefined;
     const d = eventDamage(ctx, e, enemy, own, roll, prior, side);
-    if (d) landed.push(d);
+    if (d) landed.push(target !== undefined ? { ...d, target } : d);
     if (d?.crit && crits) crits.set(e, d.element);
   }
   return records.length ? addHits({ ...next, reactions: [...next.reactions, ...records] }, landed) : st;
@@ -273,7 +276,7 @@ export function delayBursts(ctx: TimelineContext, st: TimelineState, events: rea
     const { frame: at, ...rest } = e;
     // The infliction's frame on the burst's record (record only: backlog after round 13 point 2, the bursts view's cause).
     const event = { ...rest, inflictedAt: at };
-    return [{ kind: "burst", frame: operatorClockDue(st, e.operator, e.frame, delay(e), holds(e.operator)), clock: { operator: e.operator }, event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}) }];
+    return [{ kind: "burst", frame: operatorClockDue(st, e.operator, e.frame, delay(e), holds(e.operator)), clock: { operator: e.operator }, event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}), ...(st.targets ? { target: st.targets.current } : {}) }];
   });
   return { state: schedule(st, later), now };
 }
@@ -347,6 +350,10 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount: hit.sp, kind, natural: spKind === "natural", ...(hit.spSource !== undefined ? { sourceType: hit.spSource } : {}) });
   }
   const build = ctx.builds.get(hit.operator) as Build;
+  // Several targets (TimelineScenario.landingTargets): it lands on its first target, its applications reach the others
+  // too (below); one without an entry lands on the target hit last.
+  const targets = landingTargetsOf(ctx, hit, kitHit.events);
+  if (targets?.[0] !== undefined) st = onTarget(st, targets[0]);
   st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
   const panel = panelAt(ctx, hit.operator, hit.frame);
   // Its situation as it lands, before its own effects: whether it happens (KitHit.if) and its extra scale.
@@ -520,7 +527,10 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       buffLayers: layers, staggered: before.staggered ?? false, enemyHp: before.enemyHp ?? 1,
     };
   };
-  if (result) st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(castIndex !== undefined ? { cast: castIndex } : {}), ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}), ...(hit.fired ? { fired: hit.fired } : {}),
+  // A landing on several targets records the others' statuses before its applications (the log check reads its hit on each at them).
+  const others = st.targets ? (targets ?? []).slice(1).filter((k) => k !== st.targets?.current) : [];
+  const onTargets = st.targets ? { target: st.targets.current, ...(others.length ? { otherTargets: others.map((k) => ({ target: k, enemy: expireStatus(targetEnemy(st, k), hit.frame) })) } : {}) } : {};
+  if (result) st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(castIndex !== undefined ? { cast: castIndex } : {}), ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}), ...(hit.fired ? { fired: hit.fired } : {}), ...onTargets,
     // A replay's landings carry their facts (a pinned one with its reference; one a trigger lands, matched to the log by time).
     ...(hit.ref !== undefined || ctx.replayed ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}), ...(ctx.keepInputs && inputs ? { inputs } : {}),
     ...(landedCounts && castIndex !== undefined ? { landed: { cast: castIndex, of: hit.landedOf as number, counts: landedCounts, scale: landedScale } } : {}) }]);
@@ -544,6 +554,23 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   const crits: StatusCrits = new Map();
   st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy, beforeTriggers, crits);
   if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy, undefined, beforeLateTriggers, crits);
+  // Its applications on its other targets (a landing logged on several): each swapped in, both phases (its damage there
+  // is the log check's to read), what they set off recorded on it, the first target current again. Their status events
+  // go to its triggers with the rest; the applications' own before-damage triggers don't run for them.
+  const otherEvents: StatusEvent[] = [];
+  for (const k of others) {
+    const first = st.targets?.current as number;
+    const kept = consumed;
+    st = onTarget(st, k);
+    st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
+    const prior = st.enemy;
+    const evs = [...applyPhase(false), ...applyPhase(true)];
+    st = retakeCombustionSnapshots(st, evs);
+    st = recordStatus(ctx, st, evs, st.enemy, prior, undefined, crits);
+    st = onTarget(st, first);
+    consumed = kept;
+    otherEvents.push(...evs);
+  }
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];
   if (withDamage && !away && kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {
@@ -568,7 +595,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     st = schedule(st, [{ ...rest, frame: at, clock: "enemy", detached: true, deferred: { consumed }, ...(damageFrame !== undefined ? { pinned: true as const } : {}) }]);
   }
   const all: BattleEvent[] = [
-    ...(withDamage && !away ? [hitEvent] : []), ...asEvents(statusEvents, kind, castIndex, crits), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex, crits), ...poiseEvents, ...events, ...spEvents,
+    ...(withDamage && !away ? [hitEvent] : []), ...asEvents(statusEvents, kind, castIndex, crits), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex, crits), ...asEvents(otherEvents, kind, castIndex, crits), ...poiseEvents, ...events, ...spEvents,
     ...(kitHit.heals && withDamage ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
     ...(kitHit.gains?.length && !stacksEarly ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
@@ -577,6 +604,11 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
 
 /** A burst lands: before-damage triggers on it, its damage (on the enemy as it is now), then its other triggers. */
 export function landBurst(ctx: TimelineContext, state: TimelineState, b: PendingBurst): TimelineState {
+  // Several targets: on the target whose infliction set it off, the one hit last current again after.
+  return withTarget(state, b.target, (s) => landBurstOn(ctx, s, b));
+}
+
+function landBurstOn(ctx: TimelineContext, state: TimelineState, b: PendingBurst): TimelineState {
   // Not held back while the enemy is away (TimelineScenario.enemyAway): an Arts Burst is of inflictions it already
   // took, and its effects come (pending/zmdlogs-4a64e58e75ad.json: Arcane's Nature burst at 29.30 s, 0.15 s into the
   // stretch and unlogged, gave the Will burst debuff of her weapon the log lists from 51.31 s; held back, 6 plain

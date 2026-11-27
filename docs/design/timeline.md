@@ -426,6 +426,15 @@ too: a replay leaves a cast's random landed counts to replayCast, which lands
 the ones the log shows (casting.ts landedCounts). A log-driven event no cast
 makes (a target's death) goes in through `replayEvent` (drivers.ts), its
 logged landings pinned by `pinLanding`, the one pin rule replayCast uses too.
+Several targets under one enemy id (`TimelineScenario.landingTargets`, the
+log check's second replay only; timeline/targets.ts): `TimelineState.enemy`
+is the current target's statuses and `TimelineState.targets` keeps the
+others'; a landing swaps its target in (by its ref, else operator, event and
+frame), applies what it inflicts on its other targets too, a burst and a
+status tick run on their own target, and `targetDies` with a `target` ends
+that target's statuses. The Stagger, enemy-side kit buffs and the enemy's
+clock stay one. `LandedHit.target` / `otherTargets`, `ReactionRecord.target`
+and `PendingBurst.target` are set only there (search KeyRules: records).
 
 **Per-operator contribution** of buffs and debuffs uses LMDI (log-mean
 Divisia) attribution, as End-DPScope does: it splits each hit's damage

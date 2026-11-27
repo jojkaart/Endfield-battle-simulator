@@ -4,7 +4,7 @@
 // views were one 800-line closure, so a view's new field locked out every rule change in buffreplay.ts): a view's new
 // output is an edit here, not in the replay's run.
 
-import { activeAt, reaches, type TimelineState } from "@efsim/engine";
+import { activeAt, everyTarget, reaches, type TimelineState } from "@efsim/engine";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -376,13 +376,16 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
 function enemyStatuses(st: TimelineState, names: ReadonlySet<string>): Map<string, TracedStatus> {
   const want = (s: string) => names.has(s) || names.has("*");
   const out = new Map<string, TracedStatus>();
-  const e = st.enemy;
-  for (const x of e.statuses) if (want(x.status)) out.set(`${x.status}|${x.operator}`, { level: x.level, appliedAt: x.appliedAt, expiresAt: x.expiresAt, ...(x.rampHeld ? { rampHeld: x.rampHeld } : {}) });
-  for (const x of e.physical) if (want(x.status)) out.set(`${x.status}|${x.operator}`, { level: x.level, appliedAt: x.appliedAt, expiresAt: x.expiresAt });
-  for (const x of e.controls) if (want(x.status)) out.set(`${x.status}|${x.operator}`, { level: 1, appliedAt: x.appliedAt, expiresAt: x.expiresAt });
-  if (e.vulnerable && want("vulnerable")) out.set("vulnerable|", { level: e.vulnerable.stacks, expiresAt: e.vulnerable.expiresAt });
-  // The Arts infliction: its element in the key, its stacks as the level (`status:infliction`).
-  if (e.infliction && want("infliction")) out.set(`infliction:${e.infliction.element}|${e.infliction.by?.join(",") ?? ""}`, { level: e.infliction.stacks, expiresAt: e.infliction.expiresAt });
+  // With the statuses per target (target-statuses `per-target`), every target's, its key suffixed `@T<n>`.
+  for (const { target, enemy: e } of everyTarget(st)) {
+    const on = target !== undefined ? `@T${target}` : "";
+    for (const x of e.statuses) if (want(x.status)) out.set(`${x.status}|${x.operator}${on}`, { level: x.level, appliedAt: x.appliedAt, expiresAt: x.expiresAt, ...(x.rampHeld ? { rampHeld: x.rampHeld } : {}) });
+    for (const x of e.physical) if (want(x.status)) out.set(`${x.status}|${x.operator}${on}`, { level: x.level, appliedAt: x.appliedAt, expiresAt: x.expiresAt });
+    for (const x of e.controls) if (want(x.status)) out.set(`${x.status}|${x.operator}${on}`, { level: 1, appliedAt: x.appliedAt, expiresAt: x.expiresAt });
+    if (e.vulnerable && want("vulnerable")) out.set(`vulnerable|${on}`, { level: e.vulnerable.stacks, expiresAt: e.vulnerable.expiresAt });
+    // The Arts infliction: its element in the key, its stacks as the level (`status:infliction`).
+    if (e.infliction && want("infliction")) out.set(`infliction:${e.infliction.element}|${e.infliction.by?.join(",") ?? ""}${on}`, { level: e.infliction.stacks, expiresAt: e.infliction.expiresAt });
+  }
   return out;
 }
 

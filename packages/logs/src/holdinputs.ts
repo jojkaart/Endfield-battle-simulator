@@ -4,7 +4,7 @@
 // (runBounds, statusInstances, consumedStatuses; holds.ts places them). Split from buffreplay.ts (improvement round 14).
 
 import {
-  activeAt, advance, FPS, reaches,
+  activeAt, advance, everyTarget, FPS, reaches,
   type ActiveBuff, type KitBuff, type OperatorKit, type ReactionRecord, type TimelineContext, type TimelineState,
 } from "@efsim/engine";
 import { TARGET_SIDE_ZONES, type LogFixture } from "./zmdlogs.ts";
@@ -316,15 +316,19 @@ export function msOfFrame(f: number): number {
  * expiry there, which the stops moved).
  */
 export function statusInstances(checkpoints: readonly TimelineState[], reactions: readonly ReactionRecord[], brokenAt: number | null): StatusInstance[] {
-  const applied = reactions.flatMap((r) => (r.kind === "reaction" || (r.kind === "physical" && r.status === "breach") ? [{ status: r.status as string, operator: r.operator, frame: r.frame }] : []));
+  // With the statuses per target (target-statuses `per-target`), each on its own target (ReactionRecord.target; engine everyTarget).
+  const applied = reactions.flatMap((r) => (r.kind === "reaction" || (r.kind === "physical" && r.status === "breach") ? [{ status: r.status as string, operator: r.operator, frame: r.frame, target: r.target }] : []));
   const out: StatusInstance[] = [];
   for (const [i, a] of applied.entries()) {
-    const next = applied.slice(i + 1).find((b) => b.status === a.status)?.frame ?? Infinity;
+    const next = applied.slice(i + 1).find((b) => b.status === a.status && b.target === a.target)?.frame ?? Infinity;
     const consumed = reactions.some((r) => r.kind === "statusConsumed" && r.status === a.status && r.frame >= a.frame && r.frame < next);
     let last: number | null = null;
     for (const cp of checkpoints) {
       if (cp.frame < a.frame || cp.frame >= next) continue;
-      const on = [...cp.enemy.statuses, ...cp.enemy.physical].find((x) => x.status === a.status && x.operator === a.operator);
+      const on = everyTarget(cp)
+        .filter((x) => x.target === a.target)
+        .flatMap((x) => [...x.enemy.statuses, ...x.enemy.physical])
+        .find((x) => x.status === a.status && x.operator === a.operator);
       if (on) last = on.expiresAt;
     }
     if (last === null) continue;

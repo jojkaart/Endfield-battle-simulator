@@ -2359,7 +2359,9 @@ logcasts.ts placeWith `batch`; `later`: a third slug's final 125 ms after two sl
   Laevatain's absorption at each death (below).
 - **9c6e:** its twins are the placement's already (`used` / `value`; the batch rule moves none of its casts); the
   log-only twins whose value fits no target (Typhoeus's Nature bursts on the second Wanderer, 52.80, 79.85, 94.32 s)
-  need that target's own inflictions, Corrosion level and Stagger: statuses per target, not a placement error.
+  need that target's own inflictions, Corrosion level and Stagger: statuses per target, not a placement error (built
+  2026-11-27, below: its T4 hits at 49–52 s now read without Corrosion as values; the 52.80 s burst on T4 still ×1.078
+  low and the crit on T2 ×0.55 of its reading, which no status of either target gives: open).
 
 **Fixed 2026-11-27 (docs/journal/2026-11-27-19-target-deaths-laevatain-absorbs-the-dead-slug-s-heat.md): the moves'
 Heat bursts and Laevatain's 35.70 s empowered hit.** Laevatain's passive_enemy (abilityEvent 1 on the enemy) absorbs
@@ -2374,8 +2376,21 @@ hit: the slug it killed at 29.26 s had a Combustion or Corrosion the replay does
 shortly before, or the 24.02 s empowered hit's Combustion on a slug shielded then, whose ticks dealt 0); Si's ink
 (below).
 
-**Still possible / left:** statuses per target (Corrosion and Electrification levels, a target's own inflictions and
-bursts, its Stagger: only on/off per target now; the design in docs/design/data.md "Statuses per target"); the other
+**Built 2026-11-27 (docs/journal/2026-11-27-20-statuses-per-target-a-second-replay-with-each-landing-on-its.md):
+statuses per target** (replay assumption target-statuses `per-target`; docs/design/data.md "Statuses per target"): a
+second replay with each logged landing on its first-pass targets, the engine's enemy statuses per target, each kill
+its target's death; the check reads a hit at its target's status levels. The row plain 72.1 → 75.6%, mismatch 14.5 →
+11.2%, mean |damage error| 7.6 → 10.4% (offsets gone: 6339's dead slug's Combustion ticks, 7b54's 16.36 s twins
+now fitting). **Ruled out:** holding each hit to its first-pass target in the second assignment (7b54 plain 151 →
+142); the Stagger per target as a lead here (the logged bar is the hit's target's, the twins at one ms share one;
+2 Staggered replay landings in the three fights). **Still possible:** 6339's 29.26 s Laevatain combo hit (log-only
+since, its `if` needs Combustion or Corrosion on its slug: a status from a landing the log doesn't show, on a slug
+shielded at 24.02 s, the empowered hit's explosion reaching it for 0); a twin's second target missing a status its
+applier's unlogged landing gave (9c6e 74.47 s: Liino's ultimate on T6 without the log's Electrification; 53.98 s
+Ardelia's attack 3 ×1.011 on a Corrosion ramp of another age); 7b54's 36.08–36.84 s Laevatain battle skill over
+×1.2–1.3 under per-target (Scorching Heart on from 31.03 s, Melting Flame 4 from her absorption then).
+
+**Still possible / left:** the other
 listeners on a target's death (BuffData abilityEvent 1 on a buff on the target): Arcane's
 buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable has every action disabled (no early seal finisher: nothing to
 build), Typhoeus's combo_trigger_combo none; Si's buff_chr_0036_jsspsi_xianjing_inkhurteffect (kill_damage × rate into

@@ -431,31 +431,57 @@ targets.ts):
   record onto an ink phantom (SpawnAbilityEntity inkphantom, linkline), an
   entity the kit doesn't model (not built); Zhuang Fangyi's, Seraph's and
   Yvonne's are in no several-targets fight.
-- **Statuses per target: the design, not built.** The replay's enemy
-  holds one EnemyStatus (an infliction, the reactions, physical statuses,
-  Vulnerable), so a target's statuses are on every target. What a check-side
-  model needs, as the debuffs have it: (1) each landing's target before the
-  replay runs, since an infliction's burst or reaction is the replay's to
-  make, not the check's to read: a first pass assigns the logged hits
-  (assignTargets) and a second replays with each landing's target, the
-  engine's enemy state per target id (TimelineState.enemy keyed by target,
-  a landing's `target` from the logged hit it stands for, a replay-only
-  landing on the target hit last); (2) a status level per target in the
-  reading (Corrosion's shred, Electrification's Arts DMG Taken: values, not
-  units on or off, so readingBasis recomputes the modifier at the target's
-  level rather than dropping it); (3) the Stagger per target, from the
-  log's per-hit `poise.bar` if that is its target's bar (not yet checked:
-  9c6e 52.49 s logs bars 73 and 83 at one ms, Arcane's 10 and Typhoeus's 20
-  dealt, which one bar also gives). The one-enemy approximation measured
-  instead (target-deaths `statuses`: a death ends the replay's enemy's
-  statuses) is worse: a status kept stood for the next target's own (6339's
-  29.26 s combo hit needs Combustion or Corrosion on its slug). 9c6e's
-  log-only Nature bursts on its second Wanderer (52.80, 79.85, 94.32 s) are
-  the case (1)–(3) are for: ×1.35 between the two targets' Typhoeus hits
-  at 49–51 s, a burst's two values no one state gives.
+- **Statuses per target** (2026-11-27, replay assumption target-statuses,
+  default `per-target`): the replay is made twice. The first, with one
+  enemy, gives the assignment (assignTargets); enginecheck.ts
+  replayTargets turns it into each kit-hit landing's targets (its logged
+  hits' targets, the hit its ref names first) and each logged kill's
+  target, and logcheck.ts logBuffReplay makes the replay again with them
+  (ReplayOptions.targets, engine TimelineScenario.landingTargets). The
+  engine (timeline/targets.ts) keeps the enemy's statuses (infliction,
+  reactions, physical statuses, Vulnerable, controls) per target: a landing
+  lands on its first target (by its ref, else operator, event and frame
+  ±1; one without an entry, a trigger's hit or a replay-only landing, on
+  the target hit last) and applies what it inflicts on its other targets
+  too (their bursts and reactions their own landings, LandedHit.target;
+  the others' statuses before it recorded, `otherTargets`); a burst and a
+  status tick run on their own target; the world's holds and stops shift
+  every target's (a freeze the current one's); each kill is its target's
+  death (targetDies `target`: its triggers on its statuses, which then
+  end; two kills at one ms two deaths). The check reads a hit at its
+  target's Corrosion, Electrification and Breach levels (atItsTarget:
+  values, not units), and the second assignment reads each candidate
+  target at its own statuses in the replay (fightTargets; the replay's
+  target ids are the first assignment's, which the second mostly keeps:
+  holding each hit to its first-pass target, SECOND_PASS_TARGETS `fixed`,
+  measured worse, 7b54 plain 151 → 142). Stagger, the debuffs (kit buffs
+  on the enemy, read per target as before) and the enemy's clock stay one.
+  Measured (the row, against `one`): plain 72.1 → 75.6%, mismatch 14.5 →
+  11.2%, mean |damage error| 7.6 → 10.4%: 7b54 plain 121 → 151 (Laevatain's
+  Melting Flame from each slug's own Heat: her 16–31 s and 39–44 s hits
+  match, Scorching Heart's timing), −1.0 → +4.0% (its 16.36 s Si combo
+  twins now fit, −7.3 points of log-only gone, leaving the shielded slugs'
+  replay-only landings); 6339 −10.4 → −16.1% (the 25.03–28.47 s Combustion
+  ticks of a dead slug gone, −3.3 points of replay-only, and its 29.26 s
+  Laevatain combo hit lost, −1.9: its `if` needs Combustion or Corrosion
+  on its slug, which only a landing the log doesn't show, on a slug then
+  shielded, can have given); 9c6e plain 314 → 310 (a twin's second
+  target missing a status its unlogged applier gave: 74.47 s Liino's
+  ultimate on T6 without the Electrification the log's value has).
+- **The Stagger per target: checked, not built.** The logged `poise.bar`
+  is the hit's target's bar: a slug's first logged hit reads its full bar
+  (60) less the hit's Stagger, its later hits count down from there
+  (6339 14.80–19.91 s, 7b54 29.50–31.05 s and 33.46–36.84 s), which one
+  bar can't give; but the twins at one ms carry one bar between them
+  (9c6e 52.49 s: 73 and 83 on both targets, one target's 103 − 20 − 10,
+  the other's last read was 155). In the three fights the replay has 2
+  Staggered landings and the log 1 (6339 20.37 s, both), so a bar per
+  target would move at most a hit's damage and 7b54's 46.47 s break
+  (which times Arcane's lasers): left (scratch/poise.ts's counts in the
+  2026-11-27 journal entry).
 Only these fixtures read it (no simulation, no hold-out without the mark),
-and statuses' levels and the Stagger per target, a target's own bursts
-and the shielded slugs' landings are still the one enemy's.
+and the Stagger, the shielded slugs' landings and a target's statuses from
+landings the log doesn't show are still the one enemy's or missing.
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
 sets fields over it when the fixture is read (logs.ts `readLogFixture`;
@@ -848,6 +874,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 |---|---|
 | The casts of an operator, as the log means them | `efsim zmdlogs instances <fixture> [--operator]` (for a skill that stops the world, where its first cast event sits: at its press, at its stop's end, …; its log-time distance to the placed start) |
 | An operator's Arts Bursts, logged against replayed, each side's likely cause and the stops between | `efsim zmdlogs bursts <fixture…\|--all> [--operator <op>] [--from s --to s]` (`burstRows` in a script) |
+| The replay's enemy statuses: each burst, reaction, consumption and tick, on which target, what it dealt, the statuses after it; the deaths | `efsim zmdlogs statuses <fixture> [--target n] [--operator <op>] [--from s --to s]` (views.ts statusesView) |
 | How often X happens, X near Y (a claim's count) | `efsim zmdlogs census --select cast:\|event:\|buff:<re> [--near …] [--window=a,b] [--list]` (the window in ms; `=` for a negative start, as the `rerun:` line prints it) |
 | What a listed buff id is in the kits, whose hits list it | `efsim zmdlogs buffs [--buff <re>]` |
 | A buff's listed runs (since, first, last, next unlisted hit) | `efsim zmdlogs lanes <fixture> --buff <re> [--world]` (`--world`: each run's length with the stops taken out) |

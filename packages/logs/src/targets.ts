@@ -11,7 +11,7 @@
 // purge at a kill). The placement (logcasts.ts placeWith) reads batchTargets for which logged hits of a batch are one
 // landing's twins; the assignment takes those as one landing reaching each of its targets once.
 
-import { allActions, FPS, readingOf, type KitHit, type LandedHit, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
+import { allActions, FPS, readingOf, type KitHit, type LandedHit, type LandingTarget, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import type { LogCast, LogFixture, LogHit } from "./zmdlogs.ts";
 
 /** Targets alive at once where the fixture doesn't say (severalTargets.atOnce): two, the least that is several. */
@@ -32,6 +32,23 @@ export function landingPerTarget(fx: Pick<LogFixture, "severalTargets">, assume:
 /** Whether the totals count a landing for a twin on another target whose value fits no target's state (several-targets `targets-ungated`). */
 export function landingPerTargetUngated(fx: Pick<LogFixture, "severalTargets">, assume: Readonly<Record<string, string>> | undefined): boolean {
   return landingPerTarget(fx, assume) && readingOf(assume, "several-targets") === "targets-ungated";
+}
+
+/** Whether the replay keeps the enemy's statuses per target (target-statuses `per-target`, in a fight read per target): a second pass (logcheck.ts logBuffReplay). */
+export function statusesPerTarget(fx: Pick<LogFixture, "severalTargets">, assume: Readonly<Record<string, string>> | undefined): boolean {
+  return readsTargets(fx, assume) && readingOf(assume, "target-statuses") === "per-target";
+}
+
+/**
+ * What the second replay of a fight read per target takes from the first one's assignment (target-statuses
+ * `per-target`; enginecheck.ts replayTargets builds it): each kit-hit landing's targets (TimelineScenario
+ * .landingTargets: its logged hits' targets, its own hit's first), each logged kill's target (a death of that target:
+ * targetDeaths), and the assignment itself, which the check keeps (the replay's target ids are its).
+ */
+export interface ReplayTargets {
+  readonly landings: readonly LandingTarget[];
+  readonly kills: ReadonlyMap<LogHit, number>;
+  readonly assignment: TargetAssignment;
 }
 
 /** Whether a kill gap with targets left keeps the replay's enemy there (several-targets `targets`, not `targets-gaps-away`). */
@@ -153,6 +170,12 @@ export interface TargetDeath {
   readonly except: ReadonlySet<string>;
   /** The dead target's statuses end with it (target-deaths `statuses`). */
   readonly endsStatuses: boolean;
+  /**
+   * With the statuses per target (target-statuses `per-target`, ReplayTargets.kills): the target that dies (engine
+   * TargetDeathOptions.target: its triggers run on its statuses, which then end). Two kills at one ms are two deaths
+   * at one frame, the second running no trigger that lands a hit.
+   */
+  readonly target?: number;
 }
 
 /**
@@ -166,7 +189,7 @@ export interface TargetDeath {
  * target's statuses end with it (6339: each Vesperwings move put Heat on a fresh slug, the replay's one enemy holding
  * the dead one's and bursting at 21.60, 25.57 and 33.17 s, which the log never shows).
  */
-export function targetDeaths(fx: Pick<LogFixture, "hits" | "severalTargets">, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> | undefined): TargetDeath[] {
+export function targetDeaths(fx: Pick<LogFixture, "hits" | "severalTargets">, kits: readonly OperatorKit[], assume: Readonly<Record<string, string>> | undefined, killTargets?: ReadonlyMap<LogHit, number>): TargetDeath[] {
   const moves = deathMoves(fx, kits);
   const moveWhy = (m: DeathMove) => `${m.trigger}: its landing logged at ${(m.hit.t / 1000).toFixed(2)} s${m.kill ? `, after the kill at ${(m.kill.t / 1000).toFixed(2)} s` : ""}`;
   const reading = readingOf(assume, "target-deaths");
@@ -179,12 +202,17 @@ export function targetDeaths(fx: Pick<LogFixture, "hits" | "severalTargets">, ki
   // The operators whose targetDeath triggers land a hit, and those triggers' keys.
   const movers = new Map<string, string[]>();
   for (const kit of kits) if (deathHits(kit).length) movers.set(kit.operator, kit.triggers.filter((t) => t.on.event === "targetDeath").map((t) => `${kit.operator}:${t.id}`));
-  return frames.map((frame) => {
+  const allMovers = new Set([...movers.values()].flat());
+  return frames.flatMap((frame): TargetDeath[] => {
     const here = moves.filter((m) => m.frame === frame);
     const except = new Set([...movers].flatMap(([op, keys]) => (here.some((m) => m.operator === op) ? [] : keys)));
     const kill = kills.get(frame);
     const why = [...(kill ? [`the kill at ${(kill.t / 1000).toFixed(2)} s`] : []), ...here.map(moveWhy)].join("; ");
-    return { frame, why, moves: here, except, endsStatuses: reading === "statuses" };
+    const death: TargetDeath = { frame, why, moves: here, except, endsStatuses: reading === "statuses" };
+    // With the statuses per target: one death per target killed at this frame (its target), the moves at the last.
+    const dead = killTargets ? [...new Set(fx.hits.filter((h) => killed(h) && h.t < lastMs && frameOf(h.t) === frame).flatMap((h) => (killTargets.has(h) ? [killTargets.get(h) as number] : [])))] : [];
+    if (dead.length === 0) return [death];
+    return dead.map((target, i) => (i === dead.length - 1 ? { ...death, target } : { ...death, moves: [], except: new Set([...except, ...allMovers]), target }));
   });
 }
 
@@ -201,6 +229,11 @@ export function moveEvent(moves: readonly DeathMove[], lc: Pick<LogCast, "operat
 
 /** The enemy statuses whose modifiers sit on a target (engine status.ts statusModifiers' sources), by kind. */
 const STATUS_SOURCE = /^(Corrosion|Electrification|Breach) level /;
+
+/** Whether a modifier is an enemy status's (statusModifiers': Corrosion, Electrification, Breach), not a kit buff's. */
+export function isStatusModifier(m: Modifier): boolean {
+  return !m.kitBuff && STATUS_SOURCE.test(m.source);
+}
 
 /**
  * A modifier's enemy-side unit, or null: a kit buff the team's kits put on the enemy (`owner:id`, its def's target
@@ -242,8 +275,11 @@ export interface TargetHitInput {
   /** Its frame (the landing's, else the logged ms's). */
   readonly frame: number;
   readonly units: readonly TargetUnit[];
-  /** Whether its primary reading without these units' modifiers fits its value (±1; the uncapped value where capped). */
-  readonly fits: (drop: ReadonlySet<string>) => boolean;
+  /**
+   * Whether its primary reading without these units' modifiers fits its value (±1; the uncapped value where capped), on
+   * target `target` (the second replay of the statuses per target reads each candidate at its own statuses).
+   */
+  readonly fits: (drop: ReadonlySet<string>, target: number) => boolean;
 }
 
 /** A logged hit's target: its index (in order of first hit), the units its reading leaves out, and how it was chosen. */
@@ -285,9 +321,11 @@ const killed = (h: LogHit) => h.uncapped !== undefined && h.uncapped !== null &&
  * the hit decides each open unit that is on in every fitting choice, or off in every one. The preference: a target
  * that fits with every open unit on, then one that fits by leaving some off, then a new target (while atOnce allows,
  * and with fromStart no more than atOnce in all); among equals the one hit last. Where nothing fits, the one hit last
- * (a new one if none is alive), read with what it is known to lack, decided by nothing.
+ * (a new one if none is alive), read with what it is known to lack, decided by nothing. With `fixed` (the second replay
+ * of the statuses per target: the first assignment's target of each hit, whose ids the replay's targets have), each hit
+ * goes to that target, its units decided there as above, `none fits` where no choice of them fits.
  */
-export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: readonly TargetHitInput[]): TargetAssignment {
+export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: readonly TargetHitInput[], fixed?: ReadonlyMap<LogHit, number>): TargetAssignment {
   const atOnce = fx.severalTargets?.atOnce ?? DEFAULT_AT_ONCE;
   const fromStart = fx.severalTargets?.fromStart === true;
   const targets: Target[] = [];
@@ -300,8 +338,10 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     const used = landing ? (twins.get(landing)?.get(hit.t) ?? new Set<number>()) : new Set<number>();
     const alive = targets.filter((t) => t.alive).sort((a, b) => b.last - a.last);
     const canNew = alive.length < atOnce && (!fromStart || targets.length < atOnce);
-    const fresh: Target = { id: targets.length, alive: true, last: -1, got: new Map(), missed: new Map() };
-    const candidates = [...alive.filter((t) => !used.has(t.id)), ...(canNew ? [fresh] : [])];
+    const pinned = fixed?.get(hit);
+    const fresh: Target = { id: pinned ?? targets.length, alive: true, last: -1, got: new Map(), missed: new Map() };
+    const own = pinned !== undefined ? targets.find((t) => t.id === pinned) : undefined;
+    const candidates = pinned !== undefined ? [own ?? fresh] : [...alive.filter((t) => !used.has(t.id)), ...(canNew ? [fresh] : [])];
     const state = (t: Target) => {
       const off: string[] = [];
       const open: string[] = [];
@@ -318,7 +358,7 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     for (const t of candidates) {
       const { off, open } = state(t);
       const masks = 1 << open.length <= MAX_OPEN_SUBSETS ? Array.from({ length: 1 << open.length }, (_, m) => m) : [0, ...open.map((_, i) => 1 << i)];
-      const fitting = masks.map((m) => new Set([...off, ...open.filter((_, i) => m & (1 << i))])).filter((d) => x.fits(d)).sort((a, b) => a.size - b.size);
+      const fitting = masks.map((m) => new Set([...off, ...open.filter((_, i) => m & (1 << i))])).filter((d) => x.fits(d, t.id)).sort((a, b) => a.size - b.size);
       const best = fitting[0];
       if (!best) continue;
       const decided = new Map<string, boolean>();
@@ -333,7 +373,7 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     let how: HitTarget["how"] = "fits";
     if (!chosen) {
       how = "none fits";
-      const t = alive.find((y) => !used.has(y.id)) ?? (canNew ? fresh : (alive[0] ?? fresh));
+      const t = candidates.length === 1 && pinned !== undefined ? (candidates[0] as Target) : (alive.find((y) => !used.has(y.id)) ?? (canNew ? fresh : (alive[0] ?? fresh)));
       chosen = { t, drop: new Set(state(t).off), decided: new Map(), cost: Infinity };
     }
     const t = chosen.t;
@@ -359,7 +399,7 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
     if (kills) t.alive = false;
     of.set(hit, { target: t.id, drop: chosen.drop, how, kills });
   }
-  return { of, count: targets.length };
+  return { of, count: new Set(targets.map((t) => t.id)).size };
 }
 
 /**

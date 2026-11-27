@@ -12,7 +12,7 @@
 // The engine is split by concern under timeline/ (docs/design/timeline.md, "Engine modules"); this module re-exports
 // the stepping API and its types, as @efsim/engine exports them.
 
-export type { RotationAction, TimelineOptions, TimelineScenario, EnemyActionSpec, EnemyAction, Cast, LandedHit, LandingFacts, LandingInputs, ReactionRecord, TimelineState, TimelineContext, Acting, ChainStep, PendingBurst } from "./timeline/state.ts";
+export type { RotationAction, TimelineOptions, TimelineScenario, EnemyActionSpec, EnemyAction, Cast, LandedHit, LandingFacts, LandingInputs, ReactionRecord, TimelineState, TimelineContext, Acting, ChainStep, PendingBurst, LandingTarget } from "./timeline/state.ts";
 export { withSeconds } from "./timeline/state.ts";
 export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, diveFrames, linkValue } from "./timeline/rules.ts";
 export { createContext, kitAssumptions, allAssumptions, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
@@ -36,6 +36,7 @@ export { kitSkill, skillCosts, maxPoise } from "./timeline/context.ts";
 export { spAt, spCostAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
 export { windowKey, windowOpen, needsWindow } from "./timeline/timing.ts";
 export { nextChangeAfter } from "./timeline/wake.ts";
+export { everyTarget, targetEnemy } from "./timeline/targets.ts";
 
 // What the planning code (planning/: search, payoffs, the rule driver) reads beyond the stepping API: it imports the
 // timeline only through this façade (and core.ts), never timeline/* (lint). Probes and keys of planning states.

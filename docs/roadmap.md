@@ -131,8 +131,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   Vesperwings moving to the next slug 2026-11-27 (engine `targetDeath`, the replay's deaths at logged moves, the move
   a battle-skill cast `vesperwings-move-cast` `battle`: the row |damage error| 8.3 → 6.3%); target deaths
   2026-11-27 (a death at every logged kill, `target-deaths` `kills`; Laevatain absorbs the dead target's Heat: 6339 −6.3
-  → +0.1%, the row 6.3 → 4.6%; Arcane's listener all disabled): next statuses per target (the design in
-  docs/design/data.md: a second replay pass with each landing's target), Si's ink phantom; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
+  → +0.1%, the row 6.3 → 4.6%; Arcane's listener all disabled); statuses per target 2026-11-27 (a second replay
+  with each landing on its target, `target-statuses` `per-target`: the row plain 72.1 → 75.6%, |damage error| 7.6 →
+  10.4% as offsets went; `zmdlogs statuses`): next a target's statuses from landings the log doesn't show (6339's
+  29.26 s combo), Si's ink phantom; Camille's Vesperwings and Pogranichnik's harasses 2026-11-27: her debuff
   ends at its entity's check when the enemy leaves (`vesperwings-target-loss` `listed`, e989 plain 260 → 267, one
   hold-out 6.4 → 5.8%), his harasses on the world's clock with their own slow-down (frame 18; d4fb, de6a, c4f3, 7e19
   better): next his Decisive Assault, logged 0.21–0.44 s after its event against the data's frame 25; the

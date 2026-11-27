@@ -44,7 +44,8 @@ import {
 } from "@efsim/engine";
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
-import { engineCheck, engineReadings, fightTotals, logDifferences, stageModifiers, stageScaledKill, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
+import { engineCheck, engineReadings, fightTotals, logDifferences, replayTargets, stageModifiers, stageScaledKill, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
+import { statusesPerTarget } from "./targets.ts";
 import { boundarySubsets, buffFile, collapseRepeats, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
@@ -685,21 +686,33 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
   // mixed the two silently; the views, snapshotEntry and hitRecords wrap it at their entry).
   if (withCurveReading(data, opts.assume) !== data) throw new Error(`logBuffReplay under combo-curve ${opts.assume && "combo-curve" in opts.assume ? readingOf(opts.assume, "combo-curve") : "(the default)"}: the game data is under another of its readings, so the placement and the replay would read two curves; pass withCurveReading(data, assume) (@efsim/engine), and a placement made from it`);
   const placement = placementOrOpts ?? placeHits(data, fx, opts.assume);
-  let replay = replayKitBuffs(data, fx, placement, opts);
-  // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
-  const levels = new Map<string, ReactionLevel>();
-  for (let pass = 1; pass < REACTION_LEVEL_PASSES; pass++) {
-    const own = new Map(replay.hits.filter((h) => h.skillId === "reaction:reaction" && h.inputs?.kind === "status").map((h) => [`${h.operator}|${h.element}|${h.frame}`, (h.inputs as Extract<LandingInputs, { kind: "status" }>).reaction.stacks]));
-    const shown = loggedReactionLevels(data, fx, placement, replay).filter((l) => own.get(`${l.operator}|${l.element}|${l.frame}`) !== l.level);
-    if (shown.length === 0) break;
-    for (const l of shown) levels.set(`${l.operator}|${l.element}|${l.frame}`, l);
-    replay = replayKitBuffs(data, fx, placement, { ...opts, reactionLevels: [...levels.values()] });
-  }
-  // With the holds placed (hidden-holds `placed`), Corrosion's ramp as one more clock: the steps the logged hits read
-  // (rampsteps.ts) bound the holds, and the replay is made again with them.
-  if (replay.hiddenHolds) {
-    const bounds = rampBounds(corrosionRamp(data, fx, placement, replay));
-    if (bounds.length) replay = replayKitBuffs(data, fx, placement, { ...opts, reactionLevels: [...levels.values()], holdBounds: bounds });
+  const passes = (more: Pick<ReplayOptions, "targets">): BuffReplay => {
+    const base = { ...opts, ...more };
+    let replay = replayKitBuffs(data, fx, placement, base);
+    // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
+    const levels = new Map<string, ReactionLevel>();
+    for (let pass = 1; pass < REACTION_LEVEL_PASSES; pass++) {
+      const own = new Map(replay.hits.filter((h) => h.skillId === "reaction:reaction" && h.inputs?.kind === "status").map((h) => [`${h.operator}|${h.element}|${h.frame}`, (h.inputs as Extract<LandingInputs, { kind: "status" }>).reaction.stacks]));
+      const shown = loggedReactionLevels(data, fx, placement, replay).filter((l) => own.get(`${l.operator}|${l.element}|${l.frame}`) !== l.level);
+      if (shown.length === 0) break;
+      for (const l of shown) levels.set(`${l.operator}|${l.element}|${l.frame}`, l);
+      replay = replayKitBuffs(data, fx, placement, { ...base, reactionLevels: [...levels.values()] });
+    }
+    // With the holds placed (hidden-holds `placed`), Corrosion's ramp as one more clock: the steps the logged hits read
+    // (rampsteps.ts) bound the holds, and the replay is made again with them.
+    if (replay.hiddenHolds) {
+      const bounds = rampBounds(corrosionRamp(data, fx, placement, replay));
+      if (bounds.length) replay = replayKitBuffs(data, fx, placement, { ...base, reactionLevels: [...levels.values()], holdBounds: bounds });
+    }
+    return replay;
+  };
+  let replay = passes({});
+  // The statuses per target (target-statuses `per-target`, a fight read per target): the replay again, each logged
+  // landing on the targets the first one's assignment put its hits on (enginecheck.ts replayTargets), each kill its
+  // target's death; the check reads the second one on that assignment (docs/design/data.md "Statuses per target").
+  if (statusesPerTarget(fx, opts.assume)) {
+    const targets = replayTargets(engineCheck(data, fx, replay));
+    if (targets) replay = passes({ targets });
   }
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed), placement };

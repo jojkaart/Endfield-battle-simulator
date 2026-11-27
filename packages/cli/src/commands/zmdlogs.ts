@@ -54,6 +54,7 @@ import {
   readDevFixture,
   refreshFromDetail,
   replayReport,
+  statusesView,
   scalesReport,
   staggerReport,
   stopsView,
@@ -73,7 +74,7 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
-export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away", "stack", "followups"]);
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "statuses", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away", "stack", "followups"]);
 export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
 
 export default command({
@@ -159,6 +160,11 @@ export default command({
                                           (the placement isn't a fixed point there: logcasts.ts placeHits)
                 [--choices]               Under each overlap, what the in-turn rule decided for both casts and the
                                           checks of the start it tried (Placement.inTurn)
+  efsim zmdlogs statuses <fixture>        The replay's status record: each burst, reaction, consumption, physical
+                                          status and Combustion tick with its operator, its target (in a fight
+                                          read per target), its damage and the target's statuses after it; the
+                                          replay's deaths between
+                [--target n] [--operator <op>] [--from s] [--to s]  Only these targets (repeatable), operators, window
   efsim zmdlogs bursts <fixture…|--all>   Each Arts Burst, logged against the check's replay (paired as the check
                                           pairs them, the offset; log only with the reason; replay only), each
                                           side's likely cause (the operator's latest inflicting hit at least the
@@ -406,6 +412,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     from: { type: "string" },
     to: { type: "string" },
     "kit-buff": { type: "string", multiple: true, default: [] },
+    target: { type: "string", multiple: true, default: [] },
     "trace-buff": { type: "string", multiple: true, default: [] },
     "trace-trigger": { type: "string", multiple: true, default: [] },
     trigger: { type: "string" },
@@ -670,6 +677,15 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (!named.length && !values.all) throw new Error("zmdlogs placement takes fixtures (ids such as 0c14) or --all (every verified and pending development log)");
       if (named.length && values.all) throw new Error("zmdlogs placement: fixtures or --all, not both");
       return placementView(data(), devFixtures(named.length ? { ids: named } : {}), { progress, rules: values.choices });
+    }
+    if (sub === "statuses") {
+      if (args.length !== 2 || !arg) throw new Error("zmdlogs statuses takes one fixture file (--target n, --operator op, --from s, --to s, --assume id=reading)");
+      const targets = values.target.map((x) => {
+        const n = Number(x);
+        if (!Number.isInteger(n) || n < 0) throw new Error(`zmdlogs statuses --target ${x}: a target number (0, 1, …: the T<n> of its lines)`);
+        return n;
+      });
+      return statusesView(data(), readDevFixture(arg), { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators, assume, targets });
     }
     if (sub === "bursts") {
       const named = args.slice(1);
