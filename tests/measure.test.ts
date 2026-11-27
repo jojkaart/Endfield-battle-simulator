@@ -285,7 +285,7 @@ describe("measure's options before the queue (round 13, damage-factors report po
   it("refuses an unknown option, a bad value or a missing patch without the code or git", () => {
     expect(() => measureOptions(["--bogus"])).toThrow(/Unknown option '--bogus'/);
     expect(() => measureOptions(["--workers", "0"])).toThrow(/--workers/);
-    expect(() => measureOptions(["--split", "kits"])).toThrow(/--split takes files or commits/);
+    expect(() => measureOptions(["--split", "kits"])).toThrow(/--split takes files, commits or hunks/);
     expect(() => measureOptions(["--assume", "no-equals"])).toThrow(/<id>=<reading>/);
     expect(() => measureOptions(["--patch", "scratch/no-such.diff"])).toThrow(/no such file/);
     expect(measureOptions(["--logs", "db87", "--hits"]).values.hits).toBe(true);
