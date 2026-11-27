@@ -1,0 +1,69 @@
+Held back 2026-11-27 (the Liino round; enginecheck.ts was the several-targets agent's file): a fight's opening, from
+its start to its first logged hit, as an away stretch for the totals and the replay's enemy (enginecheck.ts
+openingWindows, used by fightTotals' left-out landings and enemyAwaySpans; not by awayWindows' other users: the
+pause-holds clocks, castassembly's away presses). The log records casts from the start and every landing that lands,
+so a replay landing before the first logged hit found no one: Liino's stance pressed before the enemy is engaged
+(1cd1 3.05 s, its projectiles 3.43 s and a volley 5.33 s, the first hit at 11.00 s; 9c6e, c6d8, 9847), Si's
+ultimate in 9c0b (first hit 13.27 s), Camille's in db87. Measured against 22750d2 (OPENING_AWAY_MS 0; a 6 s floor
+as a variant): development 1 better (9c0b 0.9 → 0.3%), 3 worse by 0.1–0.4 points (1cd1 −2.2 → −2.6, 9847 −1.2 →
+−1.3, db87 −1.5 → −1.6%: their matched parts run low and the opening's replay-only landings had covered it), earlier
+c6d8 mixed (plain 509 → 505, 0.6 → 0.2%); several targets 9c6e −11.3 → −11.6%, 7b54 better then (26.8 → 17.2%;
+against e4a1e36 mixed: plain 115 → 120, −3.4 → −16.5%); hold-outs unchanged; Liino's by-operator mean |damage
+error| 8.5 → 8.1% with the 6 s floor (1cd1 23.2 → 15.0%). The mechanism is the log's, the fight totals move both
+ways: for the lead to adopt (with a reading of engine assumption enemy-away, or its own) or not. Re-measure:
+`npm run measure -- --base HEAD --patch docs/tried/2026-11-27-opening-away.diff`.
+
+diff --git a/packages/logs/src/enginecheck.ts b/packages/logs/src/enginecheck.ts
+index a372b8e..f26416d 100644
+--- a/packages/logs/src/enginecheck.ts
++++ b/packages/logs/src/enginecheck.ts
+@@ -885,7 +885,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
+   // A fight that ends in a kill: its last logged hits are capped at the enemy's remaining HP, whether or not the log
+   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
+   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
+-  const away = awayLeftOutOfTotals(readingOf(c.replay.assume, "enemy-away")) ? awayWindows(fx) : [];
++  const away = awayLeftOutOfTotals(readingOf(c.replay.assume, "enemy-away")) ? [...openingWindows(fx), ...awayWindows(fx)] : [];
+   // Under `absent` up to the stretch's ends, as the replay's enemy is away (enemyAwaySpans): a landing there no logged
+   // hit stands for is one the replay didn't hold back (an Arts Burst, a status's tick: 4a64's Nature burst at 29.30 s).
+   const awayEdge = readingOf(c.replay.assume, "enemy-away") === "absent" ? 0 : AWAY_EDGE_MS;
+@@ -896,7 +896,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
+     away.some((w) => (awayEdge === 0 ? frame > Math.round((w.from * 30) / 1000) && frame < Math.round((w.to * 30) / 1000) : (frame * 1000) / 30 > w.from + awayEdge && (frame * 1000) / 30 < w.to - awayEdge)) ||
+     keptGaps.some((w) => (frame * 1000) / 30 > w.from + KILL_EDGE_MS && (frame * 1000) / 30 < w.to - KILL_EDGE_MS);
+   // With the replay's enemy away too (enemy-away `absent`), the frames the enemy leaves at: each stretch's first hit's.
+-  const leaving = new Set(readingOf(c.replay.assume, "enemy-away") === "absent" ? away.map((w) => Math.round((w.from * 30) / 1000)) : []);
++  const leaving = new Set(readingOf(c.replay.assume, "enemy-away") === "absent" ? away.filter((w) => w.from > 0).map((w) => Math.round((w.from * 30) / 1000)) : []);
+   let awayLeftOut = 0;
+   // The killing blow's frame: the log's, or the replay's landing of a killing hit if sooner (4360: the battle skill's
+   // twelve returning lances land in one frame at 119.20 s, the log's eight before the kill end at 119.235 s).
+@@ -993,6 +993,22 @@ export function awayWindows(fx: Pick<LogFixture, "hits">): { readonly from: numb
+   return out;
+ }
+ 
++/** How long (ms) the opening before a fight's first logged hit must be to count as an away stretch (openingWindows). */
++export const OPENING_AWAY_MS = 0;
++
++/**
++ * The fight's opening (ms): from its start to its first logged hit, when that is OPENING_AWAY_MS or more. The log
++ * records every landing that lands and records casts from the start, so a replay landing before the first logged hit
++ * found no one (the team buffing before the enemy is engaged): pending/zmdlogs-1cd1657bc305.json, Liino's battle skill
++ * pressed at 3.05 s, its projectiles and first volley at 3.43 and 5.33 s in the replay alone, the first logged hit at
++ * 11.00 s (her stance's heals came: her weapon's layers on Typhoeus and Arcane from 3.59 s). Only for the totals and
++ * the replay's enemy (enemyAwaySpans), not the away stretches' clocks (pause-holds) or presses.
++ */
++export function openingWindows(fx: Pick<LogFixture, "hits">): { readonly from: number; readonly to: number }[] {
++  const first = Math.min(...fx.hits.map((h) => h.t));
++  return Number.isFinite(first) && first >= OPENING_AWAY_MS && first > 0 ? [{ from: 0, to: first }] : [];
++}
++
+ /**
+  * The stretches after a logged kill (ms): from a logged ms with a hit capped at the HP left (`uncapped` above its value)
+  * before the fight's last hit to the next logged hit, however short (engine assumption kill-gaps). The enemy (a life, a
+@@ -1044,7 +1060,7 @@ export function killPurges(fx: LogFixture, assume?: Readonly<Record<string, stri
+ export function enemyAwaySpans(fx: LogFixture, reading: string | undefined): { readonly from: number; readonly to: number }[] {
+   if (reading !== "absent" && reading !== "absent-edge") return [];
+   const edge = reading === "absent" ? 0 : AWAY_EDGE_MS;
+-  return awayWindows(fx).flatMap((w) => {
++  return [...openingWindows(fx), ...awayWindows(fx)].flatMap((w) => {
+     const from = Math.max(Math.round(((w.from + edge) * 30) / 1000), Math.round((w.from * 30) / 1000) + 1);
+     const to = Math.min(Math.round(((w.to - edge) * 30) / 1000), Math.round((w.to * 30) / 1000) - 1);
+     return to >= from ? [{ from, to }] : [];

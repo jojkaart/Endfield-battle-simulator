@@ -34,7 +34,13 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
 - [2026-11-27-tail-own-landing.diff](2026-11-27-tail-own-landing.diff): tailCuts' "logged hit no other cast holds"
   guard not passing the cast's own last landing logged at its frame (6339's 21.60 s Laevatain hit_2, +10.2%);
   development plain 84.3 → 83.7% (c4f3 −66, 9847 −21), hold-out |damage error| 5.8 → 5.9%: more cut tails whose
-  effects later hits needed.
+  effects later hits needed. Found again by the Liino round (0eef's combo hit2 at 8.80 s, +57.8% of Liino's total
+  there, kept by this guard and by the 1.5 s fight's-end guard): the same lines, and 0eef 2.3 → 1.3% with a 0.5 s
+  end guard on top (its header).
+- [2026-11-27-opening-away.diff](2026-11-27-opening-away.diff) (held back for the lead: enginecheck.ts was another
+  agent's): a fight's opening before its first logged hit as an away stretch for the totals and the replay's enemy
+  (Liino's pre-fight stance presses, 1cd1 23.2 → 15.0%); hold-outs unchanged, three development totals 0.1–0.4
+  points worse where the opening's landings covered a low matched part, 9c0b better.
 - [2026-11-27-break-window-start.diff](2026-11-27-break-window-start.diff): the replay's Stagger window recorded from
   its break, not 14 frames later (replayrecord.ts, after engine assumption break-hold); hold-outs 2 better without it
   (plain +8, mismatch −5), development mixed: the late start lets a hidden hold top up the break's 14 frames.
