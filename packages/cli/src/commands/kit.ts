@@ -23,7 +23,7 @@ function hitLine(h: KitHit, indent = "      "): string {
   const frames = landingFrames(h);
   const parts = [
     `${h.id}${h.label ? ` "${h.label}"` : ""}`,
-    `frames ${frames ? frames.join(",") : "none (a trigger's, or landing order unknown)"}`,
+    `frames ${frames ? frames.join(",") : "none (a trigger's, or landing order unknown)"}${h.latestFrame !== undefined ? ` (a channel's: up to frame ${h.latestFrame} for an enemy in reach late)` : ""}`, // split:channel-end
     `${h.damageType} ${h.element}`,
     ...(h.events.length ? [`keys ${h.events.join(", ")}`] : []),
     ...(h.poise !== undefined ? [`poise ${JSON.stringify(h.poise)}${h.poiseControlledOnly ? " (controlled only)" : ""}`] : []),

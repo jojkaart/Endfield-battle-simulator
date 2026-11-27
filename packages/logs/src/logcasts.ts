@@ -1115,6 +1115,13 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // landing starts a new cast (3aa6ab93bad4: a cast of two strikes doesn't take the next cast's seven; d774d0ce7bd3:
         // a battle skill's strikes 2.6 s apart, no press between, are one cast's).
         const pressed = next?.variant === true && cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.first && c.t <= h.t && groups.find((x) => x.id === c.skill)?.kind === cur.cast.kind);
+        // A channel's tick lands by the channel's end (KitHit.latestFrame: its per-target cap, not the channel, ends its
+        // ticks; an enemy in reach late takes them up to there), so a landing of its key later than that from the cast's
+        // first landing is a new cast's, however long the skill's whole action (abfd4b7478ec 63.77 s: Si's attack 4 has
+        // 552 frames and a channel to frame 40; two ticks at 61.96 / 62.08 s, a battle press, then six at 63.77–64.35 s,
+        // which took the first cast's four slots left and cut the second's at 64.10 s; c3c735dbb022 60.64 s).
+        // split:channel-end
+        const pastChannel = next !== undefined && head !== undefined && next.hits.every((x) => x.latestFrame !== undefined) && elapsed > msOf(Math.max(...next.hits.map((x) => x.latestFrame as number)) - head.frame) + ON_TIME_MS;
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
@@ -1155,7 +1162,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // 0.34 s after the 17th, was placed as a combo of its own, whose hovering conversion gave three Hunting Arrows).
         const atSlot = cur?.slots?.[cur.index];
         const paced = cur !== undefined && next !== undefined && atSlot !== undefined && next.hits.every((x) => x.detached) && worldMs(cur.last.t, h.t, others) <= msOf(next.frame - atSlot.frame) + ON_TIME_MS;
-        if (cur && !used && (sameUltimate || (!superseded && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) {
+        if (cur && !used && (sameUltimate || (!superseded && !pressed && !pastChannel && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) {
           cur.index++;
           cur.last = h;
           const s = cur.slots;

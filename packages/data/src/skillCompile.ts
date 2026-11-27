@@ -131,6 +131,12 @@ export interface CompiledLanding extends Placement {
   readonly poise: CompiledPoise | null;
   /** Bonuses its damage unit's processors give it (InstantModifyAttribute crit rate, DamageScaleProcessor zones). */
   readonly bonuses: readonly { readonly zone: Zone; readonly value: CompiledValue }[];
+  /**
+   * A channel's tick whose per-target cap (ChannelingAction maxCountPerTarget) ends the ticks before the channel ends:
+   * its frame is the earliest, for a target in reach from the channel's start; one that comes into reach later is hit
+   * later, up to this frame (the channel's end). Si's attack 4: 6 ticks at frames 5–20, the channel to frame 40. split:channel-end
+   */
+  readonly latest?: number;
 }
 
 /** What a skill does to the enemy's arts and physical state; `landing` is the landing it goes with (as for CompiledCost), or null. */
@@ -1320,6 +1326,11 @@ class Compiler {
       if (past || (k > 0 && interval <= 0 && a["executeEachFrame"] !== true)) break;
       this.execSeq(body, f, f, ctx);
       n++;
+    }
+    // Capped before the channel's end: a target that comes into reach late takes its ticks later, up to the end. split:channel-end
+    const last = start + (interval > 0 ? toFrame((n - 1) * interval) : n - 1);
+    if (t.startsWith("ChannelingAction") && n >= perTarget && end > last) {
+      for (let i = before; i < this.landings.length; i++) this.landings[i] = { ...(this.landings[i] as CompiledLanding), latest: end };
     }
     if (this.landings.length > before) this.notes.add(`${ctx.file}@${start}: ${t} ticks from frame ${start} every ${fmt(interval)} s to ${end}${Number.isFinite(perTarget) ? `, at most ${perTarget} per target` : ""} (first tick assumed at the start)`);
   }
