@@ -248,6 +248,28 @@ purgedByLog; enginecheck.ts killPurges).
   total −20.6 → −24.5% (its second target's log-only share no longer cancelled); 6339 plain 114 → 107, −12.6 → −19.8%
   (the slug after its 20.37 s kill had Camille's Susceptibility: Laevatain's 23.04–23.64 s hits ×1.12 low)
 
+## several-targets
+
+Read only by the log check (packages/logs targets.ts, enginecheck.ts fightTargets and fightTotals, killPurges;
+replayrun.ts's kill gaps), on the three fixtures marked severalTargets (6339 and 7b54, Hard 33's eight slugs; 9c6e,
+Hard 31's two Wanderers), never by simulations or an unmarked log. Measured 2026-11-27 (scratch/measure, the plain
+tree against `one` as variants), the several-targets row only, every other row and the hold-outs unchanged.
+
+- `one`: (the check until 2026-11-27): plain 54.1%, mismatch 27.6%, mean |damage error| 20.0% (6339 108 plain,
+  −19.7%; 7b54 65, +15.7%; 9c6e 244, −24.5%)
+- `targets`: plain 54.1 → 68.5%, mismatch 27.6 → 15.4%; 6339 plain 108 → 115 (Laevatain's 23.04–23.87 s battle skill
+  with the Vesperwings the next slug kept across the 20.37 s kill), 7b54 65 → 99 (mismatch 116 → 83: hits on a slug
+  without Jade Vessel, which the replay's one enemy had from 3.4 s, and the slugs after the 16.36 s kills), 9c6e 244 →
+  314 (mismatch 94 → 33, mean |per-hit error| 7.9 → 3.9%: the second Wanderer without Corrosion and Detonation Unit's
+  line). The totals' copies of a landing for its twins on other targets ungated: mean |damage error| 20.0 → 26.3%
+  (9c6e −24.5 → +7.4%, 7b54 +15.7 → +61.3%: Si's combo finals the placement paired with slashes, their slots used up
+  by the slashes' twins, counted once per slug); gated on the twin's fit (a hit no state fits stays log-only): 6339
+  −10.3%, 7b54 +26.8%, 9c6e −11.3%, mean 16.1%
+- `targets-once`: the totals as one target: mean |damage error| 20.9% (9c6e −26.1%, 7b54 +26.4%, 6339 −10.3%)
+- `targets-gaps-away`: 6339 plain 116, −12.6% against `targets`' 115, −10.3% (Camille's 14.09 s landing on a
+  shielded slug, unlogged: with the enemy there it gives the next slug her Vesperwings, as the log lists from 14.089 s,
+  and her weapon's Heat DMG, which the log doesn't: a shielded slug takes no infliction); 7b54 and 9c6e unchanged
+
 ## hitless-presses
 
 The press may have done nothing (a variant the slot held, a press the game dropped), or landed without its damage

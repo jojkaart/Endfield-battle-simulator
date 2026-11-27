@@ -69,7 +69,7 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       there: "yes: only the enemy-away stretches hold the replay's enemy away (the replay until 2026-11-27)",
       tight: "as `absent`, from the frame after the kill's ms to the frame before the next logged hit",
-      absent: "no: from 0.15 s after the kill's ms to 0.15 s before the next logged hit (replayrun.ts KILL_EDGE_MS: a landing logged at either may come a few frames off it in the replay) the replay's enemy is away, as in an enemy-away stretch under `absent`",
+      absent: "no: from 0.15 s after the kill's ms to 0.15 s before the next logged hit (enginecheck.ts KILL_EDGE_MS: a landing logged at either may come a few frames off it in the replay) the replay's enemy is away, as in an enemy-away stretch under `absent`",
     },
   },
   {
@@ -89,7 +89,18 @@ export const REPLAY_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       none: "no: each debuff runs to its own end (the replay until 2026-11-26)",
       log: "yes: at a logged moment after which none of the team's runs on the enemy listed there is listed again",
-      "log-kills": "as `log`, and in a fight against several targets under one id (the fixture's severalTargets) also at each logged kill",
+      "log-kills": "as `log`, and in a fight against several targets under one id (the fixture's severalTargets) read as one target (several-targets `one`) also at each logged kill",
+    },
+  },
+  {
+    id: "several-targets",
+    question: "How does the log check read a fight against several targets under one id (the fixture's severalTargets)?",
+    default: "targets",
+    readings: {
+      one: "as one target: every target's debuffs on the replay's one enemy, a kill sheds them all (logged-purges `log-kills`), a kill gap holds the enemy away (the check until 2026-11-27)",
+      targets: "per target (packages/logs targets.ts): each logged hit on a target (a landing's twins on others, else the alive target its value fits), each its own debuffs and kill; the replay's enemy keeps the debuffs at kills and stays in a kill gap with targets left; a landing counts once per target whose hit fits",
+      "targets-once": "as `targets`, but the totals count a landing once, as for one target (its logged hits on other targets log-only)",
+      "targets-gaps-away": "as `targets`, but a kill gap holds the replay's enemy away whatever targets are left",
     },
   },
   {
