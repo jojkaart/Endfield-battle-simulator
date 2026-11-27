@@ -103,7 +103,7 @@ across them on time (median +3 ms, NODES=1); a hold of the breaker only.
 **Still possible:** the exact length and curve (12f–18f measure alike in plain matches; 14f is the Node buff's curve,
 0.46 s held, and the lowest damage error; 16f, the logs' median, keeps Si's combo final in c83c, a tail cut's
 threshold).
-**The open points, 2026-11-27 (round 2; docs/journal/2026-11-27-11-the-break-s-open-points-the-hold-s-place-combos-the-stagger.md):**
+**The open points, 2026-11-27 (round 2; docs/journal/2026-11-27-12-the-break-s-open-points-the-hold-s-place-combos-the-stagger.md):**
 - **Where the hold sits against the breaking hit's ms** (scripts/probes/stagger/break-place.ts: each clock's lateness
   up to the break's ms and after it): of the 22 breaks a clock reads, 16 are late after the ms only (pre −149 … +93
   ms); 9090 128.92 s late before it only (pre +320, post −15; the moment before 0.42 s earlier, the next 0.10 s
@@ -198,10 +198,18 @@ window gains 3 frames of the 15 the log shows (not measured).
   each at a ms that batches every hit then, around Wulfgard's 49.50–50.10 s stop; the replay's at 48.97–49.47 s from
   the event. The log's grain can't place the start better (as the 2026-11-22 entry found); 00ae's 0.29 s with no stop
   listed stays a hold no clock places.
-- **Pogranichnik's harasses 0.2–2 s off:** the harass entity's own slow-downs (TimeDilationAction layer 1, 0.4 s per
-  path, kit "Not modelled") and its teleport (TeleportAction at frames 0–3) are the candidates for the 0.6–1.3 s
-  against the kit's 0.3 s; d4fb's 88.55 s harass and 89.82 s Assault are those paired the wrong way by the 16-frame
-  nearest pairing. Not built.
+- Fixed: Pogranichnik's harasses 0.2–2 s off: the entity's own slow-down (frame 9 → 18) on the world's clock —
+  docs/journal/2026-11-27-11-camille-s-vesperwings-at-an-away-stretch-pogranichnik-s.md. Ruled out: the teleport
+  (TeleportAction at frames 0–3 takes no time; the slow-down alone fits 7e19's 0.54–0.68 s and d4fb's 0.61 s).
+  **Still open: the Decisive Assault** (finish4: the data's frame 25, and the same own slow-down at its frames 0–3,
+  would be 34 frames, 1.14 s): every logged Assault comes 0.21–0.44 s after the physical status or combo slash that
+  makes it (7e19 27.75 → 28.19, a9d7 25.86 → 26.11 and 210.25 → 210.50, c4f3 73.48 → 73.69, d4fb 89.59 → 89.82 and
+  173.67 → 174.03, de6a 117.35 → 117.63 s); the replay's at frame 25 are 0.4–0.6 s late (d4fb's 89.82 s log-only, its
+  90.43 s replay-only). A frame 8 on the world's clock fits all but two (scripts/probes/entities/harass-deltas.ts with a
+  kit variant: one-sided 21 → 15), but nothing in the data gives it: the final rush buff
+  (buff_chr_0029_pograni_ultimate_skill_finall_rush) spawns the four entities at its frames 0–3 with a 1 s global
+  ComboSkill slow-down that ignores them. Still possible: the four Shieldguards already standing (the harasses'
+  entities) taking the strike sooner, or the log stamping the strike at the slow-down's clock. Not built.
 - Fixed: 99fb's bleed ticks: her ultimate's freeze of an Elite held her bleed in the replay (+93 frames at 51.03 s),
   and the log's ticks run on through it in every Elite log (99fb, 2fd9, 207f): Razor Clawmark `runsThroughFreeze` —
   docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis (the
@@ -306,16 +314,16 @@ cause:
   a7a7 39.27 / 40.87 s, not an edge: Liino's Medicant ×4 on Wulfgard in the replay's burst, an unjudged kit buff the
   logged burst lists none of: paired by the check's reading, plain; abfd 100.93 / 103.48 s, held past Fluorite's combo
   and Xaihi's ultimate (2.55 s, 76 frames; ×1.30, the replay's value at the logged frame): paired at 90 frames, plain. Not an edge:
-  e989 86.65 / 88.70 s, the replay keeps Camille's Firefang Weakness (fire Susceptibility 0.12) on 69.19–89.32 s where
-  the log lists none (her next run starts at 89.32 s; Laevatain's 70.43 and 85.87 s hits read −10.7% too): a Camille
-  buff run, open; 7b54 46.70 / 47.39 s: the slugs (below). A 10% fit was mixed
+  e989 86.65 / 88.70 s, Camille's Firefang Weakness kept through an away stretch: fixed (the next paragraph);
+  7b54 46.70 / 47.39 s: the slugs (below). A 10% fit was mixed
   (docs/tried/2026-11-27-status-value-fit-10.diff).
 - **The placement and the cast assembly** (the replay-only agent's files, not changed here): fc63 87.87 s Typhoeus's
   burst landed 0.48 s early, inside the 0.2 s Sign cooldown of the one before, so her 101.87 s combo has 7 Signs;
   f879 95.10 s Laevatain's battle skill made before her 92.50 s Heat absorption (no empowered hit, −2.1%); 5082
   45.06 s Yvonne's ultimate step made as ult_attack1_1 (five shots dropped, −1.8%); 9a80 34.94 s Si's combo final
   paired with a slash at one batched ms (twin like −4.6% / +6.6%); 3aa6 125.65 s Zhuang Fangyi's battle-skill press
-  skipped (one Sunderblade short at 146 s, −2.7%); Pogranichnik's harasses 0.2–2 s off in five logs; Rossi's bleed ticks
+  skipped (one Sunderblade short at 146 s, −2.7%); Pogranichnik's harasses 0.2–2 s off in five logs (fixed 2026-11-27,
+  his Assault left: above); Rossi's bleed ticks
   in 99fb placed as a battle skill's hits ("a landing whose order the kit doesn't give").
 - **Arcane's INT lasers (seal_finisher_wisd; 8915, 00ae, a7a7, about −2.4% each):** started from the logged combo
   event (ticksLoggedAs); 00ae's at 66.32 s run 0.29 s longer to the second laser than frames 2 → 5 with no stop listed
@@ -335,9 +343,24 @@ enemy's clock running late across combos ("The enemy's clock" below) on bursts d
 depends on it where the values fit); the pairs a buff's edge puts off in value (above). Arcane's lasers: a hold on the
 world's clock that only her lasers show, or the lasers' start not at the logged event.
 
+**Fixed 2026-11-27: Camille's Firefang Weakness through an away stretch** (e989; docs/journal/2026-11-27-11-camille-s-vesperwings-at-an-away-stretch-pogranichnik-s.md).
+The hovering Vesperwings entity checks its target every 0.5 s (buff_chr_0033_camille_normal_skill_bat_checktarget:
+FindTargetAction, CheckEntityNum, FinishOwnerAction unless retargeting) and its debuff ends with it
+(autoFinishByAction). e989 lists it to 19.67 s (the first away stretch's start; no purge read there, the stretch being
+longer than PURGE_GAP_MS) and to 69.19 s (1.74 s before the stretch 70.93–84.83 s, at the boundary of a check 7.5 s
+after the battle skill's 61.69 s hit), where the replay kept it to her next battle skill. Now KitBuff.targetCheck and
+Camille's kit assumption `vesperwings-target-loss` `listed` (buffreplay.ts targetLosses): the check at the debuff's
+last listing within TARGET_LOSS_LEAD_MS (4 s) before a stretch, else the first after the stretch's last logged hit
+(`away`). e989 plain 260 → 267, |damage error| 0.5 → 0.1%, its 86.65 s Heat burst paired (by value; 2 s off in
+time, the burst's own timing); one hold-out better (mean |damage error| 6.4 → 5.8%). **Ruled out:** her debuff's
+duration (bat_duration 45 / 60 s: every other Camille run ends at a refresh, a kill or the fight's end; f879's 77 s run is
+the hidden holds'), a consumed trigger (the entity's explosion's FinishOwnerAction is disabled). **Still possible:**
+why the boss stops being a target 1.74 s before its last hit (Si's boss, eny_0134_jsspsi, leaves as the damage
+reaches about 50% and 85% of twice its Max HP: a phase; the hits between still land); `listed` reads that from the
+debuff's own listing, `away` measured worse (e989 plain 264, 0.8%). Only e989 has Camille and an away stretch.
+
 **Next check:** the INT lasers' start against the logged combo event across every INT log (`zmdlogs casts --operator
-Arcane`); e989's Camille Firefang Weakness on 69.19–89.32 s in the replay alone (`zmdlogs replay e989 --kit-buff
-chr_0033_camille:vesperwings`).
+Arcane`).
 
 ## The totals that rose once hits read right (2026-11-27)
 
@@ -571,10 +594,9 @@ inference reads (57 of Rossi's).
   DamageAction (the follow-ups `beforeDamage`); the bank's layer came at the follow-up's harass 0.3 s later in the
   replay, which the log has 1.3 s later (87.97 s, beside the combo's own follow-up layer: two since 87966). And a hit's
   bank gains with its SP before the damage raise their trigger then (landing.ts: d4fb 47.92 s, the slash with the
-  layer it made). d4fb plain 516 → 844, de6a 71 → 287, a9d7 282 → 333, c4f3 398 → 464. **Still open:** the harasses'
-  delays (logged 0.6–1.3 s after their event, the kit's frame 9 is 0.3 s: d4fb 78.34 → 78.95, 84.18 → 85.42, 86.67 →
-  87.97 s; the placement then takes d4fb's 88.55 s harass and 89.82 s Assault as an ultimate the replay doesn't cast);
-  c4f3 92.93 and 147.41 s (a layer short, ×1.10: an earlier layer's end), a9d7 239.40 s (a layer too many, ×0.93); the
+  layer it made). d4fb plain 516 → 844, de6a 71 → 287, a9d7 282 → 333, c4f3 398 → 464. The harasses' delays fixed
+  2026-11-27 (the entity's own slow-down, the world's clock: d4fb 844 → 851, de6a 291 → 298, c4f3 464 → 468; the
+  Assault's left, "The placement cases the one-sided rounds left"). **Still open:** c4f3 92.93 and 147.41 s (a layer short, ×1.10: an earlier layer's end), a9d7 239.40 s (a layer too many, ×0.93); the
   harasses' layers on whom (c4f3 68.83 s on Pogranichnik in the log, the replay's at 71.17 s twice); a9d7 197.07 s (a
   layer the log lists from 205.06 s).
   de6a 26–61 s ×1.004 on every Pogranichnik hit and the ×1.003 on the Endministrator's d4fb fallbacks: a small

@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 177 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 178 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -39,6 +39,41 @@ error. No simulated fight moved (the new reading is the replay's only), so no te
 **Ruled out for the hold-outs:** the hold's start as the moments place it; the placement's stops with the breaks'
 holds; the held cast starts made them worse. Under `break-hold=none` they lose one INSIDE decision: an action the hold
 lengthens past the next press (as 3aa6's breaker logged inside its hold, fc63's combo across a break) is the lead.
+
+## 2026-11-27: Camille's Vesperwings at an away stretch, Pogranichnik's harasses
+
+**Goal:** two leads from docs/open-problems.md: e989's Camille Firefang Weakness (fire Susceptibility 0.12) the replay
+kept on 69.19–89.32 s, and Pogranichnik's harasses 0.2–2 s off in his five logs.
+
+**Camille.** The debuff is a child of the hovering Vesperwings entity (autoFinishByAction); the entity checks its
+target every 0.5 s (buff_chr_0033_camille_normal_skill_bat_checktarget: FindTargetAction, CheckEntityNum,
+FinishOwnerAction unless retargeting) and finishes without one. Every other Camille run ends at a refresh, a kill or
+the fight's end; only e989 has an away stretch, and it lists the debuff to 19.67 s (the first stretch's start: no purge
+is read there, the stretch being longer than PURGE_GAP_MS) and to 69.19 s, 1.74 s before the stretch 70.93–84.83 s, at
+a check's boundary (61.69 s + 15 × 0.5 s). Si's boss leaves as the damage reaches about 50% and 85% of twice its Max HP
+(scripts/probes/entities/jsspsi-phases.ts), the second time 0.2–3.6 s after the share is dealt, still hit meanwhile.
+Built: KitBuff.targetCheck (`every`, `assumption`), read only by the log check's replay (buffreplay.ts targetLosses,
+lostTargets, composed into `held` after the purges), behind Camille's kit assumption `vesperwings-target-loss`:
+`kept` (as before), `away` (the first check after the stretch's last logged hit), `listed` (the check at the debuff's
+last listing within TARGET_LOSS_LEAD_MS, 4 s, before the stretch; default). Measured: `listed` e989 plain 260 → 267,
+|damage error| 0.5 → 0.1%, its 86.65 s Heat burst paired; `away` mixed (264, 0.8%); one hold-out better under both
+(mean |damage error| 6.4 → 5.8%). Why a kit assumption: the engine registry is in timeline/, the parallel agent's
+folder (friction report point 2).
+
+**Pogranichnik.** The harass entity slows itself at each path's frames 0–3 (TimeDilationAction layer 1, 0.4 s, an
+inline curve 0.30 → 0.043 → 1: mean scale 0.23, scripts/probes/entities/harass-slowdown.ts), so its frame-9 hit comes
+9.24 frames late; as an entity's timeline it is on the world's clock, which his own combo's slow-down holds (d4fb's
+Breach at 86.67 s, its harass at 87.97 s across his combo from 87.20 s). Kit: frames [18], `world`. Over his five logs
+(scripts/probes/entities/harass-deltas.ts) median |Δ| 299 → 88 ms, one-sided 37 → 21; frame 17 measured worse (119 ms);
+the teleport takes no time (ruled out). d4fb's 87.97 / 88.55 s harasses now pair right. The Decisive Assault stays at
+frame 25: every logged one comes 0.21–0.44 s after its event, which nothing in the data gives (frame 8 fits all but
+two; not built: open-problems "The placement cases the one-sided rounds left").
+
+**Numbers** (snapshots:update, docs/accuracy.md): development plain 84.2 → 84.3%, |damage error| 1.3%; hold-out plain
+82.5%, mismatch 5.3 → 5.1%, mean |damage error| 6.4 → 5.8%; earlier pending plain 82.2 → 82.3%. Better: e989, c4f3,
+7e19, d4fb, de6a and one hold-out; mixed: a9d7 (plain 332 → 336, damage −1.7 → −1.8%, per-hit error closer); worse:
+none. Team fights unchanged (team-ab identity at e2e6f3f: no team example has either operator); the
+pogranichnik-chen example snapshot moves with the harass frames.
 
 ## 2026-11-27: The hold at a Stagger break; Rossi's bleed through her freeze
 
@@ -405,44 +440,3 @@ when every one asks under a quarter.
 **Left** (docs/friction/2026-11-27-backlog-after-round-17.md): a layered buff's per-layer clock; the recorded Stagger
 start parked; on the accuracy list the element mask of log-only buffs and the 14 factor stretches (7b54's slug first).
 CLAUDE.md lines for the lead in the round's summary.
-
-## 2026-11-27: Exposed totals: stage Electrification, kills, Rossi's combo 3
-
-**Goal:** the fight totals that rose once the attack-4 round read hits right (207f +5.5%, 3aa6, d774, 9847, a9d7),
-split by operator and landing kind and fixed by mechanisms; 3f78's Rossi combo 3 at 50.55 s, made inside combo 2's
-uncuttable frames (docs/journal/2026-11-27-01-zhuang-fangyi-s-attack-4-and-liino-s-silent-stance-ends.md).
-
-**Done:**
-- **Hard 27's stage Electrification is Arts DMG Taken only** (enginecheck.ts logOnly, stageElements): the log lists it
-  without an element and the check added it to every hit; buff_common_pulse_pulse_conduct_triggered_do reaches
-  CheckDamageTypeMask 92 (Arts), physical only with `if_contain_physicdamage` = 1, which nothing in the data sets. 207f's
-  physical hits 21–36 s (Rossi's attacks, combos, bleeds, Gilberta's set) read ×0.847 = 1.33 ÷ 1.57 with it, plain now.
-- **A kill from a stage-scaled total** (enginecheck.ts stageScaledKill): 207f's logged total is 5.7600 × the data's Max
-  HP, its last hit without an `uncapped` value; every capped single-life kill in the development logs sits within 1.3e-5
-  of a two-decimal multiple (scripts/probes/totals/stage-kills.ts), 5082 (×7.6000) is the other uncapped one. The totals cap
-  the killing hits (Rossi's ultimate final: 1,134,403, predicted 1,218,124), loggedEnemyHp reads the HP, and the check
-  leaves a killing hit unjudged where it reads above its value (logcheck.ts killingBlows `capOnly`).
-- **Rossi's combo 3 on its jumped path** (logcasts.ts jumpedFirst): placed by its perfect hit (frame 29) it started at
-  49.59 s, 13 frames before combo 2's window (frame 37); its late hit (227, 15 after the jump 0 → 212) puts it at
-  50.05 s, where the perfect-timing ring (combo 2's frame 52) isn't on yet, so the kit's own condition jumps. No INSIDE,
-  no JUMPDROP, no extra Vulnerable: Gilberta's 58.90 s ultimate Susceptibility 0.39, the log's. The rule takes the
-  twin's slot only where the skipped path's start is before the operator's previous cast lets the skill start.
-- tests/logcasts.test.ts (three tests).
-
-**Scoreboard** (`npm run snapshots:update` after merging main at 0b68614, the away stretches; `measure --base 0b68614`
-for this branch alone): development plain 81.0 → 81.4%, mismatch 6.4 → 6.3%, mean |damage error| 3.3 → 3.1%, within 5%
-27 → 28; hold-out unchanged (82.6%, 5.5%, 7.1%); earlier pending unchanged (81.4%, 7.6%, 1.6%;
-abfd mismatch 2 → 1). Better: 207f (plain 269 → 308, mismatch 16 → 3, +5.5 → +1.6%), 3f78 (plain 114 → 151, 0.9 →
-0.2%); 5082 adds a time to kill. No log worse. Rossi's row: plain 74.2 → 76.6%, mismatch 5.1 → 4.6%, mean |damage
-error| 1.8 → 1.3%. No engine or kit rule changed (log tools only): no team-ab.
-
-**Decisions:** the stage kill by the total, not a list of stage factors: the factors differ per stage and per version
-(hdg027 ×5.28 in 2fd9 / 99fb, ×5.76 in 207f), the grid is what they share. The combo-3 rule asks the kit's windows,
-not the Stagger: every logged combo-3 hit has Stagger 5 (poise_f), perfect ones too.
-
-**Dead ends:** the Stagger value as the path's evidence (above); d774's +4.9% (Zhuang Fangyi's first Empyrean battle
-skill at 103.28 s: 3 strikes, no final, in the log; neither blades, an attack's cut nor half a life's HP explain it:
-docs/open-problems.md "The totals that rose once hits read right").
-
-**Left:** d774 103.28 s; 3f78's team-wide ×1.017 after 50.55 s (Corrosion's ramp late in the replay: the enemy's
-clock); a9d7's Chen −3.0% (spread, Pogranichnik's team buffs on her combo); 207f's Rossi attack 4 hit_ai tail (+1.3%).

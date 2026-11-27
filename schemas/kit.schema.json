@@ -246,6 +246,16 @@
             "type": "boolean",
             "description": "An enemy buff whose timer and ticks run on through a freezing control status on the enemy (Si's Immobilization holds the other debuffs): Arcane's Imprisonment."
           },
+          "targetCheck": {
+            "type": "object",
+            "required": ["every", "assumption"],
+            "additionalProperties": false,
+            "properties": {
+              "every": { "type": "number", "exclusiveMinimum": 0, "description": "Seconds between the entity's checks, from the buff's application." },
+              "assumption": { "type": "string", "description": "The kit's assumption with readings kept, away and listed that says where the log check's replay ends it." }
+            },
+            "description": "An enemy buff its owner's ability entity holds while the entity finds its target (Camille's Vesperwings: bat_checktarget every 0.5 s, FinishOwnerAction): the log check's replay ends it at the first check after the enemy left (an away stretch), as the named kit assumption reads it; the engine doesn't read it."
+          },
           "endsWithCast": {
             "type": "boolean",
             "description": "Ends with the action that applied it (CreateBuffAction autoFinishByAction): when its owner's current skill ends or the owner starts another; not applied outside a skill."

@@ -6,6 +6,18 @@
     "Talent 1 (Hunter of Transgression, talent index 0) sets talent_0 = 1, heal_base / heal_sub_multi and combo_duration 15 on combo_skill and combo_skill_2 (CharGrowthTable talent node effects): its branches are gated by talentAtLeast [0, 1]. Talent 2 (Bloodfount Revival, index 1) attaches chr_0033_camille_passive_talent1 (atk_up, duration, teammate_rate). Potentials (CharacterPotentialTable) come from the data as skill values and skillParams: P1 weak_scale / vulnerable_scale +0.05 and bat_duration +15; P2 Agility and Intellect +20 (panel); P3 combo cooldown -2 s, combo and Hunter Pursuit multipliers x1.3 and their atb / atb_ex x1.15; P4 ultimate cost x0.85; P5 talent-2 atk_up +0.06.",
     "Interims (report section 'Kit (2026-10-21)'): Hunter Pursuit (comboWindow false) is cast by its own skill ID; the combo's and ultimate's windows list normal_skill_2 (the button), and the loader opens them for combo_skill_2 too (the button's switchToBuffConfig casts it), so it starts at 51 / 125. Projectile travel (Ti2) and hit-stops (Ti1b) aren't modelled. One enemy: the battle skill's retarget path (listen_target_dead → projhit_sub → abilityrange) never runs."
   ],
+  "assumptions": [
+    {
+      "id": "vesperwings-target-loss",
+      "question": "Where does the hovering Vesperwings' debuff end when the enemy leaves (an away stretch: a stage's phase)? The entity checks its target every 0.5 s (buff_chr_0033_camille_normal_skill_bat_checktarget: FindTargetAction, CheckEntityNum, FinishOwnerAction unless retargeting) and the debuff ends with it (autoFinishByAction). Read only by the log check's replay (packages/logs buffreplay.ts targetLosses): a simulation's enemy never leaves.",
+      "default": "listed",
+      "readings": {
+        "kept": "it doesn't: the debuff runs its time through the stretch (the kit until 2026-11-27). e989 keeps it on 19.67–45.89 s (no purge: the stretch is longer than PURGE_GAP_MS) and 69.19–89.32 s where the log lists none: Laevatain's 45.29, 70.43 and 85.87 s hits ×1.04–1.12 high, Arcane's 86.65 s Heat burst left unpaired",
+        "away": "at the entity's first check after the stretch's last logged hit (the replay's enemy gone: enemy-away). Measured 2026-11-27 against kept: e989 plain 260 → 264, |damage error| 0.5 → 0.8% (its 69.48–70.93 s hits still with it); one hold-out better (mean |damage error| 6.4 → 5.8%)",
+        "listed": "at the entity's first check after the debuff's last listing before the stretch, where that comes within TARGET_LOSS_LEAD_MS of the stretch (the enemy no longer a target while still hit: pending/zmdlogs-e9896c8d02be.json, listed to 69.19 s, the boundary of a check 7.5 s after the battle skill's hit at 61.69 s, the stretch from 70.93 s); else as `away`. Measured 2026-11-27 against kept: e989 plain 260 → 267, |damage error| 0.5 → 0.1%, its 86.65 s burst paired; the same hold-out better as under away; nothing else moves (no other development log has Camille and an away stretch)"
+      }
+    }
+  ],
   "element": "fire",
   "buffs": [
     {
@@ -14,6 +26,7 @@
       "target": "enemy",
       "gameBuff": "buff_chr_0033_camille_normal_skill_weak",
       "duration": { "key": "bat_duration", "skill": "chr_0033_camille_normal_skill" },
+      "targetCheck": { "every": 0.5, "assumption": "vesperwings-target-loss" },
       "modifiers": [
         { "attr": 62, "value": { "key": "weak_scale", "skill": "chr_0033_camille_normal_skill" } },
         { "zone": "susceptibility", "elements": ["fire"], "value": { "key": "vulnerable_scale", "skill": "chr_0033_camille_normal_skill" } }

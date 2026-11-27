@@ -770,6 +770,15 @@ export interface KitBuff {
    */
   readonly runsThroughFreeze?: boolean;
   /**
+   * An enemy buff its owner's ability entity holds while the entity finds its target: the entity checks every `every`
+   * seconds from the buff's application and, its target gone, finishes, the buff with it (Camille's Vesperwings:
+   * buff_chr_0033_camille_normal_skill_bat_checktarget, triggerInterval 0.5, FinishOwnerAction; the buff
+   * autoFinishByAction on the entity's skill). The log check's replay ends it at the first check after the enemy left
+   * (an away stretch), as the kit's assumption `assumption` reads it (readings `kept`, `away`, `listed`: cli
+   * buffreplay.ts targetLosses). The engine doesn't read it: a simulation's enemy never leaves.
+   */
+  readonly targetCheck?: { readonly every: number; readonly assumption: string };
+  /**
    * A child of another buff of the kit (CreateBuffAction asChildBuff in the parent's game buff): applied with it for the
    * same time. Where the log check's replay moves the parent's end (endFollowsTick), an instance that ended with it
    * moves too (cli holdinputs.ts movedTick). The engine doesn't read it: the kit gives both the same duration.
