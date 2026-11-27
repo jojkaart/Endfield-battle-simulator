@@ -886,6 +886,23 @@ export function awayWindows(fx: LogFixture): { readonly from: number; readonly t
 }
 
 /**
+ * The stretches after a logged kill (ms): from a logged ms with a hit capped at the HP left (`uncapped` above its value)
+ * before the fight's last hit to the next logged hit, however short (engine assumption kill-gaps). The enemy (a life, a
+ * phase, one of several targets) is gone there, and the log records every landing that lands, so a landing in between
+ * found no one: pending/zmdlogs-9c6e97486a9d.json 63.34–67.64 s (Typhoeus's shot capped at 8,037 of 17,127, then 14
+ * landings of hers in the replay alone, her Power Shot's 160k burst among them), pending/zmdlogs-63398339803e.json's
+ * slug (capped at 10.35, 11.31, 24.02 s: Si's burst mark and Laevatain's battle-skill ticks after them, unlogged).
+ */
+export function killGaps(fx: LogFixture): { readonly from: number; readonly to: number }[] {
+  const ts = [...new Set(fx.hits.map((h) => h.t))].sort((a, b) => a - b);
+  const last = ts.at(-1);
+  const caps = new Set(fx.hits.filter((h) => h.uncapped !== undefined && h.uncapped !== null && h.uncapped > h.value && h.t !== last).map((h) => h.t));
+  const out: { from: number; to: number }[] = [];
+  for (let i = 0; i + 1 < ts.length; i++) if (caps.has(ts[i] as number)) out.push({ from: ts[i] as number, to: ts[i + 1] as number });
+  return out;
+}
+
+/**
  * Where the replay's enemy is out of reach (TimelineScenario.enemyAway, frames), under engine assumption enemy-away:
  * `absent`, each away stretch from the frame after its last logged hit to the frame before the next (the log records
  * every hit that lands, so an unlogged landing there found no one: pending/zmdlogs-0c14fb3ce77d.json, Si's battle skill

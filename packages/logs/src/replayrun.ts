@@ -10,7 +10,7 @@ import {
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { awayWindows, enemyAwaySpans, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
+import { awayWindows, enemyAwaySpans, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
 import { loggedFrames, type Placement } from "./logcasts.ts";
 import { replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
@@ -340,6 +340,15 @@ function missedStep(ctx: TimelineContext, st: TimelineState, operator: string, f
 
 /** How far (ms) around a cast's unlogged tail a logged hit of its operator with one of its skill's events keeps it whole, and a logged hit of anyone after its first landing shows the enemy there (tailCuts). */
 const TAIL_NEAR_MS = 1500;
+/**
+ * How far inside a kill gap (enginecheck.ts killGaps) the replay's enemy is away: a landing logged with the kill or
+ * with the next hit may come a few frames off its logged ms in the replay (the log flushes about every 100 ms:
+ * pending/zmdlogs-9c6e97486a9d.json 55.20 s, Arcane's combo boom at the kill, 0.12 s before the next logged hit).
+ */
+const KILL_EDGE_MS = 150;
+
+/** How many frames after one of a tail's landings a buff run it started may begin (tailCuts: a trigger on the landing). */
+const TAIL_EFFECT_FRAMES = 1;
 /** The most casts tailCuts ends in one fight, one replay each. */
 export const TAIL_CUT_ROUNDS = 8;
 
@@ -385,12 +394,17 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
     if (shown) continue;
     // A new run of a decided game buff the replay starts from the cut to the tail's end that the log lists then and not
     // before: the tail's effects came, so its landings did, unlogged (db87's Camille ultimate at 7.61 s: her gear set's
-    // DMG and her weapon's ATK and Heat DMG on Laevatain from 13.42 s, after hits the log doesn't have).
+    // DMG and her weapon's ATK and Heat DMG on Laevatain from 13.42 s, after hits the log doesn't have). Only a run that
+    // starts at one of the tail's landings (within TAIL_EFFECT_FRAMES after it): another cast's buff in that time says
+    // nothing of the tail (d774d0ce7bd3: Zhuang Fangyi's battle skill at 103.28 s, three strikes logged; a gear set's
+    // team ATK from Arcane's ultimate hit at 107.07 s, two frames before a tail strike, kept six strikes and a 152k final
+    // the log doesn't have).
     const end = (tail.at(-1) as LandedHit).frame + 1;
+    const atTail = (f: number) => tail.some((h) => f >= h.frame && f <= h.frame + TAIL_EFFECT_FRAMES);
     const listed = (g: string, a: number, b: number) => fx.hits.some((h) => h.t >= a && h.t <= b && h.effects.some((e) => e.buff === g));
     const effects = [...run.instances].some(([key, list]) => {
       const g = key.split("|", 1)[0] as string;
-      return list.some((x) => x.start > lastLogged && x.start <= end && listed(g, ms(x.start), ms(x.start) + TAIL_NEAR_MS) && !listed(g, ms(lastLogged) - TAIL_NEAR_MS, ms(lastLogged)));
+      return list.some((x) => x.start > lastLogged && x.start <= end && atTail(x.start) && listed(g, ms(x.start), ms(x.start) + TAIL_NEAR_MS) && !listed(g, ms(lastLogged) - TAIL_NEAR_MS, ms(lastLogged)));
     });
     // At its last logged landing's own frame: an end runs after that frame's hits (schedule.ts IN_FRAME), so a tail landing
     // the frame after is cut too (c83c75d02a85: Si's combo final at 56.73 s, a frame after her last logged slash, 5.0% of
@@ -709,7 +723,17 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   let brokenAt: number | null = null;
   const firstBasic = control ? { operator: control.first } : list.find((c) => c.kind === "basic");
   const enemyHp = loggedEnemyHp(data, fx, opts.assume?.["enemy-hp"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-hp")?.default ?? "kill");
-  const enemyAway = enemyAwaySpans(fx, opts.assume?.["enemy-away"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-away")?.default);
+  // Engine assumption kill-gaps: with `absent`, from KILL_EDGE_MS after a logged kill to KILL_EDGE_MS before the next logged hit too.
+  const killReading = opts.assume?.["kill-gaps"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "kill-gaps")?.default;
+  const [killStart, killEnd] = killReading === "tight" ? [1000 / FPS, 1000 / FPS] : [KILL_EDGE_MS, KILL_EDGE_MS];
+  const killed = killReading === "absent" || killReading === "tight" ? killGaps(fx) : [];
+  const enemyAway = [
+    ...enemyAwaySpans(fx, opts.assume?.["enemy-away"] ?? ENGINE_ASSUMPTIONS.find((a) => a.id === "enemy-away")?.default),
+    ...killed.flatMap((w) => {
+      const [from, to] = [Math.round(((w.from + killStart) * FPS) / 1000), Math.round(((w.to - killEnd) * FPS) / 1000)];
+      return to >= from ? [{ from, to }] : [];
+    }),
+  ];
   const scenario: TimelineScenario = {
     team: fx.team,
     target: { enemy: fx.enemy.id, level: fx.enemy.level },

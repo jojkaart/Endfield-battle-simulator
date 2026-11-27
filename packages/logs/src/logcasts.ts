@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, cutAtResets, effectiveKit, evalContext, evaluate, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
 
@@ -463,6 +463,8 @@ interface Group {
   readonly hits: readonly KitHit[];
   /** Each hit's multiplier from its skill's values (nominalScale), where it has one: what its landing's value is in proportion to. */
   readonly scales: ReadonlyMap<KitHit, number>;
+  /** The multipliers a hit whose value expression reads its event's count takes (nominalScales), where it has no single one. */
+  readonly ranges: ReadonlyMap<KitHit, readonly number[]>;
 }
 
 /** One landing slot of a key: the kit hits it can be (alternatives at one frame), the likeliest first. */
@@ -576,10 +578,18 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
     }
     return out;
   };
+  const ranges = (skillId: string, hits: readonly KitHit[]) => {
+    const out = new Map<KitHit, readonly number[]>();
+    for (const h of hits) {
+      const v = nominalScales(data, build, panel, skillId, h);
+      if (v !== null) out.set(h, v);
+    }
+    return out;
+  };
   return [
     ...kit.skills.map((s): Group => {
       const hits = s.hits.filter(available(s.skillId));
-      return { id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits, scales: scales(s.skillId, hits) };
+      return { id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits, scales: scales(s.skillId, hits), ranges: ranges(s.skillId, hits) };
     }),
     ...kit.triggers.flatMap((t): Group[] => {
       const skillId = triggerSkillId(kit.operator, t);
@@ -588,7 +598,7 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
       const anchor = t.on.event === "cast" && t.on.skills?.length ? { skills: t.on.skills, delay: t.delay ?? 0 } : null;
       const fired = t.on.event === "hit" && t.on.decorations?.length ? decoratedHits(data, fx, t.on.decorations, t.by === "self" ? build.operator : null) : t.on.event === "physicalStatus" ? statusHits(fx, t.on.statuses, t.by, build.operator) : undefined;
       const firedAt = fired?.map((h) => h.t + msOf(t.delay ?? 0));
-      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits, scales: scales(skillId, hits) }];
+      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits, scales: scales(skillId, hits), ranges: ranges(skillId, hits) }];
     }),
   ];
 }
@@ -603,6 +613,33 @@ export function nominalScale(data: GameData, build: Build, panel: StatPanel, ski
   if (h.reaction || h.status || h.fixedDamage !== undefined || h.scaleValue !== undefined || h.extraScale?.length || h.scale.length === 0) return null;
   const v = h.scale.reduce((a, key) => a * skillValue(data, panel, build, skillId, key), h.factor ?? 1);
   return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** The event counts a value expression's multiplier is read at (nominalScales): a combo's consumed stacks, 1 to 4. */
+const NOMINAL_EVENT_COUNTS = [1, 2, 3, 4];
+
+/**
+ * The multipliers of a kit hit whose value expression (KitHit.scaleValue) reads only its skill's values and its event's
+ * count (KitHit.scaleValue's `eventCount`), one per count of NOMINAL_EVENT_COUNTS, times its `scale` keys and factor; null
+ * for any other hit (nominalScale's, or one the expression needs more for). Si's combo final (atk_scale2 + count ×
+ * atk_scale2_1: ×11–20 a slash) was a slot the values couldn't place (pending/zmdlogs-63398339803e.json 11.31 s, the logged
+ * final, 121,248 before the slug's cap, on a slash's slot and the replay's final unlogged).
+ */
+function nominalScales(data: GameData, build: Build, panel: StatPanel, skillId: string, h: KitHit): readonly number[] | null {
+  if (h.scaleValue === undefined || h.reaction || h.status || h.fixedDamage !== undefined || h.extraScale?.length) return null;
+  const keys = h.scale.reduce((a, key) => a * skillValue(data, panel, build, skillId, key), h.factor ?? 1);
+  const out = new Set<number>();
+  for (const eventCount of NOMINAL_EVENT_COUNTS) {
+    let v: number;
+    try {
+      v = keys * evaluate(h.scaleValue, evalContext(data, build, panel, skillId, { eventCount }));
+    } catch {
+      return null;
+    }
+    if (!Number.isFinite(v) || v <= 0) return null;
+    out.add(v);
+  }
+  return [...out];
 }
 
 /**
@@ -1040,7 +1077,13 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       return g && exactSlots(g, key) ? slots(g, key) : null;
     };
     realignUltimates(placed, exactSlotsOf, others);
-    realignByValue(placed, exactSlotsOf, (c) => groups.find((x) => x.id === c.group)?.scales ?? new Map(), others, (c, h, slot) => {
+    realignByValue(placed, exactSlotsOf, (c) => {
+      const g = groups.find((x) => x.id === c.group);
+      return (k: KitHit) => {
+        const one = g?.scales.get(k);
+        return one !== undefined ? [one] : g?.ranges.get(k);
+      };
+    }, others, (c, h, slot) => {
       const g = groups.find((x) => x.id === c.group);
       const { beforeStop: _b, fromEvent: _f, ...rest } = c;
       return g ? { ...rest, ...startFor(g, h, slot) } : null;
@@ -1170,7 +1213,7 @@ const REALIGN_MS = 150;
 function realignByValue(
   placed: Map<LogHit, PlacedHit>,
   slotsOf: (c: LoggedCast, key: string) => readonly Slot[] | null,
-  scalesOf: (c: LoggedCast) => ReadonlyMap<KitHit, number>,
+  scalesOf: (c: LoggedCast) => (k: KitHit) => readonly number[] | undefined,
   stops: readonly TimeStop[],
   restart: (c: LoggedCast, h: LogHit, slot: Slot) => LoggedCast | null,
 ): void {
@@ -1188,16 +1231,18 @@ function realignByValue(
       const n = hits.length;
       if (!s || n < 2 || n >= s.length || s.some((x) => x.hits.some((k) => k.landedCount !== undefined))) continue;
       const scales = scalesOf(cast);
-      // Each slot's multipliers (its alternatives'); a slot with a hit of none leaves the values undecided.
-      const slotScales = s.map((x) => x.hits.map((k) => scales.get(k)));
+      // Each slot's multipliers (its alternatives', each of a hit's own: nominalScales); a slot with a hit of none leaves
+      // the values undecided.
+      const slotScales = s.map((x) => x.hits.map((k) => scales(k)));
       if (slotScales.some((v) => v.some((m) => m === undefined))) continue;
-      const ms = slotScales as number[][];
+      const ms = (slotScales as (readonly number[])[][]).map((v) => v.flat());
       const all = [...new Set(ms.flat())];
       if (Math.max(...all) / Math.min(...all) <= VALUE_TOLERANCE) continue; // the values can't tell the slots apart
       const list = [...hits].sort((a, b) => a.t - b.t);
       const now = list.map((h) => (placed.get(h) as PlacedHit).index);
       if (now.some((j, i) => j >= s.length || (i > 0 && j <= (now[i - 1] as number)))) continue;
-      // A crit's value, or a hit's whose crit the log doesn't say, isn't compared.
+      // A crit's value, or a hit's whose crit the log doesn't say, isn't compared (a value of unknown crit fitting a slot
+      // up to a crit's factor above it measured worse on a hold-out's total: docs/tried/2026-11-27-unknown-crit-slots.diff).
       const value = (h: LogHit) => (h.crit === false ? (h.uncapped ?? h.value) : null);
       const refs = list.flatMap((h) => {
         const v = value(h);
@@ -1320,7 +1365,26 @@ function joinDelayed(candidates: readonly Group[], h: LogHit, slots: (g: Group, 
       if (!best || c.start > best.cast.start) best = { g, cast: c };
     }
   }
-  return best;
+  if (best) return best;
+  // The latest cast of these groups, with no landing of the key yet, where the stops between would hold the landing that
+  // long laid end to end (stackedHeldMs): a pass's stops are the pass before's, and an ultimate placed there from its hit
+  // alone starts later than its stop held the world (fc63a2001251 43.58 s: Typhoeus's burst, 3.7 s after her arrow at
+  // 39.94 s across Gilberta's and Perlica's ultimates, the first placed at 41.60 s in pass 1 and 39.92 s in pass 2, made a
+  // shot of its own whose arrow the log doesn't have, and her arrow's burst landed unlogged).
+  let latest: { g: Group; cast: LoggedCast } | null = null;
+  for (const g of candidates) for (const c of opened.get(g.id) ?? []) if (c.start <= h.t && (!latest || c.start > latest.cast.start)) latest = { g, cast: c };
+  if (!latest || latest.cast.key === h.event || !free(latest.cast)) return null;
+  const first = slots(latest.g, h.event)?.[0];
+  if (!first?.hits.some((x) => x.enemyDelay !== undefined)) return null;
+  return h.t - latest.cast.start - stackedHeldMs(latest.cast.start, h.t, stops) <= msOf(first.frame) + CAST_SLACK_MS ? latest : null;
+}
+
+/** The world time the stops overlapping `from`–`to` (ms) hold within it, each on its own (worldMs counts frames two stops share once). */
+function stackedHeldMs(from: number, to: number, stops: readonly TimeStop[]): number {
+  const [a, b] = [Math.round((from * FPS) / 1000), Math.round((to * FPS) / 1000)];
+  let held = 0;
+  for (const s of stops) for (let f = Math.max(a, s.start); f < Math.min(b, s.start + s.scales.length); f++) held += 1 - (s.scales[f - s.start] as number);
+  return msOf(held);
 }
 
 /**

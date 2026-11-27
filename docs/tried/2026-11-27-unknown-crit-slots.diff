@@ -1,0 +1,47 @@
+Tried 2026-11-27 (replay-only round): in logcasts.ts realignByValue, a logged value of unknown crit (crit null) is
+compared too, fitting a slot when it lies between the slot's multiplier ÷ VALUE_TOLERANCE and × VALUE_TOLERANCE ×
+UNKNOWN_CRIT_FACTOR (3) under the cast's scale. 9a8097fcf351's Si combo final at 36.10 s (495,353, crit unknown, ×16.25
+the slashes' 30,483, as a non-crit final is in 6339) then takes the final's slot. Measured with --patch against the
+round's code: development 9a80 plain 277 → 278 (0.3 → 0.2%), nothing else; one hold-out worse in total (mean |damage
+error| 6.3 → 6.8%; its keys: kind combo, time to kill, share matched). Dropped: the hold-out can't be opened to see
+whether it is a kill-fight artifact. To try again: a development log with an unknown-crit final at a kill.
+
+diff --git b/packages/logs/src/logcasts.ts a/packages/logs/src/logcasts.ts
+index 93fb045..c33ee89 100644
+--- b/packages/logs/src/logcasts.ts
++++ a/packages/logs/src/logcasts.ts
+@@ -1241,16 +1241,21 @@ function realignByValue(
+       const list = [...hits].sort((a, b) => a.t - b.t);
+       const now = list.map((h) => (placed.get(h) as PlacedHit).index);
+       if (now.some((j, i) => j >= s.length || (i > 0 && j <= (now[i - 1] as number)))) continue;
+-      // A crit's value, or a hit's whose crit the log doesn't say, isn't compared (a value of unknown crit fitting a slot
+-      // up to a crit's factor above it measured worse on a hold-out's total: docs/tried/2026-11-27-unknown-crit-slots.diff).
++      // A crit's value isn't compared, nor does a value whose crit the log doesn't say set the scale; such a value fits a
++      // slot up to a crit's factor above it (UNKNOWN_CRIT_FACTOR: 9a8097fcf351's Si combo final at 36.10 s, 495,353 of
++      // unknown crit, ×16.25 the slashes' 30,483 as a non-crit final is in 6339, sat on a slash's slot).
+       const value = (h: LogHit) => (h.crit === false ? (h.uncapped ?? h.value) : null);
++      const unknown = (h: LogHit) => (h.crit === null ? (h.uncapped ?? h.value) : null);
+       const refs = list.flatMap((h) => {
+         const v = value(h);
+         return v !== null && v > 0 ? all.map((m) => v / m) : [];
+       });
+       if (refs.length === 0) continue;
+       const off = (i: number, j: number, ref: number) => {
+-        const v = value(list[i] as LogHit);
++        const h = list[i] as LogHit;
++        const u = unknown(h);
++        if (u !== null && u > 0) return (ms[j] as number[]).some((m) => Math.log(u / (m * ref)) >= -tolerance && Math.log(u / (m * ref)) <= tolerance + Math.log(UNKNOWN_CRIT_FACTOR)) ? 0 : 1;
++        const v = value(h);
+         return v === null || v <= 0 || (ms[j] as number[]).some((m) => Math.abs(Math.log(v / (m * ref))) <= tolerance) ? 0 : 1;
+       };
+       const offOf = (at: readonly number[]) => Math.min(...refs.map((r) => at.reduce((a, j, i) => a + off(i, j, r), 0)));
+@@ -1327,6 +1332,9 @@ function realignByValue(
+  */
+ const VALUE_TOLERANCE = 2;
+ 
++/** The most a crit multiplies a hit (1 + Critical DMG; the teams' panels have 1.5–2.5): a value of unknown crit fits a slot up to this above its scale (realignByValue). */
++const UNKNOWN_CRIT_FACTOR = 3;
++
+ /**
+  * The cast of the same skill, placed from another key, that a key's first logged landing belongs to: the latest that
+  * started no later than the landing and no earlier than the landing's kit frame (plus CAST_SLACK_MS) of the world's time
