@@ -33,6 +33,9 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
 - [2026-11-27-jump-launched-landings.diff](2026-11-27-jump-launched-landings.diff): the replay's JUMPDROP leaving out
   a logged landing launched before the jump (KitHit.launch: f879's Magma Fragment ticks across Laevatain's empowered
   jump 30 → 80); no development log moves, one hold-out −23 plain: not explained without opening it.
+- [2026-11-27-break-held-cast-starts.diff](2026-11-27-break-held-cast-starts.diff): a new cast's start held back
+  by every logged break's hold between it and its first landing, no cast event needed (logcasts.ts newCastStart,
+  passStops; fc63's and 3aa6's INSIDE); development 3 better, 1 mixed, hold-outs 2 worse (plain −12).
 - [2026-11-27-placement-break-stops.diff](2026-11-27-placement-break-stops.diff): the placement's pass-2 stops with
   the logged breaks' holds (logcasts.ts passStops); development unchanged, earlier pending 1 worse, 1 mixed, hold-outs
   unchanged: a held start needs a cast event near it, which few casts across a break have.
