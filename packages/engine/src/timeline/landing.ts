@@ -440,8 +440,14 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       if (!def) throw new EngineError(`${hit.operator} has no buff ${a.buff}`);
       if (away && def.target === "enemy") continue;
       if (a.if && !decide(a.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
+      // keepEnd: the new instance ends where the active one does (SaveBuffLifeTime: the time left passed on).
+      const kept = a.keepEnd ? st.buffs.find((b) => b.id === def.id && b.owner === hit.operator && b.cast === undefined && activeAt(b, hit.frame)) : undefined;
       const r = addBuff(ctx, st, hit.operator, hit.skillId, a.duration !== undefined ? { ...def, duration: a.duration } : def, hit.frame, at(consumed), undefined, a.untilFrame);
       st = r.state;
+      if (kept && r.buff && r.applied) {
+        const b = { ...r.buff, expiresAt: kept.expiresAt };
+        st = { ...st, buffs: st.buffs.map((x) => (x === r.buff ? b : x)) };
+      }
       if (r.applied) into.push(buffAppliedEvent(ctx, hit.frame, hit.operator, def, kind, r.buff));
     }
     if (beforeDamage && into.length) st = runTriggers(ctx, st, into, { operator: hit.operator, kind });

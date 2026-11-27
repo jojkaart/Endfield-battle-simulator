@@ -9,6 +9,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 ## 2026-11
 
 - [2026-11-27: Liino's damage error and her weapon's Medicant layers](2026-11-27-17-liino-s-damage-error-and-her-weapon-s-medicant-layers.md)
+- [2026-11-27: Camille's Vesperwings moving to the next target](2026-11-27-17-camille-s-vesperwings-moving-to-the-next-target.md)
 - [2026-11-27: Twins on several targets](2026-11-27-16-twins-on-several-targets.md)
 - [2026-11-27: Ember, Alesh and Catcher's mismatches: two build fits and DEF's percentage](2026-11-27-16-ember-alesh-and-catcher-s-mismatches-two-build-fits-and-def.md)
 - [2026-11-27: Casts across a Stagger break: the hold from the moments, break-held-starts](2026-11-27-15-casts-across-a-stagger-break-the-hold-from-the-moments-break.md)

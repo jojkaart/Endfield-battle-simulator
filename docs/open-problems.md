@@ -2326,29 +2326,36 @@ logcasts.ts placeWith `batch`; `later`: a third slug's final 125 ms after two sl
   shielded slugs (0, unlogged).
 - **6339 log-only:** Laevatain's 35.70 s empowered hit (−9.6%): the replay's battle skill at 32.24 s takes the
   unempowered path (its Melting Flame 3 of 4, `--trace-stack chr_0016_laevat:melting_flame`), so its explosion and
-  dots at 32.97–34.43 s are replay-only; the stack short is likely a Heat infliction from Camille's Vesperwings moving
-  to the next slug (below), which the replay lacks between its kills. Si's 19.91 s ink hit on two slugs (−11.5%): her
+  dots at 32.97–34.43 s are replay-only. **Not the move's Heat alone** (2026-11-27, with the move landed): the replay
+  now has the 29.67 s move's Heat infliction, but nothing of Laevatain's absorbs it before the cast (her Melting Flame
+  comes from her battle skill's explosion, +1, and a controlled Final Strike or finisher absorbing Heat; between the
+  24.02 s empowered hit, which used all four, and 33.24 s she lands her combo, an attack 2 and the 31.62 s
+  explosion: 0 → 3). Still possible: a Final Strike or finisher of hers on a shielded slug (unlogged), her combo's
+  gain. Si's 19.91 s ink hit on two slugs (−11.5%): her
   Final Stroke at 19.08 s is SKIPped (Artful Intent not on: its 10.91 / 14.67 / 18.40 s presses have no logged hit and
   the log never lists her Artful Intent, both on a shielded slug's side; the hitless-press listing evidence can't
   show a debuff on a target no one else hits). Replay-only: Laevatain's 21.60 s finisher hit_2 (+10.2%), kept by
   TAILKEPT's "logged hit no other cast holds" guard, which passes the cast's own killing hit (logged 0.3 ms after its
   frame's time); the guard without that pass measured worse over every log (docs/tried/2026-11-27-tail-own-landing.diff).
-- **Camille's `normal_skill_abilityrange`** (6339 19.68 / 20.60 / 24.56 / 29.67 / 32.16 s, 7b54 16.59 s): not a
-  placement error but a kit gap. The game data: her battle skill's entity (abilityrange_first, 2000 frames) puts
-  listen_target_dead on its target; at its death reset_target launches projhit_sub, which casts
-  normal_skill_abilityrange on the next target: the battle skill's damage (the logged 9287 is the `_first` value),
-  Heat infliction, the Susceptibility (listed since each hit's ms on the next hits). Five of six follow a logged kill
-  by 0.23–0.54 s; ZMDLogs logs a normal_skill event at four of the six, which the replay makes as presses, standing in
-  for the move (their landing 0.4 s later, the same damage and debuff). Reading those events as no press measured
-  worse (6339 −10.3 → −15.2%: docs/tried/2026-11-27-sub-skill-events.diff). What it needs: a kit hit for the move
-  (packages/data, Camille's kit) and a replay-side landing with no press, at each logged move or at a logged kill of
-  the target carrying her Vesperwings (targets.ts's units say which).
+- **Fixed 2026-11-27: Camille's `normal_skill_abilityrange`** (6339 ×5, 7b54 ×1: her Vesperwings moving to the next
+  target; docs/journal/2026-11-27-17-camille-s-vesperwings-moving-to-the-next-target.md): engine event `targetDeath`,
+  kit trigger `vesperwings_move` landed by the replay at each logged move (pinned), its normal_skill events no press,
+  the move a battle-skill cast for the team (`vesperwings-move-cast` `battle`). The row plain 70.6 → 71.3%, |damage
+  error| 8.3 → 6.3%; 6339 −10.3 → −6.3%, 7b54 −3.3 → −1.2%. **Still possible:** what moved it at 6339's 19.68 s (no
+  logged kill within 8 s before; every slug's kill is logged: a burrow?); moves onto shielded slugs (7b54's
+  normal_skill event at 19.90 s, 0.31 s after the 19.59 s kill, no hit: a move dealing 0, not made, its debuff and
+  cast event missing); the moves' Heat on the replay's one enemy (6339's replay-only Heat bursts at 21.60, 25.57 and
+  33.17 s: the next slug's own infliction, statuses per target).
 - **9c6e:** its twins are the placement's already (`used` / `value`; the batch rule moves none of its casts); the
   log-only twins whose value fits no target (Typhoeus's Nature bursts on the second Wanderer, 52.80, 79.85, 94.32 s)
   need that target's own inflictions, Corrosion level and Stagger: statuses per target, not a placement error.
 
 **Still possible / left:** statuses per target (Corrosion and Electrification levels, a target's own inflictions and
-bursts, its Stagger: only on/off per target now); Camille's Vesperwings moving to the next target (above); a landing
+bursts, its Stagger: only on/off per target now); other kits' listeners on a target's death, now the engine's
+`targetDeath` (BuffData abilityEvent 1 on a buff on the target): Arcane's buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable
+(an early seal finisher in INT mode), Si's buff_chr_0036_jsspsi_xianjing_inkhurteffect (kill damage into her ink) and
+normal_skill_check, Zhuang Fangyi's normal_skill_trigger_sword_tar, Seraph's finishball, Tangtang's ultskill_buff,
+Typhoeus's combo_trigger_combo, Yvonne's ultimate (none built; Si and Arcane are in both slug fights); a landing
 on a shielded slug as "there, 0 damage, no infliction, buffs applied" (6339 14.09 s: Camille's Vesperwings reached
 the next slug, her weapon's Heat DMG, which needs an infliction, didn't; `targets-gaps-away` measured 6339 plain +1,
 total −2.3 points). What an engine state for it would need: a span kind beside TimelineScenario.enemyAway in which a

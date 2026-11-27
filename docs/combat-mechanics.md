@@ -882,7 +882,11 @@ reaction has no initial hit.
     `staggerNode`;
   - `buffApplied`, `buffEnded`, `buffTick`, `stackAtLeast`;
   - `heal`, `sp`, `linkGained`, `attacked`, `enemyCharge`, `perfectDodge`,
-    `fightStart`.
+    `fightStart`;
+  - `targetDeath`: one of several targets dies (BuffData abilityEvent 1 on
+    a buff the target carries: Camille's Vesperwings moving on). Only the
+    log check's replay makes it, at a logged move (engine `targetDies`); a
+    simulation's one enemy lives to the fight's end.
 
   Filters include `kinds`, `elements`, `skills`, `finalStrike`,
   `decorations`, `crit`, `fromKinds`, `minStacks`, `rising` and `fromNone`.

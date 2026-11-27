@@ -894,6 +894,19 @@
                 "additionalProperties": false,
                 "properties": {
                   "event": {
+                    "const": "targetDeath"
+                  }
+                },
+                "description": "One of several targets dies (BuffData abilityEvent 1 on a buff the target carries; `if` reads the enemy then, `enemyBuff`: the dead target carried it). Only the log check's replay has one (at the logged landings of the trigger's hits): a simulation's one enemy lives to the fight's end."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
                     "const": "perfectDodge"
                   }
                 },
@@ -1618,6 +1631,32 @@
                     "skill": {
                       "type": "string",
                       "description": "One of the owner's kit skills, cast by itself (SkillData CastSkill): no control, cost or cooldown; it ends the owner's current skill."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "skill",
+                    "as"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "castEvent"
+                    },
+                    "skill": {
+                      "type": "string",
+                      "description": "The SkillData skill the owner's ability entity casts (CastSkill, a projectile's castSkillOnHit); it needn't be a kit skill."
+                    },
+                    "as": {
+                      "enum": ["basic", "battle", "combo", "ultimate"],
+                      "description": "The skill kind triggers on casts see (the skill's skillSpecification: 3 battle)."
                     },
                     "if": {
                       "$ref": "#/$defs/predicate",
@@ -3373,6 +3412,10 @@
                 "type": "integer",
                 "minimum": 1,
                 "description": "It ends at this skill frame of the operator's current skill, or when that skill ends sooner (CreateBuffAction autoFinishByAction in a clip shorter than the cast)."
+              },
+              "keepEnd": {
+                "const": true,
+                "description": "A new instance that ends where the operator's active one ends (it replaces that one; with none active, the buff's own duration): SaveBuffLifeTime remain_time passed on as the new buff's duration (Camille's Vesperwings moving to the next target)."
               }
             }
           }

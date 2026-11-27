@@ -1,4 +1,6 @@
-Tried 2026-11-27 (twins-on-several-targets round), dropped.
+Tried 2026-11-27 (twins-on-several-targets round), dropped. Superseded the same day by the move's own landing
+(docs/journal/2026-11-27-17-camille-s-vesperwings-moving-to-the-next-target.md): targets.ts moveEvent reads such an
+event as no press where the move's hit is a kit trigger's (this diff's rule, a key no kit hit lists, no longer holds).
 
 What: targets.ts subSkillEvent and its use in castassembly.ts assembleCasts (and loggedCastFates' `sub-skill` fate,
 the EVENT line's words): in a fight read per target, a logged cast event at the ms of a hit of its operator whose key

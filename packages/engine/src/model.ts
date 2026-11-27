@@ -650,6 +650,12 @@ export interface BuffApplication {
    * than the cast); trigger action `buff` has it too.
    */
   readonly untilFrame?: number;
+  /**
+   * A new instance that ends where the operator's active one ends (it replaces that one; with none active, the buff's
+   * own duration): the data's SaveBuffLifeTime remain_time passed on as the new buff's duration (Camille's Vesperwings
+   * moving to the next target with the time it had left).
+   */
+  readonly keepEnd?: true;
 }
 
 /** Kept for the kit loader's error messages; values are ValueExprs (expr.ts). */

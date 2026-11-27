@@ -11,8 +11,8 @@
 // purge at a kill). The placement (logcasts.ts placeWith) reads batchTargets for which logged hits of a batch are one
 // landing's twins; the assignment takes those as one landing reaching each of its targets once.
 
-import { readingOf, type LandedHit, type Modifier, type TimelineState } from "@efsim/engine";
-import type { LogFixture, LogHit } from "./zmdlogs.ts";
+import { allActions, FPS, readingOf, type KitHit, type LandedHit, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
+import type { LogCast, LogFixture, LogHit } from "./zmdlogs.ts";
 
 /** Targets alive at once where the fixture doesn't say (severalTargets.atOnce): two, the least that is several. */
 export const DEFAULT_AT_ONCE = 2;
@@ -84,6 +84,73 @@ export function batchTargets(hits: readonly BatchHit[], critFactor: number, atOn
   }
   for (let k = 1; k <= Math.min(atOnce, Math.floor(hits.length / 2)); k++) if (fits(k)) return { targets: k, by: k === 1 ? "one" : "values" };
   return { targets: 1, by: "none fits" };
+}
+
+/** How long before a death move's logged landing a logged kill may be and be its death (ms): 6339's and 7b54's come 0.23–0.54 s after one. */
+export const MOVE_AFTER_KILL_MS = 1000;
+
+/** A logged landing of a kit trigger's hit on a target's death (TriggerOn `targetDeath`), and the death the replay makes for it. */
+export interface DeathMove {
+  readonly operator: string;
+  readonly trigger: string;
+  /** The kit hit's id (its `hits` action's). */
+  readonly hitId: string;
+  readonly hit: LogHit;
+  /** The logged landing's frame, where the replay pins the trigger's landing (engine targetDies `landings`). */
+  readonly landing: number;
+  /**
+   * The death's frame: the logged kill's (a capped hit within MOVE_AFTER_KILL_MS before the landing, and at least the
+   * trigger's lead before it: the projectile's travel between, which the data doesn't give), else the landing's less
+   * the lead (the trigger's delay and the hit's kit frame).
+   */
+  readonly frame: number;
+  /** The logged kill it follows, if any. */
+  readonly kill?: LogHit;
+}
+
+/** The hits of a kit's targetDeath triggers, each with its trigger and the frames from the death to its landing. */
+function deathHits(kit: OperatorKit): { readonly trigger: string; readonly hit: KitHit; readonly lead: number }[] {
+  return kit.triggers.flatMap((t) =>
+    t.on.event !== "targetDeath" ? [] : allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits.map((hit) => ({ trigger: t.id, hit, lead: (t.delay ?? 0) + Math.min(...(hit.frames ?? [0])) })) : [])),
+  );
+}
+
+/**
+ * The deaths the log shows by what a kit does at them: each logged landing of a targetDeath trigger's hit (its key, its
+ * operator) is one, at the logged kill before it (DeathMove.frame) or `lead` frames before it (deathHits); the replay
+ * pins the landing at its logged frame. Camille's Vesperwings moving to the next target
+ * (vesperwings_move: normal_skill_abilityrange, the battle skill's damage, Heat and debuff on the next slug): 6339 at
+ * 19.68, 20.60, 24.56, 29.67 and 32.16 s, 7b54 at 16.59 s; five of the six 0.23–0.54 s after a logged kill (the
+ * projectile's travel, which the data doesn't give), 6339's 19.68 s after none (all eight slugs' kills are logged:
+ * what ended its target there, a burrow?, is open). A move onto a shielded slug deals 0 and isn't logged, so it isn't
+ * read here (7b54's normal_skill event at 19.90 s, 0.31 s after the 19.59 s kill, with no hit).
+ */
+export function deathMoves(fx: Pick<LogFixture, "hits">, kits: readonly OperatorKit[]): DeathMove[] {
+  const out: DeathMove[] = [];
+  const frameOf = (ms: number) => Math.round((ms * FPS) / 1000);
+  for (const kit of kits) {
+    for (const d of deathHits(kit)) {
+      for (const h of fx.hits) {
+        if (h.operator !== kit.operator || !d.hit.events.includes(h.event)) continue;
+        const landing = frameOf(h.t);
+        const latest = Math.max(0, landing - d.lead);
+        const kill = fx.hits.filter((k) => killed(k) && k.t >= h.t - MOVE_AFTER_KILL_MS && frameOf(k.t) <= latest).at(-1);
+        out.push({ operator: kit.operator, trigger: d.trigger, hitId: d.hit.id, hit: h, landing, frame: kill ? frameOf(kill.t) : latest, ...(kill ? { kill } : {}) });
+      }
+    }
+  }
+  return out.sort((a, b) => a.frame - b.frame);
+}
+
+/**
+ * Whether a logged cast event is the log's record of a death move (deathMoves), not a press: at the ms (±1) of one of
+ * its operator's moves whose key is the event's skill id with a suffix (the entity's CastSkill logged under the skill:
+ * ZMDLogs logs a normal_skill event at four of Camille's six moves, 6339 19.68, 24.55, 29.67 s and 7b54 16.59 s; none
+ * of the battle skill's own landings, 0.5–1.0 s after their press, is logged at its event). Made as presses, each gave
+ * a replay-only battle-skill landing 0.4 s on (6339 20.10, 24.97, 30.07 s) standing in for the move.
+ */
+export function moveEvent(moves: readonly DeathMove[], lc: Pick<LogCast, "operator" | "skill" | "t">): DeathMove | undefined {
+  return moves.find((m) => m.operator === lc.operator && Math.abs(m.hit.t - lc.t) <= 1 && m.hit.event.startsWith(`${lc.skill}_`));
 }
 
 /** The enemy statuses whose modifiers sit on a target (engine status.ts statusModifiers' sources), by kind. */

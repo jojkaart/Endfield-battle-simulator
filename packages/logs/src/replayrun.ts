@@ -6,12 +6,12 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount,
+  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, targetDies,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { awayWindows, enemyAwaySpans, KILL_EDGE_MS, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
-import { gapsWithTargetsLeft, keepsKillGaps } from "./targets.ts";
+import { deathMoves, gapsWithTargetsLeft, keepsKillGaps } from "./targets.ts";
 import { buttonVariants, loggedFrames, type Placement } from "./logcasts.ts";
 import { replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
@@ -828,7 +828,14 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
   let st: TimelineState = init(ctx);
   for (const c of list) if (c.beforeLog) st = withCastBeforeLog(ctx, st, c);
   const rec = replayRecorder({ kitIds: input.kitIds, team: input.team, trace: opts.trace ?? [], staggerFrames: () => staggerFrames(ctx), edge: input.edge });
-  const steps = replaySteps(input.stagger, pass.worldHolds, list, sampleFrames, breaks.filter((b) => b.from !== b.at).map((b) => b.from));
+  // A target's death where a kit's targetDeath trigger's hit is logged (targets.ts deathMoves: Camille's Vesperwings
+  // moving to the next slug), at the logged kill before it (else the trigger's lead before it); the landing pinned at
+  // its logged frame.
+  const moves = deathMoves(fx, [...ctx.kits.values()]);
+  const deaths = moves.map((m) => ({ frame: m.frame, why: `${m.trigger}: its landing logged at ${(m.hit.t / 1000).toFixed(2)} s${m.kill ? `, after the kill at ${(m.kill.t / 1000).toFixed(2)} s` : ""}` }));
+  const steps = replaySteps(input.stagger, pass.worldHolds, list, sampleFrames, breaks.filter((b) => b.from !== b.at).map((b) => b.from), deaths);
+  // The moves of each death frame, pinned at their logged landings (the hit's index the ref, as a cast's landings').
+  const movesAt = (frame: number) => moves.filter((m) => m.frame === frame).map((m) => ({ trigger: m.trigger, hitId: m.hitId, frame: m.landing, ref: String(fx.hits.indexOf(m.hit)), ms: m.hit.t }));
   const checkpoints: TimelineState[] = [st];
   const made: Made[] = [];
   const needs: Need[] = [];
@@ -880,6 +887,10 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
       }
       if (s.breakHold) {
         st = breakHold(ctx, st, st.frame, true);
+        continue;
+      }
+      if (s.death !== undefined) {
+        st = targetDies(ctx, st, st.frame, movesAt(s.frame));
         continue;
       }
       if (s.bar !== undefined) {

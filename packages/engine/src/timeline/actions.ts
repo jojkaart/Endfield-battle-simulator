@@ -393,6 +393,10 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         events.push(...r.events);
         break;
       }
+      case "castEvent":
+        // An entity's cast: the event alone (no action, cost or timeline for the owner).
+        events.push({ type: "cast", frame, operator: owner, skillId: a.skill, kind: a.as, finisher: false, controlled: false, followUp: true, beside: true });
+        break;
       case "hits": {
         const [index, ...nested] = place as [number, ...number[]];
         const pending: PendingHit[] = [];

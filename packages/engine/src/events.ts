@@ -88,6 +88,12 @@ export type BattleEvent =
   | { readonly type: "perfectDodge"; readonly frame: number; readonly operator: string }
   /** The enemy started charging a skill; `operator` is the controlled one. */
   | { readonly type: "enemyCharge"; readonly frame: number; readonly operator: string }
+  /**
+   * One of several targets died (its HP reached 0: BuffData abilityEvent 1 on a buff the target carries); `operator`
+   * is the controlled one. Only the log check's replay makes it (targetDies, at a fight's logged kills): a simulation's
+   * one enemy lives to the fight's end.
+   */
+  | { readonly type: "targetDeath"; readonly frame: number; readonly operator: string }
   /** An operator's own stacks were gained or used; `changed`: those whose count changed (a gain capped at the maximum changes none). */
   | { readonly type: "stacks"; readonly frame: number; readonly operator: string; readonly changed?: readonly string[] }
   /**
@@ -168,6 +174,13 @@ export type TriggerOn =
   | { readonly event: "attacked"; readonly elements?: readonly Element[] }
   /** The enemy starts charging a skill. */
   | { readonly event: "enemyCharge" }
+  /**
+   * One of several targets dies (BuffData abilityEvent 1, "owner's HP reaches 0", on a buff a kit puts on the target:
+   * Camille's buff_chr_0033_camille_normal_skill_listen_target_dead). The trigger's `if` reads the enemy as it is then
+   * (`enemyBuff`: the dead target carried that buff). A simulation never has one (one enemy); the log check's replay
+   * makes it at the logged landings of such a trigger's hits (packages/logs targets.ts deathMoves).
+   */
+  | { readonly event: "targetDeath" }
   /** Someone (`by`) perfectly dodges an enemy attack. */
   | { readonly event: "perfectDodge" }
   /**
@@ -303,6 +316,13 @@ export type TriggerActionKind =
   | ({ readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType } & ({ readonly seconds: ValueExpr } | { readonly fraction: ValueExpr } | { readonly set: ValueExpr } | { readonly setFraction: ValueExpr }))
   /** The owner casts one of its kit skills by itself (SkillData CastSkill: a follow-up, e.g. Typhoeus's aerial shots off-field): no control, cost or cooldown. */
   | { readonly kind: "cast"; readonly skill: string }
+  /**
+   * A cast event of a skill the owner's ability entity casts (SkillData CastSkill / a projectile's castSkillOnHit on an
+   * entity: the owner doesn't act, no cost, cooldown or timeline): triggers on casts of kind `as` see it, as a
+   * follow-up beside the owner's action (Camille's Vesperwings moving to the next target: projhit_sub, of
+   * skillSpecification 3, which ZMDLogs logs as a normal_skill event). `skill` needn't be a kit skill.
+   */
+  | { readonly kind: "castEvent"; readonly skill: string; readonly as: SkillType }
   /**
    * Land hits, as the owner, at frames counted from the event (values from
    * the trigger's `skill`); each names its damage type. `now`: its frame-0
@@ -491,6 +511,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "attacked" && has(on.elements, e.element);
     case "enemyCharge":
       return e.type === "enemyCharge";
+    case "targetDeath":
+      return e.type === "targetDeath";
     case "perfectDodge":
       return e.type === "perfectDodge";
     case "linkGained":
@@ -540,7 +562,7 @@ function categoryMatches(on: Extract<TriggerOn, { readonly categories: readonly 
 export function causeMatches(by: KitTrigger["by"], e: BattleEvent, owner: string, on?: TriggerOn): boolean {
   // A buffEnded trigger by game buff judges the ended buff's owner (`by`), as a buffApplied one its applier.
   const ownBuff = ((e.type === "buffApplied" || e.type === "buffEnded") && !(on && ("categories" in on || "gameBuffs" in on))) || e.type === "buffTick";
-  if (e.type === "stacks" || ownBuff || e.type === "fightStart" || e.type === "enemyCharge") return true;
+  if (e.type === "stacks" || ownBuff || e.type === "fightStart" || e.type === "enemyCharge" || e.type === "targetDeath") return true;
   if (by === "anyone") return true;
   if (by === "self") return e.operator === owner;
   if (by === "teammate") return e.operator !== owner;
