@@ -4,9 +4,47 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 181 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 182 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Ember, Alesh and Catcher's mismatches: two build fits and DEF's percentage
+
+**Goal:** the operators whose hits mostly mismatch (by operator, every log but the hold-outs): Ember 80.2%, Snowshine
+88.8%, then Alesh 20.1%, Avywenna 19.9%, Catcher 13.9%. Is each one factor on most hits (a build input), one skill
+(a kit error), or a buff the log lists that the replay lacks?
+
+**Found and fixed:**
+- **Ember (04d4) ×1.0226 on every kit hit**, under the offset screen's 3%: Exemplar's skill 1 at level 9 for the
+  exported 8 (Strength 112 → 132), the one single change of fit-build's 124 (`--pairs`); fixture buildOverrides.
+  04d4's Ember 310 → 9 mismatches. Her other three logs were already fitted (2fd9, 99fb) or plain (7e19).
+- **Alesh (4e36) ×0.9745**, also under 3%: attribute nodes 2 (node 5's favorability 300, as Si's in 0c14 and
+  Perlica's in fc63), 13 of 13 clean; his weapon's skill 3 at 2, the other single change, is ruled out by the log's
+  Thermite Cutter 0.08 a layer. Hard 15's "per-operator factors" (Akekuri, Alesh) are both node counts.
+- **Catcher's P1 strikes ×1.027 (04d4)**: a kit buff's DEF percentage (OBJ Heavy Burden, formulaItem 6) was of the
+  panel line alone, his talent's DEF points (formulaItem 5) added after; the game sums add-slot points first. Engine
+  buffs.ts buffAttr: a percentage is of the line with the buffs' points in it. Catcher 35 → 15 mismatches.
+
+**Scoreboard** (measure against the snapshots of de528c7; snapshots:update for the final commit): earlier pending
+plain 82.3 → 84.4%, mismatch 7.5 → 4.4%, |damage error| 1.3 → 1.2% (04d4 plain 375 → 590, mismatch 614 → 293,
+−3.2 → −1.4%; 4e36 plain 368 → 401, mismatch 37 → 4); verified, development, hold-outs and several-targets
+unchanged; no log worse. By operator: Ember mismatch 80.2 → 2.6%, Alesh 20.1 → 0.6%, Catcher 13.9 → 6.0%.
+`node scripts/team-ab.ts --base de528c7`: every team's own fight the same (no team has Catcher with OBJ Heavy
+Burden), so the team numbers are unchanged.
+
+**Decisions:** fits only where one input explains the hits (Ember, Alesh), as the earlier fits did. Snowshine's
+×0.9624 (04d4) stays out of scope: one factor in [0.96232, 0.96258] fits all 157 clean hits, but no build of nodes,
+weapon level and weapon skill 1 hits it with fewer than three changes, and no resistance does (her physical basic
+attacks read the same factor as her Cryo hits); docs/open-problems.md has it. Avywenna's 9847 mismatches are the
+fight-wide stretch, team-wide hits and Liino's Medicant layers (listed up to ×9, the kit keeps 4): not her kit, so
+left as a lead in docs/open-problems.md. The multi-target 146d has the same build but no fixture there takes
+buildOverrides, so it isn't touched.
+
+**Dead ends:** a gear piece swapped between Ember and Snowshine (both off by exactly 0.125 of attribute bonus, in
+opposite directions): no swap fits either; a food for Ember (116 of 284).
+
+**Left:** Snowshine's build; Catcher's ATK hits at ×1.0005 (Will one point above the export's); Ember's 7e19
+33.15 s finisher (an unlisted talent layer); Liino's Medicant layer count on teammates.
 
 ## 2026-11-27: Casts across a Stagger break: the hold from the moments, break-held-starts
 
@@ -364,51 +402,3 @@ one Combustion share a value and traded places): docs/tried/2026-11-27-status-va
 **Left:** pairs whose replay value a buff's edge puts off (1d91 50.47 / 51.02 s ×1.095, 7b54 46.70 s, a7a7 39.27 s,
 e989 86.65 s, 7910 28.27 s, abfd 100.93 s): the fit judged by the check's reading of the pair; 9c6e's second target
 itself (the engine has one); the slug's unlogged hits (lead 3, not reached).
-
-## 2026-11-27: Placement cases: entity landings by their span, presses in away stretches, used-up casts by value
-
-**Goal:** the placement and cast-assembly cases the two one-sided rounds left (docs/open-problems.md "Log-only
-landings", "Replay-only landings"): f879 95.10 s, 5082 45.06 s, 3aa6 125.65 s, Pogranichnik's harasses, 99fb's bleed
-ticks, Arcane's INT lasers, 9a80 34.94 s; beside an agent on status pairing (buffreplay.ts theirs).
-
-**Done** (docs/open-problems.md "The placement cases the one-sided rounds left"; tests/placement-cases.test.ts):
-- **An ability entity's landings are due within the slots' span** (logcasts.ts onEntityClock): a key's next landing
-  joined the open cast while it had slots to come within the skill's whole duration (9.4 s for Laevatain's battle
-  skill). An entity's landings (`launch`; no flight, buff timeline, enemy delay or random count; not a buff's key) come
-  at their own frames whatever the cast does. f879: the 94.71 s Magma Fragment explosion had been the 87.12 s cast's
-  first tick (that cast's ticks unlogged; their radius, 2.5 against the explosion's 3, is one possible reason), so the 95.94 s empowered hit made a
-  battle skill at 92.48 s, before her final strike's Heat absorption at 92.49 s; now one cast at 93.98 s with 4 Melting
-  Flame, and the 162,889 lands. Also 6339 31.62 s, Zhuang Fangyi's attack 2 / 4 ranges in 3aa6 and 4bfc. Rossi's
-  combo afterhits (a buff's timeline, 9a80 29.20 s) are left out: measured first without that, 9a80 lost 64 plain.
-- **A slot press whose first landing is due in an away stretch is `unseen`** (castassembly.ts, awayWindows), **made as
-  the button's variant the kit holds** (replayrun.ts replayedSkill): 3aa6 125.65 s, Zhuang Fangyi's Empyrean battle
-  skill 0.08 s after the last hit before a 14 s gap; its Sunderblade is the 145.74 s cast's ninth, the 148.68 s final
-  of 9 lands.
-- **A second landing at a used-up cast's last ms isn't the same landing on a second enemy when both are non-crits in
-  the ratio of slot 0's multiplier to its slot's** (logcasts.ts nextByValue): 9a80 34.94 s, Si's final (349,888) and
-  her next combo's first slash (28,396); the 36.10 s final now on its slot. First by the values' ratio alone: 9c6e (two
-  targets under one id, their values ×1.3+ apart by their own debuffs) lost 36 plain while its total went −20.6 →
-  −0.9%, the second target's landings made as casts of their own: the wrong mechanism.
-- A press made in an away stretch takes what a cast takes: 7b54's Si at 24.81 s (21.06–26.98 s without a hit, the
-  slug) is made as Initial Stroke and takes the team's Link stack her 29.00 s cast had (7b54 +40.3 → +40.4%).
-
-**Scoreboard** (`npm run snapshots:update` after merging main at 14d422c, the status-pairing round; `measure --base
-14d422c` for this branch alone): development (31 fights, 9c6e now its own row) plain 82.5 → 82.7%, mismatch 5.9 →
-5.8%, mean |damage error| 2.9%, as other kit hit 81 → 78, |matched| 2.3 → 2.2%, replay-only 3.1 → 2.8%, log-only 1.8 →
-1.6%; earlier pending plain 81.7 → 81.8%, log-only 0.8 → 0.6%, as other kit hit 58 → 50; hold-out, verified and the
-several-targets row unchanged. Better: f879 (plain 797 → 826, mismatch 12 → 3, per hit 1.85 → 0.61%; total +0.1 →
-+1.6%: the missing 162,889 had cancelled over-predictions), 6339 (−14.1 → −12.6%), 9a80 (277 → 279), 3aa6 (415 →
-418), 4bfc (856 → 861). Worse: 7b54 +40.3 → +40.4% (below). Log tools only: no simulation reads them, no team-ab.
-
-**Decisions:** the entity rule as "no toCome" rather than a new bound: the slots' span plus CAST_SLACK_MS is the bound
-the pass already has for every other landing. The away test beside the ±1 s quiet test, not instead of it.
-
-**Dead ends:** the replay's JUMPDROP leaving out landings launched before the jump (engine drivers.ts; f879's ticks
-dropped her empowered jump): no development log moved, one hold-out −23 plain, dropped
-(docs/tried/2026-11-27-jump-launched-landings.diff). Yvonne's chain window held by the hidden holds: they sit spread
-over 1.5 s mostly before her cast (3 of 15 frames), not built.
-
-**Left:** 5082's Yvonne (her timeline held ~0.5 s at her combo's Stagger break, 44.43 s; a break dilation the data
-names, enablePoiseBreakTimeDilation, with no length), Arcane's INT lasers (the log's batched ms), Pogranichnik's
-harasses (the entity's own 0.4 s slow-downs and teleport, not modelled), 99fb's bleed after Rossi's ultimate (the
-statuses' side).
