@@ -12,7 +12,7 @@
 import { basename } from "node:path";
 import { FPS, landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
-import { logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
+import { fightTargets, logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
 import { verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
 import type { Assumption } from "./assumptions.ts";
@@ -83,6 +83,12 @@ export interface HitRecord {
   readonly unknownFacts?: readonly string[];
   /** Why the replay has no landing for the hit. */
   readonly unknown?: string;
+  /**
+   * In a fight read per target (fixture severalTargets, several-targets `targets`: enginecheck.ts fightTargets), the
+   * hit's target: its index (in order of first hit), how it was chosen (targets.ts HitTarget.how), the enemy-side units
+   * its reading leaves out (`drop`: `owner:buff`, `status:corrosion`, …) and whether it killed it. Text lines: `T<n>`.
+   */
+  readonly target?: { readonly index: number; readonly how: string; readonly drop: readonly string[]; readonly kills: boolean };
   /** The crit the replay's landing took (LandedHit.crit; null where the hit can't crit), with a landing. */
   readonly replayCrit?: boolean | null;
   /** Where that crit comes from (replaycrits.ts CritSource: the log, an inference from the log, or none). */
@@ -136,8 +142,10 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
   const verdicts = new Map(k.verdicts.map((v) => [v.hit, v]));
   const c = k.check();
   const facts = unknownFacts(data, fx, assume);
+  const targets = fightTargets(c);
   return fx.hits.map((hit) => {
     const v = verdicts.get(hit) as HitVerdict;
+    const tg = targets?.of.get(hit);
     const base = {
       fixture,
       t: hit.t,
@@ -153,6 +161,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       listed: listedBuffs(hit.effects),
       critSource: replay.replay.critSource(hit),
       ...(facts.get(hit.operator) ? { unknownFacts: facts.get(hit.operator) as readonly string[] } : {}),
+      ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills } } : {}),
     };
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;
@@ -337,7 +346,8 @@ export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "
   const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
   const log = reading === "log" ? `  log reading ${r.logReading ?? "-"}  ${pct(r.logError)}` : "";
   const z = zones && r.landing ? `  ${zoneWords(r)}` : "";
-  return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}${z}`;
+  const target = r.target ? `  T${r.target.index}${r.target.how === "fits" ? "" : ` (${r.target.how})`}${r.target.drop.length ? ` without ${r.target.drop.join(", ")}` : ""}${r.target.kills ? " killed" : ""}` : "";
+  return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}${target}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}${z}`;
 }
 
 /**

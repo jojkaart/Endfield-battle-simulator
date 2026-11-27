@@ -18,7 +18,7 @@ import type { Assumption } from "./assumptions.ts";
 import { isRecordedBurst, recordedBurst, replayRecord } from "./recordedburst.ts";
 import { kindShares, oneSidedLandings, type CountedLanding, type KeyShare, type KindShare, type OneSided } from "./onesided.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
-import { assignTargets, enemyUnit, gapsWithTargetsLeft, keepsKillGaps, landingPerTarget, readsTargets, unitsAt, type TargetAssignment, type TargetHitInput } from "./targets.ts";
+import { assignTargets, enemyUnit, gapsWithTargetsLeft, keepsKillGaps, landingPerTarget, landingPerTargetUngated, readsTargets, unitsAt, type TargetAssignment, type TargetHitInput } from "./targets.ts";
 
 /**
  * The game buffs a battle log lists a kit buff's effects under: its gameBuff, its loggedAs, and the affix buffs those
@@ -835,10 +835,11 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const targets = fightTargets(c);
   const onOthers = new Map<LandedHit, { hit: LogHit; predicted: number }[]>();
   if (targets && landingPerTarget(fx, c.replay.assume)) {
+    const ungated = landingPerTargetUngated(fx, c.replay.assume);
     for (const [h, p] of primary) {
       const first = matched.get(p.landing);
       const seen = [first, ...(onOthers.get(p.landing) ?? [])].map((x) => (x ? targets.of.get(x.hit)?.target : undefined));
-      if (first && first.hit !== h && targets.of.get(h)?.how === "fits" && !seen.includes(targets.of.get(h)?.target)) onOthers.set(p.landing, [...(onOthers.get(p.landing) ?? []), { hit: h, predicted: p.predicted }]);
+      if (first && first.hit !== h && (ungated || targets.of.get(h)?.how === "fits") && !seen.includes(targets.of.get(h)?.target)) onOthers.set(p.landing, [...(onOthers.get(p.landing) ?? []), { hit: h, predicted: p.predicted }]);
     }
   }
   // Landings of logged hits without a reading (Fixed DMG: Si's Artful Intent burst) are still that hit's: a hit the log

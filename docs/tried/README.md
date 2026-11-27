@@ -27,6 +27,10 @@ presses round) by general rules: the replay's enemy away (engine assumption enem
 inferred from the listing (`hitless-presses` `inferred`), the totals' leaving frame and a kill read from the last
 life's damage ([open-problems.md](../open-problems.md), "The damage factors"). Their diffs are deleted.
 
+- [2026-11-27-tail-own-landing.diff](2026-11-27-tail-own-landing.diff): tailCuts' "logged hit no other cast holds"
+  guard not passing the cast's own last landing logged at its frame (6339's 21.60 s Laevatain hit_2, +10.2%);
+  development plain 84.3 → 83.7% (c4f3 −66, 9847 −21), hold-out |damage error| 5.8 → 5.9%: more cut tails whose
+  effects later hits needed.
 - [2026-11-27-break-window-start.diff](2026-11-27-break-window-start.diff): the replay's Stagger window recorded from
   its break, not 14 frames later (replayrecord.ts, after engine assumption break-hold); hold-outs 2 better without it
   (plain +8, mismatch −5), development mixed: the late start lets a hidden hold top up the break's 14 frames.

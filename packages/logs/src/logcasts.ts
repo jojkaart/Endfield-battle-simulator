@@ -5,10 +5,11 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, cutAtResets, effectiveKit, evalContext, evaluate, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, readingOf, type Readings, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { Attr, computeStats, cutAtResets, effectiveKit, evalContext, evaluate, FPS, hitAvailable, hitDecorations, parseReactionEvent, pathSlowdowns, pathTwin, skillValue, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type OperatorKit, type Predicate, readingOf, type Readings, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
 import { breakStops } from "./holds.ts";
+import { batchTargets, DEFAULT_AT_ONCE, readsTargets, type BatchHit } from "./targets.ts";
 
 /**
  * A logged cast whose next landing comes later than the key's landings span
@@ -566,6 +567,8 @@ export interface PlacedHit {
   readonly at?: ReadonlyMap<KitHit, number>;
   /** The same landing on another enemy (a fight against several in a single-target log): the logged hit whose landing it shares. */
   readonly sameAs?: LogHit;
+  /** The rule that made it sameAs (PlacedTwin; `zmdlogs casts --choices` prints it). */
+  readonly twin?: PlacedTwin;
   /** Why it joined a cast placed before it rather than open one (absent: it opened its cast, or the realignment moved it): PlacedJoin. */
   readonly joined?: PlacedJoin;
 }
@@ -580,6 +583,20 @@ export interface PlacedHit {
  * absent where the key's slots are unknown). `zmdlogs casts --choices` prints it where elapsed passes due by more than
  * CAST_SLACK_MS.
  */
+export interface PlacedTwin {
+  /**
+   * `value` its value is the slot's landing's again and not the next slot's (sameByValue); `used` the cast's landings
+   * of its key all logged, its value not a next cast's first's (nextByValue); `batch` in a fight read per target
+   * (several-targets), its place in its batch (the key's alike hits at its ms) is a twin's by the batch's targets
+   * (targets.ts batchTargets: `targets` per landing, of `batch` hits, decided `by`); `later` in such a fight, a used-up
+   * combo's landing logged within TWIN_LATER_MS after its last, of its value, with no cast event of its skill between.
+   */
+  readonly rule: "value" | "used" | "batch" | "later";
+  readonly targets?: number;
+  readonly batch?: number;
+  readonly by?: string;
+}
+
 export interface PlacedJoin {
   readonly by: "span" | "to come" | "paced" | "same ultimate" | "delayed" | "reach";
   readonly elapsed: number;
@@ -972,6 +989,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
     if (groups.length === 0) continue;
     const mine = sorted.filter((h) => h.operator === build.operator);
     const others = stops.filter((x) => x.operator !== build.operator);
+    // In a fight read per target, the log's hits of one landing on its targets (targets.ts batchTargets): the crit factor
+    // that tells one target's crit from another target's non-crit.
+    const several = readsTargets(fx, assume);
+    const critFactor = 1 + (computeStats(data, build).attrs[Attr.CriticalDamageIncrease]?.total ?? 0.5);
     const breaks = stops.length && readingOf(assume, "break-held-starts") === "held" ? heldBreaks(fx, stops, others, assume) : [];
     const slotCache = new Map<string, Slot[] | null>();
     const slots = (g: Group, key: string) => {
@@ -1015,7 +1036,30 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
     /** One pass over the operator's logged hits; `starts` (by skill) picks among groups sharing a key. */
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {
       const placed = new Map<LogHit, PlacedHit>();
-      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean; scales: ReadonlyMap<KitHit, number>; ranges: ReadonlyMap<KitHit, readonly number[]> }>();
+      // `targets`: the count of targets an earlier batch of the cast's key stood on (batchTargets, ≥ 2).
+      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean; scales: ReadonlyMap<KitHit, number>; ranges: ReadonlyMap<KitHit, readonly number[]>; targets?: number }>();
+      const batches = new Map<string, { readonly hits: readonly LogHit[]; readonly targets: number; readonly by: string }>();
+      // A hit's place in its batch: its key's hits at its ms alike in value to the cast's last landing (alikeValue: not a
+      // final among slashes), in the log's order; a twin where it isn't the first of its landing's `targets` hits
+      // (batchTargets; the count an earlier batch of the cast's key read held).
+      const twinInBatch = (cur: { readonly last: LogHit; targets?: number }, h: LogHit) => {
+        const k = `${h.event}|${h.t}`;
+        let b = batches.get(k);
+        if (!b) {
+          const hs = mine.filter((x) => x.event === h.event && x.t === h.t && alikeValue(x, cur.last, critFactor));
+          const r = batchTargets(
+            hs.map((x): BatchHit => ({ value: x.uncapped ?? x.value, crit: x.crit })),
+            critFactor,
+            fx.severalTargets?.atOnce ?? DEFAULT_AT_ONCE,
+            cur.targets,
+          );
+          b = { hits: hs, ...r };
+          batches.set(k, b);
+          if (r.targets >= 2) cur.targets = r.targets;
+        }
+        const i = b.hits.indexOf(h);
+        return { twin: i > 0 && i % b.targets !== 0, targets: b.targets, size: b.hits.length, by: b.by };
+      };
       // Casts placed so far, per group: a key's first landing within an earlier cast's reach is that cast's (joinable).
       const opened = new Map<string, LoggedCast[]>();
       // The operator's casts of skills so far, for a key several chain steps share (choose: the step after the latest
@@ -1075,9 +1119,22 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // Not one whose value, both of known crit, is a next cast's first landing's and not the same landing's
         // (nextByValue): 9a8097fcf351 34.94 s, Si's 25.00 s combo's final, 349,888, and her 32.51 s combo's first slash,
         // 28,396; taken for the final on a second enemy, the slash's cast lost it.
-        if (cur && ((used && !nextByValue(cur, h)) || sameByValue(cur, h)) && h.t === cur.last.t) {
+        // In a fight read per target (several-targets), where value can't tell a twin from the next slot (its multiplier
+        // alike: Si's combo slashes), the batch's targets do (twinInBatch: 7b54 15.60 s, 2 slashes × 4 slugs took eight of
+        // the ten slash slots, the final's slot two slugs' slashes, and a second combo was opened for the rest); a used-up
+        // combo's landing a flush after its last is its last landing on another target (7b54 16.48 s: the final on a third
+        // slug, 125 ms after two slugs' finals, opened a combo the log has no event for). Combos only: the log has an event
+        // for each, and a basic attack's, a battle skill's or a trigger's next landing a flush later is a new cast's (9c6e:
+        // Typhoeus's shots and arrows, Ardelia's attack 3, Liino's ultimate beats, taken for twins: with the batch rule on
+        // landing-long batches, plain 314 → 312, mismatch 33 → 44).
+        // In such a fight a slot's multipliers over event counts (nominalScales' ranges: Si's combo final) tell it too.
+        const byValue = cur !== undefined && h.t === cur.last.t && (sameByValue(cur, h) || (several && nextDiffers(cur) && alikeValue(h, cur.last, critFactor)));
+        const batch = several && cur && !used && !byValue && h.t === cur.last.t && !nextDiffers(cur) ? twinInBatch(cur, h) : null;
+        const later = several && cur && used && cur.cast.kind === "combo" && h.t > cur.last.t && h.t - cur.last.t <= TWIN_LATER_MS && !nextByValue(cur, h) && alikeValue(h, cur.last, critFactor) && !eventsOf(groups.find((x) => x.id === cur.cast.group) as Group).some((t) => t > cur.last.t && t <= h.t);
+        if (cur && (((used && !nextByValue(cur, h)) || byValue) && h.t === cur.last.t || batch?.twin || later)) {
           const slot = cur.slots?.[cur.index];
-          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last });
+          const twin: PlacedTwin = byValue ? { rule: "value" } : batch?.twin ? { rule: "batch", targets: batch.targets, batch: batch.size, by: batch.by } : later ? { rule: "later" } : { rule: "used" };
+          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last, twin });
           continue;
         }
         // An ultimate isn't cast again within its own action: a landing of its key within the skill's duration is the same
@@ -1310,6 +1367,40 @@ function nextByValue(cur: { readonly last: LogHit; readonly index: number; reado
 
 /** How close (×, either way) a second enemy's landing's value is to the first's (sameByValue): the enemies' own debuffs differ a little (9c6e ×0.95). */
 const SAME_VALUE_TOLERANCE = 1.25;
+
+/** How long after a used-up cast's last landing its landing on another target may be logged (placeWith's `later`: one log flush, about 100 ms; 7b54 16.48 s, 125 ms). */
+const TWIN_LATER_MS = 150;
+
+/**
+ * Whether the cast's next slot's multipliers (its nominal scale, else those of its value expression over event counts,
+ * as nextByValue reads them) are all known and none within SAME_VALUE_TOLERANCE of the current slot's: a hit's value
+ * then tells a twin from the next slot, and placeWith's batch rule doesn't apply.
+ */
+function nextDiffers(cur: { readonly index: number; readonly slots: readonly Slot[] | null; readonly scales: ReadonlyMap<KitHit, number>; readonly ranges: ReadonlyMap<KitHit, readonly number[]> }): boolean {
+  const here = cur.slots?.[cur.index];
+  const next = cur.slots?.[cur.index + 1];
+  if (!here || !next) return false;
+  const of = (k: KitHit) => {
+    const one = cur.scales.get(k);
+    return one !== undefined ? [one] : cur.ranges.get(k);
+  };
+  const a = here.hits.map(of);
+  const b = next.hits.map(of);
+  if ([...a, ...b].some((m) => m === undefined)) return false;
+  const tolerance = Math.log(SAME_VALUE_TOLERANCE);
+  const [xs, ys] = [(a as (readonly number[])[]).flat(), (b as (readonly number[])[]).flat()];
+  return !ys.some((y) => xs.some((x) => Math.abs(Math.log(y / x)) <= tolerance));
+}
+
+/** Whether two logged hits' values are within SAME_VALUE_TOLERANCE of each other with their crits taken out (a hit of unknown crit either way). */
+function alikeValue(a: LogHit, b: LogHit, critFactor: number): boolean {
+  const norms = (h: LogHit) => {
+    const v = h.uncapped ?? h.value;
+    return h.crit === true ? [v / critFactor] : h.crit === false ? [v] : [v, v / critFactor];
+  };
+  const tolerance = Math.log(SAME_VALUE_TOLERANCE);
+  return norms(a).some((x) => norms(b).some((y) => x > 0 && y > 0 && Math.abs(Math.log(x / y)) <= tolerance));
+}
 
 /** How much better (ms, summed over the landings) a realigned ultimate's slots must fit than the turn order (realignUltimates). */
 const REALIGN_MS = 150;

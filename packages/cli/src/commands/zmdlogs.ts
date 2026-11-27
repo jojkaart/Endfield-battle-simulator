@@ -194,7 +194,9 @@ export default command({
                                           key (logcasts.ts choose: anchor, alike, window, restart, first, late);
                                           on a HIT that joined its cast over 1 s past its slot's frame, the join's
                                           rule and times (span, to come, paced, same ultimate, delayed, reach);
-                                          REALIGN lines: what the realignment by value did with a cast's key
+                                          on a HIT that is another target's landing of its slot, the twin rule
+                                          (value, used; several targets: batch with its targets per landing,
+                                          later); REALIGN lines: what the realignment by value did with a cast's key
                 [--json]                  Instead: a JSON line per line (castsRecords: kind, t, operator, skill,
                                           key, rule, the hit's cast and slot, its join, the text)
                 [--from s] [--to s]       Only this window (seconds); --operator: only these operators' hits, casts

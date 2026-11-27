@@ -8,7 +8,8 @@
 // had later), a kill ends its target only. enginecheck.ts fightTargets builds the inputs (each hit's primary reading)
 // and memoizes the assignment per replay; readingBasis drops a hit's units its target lacks, fightTotals counts a
 // landing once per target, replayrun.ts and buffreplay.ts read the replay's side (kill gaps with targets left, no
-// purge at a kill).
+// purge at a kill). The placement (logcasts.ts placeWith) reads batchTargets for which logged hits of a batch are one
+// landing's twins; the assignment takes those as one landing reaching each of its targets once.
 
 import { readingOf, type LandedHit, type Modifier, type TimelineState } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -28,9 +29,61 @@ export function landingPerTarget(fx: Pick<LogFixture, "severalTargets">, assume:
   return readsTargets(fx, assume) && readingOf(assume, "several-targets") !== "targets-once";
 }
 
+/** Whether the totals count a landing for a twin on another target whose value fits no target's state (several-targets `targets-ungated`). */
+export function landingPerTargetUngated(fx: Pick<LogFixture, "severalTargets">, assume: Readonly<Record<string, string>> | undefined): boolean {
+  return landingPerTarget(fx, assume) && readingOf(assume, "several-targets") === "targets-ungated";
+}
+
 /** Whether a kill gap with targets left keeps the replay's enemy there (several-targets `targets`, not `targets-gaps-away`). */
 export function keepsKillGaps(fx: Pick<LogFixture, "severalTargets">, assume: Readonly<Record<string, string>> | undefined): boolean {
   return readsTargets(fx, assume) && readingOf(assume, "several-targets") !== "targets-gaps-away";
+}
+
+/** How far apart (of the larger) two values of one target's alike landings at one ms may be (the log rounds each hit; at least 1). */
+const SAME_TARGET_VALUE = 0.002;
+/** How far (×, either way) a crit's value over a non-crit's on one target may be from the operator's crit factor. */
+const SAME_TARGET_CRIT = 1.02;
+
+/** A logged hit of a batch (one operator's key at one ms), as batchTargets reads it: its value (uncapped where capped) and crit. */
+export interface BatchHit {
+  readonly value: number;
+  readonly crit: boolean | null;
+}
+
+/**
+ * Whether two logged hits of landings alike in multiplier, at one ms, can be on one target by their values: one target's
+ * state is one at one ms, so two non-crits (or two crits) on it have one value, a crit and a non-crit values the
+ * operator's crit factor apart (the crit's the larger); a hit of unknown crit either.
+ */
+export function oneTargetByValue(a: BatchHit, b: BatchHit, critFactor: number): boolean {
+  const [lo, hi] = a.value <= b.value ? [a, b] : [b, a];
+  const equal = hi.value - lo.value <= Math.max(1, SAME_TARGET_VALUE * hi.value);
+  const crit = lo.value > 0 && Math.abs(Math.log(hi.value / lo.value / critFactor)) <= Math.log(SAME_TARGET_CRIT);
+  if (a.crit !== null && b.crit !== null) return a.crit === b.crit ? equal : crit && hi.crit === true;
+  // One of unknown crit: the same state as the other, or the crit of it (the higher one the crit, unless it is the known non-crit).
+  return equal || (crit && hi.crit !== false && lo.crit !== true);
+}
+
+/**
+ * How many targets a batch of one operator's key at one ms stands on (the placement's twins, logcasts.ts placeWith: in a
+ * fight against several targets, ZMDLogs logs each landing once per target it reached, the landings of a stop's batch
+ * one after another, each with its targets in one order, 7b54 15.60 s: 6040 6569 6040 9853* … = 4 slashes × 2 slugs).
+ * The batch is then `targets` hits per landing: hit i and hit i + targets of one target (oneTargetByValue) for every
+ * i. `before`: the count an earlier batch of the cast's key read from its values (≥ 2); where it (or the batch's size,
+ * if fewer) fits, it holds (a fewer-target batch of equal values: 7b54 47.62 s, two slugs alike in debuffs after three).
+ * Else the least count that fits with each target's hits compared at least once (the batch at least two landings
+ * long: `values` where above 1), up to atOnce; none fitting, one (`none fits`). A batch of a landing's length alone
+ * says nothing by itself: two hits of differing values may be one target's two landings with a debuff between
+ * (9c6e 76.36 s: Ardelia's attack 3, 224 and 259, then 259 and a crit 389), so it is one target unless `before` says.
+ */
+export function batchTargets(hits: readonly BatchHit[], critFactor: number, atOnce: number, before?: number): { readonly targets: number; readonly by: "values" | "before" | "one" | "none fits" } {
+  const fits = (k: number) => hits.every((h, i) => i + k >= hits.length || oneTargetByValue(h, hits[i + k] as BatchHit, critFactor));
+  if (before !== undefined && before >= 2) {
+    const k = Math.min(before, hits.length);
+    if (k >= 2 && fits(k)) return { targets: k, by: "before" };
+  }
+  for (let k = 1; k <= Math.min(atOnce, Math.floor(hits.length / 2)); k++) if (fits(k)) return { targets: k, by: k === 1 ? "one" : "values" };
+  return { targets: 1, by: "none fits" };
 }
 
 /** The enemy statuses whose modifiers sit on a target (engine status.ts statusModifiers' sources), by kind. */

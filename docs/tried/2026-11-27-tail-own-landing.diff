@@ -1,0 +1,42 @@
+Tried 2026-11-27 (twins-on-several-targets round), dropped.
+
+What: replayrun.ts tailCuts' guard "a logged hit of its operator's casts no other cast holds" also passes the cast's
+own last logged landing, which is logged a fraction of a ms after its frame's time about half the time (the frame is
+the logged ms rounded). 6339 20.37 s: Laevatain's finisher, its first hit the slug's kill, kept its 105,356 hit_2 at
+21.60 s that no log line has (+10.2% of the fight). The diff takes the cast's own landing as no evidence unless it is
+logged a frame or more after its landing's frame (a batch at a stop's end).
+
+Measured (npm run measure -- --base HEAD, on top of the round's twins and sub-skill events; the exact-own-hit form, every
+own landing ignored, gave the same lines):
+  Development: plain 84.3% → 83.7%, mismatch 4.7% → 4.9%, mean |damage error| 1.3% → 1.3% (15 better, 5 worse:
+    c4f3 plain 468 → 402, mismatch 14 → 39, −0.7 → −2.7%; 9847 plain 425 → 404, −1.2 → −1.7%)
+  Hold-out: plain 82.5% → 82.5%, mean |damage error| 5.8% → 5.9% (4 better, 4 worse)
+  Earlier pending: 6 better, 3 worse; replay-only development 1.1 → 0.9%
+
+Why dropped: more tails cut lowers totals' replay-only share but costs plain hits where the cut tail's effects
+(buffs, inflictions) the later hits need came (c4f3, 9847). The guard's own-landing pass is a rounding coincidence
+that happens to keep tails worth keeping; a cut needs a better test of whether the tail's effects came (its
+effect-run guard below it) before this can go in.
+
+diff --git a/packages/logs/src/replayrun.ts b/packages/logs/src/replayrun.ts
+index 2d97f62..0a0c143 100644
+--- a/packages/logs/src/replayrun.ts
++++ b/packages/logs/src/replayrun.ts
+@@ -416,11 +416,16 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
+       continue;
+     }
+     // A logged hit of the operator's casts (not a status's or a trigger's) that no other cast holds: this cast's, placed
+-    // elsewhere or matched freely (a follow-up's, a tick's), so the log shows more of it.
++    // elsewhere or matched freely (a follow-up's, a tick's), so the log shows more of it. One of its own landings logged
++    // after its frame (a batch at a stop's end) shows that too; not its own landing logged at its frame, a fraction of a
++    // ms after the frame's time (6339 20.37 s: Laevatain's finisher, its first hit the slug's kill, kept its 105,356 hit_2
++    // at 21.60 s that no log line has; every own landing taken as no evidence cut more: development plain 84.3 → 83.7%).
+     const shown = fx.hits.find((h, i) => {
+       if (h.operator !== c.operator || h.t <= ms(lastLogged) || h.t > from + TAIL_NEAR_MS) return false;
+       const by = heldBy.get(String(i));
+       if (by && by !== c) return false;
++      const own = by === c ? c.landings.find((l) => l.ref === String(i)) : undefined;
++      if (own && h.t - ms(own.frame) < ms(1)) return false;
+       return (placement.hits.get(h)?.cast.kind ?? null) !== null;
+     });
+     if (shown) {
