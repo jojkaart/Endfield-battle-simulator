@@ -299,12 +299,16 @@ export function remainingOf(buffs: readonly ActiveBuff[], frame: number): number
   return left;
 }
 
-/** Adds `frames` to the remaining time of an owner's active buff (every layer). Returns null when it isn't active. */
-export function extendBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, frames: number): ActiveBuff[] | null {
+/**
+ * Adds `frames` to the remaining time of an owner's active buff (every layer), or with `atLeast` raises each layer's
+ * remaining time to at least `frames` (a layer with more left keeps it). Returns null when it isn't active.
+ */
+export function extendBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, frames: number, atLeast = false): ActiveBuff[] | null {
   let found = false;
   const out = buffs.map((x) => {
     if (x.id !== id || x.owner !== owner || x.cast !== undefined || !activeAt(x, frame)) return x;
     found = true;
+    if (atLeast) return Number.isFinite(x.expiresAt) && x.expiresAt < frame + frames ? { ...x, expiresAt: frame + frames } : x;
     return { ...x, expiresAt: Math.max(frame + 1, x.expiresAt + frames) };
   });
   return found ? out : null;

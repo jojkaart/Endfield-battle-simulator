@@ -315,7 +315,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         break;
       }
       case "extendBuff": {
-        const buffs = extendBuff(st.buffs, a.buff, owner, frame, Math.round(evaluate(a.seconds, ec()) * FPS));
+        const buffs = extendBuff(st.buffs, a.buff, owner, frame, Math.round(evaluate(a.seconds, ec()) * FPS), a.atLeast === true);
         if (buffs) st = rebaseCooldowns(ctx, st, { ...st, buffs }, frame);
         break;
       }

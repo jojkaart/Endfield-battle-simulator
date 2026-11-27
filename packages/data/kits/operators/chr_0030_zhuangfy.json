@@ -182,6 +182,26 @@
    "note": "buff_chr_0030_zhuangfy_potential1: abilityEvent 6 (entering battle) -> potential1_more_sword."
   },
   {
+   "id": "bs_floor",
+   "on": {
+    "event": "cast",
+    "skills": [
+     "chr_0030_zhuangfy_normal_skill",
+     "chr_0030_zhuangfy_normal_skill_ult"
+    ]
+   },
+   "by": "self",
+   "do": [
+    {
+     "kind": "extendBuff",
+     "buff": "sunderblade",
+     "seconds": 3,
+     "atLeast": true
+    }
+   ],
+   "note": "normal_skill and normal_skill_ult frame 0 (a clip over frames 0-3): FindTargetAction swordsForExtend (her Sunderblades, tag -13979809), ForEachAction CheckAbilityEntityCurDuration < 3 -> SetAbilityEntityDuration 3: every Sunderblade with less than 3 s left is kept 3 s (batch-4 G6). d774 68.21 s: the blade from 29.57 s, 1.15 s left at the 64.72 s cast, strikes in the next cast (7 strikes and the final logged)."
+  },
+  {
    "id": "bs_swords",
    "on": {
     "event": "cast",

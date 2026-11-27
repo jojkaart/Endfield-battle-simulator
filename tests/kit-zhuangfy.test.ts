@@ -143,6 +143,13 @@ describe("Zhuang Fangyi: battle skill (Sunderblades and Thunder Strikes)", () =>
     expect(kitSkill("normal_skill")?.hits.filter((h) => h.id.startsWith("final_")).length).toBe(9);
   });
 
+  it("a battle skill keeps every Sunderblade with less than 3 s left for 3 s (SetAbilityEntityDuration at its frames 0-3: d774 68.21 s)", () => {
+    // The 0 s blade has about 2.2 s left at the 34 s cast: kept to 37 s, it strikes in the 36.4 s cast (3 blades); its own
+    // 36 s would have ended it first (2). A blade with more left keeps its time (6 s at the 30 s cast: gone at 36.4 s).
+    expect(perCast(casts({}, [0, 34, 36.4]), "normal_skill")[2]?.length).toBe(3);
+    expect(perCast(casts({}, [0, 30, 36.4]), "normal_skill")[2]?.length).toBe(2);
+  });
+
   it("her own ultimate's stop holds the strikes (a buff's timeline, on the world's clock: d774 102.17 s, 4d60 157.42 s)", () => {
     // Three Sunderblades (strikes at 24, 32, the last at 43); the ultimate at the cast's frame 20 stops the world for 78 frames.
     const plain = casts({}, [0, 5, 10]);
