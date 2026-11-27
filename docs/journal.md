@@ -4,9 +4,49 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 184 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 185 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Liino's damage error and her weapon's Medicant layers
+
+**Goal:** Liino has the largest by-operator mean |damage error| (8.5% over 19 fights, median 3.1%): which of her
+hits carry it; and her weapon's Medicant layers (buff_wpn_lance_0014_damageup) listed up to ×9 on one teammate
+against the kit's 4 (in-game test 25).
+
+**Found:**
+- **Her error is all one-sided.** Her matched landings are within ±0.5% in every fight; every fight's error is
+  replay-only landings (`zmdlogs totals --all --json`, her parts as % of her own total): 0eef's combo hit2 tail
+  (+57.8% of a 0.9% share: 3.0 points of the mean alone), her stance pressed before the fight's first logged hit
+  (1cd1 +8.2 points, c6d8 +6.5, 9c6e +5.7, 9847 +2.7), and Cosmovoice beats, finales and volleys the log never shows
+  (1cd1, 1d91, af7b +15–18 points each). Every Cosmovoice logs its Pyrotechnics and bomb, but 0–10 of its 10 beats
+  and its finale in 5 of 24; the beats are projectiles launched from Liino (her reach; by controlled operator 67% of
+  beats land, Typhoeus controlled 13 of 30): positions, which no log records. docs/open-problems.md "Liino's own
+  damage error".
+- **Medicant: 4 per teammate, by value, at every listed count.** 6,500 teammates' hits in 19 logs: the value reads
+  min(entries, 4) (entries 5–13: 3,097 of 3,434 imply exactly 4); the listing also under-counts (9847's Avywenna at
+  57.64–64.75 s: 2, 3, 4 layers where 0, 2, 3 are listed, the ×1.033 of the last round). No kit change.
+- **Overheals count (test 25 decided).** Liino's stance heals before a fight's first logged hit, when nobody has
+  been hit, give layers the damage carries (1cd1: three on Typhoeus by 11.95 s, by value; 9c6e, 9847, c6d8, 8318,
+  4bfe). The teammates a heal misses there (1cd1's Ardelia, 9847's Gilberta, c6d8's Arcane) miss it at full HP too:
+  the soundwave's reach, which also explains 1d91's Arcane and Ardelia.
+
+**Held back / tried (log-check files of the parallel several-targets agent):**
+docs/tried/2026-11-27-opening-away.diff (the opening as an away stretch for the totals and the replay's enemy:
+hold-outs unchanged, 9c0b better, 1cd1, 9847, db87 0.1–0.4 points worse where the opening's landings covered a low
+matched part; Liino 8.5 → 8.1% with a 6 s floor; for the lead) and, found again after the several-targets round
+had tried it, docs/tried/2026-11-27-tail-own-landing.diff (tailCuts' shown-hit guard takes a cast's own last
+landing for another hit; with a 0.5 s end guard as well: 0eef right, Liino 8.5 → 5.5%, but 15 better / 5 worse,
+c4f3 plain 468 → 402, hold-out |damage error| 5.8 → 5.9%: dropped; its header has the round's numbers).
+
+**Scoreboard:** unchanged (docs only: no kit or engine change; no snapshot moved). Team numbers unchanged (no
+simulated fight changed; team-ab not run).
+
+**Decisions:** no "drop the unlogged beats" reading: it would fit the log by construction; the reach is an input,
+and for simulations an expected beat share (about 0.7) is the honest model, left for the planning side. Test 25
+marked decided on the premise that a stage fight starts at full HP.
+
+**Probes:** scripts/probes/kits/liino-medicant-layers.ts, liino-opening-layers.ts, liino-cosmovoice-beats.ts.
 
 ## 2026-11-27: Camille's Vesperwings moving to the next target
 
@@ -354,52 +394,3 @@ logged runs, quartiles 0.43 / 0.84 / 1.62 s, against 20, 0.60 / 1.53 / 3.32 s; a
 
 **Open:** where the hold sits against the breaking hit's logged ms (9090, c4f3, 3aa6: the late clocks before it);
 breaks inside a combo's slow-down; the hold-outs' 30 hits.
-
-## 2026-11-27: Hard 33's eight slugs; status pairs read by the check
-
-**Goal:** two leads on main at a6c425f: Hard 33's slug (7b54 +40.4%, the largest development error; 6339 −12.6%), its
-mechanics from the game data and the logs; the status pairs whose replay value a buff's edge put off (1d91, 7b54,
-a7a7, e989, 7910, abfd), beside an agent on holds and Rossi's bleed (its files untouched).
-
-**Found:**
-- **The slug is eight slugs** (docs/open-problems.md "Hard 33's Woodcraft Slugs"; scripts/probes/targets/slugs.ts):
-  both totals are 9.600 Max HP (eight of 1.2), the kills fall at whole slugs of damage (6339: 1.00, 3.00 with two at
-  one ms, 4.46, 5.00, 6.00, 7.00, 8.00), one key at one ms at several values (7b54 17 times), and the stage's own text
-  says "They are legion" (one slug unshielded at a time, its death unshielding another). The data's number shield
-  zeroes a shielded slug's hits (−9999 in the product zone): no log has a zero hit. ZMDLogs lists every slug's debuffs
-  under the one id (7b54's attack 1 at 5.27 / 10.99 s: one listing, ×1.198 apart = Jade Vessel × Camille's 0.07), so
-  "debuffs that don't act", the partial purges and the non-round factors were other slugs' debuffs, and the purges
-  kills. The slugs' own buffs and AI aren't in the data.
-- **The status pairs, case by case:** 1d91 (the game's burst after Arcane's combo touch, its listing has Doubles) and
-  7910 (held by Arcane's own ultimate stop at +0 ms) on the other side of a buff's edge; abfd held 2.55 s (76 frames);
-  a7a7 not an edge: Liino's Medicant ×4, an unjudged kit buff the burst's listing lacks; e989 not an edge: the replay
-  keeps Camille's Firefang Weakness 69.19–89.32 s (open); 7b54 the slugs.
-
-**Done:**
-- 6339 and 7b54 marked `severalTargets` with that evidence (their own row with 9c6e: a reclassification).
-- **`logged-purges` `log-kills`** (default; enginecheck.ts killPurges): in a several-targets fight the replay's enemy
-  sheds the team's debuffs at each logged kill.
-- **`status-pairing` `check`** (default): a pair fits too by the check's primary reading of it (enginecheck.ts
-  primaryParts, now shared with readingBasis), with the landing's modifiers or the replay's at the logged hit's frame,
-  and a pair that fits only there is read there by the check (BuffReplay.statusInputs); STATUS_WIDE_FRAMES 60 → 90.
-- tests/slug-targets.test.ts, tests/status-pairing-check.test.ts; damageOptions exported from the engine's barrel.
-
-**Scoreboard** (`npm run snapshots:update` against a6c425f): development (29 fights) plain 82.7 → 83.9%, mismatch 5.8 →
-4.8%, mean |damage error| 2.9 → 1.2%, |matched| 2.16 → 1.35%, replay-only 2.83 → 1.12%, log-only 1.60 → 0.57%; of it the
-reclassification alone (measure's plain tree) plain 83.8%, 4.8%, 1.2%, the readings +0.1 plain. Hold-out plain 82.7 →
-82.9%, mismatch 5.4%, |damage error| 6.3%, replay-only 2.69 → 2.62%, log-only 4.79 → 4.70%: 3 better, 1 mixed (plain +3,
-its total moved), none worse. Earlier pending plain 81.8 → 81.9%; verified 78.4 → 78.5% (b7b3). Several targets (3
-fights) 48.1% plain / 20.6% for 9c6e alone → 54.1% / 20.0%. Better: 1d91, 4360, 7910, 79cc, 8915, 9847, 9c0b, c83c, e989,
-012a, 9555, a7a7, b6aa, c6d8, d774, e82d, b7b3, 7b54 (plain 1 → 65, +40.4 → +15.7%); mixed (plain up, a total 0.1–0.3
-points further): c779, f978, 3aa6, abfd, c3c7, 9c6e (plain 200 → 244, −20.6 → −24.5%: the second target's log-only no
-longer cancelled); worse: af7b (total 0.7 → 0.8%, a burst now paired at a slightly other value), 6339 (plain 114 → 108,
-−12.6 → −19.7%: the slug after its 20.37 s kill had Camille's Susceptibility). No simulation reads either assumption
-(log check only): no team-ab.
-
-**Decisions:** a fixture mark and a kill purge, not a shield model: which slug a hit lands on is in no log, and the
-listing can't say a slug's debuffs; a kill is the one moment the log says the target changed. `check` reads a pair at
-the logged frame only where the landing's own frame doesn't fit and the logged one does (the assumed → plain bursts of
-b7b3, c779, c6d8: Arcane's WILL burst line a frame off): the log's time is the burst's.
-
-**Left:** e989's Camille Firefang Weakness (replay-only run 69–89 s); per-target state for several-targets fights;
-the slugs' replay-only landings (hits on shielded slugs).

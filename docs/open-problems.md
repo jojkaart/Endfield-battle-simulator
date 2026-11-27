@@ -463,8 +463,9 @@ ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
 - Rossi's combo 3 in 3f78 and 207f's total: fixed — docs/journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md.
 - **1d91 (the coordinator's lead):** Arcane's strings fall ×0.965 per step from 53.2 s (−3.5, −7.1, −10.6% at 53, 56.5,
   60.3 s) with constant modifiers in the replay: her Medicant layers (wpn_lance_0014, 20 s each) from Liino's beats at
-  31.8, 35.0, 38.1, 41.4 s expiring one by one, the beats from 44.9 s giving her none in the game. Still possible: a
-  beat's heal triggering Medicant only when it heals (Arcane at full HP: no log records HP), or only in range.
+  31.8, 35.0, 38.1, 41.4 s expiring one by one, the beats from 44.9 s giving her none in the game. Still possible:
+  only in range (the soundwave's reach). Ruled out 2026-11-27: only when it heals (overheals give layers: "Liino's
+  weapon" below).
 - **8915 7.07–8.90 s (the coordinator's lead):** a Corrosion ramp step and Hot Work's end early after Liino's and Si's
   combos pressed together (stops 7.07–8.00 and 8.10–8.90 s, Si's cast event at 7.94 s). The amounts are at the log's
   grain: Corrosion applied at 6.795 s (a batch of three hits; Arcane's battle skill event at 6.06 s puts its frame-20
@@ -480,6 +481,42 @@ ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
   total hold (an overlap of Liino's ramp with Si's plateau saves about 2 frames); the Corrosion's application time
   inside its batch. Not built: one log, under the grain.
 - **c6d8 / 8915:** stage factors (main's `stageFactors`, merged 2026-11-27).
+
+## Liino's own damage error (2026-11-27)
+
+**Shows:** the largest by-operator mean |damage error| (docs/accuracy.md "By operator"): 8.5% over 19 fights,
+median 3.1%, weighted by share 6.8%; every fight's error positive (the replay over), her share 0.9–6.5%.
+
+**Found: none of it is in her matched hits; all one-sided** (`zmdlogs totals --all --json`, her parts per fight
+as % of her logged total). Her matched landings are within ±0.5% in every fight (1cd1 −0.2%, af7b −0.4%); the
+error is replay-only landings, in four kinds:
+- **0eef +57.8% (3.0 points of the mean alone):** her combo's hit2 at 8.80 s, which no log hit stands for (her
+  hit1 logged 7.57 s; the team hits to 10.03 s). Kept by two tailCuts guards: the fight's-end 1.5 s, and the
+  shown-hit guard taking the cast's own last landing (7570 ms, past its frame's 7566.7) for another hit (the same
+  bug the several-targets round found at 6339 21.60 s). Tried: docs/tried/2026-11-27-tail-own-landing.diff with a
+  0.5 s end guard (0eef fixed, Liino 8.5 → 5.5%, but too broad: c4f3 plain −66, hold-out 5.8 → 5.9%).
+- **The opening:** her stance pressed before the fight's first logged hit (1cd1 3.05 s, first hit 11.00 s; 9c6e,
+  c6d8, 9847): the replay's projectiles and first volley there, none logged (1cd1 +8.2, c6d8 +6.5, 9847 +2.7, 9c6e
+  +5.7 points of hers). Held back: docs/tried/2026-11-27-opening-away.diff (hold-outs unchanged; three development
+  totals 0.1–0.4 points worse, whose matched parts run low).
+- **Cosmovoice beats and finale the log never shows** (1cd1 +15.2, 1d91 +16.9, af7b +18.2, d9e5 +6.3, 8915 +4.6
+  net, 9090 +4.1 points): every Cosmovoice logs its Pyrotechnics and bomb, but its beats 0–10 of the kit's 10 (1cd1
+  and 1d91 none, while the song's heals still give the team Medicant layers at its beats: 1cd1 39.79, 41.51 s) and
+  its finale in 5 of 24 (scripts/probes/kits/liino-cosmovoice-beats.ts). Missing beats come in runs inside
+  Cosmovoice too (9847 56.6–60.8 s, 9090 68.5–75.8 s). Beats and finale are projectiles launched from Liino
+  (buff ultskill_music_damage LaunchProjectile from the owner), so the enemy out of her reach; by the controlled
+  operator: Zhuang Fangyi 52 of about 67 beats, Arcane 16 of 20, Perlica 15 of 27, Typhoeus 13 of 30 (a ranged
+  controlled operator, Liino with her, far from the enemy?).
+- **Volleys the log never shows** (4360 +2.8, 4d60 +2.1, 9847 +2.1, d774 +1.2 points): the 10 s timer's volley due
+  with no logged one near (4d60 ~24 s, the stance on; 154.9 s), the same reach.
+
+**Ruled out:** her kit's values (matched within ±0.5% per fight, test 6), her build (no `offsets` row), the
+Medicant layers on her teammates (not her damage), the volleys' and beats' timers (the logged ones fit them).
+
+**Still possible:** the reach as an input no log records: the replay can't tell a beat that missed from one that
+landed unlogged but by the log's rule that every landing is logged; a reading that drops a projectile of Liino's
+own the log doesn't show near its due time would fit the log by construction, so not built. For simulations an
+expected landing share for her beats (about 0.7 by the logs) would lower Cosmovoice's damage, not its buffs.
 
 ## Away stretches: a pause or a phase (2026-11-27)
 
@@ -1097,7 +1134,10 @@ shares of the off error at that code):**
     ultimate's lance-back hits at 64.76 and 135.25 s (×1.033, ×1.043) under Liino's listed Medicant layers
     (buff_wpn_lance_0014_damageup ×3 and ×7, the kit's max_stack 4: the listing counts more layers than the buff
     keeps) beside the replay's Bonekrushing Smash (suit_attri01, not listed), 2 her combo at 57.64 s and ultimate at 131.44 s. A lead for
-    Liino's Medicant layers (the roadmap's 1d91 item), not Avywenna's kit; her 4360 has 2 mismatches.
+    Liino's Medicant layers (the roadmap's 1d91 item), not Avywenna's kit; her 4360 has 2 mismatches. **2026-11-27
+    (the Liino round):** the listing under-counts there: the damage has 2, 3, 4 layers at 57.64, 63.04, 64.75 s
+    where it lists 0, 2, 3 (the replay's own 4 gives 64.75 s exactly); the ×7 entries elsewhere read as 4, the cap
+    ("Liino's weapon" below). The check reads this unjudged buff from the listing, so these stay mismatches.
   - **04d4 Snowshine ×0.9624: still open, narrowed.** (2026-11-26, combo hold and replay: **ruled out** her
     operator level, potential, weapon skill levels 1 and 2 and each pairing of them, scratch scan on computeStats: levels
     74 and 75 bracket it at ×0.9596 and ×0.9656, P0–P3 ×0.988, the weapon's skill 1 at levels 1–3 ×0.971–0.990 in steps
@@ -2462,6 +2502,28 @@ cap 2) are listed up to 12 times too: a log habit.
 **Ruled out:** the listed count in the damage; the buff's own default cap
 (2); a cap of 4 per heal source.
 
+**Re-checked by value (2026-11-27, the Liino round):** 19 Liino logs, 6,500
+teammates' hits listing 1–13 entries (scripts/probes/kits/liino-medicant-layers.ts over `zmdlogs hits --json`:
+logged ÷ the primary reading, which reads min(entries, 4), turned into layers
+with the hit's ATK zone): every count reads as min(entries, 4), about 90%
+within 0.3% at each (entries 9: 369 of 412 imply 4, 2 imply 9; entries
+5–13: 3,097 of 3,434 imply exactly 4). Entries whose `since` is 20–35 s
+before the hit still count (60 of 71 hits whose only entry is that old imply
+one layer): the buff clock's holds, not a 20 s life from `since`. The listing
+under-counts too: 9847's Avywenna at 57.64, 63.04 and 64.75 s lists 0, 2, 3
+entries where the damage has 2, 3 and 4 (the replay's 4 gives 64.75 s's 11
+lance-back hits exactly, 115,108; the ×1.033 the 2026-11-27 build round saw);
+65.63 s lists 4, plain. So no kit change: 4 per recipient stands.
+**Overheals give a layer (2026-11-27; in-game test 25 decided):** Liino's
+stance heals before a fight's first logged hit, when nobody has been hit
+(1cd1 three by 11.0 s: Typhoeus and Arcane a layer at each, 3 on Typhoeus's
+hits from 11.95 s by value; 9c6e Typhoeus 2 by 8.5 s, by value; 9847, c6d8,
+8318, multi-target 4bfe listed). A teammate a heal misses there misses it at
+full HP as well (1cd1's Ardelia 1 of 3, 4bfe's Arcane 1 of 4 listed, 9847's
+Gilberta none to 20 s and c6d8's Arcane none to 25 s by value): the
+soundwave's reach (its projectiles: the data's tables don't give their
+targeting; positions aren't logged), not HP (scripts/probes/kits/liino-opening-layers.ts).
+
 **Still possible (not the weapon):** 1cd1's team-wide step at 24.0–24.6 s
 (×0.936 → ×0.820 for Ardelia, Arcane, Typhoeus alike) and Typhoeus ×0.820
 → ×0.917 at 39.0 s; the engine giving Typhoeus's ultimate hits no layers
@@ -2485,7 +2547,12 @@ pattern follows the layers, not a factor).
 **Still possible (1d91's Ardelia):** the stance's heal being the
 soundwave projectile's area (normal_skill_soundwave_projhit, an AOE
 HealAction): teammates out of its reach get no heal and no layer (not
-modelled: positions); a heal on a teammate at full HP giving none.
+modelled: positions). **Ruled out (2026-11-27):** a heal on a teammate at
+full HP giving none (heals before the fight's first hit give layers; the
+paragraph above). The reach is the one left, and the logs show it in
+other fights too (9847's Gilberta, c6d8's Arcane): a simulation that gives
+every teammate a layer at every heal over-counts for those out of reach,
+which no log input can predict.
 
 **Next check:** 1cd1's step at 24 s (sonnet); the log check's fallback
 should not trust stackingType-11 listings' counts; whether other logs
