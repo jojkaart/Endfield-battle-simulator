@@ -260,7 +260,7 @@ that landed, or a hold), Alesh's eventless 0c14 combo.
 **Combo hold and replay, 2026-11-26** (journal: the combo-hold-and-replay entry of 2026-11-26; open-problems "The
 damage factors", "The enemy's clock", "0c14"): 0c14's Rossi replay-only landings were one battle skill's tail the log
 doesn't have (no Lift, wolves or bleed after its two charge hits) and, from the Vulnerable stack it didn't add, her
-next battle skill's follow-up: engine assumption `unlogged-tails` `cut` (the default; replayrun.ts tailCuts,
+next battle skill's follow-up: engine assumption `unlogged-tails` `cut` (the default until 2026-11-27, `cut-all` since: replayrun.ts tailCuts,
 ReplayCastOptions.endsAt), guarded by the operator's other logged hits, the listing's new runs, the away stretches
 and the fight's end; 0c14 plain 293 → 336, its total +2.7 → −3.2% (its matched Rossi ×0.943, Si ×0.964). a9d7's
 Slashing Edge past Chen's unlogged ultimate final is a hidden hold, not a landing (the away edge unchanged). The

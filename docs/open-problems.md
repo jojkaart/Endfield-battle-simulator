@@ -66,6 +66,58 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Replay-only landings: what the replay makes and the log never shows (2026-11-27)
+
+**Shows** (`zmdlogs totals --all --kinds`, `--json`; the shares per fight from the `totals --all` table): development
+replay-only 4.5% of a fight's logged total (mean), hold-outs 4.0%. Over 61 fights: cast tail 1.12%, no cast 0.73%, twin
+like 0.43%, cast gap 0.40%, cast unlogged 0.23%. 6339 (+37.4%) and 7b54 (+30.6%, both Hard 33's slug) and 9c6e (+18.6%,
+two targets) carry 2.7 of development's 4.5 points; outside them no key above 0.1% of the mean but Typhoeus's floating
+bursts (fc63) and basic-attack tails in small pieces (32 fights).
+
+**Found and fixed** (docs/journal/2026-11-27-06-replay-only-landings-kill-gaps-basic-tails-tails-kept-by.md):
+- **A logged kill's gap** (engine assumption `kill-gaps` `absent`, enginecheck.ts killGaps): a hit capped at the HP
+  left (`uncapped` above its value) before the fight's last hit is a kill (a life, a phase, one of several targets);
+  until the next logged hit the replay's enemy is away, 0.15 s inside both ends. 9c6e 63.34–67.64 s (Typhoeus's burst
+  160k), 6339's slug at 11.31 and 24.02 s. Hold-out |damage error| 7.3 → 6.3%; with no edge 5.4% but −13 plain in one
+  hold-out (`tight`).
+- **Basic attacks' unlogged tails** (`unlogged-tails` `cut-all`, now the default): 207f's Rossi attack 4 hit_ai
+  (17.42 and 20.72 s, two of five hits logged), +1.6 → +0.4%; 14 development logs closer, 6 further (under-predicted
+  fights the tails had cancelled).
+- **A tail kept by another cast's buff** (tailCuts): the new-run check now asks a run that starts at one of the tail's
+  own landings; d774's Zhuang Fangyi battle skill at 103.28 s (3 strikes, no final in the log) was kept by a gear set's
+  team ATK Arcane's ultimate hit started at 107.07 s. d774 plain 392 → 409, +5.8 → −0.6%.
+- **A final whose multiplier reads its event's count** (logcasts.ts nominalScales): Si's combo final (atk_scale2 +
+  count × atk_scale2_1) had no nominal scale, so realignByValue never moved a logged final off a slash's slot (6339
+  11.31 s; the final's value at counts 1–4 now). Per-hit |error| 6339 30.4 → 21.5%; its total −10.4 → −14.1% (the
+  replay-only final had cancelled the second 11.31 s hit, the same final on another part of the slug at 98,788 of
+  121,248 uncapped); one hold-out mismatch −6 / assumed +6, its total further.
+- **A delayed landing across stops the pass misplaced** (logcasts.ts joinDelayed): fc63 43.58 / 87.81 s, Typhoeus's
+  bursts 3.6 s after their arrows across Gilberta's and Perlica's ultimates; pass 1 placed Gilberta's from its hit alone
+  (1.7 s late), so pass 2's stops held the burst half as long and it opened a shot the log doesn't have. Now the latest
+  cast without its landing takes it when the stops between, laid end to end, hold it that long. fc63 plain 513 → 523,
+  and the fc63 87.87 s burst 0.48 s early (the log-only round's list below) is gone with it.
+
+**Tried and dropped:** a value of unknown crit fitting a slot up to ×3 above it (9a80's Si combo final at 36.10 s,
+495,353 of unknown crit, on a slash's slot): 9a80 +1 plain, one hold-out's total worse (mean 6.3 → 6.8%):
+docs/tried/2026-11-27-unknown-crit-slots.diff.
+
+**Ruled out as general:** the logged gaps of 2.5–6 s (under ENEMY_AWAY_MS): 119 in the development and earlier-pending
+logs, replay-only landings more than 0.3 s inside 21 of them, most under 0.5% of their fight; 7b54 21.06–26.98 s (Si's
+burst mark, 7.2%) and 9c6e 63.34 s (a kill gap, now fixed) are the large cases (a scratch probe, not kept: no rule from
+a gap's length alone).
+
+**Still possible / left:**
+- 6339 and 7b54 (the slug): Laevatain's finisher hit_2 at 21.60 s (10.2%) after the 20.37 s cap with a logged hit at
+  20.60 s between; Laevatain's 38.2 s combo and 6339's 32.97 s battle skill, made from their events, no hit of either
+  logged; 7b54's overlapping Si combos (two finals at 16.36 s, eleven landings for eleven slots, so no realignment);
+  Combustion ticks. Shield-blocked hits (open below, "Hard 33's slug") fit all of them; no log lists the shield.
+- 9c6e's second target (Typhoeus's bursts as twins of a teammate's hit).
+- Si's combo final of unknown crit on a slash's slot (9a80 36.10 s, +6.6% replay-only).
+- Basic-tail cut's knock-on: 4a64 16.93 s, two logged attack-4 hits that matched the cut tail's landings 0.30 s later
+  now Arcane's first attack 4's, with its set's Nature DMG (−2 plain).
+- The log-only round's placement cases not reached here: f879 95.10 s, 5082 45.06 s, 9a80 34.94 s, 3aa6 125.65 s,
+  Pogranichnik's harasses, 99fb's bleed ticks, Arcane's INT lasers.
+
 ## Log-only landings: what the log shows and the replay never makes (2026-11-27)
 
 **Shows** (`zmdlogs totals --all --kinds`, `--json`): development log-only 3.2% of a fight's logged total (mean), of

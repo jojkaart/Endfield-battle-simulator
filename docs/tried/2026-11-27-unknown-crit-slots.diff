@@ -1,3 +1,11 @@
+Tried 2026-11-27 (replay-only round): in logcasts.ts realignByValue, a logged value of unknown crit (crit null) is
+compared too, fitting a slot when it lies between the slot's multiplier ÷ VALUE_TOLERANCE and × VALUE_TOLERANCE ×
+UNKNOWN_CRIT_FACTOR (3) under the cast's scale. 9a8097fcf351's Si combo final at 36.10 s (495,353, crit unknown, ×16.25
+the slashes' 30,483, as a non-crit final is in 6339) then takes the final's slot. Measured with --patch against the
+round's code: development 9a80 plain 277 → 278 (0.3 → 0.2%), nothing else; one hold-out worse in total (mean |damage
+error| 6.3 → 6.8%; its keys: kind combo, time to kill, share matched). Dropped: the hold-out can't be opened to see
+whether it is a kill-fight artifact. To try again: a development log with an unknown-crit final at a kill.
+
 diff --git b/packages/logs/src/logcasts.ts a/packages/logs/src/logcasts.ts
 index 93fb045..c33ee89 100644
 --- b/packages/logs/src/logcasts.ts

@@ -103,7 +103,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   first Empyrean battle skill (3 strikes, no final, 103.28 s), 3f78's Corrosion ramp ×1.017, a9d7's Chen; log-only
   landings 2026-11-27: Typhoeus's burst Signs by source (`typhoeus-sign-cooldown`, 1d91), Zhuang Fangyi's 3 s
   Sunderblade floor (d774): next the status landings' pairing as an assignment, Arcane's INT lasers' start, the
-  placement's log-only casts (fc63 87.87, f879 95.10, 5082 45.06, 3aa6 125.65 s).
+  placement's log-only casts (f879 95.10, 5082 45.06, 3aa6 125.65 s); replay-only landings 2026-11-27: a logged
+  kill's gap (`kill-gaps`), basic tails cut (`unlogged-tails` `cut-all`, 207f), a tail kept only by its own landings'
+  buffs (d774 103.28 s fixed), Si's final placed by value, Typhoeus's bursts across misplaced stops (fc63): hold-out
+  |damage error| 7.1 → 6.3%; next the slug's unlogged hits (shield?), Si's finals of unknown crit (9a80).
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on

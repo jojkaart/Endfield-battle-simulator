@@ -4,9 +4,56 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 170 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 171 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Replay-only landings: kill gaps, basic tails, tails kept by another cast's buff, finals by value
+
+**Goal:** the replay-only side of the fight totals (docs/accuracy.md "Where the total's error lives": development 4.5%,
+hold-outs 4.0% of a fight's logged total): landings the replay makes that the log never shows, sorted by kind, operator
+and skill over every development and earlier-pending log, the recurring causes fixed by mechanisms from the data or
+the logs. Known leads: 207f's Rossi attack-4 tail, d774's Zhuang Fangyi battle skill at 103.28 s, 4bfc.
+
+**Done** (docs/open-problems.md "Replay-only landings"):
+- **A logged kill's gap** (engine assumption `kill-gaps`, default `absent`; enginecheck.ts killGaps, replayrun.ts): a
+  hit capped at the HP left before the fight's last hit is a kill (a life, a phase, one of several targets), and until
+  the next logged hit the replay's enemy is away, 0.15 s inside both ends (KILL_EDGE_MS). 9c6e 63.34–67.64 s
+  (Typhoeus's 160k burst), the slug's caps in 6339.
+- **Basic attacks' tails cut** (`unlogged-tails` `cut-all`, the new default): 207f's Rossi attack 4 hit_ai (two of
+  five logged, twice).
+- **A tail is kept only by a buff run its own landings start** (tailCuts): d774's battle skill at 103.28 s had been
+  kept by a gear set's team ATK from Arcane's ultimate hit 2 frames before a tail strike.
+- **Si's combo final placed by value** (logcasts.ts nominalScales: the multipliers of a value expression over event
+  counts 1–4): 6339's logged final at 11.31 s now on the final's slot.
+- **Typhoeus's burst across stops the pass misplaced** (logcasts.ts joinDelayed, stackedHeldMs): fc63 43.58 / 87.81 s
+  no longer open shots the log doesn't have (also the log-only round's fc63 87.87 s case).
+- tests/replay-only.test.ts (five tests).
+
+**Scoreboard** (`npm run snapshots:update` after merging main at 5637d06; `measure --base 5637d06` for this branch
+alone): development plain 81.5% (unchanged), mismatch 6.3%, mean |damage error| 3.2 → 3.4%, replay-only 4.5 → 3.6%;
+hold-out plain 82.6%, mismatch 5.5 → 5.4%, mean |damage error| 7.1 → 6.3%, replay-only 4.0 → 2.9%; earlier pending
+plain 81.5 → 81.6%, 1.6 → 1.3%; verified unchanged but 4e5e −2.9 → −3.0%. Better: d774 (plain 392 → 409, +5.8 →
+−0.6%), fc63 (513 → 523, 3.6 → 3.2%), 207f (+1.6 → +0.4%), 7b54, 012a, and 15 development logs closer in total. Worse:
+9c6e (−13.9 → −20.6%, plain 202 → 200: its two capped kill bursts at 79.85 s, whose readings mean nothing, plain →
+assumed) and 6339 (−8.0 → −14.1%, plain 112 → 114, per hit 30.4 → 21.5%): both under-predicted fights whose log-only
+side (−38%, −26%) the removed landings had cancelled; 5082, db87, 9090, 4360, a9d7, 9847 by 0.1–0.5 points (unlogged
+basic tails gone from under-predicted fights); 4a64 −2 plain (two logged attack-4 hits that had matched the cut tail's
+landings 0.30 s later). No simulation reads any of it (log check only): no team-ab.
+
+**Decisions:** the kill gap's 0.15 s edges because without them one hold-out lost 13 plain (logged landings a few
+frames off the next logged ms) for a better total (`tight`, 5.4%); `cut-all` because a basic attack is cut by the same
+unlogged inputs a skill is, and the measure (14 closer, 6 further, all six under-predicted) is the earlier one's with
+the totals since read right. The final's value range kept though its total effect is negative in 6339 and one hold-out:
+the per-hit error and the verdicts improve, the total had been right by a replay-only final cancelling a second copy.
+
+**Dead ends:** a value of unknown crit fitting a slot up to ×3 above it (9a80's final at 36.10 s): +1 plain, one
+hold-out's total 0.5 points of the mean worse, docs/tried/2026-11-27-unknown-crit-slots.diff; logged gaps of 2.5–6 s as
+away (no rule from length alone: 21 of 119 have replay-only landings, mostly small).
+
+**Left:** the slug's unlogged hits (6339's hit_2 at 21.60 s, 7b54's Laevatain combo and overlapping Si combos: a shield
+no log lists), 9c6e's second target, 9a80's final; the log-only round's placement cases f879 95.10, 5082 45.06, 3aa6
+125.65 s, Pogranichnik's harasses, 99fb's bleed ticks, Arcane's INT lasers (not reached).
 
 ## 2026-11-27: Log-only landings: Typhoeus's Signs, Zhuang Fangyi's Sunderblades
 
@@ -380,39 +427,3 @@ own record of the order.
 batch, not built); the harasses' logged delays (0.6–1.3 s, the kit's 0.3 s) and d4fb's 88.55 s harass and 89.82 s
 Assault placed as an ultimate the replay doesn't cast; c4f3 92.93 / 147.41 s and a9d7 239.40 s Morale layers; 7910's
 early rogue wave (not attempted).
-
-## 2026-11-26: Slots and paths by value: Hunter Pursuit, Pogranichnik's combo and his bank
-
-**Goal:** a cast's logged hits paired to its kit hits by value where time and keys don't decide (9c0b's Hunter Pursuit,
-7910's rogue wave); Pogranichnik's SP-driven team buffs (Thermite Cutter, Fervent Morale) behind Chen's, Lifeng's,
-Pogranichnik's and the Endministrator's fallbacks; if time, 9c6e's Liino combo on two enemies (open-problems "Fight
-totals" round 5, "Low plain, low mismatch").
-
-**Done:**
-- **Slots by value** (logcasts.ts realignByValue): a cast's landings of a key fewer than its slots, the slots'
-  multipliers apart by more than ×2, take the slots their values fit under one scale, then by world time; the first
-  slot moves only for a key that is its cast's only one, by values or by the landings no other stop separates (by time
-  alone it moved 7910's stares across Liino's stops). 9c0b's Hunter Pursuit is hits 2–4 (its Link before Arcane's
-  ultimate), db87's Camille ultimate hit_2 / hit_3, a27b's Mi Fu, 00ae's Arcane lasers.
-- **Neither of Pogranichnik's buffs reads the team's SP.** Thermite Cutter was right: its `other values` are the
-  listing (once per application), the hits' values fit the replay's two layers. Fervent Morale's bank was double-fed:
-  his combo's slashes, pinned to the 4-stack path's frames by kit order, landed beside the 3-stack path the replay took.
-  Now a landing in a taken state jump's skipped part goes onto the jumped-to path (engine paths.ts takenPathLandings),
-  and the values choose the path where they alone fit (castassembly.ts valuePaths, replayCast kitJumps; PATH lines).
-  c4f3's first layer 15.97 → 34.03 s (log 34.04 s).
-- **A Breach's Arts Intensity after its hit's before-damage triggers** (landing.ts): the data's SP comes before the
-  FractureAction, so the layer the SP makes counts for the Breach (alone: d4fb plain 516 → 837 on the old bank).
-- **A second enemy's landing by value** (logcasts.ts sameByValue): 9c6e's Liino combo at 47.72 s; 40d9 unchanged.
-
-**Scoreboard** (`npm run snapshots:update`): development plain 72.7 → 73.8%, mismatch 10.6 → 10.5%, mean |damage
-error| 6.3 → 6.1%; hold-out unchanged; earlier pending plain 73.0%, 3.5%. Pogranichnik 41.9 → 52.1% plain (total error
-5.0 → 2.8%), Chen 38.8 → 43.0%. Better 9c0b, db87, a27b, 7b54; mixed 9c6e (plain 175 → 202, −13.5 → −13.9%), a9d7 (177 →
-265, −2.2 → −3.3%: the doubled slashes had hidden Chen's −3.2% and Estella's −7.0%), c4f3 (223 → 275, −2.9 → −3.4%),
-d4fb (−0.4%: 86.67 s, the bank 0.3 s late in the replay); worse 7910 0.0 → −0.2% (its 352,792 is the early rogue
-wave by value, ×17.5 a stare, with no dive logged: matched to the plain wave now). team-ab: unchanged.
-
-**Decisions:** none of it an assumption: the values' ratios are ×2–17 apart where they decide, and each rule acts only
-where they do. landing.ts is outside the brief's file list (not status.ts or the buffs): named for the lead.
-
-**Left:** the Vulnerable stacks a Breach consumed read from the next combo's path (c4f3 13.07 s: three in the replay,
-four in the game), the harasses' Fervent Morale on whom (c4f3 68.83 s), 7910's early wave.
