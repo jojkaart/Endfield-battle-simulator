@@ -1,0 +1,33 @@
+A kit jump that a logged landing launched before it doesn't contradict (engine drivers.ts replayCast `contradicted`).
+
+What it does: the replay drops a kit jump whose skipped part holds a logged landing (JUMPDROP). A detached hit whose
+launch (KitHit.launch) comes before the jump lands whatever the jump does (schedule.ts jumpCast keeps it), so such a
+landing shows nothing about the jump; the diff leaves it out of `skipped`. Case: f8793bc8aea2 93.98 s, Laevatain's
+empowered battle skill, whose Magma Fragment ticks (an ability entity's, launched at frame 4) are logged across its
+jump 30 → 80: the jump was dropped and the cast ran its un-jumped timeline (its empowered hit still lands, pinned).
+
+Measured 2026-11-27 (measure --base HEAD --split files, this part alone on 107766a): no development, earlier-pending or
+verified log moved; one hold-out worse (plain −23, assumed +8, fallback +15; totals, operator keys 2, kinds basic,
+battle, status). Dropped: right by the data, but it moves only a hold-out, for the worse, and nothing in the
+development logs explains how. Likely a Laevatain hold-out where the dropped jump hid a misplacement (as f879's
+87.12 s cast did before logcasts.ts onEntityClock); to re-measure once a development log shows the case.
+
+diff --git a/packages/engine/src/timeline/drivers.ts b/packages/engine/src/timeline/drivers.ts
+index ac4aa9b..ab723bf 100644
+--- a/packages/engine/src/timeline/drivers.ts
++++ b/packages/engine/src/timeline/drivers.ts
+@@ -194,7 +194,13 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
+       // A jump in the part a taken chance jump skips is never reached: the landings past it are that path's.
+       if (decided.some((c) => c.taken && j.frame - frame >= c.at && j.frame - frame < c.to)) return false;
+       const target = j.frame + (j.to - j.from);
+-      const skipped = [...moved.keys()].filter((h) => h.frame >= j.frame && h.frame < target);
++      // Not a landing launched before the jump (KitHit.launch; schedule.ts jumpCast keeps it): it lands whatever the jump
++      // does (f8793bc8aea2 93.98 s: Laevatain's Magma Fragment ticks, an ability entity's from frame 4, logged across her
++      // empowered jump 30 → 80, dropped the jump, and with it the cast's empowered timeline).
++      const skipped = [...moved.keys()].filter((h) => {
++        const bound = h.launchAt ?? h.frame;
++        return bound >= j.frame && bound < target && h.frame >= j.frame && h.frame < target;
++      });
+       const drop = skipped.length > 0 && skipped.every((h) => !(own.get(h.hitId) ?? []).some((x) => x.frame >= target));
+       // Record only (the log check's JUMPDROP lines): which jump went, and the logged landings it would have skipped.
+       const at = () => skipped.map((h) => ({ hitId: h.hitId, frame: (moved.get(h) as { frame: number }).frame }));

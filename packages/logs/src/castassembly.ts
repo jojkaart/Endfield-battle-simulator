@@ -7,7 +7,7 @@
 
 import { allActions, applyBuff, chanceJumpsOf, hitLandingFrames, pathTwin, skippedHits, takenPathLandings, computeStats, ENGINE_ASSUMPTIONS, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, type GameData, type KitBuff, type KitHit, type KitTrigger, type OperatorKit, type SkillType } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { loggedNames } from "./enginecheck.ts";
+import { awayWindows, loggedNames } from "./enginecheck.ts";
 import { buttonVariants, castFrames, excludes, neededBuffs, nominalScale, castTimeStops, distinctCasts, loggedFrames, mergeMs, placeHits, skillStops, withResets, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /** The game buffs the log lists with values somewhere (effects or boundary effects). */
@@ -338,6 +338,9 @@ const SLOT_SHOWS_MS = 3000;
 /** How far from a slot press's first landing the log has no hit by anyone for the press to be `unseen` (ms). */
 const QUIET_MS = 1000;
 
+/** How far inside a stretch without logged hits (awayWindows) a slot press's first landing must be due for the press to be `unseen` (ms; as far as the replay leaves its own landings out there, enginecheck.ts AWAY_EDGE_MS). */
+const AWAY_INSIDE_MS = 300;
+
 /**
  * Where a logged cast of a skill without logged hits of its own starts: an ultimate's cast event can come at its time
  * stop's end (b6aa15281db4: Xaihi's at 31027 ms, after 1.8 s without a hit by anyone; her Amp, at frame 58, is on hits
@@ -443,7 +446,12 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
           .map((k) => k.skillId)
       : [];
     const landsAt = lc.t + (Math.min(...skill.hits.flatMap((h) => loggedFrames(h) ?? [])) * 1000) / FPS;
-    const unseen = shownElsewhere && Number.isFinite(landsAt) && !fx.hits.some((h) => Math.abs(h.t - landsAt) <= QUIET_MS);
+    // Or its first landing due inside a stretch the log has no hit in for ENEMY_AWAY_MS or more (awayWindows: the
+    // replay's enemy away), however soon after the last hit before it (3aa6ab93bad4 125.65 s: Zhuang Fangyi's battle
+    // skill in her Empyrean, 0.08 s after Perlica's last hit, then none by anyone to 139.57 s; its Sunderblade, made
+    // without a hit, is her 145.74 s cast's ninth).
+    const away = awayWindows(fx).some((w) => w.from < lc.t && landsAt - w.from > AWAY_INSIDE_MS && w.to - landsAt > AWAY_INSIDE_MS);
+    const unseen = shownElsewhere && Number.isFinite(landsAt) && (away || !fx.hits.some((h) => Math.abs(h.t - landsAt) <= QUIET_MS));
     const beforeHits = unseen && fx.hits.every((h) => h.t > lc.t);
     const start = shownElsewhere ? lc.t : loggedCastStart(data, lc, skill.kind, fx.hits, stops);
     added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}), ...(beforeHits ? { beforeHits: true as const } : {}) });

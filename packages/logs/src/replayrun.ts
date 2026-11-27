@@ -11,7 +11,7 @@ import {
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { awayWindows, enemyAwaySpans, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
-import { loggedFrames, type Placement } from "./logcasts.ts";
+import { buttonVariants, loggedFrames, type Placement } from "./logcasts.ts";
 import { replaySteps, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
@@ -242,7 +242,15 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
     // (every unseen ultimate made: 1cd1657bc305 −7.2 → −19.5%, Typhoeus's shots at 41.3 s lost).
     if (!c.leadsTo) {
       if (!c.unseen) return skip("a press the log shows nothing of (no hit of its own): the slot held a variant, or the press did nothing");
-      if (!skillAvailable(ctx, st, c.operator, c.skillId, f)) return skip(`a press whose hits had no one to land on: ${c.skillId} isn't available by its kit's state then`);
+      if (!skillAvailable(ctx, st, c.operator, c.skillId, f)) {
+        // The button's other variant where the kit's state holds it (buttonVariants: Zhuang Fangyi's battle skill in her
+        // Empyrean, 3aa6ab93bad4 125.65 s, logged as normal_skill; its Sunderblade comes without a hit).
+        const own = kit?.skills.find((k) => k.skillId === c.skillId);
+        const v = own && kit ? kit.skills.find((k) => k.skillId !== c.skillId && !k.followUpOnly && buttonVariants(kit, own, k) && skillAvailable(ctx, st, c.operator, k.skillId, f)) : undefined;
+        if (v === undefined) return skip(`a press whose hits had no one to land on: ${c.skillId} isn't available by its kit's state then`);
+        const late = lateBy(v.skillId);
+        return late === null ? made(v.skillId) : skip(`a press whose hits had no one to land on, as the variant ${v.skillId}: ${late}`);
+      }
       if (c.beforeHits === true && c.kind === "ultimate") return made(c.skillId);
       const late = lateBy(c.skillId);
       return late === null ? made(c.skillId) : skip(`a press whose hits had no one to land on: ${late}`);

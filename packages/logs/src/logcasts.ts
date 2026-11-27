@@ -767,6 +767,17 @@ function variantOrder(hits: readonly KitHit[]): { slotted: readonly KitHit[]; ot
 const msOf = (frames: number) => (frames * 1000) / FPS;
 
 /**
+ * A landing on an ability entity's timeline (SpawnAbilityEntity: `launch`, not a projectile's flight, a buff's world
+ * clock, a delay on the enemy's clock or a random count): it comes at its own frame after the launch, whatever the
+ * cast does since. Not one the log keys as a buff's (a buff's timeline the cast creates, which the world's holds and
+ * the enemy's state can hold: 9a8097fcf351's Rossi combo afterhits, buff_chr_0028_wulfa_combo_2_damage, the third 3.7 s
+ * after the second).
+ */
+function onEntityClock(h: KitHit): boolean {
+  return h.detached === true && h.launch !== undefined && h.travels === undefined && h.world === undefined && h.enemyDelay === undefined && h.landedCount === undefined && h.events.every((e) => !e.startsWith("buff_"));
+}
+
+/**
  * Whether a group's landings of a key are all known in number: every hit with the key has frames and a literal count (or
  * none). A landing on its way (`detached`, `launch`) may come late, but a cast still makes that many. Alternatives at one
  * frame are one slot (slotsOf).
@@ -975,7 +986,14 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const overdue = next !== undefined && head !== undefined && elapsed > msOf(next.frame - head.frame) + CAST_SLACK_MS;
         const rekeyed = onItsWay && overdue && [...opened.values()].flat().some((c) => since(c) && candidates.some((g) => g.id === c.group));
         const superseded = rekeyed || (cur !== undefined && next !== undefined && !onTime && !onItsWay && [...opened.values()].flat().some(since));
-        const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
+        // Not where every landing still to come is an ability entity's (onEntityClock): the entity's timeline runs on at
+        // its own frames, which no jump or wait of the cast moves, so its landings are due within the slots' span (the
+        // world's time: every stop but the cast's own holds them). f8793bc8aea2 94.71 s: Laevatain's Magma Fragment
+        // explosion, 6.9 s after her 87.12 s battle skill's, whose ticks the log doesn't have, was taken for that cast's
+        // first tick; the 95.94 s empowered hit then made a battle skill at 92.48 s, before her final strike's Heat
+        // absorption, with no empowered hit.
+        const entityLate = cur?.slots !== null && cur?.slots !== undefined && cur.slots.slice(cur.index + 1).every((x) => x.hits.every(onEntityClock)) && worldMs(cur.first, h.t, stops.filter((x) => x.operator !== cur.cast.operator || x.skillId !== cur.cast.skillId)) > cur.span + CAST_SLACK_MS;
+        const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS && !entityLate;
         // A variant's slot may never come (variantOrder): a logged press of a skill of the cast's kind since its first
         // landing starts a new cast (3aa6ab93bad4: a cast of two strikes doesn't take the next cast's seven; d774d0ce7bd3:
         // a battle skill's strikes 2.6 s apart, no press between, are one cast's).
@@ -988,7 +1006,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // at its last one's time whose value is that landing's and not the next slot's (sameByValue: 9c6e's Liino combo
         // at 47.72 s, hit 1 on both enemies, 6368 and 6035, took the second for hit 2 and her 48.49 s hit 2 for a new
         // combo's hit 1; 40d9a3c1da37's Si combo slashes, which the log batches at one ms, are alike in value, undecided).
-        if (cur && (used || sameByValue(cur, h)) && h.t === cur.last.t) {
+        // Not one whose value, both of known crit, is no second enemy's of the same landing (SAME_VALUE_TOLERANCE): a
+        // next cast's first landing at that ms (9a8097fcf351 34.94 s: Si's 25.00 s combo's final, 349,888, and her 32.51 s
+        // combo's first slash, 28,396; taken for the final on a second enemy, the slash's cast lost it).
+        if (cur && ((used && !unlikeByValue(cur.last, h)) || sameByValue(cur, h)) && h.t === cur.last.t) {
           const slot = cur.slots?.[cur.index];
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last });
           continue;
@@ -1190,6 +1211,13 @@ function sameByValue(cur: { readonly last: LogHit; readonly index: number; reado
   const tolerance = Math.log(SAME_VALUE_TOLERANCE);
   if (!Number.isFinite(r) || Math.abs(r) > tolerance) return false;
   return !(b as number[]).some((y) => (a as number[]).some((x) => Math.abs(r - Math.log(y / x)) <= tolerance));
+}
+
+/** Two landings at one ms, both of known crit (not crits), whose values are further apart than one landing's on two enemies (SAME_VALUE_TOLERANCE). */
+function unlikeByValue(a: LogHit, b: LogHit): boolean {
+  if (a.crit !== false || b.crit !== false) return false;
+  const r = Math.log((b.uncapped ?? b.value) / (a.uncapped ?? a.value));
+  return Number.isFinite(r) && Math.abs(r) > Math.log(SAME_VALUE_TOLERANCE);
 }
 
 /** How close (×, either way) a second enemy's landing's value is to the first's (sameByValue): the enemies' own debuffs differ a little (9c6e ×0.95). */
