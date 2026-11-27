@@ -45,6 +45,19 @@ describe("the clocks against the stops inside (zmdlogs clocks)", () => {
   });
 });
 
+// Round 18 (the placement-cases report point 3): a clock whose span holds a logged Stagger break is marked; 5082's
+// Yvonne, her ultimate's shots 0.47 s of kit frames apart logged 0.98 s apart across the break at 44.43 s.
+describe("a Stagger break inside a clock (PaceRow.breaks)", () => {
+  it("marks the rows a logged Stagger's start falls inside", () => {
+    const log = (devFixtures({ ids: ["5082"] })[0] as { short: string; fx: Parameters<typeof logClocks>[1]["fx"] });
+    const { rows } = logClocks(data, log, { kinds: ["cast"] });
+    const spans = loggedStaggerSpans(log.fx);
+    for (const r of rows) expect(r.breaks).toEqual(spans.map((x) => x.from).filter((t) => t > r.a && t < r.b));
+    const yvonne = rows.find((r) => r.what.startsWith("Yvonne") && r.breaks.length);
+    expect(yvonne?.residual).toBeGreaterThan(400);
+  });
+});
+
 describe("the hold placement's dropped bounds (zmdlogs holds --dropped)", () => {
   it("says what covers a bound's span: the log's Stagger, the kinds of stops inside", () => {
     const stops = [
