@@ -85,12 +85,13 @@ ticks, Arcane's INT lasers, 9a80 34.94 s; beside an agent on status pairing (buf
 - A press made in an away stretch takes what a cast takes: 7b54's Si at 24.81 s (21.06–26.98 s without a hit, the
   slug) is made as Initial Stroke and takes the team's Link stack her 29.00 s cast had (7b54 +40.3 → +40.4%).
 
-**Scoreboard** (`npm run snapshots:update`): development plain 81.5 → 81.7%, mismatch 6.3%, mean |damage error| 3.4%,
-as other kit hit 96 → 93, |matched| 2.4 → 2.3%, replay-only 3.6 → 3.3%, log-only 3.1 → 2.9%; earlier pending plain
-81.6 → 81.7%, log-only 0.9 → 0.7%, as other kit hit 58 → 50; hold-out and verified unchanged. Better: f879 (plain
-793 → 821, mismatch 15 → 6, per hit 1.86 → 0.62%; total 0 → +1.5%: the missing 162,889 had cancelled over-predictions),
-6339 (−14.1 → −12.6%), 9a80 (277 → 279), 3aa6 (413 → 416, per hit 3.56 → 2.70%), 4bfc (856 → 861). Worse: 7b54 +40.3 →
-+40.4% (below). Log tools only: no simulation reads them, no team-ab.
+**Scoreboard** (`npm run snapshots:update` after merging main at 14d422c, the status-pairing round; `measure --base
+14d422c` for this branch alone): development (31 fights, 9c6e now its own row) plain 82.5 → 82.7%, mismatch 5.9 →
+5.8%, mean |damage error| 2.9%, as other kit hit 81 → 78, |matched| 2.3 → 2.2%, replay-only 3.1 → 2.8%, log-only 1.8 →
+1.6%; earlier pending plain 81.7 → 81.8%, log-only 0.8 → 0.6%, as other kit hit 58 → 50; hold-out, verified and the
+several-targets row unchanged. Better: f879 (plain 797 → 826, mismatch 12 → 3, per hit 1.85 → 0.61%; total +0.1 →
++1.6%: the missing 162,889 had cancelled over-predictions), 6339 (−14.1 → −12.6%), 9a80 (277 → 279), 3aa6 (415 →
+418), 4bfc (856 → 861). Worse: 7b54 +40.3 → +40.4% (below). Log tools only: no simulation reads them, no team-ab.
 
 **Decisions:** the entity rule as "no toCome" rather than a new bound: the slots' span plus CAST_SLACK_MS is the bound
 the pass already has for every other landing. The away test beside the ±1 s quiet test, not instead of it.
