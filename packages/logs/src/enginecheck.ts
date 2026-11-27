@@ -430,11 +430,14 @@ export function replayTargets(c: EngineCheck): ReplayTargets | null {
 }
 
 /**
- * How the second replay's assignment puts each hit (target-statuses `per-target`): `free`, as the first one does, each
- * candidate target read at its own statuses in the replay (the replay's target of that id: atItsTarget); `fixed`, on its
- * first-pass target (the replay's targets' ids), only its kit-buff units decided there.
+ * How the second replay's assignment puts each hit (target-statuses `per-target`): `mapped`, as the first one does, each
+ * candidate target read at its own statuses in the replay (the replay's target of that id: atItsTarget), a new target
+ * taking the id of a target its landing reached there (targets.ts AssignOptions.ids `landings`); `free`, the same with
+ * the targets numbered afresh in order of first hit (to 2026-11-27: 7b54's ids then named other slugs than the replay's
+ * landings, 147 of 210 hits with both); `fixed`, on its first-pass target (the replay's targets' ids), only its
+ * kit-buff units decided there (7b54 plain 151 → 142).
  */
-export const SECOND_PASS_TARGETS: "free" | "fixed" = "free";
+export const SECOND_PASS_TARGETS: "mapped" | "free" | "fixed" = "mapped";
 
 /** A logged hit's inputs and its primary reading's options (readingBasis's, without a Combustion tick's snapshot hit) at target `t`'s statuses (atItsTarget), or null without a landing. */
 function primaryOf(c: EngineCheck, hit: LogHit, t?: number): { readonly landing: LandedHit & { readonly inputs: LandingInputs }; readonly inputs: LandingInputs; readonly options: DamageOptions } | null {
@@ -493,9 +496,10 @@ export function fightTargets(c: EngineCheck): TargetAssignment | null {
       });
     return { hit, landing: p.landing, frame: p.landing.frame, units: unitsAt(c.replay.stateAt(p.landing.frame), p.landing.frame, keys), fits };
   });
-  // The second replay: each hit on its first-pass target (the replay's target ids), its kit-buff units decided there.
+  // The second replay: a new target on an id its landing has in the replay (`mapped`), or each hit on its first-pass
+  // target (the replay's target ids: `fixed`), its kit-buff units decided there.
   const first = c.replay.targets?.assignment;
-  const a = assignTargets(c.fx, inputs, first && SECOND_PASS_TARGETS === "fixed" ? new Map([...first.of].map(([h, t]) => [h, t.target])) : undefined);
+  const a = assignTargets(c.fx, inputs, !first ? {} : SECOND_PASS_TARGETS === "fixed" ? { fixed: new Map([...first.of].map(([h, t]) => [h, t.target])) } : SECOND_PASS_TARGETS === "mapped" ? { ids: "landings" } : {});
   assignments.set(c.replay, a);
   return a;
 }
