@@ -24,6 +24,8 @@ export interface ReplayedCast extends LoggedCast {
   readonly lastHit: number;
   /** The operator's cast before it keeps its hits to come: the log has them landing after this one started (replayCast keepPrevious). */
   readonly keepPrevious: boolean;
+  /** Why it keeps them (keptPrevious; castsFromBuffEnds), where keepPrevious is set by those: the CUTS line says so. */
+  readonly keepPreviousWhy?: string;
   /**
    * Its landings at their logged frames (replayCast landings): each logged hit of the cast whose kit landing the placement
    * knows; `order`, its place among the Stagger events of its logged ms (batchOrder), where the log's bars give one.
@@ -314,7 +316,7 @@ export function castsFromHitBuffs(kits: readonly OperatorKit[], fx: Pick<LogFixt
       added.push({ operator: kit.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings, listed: { buff: g, since }, ...(path ? { chanceJumps: { [path.trigger]: true } } : {}) });
     }
   }
-  return added.length ? ordered([...casts, ...added]) : [...casts];
+  return added.length ? withKeptPrevious([...casts, ...added]) : [...casts];
 }
 
 /** How far from a placed cast's start a logged cast event of its skill may be to be that cast (ms). */
@@ -457,7 +459,7 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
     const start = shownElsewhere ? lc.t : loggedCastStart(data, lc, skill.kind, fx.hits, stops);
     added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}), ...(beforeHits ? { beforeHits: true as const } : {}) });
   }
-  return added.length ? ordered([...casts, ...added]) : [...casts];
+  return added.length ? withKeptPrevious([...casts, ...added]) : [...casts];
 }
 
 /**
@@ -469,14 +471,35 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
  * second hit, at her battle skill's event).
  */
 // split:keep-past-hitless
-function ordered(casts: readonly ReplayedCast[]): ReplayedCast[] {
+export function withKeptPrevious(casts: readonly ReplayedCast[]): ReplayedCast[] {
   const previous = new Map<string, ReplayedCast>();
   return [...casts].sort((x, y) => x.start - y.start).map((c) => {
     const prev = previous.get(c.operator);
-    const r = { ...c, keepPrevious: prev !== undefined && prev.lastHit > c.start };
-    if (!prev || c.landings.length > 0 || c.lastHit > c.start || prev.lastHit <= c.start) previous.set(c.operator, r);
+    const r = keptPrevious(c, prev);
+    if (isPreviousCast(c, prev)) previous.set(c.operator, r);
     return r;
   });
+}
+
+/**
+ * The one rule for a cast's keepPrevious (round 21, the interrupted-casts report point 3: three assembly steps had
+ * their own): it keeps its previous cast's hits to come where the log has that cast's last hit after it started, with
+ * the reason (ReplayedCast.keepPreviousWhy) the CUTS line prints. withKeptPrevious and replayedCasts call it, and
+ * castsFromBuffEnds for the cast after an inferred one.
+ */
+export function keptPrevious(c: ReplayedCast, prev: ReplayedCast | undefined): ReplayedCast {
+  const keep = prev !== undefined && prev.lastHit > c.start;
+  const { keepPreviousWhy: _old, ...rest } = c;
+  return keep ? { ...rest, keepPrevious: true, keepPreviousWhy: `${prev.skillId} (from ${(prev.start / 1000).toFixed(2)} s) has a logged hit at ${(prev.lastHit / 1000).toFixed(2)} s, after this cast's start` } : { ...rest, keepPrevious: false };
+}
+
+/**
+ * Whether a cast is its operator's previous cast for the next one (withKeptPrevious): the latest with a logged landing.
+ * A cast made from a log event alone (no landing, no hit after its start) while the previous one's hits go on past it
+ * isn't (the replay may skip it).
+ */
+export function isPreviousCast(c: ReplayedCast, prev: ReplayedCast | undefined): boolean {
+  return !prev || c.landings.length > 0 || c.lastHit > c.start || prev.lastHit <= c.start;
 }
 
 export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Placement, casts: readonly ReplayedCast[]): ReplayedCast[] {
@@ -525,12 +548,12 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
   // In time order, without recomputing the others' keepPrevious: an inferred cast the replay may skip isn't anyone's
   // previous cast (it keeps the running cast's hits itself).
   if (!added.length) return [...casts];
-  const all = [...casts.map((c, i) => (leads.has(i) ? { ...c, leadsTo: leads.get(i) as string } : c)), ...added.map((c) => ({ ...c, keepPrevious: true }))].sort((x, y) => x.start - y.start);
+  const all = [...casts.map((c, i) => (leads.has(i) ? { ...c, leadsTo: leads.get(i) as string } : c)), ...added.map((c) => ({ ...c, keepPrevious: true, keepPreviousWhy: `a cast inferred from ${c.whileBuff?.buff ?? "a buff"}'s logged end: it keeps the running cast's hits itself` }))].sort((x, y) => x.start - y.start);
   // The operator's next cast before the logged end keeps what the inferred cast has to come (a7a7a40c97ed: Si's attack 2
   // 0.3 s after the Final Stroke that ends her Artful Intent at 56469 ms, its burst the killing hit).
   return all.map((c, i) => {
     const prev = all.slice(0, i).reverse().find((x) => x.operator === c.operator);
-    return prev && added.some((a) => a.operator === prev.operator && a.start === prev.start && a.skillId === prev.skillId) && prev.whileBuff && c.start < (prev.whileBuff.endsAt as number) ? { ...c, keepPrevious: true } : c;
+    return prev && added.some((a) => a.operator === prev.operator && a.start === prev.start && a.skillId === prev.skillId) && prev.whileBuff && c.start < (prev.whileBuff.endsAt as number) ? { ...c, keepPrevious: true, keepPreviousWhy: `the inferred ${prev.skillId} before it has its ${prev.whileBuff.buff} end at ${((prev.whileBuff.endsAt as number) / 1000).toFixed(2)} s, after this cast's start` } : c;
   });
 }
 
@@ -721,7 +744,7 @@ export function castsFromBuffLanes(data: GameData, fx: LogFixture, kits: readonl
       added.push({ operator: kit.operator, key: skill.skillId, group: skill.skillId, skillId: skill.skillId, kind: skill.kind, start: Math.max(0, at), lastHit: Math.max(0, at), keepPrevious: false, landings: [] });
     }
   }
-  return added.length ? ordered([...casts, ...added]) : [...casts];
+  return added.length ? withKeptPrevious([...casts, ...added]) : [...casts];
 }
 
 /**
@@ -793,7 +816,7 @@ export function castsFromTriggerHits(data: GameData, fx: LogFixture, kits: reado
       }
     }
   }
-  return added.length ? ordered([...casts, ...added]) : [...casts];
+  return added.length ? withKeptPrevious([...casts, ...added]) : [...casts];
 }
 
 /** How far apart two basic casts of one operator may be (ms, the first's last hit to the next's start) to be one run of its attacks. */
@@ -1121,10 +1144,11 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
   }
   const out: ReplayedCast[] = [];
   const previous = new Map<string, ReplayedCast>();
+  // In the placement's order (not re-sorted: five development logs' casts aren't in start order here), by the one rule.
   for (const c of casts) {
     const prev = previous.get(c.operator);
-    const r: ReplayedCast = { ...c, lastHit: last.get(c) ?? c.start, keepPrevious: prev !== undefined && prev.lastHit > c.start, landings: landings.get(c) ?? [] };
-    previous.set(c.operator, r);
+    const r = keptPrevious({ ...c, lastHit: last.get(c) ?? c.start, keepPrevious: false, landings: landings.get(c) ?? [] }, prev);
+    if (isPreviousCast(r, prev)) previous.set(c.operator, r);
     out.push(r);
   }
   return out;
