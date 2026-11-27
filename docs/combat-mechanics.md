@@ -543,7 +543,9 @@ reaction has no initial hit.
   Stagger's end. Bosses jump straight to full with no Stagger before:
   second lives (3aa6, c3c7, d774), Rhodagn at 29.5–45 s in 3 of 5 fights
   (not tied to a fixed HP), and Hard 33's slug, which regains bar by
-  itself. [SETTLED] (test 99 answered by the logs); what triggers
+  itself (2026-11-27: eight Woodcraft Slugs under one id, so the refilled
+  bar may be another slug's, docs/open-problems.md "Hard 33's Woodcraft
+  Slugs"). [SETTLED] (test 99 answered by the logs); what triggers
   Rhodagn's refill: [OPEN] (test 100)
 - **Finisher** (`power_attack` on a Staggered enemy): × enemy attribute 27
   (1 / 1.25 / 1.5 / 1.75 by tier, multiplicative zone), plus the team's

@@ -7,7 +7,7 @@
 // logged hits as one assignment (the most pairs, then the closest in value and time), a landing up to
 // STATUS_WIDE_FRAMES away paired only where its value fits the logged one; `nearest` is the old pairing.
 
-import { landingDamage, type LandedHit } from "@efsim/engine";
+import { landingDamage, type LandedHit, type Modifier } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 
 /** How far (frames) a status landing may be from the logged hit it stands for, whatever its value (the old window). */
@@ -16,8 +16,11 @@ export const STATUS_NEAR_FRAMES = 16;
  * How far (frames) a status landing whose value fits the logged hit's may be from it: a burst a stop held (0.55–0.85
  * s), or several (c3c7 22.32 s, c83c 32.31 s: 1.5–1.6 s, 79cc 24.23 s and 3aa6 12.31 s 1.8–2.1 s, the same value
  * each). Measured 2026-11-27 against 30 frames (1 s): 7 logs better, none worse (docs/journal/2026-11-27-07-status-landings-paired-by-value-two-target-fights-marked.md).
+ * 90 since the `check` reading (2026-11-27, the slug round): abfd 103.48 s, Xaihi's Cryo burst held past Fluorite's
+ * combo and Xaihi's ultimate (2.55 s, 76 frames); against 60 under `check`, 79cc, c83c, e989, 012a and 2 hold-outs
+ * better, abfd, c3c7, f978 mixed (plain up, their totals 0.1–0.3 points further), none worse.
  */
-export const STATUS_WIDE_FRAMES = 60;
+export const STATUS_WIDE_FRAMES = 90;
 /**
  * A value fits within this share of the logged one (the replay's landing under the log's crit flag and the fixture's
  * stage factor). 10% tried and dropped (docs/tried/2026-11-27-status-value-fit-10.diff).
@@ -158,17 +161,21 @@ function assign(qs: readonly StatusQuery[], xs: readonly LandedHit[], near: numb
 /**
  * Whether a replay status landing's value fits a logged hit's (within STATUS_VALUE_FIT): the landing's damage again
  * from its inputs under the log's crit flag (either, where the log doesn't say), times the fixture's stage factor at
- * the hit, against the logged value before the damage cap. A landing without its inputs never fits.
+ * the hit, against the logged value before the damage cap. With `modifiers`, those in place of the landing's (the
+ * check's primary reading of the pair: enginecheck.ts primaryParts, the stage's factor among them). A landing without
+ * its inputs never fits.
  */
-export function statusValueFits(data: Parameters<typeof landingDamage>[0], fx: Pick<LogFixture, "enemy" | "stageFactors">, hit: LogHit, x: LandedHit, tol = STATUS_VALUE_FIT): boolean {
+export function statusValueFits(data: Parameters<typeof landingDamage>[0], fx: Pick<LogFixture, "enemy" | "stageFactors">, hit: LogHit, x: LandedHit, tol = STATUS_VALUE_FIT, modifiers?: readonly Modifier[]): boolean {
   const inputs = x.inputs;
   if (!inputs) return false;
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
-  const stage = fx.stageFactors?.find((w) => hit.t >= w.from && hit.t < w.to)?.factor ?? 1;
+  const stage = modifiers ? 1 : (fx.stageFactors?.find((w) => hit.t >= w.from && hit.t < w.to)?.factor ?? 1);
   const logged = hit.uncapped ?? hit.value;
   const crits = hit.crit === null ? (["never", "always"] as const) : hit.crit ? (["always"] as const) : (["never"] as const);
   return crits.some((crit) => {
-    const d = landingDamage(data, target, inputs, { ...inputs.options, crit }).exact * stage;
+    const options = { ...inputs.options, crit, ...(modifiers ? { modifiers: [...modifiers] } : {}) };
+    delete (options as { critRoll?: number }).critRoll;
+    const d = landingDamage(data, target, inputs, options).exact * stage;
     return d > 0 && Math.abs(logged / d - 1) <= tol;
   });
 }
