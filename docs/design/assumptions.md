@@ -393,10 +393,10 @@ tailCuts: ReplayCastOptions.endsAt).
   skill at 108.08 s, the Breach logged at 109.01 s), and a cut whose replay loses a logged hit's landing is undone
   (`needed`, replayrun.ts cutTails: 9847's Liino battle skill at 75.44 s, the volley timer it opens at its frame 45
   and the volleys logged from 78.36 s); the fight's end is 0.5 s (0eef's Liino combo hit2 at 8.80 s, the team's hits
-  logged to 10.03 s). Measured against 14fe159: plain unchanged in every group but several targets 71.3 → 72.0%
-  (7b54 +5); mean |damage error| development 1.3 → 1.2% (15 better, 4 worse), verified 1.6 → 1.5% (0eef 2.3 → 1.3%,
-  4e5e −3.0 → −3.3%), hold-out 5.8 → 5.9% (4 better, 4 worse, the worse ones basic-attack totals), several targets
-  6.3 → 9.4% (6339 −6.3 → −16.8%: Laevatain's 21.60 s finisher hit_2, 10.2% of the fight, no log line). The worse
+  logged to 10.03 s). Measured against fa2c2ad: plain unchanged in every group but several targets 71.6 → 72.1%
+  (7b54 +4); mean |damage error| development 1.3 → 1.2% (15 better, 4 worse), verified 1.6 → 1.5% (0eef 2.3 → 1.3%,
+  4e5e −3.0 → −3.3%), hold-out 5.9 → 5.9% (4 better, 4 worse, the worse ones basic-attack totals), several targets
+  4.6 → 7.6% (6339 +0.1 → −10.4%: Laevatain's 21.60 s finisher hit_2, 10.2% of the fight, no log line). The worse
   ones are under-predicted fights whose unlogged tails had cancelled part of it (db87 −1.5 → −2.2%: Laevatain's
   38.57 s ult_attack2 hit, 38,477, no log line), as at `cut-all`'s adoption
 - `cut-all`: (a dodge, a swap, the next attack). pending/zmdlogs-207fff414d82.json 17.42 s: Rossi's not-controlled

@@ -86,19 +86,22 @@ Done (e7d8e08, c542358):
 - TAILKEPT `rounds`: casts the 8-round limit leaves uncut, which were silent before (45 casts in 10 logs; d4fb 11,
   d572 9, 458b 7).
 
-Measured against 14fe159 (`npm run measure -- --base HEAD`) and the scoreboard (`npm run snapshots:update`):
-development plain 84.3% (unchanged; the exact guard alone was 83.7%), mean |damage error| 1.3 → 1.2% (15 better, 4
-worse); verified 1.6 → 1.5% (0eef 2.3 → 1.3%, 4e5e −3.0 → −3.3%); earlier pending plain 84.4% (abfd 414 → 412), 1.2%
-(6 better, 3 worse); several targets plain 71.3 → 72.0% (7b54 116 → 121, −1.2 → +0.1%), |damage error| 6.3 → 9.4%
-(6339 −6.3 → −16.8%); hold-out plain 82.5%, |damage error| 5.8 → 5.9% (4 better, 4 worse, the worse ones in basic
-attacks' totals). Replay-only share: development 1.1 → 0.9%, hold-outs 2.4 → 2.3%, several targets 17.8 → 14.5%; by
-operator Liino 8.5 → 5.6% (0eef no longer her largest), Laevatain 6.6 → 4.6%. A test fixed: tests/logcasts.test.ts's
+Measured after merging main at fa2c2ad (the target-deaths round; `npm run measure -- --base fa2c2ad`) and the
+scoreboard (`npm run snapshots:update`): development plain 84.3% (unchanged; the exact guard alone was 83.7%), mean
+|damage error| 1.3 → 1.2% (15 better, 4 worse); verified 1.6 → 1.5% (0eef 2.3 → 1.3%, 4e5e −3.0 → −3.3%); earlier
+pending plain 84.4% (abfd 414 → 412), 1.2% (6 better, 3 worse); several targets plain 71.6 → 72.1% (7b54 117 → 121,
+−2.3 → −1.0%), |damage error| 4.6 → 7.6% (6339 +0.1 → −10.4%); hold-out plain 82.5%, |damage error| 5.9 → 5.9% (4
+better, 4 worse, the worse ones in basic attacks' totals). Against 14fe159 the same but for several targets (6.3 →
+9.4%, 6339 −6.3 → −16.8%) and the hold-outs (5.8 → 5.9%). Replay-only share: development 1.1 → 0.9%, hold-outs 2.4 →
+2.3%, several targets 16.4 → 13.1%; by operator Liino 8.5 → 5.6% (0eef no longer her largest), Laevatain 9.0 → 6.5%.
+A test fixed: tests/logcasts.test.ts's
 b7b3 `absent` case (Last Rite's third slash is now cut, as the fixture's note reads it; the `absent` path is tested
 under `unlogged-tails` `kept`).
 
 Decisions and why:
 - Worse logs are under-predicted fights whose unlogged tails had cancelled part of it: 6339's Laevatain finisher hit_2
-  at 21.60 s (105,356, 10.2% of the fight, no log line), db87's Laevatain ult_attack2 at 38.57 s (38,477), 4e5e's,
+  at 21.60 s (105,356, 10.2% of the fight, no log line; at fa2c2ad it offset the log-only rest to +0.1%, its first
+  hit the slug's kill at 20.37 s, Camille's Vesperwings moving at 20.60 s), db87's Laevatain ult_attack2 at 38.57 s (38,477), 4e5e's,
   a9d7's, de6a's and d774's basic tails; the same shape as `cut-all`'s adoption (docs/design/assumptions.md). abfd −2:
   two logged Si attack-4 hits at 64.10 s, pinned to an attack 4 her next one cut at 64.07 s, had matched the later
   cast's tail 0.33–0.43 s on; the cut is right, the interrupted cast is the open part (open-problems).

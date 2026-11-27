@@ -265,7 +265,7 @@ bursts (fc63) and basic-attack tails in small pieces (32 fights).
   a cast's own last logged landing, logged a fraction of a ms past its frame's time, kept 143 tails; now the guard
   asks what it stands for (a logged hit or status for a tail landing, or a replay with the cut that loses a logged
   hit's landing). Replay-only (docs/accuracy.md): development 1.1 → 0.9%, earlier 0.9 → 0.8%, hold-outs 2.4 → 2.3%,
-  several targets 17.8 → 14.5%; by operator Liino 8.5 → 5.6%, Laevatain 6.6 → 4.6%.
+  several targets 16.4 → 13.1%; by operator Liino 8.5 → 5.6%, Laevatain 9.0 → 6.5%.
 - **A final whose multiplier reads its event's count** (logcasts.ts nominalScales): Si's combo final (atk_scale2 +
   count × atk_scale2_1) had no nominal scale, so realignByValue never moved a logged final off a slash's slot (6339
   11.31 s; the final's value at counts 1–4 now). Per-hit |error| 6339 30.4 → 21.5%; its total −10.4 → −14.1% (the
@@ -2346,8 +2346,8 @@ logcasts.ts placeWith `batch`; `later`: a third slug's final 125 ms after two sl
   Final Stroke at 19.08 s is SKIPped (Artful Intent not on: its 10.91 / 14.67 / 18.40 s presses have no logged hit and
   the log never lists her Artful Intent, both on a shielded slug's side; the hitless-press listing evidence can't
   show a debuff on a target no one else hits). Fixed 2026-11-27: Laevatain's 21.60 s finisher hit_2 (+10.2%, no log
-  line) is cut (docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md); 6339's total −6.3 →
-  −16.8%: what it hid is the log-only side above and the shielded slugs.
+  line) is cut (docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md); 6339's total +0.1 →
+  −10.4% (after the target-deaths round): what it hid is the log-only side above and the shielded slugs.
 - **Fixed 2026-11-27: Camille's `normal_skill_abilityrange`** (6339 ×5, 7b54 ×1: her Vesperwings moving to the next
   target; docs/journal/2026-11-27-17-camille-s-vesperwings-moving-to-the-next-target.md): engine event `targetDeath`,
   kit trigger `vesperwings_move` landed by the replay at each logged move (pinned), its normal_skill events no press,
