@@ -287,6 +287,22 @@ export interface PlacedHolds {
   readonly lateFrom: readonly (HoldStep | null)[];
 }
 
+/** A clock's earliest, latest or placed P at a time (ms, linear between PlacedHolds' nodes): the hold placed by then. */
+export function clockAt(h: Pick<PlacedHolds, "times">, P: readonly number[], t: number): number {
+  let i = 1;
+  while (i < h.times.length - 1 && (h.times[i] as number) < t) i++;
+  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
+  return t1 === t0 ? p1 : p0 + (p1 - p0) * Math.max(0, Math.min(1, (t - t0) / (t1 - t0)));
+}
+
+/** The time a clock's P first reaches a mass (ms of hold). */
+export function clockReaches(h: Pick<PlacedHolds, "times">, P: readonly number[], m: number): number {
+  const i = P.findIndex((x) => x >= m - 1e-6);
+  if (i <= 0) return h.times[0] as number;
+  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
+  return p1 === p0 ? t1 : t0 + ((m - p0) / (p1 - p0)) * (t1 - t0);
+}
+
 /** One step of a node's shortest path (PlacedHolds.earlyFrom / lateFrom): the node before, and the bound or the least total on the edge. */
 export interface HoldStep {
   readonly node: number;

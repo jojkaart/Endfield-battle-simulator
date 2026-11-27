@@ -107,6 +107,78 @@ export const OFFSETS_EXPLAINED: Readonly<Record<string, string>> = {
   "04d4 chr_0014_aurora": "open: ×0.962 on 77% of her hits; fit-build's best needs two inputs (weapon level 51 and a food, 91 of 207 fit): undecided",
 };
 
+/** A stretch where every operator's hits sit at one ratio (factorStretches): a stage factor's evidence. */
+export interface FactorStretch {
+  readonly from: number;
+  readonly to: number;
+  /** The median logged ÷ reading of the hits at it. */
+  readonly factor: number;
+  readonly at: number;
+  readonly inside: number;
+  readonly operators: readonly string[];
+}
+
+/** How factorStretches reads a run: within `tol` of its first hit's ratio, up to `gap` hits off in a row, at least `min` hits from two operators, the ratio off 1 by `off`. */
+export const FACTOR_STRETCH = { tol: 0.02, gap: 6, min: 12, off: 0.04 } as const;
+
+/**
+ * Runs of a fight's logged hits whose logged ÷ reading sits at one factor across operators (round 17, the Arcane
+ * stage-factors report point 2: a stage's shield phases, 8915 ×0.5 / ×0.05 / ×0.2 and c6d8 ×0.1, were "out of scope"
+ * for months; scripts/probes/stage/stage-factors.ts as a view). A hit's ratio is logged ÷ the nearer to it of its
+ * primary and log readings; a run is FACTOR_STRETCH's. The check's readings carry the fixture's stageFactors, so a
+ * stretch a fixture holds is gone: what is printed isn't in the fixture yet.
+ */
+export function factorStretches(records: readonly Pick<HitRecord, "t" | "operator" | "value" | "predicted" | "logReading">[]): FactorStretch[] {
+  const ratio = (h: (typeof records)[number]): number | null => {
+    const c = [h.predicted, h.logReading].filter((x): x is number => typeof x === "number" && x > 20);
+    if (!c.length || h.value < 20) return null;
+    return c.map((x) => h.value / x).sort((a, b) => Math.abs(Math.log(a)) - Math.abs(Math.log(b)))[0] ?? null;
+  };
+  const rs = [...records].sort((a, b) => a.t - b.t).flatMap((h) => {
+    const r = ratio(h);
+    return r === null ? [] : [{ h, r }];
+  });
+  const out: FactorStretch[] = [];
+  let i = 0;
+  while (i < rs.length) {
+    const v = (rs[i] as (typeof rs)[number]).r;
+    if (Math.abs(v - 1) < FACTOR_STRETCH.off) {
+      i++;
+      continue;
+    }
+    let [j, on, off, lastOn] = [i, 0, 0, i];
+    const ops = new Set<string>();
+    while (j < rs.length) {
+      const x = rs[j] as (typeof rs)[number];
+      if (Math.abs(x.r / v - 1) <= FACTOR_STRETCH.tol) {
+        on++;
+        lastOn = j;
+        ops.add(x.h.operator);
+        off = 0;
+      } else if (++off > FACTOR_STRETCH.gap) break;
+      j++;
+    }
+    if (on >= FACTOR_STRETCH.min && ops.size >= 2) {
+      const [a, b] = [(rs[i] as (typeof rs)[number]).h.t, (rs[lastOn] as (typeof rs)[number]).h.t];
+      const inside = rs.filter((x) => x.h.t >= a && x.h.t <= b);
+      const at = inside.filter((x) => Math.abs(x.r / v - 1) <= FACTOR_STRETCH.tol).map((x) => x.r).sort((p, q) => p - q);
+      out.push({ from: a, to: b, factor: at[Math.floor(at.length / 2)] as number, at: at.length, inside: inside.length, operators: [...ops] });
+      i = lastOn + 1;
+    } else i++;
+  }
+  return out;
+}
+
+/** `zmdlogs offsets`' closing section: each log's factor stretches (factorStretches), or that there are none. */
+export function factorStretchLines(data: { readonly operators: Readonly<Record<string, { readonly name?: string } | undefined>> }, logs: readonly { readonly short: string; readonly stretches: readonly FactorStretch[] }[]): string[] {
+  const rows = logs.flatMap((l) => l.stretches.map((st) => `  ${l.short.padEnd(5)} ${(st.from / 1000).toFixed(2)}–${(st.to / 1000).toFixed(2)} s  ×${st.factor.toFixed(4)}  ${st.at} of ${st.inside} hits at it  ${st.operators.map((o) => data.operators[o]?.name ?? o).join(", ")}`));
+  return [
+    "",
+    `Fight-wide factors not in the fixtures (every operator's hits at one ratio, ≥ ${FACTOR_STRETCH.min} hits from two operators within ${100 * FACTOR_STRETCH.tol}%: a stage's shield or phase factor is the fixture's stageFactors, with this as its evidence: docs/design/data.md):`,
+    ...(rows.length ? rows : ["  none"]),
+  ];
+}
+
 /** A row of the offsets view: a log (its short id), its fixture and an operator's offset there. */
 export interface OffsetRow {
   readonly short: string;

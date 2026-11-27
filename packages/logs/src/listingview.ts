@@ -12,8 +12,8 @@
 
 import type { HitRecord } from "./hitexport.ts";
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
+import { secondsText as s } from "./labels.ts";
 
-const s = (ms: number) => (ms / 1000).toFixed(2);
 const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
 const entry = (e: LogEffect) => `${e.buff}${e.source ? ` from ${e.source}` : ""}=${+e.value.toFixed(6)}`;
 

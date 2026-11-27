@@ -74,3 +74,19 @@ fixed with mechanisms, and 3f78's Rossi combo 3 made inside combo 2's frames; ba
 - `npm run measure -- --base HEAD` against a WIP commit isolated each change; its better / worse lines made the
   decision quick.
 - `zmdlogs raw --events` showing the Stagger origin per hit settled which skill a shared key's hit was.
+
+## Outcome (round 17)
+
+- 1 (No view says that a log-only buff reached a hit of an element its game buff doesn't reach): the element mask
+  moves verdicts: on the backlog's accuracy list (docs/friction/2026-11-27-backlog-after-round-17.md, "A log-only
+  buff applied to elements its game buff doesn't reach"); the interim done (f857001): `zmdlogs groups --operator`
+  lists the own mismatches by the log-only buffs on them, zone and element.
+- 2 (A kill without an uncapped value looks like an over-prediction): done (4749eb5): `zmdlogs totals`' team line
+  gives the logged total ÷ the data's Max HP and how the kill was found (TotalsComparison.kill; 207f ×5.7600,
+  stage-scaled).
+- 3 (The placement's choice between a skill's paths for a new cast is invisible): done (6859f9d): LoggedCast.paths
+  (logcasts.ts pathAlternatives) and the CAST line's `[paths: perfect@29 (no jump): start 49.59, not allowed;
+  late@227 on 0→212: start 50.05, allowed (taken)]` under `--choices`.
+- 4 (A value the replay reads team-wide "unquantified" hides behind the fix that changes it): done (4749eb5): `zmdlogs
+  hits <fixture> --against-hit <s>` (each hit's zones, crit and modifiers as the difference from that hit's:
+  hitexport.ts zoneDifference).

@@ -15,10 +15,10 @@
 import type { GameData } from "@efsim/engine";
 import { loggedPurges } from "./holdinputs.ts";
 import { frameOf } from "./castassembly.ts";
-import { castsWithinGrain, logMoments, momentSpacing, operatorLabel, spacingText } from "./query.ts";
+import { castsWithinGrain, logMoments, momentSpacing, spacingText } from "./query.ts";
 import { TARGET_SIDE_ZONES, type LogFixture } from "./zmdlogs.ts";
+import { operatorLabel, secondsText as s } from "./labels.ts";
 
-const s = (ms: number) => (ms / 1000).toFixed(2);
 
 /** One run of a listed game buff (listedRuns): its holder's side, first and last listing, ms. */
 export interface ListedRun {

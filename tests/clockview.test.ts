@@ -1,7 +1,7 @@
 // `zmdlogs clock` (packages/logs/src/clockview.ts): a kit buff's own clock in the replay against the log's run.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { CHECK_PAIR_MS, clockView, devFixtures, kitBuffClock, laneOfInstance, pairInstances, type BuffLane } from "@efsim/logs";
+import { CHECK_PAIR_MS, clockView, devFixtures, kitBuffCandidates, kitBuffClock, kitBuffKey, laneOfInstance, pairInstances, type BuffLane } from "@efsim/logs";
 
 const data = loadGameData();
 const AMP = "chr_0036_jsspsi:ultimate_amp";
@@ -57,5 +57,22 @@ describe("pairing an instance with the log's run by value (round 16, arcane-will
     expect(laneOfInstance([a, b], 3000, Infinity, [0.2])).toEqual({ lane: a, byValue: true });
     expect(laneOfInstance([a, b], 3000, Infinity, [0.5])).toEqual({ lane: b, byValue: false });
     expect(laneOfInstance([a, b], 3000, Infinity)).toEqual({ lane: b, byValue: null });
+  });
+});
+
+describe("kit buff keys by an owner's name (round 17, the away-statuses report point 2)", () => {
+  it("reads the owner as an operator's name, an equipment buff's as its wearer's, and leaves ids and trace kinds", () => {
+    expect(kitBuffKey(data, "Zhuang Fangyi:suit_expend_spell01.spell_dmg")).toBe("chr_0030_zhuangfy:suit_expend_spell01.spell_dmg");
+    expect(kitBuffKey(data, "Arcane:wpn_funnel_0016.will_susc@Liino")).toBe("chr_0032_lizhiyan:wpn_funnel_0016.will_susc@Liino");
+    expect(kitBuffKey(data, "chr_0030_zhuangfy:x")).toBe("chr_0030_zhuangfy:x");
+    expect(kitBuffKey(data, "status:electrification")).toBe("status:electrification");
+    expect(kitBuffKey(data, "suit_expend_spell01:spell_dmg")).toBe("suit_expend_spell01:spell_dmg");
+  });
+
+  it("names the team's keys with the id or its prefix in a refusal", () => {
+    const names = { defs: new Map([["chr_0030_zhuangfy:suit_expend_spell01.spell_dmg", {}], ["chr_0032_lizhiyan:ultimate", {}]]) } as unknown as Parameters<typeof kitBuffCandidates>[0];
+    expect(kitBuffCandidates(names, "suit_expend_spell01:spell_dmg")).toEqual(["chr_0030_zhuangfy:suit_expend_spell01.spell_dmg"]);
+    expect(kitBuffCandidates(names, "Arcane:suit_expend_spell01.spell_dmg")).toEqual(["chr_0030_zhuangfy:suit_expend_spell01.spell_dmg"]);
+    expect(kitBuffCandidates(names, "x:nothing")).toEqual([]);
   });
 });

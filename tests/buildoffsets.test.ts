@@ -2,7 +2,7 @@
 // pending log suites): one operator's hits off by one tight factor all fight is a fit-build candidate; a spread-out
 // median isn't; a buildOverride or an OFFSETS_EXPLAINED entry accounts for one.
 import { describe, expect, it } from "vitest";
-import { isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets, unexplainedOffsets, type HitRecord, type LogFixture, type OffsetHit } from "@efsim/logs";
+import { factorStretches, factorStretchLines, isOffsetCandidate, offsetHitsOfRecords, offsetsView, screenOffsets, unexplainedOffsets, type HitRecord, type LogFixture, type OffsetHit } from "@efsim/logs";
 
 const hits = (operator: string, ratios: readonly number[]): OffsetHit[] => ratios.map((ratio) => ({ operator, ratio }));
 const tight = (operator: string, factor: number, n = 30) => hits(operator, Array.from({ length: n }, (_, i) => factor * (1 + ((i % 5) - 2) * 0.002)));
@@ -37,5 +37,23 @@ describe("the build-offset screen", () => {
     // The check's own explanation (logcheck.ts offsetExplanations) beside the fit-build hint (round 10).
     const fitted = offsetsView({ operators: {} }, screenOffsets(ohits).map((offset) => ({ short: "abcd", fx, offset, fits: ["the weapon at level 80"] })));
     expect(fitted).toMatch(/→ zmdlogs fit-build abcd --operator chr_a \(its ATK fits the weapon at level 80\)$/m);
+  });
+});
+
+describe("fight-wide factors no fixture holds (round 17, the Arcane stage-factors report point 2)", () => {
+  // A ×0.1 shield phase on two operators from 10 s, a plain stretch around it.
+  const hit = (t: number, operator: string, ratio: number) => ({ t, operator, value: Math.round(1000 * ratio), predicted: 1000, logReading: null });
+  const hits = [...Array.from({ length: 6 }, (_, i) => hit(1000 * i, "chr_a", 1)), ...Array.from({ length: 14 }, (_, i) => hit(10000 + 500 * i, i % 2 ? "chr_a" : "chr_b", 0.1)), ...Array.from({ length: 6 }, (_, i) => hit(20000 + 1000 * i, "chr_b", 1))];
+
+  it("finds a stretch of every operator's hits at one ratio, and prints it with the operators' names", () => {
+    const st = factorStretches(hits);
+    expect(st).toHaveLength(1);
+    expect(st[0]).toMatchObject({ from: 10000, to: 16500, factor: 0.1, at: 14, inside: 14 });
+    expect(factorStretchLines({ operators: { chr_a: { name: "Ada" }, chr_b: { name: "Bo" } } }, [{ short: "abcd", stretches: st }]).at(-1)).toBe("  abcd  10.00–16.50 s  ×0.1000  14 of 14 hits at it  Bo, Ada");
+  });
+
+  it("needs two operators and enough hits", () => {
+    expect(factorStretches(hits.map((h) => ({ ...h, operator: "chr_a" })))).toEqual([]);
+    expect(factorStretches(hits.slice(0, 15))).toEqual([]);
   });
 });

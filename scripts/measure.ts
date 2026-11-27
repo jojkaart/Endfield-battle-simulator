@@ -96,7 +96,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { allLogs, compare, direction, GROUPS, groupOf, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, operatorNames, readSplit, render, snapshotsAt, splitPending, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
 import { endRun, startRun } from "./runstate.ts";
@@ -486,7 +486,7 @@ async function main(argv: string[]): Promise<number> {
     const files = splitPending(after.pending);
     writeFileSync(join(dir, PENDING), formatSnapshot(files.pending, true));
     writeFileSync(join(dir, HOLDOUT), formatSnapshot(files.holdout, true));
-    writeFileSync(join(dir, "accuracy.md"), render(after));
+    writeFileSync(join(dir, "accuracy.md"), render(after, await operatorNames()));
     const lines = [
       ...(vi === 0 ? referenceLine : []),
       `Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,

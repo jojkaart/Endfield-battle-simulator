@@ -1,6 +1,6 @@
 // A batched ms's order in the views (round 16, the batched-landings report point 2): the bar each logged hit leaves on
 // `zmdlogs replay` / `casts` lines of a batch, and a BATCH line where the replay's landings came in another order than
-// the bars give (packages/logs/src/views.ts batchDisagreements).
+// the bars give (packages/logs/src/decisionsview.ts batchDisagreements).
 import { describe, expect, it } from "vitest";
 import type { LandedHit } from "@efsim/engine";
 import { batchDisagreements, type LogHit } from "@efsim/logs";

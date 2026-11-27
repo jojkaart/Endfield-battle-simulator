@@ -41,6 +41,9 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
   (`npm run snapshots:update`: keys added only, the round's summary names them), docs/accuracy.md (generated).
 - **Why it helps:** a brief built on the by-operator table reads a kit's error, not a stage's.
 - **From:** docs/friction-done/2026-11-26-totals-off.md point 2 (its stage half); docs/friction-done/2026-11-26-backlog-after-round-15.md, point 3.
+- Closed by worktree-agent-a16f5232d3d1dbf34 (round 17), 21e5956 and dbe2545: a describing snapshot key `stage` in a
+  stage fight's totals (enginecheck.ts stageFight: the fixture's stageFactors, a stage status, a STAGE_ENEMIES enemy;
+  8 fights) and the by-operator table's "Without stage fights" mean.
 
 ## 3. A batched ms's order disagreement isn't counted across logs
 
@@ -58,6 +61,8 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
 - **Why it helps:** the next batch-order rule (a trigger's hit in a batch, Estella's weapon ATK at 7.05 s) starts from
   a count, not a log at a time.
 - **From:** docs/friction-done/2026-11-26-batched-landings.md point 2 (its count).
+- Closed by worktree-agent-a16f5232d3d1dbf34 (round 17), 1b0a829: replayDecisions(data, replay, fx) adds BATCH
+  decisions, so `zmdlogs decisions --all` counts them (20 in 10 development logs) and `--assume` shows a reading's.
 
 ## Parked
 
@@ -226,3 +231,13 @@ Round 5's points (full text in docs/friction-done/2026-11-22-backlog-after-round
 ## What worked well
 
 The reports' episodes made each view testable on arrival: 6339's purges and e82d's 8.93 s end are `zmdlogs ends` lines, e82d's Doubles instance pairs with its 0.1794 run in `zmdlogs clock`, c4f3's 7.05 s batch carries its bars and a BATCH line, d4fb's bank is a TRACE, 04d4's Snowshine is fit-build's pairs.
+
+## Outcome (round 17)
+
+- 1 (The replay's Stagger window starts are derived, not recorded): parked (carried twice without a new report: an
+  engine record whose start moves the holds' still spans, a measure's work); the Parked list of
+  docs/friction/2026-11-27-backlog-after-round-17.md.
+- 2 (The scoreboard can't tell a stage log's effect from a kit's): done (21e5956, dbe2545): the `stage` key and the
+  by-operator "Without stage fights" mean (its "Closed by" line above).
+- 3 (A batched ms's order disagreement isn't counted across logs): done (1b0a829): BATCH decisions in `zmdlogs
+  decisions` (its "Closed by" line above).

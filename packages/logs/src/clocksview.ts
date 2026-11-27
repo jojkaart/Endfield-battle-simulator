@@ -25,12 +25,12 @@ import { FPS, type ArtsElement, type GameData } from "@efsim/engine";
 import { burstRows } from "./burstsview.ts";
 import { HOLD_SERIES } from "./holds.ts";
 import { placeHits, worldMs, type LoggedCast } from "./logcasts.ts";
-import { loggedStaggerSpans, operatorLabel, replayTimeStops, type ReplayTimeStop } from "./query.ts";
+import { loggedStaggerSpans, replayTimeStops, type ReplayTimeStop } from "./query.ts";
 import type { LogFixture } from "./zmdlogs.ts";
+import { operatorLabel, secondsText as s } from "./labels.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 const frameOf = (ms: number) => Math.round((ms * FPS) / 1000);
-const s = (ms: number) => (ms / 1000).toFixed(2);
 
 /** The clock kinds of `zmdlogs clocks` (`--clock`). */
 export const CLOCK_KINDS = ["tick", "cast", "burst"] as const;

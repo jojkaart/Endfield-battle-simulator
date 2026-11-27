@@ -6,9 +6,16 @@
 //     that backlog names ("<report's file> point(s) n") comes filled in: "carried (<backlog> point k)" (round 10's
 //     own report point 2: outcomes written before the backlog was numbered needed a second pass). Write the new
 //     backlog first, then the outcomes.
+//     A **From:** entry with a parenthesis after its number ("<file> point 2 (its count)": only that part carried)
+//     comes filled in as "done but its count (carried: <backlog> point k)" (round 16's own report point 2).
 //   node scripts/friction.ts carry <backlog.md> <n,…> [--start <k>] [--label "<this backlog's name>"]
+//                                  [--lists [--park <n,…>] [--drop <words>]…]
 //     the backlog's points n,… renumbered from k (default 1), each `**From:**` line extended with where it was
-//     carried from ("<label> point n"; default the backlog's file name), printed for the next backlog
+//     carried from ("<label> point n"; default the backlog's file name), printed for the next backlog. With --lists
+//     also its "Parked" section, the points --park names added at its top as one-line entries (title, where the full
+//     text is), and its "Needs an accuracy or search task" list without the entries that carry a "Closed by" line or
+//     whose first line holds a --drop text (round 16's own report point 1: both were copied by hand); the round adds
+//     its new entries to them.
 //   node scripts/friction.ts check <report.md…>
 //     the numbered points without a `**Files:**` line (a backlog's: `**Needs:**`), which the lead splits a round by
 //     (round 13's own report point 1); exit 1 when any. tests/friction.test.ts runs it over docs/friction/.
@@ -46,13 +53,20 @@ export function points(text: string): Point[] {
   });
 }
 
+/** A backlog point that carries a report's point: its number, and the part carried when the From entry names one. */
+export interface Carried {
+  readonly k: number;
+  /** The parenthesis after the report point's number ("point 2 (its count)"): only that part was carried. */
+  readonly part?: string;
+}
+
 /**
  * Which of a backlog's points carry which points of a report: per report point number, the backlog points whose
  * **From:** paragraph names the report's file with that number ("2026-11-24-stats-candidates.md point 5", "…md
- * points 1 (the parts export) and 3"; parentheses skipped).
+ * points 1 (the parts export) and 3": point 1's parts export, and point 3).
  */
-export function carriedFrom(backlog: string, report: string): Map<number, number[]> {
-  const out = new Map<number, number[]>();
+export function carriedFrom(backlog: string, report: string): Map<number, Carried[]> {
+  const out = new Map<number, Carried[]>();
   const file = basename(report);
   for (const p of points(backlog)) {
     const from = p.body.findIndex((l) => /^- \*\*From:\*\* /.test(l));
@@ -64,21 +78,97 @@ export function carriedFrom(backlog: string, report: string): Map<number, number
       if (at < 0) continue;
       // "<file> point n", or "<file>, point n" as `carry --label "<name>,"` (the README's form) writes it (round 15:
       // the carried point's outcome came out blank).
-      const m = /^,?\s+points?\s+(.*)$/.exec(part.slice(at + file.length).replace(/\([^)]*\)/g, ""));
+      const m = /^,?\s+points?\s+(.*)$/s.exec(part.slice(at + file.length));
       if (!m) continue;
-      for (const n of (m[1] as string).match(/\d+/g) ?? []) out.set(Number(n), [...(out.get(Number(n)) ?? []), p.n]);
+      // A number with its parenthesis (the part carried), or a parenthesis alone (skipped, its numbers too).
+      for (const x of (m[1] as string).matchAll(/(\d+)(?:\s*\(([^)]*)\))?|\([^)]*\)/g)) {
+        if (x[1] === undefined) continue;
+        const n = Number(x[1]);
+        out.set(n, [...(out.get(n) ?? []), x[2] !== undefined ? { k: p.n, part: x[2].trim() } : { k: p.n }]);
+      }
     }
   }
   return out;
 }
 
-export function outcomeSkeleton(text: string, round: number, backlog?: { readonly name: string; readonly carried: ReadonlyMap<number, readonly number[]> }): string {
+export function outcomeSkeleton(text: string, round: number, backlog?: { readonly name: string; readonly carried: ReadonlyMap<number, readonly Carried[]> }): string {
   const ps = points(text);
   const lines = ps.map((p) => {
-    const ks = backlog?.carried.get(p.n);
-    return `- ${p.n} (${p.title.replace(/\.$/, "")}): ${ks?.length ? `carried (${backlog?.name} point${ks.length > 1 ? "s" : ""} ${ks.join(", ")})` : ""}`;
+    const cs = backlog?.carried.get(p.n) ?? [];
+    const whole = cs.filter((c) => c.part === undefined).map((c) => c.k);
+    const parts = [
+      ...(whole.length ? [`carried (${backlog?.name} point${whole.length > 1 ? "s" : ""} ${whole.join(", ")})`] : []),
+      ...cs.flatMap((c) => (c.part !== undefined ? [`done but ${c.part} (carried: ${backlog?.name} point ${c.k})`] : [])),
+    ];
+    return `- ${p.n} (${p.title.replace(/\.$/, "")}): ${parts.join("; ")}`;
   });
   return [`## Outcome (round ${round})`, "", ...(lines.length ? lines : ["- (no numbered points)"])].join("\n");
+}
+
+/** A `## ` section's lines after its heading, up to the next `## ` heading (trailing blank lines dropped), or null. */
+function section(text: string, heading: RegExp): string[] | null {
+  const lines = text.split("\n");
+  const at = lines.findIndex((l) => /^## /.test(l) && heading.test(l));
+  if (at < 0) return null;
+  const end = lines.findIndex((l, i) => i > at && /^## /.test(l));
+  const body = lines.slice(at + 1, end < 0 ? undefined : end);
+  while (body.length && (body.at(-1) as string).trim() === "") body.pop();
+  return body;
+}
+
+/** A list's entries: each `- ` line at the margin with its indented continuation lines; the other lines as they are. */
+function entries(body: readonly string[]): { readonly lines: readonly string[]; readonly entry: boolean }[] {
+  const out: { lines: string[]; entry: boolean }[] = [];
+  for (const l of body) {
+    if (/^- /.test(l)) out.push({ lines: [l], entry: true });
+    else if (/^ {2}\S/.test(l) && out.at(-1)?.entry) (out.at(-1) as { lines: string[] }).lines.push(l);
+    else out.push({ lines: [l], entry: false });
+  }
+  return out;
+}
+
+export const PARKED = /^## Parked\b/;
+export const ACCURACY_LIST = /^## Needs an accuracy or search task/;
+
+/**
+ * The backlog's lists for the next one (carry --lists): its Parked section with `park`'s points added at the top as
+ * one-line entries ("- n. title", under a line naming where their full text is), and its accuracy list without the
+ * entries that carry a "Closed by" line or whose first line holds a `drop` text. Throws for a --drop text no entry has.
+ */
+export function carryLists(text: string, file: string, park: readonly number[] = [], drop: readonly string[] = []): string {
+  const out: string[] = [];
+  const ps = points(text);
+  const parked = section(text, PARKED) ?? [];
+  while (parked.length && (parked[0] as string).trim() === "") parked.shift();
+  const intro = parked.findIndex((l, i) => i > 0 && l.trim() === "" && (parked[i - 1] as string).trim() !== "");
+  const head = intro < 0 ? parked : parked.slice(0, intro);
+  const rest = intro < 0 ? [] : parked.slice(intro);
+  const parkedNow = park.map((n) => {
+    const p = ps.find((x) => x.n === n);
+    if (!p) throw new Error(`--park ${n}: no point ${n} (the file has ${ps.map((x) => x.n).join(", ")})`);
+    return `- ${n}. ${p.title.replace(/\.$/, "")}.`;
+  });
+  out.push("## Parked", "", ...(head.length ? head : ["A new report that hits one brings it back with its full text from there."]));
+  if (parkedNow.length) out.push("", `Point${park.length > 1 ? "s" : ""} ${park.join(", ")} of ${file} (full text there under the same number), carried twice without a new report:`, "", ...parkedNow);
+  out.push(...rest, "");
+  const list = section(text, ACCURACY_LIST);
+  if (list) {
+    const used = new Set<string>();
+    const kept = entries(list).filter((e) => {
+      if (!e.entry) return true;
+      if (e.lines.some((l) => /Closed by/.test(l))) return false;
+      const hit = drop.find((d) => (e.lines[0] as string).includes(d));
+      if (hit !== undefined) used.add(hit);
+      return hit === undefined;
+    });
+    const unused = drop.filter((d) => !used.has(d));
+    if (unused.length) throw new Error(`--drop: no accuracy-list entry's first line holds ${unused.map((d) => `"${d}"`).join(", ")}`);
+    const heading = text.split("\n").find((l) => ACCURACY_LIST.test(l)) as string;
+    // Blank lines the dropped entries left in a row collapse into one.
+    const lines = kept.flatMap((e) => e.lines).filter((l, i, a) => !(i > 0 && l.trim() === "" && (a[i - 1] as string).trim() === ""));
+    out.push(heading, ...lines, "");
+  }
+  return out.join("\n");
 }
 
 export function carry(text: string, wanted: readonly number[], start: number, label: string): string {
@@ -108,7 +198,11 @@ export function missingFiles(text: string): number[] {
 }
 
 function main(argv: readonly string[]): number {
-  const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, options: { round: { type: "string" }, start: { type: "string" }, label: { type: "string" }, backlog: { type: "string" } } });
+  const { values, positionals } = parseArgs({
+    args: [...argv],
+    allowPositionals: true,
+    options: { round: { type: "string" }, start: { type: "string" }, label: { type: "string" }, backlog: { type: "string" }, lists: { type: "boolean" }, park: { type: "string" }, drop: { type: "string", multiple: true } },
+  });
   const [cmd, ...rest] = positionals;
   if (cmd === "outcomes" && rest.length) {
     const round = Number(values.round ?? NaN);
@@ -121,9 +215,16 @@ function main(argv: readonly string[]): number {
   }
   if (cmd === "carry" && rest.length === 2) {
     const [file, list] = rest as [string, string];
-    const wanted = list.split(",").map(Number);
+    // "none": only the lists (every point closed or parked).
+    const wanted = list === "none" ? [] : list.split(",").map(Number);
     if (wanted.some((n) => !Number.isInteger(n))) throw new Error("carry takes point numbers: 3,5,12");
-    process.stdout.write(carry(readFileSync(file, "utf8"), wanted, Number(values.start ?? 1), values.label ?? basename(file)));
+    const text = readFileSync(file, "utf8");
+    process.stdout.write(carry(text, wanted, Number(values.start ?? 1), values.label ?? basename(file)));
+    if (values.lists) {
+      const park = values.park !== undefined ? values.park.split(",").map(Number) : [];
+      if (park.some((n) => !Number.isInteger(n))) throw new Error("--park takes point numbers: 1,4");
+      process.stdout.write(`\n${carryLists(text, `docs/friction-done/${basename(file)}`, park, values.drop ?? [])}`);
+    } else if (values.park !== undefined || values.drop) throw new Error("--park and --drop go with --lists");
     return 0;
   }
   if (cmd === "check" && rest.length) {
@@ -135,7 +236,7 @@ function main(argv: readonly string[]): number {
     }
     return bad ? 1 : 0;
   }
-  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] [--backlog <new backlog.md>] | carry <backlog.md> <n,…> [--start k] [--label text] | check <report.md…>\n");
+  process.stderr.write("usage: node scripts/friction.ts outcomes <report.md…> [--round n] [--backlog <new backlog.md>] | carry <backlog.md> <n,…> [--start k] [--label text] [--lists [--park n,…] [--drop text]…] | check <report.md…>\n");
   return 2;
 }
 

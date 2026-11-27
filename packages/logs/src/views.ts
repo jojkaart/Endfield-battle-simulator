@@ -15,19 +15,21 @@
 //   whether a teammate mismatches at the same ratio nearby (team-wide, so not this operator's kit).
 // The last two read hit records (hitexport.ts), so they run on worker threads with --workers like `zmdlogs hits`.
 
-import { effectiveKit, FPS, parseReactionEvent, type GameData, type LandedHit } from "@efsim/engine";
+import { effectiveKit, FPS, parseReactionEvent, type GameData } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
 import { batchOrder, loggedCastFates } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
-import { holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
+import { FACTOR_STRETCH, factorStretches } from "./buildoffsets.ts";
+import { clockAt, clockReaches, holdPins, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, TracedStatus, TriggerTrace } from "./replayrecord.ts";
 import { distinctCasts, placeHits, settleCheck, ultimateOverlaps, type CastChoice, type InTurnRecord, type LoggedCast } from "./logcasts.ts";
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
-import { stageModifiers, teamBuffNames, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
+import { stageNote, teamBuffNames, type KillKind, type TotalsComparison, type TotalsCrit, type TotalsShares } from "./enginecheck.ts";
 import { kindsAggregate, type KindShare } from "./onesided.ts";
-import { decisionText, replayDecisions } from "./decisionsview.ts";
+import { batchDecision, batchDisagreements, decisionText, landingsOf, replayDecisions } from "./decisionsview.ts";
+import { secondsText as s, shortSkill } from "./labels.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -40,7 +42,6 @@ export interface ViewFilter {
 export const underReadings = (assume?: Readonly<Record<string, string>>): { readonly assume?: Readonly<Record<string, string>> } => (assume && Object.keys(assume).length ? { assume } : {});
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
-const s = (ms: number) => (ms / 1000).toFixed(2);
 const inWindow = (f: ViewFilter, t: number) => t >= (f.from ?? -Infinity) && t <= (f.to ?? Infinity);
 const mine = (f: ViewFilter, op: string) => !f.operators?.length || f.operators.includes(op);
 
@@ -48,7 +49,6 @@ const mine = (f: ViewFilter, op: string) => !f.operators?.length || f.operators.
 function label(data: GameData, op: string): string {
   return data.operators[op]?.name ?? op.replace(/^chr_\d+_/, "");
 }
-const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 
 type Line = { readonly t: number; readonly order: number; readonly text: string };
 const render = (lines: Line[]) =>
@@ -80,38 +80,6 @@ function barMark(fx: LogFixture): (h: LogHit) => string {
   return (h) => (h.poise && order.has(h) ? ` [bar ${h.poise.bar + h.poise.dealt} → ${h.poise.bar}]` : "");
 }
 
-/** A batched ms whose replay landings came in another order than the log's bars give (batchDisagreements). */
-export interface BatchDisagreement {
-  readonly t: number;
-  /** The logged hits in the replay's landing order, and in the bars'. */
-  readonly replay: readonly LogHit[];
-  readonly bars: readonly LogHit[];
-}
-
-/**
- * The batched ms (castassembly.ts batchOrder) where the replay's landings of the logged hits came in another order
- * than the bars' (a place lower than one landed before it): the BATCH lines of `zmdlogs replay`. Pinned landings land in
- * the bars' order since 2026-11-26 (schedule.ts dueBefore), so these are landings the bars didn't order (a trigger's
- * hit, a cast the replay moved).
- */
-export function batchDisagreements(fx: LogFixture, landings: readonly LandedHit[], byLanding: ReadonlyMap<LandedHit, LogHit>): BatchDisagreement[] {
-  const order = batchOrder(fx.hits);
-  const at = new Map<number, LogHit[]>();
-  for (const l of landings) {
-    const h = byLanding.get(l);
-    if (!h || !order.has(h)) continue;
-    const list = at.get(h.t) ?? [];
-    if (!list.includes(h)) list.push(h);
-    at.set(h.t, list);
-  }
-  const out: BatchDisagreement[] = [];
-  for (const [t, replayed] of at) {
-    const places = replayed.map((h) => order.get(h) as number);
-    if (places.every((p, i) => i === 0 || p >= (places[i - 1] as number))) continue;
-    out.push({ t, replay: replayed, bars: [...replayed].sort((a, b) => (order.get(a) as number) - (order.get(b) as number)) });
-  }
-  return out.sort((a, b) => a.t - b.t);
-}
 
 /** `zmdlogs casts`: the placement of a fight in time order (hits, cast events, placed casts, time stops). */
 export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly rules?: boolean } = {}): string {
@@ -122,7 +90,9 @@ export function castsView(data: GameData, fx: LogFixture, f: ViewFilter & { read
   for (const c of fx.casts ?? []) if (inWindow(f, c.t) && mine(f, c.operator)) lines.push({ t: c.t, order: 0, text: `EVENT  ${label(data, c.operator)} ${shortSkill(c.skill)} (the log's cast event)` });
   for (const c of distinctCasts(placement)) {
     if (!inWindow(f, c.start) || !mine(f, c.operator)) continue;
-    lines.push({ t: c.start, order: 1, text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}` });
+    // The first landing's other paths (LoggedCast.paths): each start it would give and whether the previous cast allows it.
+    const paths = f.rules && c.paths?.length ? `  [paths: ${c.paths.map((p) => `${p.hitId}@${p.frame}${p.jump ? ` on ${p.jump.at}→${p.jump.to}` : " (no jump)"}: start ${s(p.start)}${p.allowed ? ", allowed" : ", not allowed"}${Math.abs(p.start - c.start) < 1 ? " (taken)" : ""}`).join("; ")}]` : "";
+    lines.push({ t: c.start, order: 1, text: `CAST   ${label(data, c.operator)} ${shortSkill(c.group)}${c.kind ? ` (${c.kind})` : ""} key ${shortSkill(c.key)}${f.rules && c.chosen ? `  [${choiceWords(c.chosen)}]` : ""}${paths}` });
   }
   // The stops the replay holds (query.ts replayTimeStops, the views' one list): a cast placed from its cast event alone
   // (an ultimate at its logged stop's end: db87's Laevatain at 16.60 s) is marked.
@@ -279,17 +249,6 @@ export function stopsView(data: GameData, logs: readonly { readonly short: strin
   return out.join("\n");
 }
 
-/** The replay's landing of each logged hit (the hit it stands for), as the log check finds it. */
-function landingsOf(replay: BuffReplay, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
-  const byLanding = new Map<LandedHit, LogHit>();
-  const missing = new Map<LogHit, string>();
-  for (const h of fx.hits) {
-    const l = parseReactionEvent(h.event) ? replay.statusLanding(h) : replay.landing(h);
-    if ("unknown" in l) missing.set(h, l.unknown);
-    else byLanding.set(l, h);
-  }
-  return { byLanding, missing };
-}
 
 /**
  * `zmdlogs replay`: the replay of a fight in time order: its landings (with the logged hit each stands for, or
@@ -311,15 +270,13 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     const crit = h && h.crit === null && l.loggedCrit !== undefined ? ` [crit ${l.loggedCrit ? "yes" : "no"}: ${replay.critSource(h)}]` : "";
     const what = h ? `= logged ${shortSkill(h.event)} ${h.value} at ${s(h.t)}${h.t !== Math.round(t) ? ` (${Math.round(h.t - t) > 0 ? "+" : ""}${Math.round(h.t - t)} ms)` : ""}${batched(h.t)}${bar(h)}${crit}` : "replay only";
     // The stage's factor there (LogFixture.stageFactors): the replay's own damage doesn't have it, the check's does.
-    const stage = stageModifiers(fx, h?.t ?? t)[0];
-    const staged = stage ? ` (×${1 + stage.value} stage: ${Math.round(l.damage * (1 + stage.value))})` : "";
+    const staged = stageNote(fx, l.damage, h?.t ?? t);
     lines.push({ t, order: 2, text: `LAND   ${label(data, l.operator)} ${shortSkill(l.skillId)} ${l.hitId} ${l.damage}${staged}${l.count > 1 ? ` ×${l.count}` : ""} ${what}` });
   }
   // A batched ms the replay landed in another order than the log's bars (round 16, batched-landings report point 2).
   for (const b of batchDisagreements(fx, replay.hits, byLanding)) {
     if (!inWindow(f, b.t) || !b.replay.some((h) => mine(f, h.operator))) continue;
-    const words = (hs: readonly LogHit[]) => hs.map((h) => `${label(data, h.operator)} ${shortSkill(h.event)}`).join(", ");
-    lines.push({ t: b.t, order: 1, text: `BATCH  the replay landed ${words(b.replay)}; the log's bars give ${words(b.bars)}` });
+    lines.push({ t: b.t, order: 1, text: decisionText(batchDecision(data, b)) });
   }
   // With the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding).
   for (const [h, why] of missing) {
@@ -766,11 +723,16 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
   for (const r of records) byFixture.set(r.fixture, [...(byFixture.get(r.fixture) ?? []), r]);
   const own: { r: HitRecord; q: number | null }[] = [];
   const perLog: string[] = [];
-  let [hits, mism, team, noLanding] = [0, 0, 0, 0];
+  let [hits, mism, team, noLanding, wide] = [0, 0, 0, 0, 0];
   for (const [fixture, rs] of byFixture) {
     const ops = rs.filter((r) => r.operator === operator);
     if (!ops.length) continue;
-    let [m, tw, nl] = [0, 0, 0];
+    // A fight-wide factor the fixture doesn't hold (buildoffsets.ts factorStretches: every operator's hits at one ratio
+    // over a stretch, a stage's shield or phase; round 17, the Zhuang Fangyi and Liino report point 3: c6d8's ×0.1 was
+    // 122 of her 225 mismatches, listed first as her own).
+    const stretches = factorStretches(rs);
+    const inStretch = (r: HitRecord, q: number | null) => q !== null && stretches.some((st) => r.t >= st.from && r.t <= st.to && Math.abs(q / st.factor - 1) <= FACTOR_STRETCH.tol);
+    let [m, tw, nl, fw] = [0, 0, 0, 0];
     for (const r of ops) {
       if (r.class !== "mismatch") continue;
       m++;
@@ -778,6 +740,10 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
       if (!r.landing) {
         nl++;
         own.push({ r, q });
+        continue;
+      }
+      if (inStretch(r, q)) {
+        fw++;
         continue;
       }
       const shared = q !== null && rs.some((o) => o.operator !== operator && o.class === "mismatch" && Math.abs(o.t - r.t) <= NEAR_MS && (ratioOf(o) ?? 0) > 0 && Math.abs((ratioOf(o) as number) / q - 1) < SAME_RATIO);
@@ -788,7 +754,8 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     mism += m;
     team += tw;
     noLanding += nl;
-    perLog.push(`  ${fxLabel(fixture)}  ${String(ops.length).padStart(5)} hits  ${String(m).padStart(4)} mismatches  ${String(tw).padStart(4)} team-wide  ${String(nl).padStart(4)} no landing  ${String(m - tw - nl).padStart(4)} own`);
+    wide += fw;
+    perLog.push(`  ${fxLabel(fixture)}  ${String(ops.length).padStart(5)} hits  ${String(m).padStart(4)} mismatches  ${String(fw).padStart(4)} fight-wide  ${String(tw).padStart(4)} team-wide  ${String(nl).padStart(4)} no landing  ${String(m - fw - tw - nl).padStart(4)} own${stretches.length ? `  (factor stretches: ${stretches.map((st) => `${s(st.from)}–${s(st.to)} ×${st.factor.toFixed(3)}`).join(", ")})` : ""}`);
   }
   const median = (xs: number[]) => (xs.length ? ([...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) / 2)] as number).toFixed(3) : "-");
   const by = (key: (x: { r: HitRecord; q: number | null }) => string[]) => {
@@ -803,9 +770,15 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     return [...n].sort((a, b) => b[1] - a[1]).map(([k, c]) => `  ${String(c).padStart(5)}  ${k}  median ratio ${median(g.get(k) ?? [])}`);
   };
   const event = (r: HitRecord) => shortSkill(r.event).replace(/\d+$/, "");
+  const mine = records.filter((r) => r.operator === operator);
+  const asOther = mine.filter((r) => r.assumptions?.some((a) => a.kind === "kitHit")).length;
   const out = [
-    `${operator}: ${hits} hits in ${perLog.length} logs, ${mism} mismatches: ${team} team-wide (a teammate mismatches at the same ratio ±${100 * SAME_RATIO}% within ${NEAR_MS / 1000} s), ${noLanding} without a landing, ${mism - team - noLanding} own`,
+    `${operator}: ${hits} hits in ${perLog.length} logs, ${mism} mismatches: ${wide} fight-wide (inside a stretch where two or more operators' hits sit at one ratio: a stage factor no fixture holds or one shared cause, zmdlogs offsets --all lists them), ${team} team-wide (a teammate mismatches at the same ratio ±${100 * SAME_RATIO}% within ${NEAR_MS / 1000} s), ${noLanding} without a landing, ${mism - wide - team - noLanding} own`,
+    // First (round 17, the Zhuang Fangyi and Liino report point 1): a cast on the wrong step matches as the key's other
+    // kit hit and moves no mismatch count (her attack 4 as attack 2: 125 hits ×3.125, "fallback" in five logs).
+    `  ${asOther} hit(s) matched only as their event's other kit hit (the scoreboard's "as other kit hit")${asOther ? "; the casts every landing of which matched so, after the logs" : ""}`,
     ...perLog,
+    ...otherKitHitCasts(mine, fxLabel),
     "",
     "Own mismatches (not team-wide) by skill event:",
     ...by(({ r }) => [event(r)]),
@@ -813,8 +786,16 @@ export function groupsReport(records: readonly HitRecord[], operator: string, op
     "Own mismatches by where the log and the replay disagree (none: they agree on every buff they both model):",
     ...by(({ r }) => (r.differences?.length ? r.differences.map((d) => `${d.what} (${d.kind === "engine" ? "replay only" : d.kind === "log" ? "log only" : d.sameTotals ? "other values, same totals (cosmetic)" : "other values"})`) : [r.landing ? "none" : `no landing: ${r.unknown ?? "?"}`])),
     "",
-    ...fallbackGroups(records.filter((r) => r.operator === operator)),
-    ...otherKitHitCasts(records.filter((r) => r.operator === operator), fxLabel),
+    // What the replay can't verify (round 17, the exposed-totals report point 1: 207f's stage Electrification on
+    // physical hits, ×0.847 on 41 hits, was one `log buff` among forty modifiers): the buffs the check takes from the
+    // log alone, by their zone and element.
+    "Own mismatches by the log-only buffs on them (the check adds them from the listing, no kit models them: an element or a skill type they don't reach is a whole-fight factor no difference line shows):",
+    ...by(({ r }) => {
+      const logged = [...new Set((r.landing?.modifiers ?? []).filter((m) => m.source.startsWith("log buff ")).map((m) => `${m.source.replace(/^log buff /, "")} ${m.zone}${m.element ? ` ${m.element}` : ""}`))];
+      return logged.length ? logged : ["none"];
+    }),
+    "",
+    ...fallbackGroups(mine),
   ];
   if (opts.verbose) {
     out.push("", "Each own mismatch:");
@@ -848,25 +829,24 @@ export function otherKitHitCasts(records: readonly HitRecord[], fxLabel: (fixtur
   return ["", "Casts whose every landing matched only as the event's other kit hit (a path the replay didn't take, the log's key shared by both: the kit's jumps, a chance or control path; zmdlogs decisions has the replay's PATH and JUMPDROP lines):", ...rows.sort((a, b) => a.t - b.t).map((x) => x.text)];
 }
 
+/** totalsView's words for how the kill was found (TotalsComparison.kill.kind). */
+const KILL_TEXT: Readonly<Record<KillKind, string>> = {
+  "max-hp": "the data's Max HP",
+  capped: "the last hit capped (its uncapped value above it)",
+  lives: "the last life's (lastLifeKilled)",
+  "stage-scaled": "a stage-scaled Max HP (stageScaledKill)",
+  none: "none found (a whole multiple of the Max HP is a kill the log didn't mark)",
+};
+
 /** How much of a placed hold a unit is: a perfect dodge's world slow-down (BuffData, 0.512 s). */
 const HOLD_UNIT_MS = 512;
+
+/** A hold unit free over more than this (ms, from its earliest to its latest) is flagged WIDE by `zmdlogs holds`. */
+const WIDE_HOLD_MS = 3000;
 
 /** How many of the bounds pinning a unit `holds --verbose` names (nearest first; the rest counted). */
 const PIN_TAGS = 4;
 
-/** A clock's earliest or latest P at a time (ms, linear between nodes), and the time P first reaches a mass. */
-function clockAt(h: PlacedHolds, P: readonly number[], t: number): number {
-  let i = 1;
-  while (i < h.times.length - 1 && (h.times[i] as number) < t) i++;
-  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
-  return t1 === t0 ? p1 : p0 + (p1 - p0) * Math.max(0, Math.min(1, (t - t0) / (t1 - t0)));
-}
-function clockReaches(h: PlacedHolds, P: readonly number[], m: number): number {
-  const i = P.findIndex((x) => x >= m - 1e-6);
-  if (i <= 0) return h.times[0] as number;
-  const [t0, t1, p0, p1] = [h.times[i - 1] as number, h.times[i] as number, P[i - 1] as number, P[i] as number];
-  return p1 === p0 ? t1 : t0 + ((m - p0) / (p1 - p0)) * (t1 - t0);
-}
 
 /**
  * `zmdlogs holds`: the fight's hidden holds the replay places (engine assumption hidden-holds, reading `placed`:
@@ -887,6 +867,7 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
     const shown = tags.length > PIN_TAGS ? [...tags.slice(0, PIN_TAGS), `+${tags.length - PIN_TAGS} more`] : tags;
     return [...(p.total ? ["the least total"] : []), ...shown].join("; ") || "P's own rules (nondecreasing, no faster than real time)";
   };
+  let wideUnits = 0;
   for (let m = HOLD_UNIT_MS / 2; m < h.total; m += HOLD_UNIT_MS) {
     const [early, late, mid] = [clockReaches(h, h.early, m), clockReaches(h, h.late, m), clockReaches(h, h.mid, m)];
     const clocks = [...new Set(h.kept.filter((b) => b.a <= early && late <= b.b).map((b) => (b.kind === "run" ? b.tag : series(b.tag))))];
@@ -896,8 +877,13 @@ export function holdsView(data: GameData, fx: LogFixture, opts: { readonly verbo
       const j = h.late.findIndex((x) => x >= m - 1e-6);
       pins = `; earliest held back by: ${i > 0 ? pinText(holdPins(h, i - 1, "early")) : "the fight's start"}; latest forced by: ${j >= 0 ? pinText(holdPins(h, j, "late")) : "none"}`;
     }
-    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}${pins}`);
+    // A unit the clocks leave free over seconds is placed at the window's midpoint, wherever that falls (round 17, the
+    // away-statuses report point 3: 8 s of 4d60's pause spread over 21.9–45.9 s before holds.ts pausedBound).
+    const wide = late - early > WIDE_HOLD_MS ? `  WIDE: the clocks don't pin it (${s(late - early)} s from earliest to latest; placed at the midpoint)` : "";
+    if (wide) wideUnits++;
+    lines.push(`  unit ${s(m)} s: placed at ${s(mid)} (earliest ${s(early)}, latest ${s(late)}), ${clocks.length} clock(s) span it${opts.verbose && clocks.length ? `: ${clocks.join("; ")}` : ""}${pins}${wide}`);
   }
+  if (wideUnits) lines.splice(1, 0, `  ${wideUnits} unit(s) WIDE: free over more than ${s(WIDE_HOLD_MS)} s, placed at their window's midpoint, not where a clock puts them`);
   for (const [k, b] of h.dropped.entries()) {
     const against = (h.conflicts[k] ?? []).map((x) => x.tag);
     lines.push(`  dropped: ${b.tag} (asks ${b.ex.toFixed(2)} s)${opts.verbose && against.length ? `, conflicting with: ${against.join("; ")}` : ""}`);
@@ -1074,7 +1060,7 @@ export function totalsView(data: GameData, fx: LogFixture, f: { readonly operato
   const ops = [...new Set([...Object.keys(t.logged.perOperator), ...Object.keys(t.simulated.perOperator)])].filter((op) => !f.operators?.length || f.operators.includes(op));
   const out = [
     `${fx.id}: the simulated total's parts (enginecheck.ts fightTotals; damage simulated vs logged). matched: the landings standing for logged hits, predicted vs their logged values; replay only: landings no logged hit stands for (counted to the log's last hit); log only: logged hits the total has no landing for; shifts: recorded bursts' teammate shares taken as logged.`,
-    `  team: ${n(t.simulated.damage)} vs ${n(t.logged.damage)} (${pct(t.simulated.damage, t.logged.damage)})`,
+    `  team: ${n(t.simulated.damage)} vs ${n(t.logged.damage)} (${pct(t.simulated.damage, t.logged.damage)}); logged total ${t.kill.maxHp ? `×${(t.logged.damage / t.kill.maxHp).toFixed(4)} the data's Max HP (${n(t.kill.maxHp)})` : "- (no Max HP in the data)"}, kill: ${KILL_TEXT[t.kill.kind]}`,
     ...(t.away.windows.length ? [`  enemy away (engine assumption enemy-away; no logged hit for 6 s or more): ${t.away.windows.map((w) => `${s(w.from)}–${s(w.to)} s`).join(", ")}; ${t.away.leftOut} replay-only landing(s) there not counted`] : []),
   ];
   for (const op of ops) {

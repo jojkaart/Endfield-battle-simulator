@@ -6,31 +6,87 @@
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
 
-import { FPS, withCurveReading, type GameData } from "@efsim/engine";
+import { FPS, parseReactionEvent, withCurveReading, type GameData, type LandedHit } from "@efsim/engine";
 import type { BuffReplay } from "./buffreplay.ts";
+import { batchOrder } from "./castassembly.ts";
 import { logBuffReplay } from "./logcheck.ts";
-import type { LogFixture } from "./zmdlogs.ts";
+import type { LogFixture, LogHit } from "./zmdlogs.ts";
+import { secondsText as s, shortSkill } from "./labels.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
-const s = (ms: number) => (ms / 1000).toFixed(2);
-const shortSkill = (id: string) => id.replace(/^chr_\d+_[a-z0-9]+_/, "");
 const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.replace(/^chr_\d+_/, "");
 
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
+  readonly kind: "SKIP" | "TAILCUT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "FORCED" | "INSIDE" | "CUTS";
   readonly operator: string;
   readonly text: string;
 }
 
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "LINK", "FORCED", "INSIDE", "CUTS"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "FORCED", "INSIDE", "CUTS"];
 
-/** The replay's decisions (BuffReplay.skipped, tailCuts, failed, missed, made, castFlags), in time order. */
-export function replayDecisions(data: GameData, replay: BuffReplay): DecisionLine[] {
+/** The replay's landing of each logged hit (the hit it stands for), as the log check finds it, and why the others have none. */
+export function landingsOf(replay: Pick<BuffReplay, "landing" | "statusLanding">, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
+  const byLanding = new Map<LandedHit, LogHit>();
+  const missing = new Map<LogHit, string>();
+  for (const h of fx.hits) {
+    const l = parseReactionEvent(h.event) ? replay.statusLanding(h) : replay.landing(h);
+    if ("unknown" in l) missing.set(h, l.unknown);
+    else byLanding.set(l, h);
+  }
+  return { byLanding, missing };
+}
+
+/** A batched ms whose replay landings came in another order than the log's bars give (batchDisagreements). */
+export interface BatchDisagreement {
+  readonly t: number;
+  /** The logged hits in the replay's landing order, and in the bars'. */
+  readonly replay: readonly LogHit[];
+  readonly bars: readonly LogHit[];
+}
+
+/**
+ * The batched ms (castassembly.ts batchOrder) where the replay's landings of the logged hits came in another order
+ * than the bars' (a place lower than one landed before it): the BATCH lines of `zmdlogs replay` and `zmdlogs
+ * decisions`. Pinned landings land in the bars' order since 2026-11-26 (schedule.ts dueBefore), so these are landings
+ * the bars didn't order (a trigger's hit, a cast the replay moved).
+ */
+export function batchDisagreements(fx: LogFixture, landings: readonly LandedHit[], byLanding: ReadonlyMap<LandedHit, LogHit>): BatchDisagreement[] {
+  const order = batchOrder(fx.hits);
+  const at = new Map<number, LogHit[]>();
+  for (const l of landings) {
+    const h = byLanding.get(l);
+    if (!h || !order.has(h)) continue;
+    const list = at.get(h.t) ?? [];
+    if (!list.includes(h)) list.push(h);
+    at.set(h.t, list);
+  }
+  const out: BatchDisagreement[] = [];
+  for (const [t, replayed] of at) {
+    const places = replayed.map((h) => order.get(h) as number);
+    if (places.every((p, i) => i === 0 || p >= (places[i - 1] as number))) continue;
+    out.push({ t, replay: replayed, bars: [...replayed].sort((a, b) => (order.get(a) as number) - (order.get(b) as number)) });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
+/** A batch disagreement as a BATCH decision (its operator: the first hit the replay landed there). */
+export function batchDecision(data: GameData, b: BatchDisagreement): DecisionLine {
+  const words = (hs: readonly LogHit[]) => hs.map((h) => `${label(data, h.operator)} ${shortSkill(h.event)}`).join(", ");
+  return { t: b.t, kind: "BATCH", operator: (b.replay[0] as LogHit).operator, text: `the replay landed ${words(b.replay)}; the log's bars give ${words(b.bars)}` };
+}
+
+/**
+ * The replay's decisions (BuffReplay.skipped, tailCuts, failed, missed, made, castFlags), in time order; with the
+ * fixture, its BATCH lines too (batchDisagreements: the bars are the fixture's; backlog after round 16 point 3, so
+ * `zmdlogs decisions --all` counts them per log and `--assume` shows a reading's effect on the batches).
+ */
+export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixture): DecisionLine[] {
   const out: DecisionLine[] = [];
   const who = (op: string) => label(data, op);
+  if (fx) for (const b of batchDisagreements(fx, replay.hits, landingsOf(replay, fx).byLanding)) out.push(batchDecision(data, b));
   for (const x of replay.skipped) out.push({ t: msOf(x.frame), kind: "SKIP", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
   for (const x of replay.tailCuts) out.push({ t: msOf(x.frame), kind: "TAILCUT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): ended after its last logged landing, none of its later ones in the log (unlogged-tails)` });
   for (const x of replay.failed) out.push({ t: x.cast.start, kind: "FAILED", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)}: ${x.error}` });
@@ -111,7 +167,7 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
     opts.progress?.(`decisions: ${short} (${i + 1}/${logs.length})`);
     // Each side's data under its own readings (combo-curve is a reading of the data: logBuffReplay refuses a mix).
     const plain = withCurveReading(data, {});
-    const base = replayDecisions(plain, logBuffReplay(plain, fx).replay).filter(mine);
+    const base = replayDecisions(plain, logBuffReplay(plain, fx).replay, fx).filter(mine);
     if (!under) {
       if (base.length) lines.push(`${short}:`, ...base.map((d) => `  ${s(d.t).padStart(7)}  ${decisionText(d)}`));
       for (const d of base) {
@@ -123,7 +179,7 @@ export function decisionsView(data: GameData, logs: readonly { readonly short: s
       continue;
     }
     const readData = withCurveReading(data, assume);
-    const other = replayDecisions(readData, logBuffReplay(readData, fx, { assume }).replay).filter(mine);
+    const other = replayDecisions(readData, logBuffReplay(readData, fx, { assume }).replay, fx).filter(mine);
     const diff = decisionsDiff(base, other);
     if (!diff.length) continue;
     changed++;

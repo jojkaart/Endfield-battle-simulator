@@ -49,3 +49,17 @@ mismatch), grouped and fixed; base main 7e6c12f, its worktree branch.
 `zmdlogs groups --operator` split the 697 into logs and causes at once; `hits --all --json` plus a 40-line scratch
 script found every round factor in every log; `measure --base` and `snapshots:update` agreed and said which logs moved;
 `node scripts/edit.ts` for the doc batches.
+
+## Outcome (round 17)
+
+- 1 (The brief named the wrong operator): done (21e5956): docs/accuracy.md's by-operator table labels each id with
+  its display name, "chr_0032_lizhiyan (Arcane)" (scripts/accuracy.ts operatorNames, from the game data's cache; the
+  snapshots stay the only numbers).
+- 2 (The stage logs were "out of scope" in four docs, never measured as a fixture input): done (f857001):
+  open-problems' header says such an effect is a fixture field with its evidence (`stageFactors`, `buildOverrides`),
+  and `zmdlogs offsets --all` ends with the fight-wide factor stretches no fixture holds (buildoffsets.ts
+  factorStretches, the probe as a view: 14 in 8 development logs now, 7b54's slug first; the backlog's accuracy list).
+- 3 (The replay's LAND lines and the check's numbers disagree under a fixture-level factor): done for the stage factor
+  (6ffade3): enginecheck.ts stageNote, which `replay`'s LAND lines and now `bursts`' rows print; the totals' parts
+  had it already. The log-only buffs aren't printed on landings: they are a hit's reading (the check's predicted, `hits
+  --zones`), not a landing's, so no helper reads them for a view.

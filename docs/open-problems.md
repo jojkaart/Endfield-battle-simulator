@@ -41,6 +41,16 @@ listing difference that reads plain next door is no cause. An early end:
 with everything else listed there, and the moment spacing (an end within
 one grain of an event has no order against it).
 
+An effect no table has but the log shows on every operator's hits at once
+(a stage's shield or phase factor, a build input the export omits) is a
+fixture field with its evidence, not out of scope (round 17, the Arcane
+stage-factors report point 2: 8915's and c6d8's factors were "out of
+scope" in four docs for months; one `stageFactors` field took an hour
+and development mismatch 10.2 → 6.9%): `stageFactors` or `buildOverrides`
+([docs/design/data.md](design/data.md), the fixture paragraphs). `efsim
+zmdlogs offsets --all` ends with the fight-wide factors no fixture holds
+yet (every operator's hits at one ratio over a stretch).
+
 **A fixed item** (round 16, the batched-landings report point 4) shrinks
 to one line naming the journal entry that fixed it ("Fixed: … —
 docs/journal/<file>.md"); its points still open move to its round's
@@ -156,9 +166,10 @@ ATK, the team's without it from 30.11 s). 9847 plain 304 → 413.
 ## Away stretches: a pause or a phase (2026-11-27)
 
 **Shows:** do the enemy's statuses (and the team's buffs) run on, stop, or something else while the enemy is away (no
-logged hit by anyone for 6 s or more: 31 stretches in 11 development logs)? scripts/probes/away/away-clocks.ts lists,
-per stretch, every clock of the hold placement listed on both sides of it with what it asks past the replay's expiry,
-and each operator's basic string across it.
+logged hit by anyone for 6 s or more: 31 stretches in 11 development logs)? `efsim zmdlogs away <fixture…|--all>`
+(round 17; the probe scripts/probes/away/away-clocks.ts before) lists, per stretch, every clock of the hold placement
+listed on both sides of it with what it asks past the replay's expiry, the hold placed inside it, each operator's
+basic string across it and a verdict (at 44a72be: 2 pause, 11 runs on, 4 mixed, 14 no clock).
 **Found and fixed: two kinds, told apart by the clocks, not by the enemy.** 4d60's two stretches (27.38–37.00 and
 117.22–124.45 s, eny_0120_klbear_tower015) are whole-game pauses: Arcane's basic string goes on across both (attack 2
 → attack 3, no reset after 9.6 and 7.2 s), and every clock spanning them runs past its end by most of the stretch, the

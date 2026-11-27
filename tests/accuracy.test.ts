@@ -4,11 +4,11 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { addedKeysOnly, addsKeysOnly, changedLogs, direction, directionSummary, groupOf, perOperator, readSnapshots, readSplit, render, ROOT, SCOREBOARD, type Entry, type Snapshots } from "../scripts/accuracy.ts";
+import { addedKeysOnly, addsKeysOnly, changedLogs, compare, direction, directionSummary, fieldChange, formatFieldChange, groupOf, operatorNames, perOperator, readSnapshots, readSplit, render, ROOT, SCOREBOARD, type Entry, type Snapshots } from "../scripts/accuracy.ts";
 
 describe("accuracy scoreboard", () => {
-  it("is what the log verdict snapshots give (after a snapshot change: npm run accuracy, or npm run snapshots:update)", () => {
-    expect(readFileSync(join(ROOT, SCOREBOARD), "utf8")).toBe(render(readSnapshots()));
+  it("is what the log verdict snapshots give (after a snapshot change: npm run accuracy, or npm run snapshots:update)", async () => {
+    expect(readFileSync(join(ROOT, SCOREBOARD), "utf8")).toBe(render(readSnapshots(), await operatorNames()));
   });
 
   it("puts every pending log in one group: development, hold-out, or imported before the split", () => {
@@ -104,5 +104,33 @@ describe("the by-operator table and describing keys (round 16, totals-off report
     expect(addedKeysOnly(at(undefined), at(20))).toEqual({ logs: 2, kinds: new Map([["share operator <id>", 2]]) });
     expect(changedLogs(at(undefined), at(20))).toEqual([]);
     expect(directionSummary(at(undefined), at(20))).toEqual(["No log's verdicts moved."]);
+  });
+});
+
+describe("the by-operator table's names, other-kit-hit counts and stage fights (round 17)", () => {
+  const e = (err: number, extra: Record<string, number> = {}): Entry => ({ chr_a: { plain: 4, fallback: 2 }, totals: { damage: err, "operator chr_a": err, ...extra } });
+  const split = { development: new Set(["zmdlogs-d", "zmdlogs-s"]), holdout: new Set(["zmdlogs-h"]) };
+
+  it("labels an operator by its id and display name (the Arcane stage-factors report point 1: a brief named the wrong operator)", () => {
+    const text = render({ verified: {}, pending: { "pending/zmdlogs-d.json": e(3) }, split }, new Map([["chr_a", "Ada"]]));
+    expect(text).toMatch(/^\| chr_a \(Ada\) \| 1 \|/m);
+    expect(render({ verified: {}, pending: { "pending/zmdlogs-d.json": e(3) }, split })).toMatch(/^\| chr_a \| 1 \|/m);
+  });
+
+  it("counts the hits matched as another kit hit per operator and group, and the mean without the stage fights", () => {
+    const now: Snapshots = { verified: {}, pending: { "pending/zmdlogs-d.json": e(2, { "other-hit operator chr_a": 2 }), "pending/zmdlogs-s.json": e(30, { stage: 1 }) }, split };
+    const a = perOperator(Object.values(now.pending)).get("chr_a");
+    expect(a).toMatchObject({ otherHit: 2, meanDamageError: 16, meanWithoutStage: 2 });
+    const was: Snapshots = { ...now, pending: { "pending/zmdlogs-d.json": e(2), "pending/zmdlogs-s.json": e(30) } };
+    // Describing keys: no verdict moved, the entries only gained keys, and the group's count moved in the comparison.
+    expect(directionSummary(was, now)).toEqual(["No log's verdicts moved."]);
+    expect(addedKeysOnly(was, now)).toEqual({ logs: 2, kinds: new Map([["other-hit operator <id>", 1], ["stage", 1]]) });
+    expect(compare(was, now).some((l) => l.startsWith("Development") && l.includes("as other kit hit 0 → 2"))).toBe(true);
+  });
+
+  it("names a hold-out's moved other-hit key by kind, never by its operator", () => {
+    const c = fieldChange(e(2, { "other-hit operator chr_a": 1 }), e(2, { "other-hit operator chr_a": 3 }));
+    expect(formatFieldChange(c, true)).toBe("totals other-hit ×1");
+    expect(formatFieldChange(fieldChange(e(2, { "share operator chr_a": 1 }), e(2, { "share operator chr_a": 3 })), true)).toBe("totals share ×1");
   });
 });

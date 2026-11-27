@@ -315,9 +315,11 @@ listed buff marks, is the fixture's hand-written `stageFactors`
 replay's landings then in the totals, take its factor in the
 multiplicative zone (enginecheck.ts `stageModifiers`, in every reading and
 the log-listing ones); its evidence is every operator's hits there at that
-one round factor (scripts/probes/stage/stage-factors.ts on `zmdlogs hits
---json`), and the `replay` view's LAND lines show the staged damage beside
-the replay's own. Not a fudge per hit: one factor per window, from all
+one round factor (`efsim zmdlogs offsets --all`'s last section, buildoffsets.ts
+`factorStretches`, since round 17; before, scripts/probes/stage/stage-factors.ts
+on `zmdlogs hits --json`), and the `replay` view's LAND lines and the `bursts`
+rows show the staged damage beside the replay's own (enginecheck.ts
+`stageNote`). Not a fudge per hit: one factor per window, from all
 four operators' hits at once, as a build override is one input from many.
 Build inputs the export omits or got wrong are the fixture's
 `buildOverrides` (2026-11-18): `team` stays as exported, each override
@@ -766,7 +768,7 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | How often a kit buff listed at a hit's boundary (a run's start or end) reads with it or without it, before a boundary rule's measure | `efsim zmdlogs boundaries <fixture…\|--all> [--kit-buff <regex>]` (boundaryview.ts, round 16) |
 | A kit stack's value (a bank, a counter) step by step | `efsim zmdlogs replay <fixture> --trace-stack owner:stack` (BuffReplay.stackTraces, round 16) |
 | A kit buff's logged runs against the replay's windows, by start | `efsim zmdlogs replay <fixture> --kit-buff owner:id --against-lanes` (views.ts lanePairs, round 16) |
-| A batched ms's order: the Stagger bars against the replay's landing order | `efsim zmdlogs replay <fixture>`: the bar on each LAND line of a batch, BATCH where the orders differ (views.ts batchDisagreements, round 16) |
+| A batched ms's order: the Stagger bars against the replay's landing order | `efsim zmdlogs replay <fixture>`: the bar on each LAND line of a batch, BATCH where the orders differ (decisionsview.ts batchDisagreements, round 16) |
 | Is a total's miss the model or the fight's crit luck | `efsim zmdlogs totals <fixture> --by crit` (matched parts per operator by how the totals took each crit: known, exact, read from the value, expected); per hit `hits --json` `totalsPredicted`, `totalsCrit` |
 | A burst's cause | `efsim zmdlogs bursts`: the replay's infliction that set it off (StatusEvent `inflictedAt`) and the logged hit standing for it; "nearest" where neither is known |
 | Does a scratch script call the packages right | `node scripts/typecheck-scratch.ts scratch/x.ts` (the repository's compiler options; scratch/ isn't in `npm run typecheck`) |

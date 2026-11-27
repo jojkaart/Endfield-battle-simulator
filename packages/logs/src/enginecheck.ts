@@ -103,6 +103,27 @@ function stageStatus(e: LogEffect): boolean {
   return (e.source === undefined || e.source === null) && /_triggered_do$|_corrupt_do$/.test(e.buff);
 }
 
+/**
+ * The stage enemies (an enemy id per stage: `_hdg<n>` is a Hard stage's) whose fights carry a stage-wide effect no kit
+ * makes and the fixture doesn't hold as stageFactors yet: Hard 33's slug (eny_0129_slwood_hdg033: its shield and phase
+ * factors, buildoffsets.ts OFFSETS_EXPLAINED 6339 and 7b54). The other stage logs are found by what they hold
+ * (stageFight).
+ */
+export const STAGE_ENEMIES: Readonly<Record<string, string>> = {
+  eny_0129_slwood_hdg033: "the stage's shield and phase factors (not in the fixtures' stageFactors)",
+};
+
+/**
+ * Why a fight is a stage fight (a stage-wide effect on every operator's hits, no kit's: backlog after round 16 point
+ * 2, the scoreboard's `stage` key), or null: the fixture's stageFactors (8915, c6d8), a stage status the log lists
+ * without a giver (Hard 27's Electrification: 207f, 2fd9, 99fb), or a STAGE_ENEMIES enemy.
+ */
+export function stageFight(fx: LogFixture): string | null {
+  if (fx.stageFactors?.length) return "stage factors (the fixture's stageFactors)";
+  if (listsGivers(fx) && fx.hits.some((h) => h.effects.some(stageStatus))) return "a stage status (listed without a giver)";
+  return STAGE_ENEMIES[fx.enemy.id] ?? null;
+}
+
 const giversListed = new WeakMap<LogFixture, boolean>();
 
 /** Whether a fixture's effects name their givers (imports and refreshes since 2026-11-16). */
@@ -175,6 +196,18 @@ export function landingOf(c: EngineCheck, hit: LogHit): (LandedHit & { readonly 
 export function stageModifiers(fx: Pick<LogFixture, "stageFactors">, t: number): Modifier[] {
   const s = fx.stageFactors?.find((w) => t >= w.from && t < w.to);
   return s ? [{ zone: "multiplicative", value: s.factor - 1, source: `stage factor ×${s.factor}` }] : [];
+}
+
+/**
+ * A replay landing's damage as the check reads it under the fixture's stage factor at `t` (ms), for a view that prints
+ * the replay's own value (round 17, the Arcane stage-factors report point 3: `replay 8915` printed 67014 beside a
+ * logged 32458 the check matched plain): " (×0.5 stage: 33507)", or "" outside every stage factor. The views' one
+ * place for it: `zmdlogs replay`'s LAND lines and `zmdlogs bursts`' rows (the totals' parts carry it already).
+ */
+export function stageNote(fx: Pick<LogFixture, "stageFactors">, damage: number, t: number): string {
+  // The factor as the fixture has it (1 + (0.2 − 1) printed ×0.19999999999999996 before).
+  const w = fx.stageFactors?.find((x) => t >= x.from && t < x.to);
+  return w ? ` (×${w.factor} stage: ${Math.round(damage * w.factor)})` : "";
 }
 
 const LINK = /^Link \(\d+\)$/;
@@ -601,7 +634,17 @@ export interface TotalsComparison {
   readonly parts: readonly TotalPart[];
   /** Every replay-only landing and log-only hit of the parts, classified by kind (onesided.ts: `zmdlogs totals --kinds`). */
   readonly oneSided: readonly OneSided[];
+  /**
+   * How the fight's kill was found (round 17, the exposed-totals report point 2: 207f's ×5.7600 Max HP read as a −6.9%
+   * over-prediction of Rossi's ultimate final for a while): the log's total is the data's Max HP (`max-hp`), its last
+   * hit capped (`capped`: its uncapped value above it), its last life's (`lives`), a stage-scaled Max HP
+   * (`stage-scaled`), or no kill (`none`); and the data's Max HP at the enemy's level (null: not in the data).
+   */
+  readonly kill: { readonly kind: KillKind; readonly maxHp: number | null };
 }
+
+/** How a fight's kill was found (TotalsComparison.kill). */
+export type KillKind = "max-hp" | "capped" | "lives" | "stage-scaled" | "none";
 
 /** One landing the simulated total counted (TotalsComparison.parts). */
 export interface TotalPart {
@@ -727,7 +770,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // the data's HP: tower016 ×5.5, tower015 ×7.6, Si's phases ×2; 4360's four returning lances after the kill counted,
   // +6.5% of the fight, while the last hit was capped), the log's total then being the HP.
   const lastCapped = fx.hits.some((h) => h.t === logged.last && h.uncapped !== undefined && h.uncapped > h.value);
-  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : lastCapped || lastLifeKilled(data, fx) || stageScaledKill(data, fx) ? logged.damage : null;
+  const killKind: KillKind = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? "max-hp" : lastCapped ? "capped" : lastLifeKilled(data, fx) ? "lives" : stageScaledKill(data, fx) ? "stage-scaled" : "none";
+  const kill = killKind === "max-hp" ? (hp as number) : killKind !== "none" ? logged.damage : null;
   let simKill: number | null = null;
   // Landings the log can't have (the fixture's `absent`, judged by hand): each the nearest of its operator's skill and hit.
   const absent = new Set<LandedHit>();
@@ -825,7 +869,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
   const oneSided = oneSidedLandings(data, fx, c.replay, countedLandings, away, uncounted);
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts, oneSided };
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, away: { windows: away, leftOut: awayLeftOut }, recordedShifts, parts, oneSided, kill: { kind: killKind, maxHp: hp !== undefined && hp > 0 ? hp : null } };
 }
 
 /** A stretch with no logged hit at least this long is the enemy out of reach (engine assumption enemy-away). */

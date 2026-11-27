@@ -302,6 +302,54 @@ export function whoMentions(id: string): Mention[] {
   return out;
 }
 
+/** How a buff id is created in the data: its create actions (CreateBuffAction, CreateBuffAttachingSkill, …), enabled and disabled (isEnable false). */
+export interface Creators {
+  readonly enabled: number;
+  readonly disabled: readonly string[];
+}
+
+/**
+ * Every buff id a create action of BuffData or SkillData names (its `buffId`s, at any depth under it), with how many of
+ * those actions are enabled and the files of the disabled ones: one pass over the files (kit-census's dead-effect check;
+ * round 17, the Zhuang Fangyi and Liino report point 4: Liino's 5 s linger was in her kit, its CreateBuffAction
+ * `isEnable false` in buff_chr_0035_liino_normalskill_buff_atkup).
+ */
+export function buffCreators(): Map<string, Creators> {
+  const acc = new Map<string, { enabled: number; disabled: string[] }>();
+  for (const f of ["BuffData", "SkillData"] as const) {
+    const dir = folder(f);
+    for (const name of readdirSync(dir).sort()) {
+      if (!name.endsWith(".json")) continue;
+      const text = readFileSync(join(dir, name), "utf8");
+      if (!text.includes("CreateBuff")) continue;
+      const file = name.replace(/\.json$/, "");
+      const ids = (v: unknown, out: Set<string>) => {
+        if (Array.isArray(v)) for (const x of v) ids(x, out);
+        else if (isObj(v)) for (const [k, x] of Object.entries(v)) if (k === "buffId" && typeof x === "string" && x !== "") out.add(x);
+        else ids(x, out);
+      };
+      const visit = (v: unknown) => {
+        if (Array.isArray(v)) v.forEach(visit);
+        else if (isObj(v)) {
+          if (typeof v["$type"] === "string" && v["$type"].includes("CreateBuff")) {
+            const made = new Set<string>();
+            ids(v, made);
+            for (const id of made) {
+              const a = acc.get(id) ?? { enabled: 0, disabled: [] };
+              if (v["isEnable"] === false) a.disabled.push(`${f}/${file}`);
+              else a.enabled++;
+              acc.set(id, a);
+            }
+          }
+          for (const x of Object.values(v)) visit(x);
+        }
+      };
+      visit(parseJsonExact(text));
+    }
+  }
+  return acc;
+}
+
 /** `efsim gamedata who <id>`. */
 export function formatMentions(id: string, ms: readonly Mention[]): string {
   if (!ms.length) return `${id}: no BuffData or SkillData file names it`;

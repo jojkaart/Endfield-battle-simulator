@@ -4,6 +4,8 @@
 // The logic is @efsim/logs' (reports.ts and the modules it calls); this module checks the arguments and calls it.
 
 import {
+  kitBuffKey,
+  awayView,
   battleIdOf,
   buffsView,
   burstsView,
@@ -67,7 +69,7 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * code edit the moment after a measure). The others read the log or the placement only and refuse it. A new
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
-export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime"]);
+export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away"]);
 export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
 
 export default command({
@@ -98,6 +100,9 @@ export default command({
                                           very same listing (buff, source, value), with their verdicts and a count by
                                           class: a listing difference that reads plain next door is no cause
                                           (--operator, --event, --kind pick the hit at the moment)
+                [--against-hit s]         Instead (one fixture): each hit's zones, crit and modifiers as the
+                                          difference from the hit at that moment (a plain neighbour: what one
+                                          modifier the off hit has otherwise); --operator / --event pick it there
                 [--listed <regex>]        Only hits listing a matching buff (effects or boundary); text lines end with
                                           those entries' sources, sinces and values (--all --event: one hit key's
                                           listings across logs)
@@ -209,7 +214,7 @@ export default command({
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
   efsim zmdlogs decisions <fixture…|--all> --assume <id>=<reading>  The replay's decisions (SKIP, TAILCUT, FAILED,
-                                          MISSED, INFER, MADE, PATH, JUMPDROP, BOTHPATHS, FORCED, INSIDE, CUTS, as replay prints
+                                          MISSED, INFER, MADE, PATH, JUMPDROP, BOTHPATHS, BATCH, FORCED, INSIDE, CUTS, as replay prints
                                           them) that differ between the default readings (-) and the given one (+), per log,
                                           then a count per kind: a replay rule's false positives before a measure
                                           (two replays per log, seconds each); without --assume every decision;
@@ -304,6 +309,11 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                 [--at s]                  Instead: that moment's runs ending (each with its next unlisted moment),
                                           going on and starting, and the cast events within its grain
                 [--from s] [--to s] [--operator <op>]  This window; runs from these sources only
+  efsim zmdlogs away <fixture…|--all>     Per away stretch (no logged hit for 6 s or more): the hold placement's
+                                          clocks listed on both sides of it (team and enemy) with their asks, the
+                                          hold placed inside it, each operator's basic step across it, and a
+                                          verdict (pause: the clocks ask half its length or more; runs on: about
+                                          nothing); a count over the logs (--assume: under another reading)
   efsim zmdlogs worldtime <fixture> <from s> <to s>  The world's time between two log moments under the time
                                           stops of the replay's casts (placed, from cast events, inferred), and the
                                           stops between (operator, skill, frames, lowest scale): the hold
@@ -373,6 +383,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     against: { type: "string", multiple: true, default: [] },
     "no-foods": { type: "boolean", default: false },
     "same-listing": { type: "string" },
+    "against-hit": { type: "string" },
     "against-lanes": { type: "boolean", default: false },
     pairs: { type: "boolean", default: false },
     listed: { type: "string" },
@@ -469,6 +480,12 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (values.by !== undefined && values.by !== "operator" && values.by !== "kind") throw new Error("zmdlogs clocks --by takes operator (or kind, the default)");
       return clocksView(data(), devFixtures(named.length ? { ids: named } : {}), { kinds: kinds as ClockKind[], ...(values.by === "operator" ? { by: "operator" as const } : {}), rows: values.rows, assume, progress });
     }
+    if (sub === "away") {
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs away takes fixtures (ids such as 4d60) or --all (every verified and pending development log; --assume id=reading)");
+      if (named.length && values.all) throw new Error("zmdlogs away: fixtures or --all, not both");
+      return awayView(data(), devFixtures(named.length ? { ids: named } : {}), { assume, progress });
+    }
     if (sub === "ends") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs ends takes one fixture (a path or an id such as 6339; --at s, --min n, --side enemy|team, --from s, --to s, --operator op)");
       if (values.side !== undefined && values.side !== "enemy" && values.side !== "team") throw new Error("zmdlogs ends --side takes enemy or team");
@@ -491,7 +508,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     }
     if (sub === "clock") {
       if (values["kit-buff"].length !== 1) throw new Error("zmdlogs clock takes one --kit-buff owner:id (efsim kit <operator> lists its buffs) and optional fixtures");
-      const kitBuff = values["kit-buff"][0] as string;
+      const kitBuff = kitBuffKey(data(), values["kit-buff"][0] as string);
       const named = args.slice(1);
       const logs = devFixtures({ ...(named.length ? { ids: named } : { withOperators: [kitBuff.split(":")[0] as string] }) });
       return clockView(data(), logs, kitBuff, assume);
@@ -548,7 +565,10 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const sameAt = values["same-listing"] !== undefined ? Number(values["same-listing"]) * 1000 : undefined;
       if (sameAt !== undefined && !Number.isFinite(sameAt)) throw new Error("zmdlogs hits --same-listing takes seconds");
       if (sameAt !== undefined && (values.against.length || values.json || values.listed !== undefined)) throw new Error("zmdlogs hits --same-listing prints text lines alone (no --against, --json or --listed)");
-      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
+      const againstHit = values["against-hit"] !== undefined ? Number(values["against-hit"]) * 1000 : undefined;
+      if (againstHit !== undefined && !Number.isFinite(againstHit)) throw new Error("zmdlogs hits --against-hit takes seconds");
+      if (againstHit !== undefined && (sameAt !== undefined || values.against.length || values.json || values.listed !== undefined)) throw new Error("zmdlogs hits --against-hit prints text lines alone (no --same-listing, --against, --json or --listed)");
+      return hitsReport(data, selection, { workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });
@@ -557,7 +577,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);
       const filter = { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators };
       const fx = readDevFixture(arg);
-      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: values["kit-buff"], trace: [...values["trace-buff"], ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
+      // An owner given by its name ("Zhuang Fangyi:suit_expend_spell01.spell_dmg"): its id (clockview.ts kitBuffKey).
+      const keyed = (xs: readonly string[]) => xs.map((x) => kitBuffKey(data(), x));
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};

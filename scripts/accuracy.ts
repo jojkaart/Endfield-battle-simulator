@@ -16,7 +16,8 @@
 //   --compare   the scoreboard's groups and each log's direction (better / worse by the fit measure) against the
 //               snapshots at a git ref (e.g. HEAD, main)
 //
-// No game data and no engine: the snapshots hold everything, so this takes a fraction of a second.
+// No engine: the snapshots hold every number, so this takes a fraction of a second; the game data (its cache) gives
+// the by-operator table's display names only (operatorNames; --compare reads none).
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -36,8 +37,17 @@ const TOTALS = "totals";
 /** The totals keys of where the error lives (packages/logs snapshotentry.ts SHARE_KEYS): shown, never a verdict. */
 const SHARES = { matched: "share matched", replayOnly: "share replay-only", logOnly: "share log-only" } as const;
 const isShareKey = (k: string) => k.startsWith("share ");
-/** An entry without the share keys: what `direction` compares. */
-const verdictPart = (e: Entry): Entry => (e[TOTALS] ? { ...e, [TOTALS]: Object.fromEntries(Object.entries(e[TOTALS]).filter(([k]) => !isShareKey(k))) } : e);
+/** The totals key of an operator's hits matched only as their event's other kit hit (packages/logs snapshotentry.ts otherHitKey). */
+const OTHER_HIT = "other-hit operator ";
+/** The totals key of a stage fight (snapshotentry.ts STAGE_KEY). */
+const STAGE = "stage";
+/**
+ * A totals key that describes, never a verdict: the shares (where the error lives, an operator's share), an operator's
+ * hits matched as another kit hit, a stage fight. `direction` leaves them out; a round may add one (docs/friction/README.md step 3).
+ */
+export const isDescribingKey = (k: string) => isShareKey(k) || k.startsWith(OTHER_HIT) || k === STAGE;
+/** An entry without the describing keys: what `direction` compares. */
+const verdictPart = (e: Entry): Entry => (e[TOTALS] ? { ...e, [TOTALS]: Object.fromEntries(Object.entries(e[TOTALS]).filter(([k]) => !isDescribingKey(k))) } : e);
 
 /** A log's snapshot entry: per operator its verdict counts, and under "totals" its totals' errors in %. */
 export type Entry = Readonly<Record<string, Readonly<Record<string, number | null>>>>;
@@ -149,7 +159,8 @@ export interface FieldChange {
   readonly operatorsGone: readonly string[];
 }
 
-const totalsKind = (k: string) => (k.startsWith("operator ") ? "operator" : k.startsWith("kind ") ? "kind" : isShareKey(k) ? "share" : k);
+// An operator's id never names the kind: a hold-out's moved keys are printed by kind (formatFieldChange, blind).
+const totalsKind = (k: string) => (k.startsWith("operator ") ? "operator" : k.startsWith("kind ") ? "kind" : isShareKey(k) ? "share" : k.startsWith(OTHER_HIT) ? "other-hit" : k);
 
 export function fieldChange(was: Entry, now: Entry): FieldChange {
   const classes = new Map<string, number>();
@@ -189,7 +200,10 @@ export function formatFieldChange(c: FieldChange, blind = false): string {
   const parts: string[] = [];
   if (c.classes.size) parts.push(`verdict classes ${[...c.classes].map(([k, n]) => `${k} ${signed(n)}`).join(", ")}`);
   else if (c.operatorsMoved.length) parts.push(`verdict counts moved within ${blind ? `${c.operatorsMoved.length} operator(s)` : c.operatorsMoved.join(", ")} (net zero per class)`);
-  if (c.totals.size) parts.push(`totals ${[...c.totals].map(([kind, keys]) => (kind === "operator" && blind ? `operator keys ${keys.length}` : keys.length > 1 && kind !== "operator" && kind !== "kind" ? `${kind} ×${keys.length}` : keys.join(", "))).join(", ")}`);
+  // Blind, a key naming an operator is counted by its kind (a share's or an other-hit key alone named its id before round 17).
+  const keysText = (kind: string, keys: readonly string[]) =>
+    kind === "operator" && blind ? `operator keys ${keys.length}` : blind && keys.some((k) => /\bchr_/.test(k)) ? `${kind} ×${keys.length}` : keys.length > 1 && kind !== "operator" && kind !== "kind" ? `${kind} ×${keys.length}` : keys.join(", ");
+  if (c.totals.size) parts.push(`totals ${[...c.totals].map(([kind, keys]) => keysText(kind, keys)).join(", ")}`);
   if (c.operatorsNew.length) parts.push(`operators new ${blind ? c.operatorsNew.length : c.operatorsNew.join(", ")}`);
   if (c.operatorsGone.length) parts.push(`operators gone ${blind ? c.operatorsGone.length : c.operatorsGone.join(", ")}`);
   return parts.join("; ");
@@ -217,20 +231,29 @@ export interface Aggregate {
   readonly meanDamageError: number | null;
   /** Logs whose |total damage error| is at most 5%. */
   readonly within5: number;
+  /** Hits matched only as their event's other kit hit (the `other-hit operator <id>` keys): a placement on the wrong step hides there. */
+  readonly otherHit: number;
 }
+
+/** A log's hits matched only as their event's other kit hit, per operator (the `other-hit operator <id>` keys). */
+const otherHits = (e: Entry, op: string) => e[TOTALS]?.[`${OTHER_HIT}${op}`] ?? 0;
+/** Whether a log is a stage fight (the `stage` key). */
+const isStage = (e: Entry) => e[TOTALS]?.[STAGE] === 1;
 
 function aggregate(entries: readonly Entry[]): Aggregate {
   let hits = 0;
   let plain = 0;
   let matched = 0;
   let mismatch = 0;
+  let otherHit = 0;
   const errors: number[] = [];
   for (const e of entries) {
-    for (const [, c] of operators(e)) {
+    for (const [op, c] of operators(e)) {
       hits += allHits(c);
       plain += sum(c, "plain");
       matched += sum(c, ...MATCHES);
       mismatch += sum(c, "mismatch");
+      otherHit += otherHits(e, op);
     }
     const d = e[TOTALS]?.["damage"];
     if (d !== undefined && d !== null) errors.push(Math.abs(d));
@@ -243,6 +266,7 @@ function aggregate(entries: readonly Entry[]): Aggregate {
     mismatch,
     meanDamageError: errors.length ? errors.reduce((s, x) => s + x, 0) / errors.length : null,
     within5: errors.filter((x) => x <= 5).length,
+    otherHit,
   };
 }
 
@@ -262,6 +286,10 @@ export interface OperatorAggregate {
   readonly weightedDamageError: number | null;
   /** Its mean share of a fight's logged total, in % (null: no share key). */
   readonly meanShare: number | null;
+  /** Its hits matched only as their event's other kit hit (the `other-hit operator <id>` key). */
+  readonly otherHit: number;
+  /** The mean |error| over its fights that aren't stage fights (the `stage` key; null: none with an error). */
+  readonly meanWithoutStage: number | null;
 }
 
 /** The median of some numbers (null: none). */
@@ -274,17 +302,19 @@ const median = (xs: readonly number[]) => {
 
 /** Per operator, over the given logs: its hits' verdicts and the |error| of its total damage (mean, median, by its share of the fight). */
 export function perOperator(entries: readonly Entry[]): Map<string, OperatorAggregate> {
-  const acc = new Map<string, { logs: number; hits: number; plain: number; mismatch: number; errors: number[]; weighted: number; weights: number; shares: number[] }>();
+  const acc = new Map<string, { logs: number; hits: number; plain: number; mismatch: number; otherHit: number; errors: number[]; unstaged: number[]; weighted: number; weights: number; shares: number[] }>();
   for (const e of entries) {
     for (const [op, c] of operators(e)) {
-      const a = acc.get(op) ?? { logs: 0, hits: 0, plain: 0, mismatch: 0, errors: [], weighted: 0, weights: 0, shares: [] };
+      const a = acc.get(op) ?? { logs: 0, hits: 0, plain: 0, mismatch: 0, otherHit: 0, errors: [], unstaged: [], weighted: 0, weights: 0, shares: [] };
       a.logs++;
       a.hits += allHits(c);
       a.plain += sum(c, "plain");
       a.mismatch += sum(c, "mismatch");
+      a.otherHit += otherHits(e, op);
       const d = e[TOTALS]?.[`operator ${op}`];
       const share = e[TOTALS]?.[`share operator ${op}`];
       if (d !== undefined && d !== null) a.errors.push(Math.abs(d));
+      if (d !== undefined && d !== null && !isStage(e)) a.unstaged.push(Math.abs(d));
       if (share !== undefined && share !== null) {
         a.shares.push(share);
         if (d !== undefined && d !== null) {
@@ -309,6 +339,8 @@ export function perOperator(entries: readonly Entry[]): Map<string, OperatorAggr
           medianDamageError: median(a.errors),
           weightedDamageError: a.weights > 0 ? a.weighted / a.weights : null,
           meanShare: a.shares.length ? a.shares.reduce((s, x) => s + x, 0) / a.shares.length : null,
+          otherHit: a.otherHit,
+          meanWithoutStage: a.unstaged.length ? a.unstaged.reduce((s, x) => s + x, 0) / a.unstaged.length : null,
         },
       ]),
   );
@@ -373,13 +405,29 @@ function sharesAggregate(entries: readonly Entry[]): SharesAggregate | null {
 const pct = (n: number, of: number) => (of ? `${((100 * n) / of).toFixed(1)}%` : "-");
 const err = (x: number | null) => (x === null ? "-" : `${x.toFixed(1)}%`);
 
-/** The scoreboard's text (docs/accuracy.md). */
-export function render(s: Snapshots): string {
+/** Operator ids → display names, for the by-operator table (operatorNames). */
+export type OperatorNames = ReadonlyMap<string, string>;
+
+/**
+ * The operators' display names from the game data (round 17, the Arcane stage-factors report point 1: a brief copied
+ * "chr_0032_lizhiyan" from the table as Akekuri; it is Arcane). The snapshots stay the scoreboard's only numbers: the
+ * names are labels.
+ */
+export async function operatorNames(): Promise<OperatorNames> {
+  const { loadGameData } = await import("@efsim/data");
+  return new Map(Object.values(loadGameData().operators).map((o) => [o.id, o.name]));
+}
+
+/** A by-operator row's label: the id and, where known, its display name ("chr_0032_lizhiyan (Arcane)"). */
+export const operatorLabel = (op: string, names: OperatorNames) => (names.has(op) ? `${op} (${names.get(op)})` : op);
+
+/** The scoreboard's text (docs/accuracy.md); `names` labels the by-operator table (operatorNames). */
+export function render(s: Snapshots, names: OperatorNames = new Map()): string {
   const groups = groupAggregates(s);
   const visible = [...allLogs(s).values()].filter((l) => l.group !== "holdout").map((l) => l.entry);
   const all = aggregate(visible);
   const row = (label: string, a: Aggregate) =>
-    `| ${label} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.matched, a.hits)} | ${pct(a.mismatch, a.hits)} | ${err(a.meanDamageError)} | ${a.within5} |`;
+    `| ${label} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.matched, a.hits)} | ${pct(a.mismatch, a.hits)} | ${err(a.meanDamageError)} | ${a.within5} | ${a.otherHit} |`;
   const lines = [
     "# Accuracy scoreboard",
     "",
@@ -395,6 +443,10 @@ export function render(s: Snapshots): string {
     "- **Plain, matched, mismatch:** shares of the logged hits whose verdict is a",
     "  plain match; any match (plain, assumed or log-listing fallback); a",
     "  mismatch (`efsim zmdlogs check`).",
+    "- **As other kit hit:** matched hits whose reading took another kit hit of",
+    "  their event (the log's key shared by both): a cast placed on the wrong",
+    "  step or path matches so and moves no other column (`zmdlogs groups`",
+    "  lists the casts).",
     "- **Mean |damage error|:** per fight, the logged casts simulated against the",
     "  log's total damage (`engineReport`), the absolute error averaged over",
     "  the fights. **Within 5%:** fights whose total is within ±5%.",
@@ -404,8 +456,8 @@ export function render(s: Snapshots): string {
     "",
     "## By group",
     "",
-    "| Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \\|damage error\\| | Within 5% |",
-    "|---|---|---|---|---|---|---|---|",
+    "| Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \\|damage error\\| | Within 5% | As other kit hit |",
+    "|---|---|---|---|---|---|---|---|---|",
     ...GROUPS.map((g) => row(GROUP_LABEL[g], groups.get(g) as Aggregate)),
     row("All but the hold-outs", all),
     "",
@@ -415,11 +467,13 @@ export function render(s: Snapshots): string {
     "Each operator's |damage error| is its own total's (simulated ÷ logged − 1 over its own hits), not the fight's: the",
     "mean over its fights, the median, and the mean weighted by its share of each fight's logged total (the",
     "`share operator <id>` key), which a few small totals far off (a 9 s fight's +58%) don't dominate; **Share**: its",
-    "mean share of a fight's logged total.",
+    "mean share of a fight's logged total; **Without stage fights**: the mean over its fights without a stage-wide",
+    "effect (the `stage` key: the fixture's stageFactors, a stage status, a stage enemy: packages/logs enginecheck.ts",
+    "stageFight); **As other kit hit**: its hits matched only as their event's other kit hit.",
     "",
-    "| Operator | Fights | Hits | Plain | Mismatch | Mean \\|damage error\\| | Median | Weighted by share | Share |",
-    "|---|---|---|---|---|---|---|---|---|",
-    ...[...perOperator(visible)].map(([op, a]) => `| ${op} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.mismatch, a.hits)} | ${err(a.meanDamageError)} | ${err(a.medianDamageError)} | ${err(a.weightedDamageError)} | ${a.meanShare === null ? "-" : `${a.meanShare.toFixed(1)}%`} |`),
+    "| Operator | Fights | Hits | Plain | Mismatch | As other kit hit | Mean \\|damage error\\| | Median | Weighted by share | Without stage fights | Share |",
+    "|---|---|---|---|---|---|---|---|---|---|---|",
+    ...[...perOperator(visible)].map(([op, a]) => `| ${operatorLabel(op, names)} | ${a.logs} | ${a.hits} | ${pct(a.plain, a.hits)} | ${pct(a.mismatch, a.hits)} | ${a.otherHit} | ${err(a.meanDamageError)} | ${err(a.medianDamageError)} | ${err(a.weightedDamageError)} | ${err(a.meanWithoutStage)} | ${a.meanShare === null ? "-" : `${a.meanShare.toFixed(1)}%`} |`),
     "",
   ];
   return lines.join("\n");
@@ -461,7 +515,7 @@ export function compare(before: Snapshots, after: Snapshots): string[] {
     const b = gb.get(g) as Aggregate;
     const same = JSON.stringify(a) === JSON.stringify(b);
     out.push(
-      `${GROUP_LABEL[g]}: ${same ? "unchanged" : `fights ${a.logs} → ${b.logs}, plain ${pct(a.plain, a.hits)} → ${pct(b.plain, b.hits)}, mismatch ${pct(a.mismatch, a.hits)} → ${pct(b.mismatch, b.hits)}, mean |damage error| ${err(a.meanDamageError)} → ${err(b.meanDamageError)}`}`,
+      `${GROUP_LABEL[g]}: ${same ? "unchanged" : `fights ${a.logs} → ${b.logs}, plain ${pct(a.plain, a.hits)} → ${pct(b.plain, b.hits)}, mismatch ${pct(a.mismatch, a.hits)} → ${pct(b.mismatch, b.hits)}, mean |damage error| ${err(a.meanDamageError)} → ${err(b.meanDamageError)}${a.otherHit !== b.otherHit ? `, as other kit hit ${a.otherHit} → ${b.otherHit}` : ""}`}`,
     );
   }
   out.push(...directionSummary(before, after));
@@ -564,9 +618,9 @@ export function snapshotsAt(ref: string): Snapshots {
   });
 }
 
-function main(argv: readonly string[]): number {
+async function main(argv: readonly string[]): Promise<number> {
   const now = readSnapshots();
-  const text = render(now);
+  const text = render(now, argv[0] === "--compare" ? new Map() : await operatorNames());
   const file = join(ROOT, SCOREBOARD);
   if (argv[0] === "--write") {
     writeFileSync(file, text);
@@ -588,4 +642,4 @@ function main(argv: readonly string[]): number {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = await main(process.argv.slice(2));
