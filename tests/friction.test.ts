@@ -50,6 +50,8 @@ describe("friction.ts outcomes --backlog (round 10's own report point 2)", () =>
     expect(outcomeSkeleton(r, 11, { name: "backlog.md", carried })).toBe("## Outcome (round 11)\n\n- 1 (One): done but the parts export, round 2 (carried: backlog.md point 1)\n- 2 (Two): carried (backlog.md point 2)\n- 3 (Three): carried (backlog.md point 1)\n- 4 (Four): ");
     // carry --label "<name>," writes "<file>, point n" (round 15).
     expect([...carriedFrom("## 1. A\n- **From:** docs/friction-done/2026-11-26-backlog-after-round-14.md, point 1.", "docs/friction/2026-11-26-backlog-after-round-14.md")]).toEqual([[1, [{ k: 1 }]]]);
+    // A backlog by the label carry writes for it, "backlog after round N" (round 19, round 18's own report point 2).
+    expect([...carriedFrom("## 2. B\n- **From:** docs/friction-done/2026-11-27-away-statuses.md point 2; backlog after round 17, point 1.", "docs/friction/2026-11-27-backlog-after-round-17.md")]).toEqual([[1, [{ k: 2 }]]]);
   });
 });
 

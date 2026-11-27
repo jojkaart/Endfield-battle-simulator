@@ -65,20 +65,32 @@ export interface Carried {
  * **From:** paragraph names the report's file with that number ("2026-11-24-stats-candidates.md point 5", "…md
  * points 1 (the parts export) and 3": point 1's parts export, and point 3).
  */
+/**
+ * The names a From line may give a report by: its file name, and for a backlog the label `carry --label` writes for it
+ * ("backlog after round 17", the README's form; round 19, round 18's own report point 2: round 17's backlog's own
+ * carried point came out blank because only the file name was matched).
+ */
+export function reportNames(report: string): string[] {
+  const file = basename(report);
+  const m = /backlog-after-round-(\d+)\.md$/.exec(file);
+  return m ? [file, `backlog after round ${m[1]}`] : [file];
+}
+
 export function carriedFrom(backlog: string, report: string): Map<number, Carried[]> {
   const out = new Map<number, Carried[]>();
-  const file = basename(report);
+  const names = reportNames(report);
   for (const p of points(backlog)) {
     const from = p.body.findIndex((l) => /^- \*\*From:\*\* /.test(l));
     if (from < 0) continue;
     let text = p.body[from] as string;
     for (let i = from + 1; i < p.body.length && /^ {2}\S/.test(p.body[i] as string); i++) text += ` ${(p.body[i] as string).trim()}`;
     for (const part of text.split(";")) {
-      const at = part.indexOf(file);
-      if (at < 0) continue;
+      const name = names.find((x) => part.includes(x));
+      if (name === undefined) continue;
+      const at = part.indexOf(name);
       // "<file> point n", or "<file>, point n" as `carry --label "<name>,"` (the README's form) writes it (round 15:
       // the carried point's outcome came out blank).
-      const m = /^,?\s+points?\s+(.*)$/s.exec(part.slice(at + file.length));
+      const m = /^,?\s+points?\s+(.*)$/s.exec(part.slice(at + name.length));
       if (!m) continue;
       // A number with its parenthesis (the part carried), or a parenthesis alone (skipped, its numbers too).
       for (const x of (m[1] as string).matchAll(/(\d+)(?:\s*\(([^)]*)\))?|\([^)]*\)/g)) {

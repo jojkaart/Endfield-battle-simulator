@@ -99,6 +99,13 @@ all operator SkillData files; Zero Sanity's 120 and old Endaxis's 60 are
 tool choices). Seconds appear only for cooldowns, buff durations and table
 values, and are converted once at load with a documented rounding rule.
 
+A time stop or hold moves what is scheduled (hits on the way, delayed
+actions, timers, a current action's end); the presses of a pre-planned
+rotation (`simulate`'s list) keep their frames, since each is applied at
+once, before earlier landings: a test of a stop's effect on the next press
+uses rules or the search, which decide at the time (round 19, the
+break-hold report point 4).
+
 **Slow-downs** (engine `slowDown`; rules from Endaxis's time runtime, read
 not copied, 2026-10-18): an ultimate's `UltimateTimeAction` (time stop) and
 global-layer `TimeDilationAction`s (a combo's slow-down) scale time for

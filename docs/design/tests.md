@@ -121,7 +121,11 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   index, tracked changes and new files, the branch and index untouched),
   in its own worktree under scratch/at/, removed after; so keep editing
   while it waits. `--live` reads the tree when the run starts instead.
-  team-ab does the same.
+  team-ab does the same. So queue a list of variants once the reading's
+  code is settled, and try a reading on the few logs in question first
+  with the views' `--assume` (`zmdlogs hits|bursts|replay --assume`):
+  the slug and status-pairs round queued five variants, improved the
+  reading while they waited 40 min, and measured all five again.
 - **Which hits moved:** `--hits` lists, for each development log whose
   entry moved, the hits whose verdict changed (time, operator, event,
   verdict and logged ÷ primary before and after): a few per kind of
@@ -223,6 +227,11 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   question after "this reading moved db87" without two `zmdlogs hits`
   runs and a diff. A patch's own hits: `--patch <diff> --base HEAD --hits`,
   or `node scripts/cli-ab.ts HEAD --patch <diff> -- zmdlogs hits <fx>`.
+  A script of this checkout run at another commit's code (cli-ab's
+  `--placement`, at-commit.ts `--run`, `outputInTree`) links against that
+  commit's packages: import by namespace (`import * as logs from
+  "@efsim/logs"`) and test for a name newer than the ref before calling
+  it, or the run fails to link there (round 18: scripts/placement-lines.ts).
 - **The negative control in every measure** (round 7): the verified
   logs measured are also checked with every value ×0.97 and ×1.03, the
   bound test:logs fails on, flagged `!`; a reading fitted to the damage it

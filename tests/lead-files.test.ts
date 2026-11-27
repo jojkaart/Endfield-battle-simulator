@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { FAMILIES, isCode, leadFiles } from "../scripts/lead-files.ts";
+import { FAMILIES, isCode, leadFiles, parseSplit, splitSpans } from "../scripts/lead-files.ts";
 import { ROOT } from "./logverdicts.ts";
 
 describe("lead-files", () => {
@@ -24,5 +24,19 @@ describe("lead-files", () => {
   it("lists every family's files, each of which exists (--family; round 15)", () => {
     for (const [name, files] of Object.entries(FAMILIES)) for (const f of files) expect(existsSync(join(ROOT, f)), `${name}: ${f}`).toBe(true);
     expect(FAMILIES["replay"]).toContain("packages/logs/src/castassembly.ts");
+  });
+
+  // Round 19 (the break follow-ups report point 1): a lead whose earlier fixes touched two agents' files is SHARED.
+  it("says which agents of a split a lead's files fall to (--split)", () => {
+    const split = [parseSplit("a=family:holds"), parseSplit("b=packages/logs/src/logcasts.ts,packages/logs/src/castpairs.ts")];
+    expect(split[0]?.files).toContain("packages/logs/src/holds.ts");
+    const found = new Map([
+      ["break", { files: [["packages/logs/src/holds.ts", 3], ["packages/logs/src/logcasts.ts", 2], ["tests/holds.test.ts", 1]] as [string, number][] }],
+      ["slug", { files: [["packages/logs/src/holds.ts", 1]] as [string, number][] }],
+    ]);
+    const spans = splitSpans(found, split);
+    expect(spans.get("break")).toEqual({ agents: [["a", 3], ["b", 2]], shared: true });
+    expect(spans.get("slug")).toEqual({ agents: [["a", 1]], shared: false });
+    expect(() => parseSplit("a=family:nope")).toThrow(/no family nope/);
   });
 });
