@@ -677,7 +677,7 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
   // A reading of the data itself (engine assumption combo-curve): the placement's stop lists and the replay's timeline
   // must read the same curve, so the data must already be under it (combo-hold report point 3: a call with the raw data
   // mixed the two silently; the views, snapshotEntry and hitRecords wrap it at their entry).
-  if (withCurveReading(data, opts.assume) !== data) throw new Error(`logBuffReplay under combo-curve ${readingOf(opts.assume, "combo-curve")}: the game data is under another of its readings, so the placement and the replay would read two curves; pass withCurveReading(data, assume) (@efsim/engine), and a placement made from it`);
+  if (withCurveReading(data, opts.assume) !== data) throw new Error(`logBuffReplay under combo-curve ${opts.assume && "combo-curve" in opts.assume ? readingOf(opts.assume, "combo-curve") : "(the default)"}: the game data is under another of its readings, so the placement and the replay would read two curves; pass withCurveReading(data, assume) (@efsim/engine), and a placement made from it`);
   const placement = placementOrOpts ?? placeHits(data, fx);
   let replay = replayKitBuffs(data, fx, placement, opts);
   // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
