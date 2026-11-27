@@ -77,7 +77,8 @@ working, run only what a change touches: `npx vitest run tests/<file>.test.ts`
 view or report of packages/logs touches most of the suite that way, so
 there first the test files naming the changed function, `rg -l '<name>'
 tests`, and `related` once before premerge), and `npm run
-lint:changed` (ESLint on the files changed since `main`, seconds). After a
+lint:changed` (ESLint on the files changed since `main`, seconds, and the
+assumption registries' tests when a registry changed). After a
 change to the engine's timing rules (packages/engine/src/timeline/, kit
 timing): `npm run smoke` (under 2 min: kit tests, loop searches, the
 owner's rules check, the examples) before premerge; an example that stops
@@ -100,7 +101,9 @@ with `--silent=false`: a line every run must show goes through
 Snapshots (`tests/snapshots/*.json`) and the accuracy scoreboard
 ([docs/accuracy.md](docs/accuracy.md)) are generated: `npm run
 snapshots:update` regenerates them all from the current code (it prints
-the scoreboard's change and which logs got better or worse). On a merge
+the scoreboard's change and which logs got better or worse; it reads the
+working tree and fails when the code changed since it was queued: edit
+docs only meanwhile). On a merge
 conflict in any of them, take either side and run it; never merge them by
 hand. Quote the scoreboard's numbers, not scratch sums, in the journal.
 A reclassification apart from a change: `node scripts/accuracy.ts
@@ -116,7 +119,8 @@ instead of chained measures (each also against the same code without it;
 `--set <file>:<CONST>=<value>` for a constant's value, also as a variant),
 `--split files|commits|hunks` for which part of a batch moved which log
 (`hunks`: each diff hunk alone, a `split:<name>` comment joining a rule's
-hunks; its
+hunks; a part whose replay threw is "not measured alone"; the refs are
+pinned at queue time; its
 first line says when the snapshots compared against aren't the code's
 own: `--base HEAD` is then this tree's change alone),
 `--several-targets` for a change gated on the fixture mark (the three
@@ -128,7 +132,8 @@ measured and dropped keeps its diff in [docs/tried/](docs/tried/README.md);
 before measuring a rule change, `node scripts/tried.ts --touching
 <file>[:<function>]` lists the tried diffs that touch it, and `node
 scripts/tried.ts new <slug> -- <files>` keeps one, never `git diff >` over
-an existing name),
+an existing name; a stale one: `node scripts/tried.ts refresh <diff>`
+makes it again on HEAD or names the conflicting files),
 and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards); `npm run measure -- --help` lists its
 options, checked before it queues; with no reference named and stale
@@ -141,7 +146,13 @@ groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
 <fixture> [--at <s>]` (which listed buffs end at a moment, which go on),
 `stack <owner:stack> <fixture…|--all> [--at-cast <re>]` (a kit stack's
 value at each cast), `casts --choices` (a late join's rule, REALIGN),
-`replay` (TAILKEPT: a tail a guard kept),
+`replay` (TAILKEPT: a tail a guard kept), `decisions <fixture>
+--why-kept` (per kept tail, the replay with it cut: which logged hits
+lose their landing), `hits <fixture…> --layers <owner:id>` (a layered kit
+buff: the log's count, the replay's, the value's), `statuses <fixture>
+--inflictions` (a stack's arrival per target), `efsim gamedata handlers
+abilityEvent <n>` (every listener of one event, ALL DISABLED where
+nothing runs),
 `hits <fixture> --same-listing <s>` (the nearest hits with the same
 listing: check a listing lead there first), `boundaries` (a boundary
 rule's base rate), `replay --trace-stack owner:stack`, `replay --kit-buff
@@ -241,7 +252,8 @@ complex to verify"):
   replacements (backticks and all): write `scratch/edits-<n>.txt` with the
   Write tool, then `node scripts/edit.ts scratch/edits-<n>.txt` (exact,
   all or nothing, the format in its header: `@@@ <path>`, then
-  `<<<<<<<` old `=======` new `>>>>>>>` blocks; `<<<<<<< end` appends).
+  `<<<<<<<` old `=======` new `>>>>>>>` blocks; `<<<<<<< end` appends,
+  closing at the next `@@@` line or the file's end).
   `npm test` flags a doc with that damage's shapes (scripts/check-links.ts
   damagedText); `node scripts/bash-guard.ts --check '<cmd>'` says whether
   a command is one of the forbidden forms, and the same script runs as a
