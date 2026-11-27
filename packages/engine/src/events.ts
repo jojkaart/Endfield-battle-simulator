@@ -317,6 +317,13 @@ export type TriggerActionKind =
   /** The owner casts one of its kit skills by itself (SkillData CastSkill: a follow-up, e.g. Typhoeus's aerial shots off-field): no control, cost or cooldown. */
   | { readonly kind: "cast"; readonly skill: string }
   /**
+   * A cast event of a skill the owner's ability entity casts (SkillData CastSkill / a projectile's castSkillOnHit on an
+   * entity: the owner doesn't act, no cost, cooldown or timeline): triggers on casts of kind `as` see it, as a
+   * follow-up beside the owner's action (Camille's Vesperwings moving to the next target: projhit_sub, of
+   * skillSpecification 3, which ZMDLogs logs as a normal_skill event). `skill` needn't be a kit skill.
+   */
+  | { readonly kind: "castEvent"; readonly skill: string; readonly as: SkillType }
+  /**
    * Land hits, as the owner, at frames counted from the event (values from
    * the trigger's `skill`); each names its damage type. `now`: its frame-0
    * hits land as the action runs, before the trigger's next action (a

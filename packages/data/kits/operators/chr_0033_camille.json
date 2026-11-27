@@ -16,6 +16,15 @@
         "away": "at the entity's first check after the stretch's last logged hit (the replay's enemy gone: enemy-away). Measured 2026-11-27 against kept: e989 plain 260 → 264, |damage error| 0.5 → 0.8% (its 69.48–70.93 s hits still with it); one hold-out better (mean |damage error| 6.4 → 5.8%)",
         "listed": "at the entity's first check after the debuff's last listing before the stretch, where that comes within TARGET_LOSS_LEAD_MS of the stretch (the enemy no longer a target while still hit: pending/zmdlogs-e9896c8d02be.json, listed to 69.19 s, the boundary of a check 7.5 s after the battle skill's hit at 61.69 s, the stretch from 70.93 s); else as `away`. Measured 2026-11-27 against kept: e989 plain 260 → 267, |damage error| 0.5 → 0.1%, its 86.65 s burst paired; the same hold-out better as under away; nothing else moves (no other development log has Camille and an away stretch)"
       }
+    },
+    {
+      "id": "vesperwings-move-cast",
+      "question": "Is the Vesperwings' move to the next target (trigger vesperwings_move) a battle-skill cast for the team's triggers on casts? The entity's projectile casts chr_0033_camille_normal_skill_projhit_sub on reaching the next target (castSkillOnHit; skillSpecification 3, switchToBuffConfig asSkillCast), which casts abilityrange; ZMDLogs logs a normal_skill event at four of the six logged moves (6339 19.68, 24.55, 29.67 s; 7b54 16.59 s). Whether ability event 30's CheckSkillType (Yinglung's Edge) sees such a cast isn't in the data. Read only where a target dies: the log check's replay.",
+      "default": "none",
+      "readings": {
+        "none": "it isn't: no cast event (the triggers on battle-skill casts don't see it)",
+        "battle": "it is: a battle-skill cast event beside Camille's action at the death (castEvent), which the team's cast triggers see (Si's Yinglung's Edge: 6339's 28.39 s combo slashes read with 3 layers, which the replay has only with a move counted)"
+      }
     }
   ],
   "element": "fire",
@@ -207,6 +216,16 @@
         }
       ],
       "note": "The Vesperwings entity puts buff_chr_0033_camille_normal_skill_listen_target_dead on its target (abilityrange_first and abilityrange, frames 0–2000, a child of the entity). At the target's death (abilityEvent 1, HP 0) it creates buff_chr_0033_camille_normal_skill_reset_target on the entity (0.1 s: frame 3), whose end finds the next target (the highest priority, not the dead one; none: FinishOwnerAction, the entity and its debuff end), launches projectile_chr_0033_camille_normal_skill_last → normal_skill_projhit_sub (its target dead by then: reset_target again) → CastSkill normal_skill_abilityrange on it, with EntityBB_bat_duration = the time left of the bat_duration_icon buff (SaveBuffLifeTime remain_time: keepEnd). abilityrange frame 0: the debuff (weak, before the damage, as the first's), Heat infliction and DamageAction EntityBB_atk_scale (the battle skill's atk_scale; logged 9287 in 6339 as the `_first` hits) with EntityBB_poise; no team energy (that is the battle skill's projhit). The projectile's travel isn't in the data (Ti2, as the battle skill's own): logged 0.23–0.54 s after a kill. On the world's clock (an entity's timeline). The simulation's one enemy never dies; the log check's replay lands it at each logged move (packages/logs targets.ts deathMoves: 6339 ×5, 7b54 ×1), its normal_skill event there no press."
+    },
+    {
+      "id": "vesperwings_move_cast",
+      "reading": { "assumption": "vesperwings-move-cast", "reading": "battle" },
+      "on": { "event": "targetDeath" },
+      "by": "anyone",
+      "if": { "enemyBuff": "buff_chr_0033_camille_normal_skill_weak" },
+      "skill": "chr_0033_camille_normal_skill",
+      "do": [{ "kind": "castEvent", "skill": "chr_0033_camille_normal_skill_projhit_sub", "as": "battle" }],
+      "note": "Kit assumption vesperwings-move-cast `battle`: the move's projhit_sub (skillSpecification 3) as a battle-skill cast event for the team's cast triggers, at the death."
     },
     {
       "id": "hunter_on",

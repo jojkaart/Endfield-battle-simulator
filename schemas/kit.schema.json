@@ -1642,6 +1642,32 @@
                   "type": "object",
                   "required": [
                     "kind",
+                    "skill",
+                    "as"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "castEvent"
+                    },
+                    "skill": {
+                      "type": "string",
+                      "description": "The SkillData skill the owner's ability entity casts (CastSkill, a projectile's castSkillOnHit); it needn't be a kit skill."
+                    },
+                    "as": {
+                      "enum": ["basic", "battle", "combo", "ultimate"],
+                      "description": "The skill kind triggers on casts see (the skill's skillSpecification: 3 battle)."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
                     "trigger"
                   ],
                   "additionalProperties": false,

@@ -747,6 +747,9 @@ function kitChecker(scope: KitScope) {
         case "cancelHits":
         case "endAction":
           break;
+        case "castEvent":
+          if (!a.skill.startsWith(`${scope.owner}_`)) throw new Error(`${where}: castEvent ${a.skill} isn't one of ${scope.owner}'s SkillData skills`);
+          break;
         case "cast":
           if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);
           break;
