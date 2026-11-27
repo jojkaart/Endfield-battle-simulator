@@ -241,6 +241,31 @@ window gains 3 frames of the 15 the log shows (not measured).
   "a landing whose order the kit doesn't give" is a bleed the replay ended, the statuses' side (buffreplay.ts, not this
   round's files): the open "Rossi's bleed tick series" item.
 
+## Casts their operator's next press interrupts (2026-11-27)
+
+Fixed: abfd 64.10 s (Si's attack 4 is a channel to frame 40, capped at 6 ticks: no tick joins a cast past its
+channel's end), c3c7 33.64 / 60.64 s, fc63 94.79 s and c779 70.73 s (the previous cast for keepPrevious is the latest
+with a logged landing) — docs/journal/2026-11-27-20-casts-their-operator-s-next-press-interrupts-a-channel-s-end.md.
+
+**Shows:** of the logged hits placed into a cast after another of their operator's casts started (a scratch pass over
+every placement), nearly all belong there: detached hits, combos beside, a chain step's hit at its own frame that the
+next step's placed start (its first landing less its frame) precedes. The replay cut a logged landing with the next
+cast in 10 places of 6 logs at 5b08218 (`zmdlogs replay`'s NOLAND "cut by … next cast"); 7 of them in three
+multi-target logs.
+
+**Ruled out:** a press alone ends Si's attack 4 (9555 49.87 s, abfd 51.08 s, 9c0b 40.92 s, c83c 18.66 s: her battle
+presses are logged 0.23–0.56 s before the channel's last ticks); a bound for every channel hit (a skill's separate
+one-tick channels, Laevatain's normal_skill_during_ult: db87 236 → 199 plain); a slack of 150 ms (9090 Liino's attack 2
+and 4bfc Arclight's attack 4 run 0.21–0.23 s past the data's end, no press between).
+
+**Still possible / left:**
+- The multi-target logs' cut landings (69e7 66.61 / 69.49 s, 7b4e 29.92 s, b74c 19.00 / 45.32 s): Si's hits batched on
+  several targets, not followed.
+- What runs a channel 0.2 s past its data end (9090, 4bfc, c3c7 60.64 s): a hold the replay doesn't know of, or a
+  start later than its first landing says; kept by CHANNEL_SLACK_MS (400 ms).
+- The CUTS record (replayrun.ts castFlag) flags an interrupt whose hits keepPrevious keeps (c779 70.67 s): a record only.
+- The casts view's line for the rule is held back: docs/tried/2026-11-27-channel-decision-line.diff.
+
 ## Replay-only landings: what the replay makes and the log never shows (2026-11-27)
 
 **Shows** (`zmdlogs totals --all --kinds`, `--json`; the shares per fight from the `totals --all` table): development
@@ -298,9 +323,8 @@ a gap's length alone).
   kill (db87's enemy, a bigents, has a second entity in the Hard 32 multi-target logs: still possible).
 - Si's combo final of unknown crit on a slash's slot (9a80 36.10 s, +6.6% replay-only).
 - Basic-tail cut's knock-on: 4a64 16.93 s, two logged attack-4 hits that matched the cut tail's landings 0.30 s later
-  now Arcane's first attack 4's, with its set's Nature DMG (−2 plain). The same shape at abfd 64.10 s (round 21, −2
-  plain): two logged Si attack-4 hits pinned to an attack 4 that her next attack 4 cut at 64.07 s (CUTS) had matched
-  the later cast's tail 0.33–0.43 s on; the cut is right, the interrupted cast's placement is the open part.
+  now Arcane's first attack 4's, with its set's Nature DMG (−2 plain): a batch's values, not the interrupted-cast
+  shape ("Casts their operator's next press interrupts" below). abfd 64.10 s fixed there (a channel's end).
 - Tail cuts the round limit leaves (TAILKEPT `rounds`, round 21): 45 casts in 10 development and earlier logs (d4fb
   11, d572 9, 458b 7) after all 8 of TAIL_CUT_ROUNDS; 16 rounds measured: development |damage error| 1.2 → 1.3%, no
   plain change, 135 s against 115 s for every log; kept at 8. Still possible: cutting several independent tails per

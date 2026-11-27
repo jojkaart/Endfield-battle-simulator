@@ -143,7 +143,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   overheals count (test 25 decided); two log-check diffs held back in docs/tried/: next the lead's call on the
   opening as away, Snowshine's 04d4 build (undecided); tail cuts 2026-11-27: the shown-hit guard's own-landing pass
   replaced by what it stood for (`landed`, `status`, cutTails' `needed`: c4f3, 9847 kept), the fight's end 0.5 s
-  (0eef 2.3 → 1.3%, 6339's 21.60 s hit_2 cut): next several independent tails per replay (TAILKEPT `rounds`).
+  (0eef 2.3 → 1.3%, 6339's 21.60 s hit_2 cut): next several independent tails per replay (TAILKEPT `rounds`);
+  interrupted casts 2026-11-27: a capped channel's end from the data (KitHit.latestFrame: Si's attack 4 to frame
+  40), no tick joins a cast past it (abfd 412 → 414 plain, c3c7), its ticks in turn in the replay, keepPrevious past
+  a hitless event cast (fc63, c779): next the multi-target logs' cut landings, the held-back casts-view line.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
