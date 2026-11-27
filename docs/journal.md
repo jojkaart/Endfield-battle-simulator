@@ -4,9 +4,44 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 176 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 177 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-27: Camille's Vesperwings at an away stretch, Pogranichnik's harasses
+
+**Goal:** two leads from docs/open-problems.md: e989's Camille Firefang Weakness (fire Susceptibility 0.12) the replay
+kept on 69.19–89.32 s, and Pogranichnik's harasses 0.2–2 s off in his five logs.
+
+**Camille.** The debuff is a child of the hovering Vesperwings entity (autoFinishByAction); the entity checks its
+target every 0.5 s (buff_chr_0033_camille_normal_skill_bat_checktarget: FindTargetAction, CheckEntityNum,
+FinishOwnerAction unless retargeting) and finishes without one. Every other Camille run ends at a refresh, a kill or
+the fight's end; only e989 has an away stretch, and it lists the debuff to 19.67 s (the first stretch's start: no purge
+is read there, the stretch being longer than PURGE_GAP_MS) and to 69.19 s, 1.74 s before the stretch 70.93–84.83 s, at
+a check's boundary (61.69 s + 15 × 0.5 s). Si's boss leaves as the damage reaches about 50% and 85% of twice its Max HP
+(scripts/probes/entities/jsspsi-phases.ts), the second time 0.2–3.6 s after the share is dealt, still hit meanwhile.
+Built: KitBuff.targetCheck (`every`, `assumption`), read only by the log check's replay (buffreplay.ts targetLosses,
+lostTargets, composed into `held` after the purges), behind Camille's kit assumption `vesperwings-target-loss`:
+`kept` (as before), `away` (the first check after the stretch's last logged hit), `listed` (the check at the debuff's
+last listing within TARGET_LOSS_LEAD_MS, 4 s, before the stretch; default). Measured: `listed` e989 plain 260 → 267,
+|damage error| 0.5 → 0.1%, its 86.65 s Heat burst paired; `away` mixed (264, 0.8%); one hold-out better under both
+(mean |damage error| 6.4 → 5.8%). Why a kit assumption: the engine registry is in timeline/, the parallel agent's
+folder (friction report point 2).
+
+**Pogranichnik.** The harass entity slows itself at each path's frames 0–3 (TimeDilationAction layer 1, 0.4 s, an
+inline curve 0.30 → 0.043 → 1: mean scale 0.23, scripts/probes/entities/harass-slowdown.ts), so its frame-9 hit comes
+9.24 frames late; as an entity's timeline it is on the world's clock, which his own combo's slow-down holds (d4fb's
+Breach at 86.67 s, its harass at 87.97 s across his combo from 87.20 s). Kit: frames [18], `world`. Over his five logs
+(scripts/probes/entities/harass-deltas.ts) median |Δ| 299 → 88 ms, one-sided 37 → 21; frame 17 measured worse (119 ms);
+the teleport takes no time (ruled out). d4fb's 87.97 / 88.55 s harasses now pair right. The Decisive Assault stays at
+frame 25: every logged one comes 0.21–0.44 s after its event, which nothing in the data gives (frame 8 fits all but
+two; not built: open-problems "The placement cases the one-sided rounds left").
+
+**Numbers** (snapshots:update, docs/accuracy.md): development plain 84.2 → 84.3%, |damage error| 1.3%; hold-out plain
+82.5%, mismatch 5.3 → 5.1%, mean |damage error| 6.4 → 5.8%; earlier pending plain 82.2 → 82.3%. Better: e989, c4f3,
+7e19, d4fb, de6a and one hold-out; mixed: a9d7 (plain 332 → 336, damage −1.7 → −1.8%, per-hit error closer); worse:
+none. Team fights unchanged (team-ab identity at e2e6f3f: no team example has either operator); the
+pogranichnik-chen example snapshot moves with the harass frames.
 
 ## 2026-11-27: The hold at a Stagger break; Rossi's bleed through her freeze
 
@@ -414,43 +449,3 @@ docs/open-problems.md "The totals that rose once hits read right").
 
 **Left:** d774 103.28 s; 3f78's team-wide ×1.017 after 50.55 s (Corrosion's ramp late in the replay: the enemy's
 clock); a9d7's Chen −3.0% (spread, Pogranichnik's team buffs on her combo); 207f's Rossi attack 4 hit_ai tail (+1.3%).
-
-## 2026-11-27: Away stretches: a whole-game pause holds every timer, a boss phase none
-
-**Goal:** three leads on the enemy's clock: do enemy statuses run on, pause or something else while the enemy is away
-(4d60 43–60 s, Zhuang Fangyi's Sunderblades); Liino's stance ending before its last beat (4d60 66–73 s); 8915's
-Corrosion step and Hot Work end early after two combos pressed together (7.07–8.90 s).
-
-**Done:**
-- **Every away stretch of the development logs read by its clocks** (scripts/probes/away/away-clocks.ts: the hold
-  placement's clocks listed on both sides of each stretch, their asks, the basic strings across it). 31 stretches in
-  11 logs. 4d60's two are whole-game pauses: Arcane's string goes on across both (attack 2 → attack 3 after 9.6 and
-  7.2 s) and every clock spanning them, the enemy's statuses and the team's buffs alike, runs past its end by most of
-  the stretch. The other 29 (Si's phases, eny_0125_fdcentur, eny_0128_babyents_hdg031) run on: asks −2.8 to +3.2 s,
-  no string goes on. No difference between enemy statuses and team buffs in either kind, and no enemy-kind rule (4d60's
-  enemy is in 16 other logs with no away stretch): the pauses are the player's.
-- **Engine assumption `pause-holds`, new default `paused`** (holdinputs.ts runBounds, holds.ts statusBounds,
-  pausedBound, gapsWithin): a clock's run across an away stretch may ask the stretch's length past HIDDEN_HOLD_SHARE of
-  its life, and a bound asking past its share is laid inside the stretch, so the least total sits in the pause (8.4 s
-  in 27.67–36.46 s), not spread over 21–46 s as the bare relaxation placed it. Perlica's Electrification is then on for
-  Zhuang Fangyi's 37.00 s combo, and her battle skills strike 6, 8, 8 times as logged. Liino's stance is held by the same
-  pause and runs to her 73.37 s event: lead 2 was this pause too. tests/holds.test.ts, tests/replayrecord.test.ts.
-- **8915's lead at the log's grain:** the game's first Corrosion step comes ≥ 0.15 s before the stop list allows (0.08 s
-  from the battle skill's cast event: its hit sits in a batch), later steps 0.00–0.08 s, Hot Work's end ≥ 0.05 s.
-  Pressed-together combos elsewhere don't hold less: 16 clocks across two combos within 0.3 s run late as single ones
-  (+347 ms median, Σ residual ÷ Σ held 0.82 against 0.86; scripts/probes/combo-hold/combo-pairs.ts). Not built.
-
-**Scoreboard** (`npm run snapshots:update`): development plain 80.0 → 81.0%, mismatch 6.8 → 6.4%, mean |damage error|
-3.3%; hold-out, verified and earlier pending unchanged. Only 4d60 moved (mixed): plain 822 → 987, mismatch 108 → 54,
-per-hit |error| 4.97 → 1.71%, total −1.2 → +1.7% (Zhuang Fangyi's matched +8.1% had cancelled her 0.59M of log-only
-blade hits; now +1.5% with none). The log check's replay only: no simulation reads `pause-holds`, so no team-ab.
-
-**Decisions:** the clocks decide a pause, not the enemy or a flag: a pause holds what spans it, a phase holds nothing,
-and the placement places only what the clocks ask, so the Si phases need no exception. The bound past its share goes
-into the stretch because nothing else can hold a clock that long; within its share a bound stays as it was (the 117 s
-pause was already placed there by 13 clocks).
-
-**Left** (docs/open-problems.md "Away stretches: a pause or a phase", "Zhuang Fangyi's and Liino's mismatches"):
-4d60 69.35–69.84 s, Zhuang Fangyi's Xiranflow layers held 3.0 s by the stops in 43–69 s where the game holds them
-0.6–1.2 s (exposed by the pause: the 43.17 s consumption now takes level 2); her 73.37 s combo with the stance's ATK
-one frame too long; 8915's step (the two combos' placement, the batch's application time).

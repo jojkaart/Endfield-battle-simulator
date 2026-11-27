@@ -207,16 +207,18 @@ describe("Pogranichnik's skills", () => {
 });
 
 describe("the Shieldguard Banner", () => {
-  it("the example: harasses 9 frames after Chen's Lift, his Breach and each combo slash; the Decisive Assault 25 frames after Chen's later Lift; none for her Vulnerable-only Lift", () => {
+  it("the example: harasses 18 frames after Chen's Lift, his Breach and each combo slash (frame 9 and the entity's own slow-down, on the world's clock); the Decisive Assault 25 frames after Chen's later Lift; none for her Vulnerable-only Lift", () => {
     const s = run(example, example.rotation, example.durationFrames);
     const lifts = s.reactions.filter((r) => r.kind === "physical" && r.status === "lift").map((r) => r.frame);
     const breach = s.reactions.find((r) => r.kind === "physical" && r.status === "breach")?.frame ?? NaN;
     const slashes = hitsOf(s, "combo_skill").map((h) => h.frame);
+    // The Breach's harass is due inside his combo's world slow-down (from the combo's frame 0): an ability entity's
+    // timeline, it is held by it as the world is (d4fb69b036fe: the Breach at 86.67 s, the harass at 87.97 s).
     expect(followUps(s)).toEqual([
-      [(lifts[0] ?? NaN) + 9, "harass"],
-      [breach + 9, "harass"],
-      [(slashes[0] ?? NaN) + 9, "harass"],
-      [(slashes[1] ?? NaN) + 9, "harass"],
+      [(lifts[0] ?? NaN) + 18, "harass"],
+      [breach + 18 + HELD, "harass"],
+      [(slashes[0] ?? NaN) + 18, "harass"],
+      [(slashes[1] ?? NaN) + 18, "harass"],
       [(lifts[1] ?? NaN) + 25, "decisive_assault"],
     ]);
     expect(s.stacks[O]?.["steel_oath"]).toBe(0);
@@ -269,14 +271,15 @@ describe("Pogranichnik's talents", () => {
   it("talents 1 and 2 on him: one Fervent Morale buff (ATK +0.08, Arts Intensity +8 per layer), 10 s from his own follow-ups, 20 s from every 60 SP his skills recover (P3; 80 below)", () => {
     const s = run(example, opening, 300);
     const layers = s.buffs.filter((b) => b.id === "fervent_morale").map((b) => [b.appliedAt, b.expiresAt - b.appliedAt]);
-    // Breach (141), the two slashes (164, 178): talent 2's 10 s; the bank crosses 60 at the last harass (187): 20 s.
+    // Breach (141), the two slashes (164, 178): talent 2's 10 s; the bank crosses 60 at the last harass (196): 20 s.
     const breach = s.reactions.find((r) => r.kind === "physical" && r.status === "breach")?.frame ?? NaN;
     const slashes = hitsOf(s, "combo_skill").map((h) => h.frame);
-    expect(layers).toEqual([[breach, 300 + HELD], [slashes[0], 300], [slashes[1], 300], [(slashes[1] ?? NaN) + 9, 600]]);
-    const a1 = hitsOf(s, "attack1")[0];
+    expect(layers).toEqual([[breach, 300 + HELD], [slashes[0], 300], [slashes[1], 300], [(slashes[1] ?? NaN) + 18, 600]]);
+    // His first hit after the last harass (196), which brings the fourth layer.
+    const a1 = s.hits.find((h) => h.operator === O && h.frame > (slashes[1] ?? NaN) + 18);
     expect(from(a1, MORALE, "atk")).toEqual([0.08, 0.08, 0.08, 0.08].map((x) => expect.closeTo(x, 6)));
     expect(from(a1, MORALE, "artsIntensity")).toEqual([8, 8, 8, 8].map((x) => expect.closeTo(x, 6)));
-    // The bank: 10 (harass) + 15 (Breach) + 10 + 6 + 10 + 8.4 + 10 = 69.4 at 187, less 60.
+    // The bank: 10 (harass) + 15 (Breach) + 10 + 6 + 10 + 8.4 + 10 = 69.4 at 196, less 60.
     expect(s.stacks[O]?.["sp_banked"]).toBeCloseTo(9.4, 4);
     // Below P3 the threshold is 80: no talent-1 layer by then.
     const p2 = run(scenario({ potential: 2 }), opening, 300);

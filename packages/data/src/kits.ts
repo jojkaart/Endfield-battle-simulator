@@ -1154,6 +1154,15 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     if (b.target === "enemy") throw new Error(`${where0}: buff ${b.id}: an enemy debuff can't map its owner's basic-attack input`);
     if (!kit.skills.some((x) => x.skillId === b.basicAttack && x.damageType === "basic")) throw new Error(`${where0}: buff ${b.id}: maps the basic-attack input to ${b.basicAttack}, which isn't a basic attack of the kit`);
   }
+  // A buff an entity holds while it finds its target names one of the kit's assumptions, with the readings the log
+  // check's replay knows (buffreplay.ts targetLosses).
+  for (const b of buffs) {
+    if (!b.targetCheck) continue;
+    if (b.target !== "enemy") throw new Error(`${where0}: buff ${b.id}: targetCheck is for an enemy buff`);
+    const a = (kit.assumptions ?? []).find((x) => x.id === b.targetCheck?.assumption);
+    if (!a) throw new Error(`${where0}: buff ${b.id}: targetCheck: the kit has no assumption ${b.targetCheck.assumption}`);
+    for (const r of ["kept", "away", "listed"]) if (!(r in a.readings)) throw new Error(`${where0}: buff ${b.id}: targetCheck: assumption ${a.id} has no reading ${r}`);
+  }
   return {
     operator: kit.operator,
     stacks: (kit.stacks ?? []).map((x) => {
