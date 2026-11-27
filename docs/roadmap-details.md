@@ -350,6 +350,15 @@ enablePoiseBreakTimeDilation, no length: a probe of every operator's lateness af
 Pogranichnik's harass entity's own 0.4 s slow-downs and teleport; 99fb's bleed after Rossi's ultimate (statuses);
 docs/tried/2026-11-27-jump-launched-landings.diff once a development log shows the case.
 
+**The slugs and status pairs (2026-11-27, [journal](journal/2026-11-27-09-hard-33-s-eight-slugs-status-pairs-read-by-the-check.md)):**
+Hard 33's slug is eight Woodcraft Slugs of 1.2 Max HP under one id (totals 9.6 Max HP, kills at whole slugs, two kills
+at one ms, the stage's text; scripts/probes/targets/slugs.ts): 6339 and 7b54 marked `severalTargets` (their own row,
+a reclassification), the replay's enemy shedding the team's debuffs at each kill there (`logged-purges` `log-kills`).
+The status pairs a buff's edge put off pair by the check's reading (`status-pairing` `check`, window 90 frames): 1d91,
+7910, a7a7, abfd plain. Next ([open-problems](open-problems.md) "Hard 33's Woodcraft Slugs", "Log-only landings"):
+e989's Camille Firefang Weakness the replay keeps 69.19–89.32 s; per-target state for several-targets fights (an
+engine with more than one enemy).
+
 **Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
 the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only
 (207f's physical hits ×0.847), a kill read from a total that is a two-decimal multiple of Max HP (207f, 5082: no

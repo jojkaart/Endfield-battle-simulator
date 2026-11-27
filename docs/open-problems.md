@@ -212,11 +212,21 @@ cause:
   docs/journal/2026-11-27-07-status-landings-paired-by-value-two-target-fights-marked.md): one assignment per operator,
   kind and element, the most pairs and then the closest, a landing 16–60 frames away only where its value fits within
   1%. One-sided bursts in `zmdlogs bursts --all` 31 log-only / 40 replay-only → 19 / 28 (30 frames), and c3c7 22.32,
-  c83c 32.31, 79cc 24.23, 3aa6 12.31 s (1.5–2.1 s late, equal values) at 60 frames. Left: pairs whose replay value is
-  off by a buff the replay's burst landed before or after (1d91 50.47 / 51.02 s ×1.095, 7b54 46.70 / 47.39 s, a7a7
-  39.27 / 40.87 s, e989 86.65 / 88.70 s, 7910 28.27 / 29.85 s, abfd 100.93 / 103.48 s): a 10% fit was mixed
-  (docs/tried/2026-11-27-status-value-fit-10.diff); the fit judged by the check's reading of the pair (the log's
-  listed buffs) is untried.
+  c83c 32.31, 79cc 24.23, 3aa6 12.31 s (1.5–2.1 s late, equal values) at 60 frames. **The pairs a buff's edge put off
+  (2026-11-27, `status-pairing` `check`, docs/journal/2026-11-27-09-hard-33-s-eight-slugs-status-pairs-read-by-the-check.md):**
+  a pair fits too where the check's primary reading of it does (enginecheck.ts primaryParts: the unjudged kit buffs as
+  the logged hit lists them), with the landing's modifiers or the replay's at the logged hit's frame (then read
+  there: BuffReplay.statusInputs); the window 60 → 90 frames. By case, what the log decides: 1d91 50.47 / 51.02 s, the
+  game's burst after Arcane's combo touch (its listing has Tactical Doubles since 50.50 s; the replay's lands 0.13 s
+  before the touch): paired, plain; 7910 28.27 / 29.85 s, held by Arcane's own ultimate stop starting at the burst's
+  frame (+0 ms, the tie the burst-before-stop probe can't order), the value the replay has after it: paired, plain;
+  a7a7 39.27 / 40.87 s, not an edge: Liino's Medicant ×4 on Wulfgard in the replay's burst, an unjudged kit buff the
+  logged burst lists none of: paired by the check's reading, plain; abfd 100.93 / 103.48 s, held past Fluorite's combo
+  and Xaihi's ultimate (2.55 s, 76 frames; ×1.30, the replay's value at the logged frame): paired at 90 frames, plain. Not an edge:
+  e989 86.65 / 88.70 s, the replay keeps Camille's Firefang Weakness (fire Susceptibility 0.12) on 69.19–89.32 s where
+  the log lists none (her next run starts at 89.32 s; Laevatain's 70.43 and 85.87 s hits read −10.7% too): a Camille
+  buff run, open; 7b54 46.70 / 47.39 s: the slugs (below). A 10% fit was mixed
+  (docs/tried/2026-11-27-status-value-fit-10.diff).
 - **The placement and the cast assembly** (the replay-only agent's files, not changed here): fc63 87.87 s Typhoeus's
   burst landed 0.48 s early, inside the 0.2 s Sign cooldown of the one before, so her 101.87 s combo has 7 Signs;
   f879 95.10 s Laevatain's battle skill made before her 92.50 s Heat absorption (no empowered hit, −2.1%); 5082
@@ -243,7 +253,8 @@ depends on it where the values fit); the pairs a buff's edge puts off in value (
 world's clock that only her lasers show, or the lasers' start not at the logged event.
 
 **Next check:** the INT lasers' start against the logged combo event across every INT log (`zmdlogs casts --operator
-Arcane`); the status pairing's value fit by the check's reading.
+Arcane`); e989's Camille Firefang Weakness on 69.19–89.32 s in the replay alone (`zmdlogs replay e989 --kit-buff
+chr_0033_camille:vesperwings`).
 
 ## The totals that rose once hits read right (2026-11-27)
 

@@ -112,7 +112,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   placement cases 2026-11-27: an ability entity's landings due within the slots' span (f879's empowered battle skill),
   a press due in an away stretch made as its button's variant (3aa6), a used-up cast's second landing by the slots'
   multipliers (9a80's finals): next 5082's Yvonne held at a Stagger break (a break dilation?), Pogranichnik's harass
-  entity's own slow-downs.
+  entity's own slow-downs; the slugs and status pairs 2026-11-27: Hard 33's "slug" is eight slugs under one id
+  (6339, 7b54 `severalTargets`, a reclassification), a kill purges in such a fight (`logged-purges` `log-kills`),
+  status pairs fit by the check's reading, at the logged frame where only that fits (`status-pairing` `check`):
+  next e989's Camille Firefang Weakness kept 69–89 s, an engine with several targets.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
