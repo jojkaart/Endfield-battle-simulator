@@ -1,0 +1,7571 @@
+{
+ "$schema": "../schemas/log-fixture.schema.json",
+ "id": "zmdlogs-f57452bc1f02",
+ "description": "ZMDLogs battle btl_upload_f57452bc1f02 vs eny_0129_slwood_hdg033: chr_0031_mifu, chr_0015_lifeng, chr_0005_chen, chr_0019_karin; per-hit damage with the logged buff effects.",
+ "provenance": {
+  "source": "ZMDLogs (zmdlogs.com) battle log, captured in game by its client",
+  "url": "https://zmdlogs.com/battles/btl_upload_f57452bc1f02",
+  "battleId": "btl_upload_f57452bc1f02",
+  "parserVersion": "raw-log-parser-v59",
+  "inGame": true,
+  "measured": "2026-10-25T18:51:22+08:00",
+  "verifiedAgainst": {
+   "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+   "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+  },
+  "notes": [
+   "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
+   "Enemy level 90 from the stage's DungeonTable entry (indie_hard033_s)."
+  ]
+ },
+ "enemy": {
+  "id": "eny_0129_slwood_hdg033",
+  "level": 90
+ },
+ "team": [
+  {
+   "operator": "chr_0031_mifu",
+   "level": 90,
+   "promotion": 4,
+   "potential": 0,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 9
+   },
+   "weapon": {
+    "id": "wpn_claym_0017",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     5
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_parts_wuling02_hand_04",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_body_04",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0015_lifeng",
+   "level": 90,
+   "promotion": 4,
+   "potential": 0,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_lance_0007",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     2
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_usp02_hand_04",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_body_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_edc_05",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_edc_05",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0005_chen",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0021",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     5
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_poise01_hand_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_body_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_poise01_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_poise01_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0019_karin",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 9,
+    "combo": 9,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0012",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     5
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_atb01_hand_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_body_05",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_edc_06",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_parts_wuling01_edc_03",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    }
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "t": 2930,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 3747,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3571,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 2275,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3887,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 2275,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3887,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 15984,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 3887
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 3887
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 50,
+    "origin": "chr_0005_chen_normal_skill"
+   }
+  },
+  {
+   "t": 4835,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 19308,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 3887
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 3887
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 29.6755,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 4835,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 12707,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 3887
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 3887
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 29.6755,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 5061,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 736,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 6225,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 16159,
+   "crit": true,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0031_mifu",
+     "since": 6225
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 30,
+    "bar": 0,
+    "origin": "chr_0031_mifu_attack4"
+   }
+  },
+  {
+   "t": 6976,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_powerattack",
+   "value": 23485,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0031_mifu",
+     "since": 6225
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7266,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_powerattack",
+   "value": 15657,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0031_mifu",
+     "since": 6225
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7990,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_powerattack",
+   "value": 19739,
+   "uncapped": 39141,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0031_mifu",
+     "since": 6225
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 12653,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_normalskill_1",
+   "value": 10602,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 13089,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 2422,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 13404,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 4521,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 13530,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 2272,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14030,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 2745,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14134,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 2745,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14134,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 2745,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14134,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 2272,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14134,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 2272,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14134,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 2272,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14238,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 2745,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14364,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 2745,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15006,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 5570,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15150,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 5570,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15364,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 7929,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 50,
+    "origin": "chr_0015_lifeng_normal_skill"
+   }
+  },
+  {
+   "t": 15364,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 7929,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 50,
+    "origin": "chr_0015_lifeng_normal_skill"
+   }
+  },
+  {
+   "t": 15818,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 1058,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16645,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 15485,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 30,
+    "bar": 20,
+    "origin": "chr_0031_mifu_attack4"
+   }
+  },
+  {
+   "t": 16645,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 15485,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 30,
+    "bar": 20,
+    "origin": "chr_0031_mifu_attack4"
+   }
+  },
+  {
+   "t": 16979,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_normalskill_2",
+   "value": 5181,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16979,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_normalskill_2",
+   "value": 5181,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 17269,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_normalskill_2",
+   "value": 5181,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 17269,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_normalskill_2",
+   "value": 5181,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 17747,
+   "operator": "chr_0031_mifu",
+   "event": "buff_equipsuit_physuit_01",
+   "value": 23180,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 17747,
+   "operator": "chr_0031_mifu",
+   "event": "buff_physical_do_crushed",
+   "value": 34131,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 6,
+    "bar": 14,
+    "origin": "chr_0031_mifu_normalskill_2"
+   }
+  },
+  {
+   "t": 17747,
+   "operator": "chr_0031_mifu",
+   "event": "buff_physical_do_crushed",
+   "value": 34131,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 6,
+    "bar": 14,
+    "origin": "chr_0031_mifu_normalskill_2"
+   }
+  },
+  {
+   "t": 17747,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_normalskill_2",
+   "value": 7325,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 6,
+    "bar": 14,
+    "origin": "chr_0031_mifu_normalskill_2"
+   }
+  },
+  {
+   "t": 17747,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_normalskill_2",
+   "value": 7325,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 6,
+    "bar": 14,
+    "origin": "chr_0031_mifu_normalskill_2"
+   }
+  },
+  {
+   "t": 19097,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_combo_skill",
+   "value": 3107,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 19097,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_combo_skill",
+   "value": 3107,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 19348,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack1",
+   "value": 7902,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 19784,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_combo_skill",
+   "value": 11095,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 4,
+    "origin": "chr_0015_lifeng_combo_skill"
+   }
+  },
+  {
+   "t": 19784,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_combo_skill",
+   "value": 11095,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 4,
+    "origin": "chr_0015_lifeng_combo_skill"
+   }
+  },
+  {
+   "t": 20054,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 3119,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20054,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 3119,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20054,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 3119,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20345,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 5822,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20345,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 5822,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20697,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 37294,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 20697
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0,
+    "origin": "chr_0005_chen_normal_skill"
+   }
+  },
+  {
+   "t": 20697,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 17210,
+   "uncapped": 43285,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 20697
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0,
+    "origin": "chr_0005_chen_normal_skill"
+   }
+  },
+  {
+   "t": 20697,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 11406,
+   "uncapped": 45286,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 20697
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0,
+    "origin": "chr_0005_chen_normal_skill"
+   }
+  },
+  {
+   "t": 21257,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 3535,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 22026,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 39273,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 20697
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 9.6755,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 22026,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 5302,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 22026,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 23524,
+   "uncapped": 25845,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 20697
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 9.6755,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 24970,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 14946,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 30,
+    "bar": 30,
+    "origin": "chr_0031_mifu_attack4"
+   }
+  },
+  {
+   "t": 25802,
+   "operator": "chr_0019_karin",
+   "event": "chr_0019_karin_combo_skill",
+   "value": 5469,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_chr_0019_karin_potential_1_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 25,
+    "origin": "chr_0019_karin_combo_skill"
+   }
+  },
+  {
+   "t": 26220,
+   "operator": "chr_0019_karin",
+   "event": "chr_0019_karin_combo_skill",
+   "value": 5765,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_chr_0019_karin_potential_1_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 20,
+    "origin": "chr_0019_karin_combo_skill"
+   }
+  },
+  {
+   "t": 26326,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack1",
+   "value": 7055,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 26940,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 2785,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 27064,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 30582,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08,
+     "source": "chr_0005_chen",
+     "since": 20697
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 10,
+    "origin": "chr_0005_chen_normal_skill"
+   }
+  },
+  {
+   "t": 27311,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 7798,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 30710,
+   "operator": "chr_0015_lifeng",
+   "event": "buff_chr_0015_lifeng_talent_2",
+   "value": 3434,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0015_lifeng",
+     "since": 30710
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 30710,
+   "operator": "chr_0015_lifeng",
+   "event": "buff_physical_knockdown",
+   "value": 3890,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0015_lifeng",
+     "since": 30710
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 30710,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_ultimate_skill_abentity",
+   "value": 13737,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0015_lifeng",
+     "since": 30710
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 30794,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 4103,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0015_lifeng",
+     "since": 30710
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 31023,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 4103,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0015_lifeng",
+     "since": 30710
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 31641,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 3573,
+   "uncapped": 8326,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0015_lifeng",
+     "since": 30710
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 31745,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 6405,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0015_lifeng",
+     "since": 30710
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 32593,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_ultimate_skill_abentity",
+   "value": 10567,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 32842,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 2272,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33298,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 2589,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33402,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 14946,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 30,
+    "bar": 30,
+    "origin": "chr_0031_mifu_attack4"
+   }
+  },
+  {
+   "t": 33402,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 2272,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33505,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 2589,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 34126,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack1",
+   "value": 7055,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 34334,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack1",
+   "value": 7055,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 34457,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack5",
+   "value": 6852,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 34457,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack5",
+   "value": 6852,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 15364
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 34687,
+   "operator": "chr_0015_lifeng",
+   "event": "buff_chr_0015_lifeng_talent_2",
+   "value": 3963,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 34687,
+   "operator": "chr_0015_lifeng",
+   "event": "buff_physical_knockdown",
+   "value": 3890,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 20,
+    "origin": "chr_0015_lifeng_normal_skill"
+   }
+  },
+  {
+   "t": 34687,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 7080,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 20,
+    "origin": "chr_0015_lifeng_normal_skill"
+   }
+  },
+  {
+   "t": 34687,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_normal_skill",
+   "value": 7929,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 20,
+    "origin": "chr_0015_lifeng_normal_skill"
+   }
+  },
+  {
+   "t": 35059,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 2785,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 35059,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 3119,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 35678,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 38481,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 0,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 35678,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 57051,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 0,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 35678,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 32922,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 0,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 35678,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 4348,
+   "uncapped": 32539,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20.3245,
+    "bar": 0,
+    "origin": "chr_0005_chen_combo_skill"
+   }
+  },
+  {
+   "t": 35947,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack2",
+   "value": 7569,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 36551,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_powerattack",
+   "value": 25556,
+   "uncapped": 36492,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11201
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 11678
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.12,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3,
+     "source": "chr_0005_chen",
+     "since": 35678
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 38956,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_combo_skill",
+   "value": 8444,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 38956,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_attack1",
+   "value": 581,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 39060,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_combo_skill",
+   "value": 5629,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 39721,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_attack1",
+   "value": 581,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 39824,
+   "operator": "chr_0019_karin",
+   "event": "chr_0019_karin_combo_skill",
+   "value": 6060,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 55,
+    "origin": "chr_0019_karin_combo_skill"
+   }
+  },
+  {
+   "t": 39929,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 1751,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 40032,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 1751,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 40264,
+   "operator": "chr_0019_karin",
+   "event": "chr_0019_karin_combo_skill",
+   "value": 6356,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 50,
+    "origin": "chr_0019_karin_combo_skill"
+   }
+  },
+  {
+   "t": 40368,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack2",
+   "value": 4111,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 40473,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_combo_skill",
+   "value": 9996,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 54,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 12,
+    "bar": 38,
+    "origin": "chr_0031_mifu_combo_skill"
+   }
+  },
+  {
+   "t": 40577,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_attack1",
+   "value": 610,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 40782,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack3",
+   "value": 2398,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 40886,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_attack1",
+   "value": 610,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 40886,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack3",
+   "value": 2398,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 40990,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 4971,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 54,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 41218,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 3314,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 54,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 41302,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_attack2",
+   "value": 1442,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 41302,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 2718,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 41425,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 2718,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 41678,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack3",
+   "value": 6726,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 54,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 42091,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_attack3",
+   "value": 1747,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 42359,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack5",
+   "value": 11946,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 42465,
+   "operator": "chr_0031_mifu",
+   "event": "chr_0031_mifu_attack4",
+   "value": 1072,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0017_dmgup2",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.216,
+     "source": "chr_0031_mifu",
+     "since": 17747
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_claym_0017_dmgup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 54,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 42650,
+   "operator": "chr_0015_lifeng",
+   "event": "chr_0015_lifeng_attack5",
+   "value": 888,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 42838,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 43251,
+   "uncapped": 55483,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2,
+     "source": "chr_0005_chen",
+     "since": -3563
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 25802
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 26220
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0015_lifeng",
+     "since": 34687
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 39824
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09,
+     "source": "chr_0019_karin",
+     "since": 40264
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.05,
+     "source": "chr_0031_mifu",
+     "since": 40473
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 30069,
+   "operator": "chr_0015_lifeng",
+   "skill": "chr_0015_lifeng_ultimate_skill"
+  }
+ ],
+ "severalTargets": {
+  "atOnce": 8,
+  "fromStart": true,
+  "why": "Hard 33's Woodcraft Slugs, eight under the one id, as 6339 and 7b54 (scripts/probes/targets/slugs.ts, 2026-11-28): the logged total is 9.600 Max HP (the data's 110,060), eight slugs of 1.2, and its kills (hits capped at the HP left) fall at 1.00 (7.99 s), 3.65 (20.70 s: two at one ms), 4.19, 5.00, 6.75, 7.00 and 8.00 (42.84 s) slugs of damage; one event key at one ms with differing values 5 times (Chen Qianyu's battle skill 37,294 / 17,210 / 11,406 at 20.70 s: one hit on slugs with different debuffs). The stage's text (indie_hard033's dungeonDesc: \"They are legion\") and the data's number shield (buff_common_eny_numshield: a shielded slug's hits deal 0 and aren't logged). ZMDLogs lists every slug's debuffs under the one id. First check as one target (2026-11-28): total −28.6%."
+ }
+}
