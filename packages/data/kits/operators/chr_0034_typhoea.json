@@ -525,41 +525,6 @@
       "note": "combo_skillfloating timeline action 39 (frame 0): SwitchAction resets the ABATK index."
     },
     {
-      "id": "conversion",
-      "on": {
-        "event": "cast",
-        "skills": [
-          "chr_0034_typhoea_combo_skill",
-          "chr_0034_typhoea_combo_skillfloating"
-        ]
-      },
-      "by": "self",
-      "delay": 35,
-      "do": [
-        {
-          "kind": "gain",
-          "gains": [
-            {
-              "stack": "arrows",
-              "amount": {
-                "product": [
-                  {
-                    "stackCount": "signs"
-                  },
-                  0.5
-                ]
-              }
-            },
-            {
-              "stack": "signs",
-              "amount": -8
-            }
-          ]
-        }
-      ],
-      "note": "Frame 35: common_func_arrowreload, arrows = (Signs − 1) ÷ 2 = 3.5 at 8 Signs, which fixtures/zmdlogs-bdf223db8e49.json shows as 4 (all 5 shots after the floating combo burst), then all Signs removed. Written as Signs × 0.5 (the combo needs 8 Signs)."
-    },
-    {
       "id": "chain_1",
       "on": {
         "event": "cast",
@@ -1787,7 +1752,7 @@
       "skillId": "chr_0034_typhoea_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
-      "note": "The grounded combo, in the combo slot except while hovering with the slot swapped. durationFrames: the battle skill is allowed from frame 48 (SkillData window 48–99). At frame 35: usp energy and the Sign conversion (trigger conversion). Casting it ends a hover (floatingmode's inherit list).",
+      "note": "The grounded combo, in the combo slot except while hovering with the slot swapped. durationFrames: the battle skill is allowed from frame 48 (SkillData window 48–99). At frame 35: usp energy and the Sign conversion (on the first arrow). Casting it ends a hover (floatingmode's inherit list).",
       "available": {
         "not": {
           "all": [
@@ -1817,7 +1782,24 @@
               "buff": "barrage_array"
             }
           ],
-          "note": "combo_01_projhit (launched at frame 35): SimpleCalcBB atk_scale ÷ 7, poise 10. Its hit spawns the Barrage Array. usp: 10 at level 12 (ObtainCostAction at 35)."
+          "gains": [
+            {
+              "stack": "arrows",
+              "amount": {
+                "product": [
+                  {
+                    "stackCount": "signs"
+                  },
+                  0.5
+                ]
+              }
+            },
+            {
+              "stack": "signs",
+              "amount": -8
+            }
+          ],
+          "note": "combo_01_projhit (launched at frame 35): SimpleCalcBB atk_scale ÷ 7, poise 10. Its hit spawns the Barrage Array. usp: 10 at level 12 (ObtainCostAction at 35). The Sign conversion at frame 35 (common_func_arrowreload: arrows = (Signs − 1) ÷ 2 = 3.5 at 8 Signs, which fixtures/zmdlogs-bdf223db8e49.json shows as 4, all 5 shots after the floating combo burst; then all Signs removed; written as Signs × 0.5, the combo needs 8) rides on this arrow, launched at the same frame: in a replay it then comes where the log has the arrow, not where her clock through teammates' combo slow-downs puts frame 35 (fc63 57.48 s: the arrow logged at 58.65 s, a delayed cast trigger's frame 35 at 59.33 s, after Arcane's touch at 58.77 s set off a Nature burst whose Sign the conversion then removed; 2026-11-28)."
         },
         {
           "id": "arrow",
@@ -1848,7 +1830,7 @@
       "skillId": "chr_0034_typhoea_combo_skillfloating",
       "label": "Combo skill (hovering)",
       "damageType": "combo",
-      "note": "The combo cast while hovering (floatingmode's ChangeSkillAction puts it in the combo slot when she's controlled as the hover starts): same arrows; it keeps the hover (InheritBuff floatingmode) and resets the ABATK attempts at frame 0; floating_attack1 is allowed from frame 57 (SkillData window 57–74). Off-field it continues with floating_attack1 at 57; controlled and idle, floating_loop at 67. At frame 35: usp energy and the Sign conversion (trigger conversion). Conditional window (batch 4 S9a): 57–74 is under an IfElse on CheckMainCharacterCondition; listed open (the engine's reading before S9; off-field she goes on with floating_attack1 at 57 too).",
+      "note": "The combo cast while hovering (floatingmode's ChangeSkillAction puts it in the combo slot when she's controlled as the hover starts): same arrows; it keeps the hover (InheritBuff floatingmode) and resets the ABATK attempts at frame 0; floating_attack1 is allowed from frame 57 (SkillData window 57–74). Off-field it continues with floating_attack1 at 57; controlled and idle, floating_loop at 67. At frame 35: usp energy and the Sign conversion (on the first arrow). Conditional window (batch 4 S9a): 57–74 is under an IfElse on CheckMainCharacterCondition; listed open (the engine's reading before S9; off-field she goes on with floating_attack1 at 57 too).",
       "windows": [{ "from": 57 }],
       "available": {
         "all": [
@@ -1877,7 +1859,24 @@
               "buff": "barrage_array"
             }
           ],
-          "note": "combo_01_projhit (launched at frame 35): SimpleCalcBB atk_scale ÷ 7, poise 10. Its hit spawns the Barrage Array. usp: 10 at level 12 (ObtainCostAction at 35)."
+          "gains": [
+            {
+              "stack": "arrows",
+              "amount": {
+                "product": [
+                  {
+                    "stackCount": "signs"
+                  },
+                  0.5
+                ]
+              }
+            },
+            {
+              "stack": "signs",
+              "amount": -8
+            }
+          ],
+          "note": "combo_01_projhit (launched at frame 35): SimpleCalcBB atk_scale ÷ 7, poise 10. Its hit spawns the Barrage Array. usp: 10 at level 12 (ObtainCostAction at 35). The Sign conversion at frame 35 (common_func_arrowreload: arrows = (Signs − 1) ÷ 2 = 3.5 at 8 Signs, which fixtures/zmdlogs-bdf223db8e49.json shows as 4, all 5 shots after the floating combo burst; then all Signs removed; written as Signs × 0.5, the combo needs 8) rides on this arrow, launched at the same frame: in a replay it then comes where the log has the arrow, not where her clock through teammates' combo slow-downs puts frame 35 (fc63 57.48 s: the arrow logged at 58.65 s, a delayed cast trigger's frame 35 at 59.33 s, after Arcane's touch at 58.77 s set off a Nature burst whose Sign the conversion then removed; 2026-11-28)."
         },
         {
           "id": "arrow",
