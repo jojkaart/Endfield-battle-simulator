@@ -40,6 +40,12 @@
 //                       question an idea on top of the tree asks (--no-plain: skip that run). An entry
 //                       <file>:<CONST>=<value> is a --set of that variant alone (its own patched worktree): a
 //                       constant's values side by side, `--variant x.ts:WIDE=30 --variant x.ts:WIDE=60`
+//   --variant-patch <file>  a --variant whose code is the measured code with this diff applied (repeatable; round 22,
+//                       the needed-pairing report point 3: three patch measures on one base queued apart and ran the
+//                       base three times): each in a worktree of its own, all against the one base run and beside the
+//                       plain tree, in one queue slot. With --set the variant's code has both (on different files);
+//                       not with --patch (put both diffs in one file). Each diff is copied at queue time and must apply
+//                       to the code measured (--at, else the tree as queued)
 //   --set <file>:<CONST>=<value>  measure the code with the constant's one-line declaration (`[export] const CONST
 //                       = …;`, exactly one in the file) set to the value (repeatable; round 18, the status-pairing
 //                       report point 2: a constant's value took a commit, an edit, a diff and a revert each): a
@@ -117,7 +123,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
@@ -227,7 +233,7 @@ export function overlay(base: Snapshots, measured: ReadonlyMap<string, Entry>, s
 }
 
 /** Runs jobs on worker threads loading `tree`'s code; each answer to `done` as it comes. */
-async function pool(tree: string, jobs: readonly MeasureJob[], workers: number, done: (a: MeasureAnswer) => void, assume: Readonly<Record<string, string>> = {}): Promise<void> {
+export async function pool(tree: string, jobs: readonly MeasureJob[], workers: number, done: (a: MeasureAnswer) => void, assume: Readonly<Record<string, string>> = {}): Promise<void> {
   const queue = [...jobs];
   const url = new URL("./measure-worker.ts", import.meta.url);
   await Promise.all(
@@ -290,6 +296,7 @@ export function measureOptions(argv: readonly string[]) {
       out: { type: "string" },
       hits: { type: "boolean", default: false },
       variant: { type: "string", multiple: true, default: [] },
+      "variant-patch": { type: "string", multiple: true, default: [] },
       negative: { type: "boolean", default: true },
       live: { type: "boolean", default: false },
       snapshot: { type: "string" },
@@ -305,6 +312,13 @@ export function measureOptions(argv: readonly string[]) {
     allowNegative: true,
   });
   if (values.changed !== undefined && values.changed !== "placement") throw new Error("--changed takes placement");
+  // --variant-patch: a variant of its own each (`patch:<file>`, isPatchEntry), after the --variant ones.
+  for (const p of values["variant-patch"]) {
+    if (!existsSync(resolve(p))) throw new Error(`--variant-patch ${p}: no such file`);
+    values.variant.push(`patch:${resolve(p)}`);
+  }
+  if (values["variant-patch"].length && values.patch !== undefined) throw new Error("--variant-patch goes on the measured code: not with --patch (one diff file with both)");
+  if (values["variant-patch"].length && values.live) throw new Error("--variant-patch applies to a commit (--at, or the tree as queued): not with --live");
   const variantSets = values.variant.flatMap((x) => x.split(",")).filter(isSetEntry);
   if (values.split !== undefined) {
     if (values.split !== "files" && values.split !== "commits" && values.split !== "hunks") throw new Error("--split takes files, commits or hunks");
@@ -321,7 +335,7 @@ export function measureOptions(argv: readonly string[]) {
   if (values.patch !== undefined && values.live) throw new Error("--patch applies to a commit (--at, or the tree as queued): not with --live");
   if ((values.set.length || variantSets.length) && values.live) throw new Error("--set (and a --variant's <file>:<CONST>=<value>) patches a commit (--at, or the tree as queued): not with --live");
   for (const s of [...values.set, ...variantSets]) parseSet(s);
-  parseReadings([...values.assume, ...values.variant.flatMap((x) => x.split(",")).filter((x) => !isSetEntry(x))]);
+  parseReadings([...values.assume, ...values.variant.flatMap((x) => x.split(",")).filter((x) => !isSetEntry(x) && !isPatchEntry(x))]);
   if (values.patch !== undefined && !existsSync(resolve(values.patch))) throw new Error(`--patch ${values.patch}: no such file`);
   return { values, workers };
 }
@@ -340,6 +354,15 @@ async function main(argv: string[]): Promise<number> {
     const file = join(dir, `set-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${process.pid}-${label}.diff`);
     writeFileSync(file, diff);
     return file;
+  };
+  // A --variant-patch's diff with the --set constants (combinedPatch: on other files), kept beside them.
+  const variantDiff = (file: string, sets: readonly string[], vi: number): string => {
+    const diff = combinedPatch(readFileSync(file, "utf8"), sets.map(parseSet), (f) => gitShow(codeRef, f));
+    const dir = join(ROOT, "scratch/measure/patches");
+    mkdirSync(dir, { recursive: true });
+    const out = join(dir, `variant-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${process.pid}-${vi + 1}.diff`);
+    writeFileSync(out, diff);
+    return out;
   };
   if (values.set.length) values.patch = setsPatch(values.set, "base");
   const patchLabel = [...(userPatch !== undefined ? [userPatch] : []), ...values.set.map((x) => `--set ${x}`)].join(" and ");
@@ -493,13 +516,13 @@ async function main(argv: string[]): Promise<number> {
     say(`measure: ${label}negative control on ${counts.size} verified log(s)`);
     return negativeControl(counts);
   };
-  const variants = values.variant.length ? values.variant.map((v) => ({ text: v, readings: { ...assume, ...parseReadings(v.split(",").filter((x) => !isSetEntry(x))) }, sets: v.split(",").filter(isSetEntry) })) : [{ text: "", readings: assume, sets: [] as string[] }];
-  // A variant with --set entries: the measured code with them, in a worktree of its own (removed after).
+  const variants = values.variant.length ? values.variant.map((v) => ({ text: v, readings: { ...assume, ...parseReadings(v.split(",").filter((x) => !isSetEntry(x) && !isPatchEntry(x))) }, sets: v.split(",").filter(isSetEntry), patch: v.split(",").find(isPatchEntry)?.slice("patch:".length) })) : [{ text: "", readings: assume, sets: [] as string[], patch: undefined }];
+  // A variant with --set entries or a --variant-patch: the measured code with them, in a worktree of its own (removed after).
   const variantPatches = new Map<number, string>();
-  const variantTree = (sets: readonly string[], vi: number): string => {
-    if (!sets.length) return tree;
+  const variantTree = (sets: readonly string[], vi: number, diff?: string): string => {
+    if (!sets.length && diff === undefined) return tree;
     const dir = resolve(ROOT, "scratch/at", `measure-${short(codeRef)}-set${vi + 1}-${process.pid}`);
-    const patch = setsPatch([...values.set, ...sets], `variant-${vi + 1}`);
+    const patch = diff === undefined ? setsPatch([...values.set, ...sets], `variant-${vi + 1}`) : variantDiff(diff, [...values.set, ...sets], vi);
     variantPatches.set(vi, patch);
     atCommit(codeRef, dir, patch);
     process.on("exit", () => removeAtCommit(dir));
@@ -521,7 +544,7 @@ async function main(argv: string[]): Promise<number> {
     const label = variants.length > 1 || values.variant.length ? `variant ${vi + 1} (${v.text}): ` : "";
     const dir = variants.length > 1 ? join(out, `variant-${vi + 1}`) : out;
     mkdirSync(dir, { recursive: true });
-    const measured = await measureTree(variantTree(v.sets, vi), label, order, v.readings, `${tree}#${vi}`);
+    const measured = await measureTree(variantTree(v.sets, vi, v.patch), label, order, v.readings, `${tree}#${vi}`);
     before ??= baseTree ? overlay(reference, await measureTree(baseTree, `base ${values.base}: `)) : reference;
     if (values.variant.length && values.plain && !plain) plain = overlay(before, await measureTree(tree, "plain (no variant): ", order, assume, `${tree}#plain`), split);
     const after = overlay(before, measured, split);
@@ -609,7 +632,7 @@ async function main(argv: string[]): Promise<number> {
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
       ...(values.patch !== undefined && values.set.length && vi === 0 ? [`The --set patch (for docs/tried/): ${values.patch}`] : []),
-      ...(variantPatches.has(vi) ? [`Variant ${vi + 1}'s --set patch (for docs/tried/): ${variantPatches.get(vi) as string}`] : []),
+      ...(variantPatches.has(vi) ? [`Variant ${vi + 1}'s patch (${v.patch !== undefined ? "its --variant-patch" : "its --set"} diff, for docs/tried/): ${variantPatches.get(vi) as string}`] : []),
     ];
     if (keys.length === logKeys(tree).length && !baseTree) {
       const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(dir, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));
@@ -750,6 +773,9 @@ export interface SetEntry {
 
 /** Whether a --variant entry is a --set's `<file>:<CONST>=<value>` (not an assumption's `<id>=<reading>`). */
 export const isSetEntry = (x: string) => /^[^=:]+:[A-Za-z_$][\w$]*=/.test(x);
+
+/** Whether a --variant entry is a --variant-patch's `patch:<file>` (measureOptions adds them). */
+export const isPatchEntry = (x: string) => x.startsWith("patch:");
 
 export function parseSet(x: string): SetEntry {
   const m = /^([^=:]+):([A-Za-z_$][\w$]*)=(.+)$/.exec(x);
@@ -914,7 +940,7 @@ export function hunkParts(hunks: readonly DiffHunk[], only?: string): { readonly
  * misspelt id or reading fails here, before the queue, not after it). Loads the game data: seconds.
  */
 export async function readingsProblem(values: { readonly assume: readonly string[]; readonly variant: readonly string[] }): Promise<string | null> {
-  const list = [...values.assume, ...values.variant.flatMap((x) => x.split(",")).filter((x) => !isSetEntry(x))];
+  const list = [...values.assume, ...values.variant.flatMap((x) => x.split(",")).filter((x) => !isSetEntry(x) && !isPatchEntry(x))];
   if (!list.length) return null;
   const [{ loadGameData }, { allAssumptions }] = await Promise.all([import("@efsim/data"), import("@efsim/engine")]);
   const known = allAssumptions(loadGameData());
@@ -1430,14 +1456,17 @@ function gitShow(ref: string, file: string): string {
  * after waiting in the queue). Refused before queueing, with the form that measures it alone; null when fine.
  */
 export function patchProblem(argv: readonly string[], root = ROOT): string | null {
-  const pi = argv.indexOf("--patch");
-  const file = pi >= 0 ? argv[pi + 1] : undefined;
-  if (file === undefined || argv.some((a) => a === "--at" || a.startsWith("--at="))) return null;
-  const check = (reverse: boolean) => spawnSync("git", ["apply", "--check", ...(reverse ? ["--reverse"] : []), resolve(file)], { cwd: root, encoding: "utf8" }).status === 0;
-  if (check(false)) return null;
-  if (check(true))
-    return `measure: --patch ${file} is already in the working tree (it applies in reverse): without --at the patch goes on top of the tree as queued, which has it. To measure it alone: --at <the commit before it> --patch ${file} (that code plus only this diff)`;
-  return `measure: --patch ${file} doesn't apply to the working tree (git apply --check): without --at it goes on top of the tree as queued; name the commit it was made against with --at <ref>`;
+  if (argv.some((a) => a === "--at" || a.startsWith("--at="))) return null;
+  // --patch and each --variant-patch (round 22): every diff goes on top of the tree as queued.
+  const files = argv.flatMap((a, i) => ((a === "--patch" || a === "--variant-patch") && argv[i + 1] !== undefined ? [[a, argv[i + 1] as string] as const] : []));
+  for (const [flag, file] of files) {
+    const check = (reverse: boolean) => spawnSync("git", ["apply", "--check", ...(reverse ? ["--reverse"] : []), resolve(file)], { cwd: root, encoding: "utf8" }).status === 0;
+    if (check(false)) continue;
+    if (check(true))
+      return `measure: ${flag} ${file} is already in the working tree (it applies in reverse): without --at the patch goes on top of the tree as queued, which has it. To measure it alone: --at <the commit before it> ${flag} ${file} (that code plus only this diff)`;
+    return `measure: ${flag} ${file} doesn't apply to the working tree (git apply --check): without --at it goes on top of the tree as queued; name the commit it was made against with --at <ref>`;
+  }
+  return null;
 }
 
 /**
@@ -1548,15 +1577,17 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const pinned = pinRefs(argv, resolveRef);
     if (pinned.said.length) process.stderr.write(`measure: pinned at queue time: ${pinned.said.join(", ")}\n`);
     const args = pinned.argv;
-    // A --patch file as it is now (edits during the wait don't reach the run), under scratch/measure/patches/.
-    const pi = args.findIndex((a) => a === "--patch");
-    if (pi >= 0 && args[pi + 1] !== undefined) {
+    // A --patch file (and each --variant-patch, round 22) as it is now (edits during the wait don't reach the run),
+    // under scratch/measure/patches/, named after the original.
+    args.forEach((a, pi) => {
+      if ((a !== "--patch" && a !== "--variant-patch") || args[pi + 1] === undefined) return;
       const dir = join(ROOT, "scratch/measure/patches");
       mkdirSync(dir, { recursive: true });
-      const copy = join(dir, `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${process.pid}.diff`);
-      writeFileSync(copy, readFileSync(resolve(args[pi + 1] as string)));
+      const original = args[pi + 1] as string;
+      const copy = join(dir, `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${process.pid}-${pi}-${basename(original)}`);
+      writeFileSync(copy, readFileSync(resolve(original)));
       args[pi + 1] = copy;
-    }
+    });
     args.push("--queued", new Date().toISOString());
     if (!own) {
       const snap = snapshotCommit(ROOT);

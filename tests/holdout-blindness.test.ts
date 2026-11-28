@@ -1,4 +1,4 @@
-// The hold-outs' blindness over every printing function of scripts/accuracy.ts and scripts/measure.ts (round 19, round
+// The hold-outs' blindness over every printing function of scripts/accuracy.ts, measure.ts and identity.ts (round 19, round
 // 18's own report point 1): a hold-out has two key forms (holdout/… in the snapshot files and logKeys, pending/… from
 // allLogs, pairKey), and measure's splitLines once named a hold-out moved by the whole change and by no part because
 // its prefix test read allLogs' key. One helper decides (accuracy.ts isHoldoutKey), and this test runs every function
@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 import * as accuracy from "../scripts/accuracy.ts";
 import * as measure from "../scripts/measure.ts";
+import * as identity from "../scripts/identity.ts";
 import type { Entry, Snapshots } from "../scripts/accuracy.ts";
 import type { Shares } from "../scripts/measure-worker.ts";
 
@@ -69,7 +70,12 @@ const PRINTERS: Record<string, (c: { before: Snapshots; after: Snapshots }) => u
 };
 
 /** Exported functions that print no log key, or print only the development keys their callers pass (filtered by isHoldoutKey). */
+/** A case's entries as identity.ts hashes (round 22): one part per log, its entry's text. */
+const hashes = (s: Snapshots) => new Map(Object.entries(s.pending).map(([k, x]) => [k, { hits: JSON.stringify(x) }]));
+PRINTERS["identityLines"] = (c) => identity.identityLines("base", { before: hashes(c.before), after: hashes(c.after) }, (k) => accuracy.isHoldoutKey(k, split)).lines;
+
 const NOT_PRINTERS: Record<string, string> = {
+  differingParts: "a record's part names", pool: "answers to its caller",
   withSeveralTargets: "a split", readSplit: "a split", groupOf: "a group", fitOf: "numbers", direction: "a direction",
   fitChange: "one entry's change, no key", fieldChange: "one entry's change", formatFieldChange: "one entry's change (`blind` for a hold-out)",
   sumFieldChanges: "numbers", perOperator: "by operator", readSnapshots: "reads", splitPending: "entries", allLogs: "entries",
@@ -77,7 +83,7 @@ const NOT_PRINTERS: Record<string, string> = {
   snapshotsAt: "reads a ref", isDescribingKey: "a boolean", pairKey: "a key", isHoldoutKey: "the test itself",
   logKeys: "keys for the caller, which filters them", interactLines: "development keys from moved.json (MovedRecord.moved: the hold-outs as a count)",
   isHoldoutOmittedKey: "a boolean", withoutHoldoutOmitted: "a totals record", holdoutEntry: "an entry",
-  selectLogs: "refuses a hold-out", measureOptions: "options", decisionLines: "kinds and counts, no key", isSetEntry: "a boolean",
+  selectLogs: "refuses a hold-out", measureOptions: "options", decisionLines: "kinds and counts, no key", isSetEntry: "a boolean", isPatchEntry: "a boolean",
   parseSet: "a constant", applySets: "a source", replacementDiff: "a diff", combinedPatch: "a diff", setsProblem: "a constant's problem",
   diffHunks: "a diff", hunkParts: "a diff", readingsProblem: "an assumption's problem", defaultReference: "a commit", referenceNote: "a commit",
   splitGroups: "files", exportedNames: "names", importedNames: "names", importLinks: "files", negativeControl: "the verified logs' counts",
@@ -87,7 +93,7 @@ const NOT_PRINTERS: Record<string, string> = {
 
 describe("the hold-outs' blindness over every printing function (accuracy.ts, measure.ts)", () => {
   it("names every exported function: a printer this test runs, or why it prints no log", () => {
-    const fns = [...Object.entries(accuracy), ...Object.entries(measure)].filter(([, v]) => typeof v === "function").map(([k]) => k);
+    const fns = [...Object.entries(accuracy), ...Object.entries(measure), ...Object.entries(identity)].filter(([, v]) => typeof v === "function").map(([k]) => k);
     const unclassified = fns.filter((k) => !(k in PRINTERS) && !(k in NOT_PRINTERS));
     expect(unclassified, "a new export of scripts/accuracy.ts or measure.ts: add it to PRINTERS (and run it) or NOT_PRINTERS (with why)").toEqual([]);
     expect([...Object.keys(PRINTERS), ...Object.keys(NOT_PRINTERS)].filter((k) => !fns.includes(k))).toEqual([]);

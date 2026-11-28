@@ -40,3 +40,13 @@ statusesRunOn) every target's. Branch worktree-agent-a289fe4aa2df9082f.
 `measure --variant <file>:<CONST>=<value>` measured the old numbering and the third replay beside the change in one
 run each, with the verdict-neutral result stated plainly ("No log's verdicts moved"); `verify-at --test` confirmed
 the new 7b54 test fails at the base; team-ab's identity check settled the engine change in a minute.
+
+## Outcome (round 22)
+
+- 1 (No view compares the assignments of the replay passes): done (78c6a5f): HitRecord.target.replay (the
+  assignment the replay was made on) and .replays (LogBuffReplay.targetReplays), `≠ replay T<n>` on the text line,
+  `zmdlogs hits <fx…> --targets` (hitexport.ts targetDisagreements; per fight the replay count): 7b54 3 replays, 0 of
+  215 off; 6339 2, 0; 9c6e 2, its one 77.46 s hit ≠ landing.
+- 2 (A backlog claim checked only by reading turned out wrong): done (78c6a5f): `zmdlogs statuses --controls
+  <fx…|--all>` (each control status, whether it froze the enemy and to when, every target's statuses at it, a count
+  per fight): 6339 4.53 s, 7b54 3.40 and 29.50 s; tests/target-statuses.test.ts's comment corrected.

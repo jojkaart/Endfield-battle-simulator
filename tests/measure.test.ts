@@ -178,6 +178,8 @@ describe("measure --patch without --at (physical-statuses report point 1)", () =
       writeFileSync(join(dir, "a.txt"), "three\n");
       expect(patchProblem(["--patch", join(dir, "in-tree.diff")], dir)).toMatch(/doesn't apply/);
       expect(patchProblem(["--logs", "0c14"], dir)).toBeNull();
+      // Round 22: each --variant-patch is checked the same way.
+      expect(patchProblem(["--variant-patch", join(dir, "in-tree.diff")], dir)).toMatch(/--variant-patch .*doesn't apply/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -289,6 +291,23 @@ describe("measure's options before the queue (round 13, damage-factors report po
     expect(() => measureOptions(["--assume", "no-equals"])).toThrow(/<id>=<reading>/);
     expect(() => measureOptions(["--patch", "scratch/no-such.diff"])).toThrow(/no such file/);
     expect(measureOptions(["--logs", "db87", "--hits"]).values.hits).toBe(true);
+  });
+
+  // Round 22 (the needed-pairing report point 3): several patches on one base in one queue slot and one base run.
+  it("takes each --variant-patch as a variant of its own, readings beside it, not with --patch", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "efsim-measure-vpatch-"));
+    try {
+      const [a, b] = [join(dir, "a.diff"), join(dir, "b.diff")];
+      writeFileSync(a, "");
+      writeFileSync(b, "");
+      const { values } = measureOptions(["--variant", "hidden-holds=none", "--variant-patch", a, "--variant-patch", b]);
+      expect(values.variant).toEqual(["hidden-holds=none", `patch:${a}`, `patch:${b}`]);
+      expect(await readingsProblem(values)).toBeNull();
+      expect(() => measureOptions(["--variant-patch", a, "--patch", b])).toThrow(/not with --patch/);
+      expect(() => measureOptions(["--variant-patch", join(dir, "none.diff")])).toThrow(/no such file/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("checks the readings against the registered assumptions", async () => {

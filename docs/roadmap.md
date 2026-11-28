@@ -16,21 +16,18 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–21
-  done (round 21, 2026-11-27: the landing pairing and keepPrevious one
-  home each, counterfactual replays (`decisions --why-kept`), measure's
-  split parts that threw and refs pinned at queue time, one enemy's
-  readers listed, `gamedata handlers`, `hits --layers`, `statuses
-  --inflictions`, `tried.ts refresh`, snapshots:update refusing an edited
-  tree); the backlog
-  ([2026-11-27-backlog-after-round-21.md](friction/2026-11-27-backlog-after-round-21.md),
-  no point carried; its accuracy list's older entries left (done
-  2026-11-28: the check's targets on 7b54 and a freeze per target, the
-  ids mapped, a third replay, 7b54 |damage error| 4.0 → 2.8%, next a freeze
-  on a twin's other target; `needed` on the check's pairing and a channel
-  inside a detached file; Typhoeus's Barrage Array on the world's clock
-  from its launch, its end the data's: no verdict moved, next the arrays'
-  0.4 s left in dbae and 00ae); declined for
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–22
+  done (round 22, 2026-11-28: the replay's clock as time stops,
+  `worldtime --holds --without / --series`, `clocks --breaks`, `casts
+  --event-lags`, the clock table in timeline.md, `zmdlogs screen` and the
+  enemy facts the data lacks, a needed tail's lost pairing, `hits
+  --targets`, `statuses --controls`, `replay --against-starts`, `measure
+  --variant-patch`, scripts/identity.ts, `zmdlogs which`); the backlog
+  ([2026-11-28-backlog-after-round-22.md](friction/2026-11-28-backlog-after-round-22.md):
+  per-break clock rows and the views' one stop list, a test per row of
+  the clock table; its accuracy list from round 21's, the four closed
+  entries dropped; open from their rounds: a freeze on a twin's other
+  target, the arrays' 0.4 s left in dbae and 00ae; declined for
   blindness: a hold-out's change split by cast kind) joins the next round
   once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search

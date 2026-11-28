@@ -643,7 +643,8 @@ promotion. 50 loadouts may be screened (authorized 2026-11-08).
 - **Screening:** in stages, cheapest first (the lists give boss, date
   and duration; then the 64 KB export's loadout; then the full detail),
   3 s or more between requests. IDs, accounts and screening notes stay
-  in the session's scratch folder, never in the repository.
+  in the session's scratch folder, never in the repository. The rules
+  as checks: `efsim zmdlogs screen <battle id…> [--fetch]` (round 22).
 - **After import:** a third of the new logs are a hold-out, only ever
   measured (before any change and after each round), never debugged:
   their errors are the honest accuracy. Hold-out fixtures live in

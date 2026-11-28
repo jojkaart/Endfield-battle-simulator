@@ -587,6 +587,15 @@ nothing on a server. API documented in
     background, and don't restart a slow one (a second set of downloads).
     A refused `zmdlogs refresh` prints, under its reason, the fixture's
     and the detail's values at the first differing hits.
+  - Before an import, `efsim zmdlogs screen <battle id…> [--fetch]`
+    (round 22) checks a candidate's detail against docs/accuracy-plan.md
+    "Choosing logs" (parser, levels, kits, one enemy id, the stage and
+    the enemy in the pinned data with the facts it lacks, length, clear,
+    already a fixture, its account's other development logs as a count):
+    from the cache, `--fetch` downloading what it lacks 4 s apart; a
+    hold-out is refused unread, and no account name or id is printed.
+    `zmdlogs import` then names what the data lacks of the enemy (a rank,
+    Stagger nodes), which would stop a replay later.
   - The Endministrator can appear as the game's virtual ID
     `chr_9000_endmin`, without skill levels (the importer reads it as
     `chr_0003_endminf` with 12 and says so in the notes).

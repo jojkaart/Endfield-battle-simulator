@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 195 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 196 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Improvement round 22: clocks, screening, views that say why, a move's identity check
+
+**Goal:** the five open friction reports and round 21's backlog (docs/friction-done/2026-11-28-round-22.md), tools
+only: no verdict moves.
+
+**Done** (round summary for the details):
+- Clocks: packages/logs replayclock.ts (the timeline's applied stops and the hidden holds as TimeStops, a hold added
+  to any stop), `zmdlogs worldtime … --holds --without <op>` and `worldtime <fx> --series <re>` (fc63's array across
+  Typhoeus's ultimate: 4.29 s world with every stop out, 6.36 s with hers left in, 4.00 s expected), holds.ts
+  tickChains as the one chain rule, `zmdlogs clocks --breaks` (5082's Yvonne at the break +0.5 → +0.05 s), `zmdlogs
+  casts --event-lags` (Typhoeus's combo +0.53 s, Arcane's +0.29 s), docs/design/timeline.md "Which clock each hold
+  holds" (and the burst sentence's own-ultimate reading, stale since `burst-stops` `all`).
+- Screening: `efsim zmdlogs screen <battle id…> [--fetch]` ("Choosing logs" as checks; a hold-out refused unread; an
+  account only as a count), missingEnemyFacts in the screen, import, `gamedata enemy` and the check's head ("The
+  replay stopped: at t s: …").
+- Views that say why: the TAILKEPT `needed` line with the lost hit's pairing before and after the cut; `hits
+  --targets` (HitRecord.target.replay, .replays); `statuses --controls` (6339 4.53 s, 7b54 3.40, 29.50 s);
+  `replay --trace-trigger … --against-starts <buff>` (8056: Frontiers' two extra firings at the SP cap).
+- Measuring: `measure --variant-patch` (two on 0eef in one run), scripts/identity.ts (the data and every log's replay
+  record by part at a base and the tree; the hold-outs a count), lint:changed running the fakeReplay tests and the
+  typecheck, kitMatch.ts HIT_FACTS_ARE_DATA_FIELDS with a schema-enum test, `efsim zmdlogs which "<question>"`.
+- Paperwork: docs/friction/2026-11-28-backlog-after-round-22.md (points 1–2), the reports and round 21's backlog in
+  docs/friction-done/ with their outcomes.
+
+**Checked:** `node scripts/identity.ts --base c81a34f` at c3ba762: the data, 65 development logs and 13 hold-outs the
+same. `npm run snapshots:update` at a640e94: verified, development, hold-out, earlier pending and several targets
+"unchanged", "No log's verdicts moved", no snapshot file or docs/accuracy.md changed; no engine file changed (no
+team-ab).
+
+**Decisions:** the hidden holds add to a stop (holdWorld shifts every world clock), so heldWorldMs subtracts them on
+top of worldMs rather than as scale-0 stops; the screen reads the detail's own roster (no export fetched) and counts
+an account among cached development details only; identity hashes parts of the replay record rather than the
+snapshot entry (that is measure's), so a difference names where to look.
+
+**Problems:** a code edit during the first snapshots:update would have failed it (codeKey); stopped and rerun after
+the commit. The `--fetch` path is untested against the site (no downloads this round).
 
 ## 2026-11-28: Estella and Akekuri logs: four imports, a stage variant's rank, Akekuri's combo SP on its landings
 
@@ -391,33 +428,3 @@ Decisions and why:
 
 Still open: a tail whose effect shows only in later hits' values (a kit stack, a buff the log doesn't list);
 several independent tails per replay (the round limit's 45 casts); abfd's interrupted attack 4.
-
-## 2026-11-27: Friction round 20: guards that say what they cite, tried diffs by function, the build screen by the check's tolerance
-
-Goal: improvement round 20 over seven reports and round 19's backlog (summary:
-docs/friction-done/2026-11-27-round-20.md; what's left: docs/friction/2026-11-27-backlog-after-round-20.md).
-
-Done: TAILKEPT names its guard and whether the hit it cites is the cast's own landing (`[shown-own]`, logged a few ms
-into its frame), `zmdlogs decisions` counts the lines by guard; scripts/tried.ts (`--touching <file>[:<function>]`,
-`index`, `new` refusing an existing name) with a test over docs/tried/; the build-offset screen at 0.3% and 2 damage
-on the median hit (the check's ±1), `offsets --bound` (the factor interval), fit-build's weapon skill levels and
-potentials as scored singles, `hits --json` landing.base (a DEF base's parts) and listedSinces; the by-operator
-table's Largest and Own matched / one-sided (two describing `share own … operator` keys); measure's plain tree first
-under `--variant`, `--several-targets`; engine replayEvent with one pin rule (pinLanding) and TimelineContext.replayed for the record-only fields;
-NOLAND's kit-gap and trigger-group details, the twin's rule on LAND, LogBuffReplay.placement, a defaulted read's
-caller; `verify-at --snapshot`, smoke fixing its code at queue time; `carry --unpark`, the same-listing VALUE flag,
-`cli-ab --hits-zones`.
-
-Decisions: the tail guard's behaviour stays (an exact guard moved 24 logs, docs/tried/2026-11-27-tail-own-landing.diff):
-a test of what it stands for is on the accuracy list, beside a shielded target's landing. A DEF base's parts are
-computed in hitexport.ts from the landing's inputs and the replay's state, not recorded by the engine. The
-offset screen's lower threshold flagged no new development row (Ember's and Alesh's are fitted), so no
-OFFSETS_EXPLAINED entry. Two parked points came back with `--unpark` (round 6's smoke-and-snapshots, round 8's
-layers): smoke's half is done, snapshots' and the layers views are the backlog's points 2 and 3. The moved hold-outs'
-replayed casts by kind and shift, built for the break-placement report, were removed at the lead's word: a split of
-the hold-outs' change by mechanism class (hashed names or not) is what blindness forbids; the backlog's new Declined
-section keeps it from being rebuilt, and docs/design/tests.md "What a hold-out output may say" names it. For the same
-reason the two `share own … operator` keys are left out of the hold-out snapshot (accuracy.ts isHoldoutOmittedKey).
-
-Checks: `npm run snapshots:update`: no log's verdicts moved, every group unchanged, keys added only (`share own matched
-operator <id>`, `share own one-sided operator <id>`); team-ab identical at the engine change (7be8b2d).
