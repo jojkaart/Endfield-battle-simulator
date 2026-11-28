@@ -1,13 +1,20 @@
 // Round "Camille's Vesperwings, Pogranichnik's harasses" (2026-11-27): the evidence of the kit's harass frame 18.
-// Run: node scripts/probes/entities/harass-slowdown.ts (no inputs; prints the mean scale and the late frames).
+// Run: node scripts/probes/entities/harass-slowdown.ts [finish4] (prints the mean scale and the late frames).
 // The harass entity's own slow-down (TimeDilationAction layer 1, 0.4 s, its timeScaleCurve keys): the entity's local
-// time against real time, and when its frame-9 (and frame-25) action comes.
+// time against real time, and when its frame-9 (and frame-25) action comes. `finish4` (2026-11-28, the placement
+// round): the Decisive Assault entity's own curve instead (0.30 → 0.01 at 5% → 1): mean 0.18, frame 25 at 34.9.
 interface Key { t: number; v: number; inT: number; outT: number; mode: number; inW?: number; outW?: number }
-const keys: Key[] = [
+const keysHarass: Key[] = [
   { t: 0, v: 0.30000001192092896, inT: -11.516738891601562, outT: -11.516738891601562, mode: 2, outW: 0.3180464208126068 },
   { t: 0.0549403615295887, v: 0.04303966090083122, inT: 0.11563371866941452, outT: 0.11563371866941452, mode: 1, inW: 0.3333333432674408, outW: 0.6580061912536621 },
   { t: 1, v: 1, inT: 4.710066318511963, outT: 4.710066318511963, mode: 1, inW: 0.24074770510196686 },
 ];
+const keysFinish: Key[] = [
+  { t: 0, v: 0.30000001192092896, inT: -11.516738891601562, outT: -11.516738891601562, mode: 2, outW: 0.3180464208126068 },
+  { t: 0.05000000074505806, v: 0.009999999776482582, inT: 0.1587601900100708, outT: 0.05614498257637024, mode: 3, inW: 0.3333333432674408, outW: 0.7359187602996826 },
+  { t: 1, v: 1, inT: 3.7256243228912354, outT: 3.7256243228912354, mode: 1, inW: 0.3069148659706116 },
+];
+const keys = process.argv[2] === "finish4" ? keysFinish : keysHarass;
 const outW = (k: Key) => (k.mode === 2 || k.mode === 3 ? (k.outW ?? 1 / 3) : 1 / 3);
 const inW = (k: Key) => (k.mode === 1 || k.mode === 3 ? (k.inW ?? 1 / 3) : 1 / 3);
 function value(t: number): number {

@@ -14,6 +14,7 @@ export const lateJoin = (j: PlacedJoin) => j.elapsed > (j.due ?? 0) + CAST_SLACK
 export function twinWords(t: PlacedTwin): string {
   if (t.rule === "batch") return `twin: batch, ${t.targets} targets per landing of the ${t.batch} alike hits at this ms (by ${t.by}: targets.ts batchTargets)`;
   if (t.rule === "later") return "twin: later, the used-up cast's last landing on another target, one flush after it";
+  if (t.rule === "time") return `twin: time, at its slot's landing's ms with the next slot due ${s(t.due ?? 0)} s later, no stop between`;
   if (t.rule === "used") return "twin: used, the cast's landings of its key all logged";
   return "twin: value, its value the slot's again, not the next slot's";
 }

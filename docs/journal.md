@@ -4,9 +4,87 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 198 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 200 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Placement cases: a twin by time, a cast's path end, the Decisive Assault ruled out
+
+**Goal:** three placement leads (docs/open-problems.md): Pogranichnik's Decisive Assault logged 0.21–0.44 s after
+its event against the data's frame 25; f574's one Mi Fu Trail and Mangle on two slugs placed as two casts (50 SP
+spent twice); the placement's log-only casts (f879 95.10, 5082 45.06, 3aa6 125.65 s). Base main at 2f4afbd.
+
+**Done:**
+- **A twin by time** (logcasts.ts placeWith `byTime`, PlacedTwin `time`; tests/target-twins.test.ts): in a fight
+  read per target, a key's second hit at its slot's landing's ms, alike in value, where the next slot is due more
+  than ON_TIME_MS later and no stop holds the world in the ON_TIME_MS before that ms (the log flushes about every
+  100 ms and at a stop's end), is that landing on another target. f574's flurries (frames 3 and 10, alike) at one
+  ms had been one slug's two flurries; now one cast, f574's SP short 110 → 56. It also pairs 9c6e's Barrage Array
+  ticks on its two enemies and 7b54's Laevatain attack 2 at 16.36 s.
+- **A cast's slots end with its path** (logcasts.ts pathEnd; tests/placement-cases.test.ts): a cast's slots, span
+  and reach end at the skill's first InterruptCurSkillAction after its first landing (no jump between skipping it).
+  de6a 132.20 s: Pogranichnik's combo (de6a logs no cast events) had joined the 108.61 s combo, whose path-0 slots ran
+  into the jumped paths' 223–261. d572: Rossi's attack 4 hit_ai (past the jump to 189) no longer joined to a
+  controlled-path cast.
+- Lead 3: all three named casts were fixed 2026-11-27; the log-only list at 2f4afbd is in open-problems ("Log-only
+  landings": Arcane's INT lasers, 8f32's crystal shatter, the Assaults, de6a's combo, now fixed).
+
+**Scoreboard** (snapshots:update against HEAD): verified, development and hold-out unchanged; earlier pending plain
+84.7 → 84.9%, mismatch 4.4%, |damage error| 1.2% (de6a better, plain 298 → 317, damage −0.5 → +0.1%; d572 mixed,
+plain 1039 → 1044, damage 1.3 → 1.4%: its attack 4 a cast of its own); several targets plain 69.4%, mismatch 14.9%,
+|damage error| 14.1 → 14.3% (f574 −26.5 → −27.4%, 9c6e −11.0 → −11.1%: the one cast lands less than the phantom
+second did; f574's replay values run ×0.83 of the slugs' logged ones anyway). No engine or kit change: no team-ab.
+
+**The Decisive Assault (not built):** by event kind, after his combo slash 0.21–0.25 s (one 0.70 s), after a
+teammate's Lift 0.25–0.44 s, after his own Breach 1.04 s; the harasses after a slash 0.6 s. Ruled out: its own
+slow-down (finish4's curve: frame 25 at 34.9 frames, `harass-slowdown.ts finish4`), the final rush's 1 s slow-down as
+a world-wide one (teammates' hits at their kit frames across it in d4fb and 7e19; the buff is on the enemy), an
+earlier trigger (none 1.0–1.2 s before six of the nine). A frame from the logs alone would be a fit.
+
+**Dead end:** 8f32 38.50 s (the Endministrator's crystal shatter, −1.28%): Rossi's combo 2 hit_2 at 36.11 s taken
+for a combo 3 perfect strike (its Lift 2.4 s early, before the crystals). A rule keeping it on the open combo by its
+value was dropped unmeasured: the perfect strike's multiplier (`consumed`-scaled) has no nominal scale, so no value
+rule can compare it; next a lower bound for such multipliers. Friction: docs/friction/2026-11-28-placement-cases.md.
+
+## 2026-11-28: Breaks inside a combo's slow-down; Akekuri's ultimate as an ultimate
+
+**Goal:** docs/open-problems.md "The hold at a Stagger break": 458b 87.47 s (Akekuri's combo INSIDE her ultimate),
+whether and how a break inside a combo's slow-down holds, a press inside a hold.
+
+**Found:**
+- 458b 87.47 s is the placement of Akekuri's ultimate: its hitless event at 84.37 s was read as the press
+  (castassembly.ts loggedCastStart wants another's hit within 500 ms after it), though the team's next hits fall
+  inside the 1.83 s stop a press there would make. From its stop's end (82.53 s) the combo clears the ultimate's
+  cantCastSkill channel (frames 0–119), and the log's team ATK layer starts (84.47, 86.03, 87.14 s) are the ultimate's
+  SP grants at its frames 59, 86, 119. castassembly.ts was the placement agent's file: held back,
+  docs/tried/2026-11-28-ult-event-stop-end-held-back.diff (earlier pending 84.7% either way: 04d4 +2, 3aa6 mixed,
+  458b −3).
+- Akekuri's ultimate file says skillSpecification 0, the only ultimate of 34 not 5: the engine gave it a plain skill's
+  interrupt priority and no ultimate's stop (458b 158.53 s INSIDE her combo; a break inside her stop held by the
+  engine, not by the replay's stop list). skillData.ts ultimateSpecification reads it as 5.
+- A break inside a combo's slow-down holds, on top of it: engine assumption `break-hold-combo` (`added`: the running
+  slow-downs pause through the hold; `lowest`, the earlier rule; `none`), clock.ts addedHold and holds.ts breakStops.
+  scripts/probes/stagger/break-combo.ts: 18 development breaks inside a combo's slow-down, most at its end where the
+  readings differ by a frame or two; the stamped-inside ones (4360, c4f3, d4fb, f574, 458b 85.57 s) fit `moments`, the
+  next moment being the clock the hold released.
+
+**Measured** (`measure --variant`, on 2f4afbd): `added` against `lowest` development 00ae +2, 9090 +1, hold-outs one +2
+and one −1 plain, 458b damage 0.6 → 0.5%; `none` hold-outs 82.5 → 82.4% (one −7), development 00ae −2, 9090 −3. The
+specification fix alone: 458b 1093 → 1087 (its ultimate's third SP grant, from the misplaced 84.37 s start, at 88.33 s
+displaces the combo's 88.20 s team ATK layer); with the held-back diff 1089, the rest unchanged: the layers then start
+where the log has them (88.20, 88.68 s) and end 0.3 s before the log's at 111.0–111.6 s (the base's plain there came
+from a layer the log's starts contradict: the ultimate's grant at 88.93 s).
+
+**Decisions:** `added` the default (the breaker's own clocks are held by its break, and a combo's slow-down is an
+action on its caster's timeline; measured better than `lowest`, `none` worse). The specification read as 5 (the
+data's 33 other ultimates, the skill's own time stop, 458b 158.53 s); its 458b cost explained above, recovered in part
+by the held-back diff. A press in a hold stays undecided (9847 57.64 s's event lag fits both).
+
+**Scoreboard** (`npm run snapshots:update`, against 2f4afbd): SCOREBOARD-PENDING. **Team numbers** (team-ab against
+2f4afbd): TEAM-AB-PENDING.
+
+**Left:** the held-back diff for the lead; 458b's layer ends at 111 s (world holds between 88.7 and 111.5 s);
+Wulfgard's combos pressed inside his own ultimate (1a77, 8056: INSIDE 26–41 frames, the ultimate's hits running on).
 
 ## 2026-11-28: Team SP: Purrchena's counter presses, the SP readings as assumptions
 
@@ -307,103 +385,3 @@ Checks: `npm run snapshots:update` at 95a4f66: every group "unchanged", "No log'
 the compiled game data's sha1 the same at HEAD and after the compiler move (no engine number can move: team-ab not
 needed); every development log's keepPrevious flags the same under the one rule (10458 casts); cli-ab identical on
 the views touched.
-
-## 2026-11-27: Casts their operator's next press interrupts: a channel's end
-
-Goal: the tail-cut round's open part (docs/journal/2026-11-27-19-tail-cuts-what-the-shown-hit-guard-stands-for.md):
-abfd 64.10 s, two logged Si attack-4 hits cut with an attack 4 her next one interrupted at 64.07 s; more generally,
-logged hits that land after their operator's next cast started.
-
-Survey (a scratch pass over every development and multi-target log's placement, then every replay's NOLAND lines):
-of the logged hits placed into a cast after another of their operator's casts started, nearly all are as they should
-be (detached hits, combos beside, a chain step's hit at its own frame that the next step's placed start precedes:
-keepPrevious keeps them). The replay cut a logged landing with the next cast in 10 places in 6 logs: abfd 64.10 s
-(the channel below), fc63 94.79 s and c779 70.73 s (a hitless event cast between, below), and three multi-target
-logs (69e7, 7b4e, b74c: Si's batched several-target hits, not followed).
-
-Found and done:
-- **A channel's end.** Si's attack 4 is a ChannelingAction from frame 5 to 40, at most 6 ticks per target 0.1 s apart
-  (the kit's frames 5–20 are the earliest; an enemy in reach late takes them up to frame 40), and its skill lasts
-  552 frames, so the placement's "slots to come within the skill's action" joined ticks 1.8 s late: abfd's six ticks
-  at 63.77–64.35 s (the cap's six) took the 61.79 s cast's four slots left and made a second cast the replay then cut.
-  The kit compiler now records a capped channel's end on its ticks (CompiledLanding.latest → KitHit.latestFrame, not on
-  what a tick's buff deals later: Rossi's combo afterhits); placeWith joins no tick of one channel past it
-  (`pastChannel`: by CHANNEL_SLACK_MS 400 ms, or by ON_TIME_MS with a press of the operator's between; not across an
-  ultimate's event, whose stop the pass doesn't have yet: c83c 92.48 s). abfd 63.77 s and c3c7 33.64 s (past by
-  0.63 s) and 60.64 s (0.17 s, a battle press between) are new casts; Liino's attack 2 (9090 93.91 s) and Arclight's
-  attack 4 (4bfc 52.23 s), 0.21–0.23 s past with no press, stay. LoggedCast.pastChannel records it; its casts-view
-  line is held back (docs/tried/2026-11-27-channel-decision-line.diff: views.ts was the statuses agent's file).
-- **A channel's ticks in turn** (drivers.ts replayCast): an unpinned tick after a pinned late one comes as late, and
-  none past the channel's end. c3c7 32.33 s: the 6th tick sat at its kit frame beside the 5th, pinned 3 frames late,
-  so the tail cut didn't take it for a tail; 7910's Tangtang shots past their channel are gone.
-- **The previous cast past a hitless one** (castassembly.ts ordered): keepPrevious compared each cast with the one
-  just before it, a cast made from a log event alone too (a press that did nothing, a kit buff's tick the replay
-  skips), so the cast before that lost its later logged hits: fc63 94.79 s (Arcane's combo event, an Imprisonment
-  tick), c779 70.73 s.
-
-Measured (`npm run measure -- --at HEAD --base 5b08218 --split hunks`) and the scoreboard (`npm run
-snapshots:update`): development plain 84.3%, |damage error| 1.2 → 1.3% (7910 −0.8 → −1.2%, c779 0.8 → 0.9%, +1
-plain); verified 1.5 → 1.4% (0eef 1.3 → 1.1%); earlier pending plain 84.4%, 1.2% (abfd 412 → 414 plain, 2.2 → 2.1%;
-4e36 better; c3c7 2.1 → 2.2%); several targets unchanged; hold-out unchanged (one log's totals moved, no verdict).
-Worse, explained: 7910 is under-predicted and the replay-only Tangtang shots that offset part of it were past their
-channel; c3c7's three new attack-4 tail cuts use up the tail cut's 8 rounds, so its 101.77 s attack 1 tail stays
-(TAILKEPT `rounds`, the known limit); c779's newly landed hit is matched, its total over by 0.1 point more.
-
-Dead ends: the first version marked every landing a channel's tick body made, a buff's later ticks too (Rossi's
-afterhits got frame 25 as their end: 9a80 280 → 206 plain, 0c14 −54) and applied the bound to a skill's separate
-one-tick channels (Laevatain's normal_skill_during_ult: db87 236 → 199); a slack of 150 ms split Liino's and
-Arclight's channels, and a 400 ms one alone split c3c7's five ticks at their fourth (a cascade into the next cast).
-
-Still open: the multi-target cut landings; the CUTS record still flags an interrupt whose hits keepPrevious keeps
-(c779 70.67 s; replayrun.ts castFlag, the other agent's file); 4a64 16.93 s (Arcane's batched attack 4s, a value
-question, not this shape); the tail cut's round limit.
-
-## 2026-11-27: Statuses per target: a second replay with each landing on its target
-
-**Goal:** on main at 5b08218, beside the interrupted-casts agent: build the design of docs/design/data.md "Statuses
-per target" for the several-targets row (6339, 7b54, 9c6e), checking the log's `poise.bar` per target before the
-Stagger part; the DEATH lines from the replay's own record and a view of its status record per target (the
-target-statuses friction report, points 2 and 1).
-
-**Done:**
-- **Engine (replay only):** TimelineScenario.landingTargets and TimelineState.targets (timeline/targets.ts): the
-  enemy's statuses per target, `enemy` the current one's. A landing lands on its first target (by ref, else operator,
-  event and frame ±1; none: the target hit last) and applies what it inflicts on its other targets too; a burst and a
-  status tick run on their own target; the world's holds and stops shift every target's statuses (clock.ts shiftEnemy;
-  a freeze the current one's); targetDies `target` runs the death's triggers on that target's statuses, then ends
-  them. Records: LandedHit.target / otherTargets, ReactionRecord.target, PendingBurst.target (search KeyRules).
-- **Logs:** replay assumption **target-statuses** (`one`; `per-target`, the default): logcheck.ts logBuffReplay makes
-  the replay again from the first one's assignment (enginecheck.ts replayTargets: each landing's targets, each kill's
-  target; targets.ts targetDeaths one death per killed target); the check reads a hit at its target's Corrosion /
-  Electrification / Breach levels (atItsTarget), the second assignment each candidate at its own statuses (statuses
-  values there, not units). holdinputs.ts statusInstances and replayrecord.ts's status traces read every target
-  (engine everyTarget): 9c6e's Corrosion on a swapped-out target had missed its hidden holds (plain 302 → 310).
-- **Views:** BuffReplay.deaths (buffreplay.ts, committed alone for the placement agent); DEATH lines from it, every
-  death with its target and the triggers not run (decisionsview.ts deathDecisions); `efsim zmdlogs statuses <fixture>
-  [--target n]` (views.ts statusesView): each burst, reaction, consumption and tick with its target, its damage and
-  the target's statuses after it, the deaths between. tests/target-statuses.test.ts.
-
-**Found (the Stagger, checked, not built):** the logged bar is its hit's target's: a slug's first logged hit reads its
-full bar (60) less its Stagger and its later hits count down (6339 14.80–19.91 s, 7b54 29.50–31.05 and 33.46–36.84 s),
-which one bar can't give; the twins at one ms carry one bar between them (9c6e 52.49 s: 73 / 83 on both targets, one
-target's 103 − 20 − 10). With 2 Staggered replay landings in the three fights (the log's 1), a bar per target would
-move a hit's damage and 7b54's 46.47 s break at most: left (counts: 9c6e 32 of 53 poise hits consistent per target,
-26 with one bar; 6339 8 / 9 and 7b54 7 / 7, the target changes falling on fresh slugs).
-
-**Scoreboard** (`npm run snapshots:update`): the several-targets row plain 72.1 → 75.6%, mismatch 14.5 → 11.2%, mean
-|damage error| 7.6 → 10.4%, replay-only 13.13 → 12.10%, log-only 19.53 → 17.40%; 7b54 plain 121 → 151 (mismatch 76 →
-46), −1.0 → +4.0%; 6339 plain 121 → 122, −10.4 → −16.1%; 9c6e plain 314 → 310, −11.3 → −11.0%. Verified,
-development, earlier pending and the hold-outs unchanged (no other log reads it).
-
-**Decisions:** `per-target` the default though the row's mean |damage error| rises: both one-sided shares fall, and
-each moved part goes the log's way: 6339's 25.03–28.47 s Combustion ticks were a dead slug's (−3.3 points of
-replay-only), 7b54's 16.36 s Si combo twins now fit their slugs (−7.3 points of log-only), Laevatain's Melting Flame in
-7b54 comes from each slug's own Heat (her 16–31 and 39–44 s hits match); what they had offset is left uncovered (6339's
-Si ink at 19.91 s, 7b54's shielded slugs' replay-only landings), the shape of the tail cuts' adoption. One loss:
-6339's 29.26 s Laevatain combo hit (−1.9 points), whose `if` needs Combustion or Corrosion on its slug, which only a
-landing the log doesn't show can have given. The second assignment holding each hit to its first-pass target
-(enginecheck.ts SECOND_PASS_TARGETS `fixed`, kept for `--set`) measured worse (7b54 plain 151 → 142).
-
-**Left:** a target's statuses from landings the log doesn't show (6339's 29.26 s combo; 9c6e 74.47 s Liino's ultimate
-on T6 without the log's Electrification); 7b54's 36.08–36.84 s Laevatain battle skill (×1.2–1.3 high, Scorching Heart
-from 31.03 s); 9c6e's 52.80 s Typhoeus burst, whose two targets' values no status gives; the Stagger per target.
