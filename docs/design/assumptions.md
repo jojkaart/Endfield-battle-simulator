@@ -109,6 +109,14 @@ which holds no clock the logs show (86 node crossings: casts and ticks across th
 - `16f`: measured as 12f but development mean |damage error| 2.9 → 3.1% (c83c75d02a85 1.7 → 6.7%: Si's 55.83 s combo
   keeps its final, a tail cut's threshold), hold-outs 6.3 → 6.5%
 
+## break-hold-combo
+
+A break inside a combo's slow-down (2026-11-28; scripts/probes/stagger/break-combo.ts): MEASURED-PENDING
+
+- `lowest`: the default (as two slow-downs since 2026-11-27)
+- `added`: MEASURED-PENDING
+- `none`: MEASURED-PENDING
+
 ## break-hold-place
 
 The log stamps most breaking hits at the hold's start (the next moment 0.45 s or more later), some inside it or at its

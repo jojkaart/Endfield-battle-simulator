@@ -1,0 +1,37 @@
+ult event stop end held back (2026-11-28, the break-combo round): an ultimate's hitless cast event at its stop's end when another's hit falls inside the stop a start at the event would make.
+
+What it does: castassembly.ts loggedCastStart: an ultimate's cast event with no hit of its own starts the stop's
+length before the event when another operator's hit comes from the event to the stop's length (less EDGE_MS) after
+it, not only within RESUME_MS (500 ms). 458b03609665 84.37 s: Akekuri's event, the team's next hits 1.20 s after it
+(85.57, 85.70, 86.46 s), inside the 1.83 s a stop from the event would hold; made at 82.53 s, her combo at 87.47 s
+(placed from its landings) is no longer INSIDE her ultimate (it came 44 frames before the window at frame 129). The
+log's own buff starts agree: her Thermite Cutter team ATK layers since 84.47, 86.03 and 87.14 s are the ultimate's SP
+grants at its frames 59, 86 and 119 (ult_sp_1..3) from 82.53 s, not from 84.37 s (86.3, 87.2, 88.3 s), and her SQUAD!
+ON ME! ATK (frames 0 to 150) is unlisted from 88.10 s. Every other Akekuri ultimate event (458b 160.36, 227.37 s;
+805687f00250 17.06, 127.11, 188.65 s) is already read at its stop's end.
+
+Measured (measure --base HEAD on 2f4afbd): verified, development, hold-outs and several-targets unchanged; earlier
+pending plain 84.7% either way: 04d401ad257e 597 → 599, 3aa6ab93bad4 mixed (419 → 420, mismatch 19 → 17),
+458b03609665 1093 → 1090 (its team ATK layers at 85.57–88.68 s plain, six hits; four at 111.04–111.61 s, the
+layers' end, assumed: the hidden holds placed otherwise once the 85.57 s break is outside an ultimate's stop and held
+inside Laevatain's combo slow-down).
+
+Held back, not dropped: castassembly.ts was the placement agent's file this round; the lead applies it after the
+merge. With it the 85.57 s break sits inside a combo's slow-down (engine assumption break-hold-combo).
+
+diff --git a/packages/logs/src/castassembly.ts b/packages/logs/src/castassembly.ts
+index 906bd83..96ef6aa 100644
+--- a/packages/logs/src/castassembly.ts
++++ b/packages/logs/src/castassembly.ts
+@@ -365,7 +365,10 @@ function loggedCastStart(data: GameData | undefined, lc: { t: number; operator:
+   // resuming 83–356 ms after it in 012ae1c80ae6, c83c75d02a85, db8711232de9, e9896c8d02be, f8793bc8aea2, 2b013866dfa3.
+   // Without one (e82d45c46040: Xaihi's at 3896 ms after 2315 ms, her Amp not yet on Arcane's hit at 7022 ms) the event is
+   // the cast.
+-  if (!hits.some((h) => h.operator !== lc.operator && h.t >= lc.t - FLUSH_MS && h.t <= lc.t + RESUME_MS)) return lc.t;
++  // Another's hit inside the stop a start at the event would make says the same (458b03609665: Akekuri's at 84.37 s, the
++  // team's next hits 1.20 s after it, inside the 1.83 s such a stop would hold; from the event her combo at 87.47 s, placed
++  // from its landings, would come 44 frames inside the ultimate's uncuttable frames).
++  if (!hits.some((h) => h.operator !== lc.operator && h.t >= lc.t - FLUSH_MS && h.t <= lc.t + Math.max(RESUME_MS, length - EDGE_MS))) return lc.t;
+   const covering = stops.filter((x) => {
+     if (x.operator === lc.operator) return false;
+     const [a, b] = [(x.start * 1000) / FPS, ((x.start + x.scales.length) * 1000) / FPS];

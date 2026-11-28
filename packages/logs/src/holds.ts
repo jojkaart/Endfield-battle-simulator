@@ -280,10 +280,26 @@ const BREAK_EDGE_MS = 1000 / FPS;
 export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[], assume: Readings | undefined): TimeStop[] {
   const frames = breakHoldFrames(assume);
   if (frames <= 0) return [];
-  return breakHoldStarts(fx, frames, assume).flatMap(({ from: f }) => {
-    if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) return [];
-    return [{ start: f, scales: new Array<number>(frames).fill(0), operator: "", skillId: "stagger-break", kind: null }];
-  });
+  const combine = readingOf(assume, "break-hold-combo");
+  const out: TimeStop[] = [];
+  for (const { from: f } of breakHoldStarts(fx, frames, assume)) {
+    if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) continue;
+    // Engine assumption break-hold-combo, as timeline/clock.ts breakHold: a break inside another running slow-down.
+    const others = [...stops, ...out];
+    const scaleAt = (g: number) => others.reduce((m, st) => (g >= st.start && g < st.start + st.scales.length ? Math.min(m, st.scales[g - st.start] as number) : m), 1);
+    const inside = scaleAt(f) < 1;
+    if (inside && combine === "none") continue;
+    // `added`: every clock loses the hold's frames on top of what the running ones take, a stop at 0 long enough that
+    // the world time it takes beyond theirs is its frames (their rest isn't moved here, as the engine moves it).
+    let length = frames;
+    if (inside && combine === "added") {
+      let extra = 0;
+      length = 0;
+      while (extra < frames - 1e-9) extra += scaleAt(f + length++);
+    }
+    out.push({ start: f, scales: new Array<number>(length).fill(0), operator: "", skillId: "stagger-break", kind: null });
+  }
+  return out;
 }
 
 /** One tick series of a fight (tickChains): its event, operator and target, and its chains of ticks (ms, in order). */

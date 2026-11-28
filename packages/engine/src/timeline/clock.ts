@@ -118,8 +118,32 @@ export function breakHold(ctx: TimelineContext, st: TimelineState, frame: number
   // A replay holds only at the breaks its log shows (TimelineScenario.loggedBreaks).
   const logged = ctx.scenario.loggedBreaks;
   if (!placed && logged && !logged.some((f) => Math.abs(f - frame) <= LOGGED_BREAK_FRAMES)) return st;
+  // Engine assumption break-hold-combo: a break inside another running slow-down (a combo's, another break's hold).
+  const running = st.slowdowns.filter((x) => frame >= x.start && frame < x.start + x.scales.length && (x.scales[frame - x.start] as number) < 1);
+  const combine = running.length > 0 ? engineReading(ctx.scenario, "break-hold-combo") : "lowest";
+  if (combine === "none") return st;
+  if (combine === "added") return addedHold(ctx, st, frame, n);
   const timing: SkillTiming = { durationFrames: 0, exclusiveFrames: 0, windows: [], channels: [], specification: 0, keepsChain: true, slowdowns: [{ from: 0, scales: new Array<number>(n).fill(0) }], jumps: [], ends: [] };
   return slowDown(ctx, st, BREAK_HOLDER, timing, frame);
+}
+
+/**
+ * A break's hold on top of the slow-downs running at `frame` (engine assumption break-hold-combo `added`): the world and
+ * every operator lose its `n` frames whatever holds them, and the running slow-downs pause through it, their rest
+ * starting `n` frames later (what they still take was shifted when each began, so it moves with everything else).
+ */
+function addedHold(ctx: TimelineContext, st: TimelineState, frame: number, n: number): TimelineState {
+  const slowdowns = st.slowdowns.flatMap((x) => {
+    if (!(frame > x.start && frame < x.start + x.scales.length)) return [x.start >= frame ? { ...x, start: x.start + n } : x];
+    const k = frame - x.start;
+    return [
+      { ...x, scales: x.scales.slice(0, k) },
+      { ...x, start: frame + n, scales: x.scales.slice(k) },
+    ];
+  });
+  let s: TimelineState = { ...shiftWorld(st, frame, n), slowdowns: [...slowdowns, { start: frame, scales: new Array<number>(n).fill(0), exempt: BREAK_HOLDER }] };
+  for (const b of ctx.scenario.team) s = shiftOperator(s, b.operator, frame, n, true);
+  return rebaseCooldowns(ctx, st, s, frame);
 }
 
 /** The caster of a break's hold (breakHold): no operator, so it holds every one. */

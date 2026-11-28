@@ -160,6 +160,16 @@ export const SIMULATION_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "break-hold-combo",
+    question: "How does a Stagger break's hold combine with a combo's slow-down running at the break (timeline/clock.ts breakHold)?",
+    default: "lowest",
+    readings: {
+      lowest: "as any two slow-downs: the lowest scale counts where they overlap, so inside a combo's plateau (0.01) the hold adds almost nothing for the operators the combo holds (2026-11-27)",
+      added: "on top: every clock is held the hold's frames whatever runs, and the running slow-downs resume after it (their rest that many frames later)",
+      none: "no hold at a break inside another slow-down than an ultimate's stop (a combo's slow-down or another break's hold)",
+    },
+  },
+  {
     id: "combo-window-count",
     test: "10",
     question: "When several events open (or refresh) a combo window, which count does the combo read (ValueExpr eventCount; Si's final hit: the infliction stacks consumed): the highest or the latest (timeline/actions.ts openCombo)?",
