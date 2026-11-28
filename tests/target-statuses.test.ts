@@ -105,12 +105,12 @@ describe("DEATH lines: every death the replay made (6339), not only the moves", 
 // Round 21 (the statuses-per-target report point 2): the check's target ids against the replay's landings' targets
 // (HitRecord.target `landing`, `≠ landing` in `zmdlogs hits`). Numbered in order of first hit (SECOND_PASS_TARGETS
 // `free`), 7b54's second assignment had 147 of 210 hits' targets otherwise than their landings, a candidate read at
-// another slug's statuses; `mapped` (a new target takes an id its landing has, targets.ts AssignOptions.ids) leaves
-// the hits the second assignment puts on another slug than the first did: 7b54 from 16.36 s (Laevatain's attack 2
-// at 1701 on a slug of its own, its units decided otherwise in the second replay, so the 19.59 s kill and Si's
-// 20.21 s attacks follow), 55 of 210.
+// another slug's statuses; `mapped` (a new target takes an id its landing has, targets.ts AssignOptions.ids) left
+// the hits the second assignment puts on another slug than the first did, 55 of 210 (from 16.36 s: Laevatain's
+// attack 2 at 1701 on a slug of its own, so the 19.59 s kill and Si's 20.21 s attacks follow), and a third replay on
+// the second assignment (logcheck.ts TARGET_REPLAYS) gives the same assignment again: none.
 describe("the check's targets are the replay's landings' targets (hits --json target.landing)", () => {
-  it("6339: every hit with both; 9c6e: all but one; 7b54: all but the hits the two assignments put on other slugs", () => {
+  it("6339 and 7b54: every hit with both; 9c6e: all but one", () => {
     const one = targetMismatches(hitRecords(data, fixture("6339")));
     expect(one.both).toBeGreaterThan(100);
     expect(one.differ).toHaveLength(0);
@@ -120,14 +120,13 @@ describe("the check's targets are the replay's landings' targets (hits --json ta
     const records = hitRecords(data, fixture("7b54"));
     const slugs = targetMismatches(records);
     expect(slugs.both).toBeGreaterThan(200);
-    expect(slugs.differ.length).toBeLessThanOrEqual(55);
-    // Every hit whose target the second assignment made new on it is on its landing (the id is the landing's), but
-    // where its landing's targets were all taken (a new id).
+    expect(slugs.differ).toHaveLength(0);
+    // Every hit whose target the assignment made new on it is on its landing (the id is the landing's).
     const firsts = new Map<number, (typeof records)[number]>();
     for (const r of [...records].sort((x, y) => x.t - y.t)) if (r.target && !firsts.has(r.target.index)) firsts.set(r.target.index, r);
     const made = [...firsts.values()].filter((r) => r.target?.landing !== undefined);
     expect(made.length).toBeGreaterThan(3);
-    expect(made.filter((r) => !(r.target?.landing ?? []).includes(r.target?.index ?? -1)).map((r) => r.t)).toEqual([16360, 19592]);
+    expect(made.filter((r) => !(r.target?.landing ?? []).includes(r.target?.index ?? -1)).map((r) => r.t)).toEqual([]);
   });
 });
 
