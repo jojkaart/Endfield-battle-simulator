@@ -4,9 +4,58 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 201 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 202 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Placement paths: a value rule on multiplier bounds, slots cut to a path, hitless ultimate stops
+
+**Goal:** the three placement entries round 23 added to the backlog's accuracy list
+(docs/friction/2026-11-28-backlog-after-round-23.md): a cast's slots cut to its path, a value rule on a
+consumed-scaled multiplier's bounds (8f32 38.50 s), the unplaced ultimate events' stops at the cast assembly's
+reading (458b 84.37 s); then 9c6e's 78.88 s array tick pair. Base main at 967d460; files: packages/logs/src/
+logcasts.ts, castassembly.ts, placementwords.ts, the new ultimateevent.ts.
+
+**Done:**
+- **A landing kept on its cast by value** (logcasts.ts keptByValue, Group.bounds from multiplierBounds, PlacedJoin
+  `value`): a landing a newer cast of its operator's would take off its open cast (`superseded`) stays on it where
+  its value, against the cast's last landing with crits taken out, fits the next slot's multiplier within
+  VALUE_TOLERANCE and lies outside every slot of the group the key's choice would open (widened by the same). The
+  choice is now worked out lazily before the join (openChoice). 8f32 36.11 s: Rossi's combo 2 hit_2 (×0.60, as hit 1)
+  against a combo 3 perfect strike (×3.45–11.73): kept, so the 38.50 s perfect strike opens the combo 3, its Lift at
+  38.50 s, and the Endministrator's crystal shatter is made.
+- **A cast's slots cut to its first landing's path** (pathSlots, onPathFrom): after the first landing, a slot on the
+  same path before its end, or on a path a jump on it (at or past the first landing) goes to; the slots before it
+  stay as they are (PlacedHit.index counts in the whole list). The world time from the first landing is measured
+  against its own slot (`head`), not slot 0, for a jumped first landing; realignByValue assigns one path's slots only.
+  8f32 2.02 / 10.02 s: Alesh's 10.02 s hook and slam had joined her 1.29 s combo 7.4 s late as its Rare Fin slots;
+  now a combo of their own, and the 2.02 s cast the Rare Fin path by value.
+- **A hitless ultimate's unplaced event stop** (unplacedCastStops): from ultimateEventRead's start against the placed
+  casts' stops (458b: Akekuri's from 82.53 s, not 84.37 s). ultimateEventRead moved to ultimateevent.ts (a move:
+  logcasts.ts can't import castassembly.ts, which imports it); castassembly.ts re-exports it.
+- **The second pass's stops with the ultimate merge** (passStops, ultimateMerge): the first pass's stops were built
+  without Placement.merge, so 9c6e's Liino ultimate (cast at 67.85 s) placed again from her song's 78.88 s beat made a
+  stop 76.30–78.87 s, a frame before the Barrage Array's first tick pair: `byTime` saw a stop's end that could batch
+  it. Now one cast: the pair a twin by time, the array's ticks in turn.
+
+**Measured** (`measure --at HEAD --base`, one commit at a time): the value rule 8f32 plain 395 → 405, damage +2.1 →
+−0.2%; the ultimate stops no verdict moved (4bfc's 144.37 s volley pair placed elsewhere); the path cut 8f32 405 → 409,
+one hold-out mixed (+1 plain, −1 assumed, its mean per-hit error closer); the merge 4bfc 870 → 876, damage −0.6 →
++0.1%, 9c6e other (combo kind +7.6 → +7.0%, Typhoeus −12.2 → −12.3%, damage −11.1% both). Nothing worse.
+
+**Scoreboard** (`npm run snapshots:update`): verified unchanged; development plain 84.2 → 84.3%, mismatch 4.6%,
+|damage error| 1.3 → 1.2%; hold-outs plain 82.5 → 82.6%, mismatch 5.1%, |damage error| 5.9%; earlier pending plain
+84.9 → 85.0%, |damage error| 1.2%; several targets unchanged but 9c6e's totals. Log-side only (packages/logs): no
+simulated fight moves, so no team-ab.
+
+**Decisions:** the value rule asks the choice the placement would make (not every other group), since a new cast of
+the cast's own skill fits the same value; it only overrides `superseded`, not `pressed`, the channel end or `used`.
+The path cut stays a prefix of the slot list, so the slot indices realign and the replay read stay valid. The pass
+merge is the final placement's own rule applied to the stops pass 2 reads; castTimeStops' other callers (the cast
+assembly's stop list) keep their list unmerged (not measured: their merge would move the replay's stops).
+
+**Left:** 458b's 111 s layer ends 0.3 s early (world holds 88.7–111.5 s: not the ultimate's stop); the Decisive
+Assault's frame (open, a fit only).
 
 ## 2026-11-28: Improvement round 23: why a change moves a log, the replay's SP as a record, measuring without re-measuring
 
@@ -364,38 +413,3 @@ fight the same.
 **Left:** a freeze on a twin's other target holds the first target's clock (landing.ts runs the other target's
 control event after the first is current again); no such freeze in a log yet (docs/open-problems.md "statuses per
 target").
-
-## 2026-11-28: needed on the check's pairing, a channel's end in a detached file
-
-Goal: two entries of the accuracy list in docs/friction/2026-11-27-backlog-after-round-21.md: cutTails' `needed` on
-the replay's own pairing, and a capped channel inside a detached file (both left by round 21 as moving verdicts).
-
-Done (9da9d4a, 592f7c7):
-- **`needed` on the check's pairing** (replayrun.ts loggedShown, cutTails): a kit hit's landing is now
-  landingpairs.ts pairKitLandings' (pinned, else a landing of its operator with its event within 16 frames, each once);
-  the statuses' half stays loggedShown's own. Alone that kept tails it shouldn't: a logged hit before the cut that the
-  pairing had given one of the tail's unlogged landings counted as lost (c83c 47.17 s: eight batched Arcane attack-4
-  hits, four the placement's twins, paired with the 47.23 s cast's landings at 47.50 / 47.60 s; 4a64 16.93 s, 9847
-  44.53 s): hold-out |damage error| 5.9 → 6.8%, 4a64 +2 plain. So only a logged hit after the cut counts: the tail's
-  landings and what they set off come after it. With both, and with the filter alone on the old rule, no log's
-  verdicts or totals move. abfd's 64.10 s case is gone since round 21's channel end.
-- **A channel in a detached file gets its end** (skillCompile.ts drops `!detached`): Tangtang's ultimate stare to
-  frame 196 (b7b3 and 7910 have no tick past it once the stops between are out: b7b3's 15.28 s tick sits after Last
-  Rite's 12.30–15.13 s ultimate stop), Rossi's wolves, Zhuang Fangyi's attack-5 and ultimate attack-3 ranges (single
-  landings: nothing reads their end). Typhoeus's Barrage Array (frame 215) is marked in her kit, `dataOverride`
-  `latest`, now a DataField (kitMatch.ts compares the kit hit's latestFrame with the data, schema enum too): the logs
-  have its 18 ticks up to 6.4–8.0 s of world time after the first with no combo press between, and the end split one
-  array into two combos six times (00ae, fc63; unmarked: 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%, hold-out plain −6,
-  docs/tried/2026-11-28-barrage-array-channel-end.diff). With the mark nothing moves.
-
-Checks: measure against 60fa436 for each change (no verdict or total moved anywhere: development plain 84.3%,
-|damage error| 1.3%; hold-out 82.5%, 5.9%; earlier pending and several targets unchanged); `npm run smoke` passed;
-team-ab identical for both teams (the owner's and Typhoeus's: every hit and a rules seed the same, the 32-seed
-numbers unchanged); snapshots:update for the kit digests (Tangtang, Rossi, Zhuang Fangyi).
-
-Decisions: the channel's end per kit hit, not per file kind: the data's end where the logs agree, a reasoned mark where
-they don't, as any other data field. The after-cut filter is not a fit: a hit logged before the cut can't be what a
-later landing set off.
-
-Still open: what runs Typhoeus's array past its entity's 180 frames (its entity held by stops the placement's world
-time leaves in, or a longer life; its first tick also 0.5–0.7 s after the press against the kit's 1.17 s).

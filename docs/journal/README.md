@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-28: Placement paths: a value rule on multiplier bounds, slots cut to a path, hitless ultimate stops](2026-11-28-10-placement-paths-a-value-rule-on-multiplier-bounds-slots-cut.md)
 - [2026-11-28: Improvement round 23: why a change moves a log, the replay's SP as a record, measuring without re-measuring](2026-11-28-09-improvement-round-23-why-a-change-moves-a-log-the-replay-s.md)
 - [2026-11-28: Breaks inside a combo's slow-down; Akekuri's ultimate as an ultimate](2026-11-28-08-breaks-inside-a-combo-s-slow-down-akekuri-s-ultimate-as-an.md)
 - [2026-11-28: Placement cases: a twin by time, a cast's path end, the Decisive Assault ruled out](2026-11-28-07-placement-cases-a-twin-by-time-a-cast-s-path-end-the.md)

@@ -262,18 +262,26 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   path (and the twin and value rules reading `path` instead of a rule per case: Rossi's combo 3, Purrchena's shielded
   combo, Laevatain's battle skill) moves every jump-pathed cast's later slots. Measure: `--split hunks` beside de6a's
   Pogranichnik combo (fixed by pathEnd, the check that the tag path gives the same).
+  Closed by worktree-agent-a44e9ee2d8c7368e5, f337fa7: logcasts.ts pathSlots / onPathFrom (a slot after the first on
+  its path or on a jump's after it; the world time from the first landing's slot; realignByValue on one path); de6a
+  unchanged, 8f32 plain 405 → 409 (Alesh's combos), one hold-out +1 plain / −1 assumed.
 - **A value rule on a consumed-scaled multiplier's bounds** (docs/friction-done/2026-11-28-placement-cases.md point 3,
   the rule): logcasts.ts multiplierBounds (round 23) gives a hit whose value reads `consumed` its least and greatest
   multiplier (consumed 0 and 4); a value rule that rules out a slot whose least multiplier is above the hit's value
   (8f32 36.11 s: Rossi's combo 2 hit_2, 12,877, placed as a combo 3 perfect strike, its Lift 2.4 s early, the
   Endministrator's 38.50 s shatter lost, −1.28% of the fight; the rule written and dropped then had no bound) moves
   verdicts: measure, snapshots:update.
+  Closed by worktree-agent-a44e9ee2d8c7368e5, 4e0f3a6: logcasts.ts keptByValue (Group.bounds; a superseded landing
+  kept on its cast where the next slot fits its value and the chosen other group's slots can't); 8f32 plain 395 → 405,
+  damage +2.1 → −0.2%, the shatter made.
 - **The placement's unplaced ultimate events at the cast assembly's start** (docs/friction-done/2026-11-28-break-combo.md
   point 2, the rest): castassembly.ts ultimateEventRead (round 23) is the one reading of a hitless ultimate's event
   (press or stop's end) that loggedCastStart and the replay view's EVENT line read; logcasts.ts unplacedCastStops
   still starts each such event's stop at the event (458b 84.37 s: Akekuri's ultimate made at 82.53 s, its stop in the
   placement's list from 84.37 s). Reading ultimateEventRead there moves the placement's stop lists: measure,
   `cli-ab.ts <base> --placement`.
+  Closed by worktree-agent-a44e9ee2d8c7368e5, f920e82: unplacedCastStops reads it (ultimateEventRead moved to
+  ultimateevent.ts, castassembly.ts re-exports it); no log's verdicts moved (4bfc's 144.37 s pair placed elsewhere).
 - **INSIDE flags that are a shut combo window** (round 23's startGateWords on `zmdlogs decisions --all`, at 1da5562):
   of the development logs' 72 INSIDE lines, 18 are held by the cast's combo window (shut until later in the replay:
   the replay's combo trigger, an infliction or a hit, comes after the log's press; 0eef 6.77 s, Typhoeus's floating
