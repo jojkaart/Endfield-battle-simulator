@@ -4,9 +4,44 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 193 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 194 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Estella and Akekuri logs: four imports, a stage variant's rank, Akekuri's combo SP on its landings
+
+**Goal:** more development logs for the owner's team (Estella, Si, Akekuri, Arcane): the scoreboard had Akekuri in 2
+fights and Estella in 5.
+
+**Done:**
+- Screened both operators' ZMDLogs profiles (each lists every battle with the operator: Estella 45, Akekuri 75, most
+  before game 1.6), 13 exports and 5 details (4 s apart). Usable: Estella's one new 1.6 fight on a stage the data has
+  (8f32, Tower 7, on Valiant) and three with Akekuri (1a77 and 8056: one account's Rhodagn rush and boss Si with Si
+  P0; f574: Hard 33's slugs). The rest: towers 21 and 24 (not in the pinned data), Minghe (no kit), Akekuri at levels
+  1–60, a multi-target rush, or hold-outs. All four on the development list; f574 marked `severalTargets` with the
+  slug probe's evidence (as 6339, 7b54). First checks in fixtures/pending/README.md.
+- 1a77 / 8056: Akekuri and Wulfgard are level 80; `fit-build` gives both attribute nodes 2 and a level-80 weapon in
+  both logs (tied for Akekuri with weapon 72 and a food; the food-free pair fits all four), buildOverrides.
+- 8f32's replay stopped at 44.8 s: eny_0082_hsbear_race007 has an attribute template of its own and no display entry,
+  so no rank, and Rossi's ultimate freeze asks for it. The loader now takes the EnemyTable templateId's display (39
+  enemies; development targets 9, none Elite with a Rossi). 8f32 plain 171 → 395, −56.8 → +2.1%; Estella 60 of 63.
+- Akekuri's combo SP as cast triggers 22 and 31 frames after the cast came after both landings where the replay pins
+  them early (8056 76.98 s, 1a77 80.35 s, 458b 127.5 / 197.6 s: ×1.262 = Frontiers 1.16 × a Positive Feedback
+  layer). The data has each ObtainCostAction in its DamageAction's tick, before it: now the hit's own `sp` with
+  spBeforeDamage. 458b plain 1073 → 1093, 8056 +3, 1a77 +3.
+- Scoreboard (snapshots:update): development 29 → 32 fights, plain 84.3 → 84.2%, mismatch 4.7 → 4.6%, |damage error|
+  1.3%; earlier pending plain 84.4 → 84.6%; several targets 3 → 4 (f574 −26.5%); verified and hold-out unchanged.
+  Akekuri 2 → 5 fights (plain 94.6 → 94.2%), Estella 5 → 6 (80.3 → 83.0%, |damage error| 2.5 → 2.2%). team-ab
+  against 0f3c894: every team's fight identical (the owner's team's simulated combos had their SP on time).
+
+**Open:** 8056's first Akekuri ultimate shows one of its three SP grants' buffs (her ×0.862 basics at 25–30 s). The
+data rules out a target check or a cut; the SP cap fits (the replay at 284 and 300, and its SP runs short), but 22
+firings at the replay's cap do show their buffs (458b 227.5 s). In-game test 112 (open-problems "Akekuri: her SP
+grants"; scripts/probes/sp/spcap.ts). Tests: 48 not decidable from 8f32 (no skill-type bonus in her build; her
+Valiant hits don't get the combo cast's Yinglung's Edge), 71 part 1 agreed by 8f32, 11 still no log.
+
+**Dead ends:** an SP-cap rule for the "recovers SP" event wasn't built: the replay's SP decides too few firings
+either way.
 
 ## 2026-11-28: The check's targets are the replay's, and a freeze's run-on on every target
 
@@ -384,44 +419,3 @@ and for simulations an expected beat share (about 0.7) is the honest model, left
 marked decided on the premise that a stage fight starts at full HP.
 
 **Probes:** scripts/probes/kits/liino-medicant-layers.ts, liino-opening-layers.ts, liino-cosmovoice-beats.ts.
-
-## 2026-11-27: Camille's Vesperwings moving to the next target
-
-**Goal:** on main at e4a1e36, beside the Liino agent: Camille's `normal_skill_abilityrange` hits (6339 ×5, 7b54 ×1),
-never placed: her Vesperwings moving to the next slug when its own dies (docs/open-problems.md "Hard 33's Woodcraft
-Slugs"; docs/tried/2026-11-27-sub-skill-events.diff).
-
-**The data:** abilityrange_first (and abilityrange) put buff_chr_0033_camille_normal_skill_listen_target_dead on the
-target; at its death (abilityEvent 1) reset_target (0.1 s) finds the next target, launches projhit_sub
-(skillSpecification 3, castSkillOnHit), which casts abilityrange on it: frame 0 the debuff (with the bat_duration
-icon's time left: SaveBuffLifeTime), Heat infliction, the battle skill's atk_scale and poise; no team energy.
-
-**Done:**
-- **Engine:** trigger event `targetDeath` (events.ts), made only by `targetDies` (drivers.ts), which the replay calls;
-  its `landings` pin the triggers' hits at logged frames as replayCast's do. BuffApplication `keepEnd` (a new instance
-  ending where the active one does). Trigger action `castEvent` (a cast event of a skill an entity casts, no action).
-- **Kit:** trigger `vesperwings_move` (frame 3 on the world's clock, the travel not in the data), and
-  `vesperwings_move_cast` behind the new kit assumption `vesperwings-move-cast` (`battle`, default; `none`).
-- **Replay:** targets.ts `deathMoves` (each logged landing of a targetDeath trigger's hit; the death at the logged
-  kill within MOVE_AFTER_KILL_MS before it, else the lead before the landing) and `moveEvent` (a cast event at a
-  move's ms, key the skill's id with a suffix, is no press: castassembly.ts assembleCasts, loggedCastFates `move`);
-  replaysteps.ts / replayrun.ts death steps; `zmdlogs replay` / decisions DEATH lines. tests/vesperwings-move.test.ts.
-
-**Decisions:** the death at the logged kill, not at the landing less the lead: 6339's 29.26 s kill purges her
-Susceptibility from the listing (`logged-purges`) before the 29.67 s move, so a death at the landing found no debuff
-and made nothing. The cast event: the plain move made 6339 mixed (plain 115 → 109): Si's 28.39–29.57 s combo slashes
-need 3 Yinglung's Edge layers and the replay had 2 once the presses standing in for the moves were gone; the move as
-a battle-skill cast (projhit_sub is one; ZMDLogs logs a normal_skill event at four of six) gives the third. Registered
-as a reading: the data doesn't say whether ability event 30's CheckSkillType sees an entity's cast.
-
-**Numbers** (measure against e4a1e36; snapshots:update for the scoreboard): only the several-targets row moves: plain
-70.6 → 71.3%, mismatch 15.3%, mean |damage error| 8.3 → 6.3%; 6339 plain 115 → 120, −10.3 → −6.3%; 7b54 plain
-115 → 116, −3.3 → −1.2%. Development, earlier pending, verified unchanged; hold-outs' aggregates unchanged (one
-hold-out has a logged move: 2 hits uncovered → fallback, DEATH +2, SKIP −2). Team fights unchanged (team-ab identity:
-no simulated fight has a death; the one enemy never dies).
-
-**Checked:** every Camille log: only 6339 and 7b54 have the move's key (the multi-target fixtures none, the others no
-mid-fight kill). **Left open:** 6339's 19.68 s move follows no logged kill; 7b54's 19.90 s normal_skill event, 0.31 s
-after a kill with no hit, a likely move onto a shielded slug (not made); 6339's Laevatain 35.70 s empowered hit is not
-the move's Heat alone (nothing of hers absorbs it in time); the moves' Heat on the replay's one enemy gives replay-only
-bursts (statuses per target); other kits' listeners on a target's death (open-problems).

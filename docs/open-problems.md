@@ -2884,7 +2884,7 @@ loaded), weapon skill levels and gear artifice as candidates.
 its ×0.89 on her own hits (attribute nodes 0, a fixture buildOverride: docs/journal/2026-11-23-11-fight-totals-2-an-all-fights-view-kills-from-capped-hits.md).
 Her combo's SP after its pinned landings (8056 76.98 s, 1a77 80.35 s, 458b 127.5 / 197.6 s: ×1.262 on the combo,
 the Frontiers DMG and a Positive Feedback layer missing) fixed 2026-11-28 (the SP on the landings, before their
-damage; the journal entry of that day).
+damage: docs/journal/2026-11-28-02-estella-and-akekuri-logs-four-imports-a-stage-variant-s-rank.md).
 
 **Shows (8056, 2026-11-28):** her first ultimate (cast event 17.06 s) makes one SP grant's buffs in the log, at
 +0.10 s (Frontiers, OBJ Edge of Lightness, Positive Feedback, all listed from 17.17 s), where the replay makes three
