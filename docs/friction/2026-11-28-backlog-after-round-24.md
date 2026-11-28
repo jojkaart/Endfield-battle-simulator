@@ -1,39 +1,17 @@
-# Backlog after improvement round 23 (2026-11-28)
+# Backlog after improvement round 24 (2026-11-28)
 
-Task: the points of the reports round 23 read (docs/friction-done/2026-11-28-round-23.md lists them) that round 23
-didn't do. Round 22's backlog point 1 is half done (`zmdlogs clocks --around break`): the views' own stop list is
-point 1 below; its point 2 (a test per row of the clock table) is closed (tests/clock-table.test.ts). Point 2 is round
-22's own report point 2 (the zmdlogs CLI as one module), not built this round. The accuracy list gains three entries,
-the parts of this round's points that move verdicts: a cast's slots cut to its path, a value rule on a consumed-scaled
-hit's multiplier bounds, the placement's unplaced ultimate events on the cast assembly's reading. Round 23 had every
-file to itself.
+Task: the points of the reports round 24 read (docs/friction-done/2026-11-28-round-24.md lists them) that round 24
+didn't do. Round 23's backlog point 1 (the views' one stop list) is parked: carried twice without a new report. Its
+point 2 (the zmdlogs CLI per subcommand) is point 1 here: round 24 added three views to the one module itself
+(`replay --windows`, `casts --passes`, `casts --event-lags --against-holds`), three edits each. Points 2–4 are the
+parts of this round's points it left: placeWith's stages as functions, the engine's record of every openCombo
+outcome, the smoke run's wait behind premerges. The accuracy list gains two entries (the combos made before their
+cooldown, the logged crits no landing takes) and loses the INSIDE one (its combo-window lines fixed by the
+combo-windows and combo-openers tasks; what is left is the cooldown entry). Round 24 had every file to itself.
 
 A branch that closes a point adds a line under it: "Closed by <branch>, <commit>: how".
 
-## 1. A hold that isn't a cast's stop: the views' one list
-
-- **What happened:** the break-hold round's `zmdlogs clocks --rows` marked rows with a break inside, but their
-  residuals mix the placement's mistakes (Si's combo +2.5 s) with the hold, and the tick chains are cut at the
-  Stagger's edges, so no tick row spans a break; the agent wrote scripts/probes/stagger/break-hold.ts for per-break
-  rows. Round 22 gave `zmdlogs clocks --breaks` and `zmdlogs worldtime --holds --without` / `--series` on the
-  timeline's applied slow-downs (packages/logs replayclock.ts); round 23 gave the per-break rows (`zmdlogs clocks
-  --around break`: clocksview.ts breakPairs, 5082's Yvonne at 44.43 s +323 → −111 ms with the engine's holds). The
-  views' own stop list (replayTimeStops: `lanes --world`, `cadence`, `worldtime`'s first line) still lacks the
-  engine's non-cast stops.
-- **Cause:** the views' world time is the replay's casts' stops only (castassembly.ts replayStops); engine holds that
-  come from events (a break, a dodge, a freeze) have no place in that list, and the list also feeds the placement.
-- **Suggestion:** replayStops' callers in the views taking replayclock.ts's applied stops (or an `events` list of
-  non-cast stops, holds.ts breakStops) where they have a replay, the placement's list left as it is.
-- **Needs:** packages/logs/src/query.ts, packages/logs/src/replayclock.ts, packages/logs/src/views.ts (the views
-  reading replayTimeStops), tests/query.test.ts. A view, but replayStops also feeds the placement: check `node
-  scripts/cli-ab.ts <base> --placement` (the list's use there must stay as it is) and `node scripts/identity.ts
-  --base <base>`.
-- **Why it helps:** the next event-borne hold (a Lift, a Knock Down, a perfect dodge) is a view away, and a fixed hold
-  stops showing as lateness.
-- **From:** docs/friction-done/2026-11-27-break-hold.md point 2; backlog after round 19, point 1; backlog after round
-  20, point 1 (parked by round 21); backlog after round 22, point 1.
-
-## 2. One CLI module for thirty subcommands
+## 1. One CLI module for thirty subcommands
 
 - **What happened:** every view of round 22 (and round 23's `replay --sp`, `clocks --fit / --json / --around`,
   `totals --side`) meant three edits in packages/cli/src/commands/zmdlogs.ts: the usage string, the shared options
@@ -49,11 +27,64 @@ A branch that closes a point adds a line under it: "Closed by <branch>, <commit>
 - **Needs:** packages/cli/src/command.ts, packages/cli/src/cli.ts, packages/cli/src/commands/zmdlogs.ts (split),
   packages/cli/src/which.ts, tests/zmdlogs-cli.test.ts.
 - **Why it helps:** a new view is one new file; options can't collide across subcommands silently.
-- **From:** docs/friction-done/2026-11-28-round-22-friction.md point 2.
+- **From:** docs/friction-done/2026-11-28-round-22-friction.md point 2; backlog after round 23, point 2; hit again by
+  round 24's own work (three views in the one module: `replay --windows`, `casts --passes`, `casts --event-lags
+  --against-holds`).
+
+## 2. placeWith's per-hit stages as functions
+
+- **What happened:** the value rule (round 23's placement paths) needed the cast a landing would open (choose,
+  joinDelayed, anchorFree) at the join decision, defined below it in placeWith's per-hit loop; moving 35 lines needed a
+  scratch script and a lazy `openChoice()`. Round 24 wrote the four stages down at the loop's head (context, the
+  running cast, twin or join, open) with the rule that a later stage's answer is asked through a memoized function, as
+  openChoice is, but the body is still one closure of about 250 lines of `const`s.
+- **Cause:** each rule reads the `const`s above it; a rule that needs a later stage's answer has nowhere to ask but a
+  memoized closure.
+- **Suggestion:** each stage a function of the hit and the pass state returning a record (the twin's rule, the join's
+  rule, the opening), the opening a memoized record any stage may ask; `--split hunks` then gets a hunk per stage. A
+  move: `node scripts/identity.ts --base <base>` first (it hashes every log's placement), `cli-ab.ts <base>
+  --placement --summary`.
+- **Needs:** packages/logs/src/logcasts.ts (placeWith), tests/logcasts-*.test.ts.
+- **Why it helps:** the next rule comparing "stay" with "open" is one function, not a move.
+- **From:** docs/friction-done/2026-11-28-placement-paths.md point 2 (the stages as functions).
+
+## 3. openCombo's outcomes as the engine's record
+
+- **What happened:** `zmdlogs replay --windows <operator>` (round 24) reads TimelineState.comboWindow and comboTrigger
+  step by step: an opening, a refresh, an event the cooldown kept out are there, but an openCombo whose event has no
+  source (windowSourceOf: not an infliction or physical status) and that the cooldown kept out sets no comboTrigger,
+  so it leaves no trace, and an operator's own combo's event (no window by rule) neither.
+- **Cause:** the engine keeps the window and the latest sourced trigger, not each openCombo outcome.
+- **Suggestion:** a statistic (as spGained): TimelineState.windowEvents, per openCombo `{ frame, key, outcome:
+  opened|refreshed|cooldown|own-combo, readyAt? }`, left out of the search's state key; windowsview.ts reads it in place
+  of the comboTrigger diff.
+- **Needs:** packages/engine/src/timeline/actions.ts (openCombo), state.ts, the search's state key
+  (packages/engine/src/planning/search.ts), packages/logs/src/windowsview.ts, replayrecord.ts. Engine: team-ab, smoke.
+- **Why it helps:** every "kept shut" is on the view, not only the sourced ones.
+- **From:** docs/friction-done/2026-11-28-combo-windows.md point 1 (the engine's record of each openCombo outcome).
+
+## 4. smoke waits behind every premerge's test steps
+
+- **What happened:** smoke (2 min of work) waited 28 min in the test lock's queue behind other worktrees' premerges.
+  Round 24 let a measure of at most three named logs run outside the lock (measure.ts smallMeasure); smoke still
+  queues as a short job, which never runs beside a premerge's or a suite's vitest step.
+- **Cause:** one lock lane for every test run: a premerge's two vitest steps of ~8 min each, several worktrees' in a
+  row, and a short job takes its turn by arrival.
+- **Suggestion:** look at the lock's history (<lock>.history.jsonl) for how long short jobs waited and behind what;
+  then either a smoke-sized lane beside a premerge step at a lower worker count (smoke's own vitest `--maxWorkers 1`)
+  or premerge's steps queued as one ticket per premerge so a short job between them doesn't wait for the next one's.
+  A timing question: `npm run bench` before and after, and the premerge's timeouts watched.
+- **Needs:** scripts/testlock.ts, scripts/smoke.ts, scripts/premerge.ts, tests/testlock.test.ts.
+- **Why it helps:** the check after a timing change stays a few minutes, as the docs promise.
+- **From:** docs/friction-done/2026-11-28-overlap-clock.md point 4 (smoke's wait).
 
 ## Parked
 
 A new report that hits one brings it back with its full text from there.
+
+Point 1 of docs/friction-done/2026-11-28-backlog-after-round-23.md (full text there under the same number), carried twice without a new report:
+
+- 1. A hold that isn't a cast's stop: the views' one list.
 
 Round 8's layers point (docs/friction-done/2026-11-23-backlog-after-round-8.md point 1), its other parts after round 21's
 `hits --layers` (full text in docs/friction-done/2026-11-27-backlog-after-round-20.md point 3):
@@ -256,39 +287,16 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   or nothing; a `shielded` span kind (landings at 0 damage, no infliction or status, on-hit kit buffs applied), read
   only by the replay. Measured as `targets-gaps-away`: one plain and 2.3 points of 6339's total either way; Hard 33
   only so far. Moves verdicts: measure, snapshots:update.
-- **A cast's slots cut to its path** (docs/friction-done/2026-11-28-placement-cases.md point 2, the part that moves
-  verdicts): round 23 tags each skill slot with its path (logcasts.ts Slot.path: pathStart, pathEnd) and the
-  placement's cast end reads the first slot's tag, the same numbers; a cast's slots kept only on its first landing's
-  path (and the twin and value rules reading `path` instead of a rule per case: Rossi's combo 3, Purrchena's shielded
-  combo, Laevatain's battle skill) moves every jump-pathed cast's later slots. Measure: `--split hunks` beside de6a's
-  Pogranichnik combo (fixed by pathEnd, the check that the tag path gives the same).
-  Closed by worktree-agent-a44e9ee2d8c7368e5, f337fa7: logcasts.ts pathSlots / onPathFrom (a slot after the first on
-  its path or on a jump's after it; the world time from the first landing's slot; realignByValue on one path); de6a
-  unchanged, 8f32 plain 405 → 409 (Alesh's combos), one hold-out +1 plain / −1 assumed.
-- **A value rule on a consumed-scaled multiplier's bounds** (docs/friction-done/2026-11-28-placement-cases.md point 3,
-  the rule): logcasts.ts multiplierBounds (round 23) gives a hit whose value reads `consumed` its least and greatest
-  multiplier (consumed 0 and 4); a value rule that rules out a slot whose least multiplier is above the hit's value
-  (8f32 36.11 s: Rossi's combo 2 hit_2, 12,877, placed as a combo 3 perfect strike, its Lift 2.4 s early, the
-  Endministrator's 38.50 s shatter lost, −1.28% of the fight; the rule written and dropped then had no bound) moves
-  verdicts: measure, snapshots:update.
-  Closed by worktree-agent-a44e9ee2d8c7368e5, 4e0f3a6: logcasts.ts keptByValue (Group.bounds; a superseded landing
-  kept on its cast where the next slot fits its value and the chosen other group's slots can't); 8f32 plain 395 → 405,
-  damage +2.1 → −0.2%, the shatter made.
-- **The placement's unplaced ultimate events at the cast assembly's start** (docs/friction-done/2026-11-28-break-combo.md
-  point 2, the rest): castassembly.ts ultimateEventRead (round 23) is the one reading of a hitless ultimate's event
-  (press or stop's end) that loggedCastStart and the replay view's EVENT line read; logcasts.ts unplacedCastStops
-  still starts each such event's stop at the event (458b 84.37 s: Akekuri's ultimate made at 82.53 s, its stop in the
-  placement's list from 84.37 s). Reading ultimateEventRead there moves the placement's stop lists: measure,
-  `cli-ab.ts <base> --placement`.
-  Closed by worktree-agent-a44e9ee2d8c7368e5, f920e82: unplacedCastStops reads it (ultimateEventRead moved to
-  ultimateevent.ts, castassembly.ts re-exports it); no log's verdicts moved (4bfc's 144.37 s pair placed elsewhere).
-- **INSIDE flags that are a shut combo window** (round 23's startGateWords on `zmdlogs decisions --all`, at 1da5562):
-  of the development logs' 72 INSIDE lines, 18 are held by the cast's combo window (shut until later in the replay:
-  the replay's combo trigger, an infliction or a hit, comes after the log's press; 0eef 6.77 s, Typhoeus's floating
-  combo), 9 by the SP cost (the replay's SP short: the `sp short` keys), one by a cooldown, one by a later gate and
-  one with a priority that outranks; the rest by a window of the running action (34) or its uncuttable frames (8).
-  The combo-window and SP ones say the replay's trigger or SP is late, not that the kit forbids the press: leads for
-  an accuracy task (which trigger, how late), and the flag's kind could tell them apart. Measure.
-  Closed in part by worktree-agent-aae9ee5eca9001663 (the combo-windows task, 2026-11-28): Typhoeus's 5 fixed (her
-  Signs at a burst's application); 12 are openers logged inside the combo's own slow-down (a placement lead, the
-  INSIDE line now says so); 3f78 19.30 s a cooldown question (docs/open-problems.md "Combo windows").
+- **Casts made before their cooldown** (round 24's COOLDOWN lines, replayrun.ts cooldownEarly; `zmdlogs decisions
+  --all` at 0a1efea): 26 in 17 development logs, 23 combos and 3 ultimates (3f78 19.30 s Arcane 0.83 s, 4d60 97.00 s
+  Arcane 1.13 s, fc63 99.03 s Typhoeus 0.27 s among them; the combo-openers probe counted 22 combos, 10 a second
+  placement 0.3–7 s after the first). docs/open-problems.md "Combo windows" has what is ruled out (a kit, gear or stage
+  reduction for 3f78) and still possible (a team-wide recovery, Si's Proxy's Patronage on another slot, the game's
+  cooldowns shorter than the tables). The double placements are placement leads, the short gaps a cooldown question:
+  `zmdlogs replay <fixture> --windows <operator>` per case. Moves verdicts where a fix moves a cast: measure.
+- **Logged crits no landing takes** (round 24's LOST lines, lostfacts.ts; `zmdlogs decisions --all` at 0a1efea): 1027
+  in 64 development logs, every one a crit (no reaction level lost): landings 2 or more frames from their logged hit
+  (Typhoeus's arrow rain −11 to +7 frames, Rossi's bleed ticks +2 to +4, Arcane's Corrosion −25) or at its frame
+  under another key, so the triggers on crits there read the replay's own crit (none: the replay rolls none). Pairing
+  a trigger-made landing with its logged hit by the check's pairing (statusLanding, landing) for the crit, as a pinned
+  one takes its ref's, moves what the triggers on crits do: measure, team-ab if the engine's lookup changes.

@@ -38,3 +38,13 @@ worktree-agent-aa34e7a8db6e99131 on main at e865411.
   answers "the same".
 - `node scripts/edit.ts` for every multi-line doc change and the outcomes (six reports in one file), and
   `friction.ts carry … --lists` for the backlog's lists.
+
+## Outcome (round 24)
+
+- 1 (A report asked for a tool that already existed, and nothing said so): done (aa5f383, 0a1efea): `zmdlogs which`
+  also reads every scripts/*.ts header's usage, the script's head and one entry per option line (which.ts
+  scriptEntries); "replace part of a line in a doc" finds edit.ts, "the hits a change moved" measure --hits.
+- 2 (One shell call per command makes a status check slow to read): done (aa5f383): `node scripts/runstate.ts
+  --where` (branch, HEAD, the commits beyond main, the uncommitted paths with hold-outs as a count, each job's last run
+  with the tail of the file its stdout went to, recorded from /proc/self/fd/1 at its start, and its EFSIM-DONE line,
+  the other worktrees with work); identity.ts records its run state too.
