@@ -4,3 +4,5 @@ fixtures/holdout/
 # The hold-out logs' verdict snapshot (keys name hold-out logs): never diffed by eye; its effect is in
 # `node scripts/accuracy.ts --compare <ref>` (aggregates only).
 tests/snapshots/log-verdicts-holdout.json
+**/fixtures/holdout/
+**/log-verdicts-holdout.json
