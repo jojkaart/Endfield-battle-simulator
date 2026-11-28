@@ -866,6 +866,32 @@ function pathStart(timing: SkillTiming | null | undefined, frame: number): numbe
 }
 
 /**
+ * Whether a cast whose landing is at slot `first` can land slot `x` later (Slot.path): on the same path before its end,
+ * or on the path a jump goes to that lies on first's path after it (at or past its frame, before its end). A slot on a
+ * path whose jump the cast's first landing is already past is another cast's: Arclight's battle skill (4 → 96: a cast
+ * with slashes at 19 and 24 makes none of the jumped path's 112, 118, 136), Alesh's combo (10 → 65: hook and slam at 22
+ * and 38, or the Rare Fin's at 77 and 93). Slots without a path tag (a trigger's) are all one path. split:slot-paths
+ */
+function onPathFrom(timing: SkillTiming | null | undefined, first: Slot, x: Slot): boolean {
+  if (!first.path || !x.path || x.frame <= first.frame) return true;
+  if (x.path.from === first.path.from) return x.frame < first.path.end;
+  const end = first.path.end;
+  return (timing?.jumps ?? []).some((j) => j.to === x.path?.from && j.at >= first.frame && j.at < end && pathStart(timing, j.at) === first.path?.from);
+}
+
+/**
+ * A cast's slots of a key on the path its first landing (slot `index`) is on (onPathFrom): the slots before it as they
+ * are (PlacedHit.index counts in the whole list), then up to the first slot after it that the cast can't land.
+ * split:slot-paths
+ */
+function pathSlots(timing: SkillTiming | null | undefined, s: readonly Slot[], index: number): Slot[] {
+  const first = s[index];
+  if (!first) return [...s];
+  const off = s.findIndex((x, i) => i > index && !onPathFrom(timing, first, x));
+  return off < 0 ? [...s] : s.slice(0, off);
+}
+
+/**
  * A group's landing slots of a key in frame order (kit order at one frame);
  * landings of different hits at one frame that both have conditions (`if`,
  * `branch` or `requires`) are alternatives, one slot. Null when a hit with the key has
@@ -1166,7 +1192,8 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {
       const placed = new Map<LogHit, PlacedHit>();
       // `targets`: the count of targets an earlier batch of the cast's key stood on (batchTargets, ≥ 2).
-      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean; scales: ReadonlyMap<KitHit, number>; ranges: ReadonlyMap<KitHit, readonly number[]>; targets?: number }>();
+      // `head`: the slot of the cast's first landing (0 but for a first landing on a jumped path: jumpedFirst).
+      const current = new Map<string, { cast: LoggedCast; first: number; last: LogHit; index: number; head: number; span: number; longest: number; slots: Slot[] | null; exact: boolean; scales: ReadonlyMap<KitHit, number>; ranges: ReadonlyMap<KitHit, readonly number[]>; targets?: number }>();
       const batches = new Map<string, { readonly hits: readonly LogHit[]; readonly targets: number; readonly by: string }>();
       // A hit's place in its batch: its key's hits at its ms alike in value to the cast's last landing (alikeValue: not a
       // final among slashes), in the log's order; a twin where it isn't the first of its landing's `targets` hits
@@ -1254,7 +1281,8 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // A landing at its next slot's own frame is the cast's, whatever seems to start in between (012ae1c80ae6: Camille's
         // combo hits at 33910 / 34117 / 34798 ms, its frames 19 / 27 / 47, around an attack 3 placed at 33552 ms).
         const next = cur?.slots?.[cur.index + 1];
-        const head = cur?.slots?.[0];
+        // The slot of the cast's first landing, from which the world time `elapsed` runs: slot 0 but on a jumped path.
+        const head = cur?.slots?.[cur.head]; // split:slot-paths
         const onTime = cur !== undefined && next !== undefined && head !== undefined && Math.abs(elapsed - msOf(next.frame - head.frame)) <= ON_TIME_MS;
         const since = (c: LoggedCast) => cur !== undefined && c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t;
         // Even a landing on its way isn't an older cast's once a newer cast of a skill with its key has started (3aa6ab93bad4:
@@ -1392,13 +1420,14 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}), ...(pastChannel && cur ? { pastChannel: { cast: cur.cast.start, elapsed: channelElapsed, end: channelEnd, by: pastSlack ? ("slack" as const) : ("press" as const) } } : {}) }; // split:channel-end
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
-        // The cast's slots end where its action ends on the path its first landing is on (pathEnd: a skill of several
-        // paths from a jump, each ended by an InterruptCurSkillAction): the later paths' slots aren't its landings to come.
+        // The cast's slots are those of the path its first landing is on (pathSlots: a skill of several paths from a jump,
+        // each ended by an InterruptCurSkillAction; a path whose jump the first landing is past): the other paths' slots
+        // aren't its landings to come. split:slot-paths
         const end = first && g.kind !== null ? (first.path?.end ?? Infinity) : Infinity;
-        const onPath = s && end < Infinity ? s.filter((x) => x.frame < end) : s;
+        const onPath = s && first && g.kind !== null ? pathSlots(g.timing, s, firstIndex) : s; // split:slot-paths
         const span = onPath && first ? msOf((onPath.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(Math.min(end, data.skills[g.skillId]?.timing?.durationFrames ?? 0) - (end < Infinity && first ? (first.path?.from ?? 0) : 0)) : 0);
-        current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: onPath, exact: exactSlots(g, h.event), scales: g.scales, ranges: g.ranges });
+        current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, head: firstIndex, span, longest, slots: onPath, exact: exactSlots(g, h.event), scales: g.scales, ranges: g.ranges });
         // A landing joined to a cast another key opened (joinDelayed, joinable): from the cast's start, against its frame.
         const via: PlacedJoin | undefined = joined === null ? undefined : { by: late ? "delayed" : "reach", elapsed: worldMs(cast.start, h.t, stops), ...(first ? { due: msOf(first.frame) } : {}) };
         placed.set(h, { cast, index: firstIndex, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}), ...(via ? { joined: via } : {}) });
@@ -1424,7 +1453,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
       const g = groups.find((x) => x.id === c.group);
       const { beforeStop: _b, fromEvent: _f, ...rest } = c;
       return g ? { ...rest, ...startFor(g, h, slot) } : null;
-    }, realign);
+    }, realign, (c) => groups.find((x) => x.id === c.group)?.timing); // split:slot-paths
     for (const [h, p] of placed) hits.set(h, p);
     casts.push(...new Set([...placed.values()].map((p) => p.cast)));
   }
@@ -1655,6 +1684,8 @@ const REALIGN_MS = 150;
  * against the kit's 433 and 700) and the last's value (×5.3, hit 4's 3.2 against 0.6); placed as hits 1–3, the cast
  * started 0.47 s late and its frame-70 Link came after Arcane's ultimate press. 791020039384: Tangtang's rogue wave
  * (352,792 at 54.34 s, ×10 a stare's multiplier) placed on her eighth stare's slot by time, the wave replay-only.
+ * Every slot an assignment gives is on the path of its first's (onPathFrom; `timingOf`, the cast's skill's timing):
+ * a cast lands one path's slots, not one path's first and another's later ones. split:slot-paths
  */
 function realignByValue(
   placed: Map<LogHit, PlacedHit>,
@@ -1663,6 +1694,7 @@ function realignByValue(
   stops: readonly TimeStop[],
   restart: (c: LoggedCast, h: LogHit, slot: Slot) => LoggedCast | null,
   record: RealignRecord[] = [],
+  timingOf: (c: LoggedCast) => SkillTiming | null | undefined = () => null,
 ): void {
   const byCast = new Map<LoggedCast, Map<string, LogHit[]>>();
   for (const [h, p] of placed) {
@@ -1673,6 +1705,7 @@ function realignByValue(
   }
   const tolerance = Math.log(VALUE_TOLERANCE);
   for (const [cast, keys] of byCast) {
+    const timing = timingOf(cast); // split:slot-paths
     for (const [key, hits] of keys) {
       const s = slotsOf(cast, key);
       const n = hits.length;
@@ -1726,9 +1759,10 @@ function realignByValue(
         const best: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(Infinity));
         const from: number[][] = Array.from({ length: n }, () => new Array<number>(s.length).fill(-1));
         (best[0] as number[])[j0] = score(off(0, j0, ref), 0);
+        const onPath = (j: number) => onPathFrom(timing, s[j0] as Slot, s[j] as Slot); // split:slot-paths
         for (let i = 1; i < n; i++)
           for (let j = j0 + i; j <= s.length - (n - i); j++)
-            for (let k = j0 + i - 1; k < j; k++) {
+            for (let k = j0 + i - 1; k < j && onPath(j); k++) {
               const c = ((best[i - 1] as number[])[k] as number) + score(off(i, j, ref), cost(i, j));
               // Ties keep the earlier slot.
               if (c < ((best[i] as number[])[j] as number) - 1e-9) {
