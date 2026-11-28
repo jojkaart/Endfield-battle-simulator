@@ -30,9 +30,9 @@ commit, and how many logs got better or worse.
 | Verified (fixtures/) | 6 | 804 | 78.5% | 99.3% | 0.0% | 1.5% | 6 | 1 |
 | Development (fixtures/pending, holdout.json `development`) | 32 | 17182 | 84.2% | 93.0% | 4.6% | 1.3% | 31 | 70 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.5% | 93.2% | 5.1% | 5.9% | 9 | 20 |
-| Earlier pending (imported before the hold-out split) | 23 | 11736 | 84.7% | 95.4% | 4.4% | 1.2% | 22 | 49 |
-| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 4 | 888 | 69.4% | 83.9% | 14.9% | 14.1% | 1 | 22 |
-| All but the hold-outs | 65 | 30610 | 83.8% | 93.8% | 4.7% | 2.1% | 60 | 142 |
+| Earlier pending (imported before the hold-out split) | 23 | 11736 | 84.9% | 95.4% | 4.4% | 1.2% | 22 | 41 |
+| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 4 | 888 | 69.4% | 83.9% | 14.9% | 14.3% | 1 | 22 |
+| All but the hold-outs | 65 | 30610 | 83.9% | 93.8% | 4.7% | 2.1% | 60 | 134 |
 
 ## Where the total's error lives
 
@@ -47,7 +47,7 @@ over |matched|, so the error is in what lands, not in its scale.
 | Development (fixtures/pending, holdout.json `development`) | 32 | 1.3% | 1.0% | 0.4% | 16 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 1.8% | 2.3% | 4.7% | 9 |
 | Earlier pending (imported before the hold-out split) | 23 | 1.1% | 0.8% | 0.5% | 15 |
-| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 4 | 6.8% | 8.8% | 16.8% | 4 |
+| Several targets under one enemy id (fixtures/pending, the fixture's `severalTargets`) | 4 | 6.7% | 8.8% | 17.2% | 4 |
 
 ## By operator (every log but the hold-outs)
 
@@ -85,10 +85,10 @@ total (the `share own … operator <id>` keys): a kit's error is matched, a log 
 | chr_0025_ardelia (Ardelia) | 11 | 1470 | 83.6% | 9.9% | 2 | 2.2% | 0.9% | 2.0% | 2.2% | 8.0% | 1d91 0.8 | 1.6% | 0.8% |
 | chr_0026_lastrite (Last Rite) | 4 | 156 | 69.2% | 0.6% | 5 | 1.5% | 1.3% | 1.7% | 1.5% | 38.5% | 9555 0.8 | 1.1% | 1.8% |
 | chr_0027_tangtang (Tangtang) | 2 | 265 | 74.7% | 1.5% | 25 | 4.8% | 4.8% | 4.8% | 4.8% | 35.0% | b7b3 2.8 | 8.1% | 5.0% |
-| chr_0028_wulfa (Rossi) | 11 | 2587 | 77.2% | 3.7% | 8 | 1.4% | 0.8% | 1.4% | 1.5% | 61.7% | 4e5e 0.6 | 1.5% | 0.8% |
-| chr_0029_pograni (Pogranichnik) | 5 | 649 | 77.7% | 0.6% | 15 | 2.0% | 0.4% | 1.5% | 2.0% | 12.6% | de6a 1.6 | 0.7% | 11.0% |
+| chr_0028_wulfa (Rossi) | 11 | 2587 | 77.3% | 3.7% | 3 | 1.5% | 0.9% | 1.4% | 1.5% | 61.7% | 4e5e 0.6 | 1.4% | 0.9% |
+| chr_0029_pograni (Pogranichnik) | 5 | 649 | 80.4% | 0.6% | 12 | 0.5% | 0.4% | 0.6% | 0.5% | 12.6% | a9d7 0.2 | 0.6% | 9.4% |
 | chr_0030_zhuangfy (Zhuang Fangyi) | 5 | 1392 | 88.4% | 3.1% | 2 | 0.8% | 0.9% | 0.8% | 0.9% | 86.3% | 4d60 0.3 | 0.6% | 0.4% |
-| chr_0031_mifu (Mi Fu) | 6 | 531 | 85.3% | 4.1% | 14 | 4.6% | 1.0% | 4.4% | 1.5% | 47.7% | f574 3.8 | 2.9% | 1.8% |
+| chr_0031_mifu (Mi Fu) | 6 | 531 | 85.5% | 4.1% | 14 | 4.9% | 1.0% | 4.7% | 1.5% | 47.7% | f574 4.1 | 2.8% | 2.3% |
 | chr_0032_lizhiyan (Arcane) | 40 | 5688 | 87.6% | 3.5% | 25 | 3.4% | 1.6% | 2.2% | 3.2% | 10.2% | 7b54 0.6 | 1.8% | 4.8% |
 | chr_0033_camille (Camille) | 10 | 1004 | 94.9% | 1.3% | 1 | 3.5% | 0.5% | 2.4% | 2.0% | 6.3% | 7b54 1.9 | 1.6% | 2.9% |
 | chr_0034_typhoea (Typhoeus) | 12 | 2081 | 83.2% | 6.4% | 15 | 2.1% | 0.9% | 2.3% | 2.1% | 75.5% | 9c6e 1.0 | 1.2% | 3.4% |

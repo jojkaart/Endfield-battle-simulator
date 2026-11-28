@@ -232,7 +232,7 @@ window gains 3 frames of the 15 the log shows (not measured).
   (buff_chr_0029_pograni_ultimate_skill_finall_rush) spawns the four entities at its frames 0–3 with a 1 s global
   ComboSkill slow-down that ignores them. Still possible: the four Shieldguards already standing (the harasses'
   entities) taking the strike sooner, or the log stamping the strike at the slow-down's clock. Not built.
-  **Round 2026-11-28 (the placement round, docs/journal/ entry of that day):** all nine logged Assaults, delay after
+  **Round 2026-11-28 (docs/journal/2026-11-28-07-placement-cases-a-twin-by-time-a-cast-s-path-end-the.md):** all nine logged Assaults, delay after
   the event the replay fires it from: Pogranichnik's combo slash 0.21, 0.23, 0.25 s (c4f3 73.69, d4fb 89.82, a9d7
   210.50) and 0.70 s (de6a 28.66); a teammate's Lift 0.25, 0.28, 0.35, 0.44 s (a9d7 26.11, de6a 117.63, d4fb 174.03,
   7e19 28.19); his own Breach 1.04 s (c4f3 148.45). The harasses from the same kinds of event: 0.58–0.63 s after a
@@ -259,6 +259,32 @@ window gains 3 frames of the 15 the log shows (not measured).
   ultimate (one per second, held by its stop); the replay's bleed lands two (47.43, 48.43 s), so the placement's
   "a landing whose order the kit doesn't give" is a bleed the replay ended, the statuses' side (buffreplay.ts, not this
   round's files): the open "Rossi's bleed tick series" item.
+
+**The placement cases of 2026-11-28** (docs/journal/2026-11-28-07-placement-cases-a-twin-by-time-a-cast-s-path-end-the.md; tests/target-twins.test.ts,
+tests/placement-cases.test.ts):
+- **Fixed: a twin by time on several targets** (logcasts.ts placeWith `byTime`, PlacedTwin `time`): f574 16.98 s, Mi
+  Fu's Trail and Mangle on two slugs, its two flurries (frames 3 and 10, alike in value) at one ms read as one slug's
+  two flurries, the 17.75 s mangles a second cast (50 SP twice). A key's second hit at its slot's landing's ms, alike
+  in value, where the next slot is due more than ON_TIME_MS later and no stop holds the world in the ON_TIME_MS
+  before the ms, is that landing on another target. Also 9c6e's Barrage Array ticks on its two enemies (27.32 s and
+  79.21–79.85 s pairs) and 7b54's Laevatain attack 2 at 16.36 s. The several-targets row: |damage error| 14.1 →
+  14.3% (f574 −26.5 → −27.4%, 9c6e −11.0 → −11.1%: the replay's one cast lands less than the two did; f574's
+  slugs' values run ×0.83 of the log's anyway), plain and mismatch unchanged; f574's SP short 110 → 56. Still
+  possible: a pair whose ms a stop's end could have batched (9c6e 78.88 s, the array's first tick, beside the
+  replay's stop from Typhoeus's 78.33 s combo event) stays two slots.
+- **Fixed: a cast's slots end with its path** (logcasts.ts pathEnd): de6a 132.20 s, Pogranichnik's combo (de6a logs
+  no cast events) joined to the 108.61 s combo, whose path-0 slots ran on into the jumped paths' 223, 237, 261
+  (de6a plain 298 → 317, damage −0.5 → +0.1%); d572 Rossi's attack 4 hits 9.89 / 10.10 s and 93.64–93.99 s no longer
+  taken as a controlled-path cast's not-controlled hits (hit_ai, past the jump to 189; a cast of their own: plain
+  1039 → 1044, damage 1.3 → 1.4%).
+- **Diagnosed, not fixed: 8f32 38.50 s, the Endministrator's crystal shatter** (−1.28%): Rossi's combo 2 hit_2 at
+  36.11 s (12,877, the value of its hit at 35.51 s, 0.24 s past its kit frame) was placed as a combo 3 perfect strike
+  ("window: the chain step after combo_2_skill"), ×9 in the replay (117,730), its Lift at 36.10 s where the log has it
+  at 38.50 s, before the Endministrator's 38.39 s combo made the crystals: no shatter. The open combo 2 was
+  `superseded` by her attack 3 placed at 35.38 s (not on time: 600 ms against hit_2's 367). A rule keeping the hit on
+  the open cast by its value was written and dropped unmeasured: the perfect strike's multiplier (atk_scale_s +
+  damage_add × consumed) has no nominal scale or range (Group.scales / ranges), so no value rule can tell them apart.
+  Next: a lower bound for such a multiplier (consumed 0) in groupsOf, then the value rule.
 
 ## Casts their operator's next press interrupts (2026-11-27)
 
@@ -4359,7 +4385,7 @@ multi-target Final Strikes giving SP per target (the several-targets logs f574, 
 in the data, which grants a Final Strike's `atb` by no ObtainCostAction one could count); other hitless presses free
 (Si, Laevatain in db87: dubious). Fixed 2026-11-28: f574 16.88 s, one Mi Fu Trail and Mangle on two slugs placed as
 two casts, 50 SP spent twice: a twin by time (logcasts.ts placeWith `byTime`, PlacedTwin `time`; f574 short 110 → 56
-SP, its one short cast now Lifeng's 32.60 s battle skill) — docs/journal/ entry of the placement round, 2026-11-28.
+SP, its one short cast now Lifeng's 32.60 s battle skill) — docs/journal/2026-11-28-07-placement-cases-a-twin-by-time-a-cast-s-path-end-the.md.
 
 **Next check:** test 113; then what's left under `full` (1d91 52.27 s Typhoeus, 79cc 28.70 / 31.47 s, 9c6e 51.83 /
 76.50 s, f574 32.60 s, af7b 36.60 s) cast by cast with the replay's SP changes
