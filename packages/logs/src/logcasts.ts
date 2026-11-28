@@ -9,6 +9,7 @@ import { Attr, computeStats, cutAtResets, effectiveKit, evalContext, evaluate, F
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { pairCasts } from "./castpairs.ts";
 import { breakStops } from "./holds.ts";
+import { ultimateEventRead } from "./ultimateevent.ts";
 import { batchTargets, DEFAULT_AT_ONCE, readsTargets, type BatchHit } from "./targets.ts";
 
 /**
@@ -1008,7 +1009,8 @@ export function placementPasses(data: GameData, fx: LogFixture, assume?: Reading
 
 /** The stops a placement pass reads from the one before: its placed casts' (cut at their resets) and the unplaced cast events'. */
 function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[] {
-  return [...castTimeStops(data, before.casts, castFrames(before)), ...unplacedCastStops(data, fx, before.casts).flatMap((p) => p.stops)];
+  const placed = castTimeStops(data, before.casts, castFrames(before));
+  return [...placed, ...unplacedCastStops(data, fx, before.casts, placed).flatMap((p) => p.stops)];
 }
 
 /**
@@ -1055,14 +1057,16 @@ const UNPLACED_CAST_MS = 2500;
 /**
  * The time stops of the log's cast events (LogFixture.casts) that no placed cast of their skill is near
  * (UNPLACED_CAST_MS): skills whose damage comes as other skills' keys, or none (5082ceaffad1: Yvonne's ultimate at
- * 38160 ms, between Ardelia's combo projectile at 36030 ms and its bomb at 42441 ms). Each from its event's time; an
- * event within the skill's duration of an earlier one is that cast's (the log repeats some ultimates' events while they
- * last: Liino's every ~3.5 s of Cosmovoice, Ardelia's ~3 s after hers).
+ * 38160 ms, between Ardelia's combo projectile at 36030 ms and its bomb at 42441 ms). Each from its event's time, a
+ * hitless ultimate's from where ultimateEventRead puts it (`placedStops`: the placed casts' stops, as the cast assembly
+ * reads it); an event within the skill's duration of an earlier one is that cast's (the log repeats some ultimates'
+ * events while they last: Liino's every ~3.5 s of Cosmovoice, Ardelia's ~3 s after hers).
  */
-function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly LoggedCast[]): ReturnType<typeof skillStops>[] {
+function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly LoggedCast[], placedStops: readonly TimeStop[]): ReturnType<typeof skillStops>[] {
   const out: ReturnType<typeof skillStops>[] = [];
   const last = new Map<string, number>();
   const kits = new Map(fx.team.map((b) => [b.operator, effectiveKit(data, b)?.skills ?? []]));
+  const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
   for (const lc of fx.casts ?? []) {
     const timing = data.skills[lc.skill]?.timing;
     if (!timing?.slowdowns.length) continue;
@@ -1073,8 +1077,14 @@ function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly Logg
     const skills = kits.get(lc.operator) ?? [];
     const kit = new Set(skills.map((s) => s.skillId));
     if (placed.some((c) => c.operator === lc.operator && castEventOf(lc.skill, c.skillId, kit) && Math.abs(c.start - lc.t) <= UNPLACED_CAST_MS)) continue;
-    const at = Math.round((lc.t * FPS) / 1000);
-    const kind = skills.find((s) => castEventOf(lc.skill, s.skillId, kit))?.kind;
+    const skill = skills.find((s) => castEventOf(lc.skill, s.skillId, kit));
+    const kind = skill?.kind;
+    // A hitless ultimate's (its skill's keys never logged for its operator, as the cast assembly reads it) from where its
+    // event reads (ultimateEventRead: the press, or its stop's end), the cast assembly's start: 458b03609665 84.37 s,
+    // Akekuri's ultimate made at 82.53 s, its stop here had run from 84.37 s. split:ultimate-event-stops
+    const hitless = kind === "ultimate" && !(skill?.hits ?? []).some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)));
+    const start = hitless ? ultimateEventRead(data, lc, kind, fx.hits, placedStops).start : lc.t; // split:ultimate-event-stops
+    const at = Math.round((start * FPS) / 1000);
     out.push(skillStops(data, lc.skill, at, { operator: lc.operator, skillId: lc.skill, ...(kind ? { kind } : {}) }));
   }
   return out;
@@ -1300,8 +1310,9 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const onWorld = channel?.world === true; // split:channel-end
         const channelElapsed = onWorld && cur ? worldMs(cur.first, h.t, stops.filter((x) => x.operator !== build.operator || x.kind === "ultimate")) : elapsed; // split:channel-end
         const pressedBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.last.t && c.t < h.t && (!onWorld || groups.find((x) => x.id === c.skill)?.kind === cur.cast.kind)); // split:channel-end
-        // Not across an ultimate's event: logged at its stop's end, its stop isn't among this pass's (unplacedCastStops
-        // start it at the event), and it held the channel (c83c75d02a85 92.48 s: Si's attack 4's third tick 0.01 s after
+        // Not across an ultimate's event: logged at its stop's end, its stop may not be among this pass's (unplacedCastStops
+        // start it at the event unless it is a hitless one's that ultimateEventRead reads at its stop's end), and it held
+        // the channel (c83c75d02a85 92.48 s: Si's attack 4's third tick 0.01 s after
         // Laevatain's 90.43–92.47 s ultimate stop, its event at 92.48 s, 0.1 s of world time after the second).
         const ultimateBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.t > cur.last.t && c.t <= h.t && data.kits.operators[c.operator]?.skills.find((s) => s.skillId === c.skill)?.kind === "ultimate"); // split:channel-end
         const pastSlack = !onWorld && elapsed > channelEnd + CHANNEL_SLACK_MS; // split:channel-end
