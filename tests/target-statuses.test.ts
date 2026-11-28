@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { advance, createContext, effectiveKit, init, NO_STATUS, replayCast, targetDies, targetEnemy, type ActiveStatus, type EnemyStatus, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { rampRunsOn, shiftEnemy, statusesRunOn } from "../packages/engine/src/timeline/clock.ts";
-import { deathDecisions, devFixtures, hitRecords, logBuffReplay, statusesView, targetMismatches, type LogFixture } from "@efsim/logs";
+import { deathDecisions, devFixtures, formatRecord, hitRecords, logBuffReplay, statusesView, targetDisagreements, targetMismatches, type LogFixture } from "@efsim/logs";
 
 const data = loadGameData();
 const fixture = (id: string) => (devFixtures({ ids: [id] })[0] as { fx: LogFixture }).fx;
@@ -92,6 +92,16 @@ describe("the second replay of a fight read per target (target-statuses `per-tar
   });
 });
 
+// Round 22 (the check-targets report point 2): the backlog said no fight read per target had a freeze; 6339 has one,
+// Si's Immobilization at 4.53 s, found by a scratch script then, by `zmdlogs statuses --controls` now.
+describe("`zmdlogs statuses --controls`: a fight's freezes", () => {
+  it("lists 6339's Immobilization at 4.53 s, its freeze's end and every target's statuses", () => {
+    const text = statusesView(data, fixture("6339"), { controls: true });
+    expect(text).toMatch(/^ +4\.53 {2}T0 {2}Si +immobilization \d+ frames \(freezes\): froze the enemy to 6\.\d\d s; every target's statuses: T0: /m);
+    expect(text).toMatch(/^\d+ control status\(es\), \d+ freezing, [1-9]\d* froze the enemy$/m);
+  });
+});
+
 describe("DEATH lines: every death the replay made (6339), not only the moves", () => {
   it("lists the kills without a move too (10.35, 11.31 s)", () => {
     const fx = fixture("6339");
@@ -127,12 +137,21 @@ describe("the check's targets are the replay's landings' targets (hits --json ta
     const made = [...firsts.values()].filter((r) => r.target?.landing !== undefined);
     expect(made.length).toBeGreaterThan(3);
     expect(made.filter((r) => !(r.target?.landing ?? []).includes(r.target?.index ?? -1)).map((r) => r.t)).toEqual([]);
+    // Round 22 (the check-targets report point 1): each record carries the replay's own target and the replay count;
+    // 7b54 took the third replay, and none of its hits disagree now (`zmdlogs hits --targets`).
+    expect(records.filter((r) => r.target).every((r) => r.target?.replay !== undefined && r.target?.replays === 3)).toBe(true);
+    expect(targetDisagreements(records)).toEqual([]);
+    const off = { ...(records.find((r) => r.target) as (typeof records)[number]) };
+    const moved = { ...off, target: { ...(off.target as NonNullable<(typeof off)["target"]>), replay: (off.target?.index ?? 0) + 1 } };
+    expect(targetDisagreements([moved])).toHaveLength(1);
+    expect(formatRecord(moved, false)).toMatch(new RegExp(`T${off.target?.index} ≠ replay T${(off.target?.index ?? 0) + 1}`));
   });
 });
 
 // A freeze in a fight read per target (clock.ts rampRunsOn, statusesRunOn; the backlog after round 21's accuracy
-// list): its ramp and statuses run on on every target it held, and a target it didn't hold is left as it was. No fight
-// read per target has a freeze yet, so the states are synthetic.
+// list): its ramp and statuses run on on every target it held, and a target it didn't hold is left as it was. The fights
+// read per target have three (6339 4.53 s, 7b54 3.40, 29.50 s: `zmdlogs statuses --controls`), none with an Arts
+// reaction status on any target, so the states are synthetic.
 describe("a freeze's run-on on every target (clock.ts rampRunsOn, statusesRunOn)", () => {
   const fx = fixture("6339");
   const team = fx.team.filter((b) => b.operator === CAMILLE);

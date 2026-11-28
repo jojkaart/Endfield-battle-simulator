@@ -14,7 +14,7 @@ import { activeAt, FPS, landingDamage, parseReactionEvent, readingDoesNotApply, 
 import type { LogFixture } from "./zmdlogs.ts";
 import { fightTargets, logDifferences, loggedEntries, type EngineCheck, type LogDifference, type ReadingBasis, type TotalsCrit } from "./enginecheck.ts";
 import type { LogHit } from "./zmdlogs.ts";
-import { verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
+import { verdictCount, type HitVerdict, type LogBuffReplay, type VerdictCount } from "./logcheck.ts";
 import type { Assumption } from "./assumptions.ts";
 import { unknownFacts } from "./buffreplay.ts";
 import { composeCheck } from "./snapshotentry.ts";
@@ -92,7 +92,7 @@ export interface HitRecord {
    * text line flags a hit whose target isn't among them (`≠ landing T<m>`: the check read the hit at another target's
    * statuses than the replay landed it on; round 21, the statuses-per-target report point 2).
    */
-  readonly target?: { readonly index: number; readonly how: string; readonly drop: readonly string[]; readonly kills: boolean; readonly landing?: readonly number[] };
+  readonly target?: { readonly index: number; readonly how: string; readonly drop: readonly string[]; readonly kills: boolean; readonly landing?: readonly number[]; readonly replay?: number; readonly replays?: number };
   /** The crit the replay's landing took (LandedHit.crit; null where the hit can't crit), with a landing. */
   readonly replayCrit?: boolean | null;
   /** Where that crit comes from (replaycrits.ts CritSource: the log, an inference from the log, or none). */
@@ -229,7 +229,7 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
       ...listedSincesOf(hit.effects),
       critSource: replay.replay.critSource(hit),
       ...(facts.get(hit.operator) ? { unknownFacts: facts.get(hit.operator) as readonly string[] } : {}),
-      ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills, ...landingTarget(byHit.get(hit)?.landing) } } : {}),
+      ...(tg ? { target: { index: tg.target, how: tg.how, drop: [...tg.drop].sort(), kills: tg.kills, ...landingTarget(byHit.get(hit)?.landing), ...replayTarget(replay, hit) } } : {}),
     };
     const e = byHit.get(hit);
     const predicted = e?.primary ?? null;
@@ -427,7 +427,7 @@ export function formatRecord(r: HitRecord, json: boolean, reading: "primary" | "
   const pct = (e: number | null | undefined) => (e === null || e === undefined ? "-" : `${(100 * e).toFixed(1)}%`);
   const log = reading === "log" ? `  log reading ${r.logReading ?? "-"}  ${pct(r.logError)}` : "";
   const z = zones && r.landing ? `  ${zoneWords(r)}` : "";
-  const target = r.target ? `  T${r.target.index}${r.target.how === "fits" ? "" : ` (${r.target.how})`}${r.target.landing !== undefined && !r.target.landing.includes(r.target.index) ? ` ≠ landing ${r.target.landing.map((t) => `T${t}`).join("+")}` : ""}${r.target.drop.length ? ` without ${r.target.drop.join(", ")}` : ""}${r.target.kills ? " killed" : ""}` : "";
+  const target = r.target ? `  T${r.target.index}${r.target.how === "fits" ? "" : ` (${r.target.how})`}${r.target.replay !== undefined && r.target.replay !== r.target.index ? ` ≠ replay T${r.target.replay}` : ""}${r.target.landing !== undefined && !r.target.landing.includes(r.target.index) ? ` ≠ landing ${r.target.landing.map((t) => `T${t}`).join("+")}` : ""}${r.target.drop.length ? ` without ${r.target.drop.join(", ")}` : ""}${r.target.kills ? " killed" : ""}` : "";
   return `${basename(r.fixture).replace(/\.json$/, "")}  t=${r.t}${target}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${pct(r.error)}${log}${r.unknown ? `  (${r.unknown})` : ""}${z}`;
 }
 
@@ -568,6 +568,29 @@ export async function exportHitsParallel(files: readonly string[], workers: numb
 /** The targets a hit's landing was on (LandedHit.target, otherTargets), as HitRecord.target's `landing`; none without one. */
 function landingTarget(landing: LandedHit | { readonly unknown: string } | undefined): { landing?: readonly number[] } {
   return landing && !("unknown" in landing) && landing.target !== undefined ? { landing: [landing.target, ...(landing.otherTargets ?? []).map((o) => o.target)] } : {};
+}
+
+/**
+ * The target the replay's own assignment put a hit on (BuffReplay.targets: the assignment the last replay was made on;
+ * none in a fight whose statuses aren't per target) and how many replays the fight took (LogBuffReplay.targetReplays),
+ * as HitRecord.target's `replay` and `replays` (round 22, the check-targets report point 1: 7b54's cause, the second
+ * pass's new slug at 16.36 s, took a scratch script over both assignments).
+ */
+function replayTarget(replay: LogBuffReplay, hit: LogHit): { replay?: number; replays?: number } {
+  const t = replay.replay.targets?.assignment.of.get(hit)?.target;
+  return { ...(t !== undefined ? { replay: t } : {}), ...(replay.targetReplays !== undefined ? { replays: replay.targetReplays } : {}) };
+}
+
+/**
+ * The hits whose check target, replay target (the assignment the replay was made on) and landing's targets don't
+ * agree, of those with a target (`zmdlogs hits --targets`): what a target question is about.
+ */
+export function targetDisagreements(records: readonly HitRecord[]): HitRecord[] {
+  return records.filter((r) => {
+    const t = r.target;
+    if (!t) return false;
+    return (t.replay !== undefined && t.replay !== t.index) || (t.landing !== undefined && !t.landing.includes(t.index)) || (t.replay !== undefined && t.landing !== undefined && !t.landing.includes(t.replay));
+  });
 }
 
 /** The hits whose check target isn't among their landing's targets (HitRecord.target `landing`), of those with both. */

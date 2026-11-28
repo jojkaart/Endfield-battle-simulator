@@ -68,6 +68,11 @@ describe("unlogged tails (0c14's Rossi)", () => {
     const stance = liino.tailsKept.find((x) => x.cast.skillId === "chr_0035_liino_normal_skill" && Math.abs(x.cast.start - 75440) < 50);
     expect(stance?.guard).toBe("needed");
     expect(stance?.cites?.hit.event).toBe("chr_0035_liino_normal_skill_projhit_hit");
+    // Round 22 (the needed-pairing report point 1): the line says what the lost hit had paired with, and after the cut.
+    const lost = stance?.cites?.lost;
+    expect(lost?.before).toMatchObject({ skillId: "chr_0035_liino_normal_skill", pinned: false, paired: lost?.index });
+    expect(lost?.after).toBeNull();
+    expect(stance?.why).toMatch(/\(paired with normal_skill \S+ @78\.\d\d s, unpinned, a trigger's; with the cut: no landing of its operator with its event near it\)/);
     expect(liino.tailCuts.some((x) => x.cast.skillId === "chr_0035_liino_normal_skill" && Math.abs(x.cast.start - 75440) < 50)).toBe(false);
   });
 

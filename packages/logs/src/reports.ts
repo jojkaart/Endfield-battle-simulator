@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import { basename, dirname, join, resolve } from "node:path";
 import { effectiveKit, type GameData } from "@efsim/engine";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
-import { exportHits, exportHitsParallel, filterRecords, formatRecord, layerLines, layerRows, recordChanges, zoneDifference, type HitRecord } from "./hitexport.ts";
+import { exportHits, exportHitsParallel, filterRecords, formatRecord, layerLines, layerRows, recordChanges, targetDisagreements, zoneDifference, type HitRecord } from "./hitexport.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
 import { gameDataCacheKey, mainCheckoutOf, operatorId, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
@@ -92,7 +92,7 @@ export interface RecordFilter {
  * `listed`: only the hits listing a matching buff (effects or boundary), each text line with those entries' sources,
  * sinces and values (round 16, arcane-will report point 1).
  */
-export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly againstHit?: number; readonly listed?: RegExp; readonly layers?: string; readonly progress: (line: string) => void }): Promise<string> {
+export async function hitsReport(data: () => GameData, sel: LogSelection, opts: RecordFilter & { readonly workers: string | undefined; readonly json: boolean; readonly reading?: "primary" | "log"; readonly zones?: boolean; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly against?: Readonly<Record<string, string>>; readonly sameListing?: number; readonly againstHit?: number; readonly listed?: RegExp; readonly layers?: string; readonly targets?: boolean; readonly progress: (line: string) => void }): Promise<string> {
   // Another reading than the defaults: not from the cache (keyed by code and fixture only), nor into it.
   const assume = opts.assume ?? {};
   const under = Object.keys(assume).length > 0;
@@ -131,6 +131,19 @@ export async function hitsReport(data: () => GameData, sel: LogSelection, opts: 
     if (!def) throw new Error(`zmdlogs hits --layers ${opts.layers}: no kit buff ${id} of ${owner} in the selected fights' teams (owner:id, efsim kit <operator>)`);
     const gameBuff = def.gameBuff ?? null;
     return layerLines(layerRows(filterRecords(records, opts), opts.layers, gameBuff), opts.layers, gameBuff).join("\n");
+  }
+  // --targets: the hits whose check target, replay target and landing disagree, with each fight's replay count.
+  if (opts.targets) {
+    const out: string[] = [];
+    for (const file of files) {
+      const mine = filterRecords(records, opts).filter((r) => r.fixture === file || basename(r.fixture) === basename(file));
+      const withTarget = mine.filter((r) => r.target);
+      const off = targetDisagreements(mine);
+      const replays = withTarget.find((r) => r.target?.replays !== undefined)?.target?.replays;
+      out.push(`${basename(file).replace(/\.json$/, "")}: ${withTarget.length ? `${withTarget.length} hit(s) with a target, ${replays !== undefined ? `${replays} replay(s) made (logcheck.ts TARGET_REPLAYS: the first on one enemy, then one per assignment while the check's differs)` : "statuses not per target (one replay)"}; ${off.length} whose check target (T), the replay's (≠ replay: the assignment it was made on) and the landing's (≠ landing) disagree` : "not read per target (no hit has a target)"}`);
+      out.push(...off.map((r) => `  ${formatRecord(r, false, opts.reading, opts.zones === true)}`));
+    }
+    return out.join("\n");
   }
   const listed = opts.listed;
   if (listed) {

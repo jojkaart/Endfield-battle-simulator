@@ -17,7 +17,7 @@ import { deathEvent, replaySteps, runEventStep, stepWords, type LoggedStagger, t
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
 import { type ReplayedCast, frameOf, keptPrevious } from "./castassembly.ts";
-import { pairKitLandings } from "./landingpairs.ts";
+import { LANDING_NEAR_FRAMES, pairKitLandings } from "./landingpairs.ts";
 import { endedWithTick, loggedTick } from "./holdinputs.ts";
 import { breakHoldStarts } from "./holds.ts";
 
@@ -385,7 +385,46 @@ export interface TailKept {
    * For the `landed`, `status` and `shown-free` guards: the logged hit it cites, and how far (ms) the log's ms is past
    * the cast's last logged landing's frame time.
    */
-  readonly cites?: { readonly hit: LogHit; readonly afterMs: number };
+  readonly cites?: { readonly hit: LogHit; readonly afterMs: number; readonly lost?: NeededLoss };
+}
+
+/**
+ * A replay landing as a `needed` line names it (round 22, the needed-pairing report point 1: a TAILKEPT `needed` line
+ * named the lost hit but not the landing it had, so a tail kept by its own unlogged landing took a debug print to see):
+ * its skill, hit and frame, whether its cast pinned it, the cast it belongs to (its placed start, ms) and whether that is
+ * the tail's own cast, and the logged hit it stands for (its index in fx.hits; none: unpaired).
+ */
+export interface LandingNote {
+  readonly skillId: string;
+  readonly hitId: string;
+  readonly frame: number;
+  readonly pinned: boolean;
+  readonly castStart: number | null;
+  readonly tailOwn: boolean;
+  readonly paired: number | null;
+}
+
+/**
+ * The logged hit a cut's replay lost (cutTails' `needed`): its landing in the run before the cut, and in the run with
+ * the cut the nearest landing of its operator with its event (within LANDING_NEAR_FRAMES) and what that one paired with.
+ */
+export interface NeededLoss {
+  readonly hit: LogHit;
+  readonly index: number;
+  readonly before: LandingNote | null;
+  readonly after: LandingNote | null;
+}
+
+/** A NeededLoss as words: "paired with attack4 hit_2 @47.50 s, unpinned, the tail's own; with the cut: none". */
+export function neededLossText(l: NeededLoss, fx: Pick<LogFixture, "hits">): string {
+  const note = (n: LandingNote) => {
+    const of = n.tailOwn ? "the tail's own" : n.castStart !== null ? `of the cast placed at ${(n.castStart / 1000).toFixed(2)} s` : "a trigger's";
+    return `${n.skillId.replace(/^chr_\d+_[a-z0-9]+_/, "")} ${n.hitId} @${((n.frame * 1000) / FPS / 1000).toFixed(2)} s, ${n.pinned ? "pinned" : "unpinned"}, ${of}`;
+  };
+  const pairedText = (n: LandingNote) => (n.paired === null ? "unpaired" : `standing for ${(fx.hits[n.paired] as LogHit).event} at ${(((fx.hits[n.paired] as LogHit).t) / 1000).toFixed(2)} s`);
+  const before = l.before ? `paired with ${note(l.before)}` : "paired with a status landing";
+  const after = l.after ? `the nearest landing with its event ${note(l.after)}, ${pairedText(l.after)}` : "no landing of its operator with its event near it";
+  return `${before}; with the cut: ${after}`;
 }
 
 /**
@@ -412,7 +451,7 @@ export type TailGuard = (typeof TAIL_GUARDS)[number];
  * last logged landing, at that landing's frame (ReplayCastOptions.endsAt). pending/zmdlogs-0c14fb3ce77d.json: Rossi's battle skill at
  * 35.40 s, its two charge hits logged, then neither her Lift at frame 35 nor the wolves and their bleed.
  */
-export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, reading: string, kept?: TailKept[], needed?: ReadonlyMap<ReplayedCast, LogHit>): Map<ReplayedCast, number> {
+export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, reading: string, kept?: TailKept[], needed?: ReadonlyMap<ReplayedCast, NeededLoss>): Map<ReplayedCast, number> {
   const out = new Map<ReplayedCast, number>();
   if (reading !== "cut" && reading !== "cut-all") return out;
   const kinds: ReadonlySet<SkillType> = new Set<SkillType>(reading === "cut-all" ? ["basic", "battle", "combo", "ultimate"] : ["battle", "combo", "ultimate"]);
@@ -520,7 +559,8 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
     // Its cut tried (cutTails): the replay without the tail lost a logged hit's landing, so what the tail set off is in the log.
     const need = needed?.get(c);
     if (need) {
-      keep("needed", `the replay with it cut lost the landing of a logged hit, ${need.event} of ${need.operator} at ${(need.t / 1000).toFixed(2)} s: what the tail set off (a buff, a status, SP or energy, a later cast) is in the log`, { hit: need, afterMs: after(need) });
+      const h = need.hit;
+      keep("needed", `the replay with it cut lost the landing of a logged hit, ${h.event} of ${h.operator} at ${(h.t / 1000).toFixed(2)} s (${neededLossText(need, fx)}): what the tail set off (a buff, a status, SP or energy, a later cast) is in the log`, { hit: h, afterMs: after(h), lost: need });
       continue;
     }
     out.set(c, lastLogged);
@@ -538,9 +578,14 @@ export function tailCuts(run: ReplayRun, fx: LogFixture, placement: Placement, r
  * as shown by the next attack 4's tail.
  */
 export function loggedShown(run: ReplayRun, fx: LogFixture, casts: readonly ReplayedCast[]): Set<number> {
-  const out = new Set<number>();
+  return new Set(loggedShownLandings(run, fx, casts).keys());
+}
+
+/** loggedShown with each hit's kit landing (null: a status hit, shown by a status landing). */
+export function loggedShownLandings(run: ReplayRun, fx: LogFixture, casts: readonly ReplayedCast[]): Map<number, LandedHit | null> {
+  const out = new Map<number, LandedHit | null>();
   const before = (i: number) => run.brokenAt === null || frameOf((fx.hits[i] as LogHit).t) < run.brokenAt;
-  for (const [i, x] of pairKitLandings(run.st.hits, fx, [...run.ctx.kits.values()], casts)) if (x.ref !== undefined || before(i)) out.add(i);
+  for (const [i, x] of pairKitLandings(run.st.hits, fx, [...run.ctx.kits.values()], casts)) if (x.ref !== undefined || before(i)) out.set(i, x);
   const near = new Map<string, number[]>();
   for (const x of run.st.hits) {
     if (!x.skillId.startsWith("reaction:")) continue;
@@ -551,9 +596,28 @@ export function loggedShown(run: ReplayRun, fx: LogFixture, casts: readonly Repl
     const r = out.has(i) || !before(i) ? null : parseReactionEvent(h.event);
     if (!r) return;
     const f = frameOf(h.t);
-    if ((near.get(`${h.operator}|reaction:${r.kind}|${r.element}`) ?? []).some((x) => Math.abs(x - f) <= TAIL_LANDED_FRAMES)) out.add(i);
+    if ((near.get(`${h.operator}|reaction:${r.kind}|${r.element}`) ?? []).some((x) => Math.abs(x - f) <= TAIL_LANDED_FRAMES)) out.set(i, null);
   });
   return out;
+}
+
+/** A run's landing as a LandingNote: its cast by LandedHit.cast (Made.index), the tail's own when that is `tail`. */
+function landingNote(run: ReplayRun, x: LandedHit, tail: ReplayedCast, paired: ReadonlyMap<number, LandedHit | null>): LandingNote {
+  const made = x.cast !== undefined ? run.made.find((m) => m.index === x.cast) : undefined;
+  const at = [...paired].find(([, y]) => y === x)?.[0];
+  return { skillId: x.skillId, hitId: x.hitId, frame: x.frame, pinned: x.ref !== undefined, castStart: made ? made.c.start : null, tailOwn: made !== undefined && (made.c === tail || (made.c.operator === tail.operator && made.c.skillId === tail.skillId && made.c.start === tail.start)), paired: at ?? null };
+}
+
+/** The logged hit `i` a cut lost (cutTails' `needed`), with its landing before and the nearest one with its event after. */
+function neededLoss(fx: LogFixture, i: number, main: ReplayRun, mainShown: ReadonlyMap<number, LandedHit | null>, run: ReplayRun, shown: ReadonlyMap<number, LandedHit | null>, tail: ReplayedCast): NeededLoss {
+  const hit = fx.hits[i] as LogHit;
+  const had = mainShown.get(i) ?? null;
+  const events = new Map([...run.ctx.kits.values()].flatMap((k) => kitHitEntries(k).map((e) => [`${k.operator}|${e.skillId}|${e.hit.id}`, e.hit.events] as const)));
+  const f = frameOf(hit.t);
+  const near = run.st.hits
+    .filter((x) => x.operator === hit.operator && Math.abs(x.frame - f) <= LANDING_NEAR_FRAMES && (events.get(`${x.operator}|${x.skillId}|${x.hitId}`) ?? []).includes(hit.event))
+    .sort((a, b) => Math.abs(a.frame - f) - Math.abs(b.frame - f))[0];
+  return { hit, index: i, before: had ? landingNote(main, had, tail, mainShown) : null, after: near ? landingNote(run, near, tail, shown) : null };
 }
 
 /**
@@ -569,7 +633,7 @@ export function cutTails(first: ReplayRun, casts: readonly ReplayedCast[], rerun
   let main = first;
   let list = casts;
   const cuts = new Map<ReplayedCast, number>();
-  const needed = new Map<ReplayedCast, LogHit>();
+  const needed = new Map<ReplayedCast, NeededLoss>();
   for (let round = 0; round < TAIL_CUT_ROUNDS; round++) {
     const next = [...tailCuts(main, fx, placement, reading, undefined, needed)].sort((a, b) => a[1] - b[1])[0];
     if (!next) break;
@@ -577,14 +641,15 @@ export function cutTails(first: ReplayRun, casts: readonly ReplayedCast[], rerun
     const cut = { ...cast, cutAt: frame };
     const tried = list.map((c) => (c === cast ? cut : c));
     const run = rerun(tried);
-    const shown = loggedShown(run, fx, tried);
+    const shown = loggedShownLandings(run, fx, tried);
+    const mainShown = loggedShownLandings(main, fx, list);
     // Only a logged hit after the cut (its frame past the cast's last logged landing): the tail's landings and what they
     // set off come after it. One logged before it the pairing took a tail landing for (c83c75d02a85 47.17 s: four of eight
     // batched Arcane attack-4 hits, the placement's twins, paired with the 47.23 s cast's unlogged landings at 47.50 and
     // 47.60 s, 13 frames on) says nothing of the tail. split:needed-after
-    const lost = [...loggedShown(main, fx, list)].filter((i) => !shown.has(i) && frameOf((fx.hits[i] as LogHit).t) > frame && (run.brokenAt === null || frameOf((fx.hits[i] as LogHit).t) < run.brokenAt)).sort((a, b) => a - b)[0];
+    const lost = [...mainShown.keys()].filter((i) => !shown.has(i) && frameOf((fx.hits[i] as LogHit).t) > frame && (run.brokenAt === null || frameOf((fx.hits[i] as LogHit).t) < run.brokenAt)).sort((a, b) => a - b)[0];
     if (lost !== undefined) {
-      needed.set(cast, fx.hits[lost] as LogHit);
+      needed.set(cast, neededLoss(fx, lost, main, mainShown, run, shown, cast));
       continue;
     }
     cuts.set(cut, frame);

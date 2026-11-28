@@ -109,6 +109,9 @@ export default command({
                 [--layers <owner:id>]     Instead: a layered kit buff per hit, the log's entries of its game buff
                                           (their lane starts), the replay's layers (its modifiers in the primary
                                           reading) and the layers the logged value implies, then by the log's count
+                [--targets]               Instead: per fight read per target, how many replays it took and the hits
+                                          whose check target, the replay's own (the assignment it was made on: ≠
+                                          replay) and the landing's (≠ landing) disagree
                 [--same-listing s]        Instead (one fixture): the hit at that moment and the nearest hits with the
                                           very same listing (buff, source, value), with their verdicts and a count by
                                           class: a listing difference that reads plain next door is no cause
@@ -175,6 +178,10 @@ export default command({
                 [--target n] [--operator <op>] [--from s] [--to s]  Only these targets (repeatable), operators, window
                 [--inflictions]           Also each target's infliction (element×stacks) where a frame of kit
                                           landings changed it, with those landings (a stack's arrival)
+  efsim zmdlogs statuses --controls <fixture…|--all>  Each control status the replay applied, whether it froze the
+                                          enemy and to when (none on a control-immune one), every target's statuses
+                                          at it, a count per fight: is there a freeze in these fights? (--all: a
+                                          replay per log, minutes: in the background)
   efsim zmdlogs bursts <fixture…|--all>   Each Arts Burst, logged against the check's replay (paired as the check
                                           pairs them, the offset; log only with the reason; replay only), each
                                           side's likely cause (the operator's latest inflicting hit at least the
@@ -497,6 +504,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     period: { type: "string" },
     gap: { type: "string" },
     "event-lags": { type: "boolean", default: false },
+    targets: { type: "boolean", default: false },
+    controls: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args } = ctx;
@@ -690,7 +699,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       // --layers: an owner given by its name ("Liino:wpn_lance_0014.atk"): its id (clockview.ts kitBuffKey).
       const layers = values.layers !== undefined ? { layers: kitBuffKey(data(), values.layers) } : {};
       if (values.layers !== undefined && (values.json || values.against.length || sameAt !== undefined || againstHit !== undefined)) throw new Error("zmdlogs hits --layers prints text lines alone (no --json, --against, --same-listing or --against-hit)");
-      return hitsReport(data, selection, { ...layers, workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
+      if (values.targets && (values.json || values.against.length || sameAt !== undefined || againstHit !== undefined || values.layers !== undefined)) throw new Error("zmdlogs hits --targets prints text lines alone (no --json, --against, --same-listing, --against-hit or --layers)");
+      return hitsReport(data, selection, { targets: values.targets, ...layers, workers: values.workers, ...(values.kind !== undefined ? { kind: values.kind } : {}), operators, ...event, ...window, json: values.json, reading, zones: values.zones, cache: !values["no-cache"], assume, against, ...(sameAt !== undefined ? { sameListing: sameAt } : {}), ...(againstHit !== undefined ? { againstHit } : {}), ...(values.listed !== undefined ? { listed: new RegExp(values.listed) } : {}), progress });
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });
@@ -749,8 +759,18 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (named.length && values.all) throw new Error("zmdlogs placement: fixtures or --all, not both");
       return placementView(data(), devFixtures(named.length ? { ids: named } : {}), { progress, rules: values.choices });
     }
+    if (sub === "statuses" && values.controls) {
+      // Round 22 (the check-targets report point 2): is there a freeze in these fights? Over logs, one replay each.
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs statuses --controls takes fixtures (ids such as 6339) or --all (every verified and pending development log; --operator op, --from s, --to s, --assume id=reading)");
+      if (named.length && values.all) throw new Error("zmdlogs statuses --controls: fixtures or --all, not both");
+      if (values.inflictions || values.target.length) throw new Error("zmdlogs statuses --controls lists the control statuses alone (no --inflictions, --target)");
+      const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
+      if (values.all) process.stderr.write(`zmdlogs statuses --controls --all: ${logs.length} logs, a replay each (about 3 s): run it in the background with its output to a file\n`);
+      return logs.map((d) => statusesView(data(), d.fx, { ...seconds(values.from, "from"), ...seconds(values.to, "to"), operators, assume, controls: true })).join("\n");
+    }
     if (sub === "statuses") {
-      if (args.length !== 2 || !arg) throw new Error("zmdlogs statuses takes one fixture file (--target n, --operator op, --from s, --to s, --assume id=reading)");
+      if (args.length !== 2 || !arg) throw new Error("zmdlogs statuses takes one fixture file (--target n, --operator op, --from s, --to s, --assume id=reading; --controls: several or --all)");
       const targets = values.target.map((x) => {
         const n = Number(x);
         if (!Number.isInteger(n) || n < 0) throw new Error(`zmdlogs statuses --target ${x}: a target number (0, 1, …: the T<n> of its lines)`);

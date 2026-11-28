@@ -628,6 +628,12 @@ export interface LogBuffReplay {
    * the defaults beside a replay made under other readings, found only by a hand-made trace).
    */
   readonly placement?: Placement;
+  /**
+   * How many replays the fight took (TARGET_REPLAYS: 1 with one enemy's statuses, then one per assignment while the
+   * check's differs from the replay's), where its statuses are per target (round 22, the check-targets report point 1:
+   * nothing said how many it took; `zmdlogs hits --targets` prints it).
+   */
+  readonly targetReplays?: number;
 }
 
 /** A logged arts reaction's level, at the replay's landing of it (TimelineScenario.loggedReactionLevels). */
@@ -727,6 +733,7 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
     return replay;
   };
   let replay = passes({});
+  let made = 1;
   // The statuses per target (target-statuses `per-target`, a fight read per target): the replay again, each logged
   // landing on the targets the first one's assignment put its hits on (enginecheck.ts replayTargets), each kill its
   // target's death; the check reads the second one on that assignment (docs/design/data.md "Statuses per target"),
@@ -736,10 +743,11 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
       const targets = replayTargets(engineCheck(data, fx, replay));
       if (!targets || (replay.targets && sameTargets(replay.targets.assignment, targets.assignment))) break;
       replay = passes({ targets });
+      made++;
     }
   }
   const replayed = replayedHits(fx, replay);
-  return { replay, replayed, runs: disagreementRuns(fx, replayed), placement };
+  return { replay, replayed, runs: disagreementRuns(fx, replayed), placement, ...(statusesPerTarget(fx, opts.assume) ? { targetReplays: made } : {}) };
 }
 
 /** logBuffReplay's options in one object (its third argument): the placement (default placeHits), the readings and the traces. */

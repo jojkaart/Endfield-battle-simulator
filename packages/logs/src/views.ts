@@ -689,9 +689,10 @@ function enemyWords(e: EnemyStatus | null, frame: number): string {
  * it; the replay's deaths (BuffReplay.deaths) between. The target-statuses report point 1: a burst too many or a
  * reaction a kit hit's `if` needs, answered without a probe.
  */
-export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly assume?: Readonly<Record<string, string>>; readonly targets?: readonly number[]; readonly inflictions?: boolean } = {}): string {
+export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly assume?: Readonly<Record<string, string>>; readonly targets?: readonly number[]; readonly inflictions?: boolean; readonly controls?: boolean } = {}): string {
   const { replay } = logBuffReplay(data, fx, underReadings(f.assume));
   const perTarget = replay.targets !== undefined;
+  if (f.controls) return controlsLines(data, fx, replay, f).join("\n");
   const lines: { t: number; text: string }[] = [];
   const damage = new Map<string, number>();
   for (const l of replay.hits) if (l.skillId.startsWith("reaction:")) damage.set(`${l.frame}|${l.operator}|${l.target ?? ""}`, (damage.get(`${l.frame}|${l.operator}|${l.target ?? ""}`) ?? 0) + l.exact);
@@ -737,6 +738,37 @@ export function statusesView(data: GameData, fx: LogFixture, f: ViewFilter & { r
   lines.sort((a, b) => a.t - b.t);
   const head = `${fx.id}: the replay's status record (BuffReplay.reactions; times in s): each burst, reaction, consumption, physical status and Combustion tick with its operator, ${perTarget ? "its target (T<n>, the check's target numbering: target-statuses per-target), " : "(one enemy: not read per target, or target-statuses one) "}the damage the replay dealt with it, and → the ${perTarget ? "target's" : "enemy's"} statuses after it (infliction element×stacks, reactions and physical statuses with their levels, Vulnerable); DEATH the replay's deaths (BuffReplay.deaths)`;
   return [head, ...lines.map((l) => l.text), ...(lines.length ? [] : ["  (none in the window)"])].join("\n");
+}
+
+/**
+ * `zmdlogs statuses <fixture> --controls` (round 22, the check-targets report point 2: "no fight read per target has a
+ * freeze yet" was a backlog claim from the absence of a known case; a scratch script found three): each control status
+ * the replay applied (BuffReplay.reactions `control`), whether it froze the enemy (TimelineState.enemyFrozenUntil past
+ * it: none on a control-immune enemy) and to when, and every target's statuses at it (the ramp and the statuses a
+ * freeze's run-on reads: clock.ts rampRunsOn, statusesRunOn); then a count.
+ */
+function controlsLines(data: GameData, fx: LogFixture, replay: BuffReplay, f: ViewFilter & { readonly targets?: readonly number[] }): string[] {
+  const perTarget = replay.targets !== undefined;
+  const out: string[] = [];
+  let [freezes, held] = [0, 0];
+  for (const e of replay.reactions) {
+    if (e.kind !== "control") continue;
+    const t = msOf(e.frame);
+    if (!inWindow(f, t) || !mine(f, e.operator) || (f.targets?.length && (e.target === undefined || !f.targets.includes(e.target)))) continue;
+    const st = replay.stateAt(e.frame);
+    const until = st?.enemyFrozenUntil ?? 0;
+    const froze = e.freezes && until > e.frame;
+    if (e.freezes) freezes++;
+    if (froze) held++;
+    const frozen = !e.freezes ? "no freeze (not a freezing status)" : froze ? `froze the enemy to ${s(msOf(until))} s` : "no freeze (control-immune: the freezer's own debuffs only, or a freeze already running past it)";
+    const each = st ? (perTarget ? everyTarget(st).map((x) => `T${x.target}: ${enemyWords(x.enemy, e.frame)}`).join("; ") : enemyWords(st.enemy, e.frame)) : "?";
+    out.push(`${s(t).padStart(7)}  ${e.target !== undefined ? `T${e.target}`.padEnd(4) : "    "}${label(data, e.operator).padEnd(12)} ${statusEventWords(e)}: ${frozen}; ${perTarget ? "every target's statuses" : "the enemy's statuses"}: ${each}`);
+  }
+  return [
+    `${fx.id}: the control statuses the replay applied (BuffReplay.reactions; times in s), whether each froze the enemy (TimelineState.enemyFrozenUntil) and to when, and ${perTarget ? "every target's" : "the enemy's"} statuses at it (what a freeze's run-on reads: clock.ts rampRunsOn, statusesRunOn, freeze-ramp)`,
+    ...(out.length ? out : ["  (none in the window)"]),
+    `${out.length} control status(es), ${freezes} freezing, ${held} froze the enemy`,
+  ];
 }
 
 /** `zmdlogs stagger`: a fight's Stagger runs, the log's against the replay's. */
