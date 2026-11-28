@@ -61,6 +61,19 @@ worktree-agent-aae9ee5eca9001663, from main at 967d460.
 - **Files:** .ignore, tests/holdout-blindness.test.ts.
 - **Why it helps:** the blindness rule holds for the searches agents actually type.
 
+## 5. A view test pinned the very flag the task was to remove
+
+- **What happened:** the first premerge (15 min) failed on tests/views.test.ts "flags casts made against the kit":
+  it asserted 0eef's Typhoeus combo at 6.77 s is INSIDE "held by its combo window", the backlog's lead itself. No
+  test I ran while working (`vitest related` would have been most of the suite) named it; `rg -l 'combo window'
+  tests` would have.
+- **Cause:** round 23 tested its new gate words on a live accuracy lead, so the fix breaks the words' test.
+- **Suggestion:** a view's wording test uses a case the docs mark settled (or a synthetic one), and names the lead
+  in a comment when it can only use a live one ("fails when 0eef 6.77 s is fixed"), so `rg -l '<fixture> <time>'
+  tests` finds it; the lead's backlog entry names the test.
+- **Files:** tests/views.test.ts, docs/friction/README.md (the backlog's accuracy entries).
+- **Why it helps:** saves a premerge cycle for whoever fixes the lead.
+
 ## What worked well
 
 - `zmdlogs decisions --all` with round 23's gate words found the 18 at once; `zmdlogs worldtime` settled the
