@@ -285,11 +285,44 @@ export function startGateWords(ctx: TimelineContext, state: TimelineState, opera
   const later = Math.ceil(state.readyAt[skillId] ?? 0) >= until
     ? `its cooldown, ready at frame ${Math.ceil(state.readyAt[skillId] ?? 0)}`
     : needsWindow(ctx, operator, skill) && !windowOpen(then, operator, windowKey(ctx, operator, skillId), until - 1)
-      ? "its combo window, shut until then"
+      ? `its combo window, shut until then${windowWords(state, operator, skillId, windowKey(ctx, operator, skillId), Math.ceil(state.readyAt[skillId] ?? 0))}${ownSlowdownWords(nt, until - frame)}`
       : spAt(then, until - 1) < spCostAt(ctx, then, operator, costs, until - 1) - 1e-6
         ? "its SP cost, reached then"
         : "a later gate (the running action's own hits, a jump or end on its way, the attack input's mapping)";
   return { frame: until, words: `${later}; the running action alone would let it start at ${after === frame ? "once" : `frame ${after}`} (${own})` };
+}
+
+/**
+ * What a shut combo window last saw, for startGateWords (views only; the combo-windows task, 2026-11-28): the window's
+ * last opening and its end, the skill's last cast, and the latest event its trigger saw (TimelineState.comboTrigger:
+ * only those with an element or a physical status), and whether the cooldown kept it shut: one past the last opening
+ * and the last cast is one the cooldown kept shut (the combo ready only at `ready`).
+ */
+function windowWords(state: TimelineState, operator: string, skillId: string, key: string, ready: number): string {
+  const w = state.comboWindow[key];
+  const t = state.comboTrigger[key];
+  const last = state.casts.findLast((c) => c.operator === operator && c.skill === skillId)?.frame;
+  const parts: string[] = [];
+  if (w) parts.push(`last open frames ${w.from}–${Number.isFinite(w.until) ? w.until : "…"}${w.whileBuff ? ` while ${w.whileBuff}` : ""}`);
+  if (last !== undefined) parts.push(`last cast at frame ${last}`);
+  const after = Math.max(w?.from ?? -1, last ?? -1);
+  if (!t) parts.push("no trigger with an element or a physical status recorded");
+  else if (t.frame > after) parts.push(`a trigger at frame ${t.frame} (${t.source.kind === "infliction" ? `${t.source.element} infliction` : t.source.status}) the cooldown kept shut (ready at frame ${ready})`);
+  else parts.push(`no trigger with an element or a physical status since (the latest at frame ${t.frame})`);
+  return `: ${parts.join("; ")}`;
+}
+
+/**
+ * Whether a start `late` frames later falls inside the skill's own slow-down from its frame 0, and how much of the
+ * world's time runs by then (its scales summed), for startGateWords: a combo whose window opens there was pressed at
+ * the world moment its opener landed, which the log batched into the slow-down (the combo-windows task, 2026-11-28:
+ * 12 of the development logs' 13 combo-window INSIDE lines but Typhoeus's; docs/open-problems.md "Combo windows").
+ */
+function ownSlowdownWords(t: SkillTiming, late: number): string {
+  const own = t.slowdowns.find((s) => s.from === 0 && late <= s.scales.length);
+  if (!own) return "";
+  const world = own.scales.slice(0, late).reduce((a, x) => a + x, 0);
+  return `; that is ${late} frame(s) into its own slow-down (${own.scales.length} frames), ${world.toFixed(2)} frame(s) of the world's time: an opener logged inside it, landed at the press`;
 }
 
 export function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number, kind?: SkillType): number {
