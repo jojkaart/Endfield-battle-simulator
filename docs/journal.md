@@ -80,8 +80,12 @@ action on its caster's timeline; measured better than `lowest`, `none` worse). T
 data's 33 other ultimates, the skill's own time stop, 458b 158.53 s); its 458b cost explained above, recovered in part
 by the held-back diff. A press in a hold stays undecided (9847 57.64 s's event lag fits both).
 
-**Scoreboard** (`npm run snapshots:update`, against 2f4afbd): SCOREBOARD-PENDING. **Team numbers** (team-ab against
-2f4afbd): TEAM-AB-PENDING.
+**Scoreboard** (`npm run snapshots:update`; measure against main at 3717a31): verified 78.5% and development 84.2%
+plain (00ae 689 → 691, 9090 1030 → 1031), hold-outs 82.5% (one +2, one −1 plain; |matched| 1.78 → 1.82%), earlier
+pending 84.9% (458b 1093 → 1087, as above), several targets 69.4%: every row's percentage unchanged. **Team numbers**
+(team-ab against 2f4afbd, 32 seeds): the owner's team sustained DPS +0.95% full energy (53,513 → 54,023, sd 1,319),
+−0.32% zero (53,059 → 52,889, sd 1,392), within one sd; Typhoeus's team unchanged (its fight the same). `npm run
+smoke` passed.
 
 **Left:** the held-back diff for the lead; 458b's layer ends at 111 s (world holds between 88.7 and 111.5 s);
 Wulfgard's combos pressed inside his own ultimate (1a77, 8056: INSIDE 26–41 frames, the ultimate's hits running on).
