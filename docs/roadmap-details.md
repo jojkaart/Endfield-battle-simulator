@@ -282,6 +282,16 @@ landing at its cast's previous one's ms as a second enemy's fixed it and broke 4
 batches at one ms: dropped), de6a's hit_3 falls in a 2.3 s gap with no hit by anyone. Next: a chance jump's path from the values (Alesh's Rare Fin: 0c14, 4e36,
 a9d7), a combo made from the listing, Snowshine's ×0.9846 after her node 5.
 
+**The combo hold per episode (2026-11-28, [journal](journal/2026-11-28-05-a-combo-s-excess-hold-per-episode-not-a-share-the-still.md)):**
+remeasured at development plain 84.2%, the excess stands (ticks 0.23, casts 0.40, bursts 0.30 of the combo-held time)
+and is a constant per episode: a cast across one combo is 212–285 ms late whatever its hold, across two pressed
+together about as late (scripts/probes/combo-hold/episodes.ts). The layer-1 dilations (only Arcane's names her
+target) and a cut-in holding the teammates (the controlled operator is as late) are ruled out. `combo-operator-hold`
+`4f-episode`/`5f-episode`/`6f-episode` registered, not the default: earlier pending 84.6 → 83.9%, the rest unchanged,
+the loss from the replay's pinned landings against Zhuang Fangyi's strike_n stack on her clock (3aa6). Next: which casts
+take the hold (her strikes on time in 3aa6, late in 4bfc and d774), a world hold per episode inside a Stagger, the
+reading for simulated fights.
+
 **Bursts and cooldowns (2026-11-26, [journal](journal/2026-11-26-08-bursts-and-cooldowns-4d60-s-runs-a-whole-game-pause-in-a.md)):**
 4d60's Perlica weapon and Will burst runs weren't a missed refresh: a whole-game pause (117.22–124.45 s, no hit by
 anyone) inside a Stagger, where the hold placement allowed none (engine assumption `pause-holds` `away`: 696 → 806
