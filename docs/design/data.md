@@ -88,7 +88,8 @@ one branch path). Then:
   without frames takes the landings of its key and events when they are
   one branch path no other hit takes landings of; a skill hit must end up
   with frames), events, factor, element, poise and poiseControlledOnly,
-  detached, energy; `count` defaults to the number of frames; the skill's
+  detached, energy, a capped channel's end (`latest` → KitHit.latestFrame,
+  round 22 also in a buff's or entity's own file); `count` defaults to the number of frames; the skill's
   teamEnergy and energyBlockSeconds (unless an energy-blocking buff of its
   own cast trigger blocks it); SP: the grant going with each landing (one
   only while controlled as `{if: {controlled: true}, then: v}`,

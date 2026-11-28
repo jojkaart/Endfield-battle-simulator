@@ -3542,7 +3542,7 @@
           "type": "object",
           "description": "Fields in which this hit differs from the compiled SkillData on purpose (a value the kit writes that isn't the data's, or one it leaves out that the data has), each with the reason: the loader neither fills these in from the data nor refuses the difference (docs/design/data.md, \"Kits and the game data\").",
           "propertyNames": {
-            "enum": ["frames", "count", "events", "scale", "factor", "element", "poise", "poiseControlledOnly", "finalStrike", "detached", "launch", "energy", "sp", "spBeforeDamage"]
+            "enum": ["frames", "count", "events", "scale", "factor", "element", "poise", "poiseControlledOnly", "finalStrike", "detached", "launch", "energy", "sp", "spBeforeDamage", "latest"]
           },
           "additionalProperties": {
             "type": "string",

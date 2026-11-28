@@ -135,7 +135,7 @@ export function foldPoise(c: CompiledSkill): { skill: CompiledSkill; rest: Compi
 // Matching a kit skill's hits to the compiled landings.
 
 /** What the matcher reads of a kit hit (a loaded KitHit). */
-export type MatchHit = Pick<KitHit, "id" | "scale" | "scaleValue" | "events" | "frames" | "count" | "factor" | "element" | "poise" | "poiseControlledOnly" | "poiseOnly" | "finalStrike" | "reaction" | "energy" | "applies" | "detached" | "launch" | "sp" | "spBeforeDamage">;
+export type MatchHit = Pick<KitHit, "id" | "scale" | "scaleValue" | "events" | "frames" | "count" | "factor" | "element" | "poise" | "poiseControlledOnly" | "poiseOnly" | "finalStrike" | "reaction" | "energy" | "applies" | "detached" | "launch" | "sp" | "spBeforeDamage" | "latestFrame">;
 
 /** What the matcher reads of a kit skill. */
 export interface MatchSkill {
@@ -380,6 +380,10 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
       // (A trigger's hits: the trigger says whether its actions are the cast's.)
       const det = [...new Set(at.map((l) => l.detached))];
       if (!triggerHit && det.length === 1 && det[0] !== (h.detached ?? false)) hit(h.id, "detached", `${tag} detached: kit ${String(h.detached ?? false)}, data ${String(det[0])}`);
+      // A capped channel's end (CompiledLanding.latest; the loader fills KitHit.latestFrame from it): one the kit leaves
+      // out on purpose is marked (Typhoeus's Barrage Array, whose ticks the logs have past it). split:channel-detached
+      const latest = [...new Set(at.map((l) => l.latest))];
+      if (latest.length === 1 && latest[0] !== h.latestFrame) hit(h.id, "latest", `${tag} latest: kit ${h.latestFrame ?? "none"}, data ${latest[0] ?? "none"} (a capped channel's end)`);
       if (h.launch !== undefined) {
         const launches = [...new Set(at.map(launchFrame))];
         if (!launches.includes(h.launch)) hit(h.id, "launch", `${tag} launch: kit ${h.launch}, data ${launches.map((x) => x ?? "-").join(" | ")}`);
@@ -452,7 +456,7 @@ function same<T>(items: readonly T[]): T | undefined {
 }
 
 /** The hit fields the loader compares with the compiled data (and fills in where a kit leaves them out); a kit hit's `dataOverride` names the ones it differs in on purpose. */
-export const DATA_FIELDS = ["frames", "count", "events", "scale", "factor", "element", "poise", "poiseControlledOnly", "finalStrike", "detached", "launch", "energy", "sp", "spBeforeDamage"] as const;
+export const DATA_FIELDS = ["frames", "count", "events", "scale", "factor", "element", "poise", "poiseControlledOnly", "finalStrike", "detached", "launch", "energy", "sp", "spBeforeDamage", "latest"] as const;
 export type DataField = (typeof DATA_FIELDS)[number];
 
 /** What the data says of a kit hit, field by field, where its landings agree (HitMatch). */

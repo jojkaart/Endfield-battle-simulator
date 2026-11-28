@@ -1347,9 +1347,11 @@ class Compiler {
       // The ticks' own landings: not what a buff or entity they create deals later (Rossi's combo afterhits). split:channel-end
       for (let i = before; i < this.landings.length; i++) {
         const l = this.landings[i] as CompiledLanding;
-        // A channel inside a detached file (a buff's, an entity's own) gets no end yet: as before the token (round 21),
-        // nine kit hits; marking them moves verdicts (the backlog's accuracy list).
-        if (this.landingChannel.get(i) === channel && !l.detached && l.frame <= end) this.landings[i] = { ...l, latest: end };
+        // A channel inside a detached file (a buff's, an entity's own) too (round 22; until then left out: Tangtang's
+        // ultimate stare to frame 196, whose ticks the logs never have past it, Rossi's wolves, Zhuang Fangyi's attack-5
+        // and ultimate attack-3 ranges); a kit that leaves the end out marks it (dataOverride `latest`: Typhoeus's Barrage
+        // Array). split:channel-detached
+        if (this.landingChannel.get(i) === channel && l.frame <= end) this.landings[i] = { ...l, latest: end };
       }
     }
     if (this.landings.length > before) this.notes.add(`${ctx.file}@${start}: ${t} ticks from frame ${start} every ${fmt(interval)} s to ${end}${Number.isFinite(perTarget) ? `, at most ${perTarget} per target` : ""} (first tick assumed at the start)`);
