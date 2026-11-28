@@ -274,3 +274,10 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   still starts each such event's stop at the event (458b 84.37 s: Akekuri's ultimate made at 82.53 s, its stop in the
   placement's list from 84.37 s). Reading ultimateEventRead there moves the placement's stop lists: measure,
   `cli-ab.ts <base> --placement`.
+- **INSIDE flags that are a shut combo window** (round 23's startGateWords on `zmdlogs decisions --all`, at 1da5562):
+  of the development logs' 72 INSIDE lines, 18 are held by the cast's combo window (shut until later in the replay:
+  the replay's combo trigger, an infliction or a hit, comes after the log's press; 0eef 6.77 s, Typhoeus's floating
+  combo), 9 by the SP cost (the replay's SP short: the `sp short` keys), one by a cooldown, one by a later gate and
+  one with a priority that outranks; the rest by a window of the running action (34) or its uncuttable frames (8).
+  The combo-window and SP ones say the replay's trigger or SP is late, not that the kit forbids the press: leads for
+  an accuracy task (which trigger, how late), and the flag's kind could tell them apart. Measure.
