@@ -151,7 +151,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   a hitless event cast (fc63, c779): next the multi-target logs' cut landings, the held-back casts-view line.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
-  testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
+  testable by hand, the owner 2026-11-16) stays on its interim (2026-11-28:
+  the regeneration and the start as engine assumptions `sp-regen`, `sp-start`;
+  Purrchena's counter presses no longer cost SP, the replay 706 SP short in 15
+  logs; next in-game test 113, the SP bar at a fight's start), B4 waits on
   test 71; tests 18, 19, 101, 104 done from the logs (2026-11-16: bosses
   freeze, Haste isn't attack speed, teammates' pause 6.5 s); tests 9, 17,
   22, 46 decided and 21, 43 partly from the logs (2026-11-18: buffs created

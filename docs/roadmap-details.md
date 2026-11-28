@@ -534,9 +534,11 @@ and B0 (teammates' own basic attacks; the pause set to 6.5 s from the
 logs' attack share, in-game test 101, 2026-11-16) are done, and B3 / B5 / B7 as far as the data and logs go; B2
 (SP stop: 0.5 s since 2026-11-12, regen through time stops; test 102
 pins it) and B4 (Solidification) wait on in-game tests 102 and 71; the
-SP the replay still lacks (open-problems "Team SP": teammates' unlanded
-basic attacks, Purrchena's blocks; Liino's beats done 2026-11-13, 1d91's
-extra heal left);
+SP the replay still lacks (open-problems "Team SP", 2026-11-28: Purrchena's
+counter presses fixed, 1,327 → 706 SP in 16 → 15 logs; teammates' unlanded
+Final Strikes ruled out; the regeneration and the start as engine
+assumptions `sp-regen` and `sp-start`, a full start covering every short
+opening: in-game test 113 next; f574's split Mi Fu cast a placement case);
 next the screened logs' leads ([open-problems.md](open-problems.md):
 what each has ruled out and what still stands; Rossi's ultimate ×1.081 in 2fd9 (9a80's fits since before 2026-11-22), Mi Fu ×1.11 in Hard
 27 (done 2026-11-23: the enemy's resistance 11, from a second player's log, 207f; Ember's and Snowshine's weapon levels

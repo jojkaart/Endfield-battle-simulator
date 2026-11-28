@@ -71,6 +71,7 @@ suggestions.
 | 8 | [98](#98-food-buffs-on-the-stat-panel-the-stew-decided-by-the-logs-2026-11-18-the-milk-ready-any-operator-lower-priority) Bottled Milk's DEF on the stat panel | anyone | DEF changes no logged damage | `98: DEF 140 → 167` |
 | 9 | [111](#111-do-perfect-dodges-hold-the-teams-buffs-ready-if-you-have-si-one-zmdlogs-upload) perfect dodges during Si's Amp | Si; a ZMDLogs upload | dodges aren't logged | `111: 4 perfect dodges, uploaded; 0, uploaded` |
 | 10 | [112](#112-akekuris-ultimate-at-full-sp-do-its-flares-still-give-thermite-cutters-and-positive-feedbacks-layers-ready-if-you-have-akekuri-at-p1-higher-priority-the-owners-team) Akekuri's ultimate at full SP | Akekuri with Thermite Cutter | the log records no SP | `112: full 1 PF / 1 Thermite, empty 3 / 2` |
+| 11 | [113](#113-how-full-is-the-sp-bar-when-a-fight-starts-ready-any-operator-higher-priority-every-teams-opening) the SP bar at a fight's start | anyone | the log records no SP | `113: stage start 3 full; open world carries over yes` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -2810,6 +2811,12 @@ whether the teammate's pace changes.
 
 **Not testable by hand (the owner, 2026-11-16):** too hard to record accurately without special tools. The logs decide it instead where they can (in-game-tests-log-triage.md); the engine's interim above stays until then.
 
+**2026-11-28 (the logs):** they can't: they record casts, not SP, so they bound SP from below only. The interval
+has a second reading that fits 666bj's test as well: regeneration in ticks of 4 SP every 0.5 s, the timer starting
+over at each spend (none lost to a spend; outcome 3 below). Both are engine assumption `sp-regen` (`pause`, the
+default; `ticks`): the replay can't afford the logged casts in 15 development logs under `pause`, 11 under `ticks`
+(docs/open-problems.md "Team SP"). The start (200 or a full bar) is test 113.
+
 **Why:** the engine regenerates team SP at 8/s and, since 2026-11-12,
 stops it for 0.5 s after every spend (666bj's in-game test, and the game's
 own `atbRecoverInterval` as Endaxis reads it); it used 1.5 s, which the
@@ -3137,6 +3144,21 @@ and Thermite Cutter ATK layers (at most 2) when the ultimate ends? (b) Again wit
 two or three battle skills). The same counts both times (3 Positive Feedback, 2 Thermite): a grant at full SP counts
 (the engine). Fewer in (a), e.g. 1: a flare that recovers nothing gives nothing.
 **Reply, e.g.:** `112: full 1 PF / 1 Thermite, empty 3 / 2`.
+
+### 113. How full is the SP bar when a fight starts? (ready, any operator; higher priority: every team's opening)
+
+**Why:** the engine starts every fight with 200 of the 300 SP (two of the bar's three segments: the native settings
+as Endaxis's notes read them). The logs record no SP, but they record every cast, and five development logs press
+more battle skills in their first 3–12 s than 200 SP and the regeneration can pay for (79cc: four in 11 s, about
+90 SP short; 0eef, bdf2, ad7f, 7b54 a little): with a full bar at the start none of them is short
+(open-problems "Team SP"; engine assumption `sp-start`, readings `200` and `full`). Something else could pay for
+them (SP no log shows), so only the screen can say.
+**How:** (a) Start a stage fight from its entry (a Tower or Hard stage, as the logs' fights; any team), and before
+pressing anything look at the SP bar: how many of its three segments are full? (b) In the open world, spend the
+bar in a fight, walk away until it refills or not, and start the next fight: is the bar where the last one left it?
+**Predictions:** 2 segments at the start: the engine (`200`); 3: `full`. In (b), a bar carried over between
+open-world fights would make the start there whatever the last fight left.
+**Reply, e.g.:** `113: stage start 3 full; open world carries over yes`.
 
 ## Results
 

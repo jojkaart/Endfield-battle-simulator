@@ -42,7 +42,7 @@ export const TIMELINE_ASSUMPTIONS = [
   "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger), unless its kit says afterDamage; buff modifiers' conditions on the enemy see it too.",
   "Physical statuses (Vulnerable, Lift, Knock Down, Crush, Breach), Shatter and stagger follow the Talos Wiki tutorial tables (status.ts). Hit-stop and entity-layer slow-downs aren't modelled.",
   "One enemy; every hit lands on it.",
-  `Team SP: max ${SP.max}, start ${SP.start}, ${SP.perSecond}/s, paused ${SP.pauseAfterSpendFrames / FPS} s after spending (666bj's test; in-game test 102), regenerating through time stops (the logs).`,
+  `Team SP: max ${SP.max}, start ${SP.start} (engine assumption sp-start; in-game test 113), ${SP.perSecond}/s, paused ${SP.pauseAfterSpendFrames / FPS} s after spending (666bj's test; engine assumption sp-regen, which also reads the interval as ticks; in-game test 102), regenerating through time stops (the logs).`,
 ] as const;
 
 /**

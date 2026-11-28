@@ -71,6 +71,26 @@ The enemy's side is read at each tick either way (timeline/advance.ts, the statu
 
 Link isn't part of it.
 
+## sp-regen
+
+The logs record no SP, only casts, so they bound the team's SP from below: a reading the replay can't afford a
+logged cast under is short of SP the game had (BuffReplay.spTopUps; `node scripts/probes/sp/readings.ts`). Neither
+reading changes a verdict (the replay raises SP to a logged cast's cost); they move simulated fights. 2026-11-28,
+the 65 development logs after Purrchena's counter presses: `pause` 15 logs short, 27 casts, 706 SP; `ticks` 11, 21,
+577; a pause of 0.2 s (6 frames) 10, 20, 527; none (continuous, which 666bj's test rules out) 8, 15, 428.
+- `pause`: the engine since 2026-11-12 (666bj's test, the native settings' interval as Endaxis reads it).
+- `ticks`: as much SP as no pause at each tick; between ticks up to 4 less (0eef's opening press at 3.20 s: 9 SP
+  short against 8 with the pause). Keys a search state's ticks' phase (search.ts spPausedUntil), so fewer states
+  merge (tests/search-merge.test.ts's pairs: 9 against more than 10).
+
+## sp-start
+
+- `200`: the native settings as Endaxis's notes read them (rules.ts SP); every development log's opening the replay
+  can afford but five: 0eef (3.20 s, 8 SP), bdf2 (7.63 s, 2), 79cc (9.10 and 10.73 s, 92: four battle skills in
+  11 s, no pause reading pays more than 12 of it), ad7f (9.40 s, 13), 7b54 (11.03 s, 18) (2026-11-28).
+- `full`: none of those openings short; with `pause` 5 logs short, 9 casts, 323 SP; with `ticks` (scripts/probes/sp/
+  readings.ts) see docs/open-problems.md "Team SP". In-game test 113 decides it.
+
 ## break-hold
 
 Every damage unit in the data carries enablePoiseBreakTimeDilation (true on all 1514), and no table gives the

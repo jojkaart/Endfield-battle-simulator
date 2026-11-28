@@ -696,7 +696,13 @@ reaction has no initial hit.
   spend (2026-11-12; was 1.5 s, which the logs rule out). The native
   settings say `atbRecoverInterval` 0.5, 666bj's in-game test 0.5 s after
   a battle skill; Zero Sanity uses 7.69/s with no pause. [OPEN] (accuracy
-  plan B2, test 102)
+  plan B2, test 102) Both are engine assumptions since 2026-11-28:
+  `sp-regen` (`pause`, or `ticks`: 4 SP every 0.5 s, the timer starting
+  over at each spend, so no spend costs regeneration) and `sp-start`
+  (`200`, or `full`; test 113). The logs record no SP, only casts, so they
+  bound SP from below: under the defaults the replay can't afford casts in
+  15 of 65 development logs, five of them in their first 12 s, which a
+  full start covers (docs/open-problems.md "Team SP").
 - Regeneration and its pause run through others' time stops and
   slow-downs, as cooldowns do: the replay's SP shortfalls drop from 20 to
   13 of 38 logs with it. [SETTLED] by the logs (2026-11-12)
