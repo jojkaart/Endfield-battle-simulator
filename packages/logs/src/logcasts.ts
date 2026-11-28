@@ -1143,12 +1143,22 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // the cast's last landing and this one (c3c735dbb022 60.64 s: one tick at 59.30 s, a battle press at 59.50 s,
         // five ticks 0.1 s apart from 60.64 s, 1.34 s on; without the press the five would split at the slack).
         const channelEnd = channel !== undefined && head !== undefined ? msOf((channel.latestFrame as number) - head.frame) : Infinity; // split:channel-end
-        const pressedBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.last.t && c.t < h.t); // split:channel-end
+        // A channel on the world's clock (KitHit.world: an ability entity's) ends on that clock: every stop holds it, its
+        // operator's own ultimate's too, not her own combos' slow-downs (their ignore list spares what she spawned), and so
+        // do the hidden holds, which the placement doesn't have yet (holds.ts places them from the replay). Typhoeus's
+        // Barrage Array (180 frames from its first tick): 18 ticks in 6.4–8.0 s of log time, 5.6–6.2 s of world time with
+        // every stop and hidden hold out (00ae0a364ad4 24.63 s: 8.02 s, 6.79 s with the stops out, 0.68 s of hidden holds
+        // placed inside it). So no slack bound there: a tick past its end is a new cast's only with a logged press of a
+        // skill of the cast's kind between (a new array comes from a new combo, and the log has an event for each).
+        const onWorld = channel?.world === true; // split:channel-end
+        const channelElapsed = onWorld && cur ? worldMs(cur.first, h.t, stops.filter((x) => x.operator !== build.operator || x.kind === "ultimate")) : elapsed; // split:channel-end
+        const pressedBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.last.t && c.t < h.t && (!onWorld || groups.find((x) => x.id === c.skill)?.kind === cur.cast.kind)); // split:channel-end
         // Not across an ultimate's event: logged at its stop's end, its stop isn't among this pass's (unplacedCastStops
         // start it at the event), and it held the channel (c83c75d02a85 92.48 s: Si's attack 4's third tick 0.01 s after
         // Laevatain's 90.43–92.47 s ultimate stop, its event at 92.48 s, 0.1 s of world time after the second).
         const ultimateBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.t > cur.last.t && c.t <= h.t && data.kits.operators[c.operator]?.skills.find((s) => s.skillId === c.skill)?.kind === "ultimate"); // split:channel-end
-        const pastChannel = !ultimateBetween && (elapsed > channelEnd + CHANNEL_SLACK_MS || (pressedBetween && elapsed > channelEnd + ON_TIME_MS)); // split:channel-end
+        const pastSlack = !onWorld && elapsed > channelEnd + CHANNEL_SLACK_MS; // split:channel-end
+        const pastChannel = !ultimateBetween && (pastSlack || (pressedBetween && channelElapsed > channelEnd + ON_TIME_MS)); // split:channel-end
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
@@ -1244,7 +1254,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const paths = joined === null && s ? pathAlternatives(data, g, h, s, skillCasts, others) : [];
         const firstIndex = jumped?.index ?? 0;
         const first = s?.[firstIndex];
-        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}), ...(pastChannel && cur ? { pastChannel: { cast: cur.cast.start, elapsed, end: channelEnd, by: elapsed > channelEnd + CHANNEL_SLACK_MS ? ("slack" as const) : ("press" as const) } } : {}) }; // split:channel-end
+        const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}), ...(pastChannel && cur ? { pastChannel: { cast: cur.cast.start, elapsed: channelElapsed, end: channelEnd, by: pastSlack ? ("slack" as const) : ("press" as const) } } : {}) }; // split:channel-end
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;

@@ -194,6 +194,15 @@ export interface ScheduledHeader {
    */
   readonly detached?: true;
   readonly launchAt?: number;
+  /**
+   * On its cast's operator's clock (`clock`) until `launchAt`, on the world's from then (a KitHit.world hit with a
+   * KitHit.launch: what the launch spawns runs on the world's clock, every slow-down and hold holds it, the operator's
+   * own ultimate stop too; before the launch it is the cast's own, which the caster's own slow-down doesn't hold).
+   * Typhoeus's Barrage Array, spawned by her combo's first arrow at frame 35: its first tick lands with the arrow in
+   * every log, past her combo's own slow-down, and its 18 ticks run 6.4–8.0 s of log time, held by every stop and
+   * hidden hold between (schedule.ts shiftClock reads it).
+   */
+  readonly worldFromLaunch?: true;
   /** It stays at its frame whatever its clock or cast does (a replayed landing at its logged frame: the log's time has the slow-downs and jumps in already). */
   readonly pinned?: true;
   /** A pinned landing's logged time (ms): pinned landings due in one frame land in the log's order (schedule.ts dueBefore). */
