@@ -261,3 +261,20 @@ before their checks were read) is in `holdout.json`: those are only
 measured, never debugged. Since 2026-11-16 the hold-out fixtures and
 `holdout.json` live in fixtures/holdout/, so this folder holds only
 development logs.
+
+## Estella and Akekuri, 2026-11-28 (the owner's team)
+
+From the two operators' ZMDLogs profiles (every battle each is in is listed: Estella 45, Akekuri 75, most before
+game 1.6), screened by export, then detail (docs/accuracy-plan.md, "Choosing logs"). Estella's other 1.6 battles are
+fixtures already, hold-outs, or on towers 21 and 24, which the data doesn't have yet; Akekuri's are mostly with
+Minghe (no kit) or at levels 1–60. All on the development list (`holdout-split.ts add-development`). First check
+(plain of hits per operator, the total's error):
+
+| Fixture | Enemy | Date, parser, length | First check |
+|---|---|---|---|
+| `zmdlogs-8f3215963333` | eny_0082_hsbear_race007 (Tower 7) | 2026-11-22, v60, 93 s | Estella 24/63, Alesh 15/65, Endministrator 41/81, Rossi 91/282; −56.8% (the replay stopped at 44.8 s: the enemy had no rank, fixed the same day: Estella 60/63, +2.1%) |
+| `zmdlogs-1a774d7df06b` | eny_0051_rodin (Rhodagn rush) | 2026-11-02, v59, 87 s | Wulfgard 0/79, Laevatain 103/121, Akekuri 0/53, Si 74/77; 0.0% (Wulfgard and Akekuri level 80: buildOverrides, then 70/79 and 50/53) |
+| `zmdlogs-805687f00250` | eny_0134_jsspsi (the boss Si) | 2026-11-02, v59, 196 s | Wulfgard 0/177, Laevatain 172/210, Akekuri 0/70, Si 130/180; +1.8% (the same team and builds as 1a77; with the overrides 151/177 and 61/70) |
+| `zmdlogs-f57452bc1f02` | eny_0129_slwood_hdg033 (Hard 33) | 2026-10-25, v59, 44 s | Mi Fu 7/60, Lifeng 14/27, Chen Qianyu 3/26, Akekuri 0/4; −28.6% (eight slugs under one id: `severalTargets`, as 6339 and 7b54) |
+
+8f32 is a third log from one account (at most two are preferred): imported anyway, Estella's only new usable fight.

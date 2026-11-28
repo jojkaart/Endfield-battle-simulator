@@ -2878,32 +2878,34 @@ lines too; its fits go into a fixture's `buildOverrides` with the counts
 bound from its logged skill levels (WeaponBreakThroughTemplateTable isn't
 loaded), weapon skill levels and gear artifice as candidates.
 
-## Akekuri in 012a: Thermite Cutter's team ATK too early, and ×0.89 left
+## Akekuri: her SP grants and the buffs they make (5 logs, 2026-11-28)
 
-**Shows (haiku, 2026-11-14):** the engine gives wpn_sword_0012.team_atk
-(+0.08) from ~14 s to 31 s; the log lists it from 31.08 s (her combo) and
-the teammates' damage fits without it before (Laevatain 41 log-listing
-fits against 2, Camille 59 against 1, Arcane 24 against 2). Without it her
-16–22 s hits go from ×0.851 to ×0.893, like 37–60 s (×0.892): a constant
-×0.89 is left on her 35 physical hits.
+**Fixed earlier:** 012a's Thermite team ATK too early (teammates' Link gives no layer, `fromSelf`, 2026-11-14) and
+its ×0.89 on her own hits (attribute nodes 0, a fixture buildOverride: docs/journal/2026-11-23-11-fight-totals-2-an-all-fights-view-kills-from-capped-hits.md).
+Her combo's SP after its pinned landings (8056 76.98 s, 1a77 80.35 s, 458b 127.5 / 197.6 s: ×1.262 on the combo,
+the Frontiers DMG and a Positive Feedback layer missing) fixed 2026-11-28 (the SP on the landings, before their
+damage; the journal entry of that day).
 
-**Ruled out (for the ×0.89):** weapon level (skill 9 needs 80+), nodes,
-potential, gear, Thermite skill 3, her skill levels (1/1/1/9 right), food.
+**Shows (8056, 2026-11-28):** her first ultimate (cast event 17.06 s) makes one SP grant's buffs in the log, at
++0.10 s (Frontiers, OBJ Edge of Lightness, Positive Feedback, all listed from 17.17 s), where the replay makes three
+(17.27, 18.33, 19.20 s); her basic attacks at 25.0–30.2 s are ×0.862 the engine's (7 mismatches, the extra Positive
+Feedback layers' ATK), the teammates' Heat hits there fall off with the two missing OBJ Edge layers. Her other two
+ultimates in 8056 and all three in 458b show three grants each (1a77 and 012a have none).
 
-**Still possible:** her weapon's skill 2 at 4 instead of the exported 9
-(fits late, less early); the enemy's physical resistance (data 12, ~21
-would fit; Tower 15's 20 fits 458b); Thermite's trigger rule (when its
-team ATK starts).
+**Ruled out:** a target the flares need (the ultimate's three ObtainCostActions, frames 59, 86, 119, have no
+condition: `efsim gamedata tree chr_0019_karin_ultimate_skill`); a cut ultimate (both missing grants are before its
+exclusiveFrame 150, and nothing of hers is logged until 25.0 s); the trigger's timing (every buff her SP makes is
+missing, not late).
 
-**Fixed (sonnet diagnosis, 2026-11-14):** teammates' Link gives no
-Thermite layer (Camille's combo in 012a, Lifeng's in 82735 and d4fb); the
-kit's Link trigger now counts only Link the wielder grants (`fromSelf`).
-012a plain: Laevatain 53 → 90, Arcane 116 → 142, Camille 58 → 117; d4fb:
-Chen 30 → 42, Pogranichnik 93 → 129. Test 94 decided. The constant ×0.89
-on Akekuri's own physical hits stays open.
+**Still possible:** a grant that recovers nothing at full SP gives no "recovers SP" event (abilityEvent 142): the
+replay's SP is 284 before the second grant and 300 before the third, and it is known to run short of the game's
+("Team SP" below), so the game may have been at 300 for both; against it, 22 firings of such triggers where the
+replay is at 300 and the log shows the buff (458b's third ultimate, 227.5–229.5 s, all three), each only as good as
+the replay's SP (scripts/probes/sp/spcap.ts: replay firings against the log's starts of Thermite's, OBJ Edge's and Frontiers'
+buffs, with the replay's SP; 54 replay-only firings in all, 11 at the cap). In-game test 112 decides it.
 
-**Next check:** Akekuri's ×0.89 (weapon skill 2, the enemy's physical
-resistance).
+**Next check:** test 112; then, if a grant at full SP gives nothing, the replay's SP at each of the 11 capped
+replay-only firings (a9d7 Pogranichnik 92.6, 200.6, 211.1, 244.8 s; 458b 88.2, 88.9 s; a9d7 Alesh 209.4 s).
 
 ## Type 50 Yinglung's Edge: how many stacks a combo gets (Estella, Si)
 
@@ -3126,6 +3128,10 @@ stack where the engine has three. Her other weapon in c4f3 (wpn_lance_0004,
 ATK +0.42 on the first Vulnerable) triggers at other times than the log
 (8.9–23.4 s listed, engine none; from 81 s the reverse). a9d7: all four
 operators ×1.15–1.33 low from the first hit (a stage factor).
+
+**8f32 (2026-11-28, Estella on Valiant, no Razorhorn):** 60 of 63 plain, no mismatch (once the stage variant had its
+rank: the replay had stopped at 44.8 s); her four combos fit the engine's Yinglung's Edge (2, 3, 3, 3 stacks), her
+Valiant hits and Lifts the engine's: no lead for the Razorhorn half or the Edge count, which need a Razorhorn log.
 
 ## OBJ Razorhorn's ATK lasts longer than its 15 s
 
