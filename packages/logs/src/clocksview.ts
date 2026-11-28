@@ -28,7 +28,7 @@
 
 import { FPS, type ArtsElement, type GameData } from "@efsim/engine";
 import { burstRows } from "./burstsview.ts";
-import { tickChains } from "./holds.ts";
+import { breakStops, tickChains } from "./holds.ts";
 import { placeHits, worldMs, type LoggedCast } from "./logcasts.ts";
 import { loggedStaggerSpans, replayTimeStops, type ReplayTimeStop } from "./query.ts";
 import type { LogFixture } from "./zmdlogs.ts";
@@ -72,7 +72,8 @@ export interface LogPaces {
   readonly straddled: number;
 }
 
-const kindOf = (st: ReplayTimeStop) => st.kind ?? "other";
+/** A stop's kind for the rows' held time: its cast kind, "break" for a Stagger break's hold (holds.ts breakStops), else "other". */
+const kindOf = (st: ReplayTimeStop) => st.kind ?? (st.skillId === "stagger-break" ? "break" : "other");
 
 /** The time the stops inside [a, b] hold, per kind and per operator and kind; whether one straddles an end. */
 function heldInside(a: number, b: number, stops: readonly ReplayTimeStop[]): { held: Record<string, number>; byOp: Record<string, number>; straddled: boolean } {
@@ -87,11 +88,15 @@ function heldInside(a: number, b: number, stops: readonly ReplayTimeStop[]): { h
 }
 
 /** The clocks of one log (`kinds`: which; `assume`: the readings of the burst clock's replay). */
-export function logClocks(data: GameData, log: { readonly short: string; readonly fx: LogFixture }, opts: { readonly kinds?: readonly ClockKind[]; readonly assume?: Readonly<Record<string, string>> } = {}): LogPaces {
+export function logClocks(data: GameData, log: { readonly short: string; readonly fx: LogFixture }, opts: { readonly kinds?: readonly ClockKind[]; readonly assume?: Readonly<Record<string, string>>; readonly breaks?: boolean } = {}): LogPaces {
   const { short, fx } = log;
   const kinds = new Set(opts.kinds ?? ["tick", "cast"]);
   const placement = placeHits(data, fx);
-  const stops = replayTimeStops(data, fx, placement);
+  const listed = replayTimeStops(data, fx, placement);
+  // With `breaks` (round 22, the backlog after round 20's point 1 brought back by the barrage-array report point 1):
+  // the engine's holds at the log's Stagger breaks (break-hold, holds.ts breakStops) as stops too, so a row across a
+  // break stops reading the hold as lateness. Not in the views' one list: the placement reads that list.
+  const stops: ReplayTimeStop[] = opts.breaks ? [...listed, ...breakStops(fx, listed, opts.assume).map((st) => ({ ...st, placed: true }))] : listed;
   const spans = loggedStaggerSpans(fx);
   const spanOf = (t: number) => spans.findIndex((x) => x.from <= t && t <= x.to);
   const rows: PaceRow[] = [];
@@ -175,18 +180,18 @@ function rowLine(data: GameData, r: PaceRow): string {
  * `efsim zmdlogs clocks <fixture…|--all>`: every clock of the logs (logClocks) summed by clock kind and what holds it
  * (`by` "operator": per combo operator too), the tick chains also split by the log's Stagger; `rows`: each row.
  */
-export function clocksView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly kinds?: readonly ClockKind[]; readonly by?: "kind" | "operator"; readonly rows?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void } = {}): string {
+export function clocksView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly kinds?: readonly ClockKind[]; readonly by?: "kind" | "operator"; readonly rows?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly breaks?: boolean; readonly progress?: (line: string) => void } = {}): string {
   const kinds = opts.kinds ?? ["tick", "cast"];
   const all: PaceRow[] = [];
   let straddled = 0;
   for (const log of logs) {
     opts.progress?.(`clocks ${log.short}`);
-    const got = logClocks(data, log, { kinds, ...(opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {}) });
+    const got = logClocks(data, log, { kinds, ...(opts.assume && Object.keys(opts.assume).length ? { assume: opts.assume } : {}), ...(opts.breaks ? { breaks: true } : {}) });
     all.push(...got.rows);
     straddled += got.straddled;
   }
   const out = [
-    `How late each clock runs across the time stops inside it (clocksview.ts; ${kinds.join(", ")}; ${logs.length} logs): residual = its world time under the replay's casts' stops (replayTimeStops; tick: every stop, cast and burst: other operators') less what it should take; held = real less world time of the stops inside; the sums leave out rows off by ${PACE_TRIM_MS / 1000} s or more. ${straddled} row(s) left out: a stop straddles an end (its time would split between rows).`,
+    `How late each clock runs across the time stops inside it (clocksview.ts; ${kinds.join(", ")}; ${logs.length} logs): residual = its world time under the replay's casts' stops (replayTimeStops${opts.breaks ? ", and the engine's holds at the log's Stagger breaks: kind break" : ""}; tick: every stop, cast and burst: other operators') less what it should take; held = real less world time of the stops inside; the sums leave out rows off by ${PACE_TRIM_MS / 1000} s or more. ${straddled} row(s) left out: a stop straddles an end (its time would split between rows).`,
   ];
   const groups: HeldBy[] = ["no stop", "combos only", "an ultimate", "other stops only"];
   for (const k of kinds) {

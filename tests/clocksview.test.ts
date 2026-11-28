@@ -55,6 +55,11 @@ describe("a Stagger break inside a clock (PaceRow.breaks)", () => {
     for (const r of rows) expect(r.breaks).toEqual(spans.map((x) => x.from).filter((t) => t > r.a && t < r.b));
     const yvonne = rows.find((r) => r.what.startsWith("Yvonne") && r.breaks.length);
     expect(yvonne?.residual).toBeGreaterThan(400);
+    // Round 22 (round 20's backlog point 1, brought back): with the engine's holds at the breaks as stops (`--breaks`),
+    // that row's 0.5 s is the break's hold, not lateness.
+    const held = logClocks(data, log, { kinds: ["cast"], breaks: true }).rows.find((r) => r.what === yvonne?.what && r.a === yvonne?.a);
+    expect(held?.held["break"]).toBeGreaterThan(400);
+    expect(Math.abs(held?.residual ?? Infinity)).toBeLessThan(150);
   });
 });
 
