@@ -10,7 +10,7 @@ import {
 import { TARGET_SIDE_ZONES, type LogFixture } from "./zmdlogs.ts";
 import { loggedNames } from "./enginecheck.ts";
 import { worldMs, type Placement, type TimeStop } from "./logcasts.ts";
-import { gapsWithin, pausedBound, HOLD_BOUND_TOL_MS, notAClock, refreshedIn, RUN_START_MS, type ClockWhy, type Gap, type HoldBound, type StatusInstance } from "./holds.ts";
+import { gapsWithin, pausedBound, HOLD_BOUND_TOL_MS, notAClock, notAClockWords, refreshedIn, RUN_START_MS, type ClockWhy, type Gap, type HoldBound, type StatusInstance } from "./holds.ts";
 import { type ReplayedCast, frameOf } from "./castassembly.ts";
 
 /**
@@ -375,7 +375,7 @@ export function runBounds(kitInstances: ReadonlyMap<string, readonly { start: nu
     const note = (x: Omit<ClockWhy, "clock" | "holder">) => why?.push({ clock: kitKey, holder, ...x });
     const skip = notAClock(def, { every: true });
     if (skip) {
-      note({ instance: null, verdict: `not a clock: the kit buff has \`${skip}\` (its end isn't its own timer's, or the log merges its instances)` });
+      note({ instance: null, verdict: `not a clock: the kit buff has ${notAClockWords(def, skip)} (its end isn't its own timer's, or the log merges its instances)` });
       continue;
     }
     for (const w of list) {
@@ -531,7 +531,7 @@ function loggedEndOf(b: ActiveBuff, ends: LoggedLaneEnds, defs: ReadonlyMap<stri
   const def = defs.get(`${b.owner}:${b.id}`);
   if (!def) return decide(null, "not taken: no kit buff of that id");
   const skip = notAClock(def);
-  if (skip !== null) return decide(null, `not taken: the kit buff has \`${skip}\``);
+  if (skip !== null) return decide(null, `not taken: the kit buff has ${notAClockWords(def, skip)}`);
   // The run began with this instance (within RUN_START_MS of its application), not a later one the replay missed.
   const [from, latest, until] = [((b.appliedAt * 1000) / FPS) - RUN_START_MS, ((b.appliedAt * 1000) / FPS) + RUN_START_MS, (b.expiresAt * 1000) / FPS];
   const names = loggedNames(def);

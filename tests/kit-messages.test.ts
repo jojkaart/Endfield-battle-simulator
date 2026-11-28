@@ -73,5 +73,8 @@ describe("the likely-loggedAs screen from the data (kits.ts unloggedAttachedBuff
     expect(text).toMatch(/^ +\d+ {2}world: globalCd$/m);
     expect(text).toMatch(/^ +\d+ {2}raw: marker$/m);
     expect(text).toMatch(/^Kit buffs that likely need a loggedAs: none$/m);
+    // Round 24 (the overlap-clock report point 2): the layered kit buffs by stacking type, 458b's Thermite Cutter at 11.
+    expect(text).toMatch(/^ +\d+ {2}stackingType 11: [^\n]*wpn_sword_0012:wpn_sword_0012\.team_atk/m);
+    expect(text).toMatch(/^ +\d+ {2}stackingType 2: [^\n]*suit_combo_cd01/m);
   });
 });
