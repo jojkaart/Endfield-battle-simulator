@@ -6,13 +6,13 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, startGateWords, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, kitHitEntries, parseReactionEvent,
+  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, startGateWords, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, windowKey, kitHitEntries, parseReactionEvent,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { awayWindows, enemyAwaySpans, KILL_EDGE_MS, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
 import { gapsWithTargetsLeft, keepsKillGaps, targetDeaths } from "./targets.ts";
-import { buttonVariants, excludes, loggedFrames, type Placement } from "./logcasts.ts"; // split:event-variant
+import { buttonVariants, excludes, loggedFrames, skillStops, type Placement } from "./logcasts.ts"; // split:event-variant
 import { deathEvent, replaySteps, runEventStep, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
@@ -868,7 +868,17 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
  * REPLAY_EDGE_MS either side of it.
  */
 /** A logged cast as one replay made it (replayOnce): its frame, skill, the states either side, and what it found. */
-type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string; dropped?: readonly JumpDrop[]; keptSkipped?: readonly JumpDrop[] };
+type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string; dropped?: readonly JumpDrop[]; keptSkipped?: readonly JumpDrop[]; openers?: readonly WindowOpener[] };
+
+/**
+ * The window a combo's press took from the opener logged inside its own slow-down (openerAhead): the frame the replay
+ * opened it at, its count and the source its trigger saw. OPENER lines.
+ */
+export interface WindowOpener {
+  readonly frame: number;
+  readonly count: number;
+  readonly source?: string;
+}
 
 /**
  * A kit jump of a replayed cast that its logged landings contradicted, which the engine dropped (drivers.ts replayCast
@@ -885,11 +895,40 @@ export interface JumpDrop {
 type Need = { c: ReplayedCast; f: number };
 
 /**
+ * A combo's window opened by an opener logged inside the combo's own slow-down (the state advanced to `f`): where the
+ * combo's window is shut at its frame and the state run on without it opens it within its own stop (skillStops: from
+ * frame 0), the press takes that window, its count and its source, at `f` (replayCast then uses it up); the landings
+ * stay where the log has them. Without it the replay opened one at the press counting 1 with no source (replayCast).
+ * In such a stop the world barely moves (0.02–5.2 frames of its time in the 12 development cases of 2026-11-28), and
+ * the log's ms there are its flush, not the landing's: 7 of them share a ms with the combo's own cast event or first
+ * hit (8f32 83.34 s: Estella's projectile, her event at 81.85 s, with Rossi's combo hit 13 frames into his combo; d572
+ * 36.34 and 102.15 s: Camille's battle skill with Rossi's), and Estella's battle skill, whose event is its start ±0.07
+ * s in 19 of 24 casts, is the event's 0.40–0.81 s earlier in the four whose projectile opens a combo here (4e5e 27.99,
+ * c4f3 40.79 and 117.22, 8f32 82.24 s). The press needs its window open, so the opener came first; the combo's own hit
+ * pins its press (13 frames before it), not the opener's ms (docs/open-problems.md "Combo windows"). Landing the
+ * openers at the press instead moved what they deal (docs/tried/2026-11-28-opener-landed-at-press.diff: Arcane's own
+ * ultimate hits before her combo's cast lost its effects the log shows them with).
+ */
+function openerAhead(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): { readonly st: TimelineState; readonly opened?: WindowOpener } {
+  if (c.kind !== "combo" || c.missed || replayWindowCount(ctx, st, c.operator, c.skillId, f) !== null) return { st };
+  const own = skillStops(ctx.data, c.skillId, f, { operator: c.operator, skillId: c.skillId, kind: c.kind }).stops.find((s) => s.start === f);
+  if (!own) return { st };
+  const end = f + own.scales.length;
+  const key = windowKey(ctx, c.operator, c.skillId);
+  const w = advance(ctx, st, end).comboWindow[key];
+  if (!w || w.from <= f || w.from > end) return { st };
+  const opened = { from: f, until: Math.max(w.until, f + 1), count: w.count, ...(w.source ? { source: w.source } : {}) };
+  return { st: { ...st, comboWindow: { ...st.comboWindow, [key]: opened } }, opened: { frame: w.from, count: w.count, ...(w.source ? { source: w.source.kind === "infliction" ? `${w.source.element} infliction` : w.source.status } : {}) } };
+}
+
+/**
  * One cast made at `f` (the state not yet advanced to it): the state after it, the skill it was made as (null: none,
  * a tick or a press the slot doesn't make), the state before it and the combo window count it found.
  */
 export function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: number, list: readonly ReplayedCast[], ev?: PressEvidence) {
-  let st = advance(ctx, withoutFollowUps(ctx, st0, list, f), f);
+  const first = openerAhead(ctx, advance(ctx, withoutFollowUps(ctx, st0, list, f), f), c, f);
+  let st = first.st;
+  const openers = first.opened ? { openers: [first.opened] } : {};
   const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
   const pre = st;
   const tick = c.missed ? null : loggedTick(ctx, st, c, f);
@@ -909,7 +948,7 @@ export function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCa
   st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}), ...(c.chanceJumps ? { chanceJumps: c.chanceJumps } : {}), ...(c.kitJumps ? { kitJumps: c.kitJumps } : {}), dropped: (j, landings) => dropped.push({ ...j, landings }), keptSkipped: (j, landings) => keptSkipped.push({ ...j, landings }) });
   // A cast made from the listing alone (castsFromHitBuffs): recorded as an inferred one, its landings dealt nothing.
   const why = inferred?.why ?? (c.listed ? `a cast the log shows only by a buff its hit alone gives, made (listed-casts inferred): ${c.listed.buff} listed from ${(c.listed.since / 1000).toFixed(2)} s` : undefined);
-  return { st, skillId, pre, windowCount, ...(flag ? { flag } : {}), ...(why !== undefined ? { inferred: why } : {}), ...(dropped.length ? { dropped } : {}), ...(keptSkipped.length ? { keptSkipped } : {}) };
+  return { st, skillId, pre, windowCount, ...openers, ...(flag ? { flag } : {}), ...(why !== undefined ? { inferred: why } : {}), ...(dropped.length ? { dropped } : {}), ...(keptSkipped.length ? { keptSkipped } : {}) };
 }
 
 /** What every replay of a fight (replayOnce) reads that its passes share: the fight, the options, the log's Stagger steps and crits. */
@@ -1094,7 +1133,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
         const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
         const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
-        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}), ...("dropped" in r && r.dropped ? { dropped: r.dropped } : {}), ...("keptSkipped" in r && r.keptSkipped ? { keptSkipped: r.keptSkipped } : {}) });
+        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}), ...("dropped" in r && r.dropped ? { dropped: r.dropped } : {}), ...("keptSkipped" in r && r.keptSkipped ? { keptSkipped: r.keptSkipped } : {}), ...("openers" in r && r.openers ? { openers: r.openers } : {}) });
       } catch (e) {
         castErrors.push({ cast: c, error: e instanceof Error ? e.message : String(e) });
       }
