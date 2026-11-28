@@ -27,7 +27,7 @@ commit, and how many logs got better or worse.
 
 | Logs | Fights | Hits | Plain | Matched | Mismatch | Mean \|damage error\| | Within 5% | As other kit hit |
 |---|---|---|---|---|---|---|---|---|
-| Verified (fixtures/) | 6 | 804 | 78.5% | 99.3% | 0.0% | 1.4% | 6 | 1 |
+| Verified (fixtures/) | 6 | 804 | 78.5% | 99.3% | 0.0% | 1.5% | 6 | 1 |
 | Development (fixtures/pending, holdout.json `development`) | 29 | 15724 | 84.3% | 92.6% | 4.7% | 1.3% | 28 | 63 |
 | Hold-out (fixtures/holdout, holdout.json `holdout`; aggregates only) | 13 | 5689 | 82.5% | 93.2% | 5.1% | 5.9% | 9 | 20 |
 | Earlier pending (imported before the hold-out split) | 23 | 11736 | 84.4% | 95.4% | 4.4% | 1.2% | 22 | 49 |
@@ -91,7 +91,7 @@ total (the `share own … operator <id>` keys): a kit's error is matched, a log 
 | chr_0031_mifu (Mi Fu) | 5 | 471 | 92.4% | 0.8% | 8 | 0.9% | 0.2% | 0.9% | 1.5% | 48.1% | d572 0.5 | 0.5% | 0.6% |
 | chr_0032_lizhiyan (Arcane) | 40 | 5688 | 87.6% | 3.5% | 25 | 3.4% | 1.6% | 2.2% | 3.2% | 10.2% | 7b54 0.6 | 1.8% | 4.8% |
 | chr_0033_camille (Camille) | 10 | 1004 | 94.9% | 1.3% | 1 | 3.5% | 0.5% | 2.4% | 2.0% | 6.3% | 7b54 1.9 | 1.6% | 2.9% |
-| chr_0034_typhoea (Typhoeus) | 12 | 2081 | 83.2% | 6.4% | 15 | 2.1% | 0.9% | 2.3% | 2.1% | 75.5% | 9c6e 1.0 | 1.2% | 3.5% |
+| chr_0034_typhoea (Typhoeus) | 12 | 2081 | 83.2% | 6.4% | 15 | 2.1% | 0.9% | 2.3% | 2.1% | 75.5% | 9c6e 1.0 | 1.2% | 3.4% |
 | chr_0035_liino (Liino) | 19 | 1469 | 84.8% | 4.7% | 7 | 5.6% | 2.9% | 6.0% | 5.5% | 3.7% | 1cd1 1.2 | 0.9% | 8.8% |
 | chr_0036_jsspsi (Si) | 29 | 3060 | 81.6% | 2.8% | 1 | 3.0% | 0.7% | 4.2% | 1.4% | 40.3% | 6339 1.1 | 2.4% | 2.1% |
 | chr_0038_purrche (Purrchena) | 3 | 290 | 63.8% | 29.7% | 12 | 26.3% | 26.3% | 13.6% | 9.9% | 3.5% | 99fb 21.3 | 27.6% | 49.3% |

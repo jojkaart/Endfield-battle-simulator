@@ -1,5 +1,10 @@
 barrage array channel end (2026-11-28): Typhoeus's Barrage Array with the data's channel end (frame 215).
 
+Superseded 2026-11-28 (docs/journal/2026-11-28-02-typhoeus-s-barrage-array-on-the-world-s-clock.md): the end is in,
+on the array's own clock (the area hits `world` with launch 35; the placement bounds a world channel's end by a
+combo press, not the slack): each of the six arrays is one combo, no development or hold-out verdict moves. Kept
+here for its numbers.
+
 What it does: drops the kit's dataOverride `latest` on both combos' `area` hits, so the array's ticks get
 KitHit.latestFrame 215 (the entity's 180 frames from its first tick at 35), as every other capped channel since round
 22 (skillCompile.ts, a channel in a detached file): the placement joins no tick past it (logcasts.ts `pastChannel`) and

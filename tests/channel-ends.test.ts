@@ -32,16 +32,26 @@ describe("a capped channel's end from the data (KitHit.latestFrame)", () => {
     expect(h?.latestFrame).toBe(196);
   });
 
-  // Typhoeus's Barrage Array (frames 35–205, the entity's channel to 215): the logs have its 18 ticks past that end with
-  // no combo press between, so the kit leaves the end out (dataOverride `latest`) and the placement keeps one array one
-  // combo (00ae 54.96 s: 18 ticks to 65.88 s, 6.9 s after the first).
-  it("left out where the kit marks it: Typhoeus's Barrage Array, one combo's 18 ticks (00ae 54.96 s)", () => {
-    for (const s of ["chr_0034_typhoea_combo_skill", "chr_0034_typhoea_combo_skillfloating"]) expect(kitHit("chr_0034_typhoea", s, "area")?.latestFrame).toBeUndefined();
-    const fx = fixture("00ae");
-    const p = placeHits(data, fx);
-    const ticks = fx.hits.filter((h) => h.event === "chr_0034_typhoea_combo_persistentdamage" && h.t >= 56000 && h.t <= 66000);
-    expect(ticks.length).toBe(18);
-    expect(new Set(ticks.map((h) => p.hits.get(h)?.cast)).size).toBe(1);
+  // Typhoeus's Barrage Array (frames 35–205, the entity's channel to 215) runs on the world's clock from the first
+  // arrow's hit (KitHit.world, launch 35): every stop and hidden hold holds it, so its 18 ticks run 5.7–9.8 s of log
+  // time, and the placement, which has no hidden holds, bounds it by a combo press, not a slack (logcasts.ts placeWith
+  // `onWorld`). With the end measured as any other channel's, six arrays split into two combos (round 22:
+  // docs/tried/2026-11-28-barrage-array-channel-end.diff); each is one combo's 18 ticks now.
+  it("on the world's clock: Typhoeus's Barrage Array, each array one combo's 18 ticks (00ae, fc63)", () => {
+    for (const s of ["chr_0034_typhoea_combo_skill", "chr_0034_typhoea_combo_skillfloating"]) {
+      const h = kitHit("chr_0034_typhoea", s, "area");
+      expect([h?.latestFrame, h?.world, h?.launch]).toEqual([215, true, 35]);
+    }
+    for (const [id, firsts] of [["00ae", [24629, 56131, 76399, 95411]], ["fc63", [37148, 81470]]] as const) {
+      const fx = fixture(id);
+      const p = placeHits(data, fx);
+      const all = fx.hits.filter((h) => h.event === "chr_0034_typhoea_combo_persistentdamage").sort((a, b) => a.t - b.t);
+      for (const t of firsts) {
+        const ticks = all.filter((h) => h.t >= t).slice(0, 18);
+        expect(ticks[0]?.t).toBe(t);
+        expect(new Set(ticks.map((h) => p.hits.get(h)?.cast)).size, `${id} ${t}`).toBe(1);
+      }
+    }
   });
 });
 

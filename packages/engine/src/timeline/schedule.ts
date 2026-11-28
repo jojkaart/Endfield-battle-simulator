@@ -98,7 +98,9 @@ export function shiftClock(list: readonly Scheduled[], on: (c: Clock, x: Schedul
   const later = (f: number) => (n > 0 ? f + n : Math.max(start + 1, f + n));
   let changed = false;
   const out = list.map((x) => {
-    if (x.pinned || x.frame <= start || !on(x.clock, x)) return x;
+    // On the world's clock from its launch (ScheduledHeader.worldFromLaunch): a shift from then on is the world's.
+    const clock: Clock = x.worldFromLaunch && x.launchAt !== undefined && start >= x.launchAt ? "world" : x.clock;
+    if (x.pinned || x.frame <= start || !on(clock, x)) return x;
     changed = true;
     return { ...x, frame: later(x.frame), ...(x.launchAt !== undefined && x.launchAt > start ? { launchAt: later(x.launchAt) } : {}) };
   });

@@ -1835,8 +1835,9 @@
             "atk_scale_persistent"
           ],
           "factor": 0.05555555555555555,
-          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171).",
-          "dataOverride": { "latest": "The logs have the array's ticks past the data's channel end (the entity's 180 frames, frame 215): 18 ticks up to 6.4-8.0 s of world time after the first, with no combo press between (pending 00ae 23.46, 54.96, 75.23 and 94.24 s; fc63 35.98 and 80.30 s, round 22), so an end there split one array into two combos. Why the array runs longer (its entity's clock held, or a longer life) is open." }
+          "launch": 35,
+          "world": true,
+          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit (launch: the arrow's LaunchProjectile at 35): ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside, for its skill's 180 frames (persistent_time 6 s). The first tick lands with the arrow (the same ms in all 32 arrays of the development logs; fixtures/zmdlogs-bdf223db8e49.json t=12171). world: the entity's 180 frames run on the world's clock from the arrow's hit, held by every stop (her own ultimate's too: fc63 90.53-92.87 s, 2.35 s of log time between two ticks, 0.28 s with her stop out; not her own combo's slow-down, whose ignore list spares what she spawned) and by the hidden holds: 18 ticks over 5.7-9.8 s of log time are 5.6-6.2 s of world time with every stop and hidden hold out (00ae 24.63 s: 8.02 s, 6.79 s with the stops out, 0.68 s of hidden holds inside it), so the channel's end (frame 215) is on that clock (logcasts.ts placeWith `onWorld`)."
         }
       ]
     },
@@ -1894,8 +1895,9 @@
             "atk_scale_persistent"
           ],
           "factor": 0.05555555555555555,
-          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171).",
-          "dataOverride": { "latest": "As the grounded combo's array (its note): the logs have the ticks past the data's channel end (frame 215), so the kit leaves the end out." }
+          "launch": 35,
+          "world": true,
+          "note": "As the grounded combo's array (its note): combo_persistentdamage ability entity spawned by the first arrow's hit at frame 35, its 180 frames on the world's clock from there."
         }
       ]
     },

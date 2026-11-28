@@ -256,8 +256,10 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     const frames = typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, countEc()));
     frames.forEach((f, i) =>
       pending.push({
-        // A buff's timeline (KitHit.world) is held by every slow-down, the caster's own too.
-        kind: "hit", frame: frame + f, clock: h.world ? "world" : clock, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castRef,
+        // A buff's timeline (KitHit.world) is held by every slow-down, the caster's own too; one with a launch only from
+        // its launch (ScheduledHeader.worldFromLaunch: until then it's the cast's own, on the caster's clock).
+        kind: "hit", frame: frame + f, clock: h.world && h.launch === undefined ? "world" : clock, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castRef,
+        ...(h.world && h.launch !== undefined ? { worldFromLaunch: true as const } : {}),
         ...(usesAtHit(h.id).length && i === 0 ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached || h.launch !== undefined ? { detached: true as const } : {}),
         ...(h.launch !== undefined ? { launchAt: frame + h.launch } : {}),
         ...(windowCount !== undefined ? { eventCount: windowCount } : {}), ...(windowSource ? { eventSource: windowSource } : {}), ...(h.branch ? { branch: `${castIndex}:${h.branch}:${i}` } : {}),
