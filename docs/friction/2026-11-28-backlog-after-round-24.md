@@ -294,6 +294,7 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   reduction for 3f78) and still possible (a team-wide recovery, Si's Proxy's Patronage on another slot, the game's
   cooldowns shorter than the tables). The double placements are placement leads, the short gaps a cooldown question:
   `zmdlogs replay <fixture> --windows <operator>` per case. Moves verdicts where a fix moves a cast: measure.
+  tests/combo-windows.test.ts pins 3f78 19.30 s as a live lead: a fix there updates it.
 - **Logged crits no landing takes** (round 24's LOST lines, lostfacts.ts; `zmdlogs decisions --all` at 0a1efea): 1027
   in 64 development logs, every one a crit (no reaction level lost): landings 2 or more frames from their logged hit
   (Typhoeus's arrow rain −11 to +7 frames, Rossi's bleed ticks +2 to +4, Arcane's Corrosion −25) or at its frame
