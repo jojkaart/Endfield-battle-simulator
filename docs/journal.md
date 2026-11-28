@@ -4,9 +4,59 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 204 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 205 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: The clock through overlapping combo slow-downs; layered buffs on their own timers as clocks
+
+**Goal:** two leads: Typhoeus's clock through overlapping combo slow-downs runs late against her landings (fc63: her
+conversion's frame-35 trigger at 59.33 s against her arrow at 58.65 s; five battle skills INSIDE her combo's window 0),
+across every development log; 458b's Thermite Cutter team ATK layers ending 0.3 s before the log's at 111 s. Base main
+at 400bb44, merged with 88d79bb.
+
+**Found:**
+- **Combos pressed together each run on their caster's clock.** A combo's landings all come after the overlapping
+  slow-downs, so a start placed from them can't tell a hold; the cast event can: it is stamped on the world's clock (a
+  plain combo's event +0.5 s in log time, +0.05 s in world time). Over 132 development combos whose first landing comes
+  across another operator's combo slow-down (scripts/probes/combo-hold/overlap-events.ts), the event's world lag from
+  the start the landing gives unheld is 0.00 s median (99 within 0.1 s), from the start held by those slow-downs
+  +0.25 s (20 within 0.1 s). Held only past her own slow-down's end measured worse (Typhoeus's 0eef, bdf2, fc63 9.26 s
+  0.2–0.5 s off). Camille's battle-skill explosion lands where 4e5e logs it (8.33, 56.17 s) only unheld. A slow-down
+  starting after hers ended holds her (landing pairs; three events, mixed).
+- **458b's layers:** not a hold at a break: a layered kit buff was no clock of the hidden holds (holds.ts NOT_A_CLOCK
+  `maxStacks`), though Thermite Cutter's layers (BuffData stackingType 11) have their own timers and the log lists each
+  apart from its application.
+
+**Done:**
+- Engine assumption `combo-overlap` (default `own`; `lowest` the old rule): timeline/clock.ts slowDown, at a combo
+  slow-down's start an operator whose own combo slow-down runs loses no frames to it (slow-downs carry `combo`; a cast
+  started inside a running slow-down was already not held by its rest). tests/combo-overlap.test.ts. fc63: the
+  conversion on time, INSIDE at 37.67 and 59.03 s gone, 81.83 s 11 → 2 frames, 11.37 s 22 → 6.
+- holds.ts notAClock: a layered buff whose game buff is stackingType 11 is a clock (runBounds, heldToLoggedEnds), each
+  layer paired with the run nearest its application (nearestRun). 458b: every 111 s hit plain.
+
+**Measured** (against bf6a399 for the layers, against `lowest` for the engine rule): the layers development plain 84.3
+→ 84.5%, earlier 85.0 → 85.4%, hold-outs unchanged, 9c6e −4 (a Corrosion step at 76.46 s the moved holds put off);
+with stackingType 2 too, 7910 lost 120 plain (its gear-set runs outlast their layers' timers): left out. The engine
+rule: verified 4e5e −1 (its 31.07 s explosion 0.4 s early either way, now across a buff's start), db87 236 → 230 (its
+Corrosion steps after three combos at 22.0–22.3 s ask 0.15 s more world hold than placed: the world's per-episode
+excess), one hold-out +4 plain.
+
+**Scoreboard** (`npm run snapshots:update`, against 88d79bb): verified plain 78.5 → 78.4%; development plain 84.3 →
+84.5%, mismatch 4.6 → 4.5%, |damage error| 1.2%; hold-outs plain 82.6%, mismatch 5.1%, |damage error| 5.9%; earlier
+pending plain 85.0 → 85.4%; several targets plain 69.4 → 69.0%. `npm run smoke`: the six example snapshots moved
+(regenerated); team-ab against 400bb44 (32 seeds): the owner's team sustained DPS +0.41% full energy (54,023 →
+54,247), +0.53% zero (52,889 → 53,168); Typhoeus's team −0.03% both (58,428 → 58,411; 56,844 → 56,825), all within
+one sd.
+
+**Decisions:** `own` the default: the events decide it across 132 combos and the placement already reads combos this
+way; the verdicts barely move because the replay pins its casts to the log. stackingType 2 layers stay out of the
+clocks (measured).
+
+**Left:** a combo pressed after hers ended but before her landing (three rows); the world's per-episode excess (db87
+22 s, the hidden holds); fc63's Typhoeus combo events 0.6–2.4 s before her placed starts (a placement question);
+11.37 s's 6 frames.
 
 ## 2026-11-28: Combo windows: the opener logged inside a combo's own slow-down opens the press's window
 
@@ -388,38 +438,3 @@ snapshot entry (that is measure's), so a difference names where to look.
 
 **Problems:** a code edit during the first snapshots:update would have failed it (codeKey); stopped and rerun after
 the commit. The `--fetch` path is untested against the site (no downloads this round).
-
-## 2026-11-28: Estella and Akekuri logs: four imports, a stage variant's rank, Akekuri's combo SP on its landings
-
-**Goal:** more development logs for the owner's team (Estella, Si, Akekuri, Arcane): the scoreboard had Akekuri in 2
-fights and Estella in 5.
-
-**Done:**
-- Screened both operators' ZMDLogs profiles (each lists every battle with the operator: Estella 45, Akekuri 75, most
-  before game 1.6), 13 exports and 5 details (4 s apart). Usable: Estella's one new 1.6 fight on a stage the data has
-  (8f32, Tower 7, on Valiant) and three with Akekuri (1a77 and 8056: one account's Rhodagn rush and boss Si with Si
-  P0; f574: Hard 33's slugs). The rest: towers 21 and 24 (not in the pinned data), Minghe (no kit), Akekuri at levels
-  1–60, a multi-target rush, or hold-outs. All four on the development list; f574 marked `severalTargets` with the
-  slug probe's evidence (as 6339, 7b54). First checks in fixtures/pending/README.md.
-- 1a77 / 8056: Akekuri and Wulfgard are level 80; `fit-build` gives both attribute nodes 2 and a level-80 weapon in
-  both logs (tied for Akekuri with weapon 72 and a food; the food-free pair fits all four), buildOverrides.
-- 8f32's replay stopped at 44.8 s: eny_0082_hsbear_race007 has an attribute template of its own and no display entry,
-  so no rank, and Rossi's ultimate freeze asks for it. The loader now takes the EnemyTable templateId's display (39
-  enemies; development targets 9, none Elite with a Rossi). 8f32 plain 171 → 395, −56.8 → +2.1%; Estella 60 of 63.
-- Akekuri's combo SP as cast triggers 22 and 31 frames after the cast came after both landings where the replay pins
-  them early (8056 76.98 s, 1a77 80.35 s, 458b 127.5 / 197.6 s: ×1.262 = Frontiers 1.16 × a Positive Feedback
-  layer). The data has each ObtainCostAction in its DamageAction's tick, before it: now the hit's own `sp` with
-  spBeforeDamage. 458b plain 1073 → 1093, 8056 +3, 1a77 +3.
-- Scoreboard (snapshots:update): development 29 → 32 fights, plain 84.3 → 84.2%, mismatch 4.7 → 4.6%, |damage error|
-  1.3%; earlier pending plain 84.4 → 84.6%; several targets 3 → 4 (f574 −26.5%); verified and hold-out unchanged.
-  Akekuri 2 → 5 fights (plain 94.6 → 94.2%), Estella 5 → 6 (80.3 → 83.0%, |damage error| 2.5 → 2.2%). team-ab
-  against 0f3c894: every team's fight identical (the owner's team's simulated combos had their SP on time).
-
-**Open:** 8056's first Akekuri ultimate shows one of its three SP grants' buffs (her ×0.862 basics at 25–30 s). The
-data rules out a target check or a cut; the SP cap fits (the replay at 284 and 300, and its SP runs short), but 22
-firings at the replay's cap do show their buffs (458b 227.5 s). In-game test 112 (open-problems "Akekuri: her SP
-grants"; scripts/probes/sp/spcap.ts). Tests: 48 not decidable from 8f32 (no skill-type bonus in her build; her
-Valiant hits don't get the combo cast's Yinglung's Edge), 71 part 1 agreed by 8f32, 11 still no log.
-
-**Dead ends:** an SP-cap rule for the "recovers SP" event wasn't built: the replay's SP decides too few firings
-either way.

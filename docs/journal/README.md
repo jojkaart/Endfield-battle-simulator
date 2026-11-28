@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-28: The clock through overlapping combo slow-downs; layered buffs on their own timers as clocks](2026-11-28-11-the-clock-through-overlapping-combo-slow-downs-layered-buffs.md)
 - [2026-11-28: Combo windows: the opener logged inside a combo's own slow-down opens the press's window](2026-11-28-11-combo-windows-the-opener-logged-inside-a-combo-s-own-slow.md)
 - [2026-11-28: Placement paths: a value rule on multiplier bounds, slots cut to a path, hitless ultimate stops](2026-11-28-10-placement-paths-a-value-rule-on-multiplier-bounds-slots-cut.md)
 - [2026-11-28: Combo windows: Typhoeus's Signs at a burst's application; openers logged inside a combo's slow-down](2026-11-28-10-combo-windows-typhoeus-s-signs-at-a-burst-s-application.md)
