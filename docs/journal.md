@@ -4,9 +4,44 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 191 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 192 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: The check's targets are the replay's, and a freeze's run-on on every target
+
+**Goal:** the backlog after round 21's accuracy list, its first and last items: the second assignment of a fight
+read per target numbered its targets afresh, so enginecheck.ts atItsTarget read a candidate `t` at the replay's
+target `t`, another slug (7b54: 147 of 210 hits with both off their landing's targets); and a freeze's ramp and
+statuses run-on (clock.ts rampRunsOn, statusesRunOn) read the current target only.
+
+**Done:**
+- targets.ts assignTargets takes AssignOptions (`fixed`, `ids`); with ids `landings` a new target takes the id of a
+  target its first hit's landing reached in the replay that no target has yet (each a candidate, the first that
+  fits), else an id no landing names. enginecheck.ts SECOND_PASS_TARGETS `mapped` (the default; `free` the old
+  numbering). 7b54: 147 → 55 hits off their landing; 6339 and 9c6e unchanged (0 and 1).
+- The 55 left are hits the two assignments put on other slugs: at 16.36 s the first assignment had both of
+  Laevatain's attack 2 hits (1462, 1701) on one slug, neither fitting in the one-enemy replay; in the second replay
+  1701 fits only with Vesperwings and Arcane's will_susc on, which that slug was read without, so it went to a slug
+  of its own, and the 19.59 s kill and Si's 20.21 s attacks followed. logcheck.ts TARGET_REPLAYS (at most three):
+  the replay is made again on the check's assignment while it puts a hit on another target than the replay was made
+  on. 7b54's third replay gives the same assignment back: 0 of 210 off. 6339 and 9c6e stop at two.
+- clock.ts rampRunsOn and statusesRunOn run on every target the freeze held (eachTarget), a target it didn't hold
+  unchanged; synthetic tests in tests/target-statuses.test.ts; clock.ts left tests/enemy-readers.test.ts's list.
+  The backlog's "no fight read per target has a freeze yet" was wrong: Si's Immobilization freezes the slugs (not
+  control-immune) at 6339 4.53 s and 7b54 3.40 and 29.50 s, each a single-target landing with no status on any
+  target then, so it reads nothing.
+
+**Measured:** the full measure against 60fa436 at each step: no log's verdicts moved, hold-outs unchanged. The
+third replay (`--several-targets`): the row's mean |damage error| 10.4 → 10.0%, 7b54 4.0 → 2.8% (replay-only 12.1 →
+11.7%: landings on their slugs), plain 75.6% and mismatch 11.2% unchanged. Why no verdict moved: 7b54's only reaction
+status is Combustion (a dot), so no hit reads a Corrosion, Electrification or Breach level and the ids decided
+nothing in its values; the slugs' kit buffs are decided by the assignment itself, not by id. team-ab: every team's
+fight the same.
+
+**Left:** a freeze on a twin's other target holds the first target's clock (landing.ts runs the other target's
+control event after the first is current again); no such freeze in a log yet (docs/open-problems.md "statuses per
+target").
 
 ## 2026-11-27: Friction round 21: one home for the pairing and keepPrevious, counterfactual replays, measure's split by what it measured
 
@@ -401,41 +436,3 @@ simulation reads it: no team-ab.
 
 **Dead ends:** a time-based twin count (slots due by the batch's ms): the first batch's slashes come before the kit
 frames allow from the event (the stop batches them), so time can't count slots there.
-
-## 2026-11-27: Ember, Alesh and Catcher's mismatches: two build fits and DEF's percentage
-
-**Goal:** the operators whose hits mostly mismatch (by operator, every log but the hold-outs): Ember 80.2%, Snowshine
-88.8%, then Alesh 20.1%, Avywenna 19.9%, Catcher 13.9%. Is each one factor on most hits (a build input), one skill
-(a kit error), or a buff the log lists that the replay lacks?
-
-**Found and fixed:**
-- **Ember (04d4) ×1.0226 on every kit hit**, under the offset screen's 3%: Exemplar's skill 1 at level 9 for the
-  exported 8 (Strength 112 → 132), the one single change of fit-build's 124 (`--pairs`); fixture buildOverrides.
-  04d4's Ember 310 → 9 mismatches. Her other three logs were already fitted (2fd9, 99fb) or plain (7e19).
-- **Alesh (4e36) ×0.9745**, also under 3%: attribute nodes 2 (node 5's favorability 300, as Si's in 0c14 and
-  Perlica's in fc63), 13 of 13 clean; his weapon's skill 3 at 2, the other single change, is ruled out by the log's
-  Thermite Cutter 0.08 a layer. Hard 15's "per-operator factors" (Akekuri, Alesh) are both node counts.
-- **Catcher's P1 strikes ×1.027 (04d4)**: a kit buff's DEF percentage (OBJ Heavy Burden, formulaItem 6) was of the
-  panel line alone, his talent's DEF points (formulaItem 5) added after; the game sums add-slot points first. Engine
-  buffs.ts buffAttr: a percentage is of the line with the buffs' points in it. Catcher 35 → 15 mismatches.
-
-**Scoreboard** (measure against the snapshots of de528c7; snapshots:update for the final commit): earlier pending
-plain 82.3 → 84.4%, mismatch 7.5 → 4.4%, |damage error| 1.3 → 1.2% (04d4 plain 375 → 590, mismatch 614 → 293,
-−3.2 → −1.4%; 4e36 plain 368 → 401, mismatch 37 → 4); verified, development, hold-outs and several-targets
-unchanged; no log worse. By operator: Ember mismatch 80.2 → 2.6%, Alesh 20.1 → 0.6%, Catcher 13.9 → 6.0%.
-`node scripts/team-ab.ts --base de528c7`: every team's own fight the same (no team has Catcher with OBJ Heavy
-Burden), so the team numbers are unchanged.
-
-**Decisions:** fits only where one input explains the hits (Ember, Alesh), as the earlier fits did. Snowshine's
-×0.9624 (04d4) stays out of scope: one factor in [0.96232, 0.96258] fits all 157 clean hits, but no build of nodes,
-weapon level and weapon skill 1 hits it with fewer than three changes, and no resistance does (her physical basic
-attacks read the same factor as her Cryo hits); docs/open-problems.md has it. Avywenna's 9847 mismatches are the
-fight-wide stretch, team-wide hits and Liino's Medicant layers (listed up to ×9, the kit keeps 4): not her kit, so
-left as a lead in docs/open-problems.md. The multi-target 146d has the same build but no fixture there takes
-buildOverrides, so it isn't touched.
-
-**Dead ends:** a gear piece swapped between Ember and Snowshine (both off by exactly 0.125 of attribute bonus, in
-opposite directions): no swap fits either; a food for Ember (116 of 284).
-
-**Left:** Snowshine's build; Catcher's ATK hits at ×1.0005 (Will one point above the export's); Ember's 7e19
-33.15 s finisher (an unlisted talent layer); Liino's Medicant layer count on teammates.
