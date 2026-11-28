@@ -14,13 +14,13 @@
 
 export type { RotationAction, TimelineOptions, TimelineScenario, EnemyActionSpec, EnemyAction, Cast, LandedHit, LandingFacts, LandingInputs, ReactionRecord, TimelineState, TimelineContext, Acting, ChainStep, PendingBurst, LandingTarget } from "./timeline/state.ts";
 export { withSeconds } from "./timeline/state.ts";
-export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, diveFrames, linkValue } from "./timeline/rules.ts";
+export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, diveFrames, linkValue, priorityOf } from "./timeline/rules.ts";
 export { createContext, kitAssumptions, allAssumptions, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { setPoise, refillPoise, holdStagger, staggerFrames } from "./timeline/resources.ts";
 export { breakHold, breakHoldFrames, cutAtResets, holdWorld, pathSlowdowns } from "./timeline/clock.ts";
 export { COMBO_CURVE, COMBO_CURVES, curveScales, withCurveReading } from "./timeline/curves.ts";
-export { exclusiveUntil, earliestStart, enhancedBasic, ownHitsLanded, skillAvailable } from "./timeline/timing.ts";
+export { exclusiveUntil, earliestStart, enhancedBasic, ownHitsLanded, skillAvailable, startGateWords } from "./timeline/timing.ts";
 export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
