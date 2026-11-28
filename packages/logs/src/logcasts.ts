@@ -1246,7 +1246,21 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
       // swords at the same ms, was taken for attack 2 restarting the chain).
       const shared = (h: LogHit) => (groupsWith(h.event, h.t).length > 1 ? 1 : 0);
       const order = starts ? [...mine].sort((a, b) => a.t - b.t || shared(a) - shared(b)) : mine;
+      // Each logged hit's decision, in four stages that read only what the stages above them defined (a `const` read
+      // before its line throws; round 24, the placement-paths report point 2: the value rule needed stage 4's answer in
+      // stage 3 and the block had to move):
+      //   1. the context: candidates, free, landedLater, anchorFree, and `openChoice` (the cast the landing would open
+      //      or the delayed cast it would join: stage 4's answer, memoized, so any stage may ask it and a hit that
+      //      joins never pays for it);
+      //   2. the running cast `cur` and what ends it: elapsed, next, onTime, superseded (and valueKept, which asks
+      //      openChoice), entityLate, toCome, pressed, the channel's end (pastChannel);
+      //   3. the same slot on another target (a twin: used, byValue, byTime, batch, later) and the join to `cur`
+      //      (sameUltimate, paced): `continue` when either takes the hit;
+      //   4. a new cast or a join to one another key opened (openChoice's answer, joinable, jumpedFirst).
+      // A new rule that compares staying with opening asks a memoized answer of a later stage as openChoice does,
+      // rather than moving that stage's block above it (`--split hunks` then keeps one hunk per rule).
       for (const h of order) {
+        // Stage 1: the context.
         const candidates = groupsWith(h.event, h.t);
         if (candidates.length === 0) continue;
         if (!starts && candidates.length > 1) continue; // the first pass places only keys of one group
@@ -1291,6 +1305,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
           opening = { late, choice: late ? null : choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops, (id) => (basicSkills.has(id) ? data.skills[id]?.timing : undefined)) };
           return opening;
         };
+        // Stage 2: the running cast and what ends it.
         const cur = current.get(h.event);
         // The same cast while within its landings' span, or while it has landings to come within the skill's whole action
         // (a landing after a wait: Rossi's Lift 2.2 s after her charge, where the logged span is 0.6 s).
@@ -1365,6 +1380,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const ultimateBetween = cur !== undefined && (fx.casts ?? []).some((c) => c.t > cur.last.t && c.t <= h.t && data.kits.operators[c.operator]?.skills.find((s) => s.skillId === c.skill)?.kind === "ultimate"); // split:channel-end
         const pastSlack = !onWorld && elapsed > channelEnd + CHANNEL_SLACK_MS; // split:channel-end
         const pastChannel = !ultimateBetween && (pastSlack || (pressedBetween && channelElapsed > channelEnd + ON_TIME_MS)); // split:channel-end
+        // Stage 3: the same slot on another target (a twin), else the join to the running cast.
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
@@ -1424,6 +1440,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), joined });
           continue;
         }
+        // Stage 4: a new cast, or a join to one another key opened.
         const { late, choice } = openChoice();
         const g: Group = late?.g ?? (choice as { g: Group }).g;
         const chosen: CastChoice | null = candidates.length < 2 ? null : late ? { rule: "late", candidates: candidates.map((x) => x.id) } : (choice as { why: CastChoice }).why;

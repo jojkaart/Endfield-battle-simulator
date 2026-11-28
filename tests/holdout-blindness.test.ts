@@ -5,6 +5,7 @@
 // that prints a log's key on synthetic snapshots whose hold-out moves (alone, beside a development log, new, gone) and
 // fails if the hold-out's id appears anywhere in the output. Every exported function of the two modules is named
 // below, as a printer this test runs or with why it prints no log of its own, so a new export must be classified.
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import * as accuracy from "../scripts/accuracy.ts";
 import * as measure from "../scripts/measure.ts";
@@ -143,5 +144,18 @@ describe("the hold-outs' blindness over every printing function (accuracy.ts, me
     expect(carrying, "hold-out entries carrying an operator's own split: npm run snapshots:update").toBe(0);
     const dev = Object.entries(stored.pending).filter(([k]) => !accuracy.isHoldoutKey(k, stored.split));
     expect(dev.some(([, x]) => Object.keys(x.totals ?? {}).some((k) => k.startsWith("share own one-sided operator ")))).toBe(true);
+  });
+});
+
+describe("ripgrep keeps off the hold-outs from the search roots agents type (round 24)", () => {
+  // The combo-windows report point 4: `rg -l typhoea tests packages/*/test` listed the hold-out snapshot's name until
+  // .ignore's patterns were unanchored (400bb44). Round 24: with several roots ripgrep 14.1 applied the root .ignore to
+  // the later ones only sometimes (`rg --files tests fixtures` listed the hold-out logs in 8 runs of 12, 12 of 12 with
+  // -j1), so fixtures/.ignore and tests/snapshots/.ignore hold the patterns too. A count only: no path is ever printed.
+  it.skipIf(spawnSync("rg", ["--version"]).status !== 0)("lists no hold-out path under tests/ or fixtures/, from one root or several, in any order", () => {
+    const root = new URL("..", import.meta.url).pathname;
+    const held = (args: string[]) => (spawnSync("rg", args, { cwd: root, encoding: "utf8", maxBuffer: 64 << 20 }).stdout ?? "").split("\n").filter((p) => p.startsWith("fixtures/holdout/") || p.endsWith("log-verdicts-holdout.json")).length;
+    const forms = [["--files", "fixtures"], ["--files", "-j1", "tests", "fixtures"], ["--files", "-j1", "fixtures", "tests"], ["-l", "-j1", "battleId", "tests", "fixtures"], ["-l", "-j1", "plain", "packages", "tests"], ["-l", "plain", "tests/snapshots"], ["--files"]];
+    for (const args of forms) expect(held(args), `rg ${args.join(" ")}`).toBe(0);
   });
 });

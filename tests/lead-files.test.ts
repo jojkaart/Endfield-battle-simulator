@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { FAMILIES, isCode, leadFiles, parseSplit, splitSpans } from "../scripts/lead-files.ts";
+import { FAMILIES, familyCounts, isCode, leadFiles, parseSplit, splitSpans } from "../scripts/lead-files.ts";
 import { ROOT } from "./logverdicts.ts";
 
 describe("lead-files", () => {
@@ -38,5 +38,19 @@ describe("lead-files", () => {
     expect(spans.get("break")).toEqual({ agents: [["a", 3], ["b", 2]], shared: true });
     expect(spans.get("slug")).toEqual({ agents: [["a", 1]], shared: false });
     expect(() => parseSplit("a=family:nope")).toThrow(/no family nope/);
+  });
+});
+
+describe("lead-files by family (round 24)", () => {
+  it("counts the commits naming a term per family of the files they touched, other for the rest", () => {
+    // The combo-openers report point 3: a "placement lead" was fixed in the replay's makeCast.
+    const log = [
+      { message: "openers: makeCast takes the window", files: ["packages/logs/src/replayrun.ts", "tests/x.test.ts"] },
+      { message: "openers: the INSIDE words", files: ["packages/logs/src/decisionsview.ts", "packages/logs/src/replayrun.ts"] },
+      { message: "openers: a script", files: ["scripts/probes/x.ts"] },
+      { message: "openers: docs", files: ["docs/x.md"] },
+      { message: "something else", files: ["packages/logs/src/logcasts.ts"] },
+    ];
+    expect(familyCounts(log, "Openers")).toEqual([["replay", 2], ["other", 1], ["views", 1]]);
   });
 });

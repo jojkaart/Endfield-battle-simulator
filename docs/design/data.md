@@ -998,6 +998,14 @@ takes a fixture's path or its id, e.g. `0c14`, and operators by name):
 | Is a total's miss the model or the fight's crit luck | `efsim zmdlogs totals <fixture> --by crit` (matched parts per operator by how the totals took each crit: known, exact, read from the value, expected); per hit `hits --json` `totalsPredicted`, `totalsCrit` |
 | A burst's cause | `efsim zmdlogs bursts`: the replay's infliction that set it off (StatusEvent `inflictedAt`) and the logged hit standing for it; "nearest" where neither is known |
 | Does a scratch script call the packages right | `node scripts/typecheck-scratch.ts scratch/x.ts` (the repository's compiler options; scratch/ isn't in `npm run typecheck`) |
+| What opened a combo window, when, and why it stayed shut | `efsim zmdlogs replay <fixture> --windows <operator>` (WINDOW lines: each opening or refresh with its source, an event the cooldown kept out, each end, the combos' ready frames, each press with the window it found; round 24) |
+| A cast made before its cooldown was ready | `efsim zmdlogs decisions <fixture…\|--all>` (COOLDOWN lines: how early, the last cast's cooldown, how far readyAt moved since; replayrun.ts cooldownEarly, round 24) |
+| A skill's cooldown and SP or energy cost | `efsim kit <operator> [--levels]` (at level 12 and the levels that differ; the kit triggers that change the cooldown; round 24) |
+| A logged crit or reaction level the replay's landing didn't take (a moved landing's lost facts) | `efsim zmdlogs decisions <fixture…\|--all>` or `replay <fixture>` (LOST lines, a count in the replay's header: lostfacts.ts, round 24) |
+| What each placement pass placed and which stops the next pass read | `efsim zmdlogs casts <fixture> --passes` (passesview.ts; round 24) |
+| An operator's clock across a teammate's slow-down, from the cast event | `efsim zmdlogs casts --event-lags <fixture…\|--all> --against-holds [--verbose]` (the event's world lag from the start unheld and held; round 24) |
+| Which stacking type a layered kit buff is, and whether it is a clock of the hidden holds | `efsim kit-census` (layered kit buffs by stacking type) and `efsim zmdlogs holds <fixture> --why <regex>` (round 24) |
+| Where this worktree stands: branch, commits, uncommitted files, runs and their output | `node scripts/runstate.ts --where` (round 24) |
 
 `zmdlogs hits --json` records (packages/logs/src/hitexport.ts `HitRecord`):
 `value`, `verdict` (`match` for every match class) and `class`,

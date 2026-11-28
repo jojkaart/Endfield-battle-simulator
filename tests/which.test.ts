@@ -33,7 +33,7 @@ describe("zmdlogs which: the scripts' --help (round 24)", () => {
   it("reads a script's header as an entry and each option line as its own, with the lines under it", () => {
     const header = ["Usage: node scripts/x.ts [options]", "  --hits              the hits whose verdict changed", "                      per moved log", "  --at <ref>          that commit's code", "Other text."].join("\n");
     expect(scriptEntries("x.ts", header).map((e) => [e.command, e.question])).toEqual([
-      ["node scripts/x.ts", expect.stringMatching(/^node scripts\/x\.ts \[options\] --hits/)],
+      ["node scripts/x.ts", "node scripts/x.ts [options]"],
       ["node scripts/x.ts --hits", "the hits whose verdict changed per moved log"],
       ["node scripts/x.ts --at <ref>", "that commit's code"],
     ]);

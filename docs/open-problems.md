@@ -29,6 +29,20 @@ doesn't hide a kit error; its fit goes into the fixture's
 and dropped keeps its diff in [docs/tried/](tried/README.md), named here
 with its measure, so it can be measured again later.
 
+A "still possible" names the smallest state that differs between the
+log and the replay (a combo's window at the press, an operator's SP
+before a cast, a buff's end) beside the mechanism that might make it
+(where a landing goes, which rule places it), so a brief's file list
+covers both the replay's facts and the placement (round 24, the
+combo-openers report point 3: a lead read as "re-place the landing" was
+fixed in the replay's makeCast; `node scripts/lead-files.ts <term>`
+counts a theme's earlier fixes by family). A test that pins a view's
+words on a live lead names it in a comment ("a live lead: fails when it
+is fixed", with its fixture and time), so `rg -l '<fixture> <time>'
+tests` finds it before a fix's premerge (round 24, the combo-windows
+report point 5); a wording test takes a settled or a synthetic case
+where it can.
+
 A candidate about the log's listing ("the log lists X five times, the
 engine has two") names the neighbour hit that would rule it out, and is
 checked against it first (round 16, the arcane-will report: the combo
@@ -99,7 +113,12 @@ one shut, and a start inside the combo's own slow-down: timing.ts startGateWords
   Avywenna 1.03 s, 207f 31.40 s Rossi 2.43 s, c4f3 22.77 s Estella and 156.43 s Chen 0.63 s): not Arcane's. **Still
   possible:** a team-wide cooldown recovery the engine lacks; Si's Proxy's Patronage reaching another slot than the
   fixture's first (3f78 and 0c14 have her ultimate between, the other ten not); combo cooldowns in the game up to
-  a second or two shorter than the data's tables give (every short gap 0.07–2.4 s, never more).
+  a second or two shorter than the data's tables give (every short gap 0.07–2.4 s, never more). **The state that
+  differs:** the skill's ready frame at the press (TimelineState.readyAt). Since round 24 each such cast is a COOLDOWN
+  line of `zmdlogs decisions` (replayrun.ts cooldownEarly: how early, the last cast's cooldown, how far readyAt moved
+  since), `zmdlogs replay <fixture> --windows <operator>` traces the window and the event the cooldown kept out, and
+  `efsim kit <operator>` prints each skill's cooldown per level; tests/combo-windows.test.ts pins 3f78 19.30 s (a live
+  lead: it fails when this is fixed).
 - **Fixed: Typhoeus's clock through overlapping combo slow-downs** (fc63 59.33 s; engine assumption `combo-overlap`
   `own`, docs/journal/2026-11-28-11-the-clock-through-overlapping-combo-slow-downs-layered-buffs.md): 37.67 and 59.03 s
   no longer INSIDE; 81.83 s 11 → 2 frames (the press's grain), 11.37 s 22 → 6 (Gilberta's combo at 10.77 s, after her

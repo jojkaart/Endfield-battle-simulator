@@ -74,12 +74,16 @@ export function usageEntries(usage: string): WhichEntry[] {
 
 /**
  * A script's header usage (scripts/usage.ts headerUsage: the comment lines from "Usage:" on) as entries: the script
- * itself with its whole text, and each option line (`--name …` at the start of a line, two spaces or more before its
+ * itself with the text before its first option line (at most SCRIPT_HEAD_LINES lines: a whole header would share a word
+ * with every question), and each option line (`--name …` at the start of a line, two spaces or more before its
  * description) with its description and the lines indented under it, as `node scripts/<file> --name …`.
  */
 export function scriptEntries(file: string, header: string): WhichEntry[] {
   const command = `node scripts/${file}`;
-  const out: { command: string; lines: string[]; indent: number }[] = [{ command, lines: [header.replace(/^Usage:\s*/, "")], indent: -1 }];
+  const lines = header.split("\n");
+  const firstOption = lines.findIndex((l) => /^\s*--[a-z]/.test(l));
+  const head = lines.slice(0, Math.min(firstOption < 0 ? lines.length : firstOption, SCRIPT_HEAD_LINES)).join(" ").replace(/^Usage:\s*/, "");
+  const out: { command: string; lines: string[]; indent: number }[] = [{ command, lines: [head], indent: -1 }];
   for (const line of header.split("\n")) {
     const opt = /^(\s*)(--[a-z][\w-]*(?:[ =][^\s].*?)?)\s{2,}(\S.*)$/.exec(line);
     if (opt) {
@@ -93,6 +97,9 @@ export function scriptEntries(file: string, header: string): WhichEntry[] {
   }
   return out.map((e) => ({ from: "script" as const, question: e.lines.join(" ").replace(/\s+/g, " ").trim(), command: e.command }));
 }
+
+/** At most how many lines of a script's header, before its first option, its own entry takes (scriptEntries). */
+const SCRIPT_HEAD_LINES = 6;
 
 /** Every scripts/*.ts file's header usage as entries (scriptEntries). */
 export function allScriptEntries(root = REPO_ROOT): WhichEntry[] {

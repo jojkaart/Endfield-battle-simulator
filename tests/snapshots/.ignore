@@ -1,0 +1,3 @@
+# The hold-out logs' verdict snapshot: ripgrep skips it from any search root (round 24: the repository root's .ignore
+# alone didn't hold with several roots; a directory's own .ignore applies whenever ripgrep walks into it).
+log-verdicts-holdout.json
