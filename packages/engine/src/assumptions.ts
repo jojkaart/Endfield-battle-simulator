@@ -80,6 +80,15 @@ export const SIMULATION_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "combo-overlap",
+    question: "Does a teammate's combo slow-down hold an operator whose own combo's slow-down is running as it starts (two combos pressed together: timeline/clock.ts slowDown)?",
+    default: "own",
+    readings: {
+      own: "no: she runs on her own clock through it, its whole length (the log's cast events put the first combo's start where its landing does unheld: 2026-11-28, 130 pairs; the log tools' placement already reads it so)",
+      lowest: "yes, as any operator: the lowest scale of the slow-downs holding her counts (the engine until 2026-11-28)",
+    },
+  },
+  {
     id: "freeze-ramp",
     test: "104",
     question: "Does a freeze (a control status that stops the enemy's clock: Si's Immobilization, Tangtang's stare) hold the enemy's Arts reaction statuses (Corrosion's ramp and end, Combustion's ticks and end, Electrification, Solidification), as it holds the operators' debuffs on it (timeline/actions.ts runTriggers)?",

@@ -43,6 +43,11 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   if (reading === "reaches") s = { ...s, resets: [...pending, ...resets.filter((r) => r.frame > frame).map((r) => ({ ...r, by: caster }))] };
   // Engine assumption combo-operator-hold's curve readings: the operators a combo holds follow another curve than the world.
   const opCurve = kind === "combo" ? comboOperatorCurve(ctx) : undefined;
+  // Engine assumption combo-overlap: a combo's slow-down doesn't hold an operator whose own combo's slow-down runs as it
+  // starts (combos pressed together run on their casters' own clocks).
+  const combo = kind === "combo";
+  const overlap = combo && engineReading(ctx.scenario, "combo-overlap") === "own";
+  const inOwnCombo = (who: string | null, f: number) => who !== null && s.slowdowns.some((x) => x.combo && x.exempt === who && f >= x.start && f < x.start + x.scales.length);
   const own = timing.slowdowns
     .map((d) => {
       const whole = { start: frame + d.from, scales: d.scales, ...(d.priority !== undefined ? { priority: d.priority } : {}) };
@@ -68,7 +73,7 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     // from that stop's end, so what's due right then comes on time (dbaee23b801d: Liino's Cosmovoice at her ultimate's
     // frame 77, the end of its stop, with Xaihi's ultimate stop from 7606 ms running on: at 8258 ms, as logged).
     const lost = (who: string | null): { n: number; from: number } => {
-      if (who === caster || who === d.spares) return { n: 0, from: start };
+      if (who === caster || who === d.spares || (overlap && inOwnCombo(who, start))) return { n: 0, from: start };
       let sum = 0;
       let from: number | null = null;
       const scales = who !== null && d.opScales ? d.opScales : d.scales;
@@ -83,7 +88,7 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     // Per episode: a slow-down that starts inside another (pressed together) adds no extra hold of its own.
     const extra = hold.episode && scaleAt(null, start) < 1 ? 0 : hold.frames;
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
-    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
+    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(combo ? { combo: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
     // The Arts Bursts on their way: held as their operators' clocks are, or by ultimates' stops only (engine
     // assumption burst-stops), their caster's own included under `all` and `ultimates`.
     const bursts = burstStops !== "ultimates" || ultimate;

@@ -54,6 +54,28 @@ The game keeps one dilation per priority tag (the reset would do nothing under t
   lowest-scale rule holds 0.93 s and 0.91 s where the steps allow 0.73 s and 0.75 s; with the reset 0.72 s and 0.74
   s); one starting after her cast but before her frame 9 runs whole (the engine 2026-11-23, before `reaches`)
 
+## combo-overlap
+
+Two combos pressed together: does the second's slow-down hold the first's caster? The log's cast event is stamped on
+the world's clock (a plain combo's event comes about +0.05 s after its start in world time,
+`zmdlogs casts --event-lags`), so it dates the press whatever holds the caster. Over 132 development combos whose
+first landing comes across another operator's combo slow-down (scripts/probes/combo-hold/overlap-events.ts), the
+event's world lag from the start the landing gives unheld is 0.00 s median (99 within 0.1 s), from the start held by
+every slow-down between +0.25 s (20 within 0.1 s); the placement's start (logcasts.ts castStart: "a combo isn't held
+by another's combo") is that unheld one. A slow-down that starts after hers ended holds her (casts' landing pairs
+across one: late by its hold or more); only 3 rows have the event to tell, 2 of them unheld (Laevatain's with
+Wulfgard's at her frame 32–33), so that case stays as it was.
+
+- `own`: (2026-11-28) fc63's Typhoeus: her conversion at her combo's frame 35 at 58.65 s, as her arrow (59.33 s held
+  by Gilberta's and Arcane's), and three of her five battle skills no longer INSIDE her combo's window (59.03, 37.67
+  s; 81.83 s 11 → 2 frames, 11.37 s 22 → 6); Camille's battle-skill explosion in 4e5e at 8.33 and 56.17 s where the
+  log has it (held 0.4 s later), db87 24.27 s the same. Measured against `lowest` (the same tree): verified 4e5e −1
+  plain (its 31.07 s explosion, 0.4 s early either way, now on the other side of a buff's start), development db87
+  plain 236 → 230 (its Corrosion steps after Si's, Camille's and Laevatain's combos at 22.0–22.3 s: the hidden holds
+  placed 0.15 s less there, the world's per-episode excess the stop list lacks), earlier a7a7 −1, 99fb's mismatch
+  110 → 109, 6339 +1; one hold-out +4 plain (assumed −4)
+- `lowest`: the engine until 2026-11-28; the replay's casts are placed from the log, so it moved few verdicts
+
 ## freeze-ramp
 
 - `statuses`: (clock.ts statusesRunOn): Corrosion's ramp runs on (reading `runs`' logs) and its end too,
