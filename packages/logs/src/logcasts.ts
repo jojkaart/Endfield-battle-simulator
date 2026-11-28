@@ -605,9 +605,12 @@ export interface PlacedTwin {
    * of its key all logged, its value not a next cast's first's (nextByValue); `batch` in a fight read per target
    * (several-targets), its place in its batch (the key's alike hits at its ms) is a twin's by the batch's targets
    * (targets.ts batchTargets: `targets` per landing, of `batch` hits, decided `by`); `later` in such a fight, a used-up
-   * combo's landing logged within TWIN_LATER_MS after its last, of its value, with no cast event of its skill between.
+   * combo's landing logged within TWIN_LATER_MS after its last, of its value, with no cast event of its skill between;
+   * `time` in such a fight, logged at its slot's landing's ms where the next slot is due `due` ms later and no stop
+   * between could have batched both at one ms (placeWith's byTime).
    */
-  readonly rule: "value" | "used" | "batch" | "later";
+  readonly rule: "value" | "used" | "batch" | "later" | "time";
+  readonly due?: number;
   readonly targets?: number;
   readonly batch?: number;
   readonly by?: string;
@@ -1180,11 +1183,21 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // landing-long batches, plain 314 → 312, mismatch 33 → 44).
         // In such a fight a slot's multipliers over event counts (nominalScales' ranges: Si's combo final) tell it too.
         const byValue = cur !== undefined && h.t === cur.last.t && (sameByValue(cur, h) || (several && nextDiffers(cur) && alikeValue(h, cur.last, critFactor)));
-        const batch = several && cur && !used && !byValue && h.t === cur.last.t && !nextDiffers(cur) ? twinInBatch(cur, h) : null;
+        // Nor where the next slot is due later than the slot's landing by more than ON_TIME_MS (the log flushes its hits
+        // about every 100 ms and at a stop's end: castassembly.ts batchOrder) and no stop, the operator's own included,
+        // holds the world in the ON_TIME_MS before the ms (a stop ending there could have batched both landings at it):
+        // at the last landing's ms it is that landing on another target, alike in value (f57452bc1f02 16.98 s: Mi Fu's
+        // Trail and Mangle on two
+        // slugs, its flurries at frames 3 and 10 alike in value, 5181 twice at 16.98 s and twice at 17.27 s; the batch
+        // rule read the first two as one slug's two flurries, the 17.27 s pair as the mangle and its twin, and the 17.75 s
+        // mangles opened a second cast: 50 SP spent twice).
+        const timeDue = cur && next && cur.slots?.[cur.index] ? msOf(next.frame - (cur.slots[cur.index] as Slot).frame) : 0;
+        const byTime = several && cur !== undefined && !used && !byValue && h.t === cur.last.t && timeDue > ON_TIME_MS && ON_TIME_MS - worldMs(h.t - ON_TIME_MS, h.t, stops) < 1 && alikeValue(h, cur.last, critFactor);
+        const batch = several && cur && !used && !byValue && !byTime && h.t === cur.last.t && !nextDiffers(cur) ? twinInBatch(cur, h) : null;
         const later = several && cur && used && cur.cast.kind === "combo" && h.t > cur.last.t && h.t - cur.last.t <= TWIN_LATER_MS && !nextByValue(cur, h) && alikeValue(h, cur.last, critFactor) && !eventsOf(groups.find((x) => x.id === cur.cast.group) as Group).some((t) => t > cur.last.t && t <= h.t);
-        if (cur && (((used && !nextByValue(cur, h)) || byValue) && h.t === cur.last.t || batch?.twin || later)) {
+        if (cur && (((used && !nextByValue(cur, h)) || byValue) && h.t === cur.last.t || byTime || batch?.twin || later)) {
           const slot = cur.slots?.[cur.index];
-          const twin: PlacedTwin = byValue ? { rule: "value" } : batch?.twin ? { rule: "batch", targets: batch.targets, batch: batch.size, by: batch.by } : later ? { rule: "later" } : { rule: "used" };
+          const twin: PlacedTwin = byValue ? { rule: "value" } : byTime ? { rule: "time", due: timeDue } : batch?.twin ? { rule: "batch", targets: batch.targets, batch: batch.size, by: batch.by } : later ? { rule: "later" } : { rule: "used" };
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last, twin });
           continue;
         }
