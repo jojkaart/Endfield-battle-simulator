@@ -25,6 +25,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printHelp } from "./usage.ts";
 
 const JOURNAL = ["docs/journal.md", "docs/journal/README.md"];
 const isSnapshot = (f: string) => /^tests\/snapshots\/[^/]+\.json$/.test(f) || f === "docs/accuracy.md";
@@ -187,6 +188,7 @@ function main(argv: readonly string[]): number {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
   try {
     process.exitCode = main(process.argv.slice(2));
   } catch (e) {

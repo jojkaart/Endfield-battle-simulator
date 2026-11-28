@@ -382,7 +382,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   };
   // Only the first of an ultimate's repeated events (each ~3.5 s while it lasts) has a stop around it.
   const lastEvent = new Map<string, number>();
-  // The placed casts' stops, as withLoggedCasts reads them (castassembly.ts buildReplayedCasts), made once if asked.
+  // The placed casts' stops, as withLoggedCasts reads them (castassembly.ts assembleCasts), made once if asked.
   let stopsMade: readonly TimeStop[] | undefined;
   const eventStops = () => {
     const p = placement ?? placeHits(data, fx);

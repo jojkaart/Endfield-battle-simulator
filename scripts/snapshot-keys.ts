@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { snapshotLayout, snapshotPath, writeSnapshotFile } from "../tests/snapshot.ts";
+import { printHelp } from "./usage.ts";
 
 export interface RenameResult {
   readonly entries: Record<string, unknown>;
@@ -48,4 +49,7 @@ function main(argv: string[]): number {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = main(process.argv.slice(2));
+}

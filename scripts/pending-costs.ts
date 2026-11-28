@@ -10,6 +10,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { VitestReport } from "./premerge.ts";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const PENDING_COSTS = join(ROOT, "tests", "slow", "pending-costs.json");
@@ -51,4 +52,7 @@ function main(argv: string[]): number {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = main(process.argv.slice(2));
+}

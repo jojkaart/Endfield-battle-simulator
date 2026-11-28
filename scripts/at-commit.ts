@@ -28,6 +28,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mainCheckoutOf } from "../packages/data/src/checkout.ts";
 import { setupWorktree } from "./setup-worktree.ts";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -181,4 +182,7 @@ function main(argv: string[]): number {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = main(process.argv.slice(2));
+}

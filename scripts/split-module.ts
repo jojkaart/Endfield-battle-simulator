@@ -21,6 +21,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { pruneUnused } from "./prune-unused.ts";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -253,6 +254,7 @@ function main(argv: readonly string[]): number {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
   try {
     process.exitCode = main(process.argv.slice(2));
   } catch (e) {

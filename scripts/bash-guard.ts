@@ -22,6 +22,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printHelp } from "./usage.ts";
 
 const SAFE = "Write the text with the Write tool into scratch/ and run that file with one plain command (node scratch/x.ts, python3 -I scratch/x.py); text replacements: node scripts/edit.ts <edits file> (its header has the format). CLAUDE.md, \"Worktrees and sub-agents\".";
 
@@ -119,4 +120,7 @@ function main(argv: readonly string[]): number {
   return 2;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = main(process.argv.slice(2));
+}

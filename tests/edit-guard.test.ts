@@ -14,6 +14,17 @@ import { applyEdits, parseEdits } from "../scripts/edit.ts";
 const B = "`";
 
 describe("scripts/edit.ts", () => {
+  it("replaces a part of one line: a name inside a long import (round 23, the team-SP report point 4)", () => {
+    const line = `import { a, b, c, ${Array.from({ length: 40 }, (_, i) => `name${i}`).join(", ")} } from "./x.ts";`;
+    const files = parseEdits(["@@@ x.ts", "<<<<<<<", "name7, name8,", "=======", "name7, engineReading, name8,", ">>>>>>>"].join("\n"));
+    const { texts, errors } = applyEdits(files, () => `${line}\nconst y = 1;\n`);
+    expect(errors).toEqual([]);
+    expect(texts.get("x.ts")).toContain("name7, engineReading, name8,");
+    expect(texts.get("x.ts")?.split("\n")).toHaveLength(3);
+    // A part that repeats is refused, as a whole line is.
+    expect(applyEdits(parseEdits(["@@@ x.ts", "<<<<<<<", "name", "=======", "x", ">>>>>>>"].join("\n")), () => line).errors[0]).toMatch(/matches 4\d times/);
+  });
+
   const edits = [
     "comments outside blocks are ignored",
     "@@@ docs/a.md",

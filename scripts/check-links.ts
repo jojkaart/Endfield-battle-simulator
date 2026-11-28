@@ -16,6 +16,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SKIP = /^(data|reference|node_modules|scratch|\.claude)\//;
@@ -215,6 +216,7 @@ export function staleCitations(root: string = ROOT): StaleCitation[] {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
   const broken = brokenLinks();
   for (const b of broken) process.stdout.write(`${b.file}:${b.line}: ${b.target} — ${b.why}\n`);
   const stale = staleCitations();

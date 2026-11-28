@@ -388,7 +388,7 @@ export async function boundariesCliReport(data: () => GameData, sel: LogSelectio
  * the fixture are unchanged (as the hit records; not under another reading). Never a hold-out: their aggregates come
  * from measure.
  */
-export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly kinds?: boolean; readonly json?: boolean; readonly skip?: readonly string[]; readonly progress?: (line: string) => void }): Promise<string> {
+export async function totalsAllReport(data: () => GameData, sel: LogSelection, opts: { readonly workers: string | undefined; readonly operators?: readonly string[]; readonly top?: number; readonly cache?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly kinds?: boolean; readonly json?: boolean; readonly side?: "log" | "replay"; readonly skip?: readonly string[]; readonly progress?: (line: string) => void }): Promise<string> {
   const fights = selectedFiles(sel, "totals").map((f) => ({ file: f, ...fightMarks(readLogFixture(f)) }));
   const { kept, skipped } = skipFights(fights, opts.skip ?? []);
   if (skipped.length) opts.progress?.(`totals: ${skipped.length} fight(s) left out (--skip ${(opts.skip ?? []).join(",")}): ${skipped.map((x) => shortId(fixtureLabel(x.file))).join(", ")}`);
@@ -423,6 +423,11 @@ export async function totalsAllReport(data: () => GameData, sel: LogSelection, o
   // groupOf: the fixture's severalTargets; round 18, the status-pairing report point 4: the views and the scoreboard
   // grouped 9c6e apart).
   const groupOf = (f: string): TotalsGroup => (isMultiTarget(f) ? "multi" : !resolve(f).startsWith(resolve(REPO_ROOT, LOG_DIRS.pending) + "/") ? "verified" : marks.get(f)?.severalTargets ? "targets" : dev.has(fixtureLabel(f).replace(/^zmdlogs-/, "")) ? "development" : "earlier");
+  if (opts.side)
+    return oneSidedRanking(data(), files.map((f) => {
+      const s = (shares.get(f) as FightTotals).shares;
+      return { fight: shortId(fixtureLabel(f)), oneSided: (shares.get(f) as FightTotals).oneSided, ...(s.logged !== undefined ? { logged: s.logged } : {}), ...(marks.get(f)?.severalTargets ? { severalTargets: true } : {}) };
+    }), opts.side, opts.top ?? 20, opts.operators);
   if (opts.json)
     return oneSidedJson(files.map((f) => {
       const s = (shares.get(f) as FightTotals).shares;
@@ -506,6 +511,24 @@ export function oneSidedJson(fights: readonly { readonly fight: string; readonly
         .map((o) => JSON.stringify({ ...fight, ...o, ...(f.logged ? { share: r3((100 * o.damage) / f.logged) } : {}), ...(f.fightError !== undefined ? { fightError: r3(f.fightError) } : {}) }));
     })
     .join("\n");
+}
+
+/**
+ * `zmdlogs totals --all --side log|replay [--top n]`: the largest one-sided landings of one side across the fights,
+ * by their share of the fight's logged total, several-target fights left out (their own row): share, fight, time,
+ * operator, key and where it sits (round 23, the placement-cases report point 1: "what is still log-only today" took a
+ * `--json` run and a jq ranking).
+ */
+export function oneSidedRanking(data: GameData, fights: readonly { readonly fight: string; readonly oneSided: readonly OneSided[]; readonly logged?: number; readonly severalTargets?: boolean }[], side: "log" | "replay", top = 20, operators?: readonly string[]): string {
+  const rows = fights
+    .filter((f) => !f.severalTargets && f.logged)
+    .flatMap((f) => f.oneSided.filter((o) => o.side === side && (!operators?.length || operators.includes(o.operator))).map((o) => ({ f, o, share: (100 * Math.abs(o.damage)) / (f.logged as number) })))
+    .sort((a, b) => b.share - a.share);
+  const label = (op: string) => data.operators[op]?.name ?? op;
+  return [
+    `The largest ${side}-only landings across ${fights.length} fight(s) (several-target fights left out), by share of the fight's logged total (${Math.min(top, rows.length)} of ${rows.length}):`,
+    ...rows.slice(0, top).map(({ f, o, share }) => `  ${share.toFixed(2).padStart(6)}%  ${f.fight} ${(o.t / 1000).toFixed(2)} s  ${label(o.operator)}  ${o.key}  ${o.context}`),
+  ].join("\n");
 }
 
 function sharesCacheFile(file: string): string {

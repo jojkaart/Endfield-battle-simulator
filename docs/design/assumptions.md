@@ -13,6 +13,14 @@ and the evidence), its continuation lines indented two spaces. Every heading nam
 item one of its readings. A reading's evidence goes here, its one sentence in the registry: a change of prose here
 needs no team-ab identity run and no cache rebuild.
 
+In short, for a new reading (round 23, the combo-hold report point 4: both rules failed a test round each):
+
+- one item per reading, `` - `<reading>`: <evidence> ``, never several readings in one item (`` - `4f`, `5f`: … ``
+  is "a line after its readings that isn't one"); readings that share their evidence each get an item that says so;
+- the paragraph of the question's evidence comes before the first item, never after one;
+- the registry's sentence for a reading (packages/engine/src/assumptions.ts, replay-assumptions.ts) is at most 320
+  characters (tests/engine-assumptions.test.ts); the measures, logs and dates go here.
+
 ## control-immunity
 
 An immune enemy's clock runs on; only the freezing operator's own debuffs on it are held (timeline/clock.ts

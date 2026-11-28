@@ -27,6 +27,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printHelp } from "./usage.ts";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const SCOREBOARD = "docs/accuracy.md";
@@ -771,4 +772,7 @@ async function main(argv: readonly string[]): Promise<number> {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = await main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = await main(process.argv.slice(2));
+}

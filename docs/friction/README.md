@@ -16,7 +16,13 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    [docs/friction-done/](../friction-done/README.md), adding a line per point
    saying what was done (or why not), leaves a summary of the round there,
    and writes its own journal entry. This folder only holds what still needs
-   doing.
+   doing. Each theme the lead's brief adds beyond the reports names its
+   episode in one line (a journal file, a commit, a command that failed),
+   or goes in as a report of the lead's own (round 23, round 22's own
+   report point 3: a theme without one was built as a guess). A brief that
+   names an accuracy lead checks it first: `node scripts/lead-status.ts
+   <id@time | words>…` says whether docs/open-problems.md marks it fixed,
+   open, or both (round 23, the placement-cases report point 1).
 3. Accuracy rules still apply to improvement rounds: tests stay green,
    snapshots only move with a reason, `node scripts/premerge.ts` before merging.
    A round may add a snapshot key that only describes (round 16, round 15's

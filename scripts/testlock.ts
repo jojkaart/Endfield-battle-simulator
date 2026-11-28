@@ -29,6 +29,7 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -417,4 +418,7 @@ async function main(argv: string[]): Promise<number> {
   return runLockedAsync(command, { kind, who: opt("--who") ?? "testlock", cwd: process.cwd(), ...(done ? { done } : {}) });
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+}

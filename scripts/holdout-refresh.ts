@@ -23,6 +23,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { fetchDetail, HOLDOUT_DIR, readLogSplit, refreshFixture, RefreshMismatch, type LogFixture } from "@efsim/logs";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /** The pause between two requests to zmdlogs.com (docs/accuracy-plan.md "Screening": 3 s or more). */
@@ -158,6 +159,7 @@ export async function refreshHoldouts(opts: HoldoutRefreshOptions = {}): Promise
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
   const args = process.argv.slice(2);
   if (args.some((a) => a !== "--dry-run")) {
     process.stderr.write("usage: node scripts/holdout-refresh.ts [--dry-run]\n");

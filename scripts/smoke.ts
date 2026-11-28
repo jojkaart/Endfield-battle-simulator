@@ -19,6 +19,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import { runLockedAsync } from "./testlock.ts";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
@@ -51,4 +52,7 @@ async function main(argv: string[]): Promise<number> {
   return status;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  void main(process.argv.slice(2)).then((c) => (process.exitCode = c));
+}
