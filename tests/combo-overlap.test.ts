@@ -35,7 +35,7 @@ describe("combo-overlap", () => {
   });
 
   it("a combo pressed after si's slow-down ended holds her either way", () => {
-    expect(shifts({}, SI.slowdowns[0]!.scales.length + 1).si).toBe(16);
+    expect(shifts({}, (SI.slowdowns[0]?.scales.length ?? 0) + 1).si).toBe(16);
   });
 
   it("a third operator is held by both slow-downs, the lowest scale counting, under either reading", () => {
