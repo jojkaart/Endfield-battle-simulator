@@ -452,9 +452,14 @@ targets.ts):
   target's Corrosion, Electrification and Breach levels (atItsTarget:
   values, not units), and the second assignment reads each candidate
   target at its own statuses in the replay (fightTargets; the replay's
-  target ids are the first assignment's, which the second mostly keeps:
-  holding each hit to its first-pass target, SECOND_PASS_TARGETS `fixed`,
-  measured worse, 7b54 plain 151 → 142). Stagger, the debuffs (kit buffs
+  target ids are the first assignment's, and a new target of the second
+  takes the id of a target its landing reached that no target has yet,
+  else an id no landing names: SECOND_PASS_TARGETS `mapped`, targets.ts
+  AssignOptions.ids `landings`, 2026-11-27; numbered in order of first
+  hit, 7b54's ids named other slugs than the landings' for 147 of 210
+  hits, 55 now: the hits the two assignments put on other slugs; holding
+  each hit to its first-pass target, `fixed`, measured worse, 7b54 plain
+  151 → 142). Stagger, the debuffs (kit buffs
   on the enemy, read per target as before) and the enemy's clock stay one.
   Measured (the row, against `one`): plain 72.1 → 75.6%, mismatch 14.5 →
   11.2%, mean |damage error| 7.6 → 10.4%: 7b54 plain 121 → 151 (Laevatain's

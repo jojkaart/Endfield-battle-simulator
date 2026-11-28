@@ -672,6 +672,13 @@ export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: 
   return out;
 }
 
+/**
+ * How many replays a fight with the statuses per target is made with (target-statuses `per-target`): the first with
+ * one enemy, the second on its assignment, a third on the second's (its ids the replay's: enginecheck.ts
+ * SECOND_PASS_TARGETS `mapped`).
+ */
+export const TARGET_REPLAYS: number = 2;
+
 export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: Placement | LogReplayOptions, opts: Pick<ReplayOptions, "assume" | "trace" | "cutCasts"> = {}): LogBuffReplay {
   // Either form (away-and-presses report point 5: `logBuffReplay(data, fx, { assume })` passed the readings as the
   // placement, and the replay ran on the defaults without a word): an options object as the third argument is taken
@@ -711,8 +718,11 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
   // landing on the targets the first one's assignment put its hits on (enginecheck.ts replayTargets), each kill its
   // target's death; the check reads the second one on that assignment (docs/design/data.md "Statuses per target").
   if (statusesPerTarget(fx, opts.assume)) {
-    const targets = replayTargets(engineCheck(data, fx, replay));
-    if (targets) replay = passes({ targets });
+    for (let pass = 1; pass < TARGET_REPLAYS; pass++) {
+      const targets = replayTargets(engineCheck(data, fx, replay));
+      if (!targets) break;
+      replay = passes({ targets });
+    }
   }
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed), placement };
