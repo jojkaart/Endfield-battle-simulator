@@ -35,11 +35,6 @@ function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
 }
 
-/** The frame by which SP has regenerated for `frames` frames from `from` (no earlier than the pause after a spend). */
-export function afterRegen(state: TimelineState, from: number, frames: number): number {
-  return Math.max(from, state.spPausedUntil) + frames;
-}
-
 /** SP a regeneration tick gives (engine assumption sp-regen `ticks`): SP.perSecond over `tick` frames. */
 const spPerTick = (tick: number) => (SP.perSecond * tick) / FPS;
 
