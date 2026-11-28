@@ -667,8 +667,12 @@ async function main(argv: string[]): Promise<number> {
       ...((n) => (n ? [`The replay threw a code error, caught per cast, so these numbers are no measurement: ${n}`] : []))(threwNote(threwBy.get(`${tree}#${vi}`) ?? new Map(), keys.length)),
       // The tree's own change first, when variants are measured beside it (round 20: it was measured, not printed).
       ...(vi === 0 && plain ? [`The plain tree (${what}, no variant) against the reference:`, ...(plainNote ? [`  ${plainNote}`] : []), ...compare(before, plain).map((l) => `  ${l}`), ""] : []),
-      `Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
-      ...compare(before, after),
+      // With the plain tree beside it, this section is the tree's change and the variant's together against the
+      // reference, said in its heading and indented (round 24, the overlap-clock report point 1: a variant that undid
+      // the tree's change printed an unindented "No log's verdicts moved" here, read as the plain tree's verdict).
+      ...(plain
+        ? [`Variant ${vi + 1} (${v.text}) against the reference (${values.base ? `base ${values.base}'s code` : `the snapshots at ${against}`}): the tree's change and the variant's together (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`, ...compare(before, after).map((l) => `  ${l}`), ...variantUndoNote(movedCount(before, plain), movedCount(before, after), vi + 1).map((l) => `  ${l}`)]
+        : [`Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`, ...compare(before, after)]),
       ...(plain ? [`Variant ${vi + 1} against the plain tree (the same code${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}, no variant): the variant's own effect`, ...compare(plain, after).map((l) => `  ${l}`)] : []),
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
@@ -743,6 +747,27 @@ export function sharesLines(after: ReadonlyMap<string, Shares>, split: Split, be
     out.push(`  ${g}: ${a.n} fight(s), |error| ${f("error")}, |matched| ${f("matched")}, replay-only ${f("replayOnly")}, log-only ${f("logOnly")}, one-sided ${b && b.n ? `${b.oneSided} → ` : ""}${a.oneSided}`);
   }
   return out;
+}
+
+/** How many logs' entries differ between two snapshot sets (the keys of either). */
+export function movedCount(a: Snapshots, b: Snapshots): number {
+  let n = 0;
+  for (const side of ["verified", "pending"] as const) {
+    for (const k of new Set([...Object.keys(a[side]), ...Object.keys(b[side])])) if (JSON.stringify(a[side][k]) !== JSON.stringify(b[side][k])) n++;
+  }
+  return n;
+}
+
+/**
+ * The line a variant's against-the-reference section ends with where the plain tree and the variant disagree about
+ * moving anything (round 24, the overlap-clock report point 1): the plain tree moved logs against the reference and
+ * the variant none (its reading is the reference's behaviour on these logs: it undoes the tree's change), or the reverse
+ * (the variant alone moves them). Empty where both moved logs or neither did.
+ */
+export function variantUndoNote(plainMoved: number, variantMoved: number, n: number): string[] {
+  if (plainMoved > 0 && variantMoved === 0) return [`(The plain tree moved ${plainMoved} log(s) against the reference and variant ${n} none: on these logs the variant is the reference's behaviour, it undoes the tree's change; the plain tree's section above is the tree's own effect.)`];
+  if (plainMoved === 0 && variantMoved > 0) return [`(The plain tree moved no log against the reference and variant ${n} moved ${variantMoved}: the variant's own effect, as its section against the plain tree says.)`];
+  return [];
 }
 
 /** The plain tree's record a --variant run writes into its --out folder, for a later run's --plain-from. */

@@ -6,8 +6,11 @@
 //   a lead: a fixture's short id and a time (`f879@95.10`, `f879:95.10`), a fixture alone (`f879`), or words
 //   (`"Decisive Assault"`). Prints, per lead, every paragraph of docs/open-problems.md naming it, under its section,
 //   each marked FIXED where the paragraph says the case was fixed or decided ("fixed", "Found and fixed", "Closed by",
-//   "decided") and OPEN otherwise, then one verdict: open in every mention, fixed in every one, or both (a section
-//   left stale: shrink it to one line naming the journal entry, as CLAUDE.md asks). Reads only that file.
+//   "decided"), OPEN where it doesn't or says it isn't ("not fixed", "Diagnosed, not fixed", "Still possible", "still
+//   open": round 24, the placement-paths report point 4, `8f32@38.50` read "fixed" off "Diagnosed, not fixed"), BOTH
+//   where it says both (a fixed case with a "Still possible" part: the sentences that say each are printed), then one
+//   verdict: open in every mention, fixed in every one, or both (a section left stale: shrink it to one line naming the
+//   journal entry, as CLAUDE.md asks). Reads only that file.
 
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -20,12 +23,28 @@ const OPEN_PROBLEMS = join(ROOT, "docs/open-problems.md");
 /** Words that say a paragraph's case was fixed or decided. */
 const FIXED = /\bfixed\b|\bFound and fixed\b|\bClosed by\b|\bdecided\b|\bno longer\b/i;
 
-/** One paragraph naming a lead: its section heading, first line number and text. */
+/** Words that say a case is not fixed, or a part of it still open (read before FIXED: "not fixed" holds "fixed"). */
+const NOT_FIXED = /\bnot (?:yet )?(?:fixed|decided)\b|\bunfixed\b|\bundecided\b|\bStill possible\b|\bstill open\b/gi;
+
+/** One paragraph naming a lead: its section heading, first line number and text; `state` what it says of the case. */
 export interface LeadMention {
   readonly section: string;
   readonly line: number;
   readonly text: string;
   readonly fixed: boolean;
+  readonly state: "fixed" | "open" | "both";
+  /** With `both`: the sentences that say it is open (a "Still possible" part, a "not fixed"). */
+  readonly openPart?: string;
+}
+
+/** What a paragraph says of its case: fixed (FIXED and no NOT_FIXED), open (no FIXED once the negations are taken out), or both. */
+export function paragraphState(p: string): { readonly state: LeadMention["state"]; readonly openPart?: string } {
+  const open = new RegExp(NOT_FIXED.source, "i").test(p);
+  const fixed = FIXED.test(p.replace(NOT_FIXED, ""));
+  if (!open) return { state: fixed ? "fixed" : "open" };
+  if (!fixed) return { state: "open" };
+  const part = p.split(/(?<=[.;])\s+/).filter((x) => new RegExp(NOT_FIXED.source, "i").test(x)).join(" ");
+  return { state: "both", openPart: part };
 }
 
 /** A lead's matcher: `f879@95.10` (the id, then the time as written, within the paragraph), `f879`, or words. */
@@ -46,7 +65,10 @@ export function leadMentions(text: string, lead: string): LeadMention[] {
   let start = 0;
   const flush = () => {
     const p = para.join(" ");
-    if (p.trim() && matches(p)) out.push({ section, line: start, text: p.replace(/\s+/g, " ").trim(), fixed: FIXED.test(p) });
+    if (p.trim() && matches(p)) {
+      const s = paragraphState(p);
+      out.push({ section, line: start, text: p.replace(/\s+/g, " ").trim(), fixed: s.state === "fixed", state: s.state, ...(s.openPart !== undefined ? { openPart: s.openPart.replace(/\s+/g, " ").trim() } : {}) });
+    }
     para = [];
   };
   text.split("\n").forEach((l, i) => {
@@ -69,10 +91,11 @@ export function leadMentions(text: string, lead: string): LeadMention[] {
 /** The verdict over a lead's mentions. */
 export function leadVerdict(mentions: readonly LeadMention[]): string {
   if (!mentions.length) return "not in docs/open-problems.md";
-  const fixed = mentions.filter((m) => m.fixed).length;
-  if (fixed === 0) return `open: ${mentions.length} mention(s), none says fixed`;
+  const fixed = mentions.filter((m) => m.state === "fixed").length;
+  const both = mentions.filter((m) => m.state === "both").length;
+  if (fixed === 0 && both === 0) return `open: ${mentions.length} mention(s), none says fixed`;
   if (fixed === mentions.length) return `fixed: every one of ${mentions.length} mention(s) says so (check the journal entry it names)`;
-  return `BOTH: ${fixed} of ${mentions.length} mention(s) say fixed and ${mentions.length - fixed} don't: a stale section, or a case with an open part; read them before briefing`;
+  return `BOTH: ${fixed} of ${mentions.length} mention(s) say fixed${both ? `, ${both} say fixed with a part still open (a "Still possible", a "not fixed")` : ""} and ${mentions.length - fixed - both} don't: a stale section, or a case with an open part; read them before briefing`;
 }
 
 function main(argv: readonly string[]): number {
@@ -84,7 +107,10 @@ function main(argv: readonly string[]): number {
   for (const lead of argv) {
     const ms = leadMentions(text, lead);
     process.stdout.write(`${lead}: ${leadVerdict(ms)}\n`);
-    for (const m of ms) process.stdout.write(`  ${m.fixed ? "FIXED" : "OPEN "} line ${m.line} (${m.section}): ${m.text.slice(0, 220)}${m.text.length > 220 ? "…" : ""}\n`);
+    for (const m of ms) {
+      process.stdout.write(`  ${m.state === "fixed" ? "FIXED" : m.state === "both" ? "BOTH " : "OPEN "} line ${m.line} (${m.section}): ${m.text.slice(0, 220)}${m.text.length > 220 ? "…" : ""}\n`);
+      if (m.openPart) process.stdout.write(`        open part: ${m.openPart.slice(0, 220)}${m.openPart.length > 220 ? "…" : ""}\n`);
+    }
   }
   return 0;
 }

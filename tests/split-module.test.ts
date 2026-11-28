@@ -1,7 +1,7 @@
 // scripts/split-module.ts (round 15, round 14's own report point 1): a module split by top-level statement, its
 // importers and citations following each name, checked as a move by AST.
 import { describe, expect, it } from "vitest";
-import { rewriteCitations, rewriteImporter, splitPlan, statementTexts } from "../scripts/split-module.ts";
+import { reexportLines, rewriteCitations, rewriteImporter, splitPlan, statementTexts } from "../scripts/split-module.ts";
 
 const SOURCE = [
   "// The replay.",
@@ -55,5 +55,16 @@ describe("split-module", () => {
 
   it("rewrites the citations of a moved name", () => {
     expect(rewriteCitations("buffreplay.ts shownCrits and buffreplay.ts `Crit`, buffreplay.ts replay", "buffreplay.ts", plan.home)).toBe("replaycrits.ts shownCrits and replaycrits.ts `Crit`, buffreplay.ts replay");
+  });
+});
+
+describe("split-module --reexport (round 24)", () => {
+  it("re-exports the moved names the original exported, types apart, so no importer changes", () => {
+    // The placement-paths report point 3: moving ultimateEventRead rewrote the parallel agent's views.ts.
+    const plan = splitPlan("buffreplay.ts", SOURCE, { "replaycrits.ts": ["Crit", "shownCrits", "msOf"] });
+    expect(reexportLines("buffreplay.ts", SOURCE, { "replaycrits.ts": ["Crit", "shownCrits", "msOf"] }, plan.isType)).toEqual([
+      'export { shownCrits } from "./replaycrits.ts";',
+      'export type { Crit } from "./replaycrits.ts";',
+    ]);
   });
 });

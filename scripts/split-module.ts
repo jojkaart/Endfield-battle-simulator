@@ -8,7 +8,11 @@
 // multiset, `export` aside), and the prose citations "<file>.ts <name>" of a moved name in the docs (history aside) and
 // the sources follow it (scripts/check-links.ts staleCitations checks the rest).
 //
-// Usage: node scripts/split-module.ts <file.ts> --to <new.ts>=<name>,<name>… [--to …] [--dry-run]
+// Usage: node scripts/split-module.ts <file.ts> --to <new.ts>=<name>,<name>… [--to …] [--reexport] [--dry-run]
+//   --reexport: leave every importer as it is; the original re-exports the moved names it exported (`export { … }
+//   from "./<new.ts>"`), so a move beside another agent's files edits none of them (round 24, the placement-paths
+//   report point 3: moving ultimateEventRead rewrote views.ts, the parallel agent's); the lead drops the re-export after
+//   the merge (a plain split of the same names then rewrites the importers). The importers' prose citations stay too.
 //   <new.ts> is a file name beside <file.ts>; each name a top-level declaration of it (a function, const, type,
 //   interface, class or enum). --dry-run prints the plan (each file's names, the references across files, the exports
 //   added, the importers rewritten) and writes nothing. Give each new file its header comment afterwards (a
@@ -34,6 +38,20 @@ function namesOf(s: ts.Statement): string[] {
 
 const exported = (s: ts.Statement) => ts.canHaveModifiers(s) && (ts.getModifiers(s) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
 const typeOnly = (s: ts.Statement) => ts.isInterfaceDeclaration(s) || ts.isTypeAliasDeclaration(s);
+
+/**
+ * The re-export lines `--reexport` appends to the original: per new file, the moved names the original exported
+ * (`export type { … }` for types), in the targets' order. Empty where none was exported.
+ */
+export function reexportLines(sourceName: string, source: string, targets: Readonly<Record<string, readonly string[]>>, isType: ReadonlyMap<string, boolean>): string[] {
+  const sf = ts.createSourceFile(sourceName, source, ts.ScriptTarget.Latest, true);
+  const wasExported = new Set(sf.statements.filter((s) => !ts.isImportDeclaration(s) && exported(s)).flatMap(namesOf));
+  return Object.entries(targets).flatMap(([f, names]) => {
+    const out = names.filter((n) => wasExported.has(n));
+    const [types, values] = [out.filter((n) => isType.get(n)), out.filter((n) => !isType.get(n))];
+    return [...(values.length ? [`export { ${values.join(", ")} } from "./${f}";`] : []), ...(types.length ? [`export type { ${types.join(", ")} } from "./${f}";`] : [])];
+  });
+}
 
 /** The plan of a split (splitPlan): per file, its statements' texts, the names it imports from its siblings, the exports added. */
 export interface SplitPlan {
@@ -194,8 +212,9 @@ function trackedFiles(pattern: string): string[] {
 
 function main(argv: readonly string[]): number {
   const source = argv[0];
-  if (!source || source.startsWith("--")) throw new Error("usage: node scripts/split-module.ts <file.ts> --to <new.ts>=<name>,<name>… [--to …] [--dry-run]");
+  if (!source || source.startsWith("--")) throw new Error("usage: node scripts/split-module.ts <file.ts> --to <new.ts>=<name>,<name>… [--to …] [--reexport] [--dry-run]");
   const dry = argv.includes("--dry-run");
+  const reexport = argv.includes("--reexport");
   const targets: Record<string, string[]> = {};
   for (let i = 1; i < argv.length; i++) {
     if (argv[i] !== "--to") continue;
@@ -209,14 +228,18 @@ function main(argv: readonly string[]): number {
   const sourceFile = basename(sourcePath);
   for (const f of Object.keys(targets)) if (existsSync(join(dir, f))) throw new Error(`split-module: ${join(dir, f)} exists`);
   const original = readFileSync(sourcePath, "utf8");
-  const plan = splitPlan(sourceFile, original, targets);
+  const planned = splitPlan(sourceFile, original, targets);
+  const again = reexport ? reexportLines(sourceFile, original, targets, planned.isType) : [];
+  // --reexport: the original's text ends with the re-exports of what it exported (its importers stay as they are).
+  const plan: SplitPlan = again.length ? { ...planned, texts: new Map([...planned.texts].map(([f, t]) => [f, f === sourceFile ? `${t.trimEnd()}\n\n// Moved by scripts/split-module.ts --reexport: importers still import these from here (drop after the merge).\n${again.join("\n")}\n` : t])) } : planned;
   const say = (l: string) => process.stdout.write(`${l}\n`);
+  if (again.length) say(`re-exported from ${sourceFile}: ${again.join(" ")}`);
   for (const [f, p] of plan.files) say(`${f}: ${p.names.length} name(s)${p.imports.size ? `; imports ${[...p.imports].map(([g, ns]) => `${ns.join(", ")} from ${g}`).join("; ")}` : ""}`);
   say(`exports added: ${plan.exportsAdded.join(", ") || "none"}`);
   // Two files reading each other: a cycle the loader takes (functions), but a top-level read of the other's const wouldn't.
   for (const [f, p] of plan.files) for (const g of p.imports.keys()) if (f < g && plan.files.get(g)?.imports.has(f)) say(`warning: ${f} and ${g} import each other (${p.imports.get(g)?.join(", ")} / ${plan.files.get(g)?.imports.get(f)?.join(", ")}): move the shared names to one side unless only functions read them`);
   // The importers.
-  const importers = trackedFiles("*.ts").filter((f) => /^(packages|scripts|tests)\//.test(f) && resolve(ROOT, f) !== sourcePath);
+  const importers = reexport ? [] : trackedFiles("*.ts").filter((f) => /^(packages|scripts|tests)\//.test(f) && resolve(ROOT, f) !== sourcePath);
   const rewritten = new Map<string, string>();
   for (const f of importers) {
     const p = resolve(ROOT, f);
@@ -224,14 +247,15 @@ function main(argv: readonly string[]): number {
     const out = rewriteImporter(p, text, sourcePath, plan.home, Object.keys(targets));
     if (out !== text) rewritten.set(p, out);
   }
-  say(`importers rewritten: ${[...rewritten.keys()].map((p) => relative(ROOT, p)).join(", ") || "none"}`);
+  say(`importers rewritten: ${[...rewritten.keys()].map((p) => relative(ROOT, p)).join(", ") || (reexport ? "none (--reexport)" : "none")}`);
   if (dry) return 0;
   const written = [...plan.texts].map(([f, t]) => [join(dir, f), t] as const);
   for (const [p, t] of [...written, ...rewritten]) writeFileSync(p, t);
   pruneUnused([...written.map(([p]) => p), ...rewritten.keys()], { importsOnly: true });
   // The AST check: the files hold the original's statements, no more, no fewer.
   const was = statementTexts([[sourceFile, original]]);
-  const now = statementTexts(written.map(([p]) => [basename(p), readFileSync(p, "utf8")] as const));
+  // The re-exports aren't the original's statements: left out of the check.
+  const now = statementTexts(written.map(([p]) => [basename(p), readFileSync(p, "utf8")] as const)).filter((s) => !again.some((x) => x.replace(/^export /, "") === s));
   const missing = was.filter((s, i) => now[i] !== s);
   if (was.length !== now.length || missing.length) {
     say(`split-module: the statements differ from the original's (${was.length} before, ${now.length} after): check the diff`);

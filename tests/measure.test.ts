@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { defaultReference, exportedNames, hitChanges, holdChanges, importLinks, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, plainReuse, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { defaultReference, exportedNames, hitChanges, movedCount, variantUndoNote, holdChanges, importLinks, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, plainReuse, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 import { headerUsage, wantsHelp } from "../scripts/usage.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
@@ -337,5 +337,17 @@ describe("measure --plain-from", () => {
     expect(other.why).toBe("other --assume readings; no --hits rows there; the fixtures differ");
     expect(() => measureOptions(["--plain-from", "scratch"])).toThrow(/goes with --variant/);
     expect(() => measureOptions(["--trust-plain"])).toThrow(/goes with --plain-from/);
+  });
+});
+
+describe("measure --variant: the section against the reference (round 24)", () => {
+  it("says when the variant undoes the tree's change (the overlap-clock report point 1: an unindented \"No log's verdicts moved\" read as the plain tree's)", () => {
+    const e = (plain: number) => ({ plain } as unknown as Parameters<typeof overlay>[0]["verified"][string]);
+    const snap = (v: Record<string, number>) => ({ verified: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, e(x)])), pending: {}, split: { holdout: [], development: [] } }) as unknown as Parameters<typeof overlay>[0];
+    const [base, plain, variant] = [snap({ a: 1, b: 2 }), snap({ a: 1, b: 3 }), snap({ a: 1, b: 2 })];
+    expect([movedCount(base, plain), movedCount(base, variant), movedCount(plain, variant)]).toEqual([1, 0, 1]);
+    expect(variantUndoNote(movedCount(base, plain), movedCount(base, variant), 1)).toEqual([expect.stringMatching(/^\(The plain tree moved 1 log\(s\) against the reference and variant 1 none: on these logs the variant is the reference's behaviour, it undoes the tree's change/)]);
+    expect(variantUndoNote(0, 2, 1)).toEqual([expect.stringMatching(/moved no log against the reference and variant 1 moved 2/)]);
+    expect(variantUndoNote(1, 1, 1)).toEqual([]);
   });
 });
