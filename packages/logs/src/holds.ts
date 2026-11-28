@@ -39,6 +39,17 @@ const NOT_A_CLOCK = ["consumedBy", "link", "endsWithCast", "maxStacks", "sharedT
 /** A layered kit buff whose layers are each a clock (NOT_A_CLOCK): its game buff's stackingType is 11. */
 const OWN_TIMER_LAYERS = 11;
 
+/**
+ * Why a kit buff is no clock, in words (`zmdlogs holds --why`, loggedEndOf): the field notAClock found, and for a
+ * layered buff the BuffData stackingType it judged (round 24, the overlap-clock report point 2: whether 458b's layered
+ * buff could be a clock took a scratch script over every kit's stacking types).
+ */
+export function notAClockWords(def: KitBuff, field: string): string {
+  if (field !== "maxStacks") return `\`${field}\``;
+  const type = def.gameBuff ? buffFile(def.gameBuff)?.stacking?.type : undefined;
+  return `\`maxStacks\` (layered; ${def.gameBuff ? `its game buff ${def.gameBuff} is BuffData stackingType ${type ?? "unknown"}` : "no game buff to read a stackingType from"}: only stackingType ${OWN_TIMER_LAYERS}, layers on their own timers the log lists apart, is a clock)`;
+}
+
 /** The first field that makes `def` no clock (NOT_A_CLOCK; `every` too with `opts.every`), or null. */
 export function notAClock(def: KitBuff, opts: { readonly every?: boolean } = {}): string | null {
   if (opts.every && def.every !== undefined) return "every";

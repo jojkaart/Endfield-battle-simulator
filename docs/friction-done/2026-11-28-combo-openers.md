@@ -56,3 +56,20 @@ Task: the combo-windows lead's 12 INSIDE lines whose window opener was logged in
   and their facts on one screen; `casts --event-lags --operator Estella --verbose` found the four off events at once.
 - `measure` naming the hold-outs' moved decision kinds (INSIDE −2) and the tried-diff workflow made dropping the first
   rule cheap.
+
+## Outcome (round 24)
+
+- 1 (Moving a pinned landing loses what the log keyed to its frame, silently): done (273c677): lostfacts.ts lostFacts
+  (a logged hit whose crit the log or an inference gives, paired with a landing that didn't take it; a reaction level
+  the replay was made with, BuffReplay.reactionLevels, that no reaction landing took), LOST decision lines with the
+  fixture (`zmdlogs decisions`, measure's decision counts) and in `zmdlogs replay` with a count in its header. The
+  loggedFrame on pinned landings (the suggestion's first form) not built: a lookup by ref already covers a pinned
+  landing's own crit, and the trigger-made landings it would need to follow aren't pinned. The tried diff
+  (opener-landed-at-press) doesn't apply on HEAD any more (openerAhead replaced its function), so the episode itself
+  wasn't rerun.
+- 2 ("Is this combo's cooldown right?" has no view): done (8b932fc): replayrun.ts cooldownEarly, MadeCast.early,
+  COOLDOWN lines (how early, the last cast's cooldown, how far readyAt moved since), counted by cast kind; with
+  `efsim kit`'s costs and `replay --windows`.
+- 3 (The brief's suggested rule and a "placement lead" pointed at files that weren't the fix): done (0a1efea):
+  docs/open-problems.md's head: a "still possible" names the smallest state that differs beside the mechanism;
+  `node scripts/lead-files.ts <term>` prints a term's earlier commits by family (replay, placement, …).

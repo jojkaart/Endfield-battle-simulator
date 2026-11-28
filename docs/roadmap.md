@@ -16,20 +16,21 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–23
-  done (round 23, 2026-11-28: a moved hit's landing in `measure --hits`
-  and `hits --against`, the replay's SP as a record (`spGained`, `replay
-  --sp`, TOPUP, the `sp short` keys), INSIDE's gate, `measure
-  --plain-from`, `clocks --fit / --json / --around break`, `gamedata
-  curve`, `totals --side`, scripts/lead-status.ts, the clock table's
-  test); the backlog
-  ([2026-11-28-backlog-after-round-23.md](friction/2026-11-28-backlog-after-round-23.md):
-  the views' one stop list, the zmdlogs CLI per subcommand; its accuracy
-  list gains a cast's slots cut to its path, a value rule on a
-  consumed-scaled multiplier's bounds, the unplaced ultimate events at
-  the assembly's start; declined for blindness: a hold-out's change split
-  by cast kind) joins the next round once about five new reports have
-  collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–24
+  done (round 24, 2026-11-28: cooldowns and windows as records (COOLDOWN
+  lines, `replay --windows`, `efsim kit`'s costs), LOST lines (a moved
+  landing's logged crits and levels), `casts --passes`, `casts
+  --event-lags --against-holds`, measure's variant section in words, a
+  few named logs outside the lock, lead-status's negations, split-module
+  `--reexport`, `which` over the scripts, `runstate --where`, the
+  hold-outs kept off every ripgrep root); the backlog
+  ([2026-11-28-backlog-after-round-24.md](friction/2026-11-28-backlog-after-round-24.md):
+  the zmdlogs CLI per subcommand, placeWith's stages as functions,
+  openCombo's outcomes as an engine record, smoke's wait; its accuracy
+  list gains the casts made before their cooldown (26) and the logged
+  crits no landing takes (1027); declined for blindness: a hold-out's
+  change split by cast kind) joins the next round once about five new
+  reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

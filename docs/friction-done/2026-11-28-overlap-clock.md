@@ -66,3 +66,24 @@ end 0.3 s early at 111 s; fix what the logs decide. Branch worktree-agent-a07379
   `--holds` showed the new bounds; `zmdlogs hits <fixture> --against <id>=<r>` showed Camille's explosion landing
   where the log has it only under the new reading.
 - `zmdlogs holds --why <regex>` made the layered-buff skip visible in one line.
+
+## Outcome (round 24)
+
+- 1 (A `--variant` measure's first section said "No log's verdicts moved" while the variant moved several): done
+  (818fb42). Reproduced with `measure --variant combo-overlap=lowest --base 400bb44 --logs 4e5e,db87`: the plain tree
+  moved both against the base (indented section), the variant neither (the unindented section, "No log's verdicts
+  moved."), the variant against the plain tree both: consistent, the variant being the base's behaviour. The
+  unindented line was the variant against the reference, read as the plain tree's. Now that section is headed
+  "Variant n (…) against the reference (…): the tree's change and the variant's together", indented, and ends with a
+  note where the plain tree moved logs and the variant none (it undoes the tree's change) or the reverse
+  (variantUndoNote).
+- 2 (Which hidden-hold clock a layered buff is, and why not, took a source read): done (44b18ff): the not-a-clock line
+  names the game buff's stacking type it judged (holds.ts notAClockWords); `efsim kit-census` lists the layered kit
+  buffs by stacking type (24 at 2, 11 at 11, 8 at 8, 4 without a game buff, 1 at 10).
+- 3 (No view gives an operator's clock across another's slow-down from an independent anchor): done (1f25928): `zmdlogs
+  casts --event-lags <…> --against-holds [--verbose]` (eventlagsview.ts eventsAgainstHolds): per cast with teammates'
+  stops before its first landing, the event's world lag from the start unheld and held. The engine's own reading (a
+  replay per log) not built: the two readings the probe compared.
+- 4 (The test lock's queue cost more than the work): done but smoke's wait (carried:
+  2026-11-28-backlog-after-round-24.md point 4) (cb46ffb): a measure of at most three logs named with `--logs` runs
+  outside the lock (measure.ts smallMeasure).

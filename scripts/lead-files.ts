@@ -17,6 +17,9 @@
 //              follow-ups report point 1: the cause sat in logcasts.ts, the other agent's file): split that lead by
 //              question, or name the shared files in both briefs as "may touch with a note" (one function, its own
 //              commit naming the other agent)
+// Each term also gets a line by family (FAMILIES: the replay's facts, the placement, the check, the holds, the views,
+// the timeline): how many of its earlier commits touched each (round 24, the combo-openers report point 3: a lead
+// briefed as a placement lead was fixed in the replay's makeCast, and the brief's files missed it).
 // Each file is marked when another worktree's branch has changed it since main (scripts/runstate.ts --touching): a
 // split that gives that file to someone else needs a held-back diff or a later merge (docs/tried/README.md, "held
 // back"). Only code files are counted (packages/, scripts/, tests/ but not tests/snapshots/); docs, fixtures and the
@@ -63,6 +66,22 @@ export function leadFiles(log: readonly { readonly commit: string; readonly mess
     out.set(term, { commits: mine.length, files: [...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) });
   }
   return out;
+}
+
+/**
+ * Per family (FAMILIES), how many of a term's commits touched one of its files (`log` as leadFiles reads it), most
+ * first; "other" for commits that touched code in none. A file in two families counts for both.
+ */
+export function familyCounts(log: readonly { readonly message: string; readonly files: readonly string[] }[], term: string): [string, number][] {
+  const t = term.toLowerCase();
+  const count = new Map<string, number>();
+  for (const c of log.filter((x) => x.message.toLowerCase().includes(t))) {
+    const code = c.files.filter(isCode);
+    if (!code.length) continue;
+    const fams = Object.entries(FAMILIES).filter(([, fs]) => code.some((f) => fs.includes(f))).map(([name]) => name);
+    for (const name of fams.length ? fams : ["other"]) count.set(name, (count.get(name) ?? 0) + 1);
+  }
+  return [...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
 /** A `--split` entry `<agent>=<file|family:<name>>,…` as its agent and files (a family's expanded: FAMILIES). */
@@ -120,9 +139,12 @@ function main(argv: string[]): number {
     return 2;
   }
   const busy = new Set(touching("main").filter((l) => l.startsWith("  ")).map((l) => l.trim().replace(/ \(uncommitted\)$/, "")));
-  const found = leadFiles(history(values.ref, Number(values.commits)), positionals);
+  const log = history(values.ref, Number(values.commits));
+  const found = leadFiles(log, positionals);
   for (const [term, { commits, files }] of found) {
     process.stdout.write(`${term}: ${commits} commit(s) of the last ${values.commits} on ${values.ref} name it; their code files:\n`);
+    const fams = familyCounts(log, term);
+    if (fams.length) process.stdout.write(`  by family (commits touching it): ${fams.map(([f, n]) => `${f} ${n}`).join(", ")} (--family <name> lists one's files)\n`);
     for (const [f, n] of files.slice(0, Number(values.top))) process.stdout.write(`  ${String(n).padStart(3)}  ${f}${busy.has(f) ? "  (changed by another worktree's branch now)" : ""}\n`);
     if (files.length > Number(values.top)) process.stdout.write(`  … ${files.length - Number(values.top)} more\n`);
   }

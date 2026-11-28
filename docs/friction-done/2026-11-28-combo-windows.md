@@ -80,3 +80,26 @@ worktree-agent-aae9ee5eca9001663, from main at 967d460.
   slow-down cases in one line each; `gamedata tree` / `who` led straight from the kit's note to the listener's
   abilityEvent 9 and the burst buffs' tags.
 - `node scripts/verify-at.ts <base> --test` confirmed the new test fails before the change in seconds.
+
+## Outcome (round 24)
+
+- 1 (No view says what opened a combo window, when, or why it stayed shut): done but the engine's record of each
+  openCombo outcome (carried: 2026-11-28-backlog-after-round-24.md point 3) (8b932fc): `zmdlogs replay <fixture>
+  --windows <operator>` (ReplayOptions.trace `window:<operator>`, replayrecord.ts WindowTrace, windowsview.ts): each
+  opening or refresh with its source, an event the cooldown kept out, each end, the combos' ready frames, each press
+  with the window it found (MadeCast.window). 3f78 19.30 s reads off it: "an event at 19.17 s (natural infliction) kept
+  shut by the cooldown (combo_skill ready at 20.13 s)".
+- 2 (`efsim kit` doesn't print a skill's cooldown): done (8b932fc): a costs line per skill (cooldown and SP or energy
+  at level 12, the levels that differ, `--levels` every one) and the kit triggers' cooldown actions that change it
+  (Arcane's combo: p5_cooldown, Si's ultimate_effects on slot 0).
+- 3 (The INSIDE flag counts a world-time-simultaneous opener as a wrong replay): done by the combo-openers task
+  before this round (b3612e6, replayrun.ts openerAhead: the 12 lines gone, OPENER lines instead); nothing more here.
+- 4 (`.ignore` doesn't keep `rg -l <word> tests` off the hold-out snapshot): done (400bb44 before this round; 0a1efea):
+  checking it, ripgrep 14.1 with several roots skipped the root .ignore's patterns for the later roots in 8 runs of 12
+  (`rg --files tests fixtures`, every run with -j1: the hold-out logs listed; counted, never printed): fixtures/.ignore
+  and tests/snapshots/.ignore hold them too, and tests/holdout-blindness.test.ts runs seven forms, one root and
+  several, in both orders (it fails with fixtures/.ignore moved aside).
+- 5 (A view test pinned the very flag the task was to remove): done (0a1efea): docs/open-problems.md's head says a
+  wording test on a live lead names it in a comment ("a live lead: fails when it is fixed") and takes a settled or a
+  synthetic case where it can; this round's own tests do so (tests/decisions.test.ts COOLDOWN on a synthetic record,
+  tests/combo-windows.test.ts 3f78 19.30 s commented as live).

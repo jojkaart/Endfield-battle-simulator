@@ -66,3 +66,18 @@ worktree-agent-a44e9ee2d8c7368e5 (docs/journal/2026-11-28-10-placement-paths-a-v
 `cli-ab.ts <ref> --placement --summary` (which logs a rule moves, in a minute, before a measure); `measure --at HEAD
 --base <commit>` per commit while editing on; `measure --hits`' landing lines (Alesh's hook → hook_ex said what the
 path cut did without opening the log).
+
+## Outcome (round 24)
+
+- 1 (A pass's own stops are invisible: 9c6e's phantom stop took a scratch script to find): done (1f25928): `zmdlogs
+  casts <fixture> --passes` (passesview.ts): each pass's CAST and DISTINCT lines and the stops pass 2 read (logcasts.ts
+  passStopParts: pass 1's casts' and the unplaced cast events', marked), beside the final placement's own; passStops
+  reads passStopParts (identity: the same).
+- 2 (placeWith's per-hit decisions depend on their definition order): done but the stages as functions (carried:
+  2026-11-28-backlog-after-round-24.md point 2) (0a1efea): the four stages written down at the loop's head (context,
+  the running cast, twin or join, open) with stage markers, and the rule that a later stage's answer is asked through a
+  memoized function as openChoice is (comments only).
+- 3 (split-module rewrites another agent's importers): done (818fb42): `--reexport` leaves every importer as it is;
+  the original re-exports the moved names it exported (types apart), with a comment to drop it after the merge.
+- 4 (lead-status reads "Diagnosed, not fixed" as fixed): done (818fb42): "not fixed", "Diagnosed, not fixed", "Still
+  possible", "still open" read as open; a fixed case with an open part is BOTH, its open sentences printed.

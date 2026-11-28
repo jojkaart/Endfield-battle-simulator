@@ -11,7 +11,7 @@ import { exportHits, exportHitsParallel, filterRecords, formatRecord, layerLines
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, offsetExplanations, simulateLog } from "./logcheck.ts";
 import { gameDataCacheKey, mainCheckoutOf, operatorId, REPO_ROOT } from "@efsim/data";
 import { isMultiTarget, listLogs, LOG_DIRS, logFixtureFiles, readLogFixture, readLogSplit, resolveFixture, resolveFixtures, shortId } from "./logs.ts";
-import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type TotalsGroup, type ViewFilter } from "./views.ts";
+import { castsView, differencesReport, groupsReport, replayView, staggerRuns, staggerSummary, staggerView, totalsAllView, totalsKindsView, type ReplayViewFilter, type TotalsGroup, type ViewFilter } from "./views.ts";
 import { stageFight, type TotalsShares } from "./enginecheck.ts";
 import type { OneSided } from "./onesided.ts";
 import { snapshotEntry } from "./snapshotentry.ts";
@@ -289,7 +289,7 @@ export function castsReport(data: GameData, fx: LogFixture, filter: ViewFilter &
 }
 
 /** `efsim zmdlogs replay`: the replay view of one log, with the named kit buffs' windows. */
-export function replayReport(data: GameData, fx: LogFixture, filter: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly sp?: boolean; readonly againstLanes?: boolean; readonly againstStarts?: RegExp }): string {
+export function replayReport(data: GameData, fx: LogFixture, filter: ReplayViewFilter): string {
   return replayView(data, fx, filter);
 }
 

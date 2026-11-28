@@ -44,7 +44,9 @@ They feed periodic improvement rounds (the owner, 2026-11-16).
    "<name>,"` (the points carried into it, renumbered, their **From:**
    lines extended; `--lists [--park <n,…>] [--drop <text>]…` also prints
    its Parked section with the newly parked points on top and its
-   accuracy list without the closed or dropped entries, round 17;
+   accuracy list without the closed or dropped entries, round 17; an
+   accuracy entry whose case a test pins names that test, so its fix
+   updates it in the same branch, round 24;
    `--unpark <words>` (repeatable) drops a parked entry a new report
    brought back and prints its full text on stderr, for the new point or
    accuracy entry, round 20; `none`
@@ -109,4 +111,5 @@ tests/friction.test.ts holds every open report here to it (round 14).
 > mistakes, and how to make future agents' work easier. Only real friction you
 > hit, most costly first; then a short "what worked well". Before suggesting
 > a view or a command, ask `npm run -s efsim -- zmdlogs which "<your
-> question>"`: it may exist already.
+> question>"` (the views' usage, docs/design/data.md's questions and every
+> script's --help): it may exist already.

@@ -4,7 +4,7 @@
 // views were one 800-line closure, so a view's new field locked out every rule change in buffreplay.ts): a view's new
 // output is an edit here, not in the replay's run.
 
-import { activeAt, everyTarget, reaches, type TimelineState } from "@efsim/engine";
+import { activeAt, everyTarget, reaches, type EventSource, type TimelineState } from "@efsim/engine";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -108,6 +108,42 @@ export interface StackTrace {
   readonly to: number | null;
 }
 
+/**
+ * One change of an operator's combo windows (ReplayOptions.trace `window:<operator>`, `zmdlogs replay --windows`;
+ * round 24, the combo-windows report point 1: what opened a window, when, or why it stayed shut took three views and a
+ * kit read per INSIDE line) at a step: per window key (timing.ts windowKey: the operator, or `operator>skill` for a
+ * window of its own), the window before and after (TimelineState.comboWindow; null: none), the latest event its
+ * openCombo saw (TimelineState.comboTrigger: also when the cooldown kept the window shut), and the ready frames of the
+ * operator's skills that changed (TimelineState.readyAt). An openCombo whose event has no source (windowSourceOf) and
+ * that the cooldown kept out leaves no trace: the engine records nothing then.
+ */
+export interface WindowTrace {
+  readonly key: string;
+  readonly frame: number;
+  readonly step: string;
+  readonly from: TracedWindow | null;
+  readonly to: TracedWindow | null;
+  /** The latest openCombo event seen, where it changed in the step (its frame and source). */
+  readonly trigger?: { readonly frame: number; readonly source: string };
+  /** The operator's skills whose ready frame changed in the step: from (null: never cast) and to. */
+  readonly ready?: readonly { readonly skillId: string; readonly from: number | null; readonly to: number }[];
+}
+
+/** A combo window as a trace sees it (frames): its opening, end, count and source (`whileBuff`: it lasts while that buff does). */
+export interface TracedWindow {
+  readonly from: number;
+  readonly until: number;
+  readonly count: number;
+  readonly source?: string;
+  readonly whileBuff?: string;
+}
+
+/** An event source in words (an infliction's element, a physical status). */
+export const sourceWords = (x: EventSource): string => (x.kind === "infliction" ? `${x.element} infliction` : x.status);
+
+/** Whether a combo window key (TimelineState.comboWindow) is an operator's: its own window or one of its skills'. */
+const windowOf = (op: string, key: string) => key === op || key.startsWith(`${op}>`);
+
 /** Whether a triggerState key is one a `trigger:` trace asks for: `owner:id` (and its per-subject keys), or `id` for any owner. */
 export function tracesTrigger(spec: string, key: string): boolean {
   if (key.includes("@")) return false;
@@ -164,6 +200,7 @@ export interface ReplayRecord {
   readonly statusTraces: readonly StatusTrace[];
   readonly triggerTraces: readonly TriggerTrace[];
   readonly stackTraces: readonly StackTrace[];
+  readonly windowTraces: readonly WindowTrace[];
   readonly appliedStops: readonly AppliedStop[];
   readonly changes: ReadonlyMap<string, readonly Change[]>;
   readonly kitChanges: ReadonlyMap<string, readonly Change[]>;
@@ -204,7 +241,10 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
     kitInstances.set(rec.key, [...(kitInstances.get(rec.key) ?? []), { start: rec.start, end, expired, ...(rec.replaces !== undefined ? { replaces: rec.replaces } : {}) }]);
   let staggerOpen: { start: number; until: number } | null = null;
   let lastSample = 0;
-  const traced = new Set(o.trace.filter((x) => !x.startsWith("status:") && !x.startsWith("trigger:") && !x.startsWith("stack:")));
+  const traced = new Set(o.trace.filter((x) => !x.startsWith("status:") && !x.startsWith("trigger:") && !x.startsWith("stack:") && !x.startsWith("window:")));
+  const tracedWindows = o.trace.filter((x) => x.startsWith("window:")).map((x) => x.slice("window:".length));
+  const windowTraces: WindowTrace[] = [];
+  let windowsNow: Pick<TimelineState, "comboWindow" | "comboTrigger" | "readyAt"> = { comboWindow: {}, comboTrigger: {}, readyAt: {} };
   const tracedStacks = o.trace.filter((x) => x.startsWith("stack:")).map((x) => x.slice("stack:".length).split(":") as [string, string]);
   const stackTraces: StackTrace[] = [];
   let stacksNow: TimelineState["stacks"] = {};
@@ -343,6 +383,26 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         }
         triggersNow = st.triggerState;
       }
+      if (tracedWindows.length && (st.comboWindow !== windowsNow.comboWindow || st.comboTrigger !== windowsNow.comboTrigger || st.readyAt !== windowsNow.readyAt)) {
+        const was = windowsNow;
+        const win = (w: TimelineState["comboWindow"][string] | undefined): TracedWindow | null => (w ? { from: w.from, until: w.until, count: w.count, ...(w.source ? { source: sourceWords(w.source) } : {}), ...(w.whileBuff ? { whileBuff: w.whileBuff } : {}) } : null);
+        for (const op of tracedWindows) {
+          const ready = Object.entries(st.readyAt).filter(([k, v]) => k.startsWith(`${op}_`) && was.readyAt[k] !== v).map(([skillId, to]) => ({ skillId, from: was.readyAt[skillId] ?? null, to }));
+          const keys = [...new Set([...Object.keys(was.comboWindow), ...Object.keys(st.comboWindow), ...Object.keys(st.comboTrigger)])].filter((k) => windowOf(op, k)).sort();
+          let readyGiven = false;
+          for (const key of keys) {
+            const [from, to] = [win(was.comboWindow[key]), win(st.comboWindow[key])];
+            const t = st.comboTrigger[key];
+            const trigger = t && t.frame !== was.comboTrigger[key]?.frame ? { frame: t.frame, source: sourceWords(t.source) } : undefined;
+            const changed = JSON.stringify(from) !== JSON.stringify(to);
+            if (!changed && !trigger && (readyGiven || !ready.length)) continue;
+            windowTraces.push({ key, frame: st.frame, step: words, from, to, ...(trigger ? { trigger } : {}), ...(!readyGiven && ready.length ? { ready } : {}) });
+            if (ready.length) readyGiven = true;
+          }
+          if (!readyGiven && ready.length) windowTraces.push({ key: op, frame: st.frame, step: words, from: win(was.comboWindow[op]), to: win(st.comboWindow[op]), ready });
+        }
+        windowsNow = { comboWindow: st.comboWindow, comboTrigger: st.comboTrigger, readyAt: st.readyAt };
+      }
       if (tracedStacks.length && st.stacks !== stacksNow) {
         for (const [op, name] of tracedStacks) {
           const [from, to] = [stacksNow[op]?.[name] ?? null, st.stacks[op]?.[name] ?? null];
@@ -364,6 +424,7 @@ export function replayRecorder(o: RecorderInput): ReplayRecorder {
         statusTraces,
         triggerTraces,
         stackTraces,
+        windowTraces,
         appliedStops: [...stops.values()].flatMap((recs) => recs.map((r) => r.stop)).sort((a, b) => a.start - b.start),
         changes: countChanges(instances, o.edge),
         kitChanges: countChanges(kitInstances, o.edge),

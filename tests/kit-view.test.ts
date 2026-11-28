@@ -90,3 +90,15 @@ describe("efsim kit: a cooldown's clock and its mechanism (cooldown-clock report
     expect(xaihi).toMatch(/cooldown 0\.3 on raw time: none in the data /);
   });
 });
+
+describe("efsim kit: costs (round 24)", () => {
+  it("prints a skill's cooldown and cost at level 12, the levels that differ, and the kit triggers that change its cooldown", () => {
+    // The combo-windows report point 2: 3f78's Arcane combo 0.83 s early took a scratch script over levels[].coolDown.
+    const text = kitView(data, "Arcane", /combo_skill$/);
+    expect(text).toMatch(/^ {6}costs at level 12: cooldown 18 s, no cost; other levels: 1–8 cooldown 20 s, no cost; 9–11 cooldown 19 s, no cost/m);
+    expect(text).toMatch(/^ {6}cooldown changed by: p5_cooldown \(self: fraction [^)]*\); Si's ultimate_effects \(\{"slot":0\}/m);
+    expect(kitView(data, "Arcane", /combo_skill$/, true)).toMatch(/per level: 1 cooldown 20 s, no cost; 2 cooldown 20 s/);
+    // Basic attacks (no cooldown, no cost) have no costs line.
+    expect(kitView(data, "Si", /attack5$/)).not.toMatch(/costs at level/);
+  });
+});

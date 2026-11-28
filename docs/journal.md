@@ -4,9 +4,44 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 205 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 206 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Improvement round 24: cooldowns and windows as records, the facts a moved landing loses, measuring in words
+
+**Goal:** the five open friction reports and round 23's backlog (docs/friction-done/2026-11-28-round-24.md), tools
+only: no verdict moves.
+
+**Done** (round summary for the details):
+- Cooldowns and windows as records: COOLDOWN decision lines (replayrun.ts cooldownEarly, MadeCast.early), `zmdlogs
+  replay <fixture> --windows <operator>` (ReplayOptions.trace `window:<operator>`, windowsview.ts), `efsim kit`'s costs
+  per skill. 3f78 19.30 s reads off one view: Arcane's window kept shut by her cooldown at 19.17 s, the press 0.83 s
+  early.
+- The facts a moved landing loses: LOST lines (lostfacts.ts; `decisions`, `replay`'s header, measure's decision counts).
+- What a pass or a clock read: `zmdlogs casts --passes`, `casts --event-lags --against-holds`.
+- Words: measure's variant section against the reference (headed, indented, a note where the variant undoes the tree's
+  change), lead-status's negations, `holds --why`'s stacking type, `kit-census`'s layered buffs.
+- Reach: split-module `--reexport`, `zmdlogs which` over the scripts' --help, `runstate --where`, a measure of at most
+  three named logs outside the lock, fixtures/.ignore and tests/snapshots/.ignore.
+- Conventions: open-problems' head (the state that differs; a wording test on a live lead says so), placeWith's
+  stages written down, lead-files by family, data.md's question rows.
+- Paperwork: docs/friction/2026-11-28-backlog-after-round-24.md (points 1–4, two new accuracy entries, round 23's
+  point 1 parked), the reports and round 23's backlog in docs/friction-done/ with their outcomes.
+
+**Checked:** `node scripts/identity.ts --base 36d6843` at 0a1efea: the data and every log's replay record the same (0
+of 65 development, 0 of 13 hold-outs); no engine or data file changed (no team-ab); snapshots:update and premerge as
+the round summary says.
+
+**Decisions:** COOLDOWN and LOST as records of the replay read off its own state (no engine change, no new snapshot
+key); LOST lines only with the fixture (as BATCH), so `decisions --assume` and measure see a rule that drops them; the
+window view from a trace of the state (comboWindow, comboTrigger, readyAt) rather than an engine statistic, which would
+catch the sourceless events the cooldown keeps out too (backlog point 3); the measure "bug" reproduced as wording, not
+a wrong comparison.
+
+**Problems:** ripgrep 14.1 with several roots ignored the root .ignore for the later roots in most runs (the hold-out
+logs listed by `rg --files tests fixtures`; counted only): fixed with per-directory .ignore files and a test. The
+opener-landed-at-press diff no longer applies on HEAD, so the LOST lines weren't run on the report's own episode.
 
 ## 2026-11-28: The clock through overlapping combo slow-downs; layered buffs on their own timers as clocks
 
@@ -407,40 +442,3 @@ pinned to the log, so the hold moves only what isn't, Zhuang Fangyi's strike_n s
 **Open:** why some casts take the per-episode hold and others not (Zhuang Fangyi's strikes on time in 3aa6, late in
 4bfc and d774); a world-clock hold per episode (about 2.5 frames; the hidden holds take it outside a Stagger);
 `4f-episode` for simulated fights, which the replay can't judge while its landings are pinned.
-
-## 2026-11-28: Improvement round 22: clocks, screening, views that say why, a move's identity check
-
-**Goal:** the five open friction reports and round 21's backlog (docs/friction-done/2026-11-28-round-22.md), tools
-only: no verdict moves.
-
-**Done** (round summary for the details):
-- Clocks: packages/logs replayclock.ts (the timeline's applied stops and the hidden holds as TimeStops, a hold added
-  to any stop), `zmdlogs worldtime … --holds --without <op>` and `worldtime <fx> --series <re>` (fc63's array across
-  Typhoeus's ultimate: 4.29 s world with every stop out, 6.36 s with hers left in, 4.00 s expected), holds.ts
-  tickChains as the one chain rule, `zmdlogs clocks --breaks` (5082's Yvonne at the break +0.5 → +0.05 s), `zmdlogs
-  casts --event-lags` (Typhoeus's combo +0.53 s, Arcane's +0.29 s), docs/design/timeline.md "Which clock each hold
-  holds" (and the burst sentence's own-ultimate reading, stale since `burst-stops` `all`).
-- Screening: `efsim zmdlogs screen <battle id…> [--fetch]` ("Choosing logs" as checks; a hold-out refused unread; an
-  account only as a count), missingEnemyFacts in the screen, import, `gamedata enemy` and the check's head ("The
-  replay stopped: at t s: …").
-- Views that say why: the TAILKEPT `needed` line with the lost hit's pairing before and after the cut; `hits
-  --targets` (HitRecord.target.replay, .replays); `statuses --controls` (6339 4.53 s, 7b54 3.40, 29.50 s);
-  `replay --trace-trigger … --against-starts <buff>` (8056: Frontiers' two extra firings at the SP cap).
-- Measuring: `measure --variant-patch` (two on 0eef in one run), scripts/identity.ts (the data and every log's replay
-  record by part at a base and the tree; the hold-outs a count), lint:changed running the fakeReplay tests and the
-  typecheck, kitMatch.ts HIT_FACTS_ARE_DATA_FIELDS with a schema-enum test, `efsim zmdlogs which "<question>"`.
-- Paperwork: docs/friction/2026-11-28-backlog-after-round-22.md (points 1–2), the reports and round 21's backlog in
-  docs/friction-done/ with their outcomes.
-
-**Checked:** `node scripts/identity.ts --base c81a34f` at c3ba762: the data, 65 development logs and 13 hold-outs the
-same. `npm run snapshots:update` at a640e94: verified, development, hold-out, earlier pending and several targets
-"unchanged", "No log's verdicts moved", no snapshot file or docs/accuracy.md changed; no engine file changed (no
-team-ab).
-
-**Decisions:** the hidden holds add to a stop (holdWorld shifts every world clock), so heldWorldMs subtracts them on
-top of worldMs rather than as scale-0 stops; the screen reads the detail's own roster (no export fetched) and counts
-an account among cached development details only; identity hashes parts of the replay record rather than the
-snapshot entry (that is measure's), so a difference names where to look.
-
-**Problems:** a code edit during the first snapshots:update would have failed it (codeKey); stopped and rerun after
-the commit. The `--fetch` path is untested against the site (no downloads this round).

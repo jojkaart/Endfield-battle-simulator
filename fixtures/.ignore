@@ -1,0 +1,4 @@
+# The hold-out logs: ripgrep skips them from any search root (round 24: with several roots, `rg --files tests
+# fixtures` listed them in 8 runs of 12 under the repository root's .ignore alone; a directory's own .ignore applies
+# whenever ripgrep walks into it). tests/holdout-blindness.test.ts checks the forms.
+holdout/

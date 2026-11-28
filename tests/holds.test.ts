@@ -3,7 +3,7 @@
 // none inside a span where nothing holds (the enemy Staggered), and the world holds a frame at a time.
 import { describe, expect, it } from "vitest";
 import { holdWorld, FPS, rampElapsed, statusModifiers, type TimelineState } from "@efsim/engine";
-import { breakHoldStarts, breakStops, comboHoldSpans, gapsWithin, holdPins, notAClock, pausedBound, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, withoutGaps, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
+import { breakHoldStarts, breakStops, comboHoldSpans, gapsWithin, holdPins, notAClock, notAClockWords, pausedBound, placeHolds, rampBounds, refreshedIn, statusBounds, statusLanes, tickBounds, withoutGaps, type ClockWhy, type HoldBound, type RampStep } from "@efsim/logs";
 
 const run = (a: number, b: number, min: number, max = Infinity, tag = `run ${a}→${b}`): HoldBound => ({ a, b, min, max, kind: "run", tag, ex: (Number.isFinite(min) ? min : max) / 1000 });
 
@@ -236,6 +236,9 @@ describe("the shared clock rules (holds.ts)", () => {
     expect(notAClock({ id: "b", label: "b", target: "self", maxStacks: 2 } as never)).toBe("maxStacks");
     expect(notAClock({ id: "b", label: "b", target: "team", maxStacks: 2, gameBuff: "buff_wpn_sword_0012_atk_up" } as never)).toBeNull();
     expect(notAClock({ id: "b", label: "b", target: "self", maxStacks: 2, gameBuff: "buff_equipsuit_combo_cd01_spellup" } as never)).toBe("maxStacks");
+    // Round 24 (the overlap-clock report point 2): the `--why` words name the stacking type judged.
+    expect(notAClockWords({ id: "b", label: "b", target: "self", maxStacks: 2, gameBuff: "buff_equipsuit_combo_cd01_spellup" } as never, "maxStacks")).toBe("`maxStacks` (layered; its game buff buff_equipsuit_combo_cd01_spellup is BuffData stackingType 2: only stackingType 11, layers on their own timers the log lists apart, is a clock)");
+    expect(notAClockWords({ id: "b", label: "b", target: "self", link: true } as never, "link")).toBe("`link`");
   });
 });
 

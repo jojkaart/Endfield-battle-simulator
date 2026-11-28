@@ -32,6 +32,24 @@ describe("scripts/lead-status.ts", () => {
     expect(leadVerdict(leadMentions(doc, "dead"))).toBe("not in docs/open-problems.md");
     expect(leadMentions(doc, "empowered battle").length).toBe(1);
   });
+
+  it("reads \"not fixed\" and \"Still possible\" as open, and a fixed case with an open part as both (round 24)", () => {
+    // The placement-paths report point 4: "**Diagnosed, not fixed: 8f32 38.50 s**" read as fixed, and a "Still
+    // possible" clause inside a "Fixed:" bullet (9c6e 78.88 s) too.
+    const text = [
+      "## Placement",
+      "",
+      "**Diagnosed, not fixed: 8f32 38.50 s** (the Endministrator's shatter): Rossi's combo 2 hit_2 placed as a combo 3.",
+      "",
+      "- Fixed: 9c6e 78.88 s, the array's first tick pair. Still possible: the second pair stays two slots.",
+      "- Fixed: 4e5e 28.73 s, no longer INSIDE.",
+    ].join("\n");
+    expect(leadMentions(text, "8f32@38.50").map((m) => m.state)).toEqual(["open"]);
+    const both = leadMentions(text, "9c6e@78.88");
+    expect(both.map((m) => [m.state, m.openPart])).toEqual([["both", "Still possible: the second pair stays two slots."]]);
+    expect(leadVerdict(both)).toMatch(/^BOTH: 0 of 1 mention\(s\) say fixed, 1 say fixed with a part still open/);
+    expect(leadVerdict(leadMentions(text, "4e5e@28.73"))).toMatch(/^fixed: every one of 1/);
+  });
 });
 
 describe("zmdlogs totals --side", () => {
