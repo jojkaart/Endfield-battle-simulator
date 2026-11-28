@@ -162,7 +162,7 @@ export const SIMULATION_ASSUMPTIONS: readonly EngineAssumption[] = [
   {
     id: "break-hold-combo",
     question: "How does a Stagger break's hold combine with a combo's slow-down running at the break (timeline/clock.ts breakHold)?",
-    default: "lowest",
+    default: "added",
     readings: {
       lowest: "as any two slow-downs: the lowest scale counts where they overlap, so inside a combo's plateau (0.01) the hold adds almost nothing for the operators the combo holds (2026-11-27)",
       added: "on top: every clock is held the hold's frames whatever runs, and the running slow-downs resume after it (their rest that many frames later)",

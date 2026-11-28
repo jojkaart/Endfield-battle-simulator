@@ -129,6 +129,14 @@ describe("placeHolds", () => {
     expect(breakStops(fx, [], { "break-hold": "none" })).toEqual([]);
     // The stops follow break-hold-place as the replay does (round 19: tickBounds took the defaults under a variant).
     expect(breakStops(fx, [], { "break-hold": "14f", ...moments }).map((s) => s.start)).toEqual([f(10000), f(20105 - (14 * 1000) / FPS)]);
+    // A break inside a combo's slow-down (engine assumption break-hold-combo, as timeline/clock.ts breakHold): the stop
+    // as it is (`lowest`), long enough to take its frames beyond the combo's (`added`, the default), or none.
+    const combo = { start: f(10000) - 5, scales: new Array<number>(20).fill(0.5), operator: "y", skillId: "c", kind: "combo" as const };
+    const at10 = (assume: Record<string, string>) => breakStops(fx, [combo], { ...ms, ...assume }).filter((s) => s.start === f(10000));
+    expect(at10({ "break-hold-combo": "lowest" }).map((s) => s.scales.length)).toEqual([14]);
+    // Over the combo's 15 frames left at 0.5 the stop takes 7.5 frames more, then 6.5 more past its end: 22 frames.
+    expect(at10({}).map((s) => s.scales.length)).toEqual([22]);
+    expect(at10({ "break-hold-combo": "none" })).toEqual([]);
   });
 });
 

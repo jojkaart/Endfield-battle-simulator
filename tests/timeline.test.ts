@@ -1000,6 +1000,39 @@ describe("timeline: stagger and finishers", () => {
     expect(breakHold(ctx, st, 98).slowdowns.length).toBe(st.slowdowns.length + 1);
   });
 
+  it("every operator's ultimate is an ultimate's specification (5), Akekuri's too, whose file says 0 (skillData.ts ultimateSpecification)", () => {
+    const ultimates = Object.values(data.kits.operators).flatMap((k) => k.skills.filter((s) => s.kind === "ultimate" && s.skillId.endsWith("_ultimate_skill")));
+    expect(ultimates.length).toBeGreaterThan(30);
+    for (const s of ultimates) expect(data.skills[s.skillId]?.timing?.specification, s.skillId).toBe(5);
+  });
+
+  it("a break inside a combo's slow-down: the lowest scale, the hold on top, or none (engine assumption break-hold-combo)", () => {
+    // A teammate's combo slow-down at 0.01 over frames 0–19 holds the operator; the break at frame 10 holds 14 frames.
+    const combo = { start: 0, scales: new Array<number>(20).fill(0.01), exempt: "someone" };
+    const held = (assume: Record<string, string>) => {
+      const ctx = createContext(d, { ...scenario([]), options: { crit: "never", assume } });
+      const st: TimelineState = { ...init(ctx), slowdowns: [combo] };
+      return breakHold(ctx, st, 10);
+    };
+    // `lowest`: where the combo holds at 0.01 the hold adds 0.01 a frame for the 10 frames they overlap.
+    const lowest = held({ "break-hold-combo": "lowest" });
+    expect(lowest.slowdowns.at(-1)).toMatchObject({ start: 10, scales: new Array<number>(14).fill(0) });
+    expect(lowest.slowdowns[0]).toEqual(combo);
+    // `added` (the default): the combo pauses through the hold, its rest 14 frames later.
+    expect(held({})).toEqual(held({ "break-hold-combo": "added" }));
+    expect(held({}).slowdowns).toEqual([
+      { ...combo, scales: new Array<number>(10).fill(0.01) },
+      { ...combo, start: 24, scales: new Array<number>(10).fill(0.01) },
+      { start: 10, scales: new Array<number>(14).fill(0), exempt: "stagger-break" },
+    ]);
+    // `none`: no hold.
+    const ctx = createContext(d, { ...scenario([]), options: { crit: "never", assume: { "break-hold-combo": "none" } } });
+    const st: TimelineState = { ...init(ctx), slowdowns: [combo] };
+    expect(breakHold(ctx, st, 10)).toBe(st);
+    // Outside every slow-down the reading changes nothing.
+    expect(breakHold(ctx, st, 30).slowdowns.at(-1)).toMatchObject({ start: 30, scales: new Array<number>(14).fill(0) });
+  });
+
   it("a finisher needs a Staggered enemy, once per stagger, and is multiplied by its finisher multiplier with its SP", () => {
     const { ctx, s } = at([], 0);
     expect(earliestStart(ctx, s, { operator: op, skill: L + "power_attack" })).toHaveProperty("error");
