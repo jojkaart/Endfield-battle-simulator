@@ -115,7 +115,10 @@ and the other operators (their hits on the way, delayed actions, current
 action) lose the frames the slow-down takes; skill cooldowns run on raw
 time (the logs, in-game test 18: 58 combo pairs come back within their
 cooldown plus less than the stops between), and so do team SP's regen and its pause after a spend (the logs:
-the replay's SP shortfalls drop from 20 to 13 of 38 logs). Overlapping slow-downs: the lowest scale counts; a reset (SkillTiming.resets: a dilation back to scale 1 in a
+the replay's SP shortfalls drop from 20 to 13 of 38 logs). Overlapping slow-downs: the lowest scale counts, except
+that a combo's slow-down doesn't hold an operator whose own combo's slow-down runs as it starts (combos pressed
+together each run on their caster's clock; a cast started inside a running slow-down isn't held by its rest either:
+slowDown shifts only what was scheduled; engine assumption `combo-overlap`); a reset (SkillTiming.resets: a dilation back to scale 1 in a
 priority tag, Arcane's combo at its frame 9) ends every running slow-down of its priority, its own too, and gives
 the clocks back what they would still have lost (engine assumption `combo-reset`, clock.ts `resetSlowdowns`). The engine shifts
 what comes after the slow-down's start by the lost frames, which is exact

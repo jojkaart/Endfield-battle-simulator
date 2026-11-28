@@ -100,10 +100,10 @@ one shut, and a start inside the combo's own slow-down: timing.ts startGateWords
   possible:** a team-wide cooldown recovery the engine lacks; Si's Proxy's Patronage reaching another slot than the
   fixture's first (3f78 and 0c14 have her ultimate between, the other ten not); combo cooldowns in the game up to
   a second or two shorter than the data's tables give (every short gap 0.07–2.4 s, never more).
-- **Beside it, not a window:** Typhoeus's clock through overlapping combo slow-downs runs late against her pinned
-  landings. fc63 57.48 s: her combo's frame 35 by a delayed cast trigger at 59.33 s, its first arrow (launched at
-  frame 35) logged at 58.65 s; her Sign conversion now rides on that arrow (the journal entry above). Her battle skills
-  INSIDE that combo's window 0 (fc63 11.37, 37.67, 59.03, 81.83, 102.33 s; 6–22 frames) are likely the same clock.
+- **Fixed: Typhoeus's clock through overlapping combo slow-downs** (fc63 59.33 s; engine assumption `combo-overlap`
+  `own`, docs/journal/2026-11-28-11-the-clock-through-overlapping-combo-slow-downs-layered-buffs.md): 37.67 and 59.03 s
+  no longer INSIDE; 81.83 s 11 → 2 frames (the press's grain), 11.37 s 22 → 6 (Gilberta's combo at 10.77 s, after her
+  own slow-down ended, holds her), 102.33 s the break's (below).
 
 ## The hold at a Stagger break (2026-11-27)
 
@@ -231,8 +231,9 @@ clock would put the stamp anywhere in it); what the 2 hold-outs' INSIDE is (not 
 hold-out 6 plain and moves none of its decisions; a press in the hold waiting it out or running unheld, which the
 landings and the one cast event can't tell); `lowest` against `added` where a break falls deep in a combo's plateau
 (00ae 55.14, d4fb 97.05 s have no clock across); the length (above).
-**Next check:** 458b's team ATK layers, which now start where the log has them (88.20, 88.68 s), end 0.3 s before the
-log's at 111.04–111.61 s (four hits plain → assumed): the world's holds between, a buff-clock question; a press in a
+**Fixed: 458b's team ATK layers at 111.04–111.61 s** (docs/journal/2026-11-28-11-the-clock-through-overlapping-combo-slow-downs-layered-buffs.md):
+not a hold at a break: a layered buff was no clock of the hidden holds; Thermite Cutter's layers (stackingType 11, own
+timers) are now, every 111 s hit plain. **Next check:** a press in a
 hold, from a log with a cast event and a kit window there; `held` once
 a second log decides the hold-out's kind; a `stagger-recovery` refit once more Staggers are bracketed (the median's
 error is as large as its offset).
@@ -1547,6 +1548,29 @@ spawn); a per-episode hold of the world's clock too (about 2.5 frames: the enemy
 median), which the hidden holds take outside a Stagger. **Next check:** the casts' rows split by whether the cast was
 pressed before the combo's slow-down or inside it (3aa6 21.26 s), and for simulated fights `4f-episode` as their own
 reading (the replay can't judge it while its landings are pinned).
+**2026-11-28 (the overlap clock; docs/journal/2026-11-28-11-the-clock-through-overlapping-combo-slow-downs-layered-buffs.md):
+the casters of combos pressed together aren't held by each other's slow-downs.** The log's cast event is stamped on
+the world's clock (scripts/probes/combo-hold/overlap-events.ts): over 132 development combos whose first landing comes
+across another operator's combo slow-down, its world lag from the start the landing gives unheld is 0.00 s median (99
+within 0.1 s), from the start held by them +0.25 s (20 within 0.1 s), by class alike (a slow-down starting inside hers:
+45 of 54 within 0.1 s unheld, 8 held; hers starting inside another's: 23 of 38 against 8). Camille's battle-skill
+explosion (an operator-clock delayed action) lands where 4e5e logs it, 8.33 and 56.17 s, only unheld. **Built, the
+default:** engine assumption `combo-overlap` `own` (timeline/clock.ts slowDown: at a combo slow-down's start, an
+operator whose own combo slow-down runs loses no frames to it, its whole length; a cast started inside a running
+slow-down was already not held by its rest). The placement's start (logcasts.ts castStart, "a combo isn't held by
+another's combo") already read it so. **Ruled out:** her clock held only past her own slow-down's end (R1: 42 of 54
+within 0.1 s, Typhoeus's 0eef 6.77, bdf2 11.00, fc63 9.26 s 0.22–0.48 s off: Perlica's, Jsspsi's slow-downs running 10
+frames past hers hold her not at all); the lowest scale for her (above). **Relation to the per-episode excess:** the
+casters inside an episode take neither the stop nor the excess; the operators outside it are held by the union at the
+lowest scale plus the ~180 ms an episode (episodes.ts, rerun: 115 casts, 0.40 of the held time); `4f-episode` adds its
+frames only where the stop holds, so under `own` never to an episode's own casters. **Still open:** `own` against `own-stop`
+(held by the other's frames past her own slow-down's end): the events favour `own` by 5 of 132, fc63 59.03 s's press
+needs her unheld, a7a7's Wulfgard burst (36.43 s) needs him held 0.23 s by Arcane's combo past his own; both hang on an
+Arcane combo's placed stop; a7a7 +1 plain under `own-stop`, nothing else moves. A combo pressed
+after hers ended but before her landing (3 rows with an event: 1a77 12.51, 8056 175.27 s unheld, f879 55.62 s held;
+Laevatain's with Wulfgard's at her frame 32–33: held as before); db87's Corrosion steps after Si's, Camille's and
+Laevatain's combos at 22.0–22.3 s now ask 0.15 s more world hold than the hidden holds place (the world's per-episode
+excess, which `lowest` covered through the operators' clocks the holds read).
 
 ## Fight totals: what moves them (2026-11-23)
 

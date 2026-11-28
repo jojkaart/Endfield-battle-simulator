@@ -177,42 +177,42 @@
   ]
  },
  "estella-si-akekuri-arcane-zero.scenario.json": {
-  "total": 2264521.867,
-  "hits": 359,
-  "casts": 190,
+  "total": 2269463.021,
+  "hits": 360,
+  "casts": 192,
   "perOperator": {
    "chr_0019_karin": 190863.272,
-   "chr_0036_jsspsi": 836118.976,
+   "chr_0036_jsspsi": 841060.13,
    "chr_0021_whiten": 1058332.906,
    "chr_0032_lizhiyan": 179206.714
   },
-  "digest": "4fd71fbd343f",
+  "digest": "bbc2f2181f09",
   "windows": [
-   "40bbe38068ae",
-   "97b7ab8a6641",
-   "1ea9a1c8ed2e",
-   "81732e672ca1",
-   "4af66562a9c6",
+   "c4e4014893d0",
+   "d5c5e0583711",
+   "670c98803b04",
+   "81bf33f91ef7",
+   "8d90aa56ac1c",
    "f46094bf9357",
    "9e2977695839"
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {
-  "total": 3673910.917,
+  "total": 3670449.419,
   "hits": 390,
-  "casts": 200,
+  "casts": 201,
   "perOperator": {
    "chr_0019_karin": 265014.926,
-   "chr_0036_jsspsi": 1664191.55,
+   "chr_0036_jsspsi": 1660730.053,
    "chr_0021_whiten": 1468104.204,
    "chr_0032_lizhiyan": 276600.237
   },
-  "digest": "2c4fd7c6e88d",
+  "digest": "d1ea7d458267",
   "windows": [
    "642b67bcd049",
    "4ec080c55221",
-   "abec5cdd0ace",
-   "06b9ea1c1f7c",
+   "8b2a1c896638",
+   "f0b11fa90303",
    "e367ed8aca37",
    "c21fd675bf89"
   ]
@@ -436,33 +436,33 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2660238.646,
+  "total": 2647930.607,
   "hits": 169,
   "casts": 64,
   "perOperator": {
-   "chr_0036_jsspsi": 694875.224,
+   "chr_0036_jsspsi": 682567.184,
    "chr_0016_laevat": 1633536.69,
    "chr_0035_liino": 206575.561,
    "chr_0013_aglina": 125251.171
   },
-  "digest": "715e7cd62193",
+  "digest": "1f5e288eaf63",
   "windows": [
-   "b0c782d11f81",
+   "7b5f6a6910ce",
    "22483252d616"
   ]
  },
  "si-laevatain.scenario.json": {
-  "total": 1046931.94,
+  "total": 1047730.772,
   "hits": 73,
   "casts": 27,
   "perOperator": {
-   "chr_0036_jsspsi": 384664.102,
+   "chr_0036_jsspsi": 385462.933,
    "chr_0016_laevat": 662267.839
   },
-  "digest": "d9d8a10285b0",
+  "digest": "76552295e571",
   "windows": [
-   "0f9ca2ae2569",
-   "3f4f2c7b2f80"
+   "0dbe18366ae6",
+   "8361d56d7e09"
   ]
  },
  "snowshine-counter.scenario.json": {
@@ -494,41 +494,41 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4886381.445,
+  "total": 4922328.98,
   "hits": 516,
   "casts": 167,
   "perOperator": {
-   "chr_0034_typhoea": 3761565.004,
-   "chr_0032_lizhiyan": 192483.21,
+   "chr_0034_typhoea": 3781512.422,
+   "chr_0032_lizhiyan": 195837.049,
    "chr_0035_liino": 319814.161,
-   "chr_0004_pelica": 612519.069
+   "chr_0004_pelica": 625165.348
   },
-  "digest": "b8c6276d5f9a",
+  "digest": "73cf19ae083b",
   "windows": [
-   "17591050110c",
-   "efd04bfbdbe1",
-   "5743d42d6a91",
-   "192272ea43f3",
-   "2837bd01135d",
-   "5a0c2618a3c0",
+   "39fb5423e69a",
+   "a0eb0b5c667f",
+   "3c34ba354955",
+   "5c30f2c5b4d6",
+   "ccd81a917742",
+   "56d97f3a4abd",
    "16559fd12ceb"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5603794.224,
-  "hits": 443,
-  "casts": 165,
+  "total": 5474875.234,
+  "hits": 445,
+  "casts": 166,
   "perOperator": {
-   "chr_0034_typhoea": 4184200.811,
-   "chr_0032_lizhiyan": 383678.605,
-   "chr_0035_liino": 317633.373,
-   "chr_0004_pelica": 718281.436
+   "chr_0034_typhoea": 4068468.906,
+   "chr_0032_lizhiyan": 374806.346,
+   "chr_0035_liino": 313193.658,
+   "chr_0004_pelica": 718406.324
   },
-  "digest": "b2098145ec8d",
+  "digest": "ff3c8b807f62",
   "windows": [
-   "501772211b6c",
-   "ae66c6c97a5f",
-   "6f97eaed1425",
+   "edd532300065",
+   "af05d3d812c3",
+   "1b9edfadd392",
    "e49b39628c0f",
    "689a13af8b70",
    "6c0715678957"

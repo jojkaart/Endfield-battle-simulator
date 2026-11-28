@@ -232,7 +232,10 @@ describe("the shared clock rules (holds.ts)", () => {
     const def = { id: "b", label: "b", target: "self", every: 30 } as never;
     expect(notAClock(def)).toBeNull();
     expect(notAClock(def, { every: true })).toBe("every");
-    expect(notAClock({ id: "b", label: "b", target: "self", maxStacks: 0 } as never)).toBe("maxStacks");
+    // A layered buff's layers are clocks only on their own timers, stackingType 11 (Thermite Cutter's team ATK).
+    expect(notAClock({ id: "b", label: "b", target: "self", maxStacks: 2 } as never)).toBe("maxStacks");
+    expect(notAClock({ id: "b", label: "b", target: "team", maxStacks: 2, gameBuff: "buff_wpn_sword_0012_atk_up" } as never)).toBeNull();
+    expect(notAClock({ id: "b", label: "b", target: "self", maxStacks: 2, gameBuff: "buff_equipsuit_combo_cd01_spellup" } as never)).toBe("maxStacks");
   });
 });
 

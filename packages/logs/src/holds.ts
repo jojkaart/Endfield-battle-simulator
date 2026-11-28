@@ -7,6 +7,7 @@
 import { breakHoldFrames, readingOf, FPS, type KitBuff, type Readings } from "@efsim/engine";
 import type { LogFixture } from "./zmdlogs.ts";
 import { worldMs, type TimeStop } from "./logcasts.ts";
+import { buffFile } from "./logeffects.ts";
 
 /**
  * Why a replayed instance is or isn't a clock of the hidden holds (`zmdlogs holds --why`, rossi-gilberta report point
@@ -26,14 +27,22 @@ export interface ClockWhy {
 /**
  * The kit fields that make a buff no clock of the holds (its end follows something other than its own timer, or the log
  * shows its instances merged), for runBounds and for holdinputs.ts loggedEndOf (`every`: a ticking buff, runBounds only;
- * loggedEndOf reads it off the active buff).
+ * loggedEndOf reads it off the active buff). A layered buff (maxStacks) is a clock only with its game buff's BuffData
+ * stackingType 11 (layers on their own timers, which the log lists apart, a run per application: 458b's Thermite Cutter
+ * team ATK layers from 88.20 and 88.68 s, listed to 111.27–111.73 s; holdinputs.ts nearestRun pairs a layer with its
+ * run). Not stackingType 8 (one timer, listed once) nor 2: its runs outlast their layers' timers where a layer at the
+ * maximum replaces another (2026-11-28: 7910's suit_combo_cd01 runs from 26.58 and 38.10 s asked 1.96 and 1.42 s of
+ * hidden hold, against Corrosion's steps).
  */
 const NOT_A_CLOCK = ["consumedBy", "link", "endsWithCast", "maxStacks", "sharedTimer", "ticksShownByHits", "ticksLoggedAs", "endFollowsTick", "childOf"] as const;
+
+/** A layered kit buff whose layers are each a clock (NOT_A_CLOCK): its game buff's stackingType is 11. */
+const OWN_TIMER_LAYERS = 11;
 
 /** The first field that makes `def` no clock (NOT_A_CLOCK; `every` too with `opts.every`), or null. */
 export function notAClock(def: KitBuff, opts: { readonly every?: boolean } = {}): string | null {
   if (opts.every && def.every !== undefined) return "every";
-  for (const k of NOT_A_CLOCK) if (k === "maxStacks" ? def.maxStacks !== undefined : Boolean(def[k])) return k;
+  for (const k of NOT_A_CLOCK) if (k === "maxStacks" ? def.maxStacks !== undefined && !(def.gameBuff && buffFile(def.gameBuff)?.stacking?.type === OWN_TIMER_LAYERS) : Boolean(def[k])) return k;
   return null;
 }
 

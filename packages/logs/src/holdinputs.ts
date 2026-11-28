@@ -405,7 +405,8 @@ export function runBounds(kitInstances: ReadonlyMap<string, readonly { start: nu
             v("an instance buff's run the log doesn't show apart from the reapplications inside it (runApart)");
             continue;
           }
-          if (def.instances !== undefined && !nearestRun(r, S, ends.runs.get(k) ?? [])) {
+          // A layer of a layered buff (its own timer: notAClock) the same: its run is the one nearest its application.
+          if ((def.instances !== undefined || def.maxStacks !== undefined) && !nearestRun(r, S, ends.runs.get(k) ?? [])) {
             v("another run on its holder starts nearer the application (nearestRun)");
             continue;
           }
@@ -486,7 +487,7 @@ function nearestRun(r: LoggedLaneEnd, S: number, runs: readonly LoggedLaneEnd[])
  * The state with each buff due to expire by `frame` kept on while the log still lists it (engine assumption
  * hidden-holds, reading `log`): the world held it in ways no logged cast shows (perfect dodges: a 0.512 s world
  * slow-down each, the dodger exempt; docs/open-problems.md "The buff clock"). Only a timed buff of a kit with one game
- * buff run per instance: not consumed, ended with a cast, layered, ticking, or on a clock the replay already takes from
+ * buff run per instance: not consumed, ended with a cast, layered on one timer, ticking, or on a clock the replay already takes from
  * the log (ticksShownByHits, ticksLoggedAs, endFollowsTick). The run must have started within RUN_START_MS of the
  * instance's application, be listed past its own expiry on a holder the instance reaches, not be refreshed in the log,
  * and end within HIDDEN_HOLD_SHARE of the instance's life past it. Its end (loggedEndOf) is a frame after the last
@@ -526,7 +527,6 @@ function loggedEndOf(b: ActiveBuff, ends: LoggedLaneEnds, defs: ReadonlyMap<stri
     return v;
   };
   if (b.every !== undefined) return decide(null, "not taken: a ticking buff (its end is its ticks')");
-  if (b.maxLayers !== undefined) return decide(null, "not taken: a layered buff");
   if (b.maxInstances !== undefined) return decide(null, "not taken: an instance buff (KitBuff.instances, or stackingType 1: the log may merge its instances)");
   const def = defs.get(`${b.owner}:${b.id}`);
   if (!def) return decide(null, "not taken: no kit buff of that id");
@@ -538,8 +538,11 @@ function loggedEndOf(b: ActiveBuff, ends: LoggedLaneEnds, defs: ReadonlyMap<stri
   const holds = (holder: string) => (def.target === "enemy" ? holder === "enemy" : holder !== "enemy" && reaches(b, holder));
   const lasts: number[] = [];
   for (const g of names) {
-    for (const r of ends.runs.get(`${g}|${b.owner}`) ?? []) {
+    const runs = ends.runs.get(`${g}|${b.owner}`) ?? [];
+    for (const r of runs) {
       if (r.refreshed || r.since < from || r.since > latest || r.since >= until || r.lastListed <= until || !holds(r.holder)) continue;
+      // A layer (its own timer: notAClock; a sharedTimer one isn't taken) stands for the run nearest its application.
+      if (b.maxLayers !== undefined && !nearestRun(r, (b.appliedAt * 1000) / FPS, runs)) continue;
       lasts.push(r.lastListed);
     }
   }
