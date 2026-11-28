@@ -4,7 +4,7 @@
 // ratioClusters; the damage-factors report point 4). Structural: what each row is, not the clocks' numbers.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { boundCover, devFixtures, pairCasts, droppedView, heldBy, logClocks, loggedStaggerSpans, ratioClusters, replayTimeStops, STAGGER_LISTED, worldMs, type LogHit } from "@efsim/logs";
+import { boundCover, clockFits, devFixtures, fitThroughZero, pairCasts, droppedView, heldBy, logClocks, loggedStaggerSpans, ratioClusters, replayTimeStops, STAGGER_LISTED, worldMs, type LogHit } from "@efsim/logs";
 
 const data = loadGameData();
 
@@ -110,5 +110,21 @@ describe("two placements' casts paired (castpairs.ts; round 12 friction point 2)
     expect(q.moved.map(([a, b]) => [a.start, b.start])).toEqual([[1000, 1800]]);
     expect(q.gone.map((x) => x.skillId)).toEqual(["combo"]);
     expect(q.added.map((x) => x.skillId)).toEqual(["ult"]);
+  });
+});
+
+describe("zmdlogs clocks --json and --fit (round 23, the combo-hold report point 3)", () => {
+  it("fits through 0 and counts a row's combo stops and their episodes", () => {
+    expect(fitThroughZero([1, 2, 3], [2, 4, 6])).toEqual({ c: 2, rms: 0 });
+    expect(fitThroughZero([0, 0], [1, 2])).toBeNull();
+    const [log] = devFixtures({ ids: ["db87"] });
+    if (!log) throw new Error("db87 is a development log");
+    const { rows } = logClocks(data, log, { kinds: ["tick"] });
+    const combo = rows.find((r) => heldBy(r) === "combos only");
+    expect(combo?.combos).toBeGreaterThan(0);
+    expect(combo?.episodes).toBeGreaterThan(0);
+    expect(combo?.episodes).toBeLessThanOrEqual(combo?.combos ?? 0);
+    const fits = clockFits(rows, ["tick"]);
+    expect(fits.some((l) => /^ {2}tick, combos only \(\d+ rows\): per combo -?\d+ ms \(rms \d+ ms\); per episode -?\d+ ms \(rms \d+ ms\); share of the held time -?\d\.\d{3} × \(rms \d+ ms\)$/.test(l))).toBe(true);
   });
 });

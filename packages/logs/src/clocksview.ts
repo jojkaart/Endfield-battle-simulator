@@ -64,6 +64,12 @@ export interface PaceRow {
   readonly staggered: boolean;
   /** The logged Stagger breaks (a Stagger span's start) inside it, ms. */
   readonly breaks: readonly number[];
+  /**
+   * The combo stops counted inside it, and their episodes (overlapping combo stops one episode: the combo-hold round's
+   * unit, 2026-11-28), for `--fit`'s per-combo and per-episode fits and `--json` (round 23, the combo-hold report point 3).
+   */
+  readonly combos: number;
+  readonly episodes: number;
 }
 
 /** The rows of a log, and how many were left out because a stop straddles them. */
@@ -76,7 +82,7 @@ export interface LogPaces {
 const kindOf = (st: ReplayTimeStop) => st.kind ?? (st.skillId === "stagger-break" ? "break" : "other");
 
 /** The time the stops inside [a, b] hold, per kind and per operator and kind; whether one straddles an end. */
-function heldInside(a: number, b: number, stops: readonly ReplayTimeStop[]): { held: Record<string, number>; byOp: Record<string, number>; straddled: boolean } {
+function heldInside(a: number, b: number, stops: readonly ReplayTimeStop[]): { held: Record<string, number>; byOp: Record<string, number>; straddled: boolean; combos: number; episodes: number } {
   const [fa, fb] = [frameOf(a), frameOf(b)];
   const inside = stops.filter((st) => st.start < fb && st.start + st.scales.length > fa && st.scales.some((x) => x < 1));
   const straddled = inside.some((st) => st.start < fa || st.start + st.scales.length > fb);
@@ -84,7 +90,15 @@ function heldInside(a: number, b: number, stops: readonly ReplayTimeStop[]): { h
   const byOp: Record<string, number> = {};
   for (const k of new Set(inside.map(kindOf))) held[k] = b - a - worldMs(a, b, inside.filter((st) => kindOf(st) === k));
   for (const key of new Set(inside.map((st) => `${st.operator}|${kindOf(st)}`))) byOp[key] = b - a - worldMs(a, b, inside.filter((st) => `${st.operator}|${kindOf(st)}` === key));
-  return { held, byOp, straddled };
+  // The combo stops and their episodes: a stop that starts before the episode's last one ends joins it.
+  const combos = inside.filter((st) => kindOf(st) === "combo").sort((x, y) => x.start - y.start);
+  let episodes = 0;
+  let end = -Infinity;
+  for (const st of combos) {
+    if (st.start >= end) episodes++;
+    end = Math.max(end, st.start + st.scales.length);
+  }
+  return { held, byOp, straddled, combos: combos.length, episodes };
 }
 
 /** The clocks of one log (`kinds`: which; `assume`: the readings of the burst clock's replay). */
@@ -101,13 +115,13 @@ export function logClocks(data: GameData, log: { readonly short: string; readonl
   const spanOf = (t: number) => spans.findIndex((x) => x.from <= t && t <= x.to);
   const rows: PaceRow[] = [];
   let straddled = 0;
-  const add = (r: Omit<PaceRow, "log" | "residual" | "held" | "heldByOperator" | "staggered" | "breaks">, counted: readonly ReplayTimeStop[]) => {
+  const add = (r: Omit<PaceRow, "log" | "residual" | "held" | "heldByOperator" | "staggered" | "breaks" | "combos" | "episodes">, counted: readonly ReplayTimeStop[]) => {
     const h = heldInside(r.a, r.b, counted);
     if (h.straddled) {
       straddled++;
       return;
     }
-    rows.push({ ...r, log: short, residual: worldMs(r.a, r.b, counted) - r.expected, held: h.held, heldByOperator: h.byOp, staggered: spanOf(r.a) >= 0 && spanOf(r.a) === spanOf(r.b), breaks: spans.map((x) => x.from).filter((t) => t > r.a && t < r.b) });
+    rows.push({ ...r, log: short, residual: worldMs(r.a, r.b, counted) - r.expected, held: h.held, heldByOperator: h.byOp, staggered: spanOf(r.a) >= 0 && spanOf(r.a) === spanOf(r.b), breaks: spans.map((x) => x.from).filter((t) => t > r.a && t < r.b), combos: h.combos, episodes: h.episodes });
   };
   if (kinds.has("tick")) {
     // The enemy's clock: every stop counts (holds.ts tickBounds' chains, cut at the log's Stagger's edges).
@@ -167,6 +181,37 @@ function summaryLine(label: string, rows: readonly PaceRow[]): string {
   return `  ${label.padEnd(34)} ${String(rows.length).padStart(5)} rows  residual median ${median(rows.map((r) => r.residual)).toFixed(0).padStart(5)} ms  held median ${median(rows.map(total)).toFixed(0).padStart(5)} ms  Σ residual ${s(res)} s${held > 0 ? ` = ${(res / held).toFixed(2)} × Σ held ${s(held)} s` : ""}${out ? ` (${out} row(s) off by ${PACE_TRIM_MS / 1000} s or more not summed)` : ""}`;
 }
 
+/** A least-squares fit through 0 of y on x: the coefficient and the rms of what is left; null without an x. */
+export function fitThroughZero(xs: readonly number[], ys: readonly number[]): { readonly c: number; readonly rms: number } | null {
+  const sxx = xs.reduce((a, x) => a + x * x, 0);
+  if (!(sxx > 0)) return null;
+  const c = xs.reduce((a, x, i) => a + x * (ys[i] as number), 0) / sxx;
+  return { c, rms: Math.sqrt(xs.reduce((a, x, i) => a + ((ys[i] as number) - c * x) ** 2, 0) / xs.length) };
+}
+
+/**
+ * `zmdlogs clocks --fit`: per clock kind and what holds it (HeldBy, rows with a hold), the residual fitted through 0 on
+ * the combos inside (a constant per combo), their episodes (a constant per episode) and the held time (a share), each
+ * with its rms (ms), over the rows within PACE_TRIM_MS: "a constant or a share" in one command (round 23, the
+ * combo-hold report point 3: scratch/rows-fit.ts parsed `--rows` back).
+ */
+export function clockFits(rows: readonly PaceRow[], kinds: readonly ClockKind[]): string[] {
+  const out: string[] = [];
+  for (const k of kinds) {
+    for (const g of ["combos only", "an ultimate", "other stops only"] as const) {
+      const sel = rows.filter((r) => r.kind === k && heldBy(r) === g && Math.abs(r.residual) < PACE_TRIM_MS);
+      if (!sel.length) continue;
+      const ys = sel.map((r) => r.residual);
+      const fits = ([["per combo", sel.map((r) => r.combos), "ms"], ["per episode", sel.map((r) => r.episodes), "ms"], ["share of the held time", sel.map(total), "×"]] as const).map(([name, xs, unit]) => {
+        const f = fitThroughZero(xs, ys);
+        return f ? `${name} ${unit === "ms" ? `${f.c.toFixed(0)} ms` : `${f.c.toFixed(3)} ×`} (rms ${f.rms.toFixed(0)} ms)` : `${name} -`;
+      });
+      out.push(`  ${k}, ${g} (${sel.length} rows): ${fits.join("; ")}`);
+    }
+  }
+  return out;
+}
+
 /** A row in full (`rows`). */
 function rowLine(data: GameData, r: PaceRow): string {
   const by = Object.entries(r.heldByOperator).map(([k, v]) => {
@@ -180,7 +225,7 @@ function rowLine(data: GameData, r: PaceRow): string {
  * `efsim zmdlogs clocks <fixture…|--all>`: every clock of the logs (logClocks) summed by clock kind and what holds it
  * (`by` "operator": per combo operator too), the tick chains also split by the log's Stagger; `rows`: each row.
  */
-export function clocksView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly kinds?: readonly ClockKind[]; readonly by?: "kind" | "operator"; readonly rows?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly breaks?: boolean; readonly progress?: (line: string) => void } = {}): string {
+export function clocksView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly kinds?: readonly ClockKind[]; readonly by?: "kind" | "operator"; readonly rows?: boolean; readonly json?: boolean; readonly fit?: boolean; readonly assume?: Readonly<Record<string, string>>; readonly breaks?: boolean; readonly progress?: (line: string) => void } = {}): string {
   const kinds = opts.kinds ?? ["tick", "cast"];
   const all: PaceRow[] = [];
   let straddled = 0;
@@ -190,6 +235,9 @@ export function clocksView(data: GameData, logs: readonly { readonly short: stri
     all.push(...got.rows);
     straddled += got.straddled;
   }
+  // A line per row (round 23, the combo-hold report point 3: the rows were parsed back from text for a fit).
+  if (opts.json) return all.map((r) => JSON.stringify(r)).join("\n");
+  if (opts.fit) return [`How each clock's lateness fits, per clock kind and what holds it (clocksview.ts clockFits; ${kinds.join(", ")}; ${logs.length} logs; rows off by ${PACE_TRIM_MS / 1000} s or more left out): residual ≈ c × the combos inside, c × their episodes (overlapping combo stops one), or c × the held time (a share), each through 0 with its rms:`, ...clockFits(all, kinds)].join("\n");
   const out = [
     `How late each clock runs across the time stops inside it (clocksview.ts; ${kinds.join(", ")}; ${logs.length} logs): residual = its world time under the replay's casts' stops (replayTimeStops${opts.breaks ? ", and the engine's holds at the log's Stagger breaks: kind break" : ""}; tick: every stop, cast and burst: other operators') less what it should take; held = real less world time of the stops inside; the sums leave out rows off by ${PACE_TRIM_MS / 1000} s or more. ${straddled} row(s) left out: a stop straddles an end (its time would split between rows).`,
   ];
