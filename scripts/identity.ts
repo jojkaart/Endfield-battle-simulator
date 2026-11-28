@@ -23,6 +23,7 @@ import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import { logKeys, pool } from "./measure.ts";
 import type { MeasureAnswer, MeasureJob } from "./measure-worker.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
+import { endRun, startRun } from "./runstate.ts";
 import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -118,14 +119,18 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.stderr.write(`identity: the tree is fixed at queue time (${snap.dirty ? `a snapshot, ${snap.commit.slice(0, 9)}` : `HEAD ${snap.head.slice(0, 9)}`}): keep editing while it waits\n`);
     void runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...argv, "--tree", snap.commit.slice(0, 12)], { kind: "short", who: "identity", done: "identity" }).then((c) => (process.exitCode = c));
   } else {
+    // Its run state (scratch/runs/identity.json: `node scripts/runstate.ts --where` tails its output; round 24).
+    startRun("identity", argv.join(" "));
     main(argv).then(
       (code) => {
         process.stdout.write(`EFSIM-DONE identity ${code === 0 ? "same" : "differ"}\n`);
+        endRun("identity", code === 0 ? "same" : "differ");
         process.exitCode = code;
       },
       (e: unknown) => {
         process.stderr.write(`identity: ${e instanceof Error ? e.message : String(e)}\n`);
         process.stdout.write("EFSIM-DONE identity fail\n");
+        endRun("identity", "fail");
         process.exitCode = 2;
       },
     );
