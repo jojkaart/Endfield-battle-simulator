@@ -193,6 +193,8 @@ export interface BuffReplay {
    * cost silently: docs/open-problems.md "Team SP"), for the casts that lacked any.
    */
   readonly spTopUps: readonly { readonly frame: number; readonly operator: string; readonly skillId: string; readonly sp: number }[];
+  /** The reaction levels the log shows that this replay was made with (ReplayOptions.reactionLevels; lostfacts.ts reads them). */
+  readonly reactionLevels: NonNullable<TimelineScenario["loggedReactionLevels"]>;
   /**
    * The targets' deaths the replay made (the final run's death steps, in order: targets.ts targetDeaths), each with its
    * frame, why, the triggers that didn't run and the target that died (with the statuses per target): DEATH lines.
@@ -696,6 +698,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     staggerHolds: main?.staggerHolds ?? [],
     staggerCuts: main?.staggerCuts ?? [],
     castFlags: main?.flags ?? [],
+    reactionLevels: opts.reactionLevels ?? [],
     skipped: main?.skipped ?? [],
     tailCuts: [...cuts].map(([cast, frame]) => ({ cast, frame })),
     tailsKept,

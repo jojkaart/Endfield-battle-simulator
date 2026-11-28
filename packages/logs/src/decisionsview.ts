@@ -3,7 +3,8 @@
 // skill than the placement's (MADE), the kit jumps its logged landings contradicted (JUMPDROP: drivers.ts replayCast
 // `dropped`), the window a combo took from an opener inside its own slow-down (OPENER: replayrun.ts openerAhead), those
 // it made against the kit (FORCED, INSIDE, CUTS) or before its own cooldown had them ready (COOLDOWN: replayrun.ts
-// cooldownEarly, round 24), each from BuffReplay's records. `zmdlogs
+// cooldownEarly, round 24), each from BuffReplay's records; with the fixture, the logged crits and reaction levels no
+// landing took (LOST: lostfacts.ts, round 24). `zmdlogs
 // replay` prints them among its landings; `zmdlogs decisions` prints those that differ between the
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
@@ -14,6 +15,7 @@ import type { BuffReplay, MadeCast } from "./buffreplay.ts";
 import { batchOrder } from "./castassembly.ts";
 import { logBuffReplay } from "./logcheck.ts";
 import { MISSED_ROUNDS, type EarlyCast } from "./replayrun.ts";
+import { lostFacts, type LostFact } from "./lostfacts.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
 
@@ -24,7 +26,7 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "OPENER" | "FORCED" | "INSIDE" | "COOLDOWN" | "CUTS" | "DEATH";
+  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "OPENER" | "FORCED" | "INSIDE" | "COOLDOWN" | "CUTS" | "LOST" | "DEATH";
   readonly operator: string;
   readonly text: string;
   /** A sub-kind `zmdlogs decisions` counts the kind's lines by (TAILKEPT: the guard, replayrun.ts TAIL_GUARDS). */
@@ -56,8 +58,22 @@ export function cooldownDecision(data: GameData, m: Pick<MadeCast, "cast" | "fra
   return { t: msOf(m.frame), kind: "COOLDOWN", operator: m.cast.operator, text: `${label(data, m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): ${s(msOf(e.readyAt - m.frame))} s before the replay's cooldown had it ready at ${s(msOf(e.readyAt))} (${last}; made all the same: cooldownEarly)`, detail: String(m.cast.kind) };
 }
 
+/**
+ * A logged fact no landing took (lostfacts.ts) as a LOST line, its detail the fact (`crit`, `level`): a landing more than
+ * a frame from its logged hit takes neither its crit nor a reaction's level (landing.ts loggedCritAt,
+ * withLoggedReactionLevel), so the replay's triggers on crits and its reactions didn't see them.
+ */
+export function lostDecision(data: GameData, x: LostFact): DecisionLine {
+  if (x.fact === "level") return { t: msOf(x.frame), kind: "LOST", operator: x.operator, text: `${label(data, x.operator)} ${x.element} reaction level ${x.level} (the log's, at ${s(msOf(x.frame))}): no reaction landing of hers or his within a frame took it (a landing moved since the pass that read it: withLoggedReactionLevel)`, detail: "level" };
+  const h = x.hit;
+  const away = x.landing - Math.round((h.t * FPS) / 1000);
+  const from = x.source === "log" ? "the log's" : `the log's by inference (${x.source}: replaycrits.ts)`;
+  const why = Math.abs(away) <= 1 ? "within a frame of it, yet no logged crit of its operator and its kit hit's keys there was one answer (another key, or crit and not at one frame: landing.ts loggedCritAt)" : `${away > 0 ? "+" : ""}${away} frame(s) from the logged hit (a landing takes a logged crit by its pinned hit's ref, else within a frame: landing.ts loggedCritAt)`;
+  return { t: h.t, kind: "LOST", operator: h.operator, text: `${label(data, h.operator)} ${shortSkill(h.event)} ${h.value} (logged at ${s(h.t)}): its crit (${from}) not taken by its landing at ${s(msOf(x.landing))}, ${why}, so the triggers on crits didn't see it`, detail: "crit" };
+}
+
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "OPENER", "FORCED", "INSIDE", "COOLDOWN", "CUTS", "DEATH"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "OPENER", "FORCED", "INSIDE", "COOLDOWN", "CUTS", "LOST", "DEATH"];
 
 /** The replay's landing of each logged hit (the hit it stands for), as the log check finds it, and why the others have none. */
 export function landingsOf(replay: Pick<BuffReplay, "landing" | "statusLanding">, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
@@ -120,6 +136,8 @@ export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixt
   const who = (op: string) => label(data, op);
   if (fx) for (const b of batchDisagreements(fx, replay.hits, landingsOf(replay, fx).byLanding)) out.push(batchDecision(data, b));
   if (fx) out.push(...deathDecisions(data, replay));
+  // The logged crits and reaction levels no landing took (round 24, the combo-openers report point 1).
+  if (fx) for (const x of lostFacts(fx, replay)) out.push(lostDecision(data, x));
   for (const x of replay.skipped) out.push({ t: msOf(x.frame), kind: "SKIP", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (logged at ${s(x.cast.start)}): ${x.why}` });
   for (const x of replay.tailCuts) out.push({ t: msOf(x.frame), kind: "TAILCUT", operator: x.cast.operator, text: `${who(x.cast.operator)} ${shortSkill(x.cast.skillId)} (placed at ${s(x.cast.start)}): ended after its last logged landing, none of its later ones in the log (unlogged-tails)` });
   // A tail the cut's guards kept (replayrun.ts tailCuts' `kept`): which guard, and what it found.
