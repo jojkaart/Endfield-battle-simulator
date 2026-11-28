@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { defaultReference, exportedNames, hitChanges, movedCount, variantUndoNote, holdChanges, importLinks, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, plainReuse, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { defaultReference, exportedNames, hitChanges, movedCount, smallMeasure, variantUndoNote, holdChanges, importLinks, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, plainReuse, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 import { headerUsage, wantsHelp } from "../scripts/usage.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
@@ -349,5 +349,17 @@ describe("measure --variant: the section against the reference (round 24)", () =
     expect(variantUndoNote(movedCount(base, plain), movedCount(base, variant), 1)).toEqual([expect.stringMatching(/^\(The plain tree moved 1 log\(s\) against the reference and variant 1 none: on these logs the variant is the reference's behaviour, it undoes the tree's change/)]);
     expect(variantUndoNote(0, 2, 1)).toEqual([expect.stringMatching(/moved no log against the reference and variant 1 moved 2/)]);
     expect(variantUndoNote(1, 1, 1)).toEqual([]);
+  });
+});
+
+describe("measure: a few named logs outside the test lock (round 24)", () => {
+  it("runs at most SMALL_MEASURE_LOGS logs named with --logs at once, nothing that selects or measures more", () => {
+    // The overlap-clock report point 4: a 2-log measure waited 5 min in the queue for a 3 s run.
+    expect(smallMeasure(["--logs", "4e5e,db87", "--variant", "x=y"])).toMatch(/^2 log\(s\) named with --logs/);
+    expect(smallMeasure(["--logs=4e5e"])).toMatch(/^1 log/);
+    expect(smallMeasure(["--logs", "a,b,c,d"])).toBeNull();
+    expect(smallMeasure(["--with", "Arcane"])).toBeNull();
+    expect(smallMeasure(["--logs", "a", "--split", "hunks"])).toBeNull();
+    expect(smallMeasure([])).toBeNull();
   });
 });

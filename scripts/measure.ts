@@ -127,7 +127,7 @@
 // "Long runs") and keep working.
 //
 // It takes the test lock as a short job (scripts/testlock.ts: the side lane, beside a long rule search but not beside a
-// premerge or test suite), writes its run state to scratch/runs/measure.json and ends with `EFSIM-DONE measure pass`
+// premerge or test suite; a measure of at most SMALL_MEASURE_LOGS logs named with --logs takes none), writes its run state to scratch/runs/measure.json and ends with `EFSIM-DONE measure pass`
 // (or `fail`; `killed` when a signal stopped it, waiting included). A full run takes the pending suite's check time over the workers
 // (about 1.5–2 min on 3 workers when the machine is quiet); `--with` or `--changed` a fraction of it.
 
@@ -747,6 +747,21 @@ export function sharesLines(after: ReadonlyMap<string, Shares>, split: Split, be
     out.push(`  ${g}: ${a.n} fight(s), |error| ${f("error")}, |matched| ${f("matched")}, replay-only ${f("replayOnly")}, log-only ${f("logOnly")}, one-sided ${b && b.n ? `${b.oneSided} → ` : ""}${a.oneSided}`);
   }
   return out;
+}
+
+/** At most how many logs a measure may name with --logs and run outside the test lock (smallMeasure). */
+export const SMALL_MEASURE_LOGS = 3;
+
+/**
+ * Why a measure runs outside the test lock, or null: `--logs` naming at most SMALL_MEASURE_LOGS logs (never a
+ * hold-out: --logs refuses one), without --with, --split or --several-targets (which select or measure more): a few
+ * seconds of CPU per run, base and variants included, beside whatever holds the lock.
+ */
+export function smallMeasure(argv: readonly string[]): string | null {
+  const named = argv.flatMap((a, i) => (a === "--logs" ? (argv[i + 1] ?? "").split(",") : a.startsWith("--logs=") ? a.slice("--logs=".length).split(",") : [])).filter(Boolean);
+  if (!named.length || named.length > SMALL_MEASURE_LOGS) return null;
+  if (argv.some((a) => a === "--with" || a.startsWith("--with=") || a === "--split" || a.startsWith("--split=") || a === "--several-targets")) return null;
+  return `${named.length} log(s) named with --logs (at most ${SMALL_MEASURE_LOGS}: SMALL_MEASURE_LOGS), seconds of CPU`;
 }
 
 /** How many logs' entries differ between two snapshot sets (the keys of either). */
@@ -1765,6 +1780,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
           process.stderr.write(`measure: --split hunks: the parts weren't checked at queue time (${e instanceof Error ? e.message.split("\n")[0] : String(e)})\n`);
         }
       }
+    }
+    // A measure of a few named logs (seconds of CPU) runs at once, outside the test lock (round 24, the overlap-clock
+    // report point 4: a 2-log measure waited 5 min in the queue for a 3 s run): smallMeasure says when.
+    const small = smallMeasure(args);
+    if (small) {
+      process.stderr.write(`measure: ${small}: not queued for the test lock\n`);
+      process.env.EFSIM_NO_TEST_LOCK = "1";
     }
     void runLockedAsync([process.execPath, fileURLToPath(import.meta.url), ...args], { kind: "short", who: "measure", done: "measure" }).then((c) => (process.exitCode = c));
   } else {
