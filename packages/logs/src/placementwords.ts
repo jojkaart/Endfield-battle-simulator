@@ -7,8 +7,11 @@
 import { CAST_SLACK_MS, type CastChoice, type InTurnRecord, type LoggedCast, type PlacedJoin, type PlacedTwin } from "./logcasts.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
 
-/** Whether a join came later than its slot's frame by more than CAST_SLACK_MS (where the slot's frame is unknown: than the slack itself). */
-export const lateJoin = (j: PlacedJoin) => j.elapsed > (j.due ?? 0) + CAST_SLACK_MS;
+/**
+ * Whether a join is one the casts view prints: later than its slot's frame by more than CAST_SLACK_MS (where the slot's
+ * frame is unknown: than the slack itself), or kept on its cast against a newer one by its value (PlacedJoin.value).
+ */
+export const lateJoin = (j: PlacedJoin) => j.value === true || j.elapsed > (j.due ?? 0) + CAST_SLACK_MS;
 
 /** The rule that made a hit another target's landing of its slot (PlacedHit.twin), in words. */
 export function twinWords(t: PlacedTwin): string {
@@ -23,7 +26,8 @@ export function twinWords(t: PlacedTwin): string {
 export function joinWords(j: PlacedJoin): string {
   const from = j.by === "delayed" || j.by === "reach" ? "its cast's start" : "the cast's first landing";
   const rule = j.by === "span" ? "within the cast's landings' span" : j.by === "to come" ? "slots to come within the skill's action" : j.by === "paced" ? "a detached series at its pace" : j.by === "same ultimate" ? "within the ultimate's action" : j.by === "delayed" ? "a delayed hit's landing (joinDelayed)" : "within an earlier cast's reach (joinable)";
-  return `joined: ${j.by}, ${rule}: ${s(j.elapsed)} s after ${from}${j.due !== undefined ? `, its slot's frame at ${s(j.due)} s` : ""}`;
+  const value = j.value ? "; kept against a newer cast by its value (the next slot's multiplier fits it, the other group's can't: keptByValue)" : "";
+  return `joined: ${j.by}, ${rule}: ${s(j.elapsed)} s after ${from}${j.due !== undefined ? `, its slot's frame at ${s(j.due)} s` : ""}${value}`;
 }
 
 /** A cast's choice (LoggedCast.chosen) in words: the rule, what decided it and the candidates. */

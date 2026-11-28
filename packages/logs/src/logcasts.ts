@@ -501,6 +501,8 @@ interface Group {
   readonly scales: ReadonlyMap<KitHit, number>;
   /** The multipliers a hit whose value expression reads its event's count takes (nominalScales), where it has no single one. */
   readonly ranges: ReadonlyMap<KitHit, readonly number[]>;
+  /** The least and greatest multiplier of a hit whose value reads the consumed infliction stacks (multiplierBounds), where it has neither of the above. */
+  readonly bounds: ReadonlyMap<KitHit, readonly [number, number]>;
   /** A skill group's SkillData timing (its paths' starts and ends tag its slots: Slot.path); absent for a trigger's. */
   readonly timing?: SkillTiming | null;
 }
@@ -644,6 +646,13 @@ export interface PlacedJoin {
   readonly by: "span" | "to come" | "paced" | "same ultimate" | "delayed" | "reach";
   readonly elapsed: number;
   readonly due?: number;
+  /**
+   * Kept on its cast though a newer cast of its operator's had started (placeWith's `superseded`), by its value
+   * (keptByValue): its cast's next slot's multiplier fits it, and no slot of the group the key's choice would open a
+   * cast of can (8f3215963333 36.11 s: Rossi's combo 2 hit_2 against a combo 3 perfect strike, ×5.7–19 its value).
+   * split:value-bounds
+   */
+  readonly value?: true;
 }
 
 /**
@@ -698,10 +707,18 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
     }
     return out;
   };
+  const bounds = (skillId: string, hits: readonly KitHit[]) => {
+    const out = new Map<KitHit, readonly [number, number]>();
+    for (const h of hits) {
+      const v = multiplierBounds(data, build, panel, skillId, h);
+      if (v !== null) out.set(h, v);
+    }
+    return out;
+  };
   return [
     ...kit.skills.map((s): Group => {
       const hits = s.hits.filter(available(s.skillId));
-      return { id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits, scales: scales(s.skillId, hits), ranges: ranges(s.skillId, hits), timing: data.skills[s.skillId]?.timing ?? null };
+      return { id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits, scales: scales(s.skillId, hits), ranges: ranges(s.skillId, hits), bounds: bounds(s.skillId, hits), timing: data.skills[s.skillId]?.timing ?? null };
     }),
     ...kit.triggers.flatMap((t): Group[] => {
       const skillId = triggerSkillId(kit.operator, t);
@@ -710,7 +727,7 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
       const anchor = t.on.event === "cast" && t.on.skills?.length ? { skills: t.on.skills, delay: t.delay ?? 0 } : null;
       const fired = t.on.event === "hit" && t.on.decorations?.length ? decoratedHits(data, fx, t.on.decorations, t.by === "self" ? build.operator : null) : t.on.event === "physicalStatus" ? statusHits(fx, t.on.statuses, t.by, build.operator) : undefined;
       const firedAt = fired?.map((h) => h.t + msOf(t.delay ?? 0));
-      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits, scales: scales(skillId, hits), ranges: ranges(skillId, hits) }];
+      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits, scales: scales(skillId, hits), ranges: ranges(skillId, hits), bounds: bounds(skillId, hits) }];
     }),
   ];
 }
@@ -1176,6 +1193,47 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const candidates = groupsWith(h.event, h.t);
         if (candidates.length === 0) continue;
         if (!starts && candidates.length > 1) continue; // the first pass places only keys of one group
+        const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
+        // A cast with a landing of a later frame logged already, a delayed one (a burst after its arrow), isn't joined
+        // by a landing of an earlier frame: that landing is a later cast's (fc63a2001251 87–97 s: each of Typhoeus's
+        // bursts opened a cast that the next shot's arrow joined, a shot late; tried 2026-11-18 without the off-field
+        // rule, when bdf2 and 00ae lost a shot to it).
+        const landedLater = (c: LoggedCast, frame: number) => [...placed].some(([x, p]) => p.cast === c && x.t < h.t && p.frame !== undefined && p.frame > frame && p.hits.some((k) => k.enemyDelay !== undefined));
+        // A trigger on casts fires once per cast: no new cast of its group once one was placed since the anchor before
+        // the latest one it could be (a cast of the skills it fires on, plus its delay, placed up to the skill's duration
+        // after where this cast would start: an ultimate's casts placed from its keys merge within it), while another
+        // candidate is left (Liino's ultimate's first beat, trigger ult_song at frame 77, and her song's later beats,
+        // cosmovoice_beat's ticks: each later beat made an ult_song of its own, so no tick was pinned to its logged beat;
+        // a7a7a40c97ed's first beat at 45.64 s comes 3.1 s before the projectiles its ultimate is placed from,
+        // 984748cfa662's at 129.37 s 2.0 s before, and each is still that ultimate's).
+        const anchorFree = (g: Group) => {
+          if (!g.anchor || !starts) return true;
+          const a = g.anchor;
+          const start = h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
+          const reach = (s: string) => Math.max(ANCHOR_MS, msOf(data.skills[s]?.timing?.durationFrames ?? 0));
+          const refs = a.skills.flatMap((s) => (starts.get(s) ?? []).map((t) => ({ at: t + msOf(a.delay), reach: reach(s) }))).filter((r) => r.at <= start + r.reach).sort((x, y) => x.at - y.at);
+          if (refs.length === 0) return true;
+          // One cast placed from several keys is one anchor (4bfc6f3e84b8: Liino's ultimate at 52.70, 52.84 and 55.40 s).
+          const anchors: { first: number; last: number; reach: number }[] = [];
+          for (const r of refs) {
+            const cur = anchors.at(-1);
+            if (cur && r.at - cur.last <= cur.reach) cur.last = r.at;
+            else anchors.push({ first: r.at, last: r.at, reach: r.reach });
+          }
+          const prev = anchors.at(-2);
+          const since = prev ? prev.last + prev.reach : -Infinity;
+          return !(opened.get(g.id) ?? []).some((c) => c.start > since);
+        };
+        // The cast this landing would open (or the delayed cast it would join) where the rules below leave it to a new
+        // cast; the value rule asks it first (keptByValue), so it is worked out once, when first asked.
+        let opening: { readonly late: ReturnType<typeof joinDelayed>; readonly choice: ReturnType<typeof choose> | null } | undefined;
+        const openChoice = () => {
+          if (opening) return opening;
+          const late = joinDelayed(candidates, h, slots, opened, stops, free);
+          const eligible = candidates.filter(anchorFree);
+          opening = { late, choice: late ? null : choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops, (id) => (basicSkills.has(id) ? data.skills[id]?.timing : undefined)) };
+          return opening;
+        };
         const cur = current.get(h.event);
         // The same cast while within its landings' span, or while it has landings to come within the skill's whole action
         // (a landing after a wait: Rossi's Lift 2.2 s after her charge, where the logged span is 0.6 s).
@@ -1198,6 +1256,16 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const overdue = next !== undefined && head !== undefined && elapsed > msOf(next.frame - head.frame) + CAST_SLACK_MS;
         const rekeyed = onItsWay && overdue && [...opened.values()].flat().some((c) => since(c) && candidates.some((g) => g.id === c.group));
         const superseded = rekeyed || (cur !== undefined && next !== undefined && !onTime && !onItsWay && [...opened.values()].flat().some(since));
+        // Unless its value says it is the cast's next landing and can't be the cast its key's choice would open: the next
+        // slot's multiplier fits it against the cast's last landing, no slot of the chosen other group's can (its nominal
+        // scale, its range over event counts, or a consumed-scaled hit's bounds: multiplierBounds). 8f3215963333 36.11 s:
+        // Rossi's combo 2 hit_2 (12,877, hit 1's value at 35.51 s, both ×0.60), 0.23 s past its frame after an attack 3
+        // placed at 35.38 s, was opened as a combo 3 perfect strike (×3.45–11.73), its Lift 2.4 s before the log's, ahead of
+        // the Endministrator's 38.39 s combo crystals: no 38.50 s shatter. split:value-bounds
+        const valueKept = superseded && !rekeyed && starts !== null && cur !== undefined && next !== undefined && keptByValue(cur, h, critFactor, (c) => groups.find((x) => x.id === c.group), () => {
+          const o = openChoice();
+          return o.late || !o.choice ? null : { g: o.choice.g, slots: slots(o.choice.g, h.event) };
+        });
         // Not where every landing still to come is an ability entity's (onEntityClock): the entity's timeline runs on at
         // its own frames, which no jump or wait of the cast moves, so its landings are due within the slots' span (the
         // world's time: every stop but the cast's own holds them). f8793bc8aea2 94.71 s: Laevatain's Magma Fragment
@@ -1288,49 +1356,16 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // 0.34 s after the 17th, was placed as a combo of its own, whose hovering conversion gave three Hunting Arrows).
         const atSlot = cur?.slots?.[cur.index];
         const paced = cur !== undefined && next !== undefined && atSlot !== undefined && next.hits.every((x) => x.detached) && worldMs(cur.last.t, h.t, others) <= msOf(next.frame - atSlot.frame) + ON_TIME_MS;
-        if (cur && !used && (sameUltimate || (!superseded && !pressed && !pastChannel && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) { // split:channel-end
+        if (cur && !used && (sameUltimate || ((!superseded || valueKept) && !pressed && !pastChannel && (elapsed <= cur.span + CAST_SLACK_MS || toCome || paced)))) { // split:channel-end
           cur.index++;
           cur.last = h;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;
-          const joined: PlacedJoin = { by: sameUltimate ? "same ultimate" : elapsed <= cur.span + CAST_SLACK_MS ? "span" : toCome ? "to come" : "paced", elapsed, ...(slot && head ? { due: msOf(slot.frame - head.frame) } : {}) };
+          const joined: PlacedJoin = { by: sameUltimate ? "same ultimate" : elapsed <= cur.span + CAST_SLACK_MS ? "span" : toCome ? "to come" : "paced", elapsed, ...(slot && head ? { due: msOf(slot.frame - head.frame) } : {}), ...(valueKept && !sameUltimate ? { value: true as const } : {}) }; // split:value-bounds
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), joined });
           continue;
         }
-        const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
-        // A cast with a landing of a later frame logged already, a delayed one (a burst after its arrow), isn't joined
-        // by a landing of an earlier frame: that landing is a later cast's (fc63a2001251 87–97 s: each of Typhoeus's
-        // bursts opened a cast that the next shot's arrow joined, a shot late; tried 2026-11-18 without the off-field
-        // rule, when bdf2 and 00ae lost a shot to it).
-        const landedLater = (c: LoggedCast, frame: number) => [...placed].some(([x, p]) => p.cast === c && x.t < h.t && p.frame !== undefined && p.frame > frame && p.hits.some((k) => k.enemyDelay !== undefined));
-        const late = joinDelayed(candidates, h, slots, opened, stops, free);
-        // A trigger on casts fires once per cast: no new cast of its group once one was placed since the anchor before
-        // the latest one it could be (a cast of the skills it fires on, plus its delay, placed up to the skill's duration
-        // after where this cast would start: an ultimate's casts placed from its keys merge within it), while another
-        // candidate is left (Liino's ultimate's first beat, trigger ult_song at frame 77, and her song's later beats,
-        // cosmovoice_beat's ticks: each later beat made an ult_song of its own, so no tick was pinned to its logged beat;
-        // a7a7a40c97ed's first beat at 45.64 s comes 3.1 s before the projectiles its ultimate is placed from,
-        // 984748cfa662's at 129.37 s 2.0 s before, and each is still that ultimate's).
-        const anchorFree = (g: Group) => {
-          if (!g.anchor || !starts) return true;
-          const a = g.anchor;
-          const start = h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
-          const reach = (s: string) => Math.max(ANCHOR_MS, msOf(data.skills[s]?.timing?.durationFrames ?? 0));
-          const refs = a.skills.flatMap((s) => (starts.get(s) ?? []).map((t) => ({ at: t + msOf(a.delay), reach: reach(s) }))).filter((r) => r.at <= start + r.reach).sort((x, y) => x.at - y.at);
-          if (refs.length === 0) return true;
-          // One cast placed from several keys is one anchor (4bfc6f3e84b8: Liino's ultimate at 52.70, 52.84 and 55.40 s).
-          const anchors: { first: number; last: number; reach: number }[] = [];
-          for (const r of refs) {
-            const cur = anchors.at(-1);
-            if (cur && r.at - cur.last <= cur.reach) cur.last = r.at;
-            else anchors.push({ first: r.at, last: r.at, reach: r.reach });
-          }
-          const prev = anchors.at(-2);
-          const since = prev ? prev.last + prev.reach : -Infinity;
-          return !(opened.get(g.id) ?? []).some((c) => c.start > since);
-        };
-        const eligible = candidates.filter(anchorFree);
-        const choice = late ? null : choose(eligible.length ? eligible : candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops, (id) => (basicSkills.has(id) ? data.skills[id]?.timing : undefined));
+        const { late, choice } = openChoice();
         const g: Group = late?.g ?? (choice as { g: Group }).g;
         const chosen: CastChoice | null = candidates.length < 2 ? null : late ? { rule: "late", candidates: candidates.map((x) => x.id) } : (choice as { why: CastChoice }).why;
         const s = slots(g, h.event);
@@ -1536,14 +1571,63 @@ function nextDiffers(cur: { readonly index: number; readonly slots: readonly Slo
   return !ys.some((y) => xs.some((x) => Math.abs(Math.log(y / x)) <= tolerance));
 }
 
+/** A logged hit's value with its crit taken out: one reading, or two for a hit of unknown crit (a crit's and a non-crit's). */
+function critFree(h: LogHit, critFactor: number): number[] {
+  const v = h.uncapped ?? h.value;
+  return h.crit === true ? [v / critFactor] : h.crit === false ? [v] : [v, v / critFactor];
+}
+
 /** Whether two logged hits' values are within SAME_VALUE_TOLERANCE of each other with their crits taken out (a hit of unknown crit either way). */
 function alikeValue(a: LogHit, b: LogHit, critFactor: number): boolean {
-  const norms = (h: LogHit) => {
-    const v = h.uncapped ?? h.value;
-    return h.crit === true ? [v / critFactor] : h.crit === false ? [v] : [v, v / critFactor];
-  };
   const tolerance = Math.log(SAME_VALUE_TOLERANCE);
-  return norms(a).some((x) => norms(b).some((y) => x > 0 && y > 0 && Math.abs(Math.log(x / y)) <= tolerance));
+  return critFree(a, critFactor).some((x) => critFree(b, critFactor).some((y) => x > 0 && y > 0 && Math.abs(Math.log(x / y)) <= tolerance));
+}
+
+/**
+ * A kit hit's multipliers in its group as intervals: its nominal scale (one point), its value expression's over event
+ * counts (points: nominalScales), or a consumed-scaled hit's least and greatest (multiplierBounds); undefined: unknown.
+ */
+function multipliersOf(g: Pick<Group, "scales" | "ranges" | "bounds">, k: KitHit): readonly (readonly [number, number])[] | undefined {
+  const one = g.scales.get(k);
+  if (one !== undefined) return [[one, one]];
+  const some = g.ranges.get(k);
+  if (some) return some.map((v) => [v, v] as const);
+  const b = g.bounds.get(k);
+  return b ? [b] : undefined;
+}
+
+/**
+ * Whether a landing `h` a newer cast of its operator's would take off its open cast `cur` (placeWith's `superseded`)
+ * stays on it by its value: against the cast's last landing (crits taken out: critFree), its value fits the next slot's
+ * multiplier within VALUE_TOLERANCE (the buffs that change within a cast) by the current slot's, and lies outside every
+ * slot of the key in the group the placement would open instead (`other`: not the cast's own, whose new cast the
+ * value can't tell from this one), each widened by VALUE_TOLERANCE either way. The current and next slots need one
+ * multiplier per hit (a point); every slot of the other group a known one (multipliersOf). split:value-bounds
+ */
+function keptByValue(
+  cur: { readonly cast: LoggedCast; readonly last: LogHit; readonly index: number; readonly slots: readonly Slot[] | null },
+  h: LogHit,
+  critFactor: number,
+  groupOf: (c: LoggedCast) => Group | undefined,
+  other: () => { readonly g: Group; readonly slots: readonly Slot[] | null } | null,
+): boolean {
+  const own = groupOf(cur.cast);
+  const here = cur.slots?.[cur.index];
+  const next = cur.slots?.[cur.index + 1];
+  if (!own || !here || !next) return false;
+  const points = (s: Slot) => s.hits.map((k) => multipliersOf(own, k));
+  const [a, b] = [points(here), points(next)];
+  if ([...a, ...b].some((m) => m === undefined || m.some(([lo, hi]) => lo !== hi))) return false;
+  const [xs, ys] = [(a as (readonly (readonly [number, number])[])[]).flat().map(([v]) => v), (b as (readonly (readonly [number, number])[])[]).flat().map(([v]) => v)];
+  const rs = critFree(h, critFactor).flatMap((v) => critFree(cur.last, critFactor).map((w) => v / w)).filter((r) => Number.isFinite(r) && r > 0);
+  const tolerance = Math.log(VALUE_TOLERANCE);
+  if (!rs.some((r) => xs.some((x) => ys.some((y) => Math.abs(Math.log((r * x) / y)) <= tolerance)))) return false;
+  const o = other();
+  if (!o || o.g.id === own.id || !o.slots?.length) return false;
+  const theirs = o.slots.flatMap((s) => s.hits.map((k) => multipliersOf(o.g, k)));
+  if (theirs.some((m) => m === undefined)) return false;
+  const intervals = (theirs as (readonly (readonly [number, number])[])[]).flat();
+  return rs.every((r) => xs.every((x) => intervals.every(([lo, hi]) => r * x < lo / VALUE_TOLERANCE || r * x > hi * VALUE_TOLERANCE)));
 }
 
 /** How much better (ms, summed over the landings) a realigned ultimate's slots must fit than the turn order (realignUltimates). */
