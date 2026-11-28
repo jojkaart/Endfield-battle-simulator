@@ -17,7 +17,9 @@ import { engineReading } from "../assumptions.ts";
 
 /** SP at a later frame, with regeneration (whole frames, no fractions lost): from the state's frame, after its pause, outside its stops. */
 export function spAt(state: TimelineState, frame: number): number {
-  // On raw time, through time stops and slow-downs (rules.ts SP).
+  // On raw time, through time stops and slow-downs (rules.ts SP). Engine assumption sp-regen `ticks`: the ticks after
+  // the state's frame, up to `frame`, each SP.perSecond × spTick / FPS.
+  if (state.spTick) return Math.min(SP.max, state.sp + Math.max(0, regenTicks(state, frame) - regenTicks(state, state.frame)) * spPerTick(state.spTick));
   const v = Math.min(SP.max, state.sp + (Math.max(0, frame - Math.max(state.frame, state.spPausedUntil)) * SP.perSecond) / FPS);
   // A level a whole number of regeneration steps from a whole one (every level, when grants are whole) is snapped to
   // the step's grid: then SP is the same however the frames were advanced, one by one or at once (2/15 a frame added
@@ -36,6 +38,28 @@ function gcd(a: number, b: number): number {
 /** The frame by which SP has regenerated for `frames` frames from `from` (no earlier than the pause after a spend). */
 export function afterRegen(state: TimelineState, from: number, frames: number): number {
   return Math.max(from, state.spPausedUntil) + frames;
+}
+
+/** SP a regeneration tick gives (engine assumption sp-regen `ticks`): SP.perSecond over `tick` frames. */
+const spPerTick = (tick: number) => (SP.perSecond * tick) / FPS;
+
+/** How many regeneration ticks (sp-regen `ticks`) come by `frame`: at spPausedUntil and every spTick frames after it. */
+function regenTicks(state: TimelineState, frame: number): number {
+  const tick = state.spTick as number;
+  return frame < state.spPausedUntil ? 0 : Math.floor((frame - state.spPausedUntil) / tick) + 1;
+}
+
+/**
+ * The first frame from `from` on by which the team's SP has regenerated to `level` (no spend or grant between), or
+ * Infinity past the maximum: after the pause, linearly (sp-regen `pause`), or at the tick that reaches it (`ticks`).
+ */
+export function spReachedAt(state: TimelineState, from: number, level: number): number {
+  const now = spAt(state, from);
+  if (now >= level) return from;
+  if (level > SP.max) return Infinity;
+  if (!state.spTick) return Math.max(from, state.spPausedUntil) + Math.ceil(((level - now) * FPS) / SP.perSecond);
+  const need = regenTicks(state, from) + Math.ceil((level - now) / spPerTick(state.spTick) - 1e-9);
+  return state.spPausedUntil + (need - 1) * state.spTick;
 }
 
 /**

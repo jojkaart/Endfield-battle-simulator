@@ -127,6 +127,26 @@ export const SIMULATION_ASSUMPTIONS: readonly EngineAssumption[] = [
     },
   },
   {
+    id: "sp-regen",
+    test: "102",
+    question: "How does team SP regenerate around a spend (the native settings' atbRecoverInterval 0.5 s; 666bj's test: SP rises again 0.5 s after a battle skill; timeline/resources.ts spAt)?",
+    default: "pause",
+    readings: {
+      ticks: "4 SP every 0.5 s (the interval as the regeneration's tick), its timer starting over at each spend: the first 4 SP come 0.5 s after it, so a spend costs no regeneration",
+      pause: "continuously at 8 SP a second, paused for 0.5 s after each spend (the interval as a pause: 4 SP lost per spend; the engine since 2026-11-12)",
+    },
+  },
+  {
+    id: "sp-start",
+    test: "102",
+    question: "How much team SP does a fight start with (timeline/drivers.ts initialState)?",
+    default: "200",
+    readings: {
+      "200": "200 of 300 (the native settings, as Endaxis's notes read them)",
+      full: "300: full (the SP bar carried in full from before the fight, or a start the native settings don't give)",
+    },
+  },
+  {
     id: "break-hold",
     question: "How long does a Stagger break hold every clock (timeline/clock.ts breakHold)?",
     default: BREAK_HOLD_READING,
