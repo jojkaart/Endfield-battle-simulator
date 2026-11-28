@@ -578,7 +578,7 @@ there: the mean of crit-triggered teams from one deterministic battle
 with those buffs at their expected state (so the search ranks by it
 and stays one battle), then `--percentile` from the distribution.
 
-**The owner's team's logs** (2026-11-28, docs/journal/2026-11-28-02-estella-and-akekuri-logs-four-imports-a-stage-variant-s-rank.md):
+**The owner's team's logs** (2026-11-28, docs/journal/2026-11-28-03-estella-and-akekuri-logs-four-imports-a-stage-variant-s-rank.md):
 ZMDLogs lists every battle with an operator in its profile (Estella 45, Akekuri 75, most before game 1.6); four
 imported (8f32 Estella on Valiant, 1a77 and 8056 Akekuri with Si P0, f574 Akekuri on Hard 33's slugs). Estella 5 → 6
 fights, Akekuri 2 → 5; no fight yet with Estella and Akekuri together on 1.6 tables, nor Estella on JET (one on Tower

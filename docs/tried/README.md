@@ -98,4 +98,4 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
   (views.ts was another agent's file in round 22).
 - [2026-11-28-barrage-array-channel-end.diff](2026-11-28-barrage-array-channel-end.diff): Typhoeus's Barrage Array
   with the data's channel end (frame 215): its 18 ticks run past it in the logs; 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%,
-  hold-out plain −6.
+  hold-out plain −6. Superseded 2026-11-28: the end on the array's world clock.

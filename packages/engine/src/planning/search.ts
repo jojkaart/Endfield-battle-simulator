@@ -633,6 +633,7 @@ const HEADER_KEY = {
   frame: true,
   clock: "follows from the operator, the cast or the kind (the enemy's for bursts and enemy actions)",
   cast: castRef, detached: true, launchAt: true, pinned: true, loggedMs: true, loggedOrder: true,
+  worldFromLaunch: "follows from the hit (KitHit.world with KitHit.launch), which skillId and hitId name",
 } as const;
 
 /** An event with a cast index in it (hit, status and cast events), from the end of the cast list. */

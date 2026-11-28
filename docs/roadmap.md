@@ -28,8 +28,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   2026-11-28: the check's targets on 7b54 and a freeze per target, the
   ids mapped, a third replay, 7b54 |damage error| 4.0 → 2.8%, next a freeze
   on a twin's other target; `needed` on the check's pairing and a channel
-  inside a detached file, next Typhoeus's Barrage Array past its entity's
-  end); declined for
+  inside a detached file; Typhoeus's Barrage Array on the world's clock
+  from its launch, its end the data's: no verdict moved, next the arrays'
+  0.4 s left in dbae and 00ae); declined for
   blindness: a hold-out's change split by cast kind) joins the next round
   once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search

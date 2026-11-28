@@ -182,7 +182,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const turned = new Map<PendingHit, number>();
     const pastChannel = new Set<PendingHit>();
     for (const k of skill.hits) {
-      if (k.latestFrame === undefined) continue;
+      // Not a channel on the world's clock (KitHit.world: an ability entity's): the stops and holds to come move its
+      // unpinned ticks as they come, and a pinned tick's lateness already has them in it (Typhoeus's Barrage Array,
+      // 18 ticks over 5.7–9.8 s of log time); at its kit end its last ticks would go.
+      if (k.latestFrame === undefined || k.world) continue;
       let late = 0;
       for (const h of own.get(k.id) ?? []) {
         const m = moved.get(h);
