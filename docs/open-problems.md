@@ -66,6 +66,36 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Combo windows: INSIDE flags where the replay's window is shut at the press (2026-11-28)
+
+The development logs' 18 INSIDE lines held by the cast's combo window (`zmdlogs decisions --all`, at 967d460; the
+line now names the window's last opening, the skill's last cast, its latest recorded trigger, the cooldown that kept
+one shut, and a start inside the combo's own slow-down: timing.ts startGateWords). Three causes:
+
+- **Fixed: Typhoeus's Signs at a Nature burst's damage (5)** — her Sign listener runs when the burst's buff is added
+  (one triggerInterval before its damage): engine event `burstApplied`, kit trigger `applied`
+  (docs/journal/2026-11-28-10-combo-windows-typhoeus-s-signs-at-a-burst-s-application.md). 0eef 6.77, bdf2 11.00, 1d91 8.63, d9e5 11.17, af7b 68.97 s.
+- **The opener logged inside the combo's own slow-down (12; a placement lead):** 4e5e 28.73 (Gilberta, 2 frames),
+  00ae 100.57 (Arcane, 4), 7b54 42.17 (Arcane, 8), 8056 112.70 (Laevatain, 17), 8f32 82.90, d572 35.90 and 101.73
+  (Rossi, 13 each), 9847 141.07 (Perlica, 15), a9d7 38.20 (Chen Qianyu, 9), a9d7 212.43, c4f3 41.13, 117.60
+  (Estella, 10, 11, 9). Each window opens 2–17 frames after the press, inside the combo's slow-down from its frame 0
+  (18–25 frames at 0.01): 0.05–1.6 frames of the world's time (`zmdlogs worldtime`). The opener is the kit trigger's
+  own event (an infliction, a reaction, a final strike, Vulnerable), pinned at its logged ms, mostly a ms the combo's
+  own first hit or cast event shares (8f32 83.34, d572 36.34 and 102.15, 00ae 100.71, 9847 141.58, 8056 113.31):
+  the log flushed it there. **Ruled out:** a trigger read from the wrong event (each is the CharGrowthTable's);
+  the cooldown (ready before every press). **Still possible:** the landing came before the press and the log batched
+  it (a pinned landing logged inside another cast's slow-down placed at or before that cast's start: the placement's
+  rule, packages/logs logcasts.ts); the game taking the press on the frame its window opens, with the slow-down's
+  first world frame after the opener. Either way the replay makes the cast as logged; only the flag and the window's
+  facts at the cast (its count, its source) are at stake.
+- **3f78 19.30 s, Arcane (64 frames):** her combo 17.17 s after the one at 2.14 s, against an 18 s cooldown (level 12,
+  P0, no reduction in the team: Si's Proxy's Patronage goes to team slot 0, Si herself); Gilberta's ultimate's Nature
+  infliction at 19.17 s came while it ran (ready at 20.13 s), so the window waited for Rossi's Combustion at 21.43 s.
+  **Still possible:** a cooldown reduction the kit lacks (4d60, 8915, c779 have P0 gaps of 14.1–16.9 s the replay
+  allows, which a probe of the replay's reductions should explain first); the placement of either combo (the second's
+  touch at a 5-hit batched ms inside Rossi's ultimate, its cast event 0.15 s *before* the placed start where combos
+  lag 0.3–0.7 s).
+
 ## The hold at a Stagger break (2026-11-27)
 
 **Shows** (scripts/probes/stagger/break-hold.ts, on the code before the fix): across a logged break (a bar-0 hit

@@ -1,0 +1,69 @@
+# Combo windows: INSIDE flags where the replay's window is shut at the press (2026-11-28)
+
+Task: the 18 combo-window INSIDE lines of `zmdlogs decisions --all` (round 23's backlog accuracy list): which trigger
+opens each window, when the log and the replay have it, group by cause, fix what the data decides. Branch
+worktree-agent-aae9ee5eca9001663, from main at 967d460.
+
+## 1. No view says what opened a combo window, when, or why it stayed shut
+
+- **What happened:** for each of the 18 lines I had to piece the opener together from three views: `zmdlogs replay
+  --from --to` (the landings around the press), `zmdlogs statuses --inflictions` (the infliction that fired the
+  trigger) and `replay --trace-trigger owner:id` (only when I knew the kit's trigger id, from `jq` over the kit
+  file). That took about an hour for 18 lines; the cooldown case (3f78 19.30 s) needed a scratch script to read the
+  combo's cooldown from `data.skills[id].levels`, since nothing prints it. The INSIDE line said only "its combo
+  window, shut until then".
+- **Cause:** the replay keeps the window (`TimelineState.comboWindow`) and its latest trigger (`comboTrigger`) in
+  the state, but no view prints them; the trigger trace is per trigger id, not per window, and the cooldown that
+  keeps a window shut (actions.ts openCombo's `break`) leaves no record.
+- **Suggestion:** done in part: startGateWords now names the window's last opening, the skill's last cast, the
+  latest recorded trigger and the cooldown that kept it shut, and a start inside the combo's own slow-down. Still
+  worth a `zmdlogs replay <fixture> --windows <operator>`: one line per openCombo firing of the operator's triggers
+  (opened, refreshed, kept shut by the cooldown with its ready frame, the event and its source), each window's close
+  (expiry, cast, its buff's end).
+- **Files:** packages/engine/src/timeline/actions.ts (a record of each openCombo outcome, as a statistic),
+  packages/logs/src/views.ts, packages/cli/src/commands/zmdlogs.ts.
+- **Why it helps:** a combo-window question becomes one command instead of three views and a kit read.
+
+## 2. `efsim kit` doesn't print a skill's cooldown
+
+- **What happened:** to test whether 3f78's Arcane combo (17.17 s after the last) beat its cooldown I wrote
+  scratch/cd.ts to read `levels[].coolDown`, then a second script for every log's combo gaps against it.
+- **Cause:** the kit view prints timing (duration, uncuttable frames, windows, slow-downs), not costs; skillCosts
+  (timeline/context.ts) computes cooldown and SP cost per build only inside a run.
+- **Suggestion:** `efsim kit <operator>` prints each skill's cooldown and SP cost at level 12 (and per level with
+  `--levels`), and the cooldown-changing triggers (kind `cooldown`) under it.
+- **Files:** packages/cli/src/commands/kit.ts, packages/engine/src/timeline/context.ts.
+- **Why it helps:** cooldown questions (a combo pressed early, a window kept shut) start from the number.
+
+## 3. The INSIDE flag counts a world-time-simultaneous opener as a wrong replay
+
+- **What happened:** 12 of the 18 lines are an opener logged 2–17 frames into the combo's own slow-down (0.05–1.6
+  frames of the world's time), at a ms the combo's own first hit or cast event shares: the log batched it. The flag
+  says "the replay's state may be wrong from each on" for all of them, so the 72 INSIDE lines overstate the replay's
+  disagreements; the backlog's "the flag's kind could tell them apart" was right.
+- **Cause:** castFlag (replayrun.ts) compares raw frames; a pinned landing sits at its logged (flushed) ms.
+- **Suggestion:** give the flag a kind for this case (`inside` with `within its own slow-down`, counted apart in the
+  decisions summary), or have the placement move a pinned landing logged inside another cast's slow-down, at that
+  cast's first logged ms, to the cast's start (the lead in docs/open-problems.md "Combo windows").
+- **Files:** packages/logs/src/replayrun.ts castFlag, packages/logs/src/decisionsview.ts (the counts), or
+  packages/logs/src/logcasts.ts for the placement rule.
+- **Why it helps:** the INSIDE count then measures real disagreements.
+
+## 4. `.ignore` doesn't keep `rg -l <word> tests` off the hold-out snapshot
+
+- **What happened:** `rg -l "typhoea" tests packages/*/test` listed tests/snapshots/log-verdicts-holdout.json among
+  the matches (its name only; I didn't open it). `rg -l typhoea tests/snapshots` does skip it, so the `.ignore`
+  pattern `tests/snapshots/log-verdicts-holdout.json` only works for some search roots.
+- **Cause:** an unanchored pattern with a slash in `.ignore` matches relative to the `.ignore` file's directory, but
+  ripgrep 14.1 apparently didn't apply it when the search root was `tests` from the worktree.
+- **Suggestion:** write it as `**/log-verdicts-holdout.json` (and `**/fixtures/holdout/`), and add a test that runs
+  `rg -l <a word every snapshot has> tests` and expects no hold-out path (a count only).
+- **Files:** .ignore, tests/holdout-blindness.test.ts.
+- **Why it helps:** the blindness rule holds for the searches agents actually type.
+
+## What worked well
+
+- `zmdlogs decisions --all` with round 23's gate words found the 18 at once; `zmdlogs worldtime` settled the
+  slow-down cases in one line each; `gamedata tree` / `who` led straight from the kit's note to the listener's
+  abilityEvent 9 and the burst buffs' tags.
+- `node scripts/verify-at.ts <base> --test` confirmed the new test fails before the change in seconds.
