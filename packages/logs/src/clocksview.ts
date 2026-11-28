@@ -28,7 +28,7 @@
 
 import { FPS, type ArtsElement, type GameData } from "@efsim/engine";
 import { burstRows } from "./burstsview.ts";
-import { breakStops, tickChains } from "./holds.ts";
+import { breakStops, loggedBreaks, tickChains } from "./holds.ts";
 import { placeHits, worldMs, type LoggedCast } from "./logcasts.ts";
 import { loggedStaggerSpans, replayTimeStops, type ReplayTimeStop } from "./query.ts";
 import type { LogFixture } from "./zmdlogs.ts";
@@ -179,6 +179,88 @@ function summaryLine(label: string, rows: readonly PaceRow[]): string {
   const res = kept.reduce((x, r) => x + r.residual, 0);
   const out = rows.length - kept.length;
   return `  ${label.padEnd(34)} ${String(rows.length).padStart(5)} rows  residual median ${median(rows.map((r) => r.residual)).toFixed(0).padStart(5)} ms  held median ${median(rows.map(total)).toFixed(0).padStart(5)} ms  Σ residual ${s(res)} s${held > 0 ? ` = ${(res / held).toFixed(2)} × Σ held ${s(held)} s` : ""}${out ? ` (${out} row(s) off by ${PACE_TRIM_MS / 1000} s or more not summed)` : ""}`;
+}
+
+/** How far before and after a break `clocks --around break` looks for a clock's pair spanning it (ms). */
+const AROUND_BEFORE_MS = 2500;
+const AROUND_AFTER_MS = 1500;
+
+/** One clock's pair spanning a logged break (`zmdlogs clocks --around break`). */
+export interface BreakPair {
+  readonly log: string;
+  readonly break: number;
+  readonly kind: "cast" | "tick";
+  readonly what: string;
+  /** The breaker's own cast (the hit that emptied the bar is one of its operator's). */
+  readonly breaker: boolean;
+  readonly a: number;
+  readonly b: number;
+  /** Its world time less its expected time, under the replay's stops alone, and with the engine's break holds too. */
+  readonly residual: number;
+  readonly withHolds: number;
+}
+
+/**
+ * `zmdlogs clocks --around break`: per logged Stagger break (holds.ts loggedBreaks), each clock's pair spanning it,
+ * with no Stagger cut (the tick chains of `clocks` stop at the log's Stagger's edges, so none spans a break): each
+ * placed cast's last landing before it (within 2.5 s) and first after it (within 1.5 s), outside the other
+ * operators' stops, and each tick series' pair; the residual under the replay's casts' stops and with the engine's
+ * break holds (breakStops) too. The rows scripts/probes/stagger/break-hold.ts printed, as a view (round 23, the
+ * backlog after round 22's point 1).
+ */
+export function breakPairs(data: GameData, log: { readonly short: string; readonly fx: LogFixture }, assume?: Readonly<Record<string, string>>): BreakPair[] {
+  const { short, fx } = log;
+  const placement = placeHits(data, fx);
+  const stops = replayTimeStops(data, fx, placement);
+  const holds = breakStops(fx, stops, assume).map((st) => ({ ...st, placed: true }));
+  const out: BreakPair[] = [];
+  const straddles = (list: readonly ReplayTimeStop[], a: number, b: number) => {
+    const [fa, fb] = [frameOf(a), frameOf(b)];
+    return list.some((st) => st.scales.some((x) => x < 1) && st.start < fb && st.start + st.scales.length > fa && (st.start < fa || st.start + st.scales.length > fb));
+  };
+  const byCast = new Map<LoggedCast, { t: number; frame: number }[]>();
+  for (const [h, p] of placement.hits) if (p.frame !== undefined && p.cast.kind !== null) byCast.set(p.cast, [...(byCast.get(p.cast) ?? []), { t: h.t, frame: p.frame }]);
+  const breakerOf = (t: number) => fx.hits.find((h) => h.t === t && h.poise?.bar === 0)?.operator;
+  for (const at of loggedBreaks(fx)) {
+    const breaker = breakerOf(at);
+    for (const [c, list] of byCast) {
+      const others = stops.filter((st) => st.operator !== c.operator);
+      const inStop = (t: number) => others.some((st) => frameOf(t) >= st.start - 2 && frameOf(t) < st.start + st.scales.length + 2);
+      const ok = list.filter((x) => !inStop(x.t)).sort((x, y) => x.t - y.t);
+      const last = ok.filter((x) => x.t <= at && x.t >= at - AROUND_BEFORE_MS).at(-1);
+      const next = ok.find((x) => x.t > at && x.t <= at + AROUND_AFTER_MS);
+      if (!last || !next || next.frame <= last.frame || straddles(others, last.t, next.t)) continue;
+      const expected = msOf(next.frame - last.frame);
+      out.push({ log: short, break: at, kind: "cast", what: `${operatorLabel(data, c.operator)} ${c.skillId.replace(/^chr_\d+_[a-z0-9]+_/, "")}`, breaker: c.operator === breaker, a: last.t, b: next.t, residual: worldMs(last.t, next.t, others) - expected, withHolds: worldMs(last.t, next.t, [...others, ...holds]) - expected });
+    }
+    for (const { event, operator: op, period, chains } of tickChains(fx)) {
+      const ts = chains.flat().sort((x, y) => x - y);
+      const i = ts.findIndex((t) => t > at);
+      if (i <= 0) continue;
+      const [p, n] = [ts[i - 1] as number, ts[i] as number];
+      if (n - p < 0.5 * period || n - p > period + AROUND_AFTER_MS || straddles(stops, p, n)) continue;
+      out.push({ log: short, break: at, kind: "tick", what: `${event.replace(/^buff_/, "")} by ${operatorLabel(data, op)}`, breaker: false, a: p, b: n, residual: worldMs(p, n, stops) - period, withHolds: worldMs(p, n, [...stops, ...holds]) - period });
+    }
+  }
+  return out;
+}
+
+/** `zmdlogs clocks --around break`: breakPairs over the logs, a line per pair under its break, medians per kind and role. */
+export function breakPairsView(data: GameData, logs: readonly { readonly short: string; readonly fx: LogFixture }[], opts: { readonly assume?: Readonly<Record<string, string>>; readonly progress?: (line: string) => void } = {}): string {
+  const all: BreakPair[] = [];
+  const out: string[] = [`Each clock's pair spanning a logged Stagger break (clocksview.ts breakPairs; ${logs.length} logs): a cast's last landing within ${AROUND_BEFORE_MS / 1000} s before and first within ${AROUND_AFTER_MS / 1000} s after it (outside the other operators' stops; * the breaker's), a tick series' pair; residual under the replay's casts' stops, then with the engine's break holds (break-hold) too (ms):`];
+  for (const log of logs) {
+    opts.progress?.(`clocks ${log.short}`);
+    const rows = breakPairs(data, log, opts.assume);
+    all.push(...rows);
+    for (const at of [...new Set(rows.map((r) => r.break))]) {
+      out.push(`  ${log.short} ${s(at)} s:`);
+      for (const r of rows.filter((x) => x.break === at)) out.push(`    ${r.breaker ? "*" : " "}${r.kind} ${r.what} ${s(r.a)}⇒${s(r.b)}: ${r.residual >= 0 ? "+" : ""}${r.residual.toFixed(0)} → ${r.withHolds >= 0 ? "+" : ""}${r.withHolds.toFixed(0)}`);
+    }
+  }
+  const line = (label: string, rs: readonly BreakPair[]) => (rs.length ? [`  ${label.padEnd(16)} ${String(rs.length).padStart(4)} pairs  residual median ${median(rs.map((r) => r.residual)).toFixed(0)} ms, with the holds ${median(rs.map((r) => r.withHolds)).toFixed(0)} ms`] : []);
+  out.push("", "Medians:", ...line("breaker's casts", all.filter((r) => r.kind === "cast" && r.breaker)), ...line("other casts", all.filter((r) => r.kind === "cast" && !r.breaker)), ...line("ticks", all.filter((r) => r.kind === "tick")));
+  return out.join("\n");
 }
 
 /** A least-squares fit through 0 of y on x: the coefficient and the rms of what is left; null without an x. */

@@ -16,6 +16,7 @@ import {
   burstsView,
   CLOCK_KINDS,
   clocksView,
+  breakPairsView,
   droppedView,
   type ClockKind,
   placementView,
@@ -192,6 +193,9 @@ export default command({
                 [--fit]                   Instead: per clock kind and what holds it, the residual fitted through 0
                                           per combo, per episode (overlapping combo stops one) and as a share of
                                           the held time, each with its rms: a constant or a share
+                [--around break]          Instead: per logged Stagger break, each clock's pair spanning it (a
+                                          cast's landings before and after, a tick series' pair; no Stagger cut),
+                                          its residual under the stops and with the engine's break holds too
   efsim zmdlogs placement <fixture…|--all> What the placement's passes leave: ultimates whose time stops still
                                           overlap after the in-turn rule, and the casts a third pass would move
                                           (the placement isn't a fixed point there: logcasts.ts placeHits)
@@ -548,6 +552,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     breaks: { type: "boolean", default: false },
     sp: { type: "boolean", default: false },
     fit: { type: "boolean", default: false },
+    around: { type: "string" },
   },
   run: async (ctx) => {
     const { values, args } = ctx;
@@ -668,6 +673,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const bad = kinds.filter((k) => !(CLOCK_KINDS as readonly string[]).includes(k));
       if (bad.length || !kinds.length) throw new Error(`--clock takes ${CLOCK_KINDS.join(", ")} (comma-separated)`);
       if (values.by !== undefined && values.by !== "operator" && values.by !== "kind") throw new Error("zmdlogs clocks --by takes operator (or kind, the default)");
+      if (values.around !== undefined && values.around !== "break") throw new Error("zmdlogs clocks --around takes break");
+      if (values.around === "break") return breakPairsView(data(), devFixtures(named.length ? { ids: named } : {}), { assume, progress });
       return clocksView(data(), devFixtures(named.length ? { ids: named } : {}), { kinds: kinds as ClockKind[], ...(values.by === "operator" ? { by: "operator" as const } : {}), rows: values.rows, json: values.json, fit: values.fit, assume, breaks: values.breaks, progress });
     }
     if (sub === "followups") {
