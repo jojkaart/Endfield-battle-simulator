@@ -100,20 +100,30 @@ const NAMED_CURVES: Readonly<Record<string, (t: number) => number>> = {
 
 /** A global TimeDilationAction as per-frame scales (its curve over its duration, sampled mid-frame), or null when its curve is unknown. */
 export function slowdownOf(o: Record<string, unknown>, intervalFrames: number): number[] | null {
+  const c = dilationCurve(o, intervalFrames);
+  if (!c) return null;
+  const scales = Array.from({ length: c.frames }, (_, k) => Math.max(0, Math.min(1, c.at((k + 0.5) / c.frames))));
+  return scales.every((x) => x >= 1) ? null : scales;
+}
+
+/**
+ * A TimeDilationAction's curve as the compiler reads it (any layer): its length in frames (its duration, at most the
+ * action's own interval with finishByAction) and its scale at normalised time t in [0, 1] (its own timeScaleCurve,
+ * Hermite: curveAt; or a named curve: NAMED_CURVES), and which; null without a length or a known curve. `efsim
+ * gamedata curve` evaluates it (round 23, the placement-cases report point 5: an entity's slow-down took a probe
+ * with its keys copied by hand).
+ */
+export function dilationCurve(o: Record<string, unknown>, intervalFrames = Infinity): { readonly frames: number; readonly at: (t: number) => number; readonly source: string } | null {
   const dur = o["duration"] as { value?: number } | undefined;
   let frames = Math.round((typeof dur?.value === "number" ? dur.value : 0) * 30);
   if (o["finishByAction"] === true) frames = Math.min(frames, intervalFrames);
   if (frames <= 0) return null;
-  let at: ((t: number) => number) | undefined;
-  if (o["useCurveKey"] === true) at = NAMED_CURVES[String(o["curveKey"])];
-  else {
-    const keys = ((o["timeScaleCurve"] as { keys?: CurveKey[] } | undefined)?.keys ?? []) as CurveKey[];
-    if (keys.length) at = (t) => curveAt(keys, t);
+  if (o["useCurveKey"] === true) {
+    const named = NAMED_CURVES[String(o["curveKey"])];
+    return named ? { frames, at: named, source: `the named curve ${String(o["curveKey"])}` } : null;
   }
-  if (!at) return null;
-  const f = at;
-  const scales = Array.from({ length: frames }, (_, k) => Math.max(0, Math.min(1, f((k + 0.5) / frames))));
-  return scales.every((x) => x >= 1) ? null : scales;
+  const keys = ((o["timeScaleCurve"] as { keys?: CurveKey[] } | undefined)?.keys ?? []) as CurveKey[];
+  return keys.length ? { frames, at: (t) => curveAt(keys, t), source: `its own curve (${keys.length} keys, Hermite)` } : null;
 }
 
 /** A time dilation's priority tag (timeDilationPriority.tagId: one per kind, every combo's -593023102), or null without one. */

@@ -4,7 +4,7 @@ import { command } from "../command.ts";
 import { isSkillFileListed, readSkillFile } from "@efsim/data";
 import type { GameData } from "@efsim/engine";
 import { enemyView } from "../enemyview.ts";
-import { eventHandlers, findActions, formatFound, formatHandlers, formatMentions, gamedataTree, heldFrames, whoMentions } from "../gamedata.ts";
+import { curveView, eventHandlers, findActions, formatFound, formatHandlers, formatMentions, gamedataTree, heldFrames, whoMentions } from "../gamedata.ts";
 
 /** `gamedata dilations`: each skill's time-dilation actions and what the compiler made of them (RawSkillFile.dilations). */
 function dilationsView(data: GameData, re: RegExp | undefined, dropped: boolean): string {
@@ -69,19 +69,32 @@ export default command({
                                           or dropped and why (a layer other than the world's, an unknown curve,
                                           switched off); the dropped ones counted by why
                 [--dropped]               Only the dropped ones
+  efsim gamedata curve <id>               Each TimeDilationAction of a BuffData or SkillData file (any layer: an
+                                          entity's own slow-down too) evaluated as the compiler reads its curve (its
+                                          keys, Hermite, or a named one): length, mean scale, the owner's time it
+                                          lets pass, its scale at a few points
+                [--path <json path>]      Only the one there (as \`who\` and \`tree --path\` print paths)
+                [--frame n]               When the owner's frame n (from the action's start) comes in real frames;
+                                          repeatable
 `,
-  options: { grep: { type: "string" }, depth: { type: "string" }, path: { type: "string" }, file: { type: "string" }, folder: { type: "string" }, enabled: { type: "boolean", default: false }, fields: { type: "string" }, count: { type: "string" }, dropped: { type: "boolean", default: false } },
+  options: { grep: { type: "string" }, depth: { type: "string" }, path: { type: "string" }, file: { type: "string" }, folder: { type: "string" }, enabled: { type: "boolean", default: false }, fields: { type: "string" }, count: { type: "string" }, dropped: { type: "boolean", default: false }, frame: { type: "string", multiple: true, default: [] } },
   run: (ctx) => {
     const { values, args } = ctx;
     const [sub, id] = args;
     if (sub === "dilations") return dilationsView(ctx.data(), id === undefined ? undefined : new RegExp(id), values.dropped);
+    if (sub === "curve") {
+      if (args.length !== 2 || !id) throw new Error("gamedata curve takes one BuffData or SkillData id (--path <json path>, --frame n…)");
+      const frames = values.frame.map(Number);
+      if (frames.some((x) => !(Number.isFinite(x) && x >= 0))) throw new Error("--frame takes a frame count ≥ 0");
+      return curveView(id, { ...(values.path !== undefined ? { path: values.path } : {}), frames });
+    }
     if (sub === "handlers") {
       const n = Number(args[2]);
       if ((id !== "abilityEvent" && id !== "buffEvent") || args.length !== 3 || !Number.isInteger(n)) throw new Error("gamedata handlers takes abilityEvent <n> or buffEvent <n> (1: a target's death; docs/game-data-format.md names the events)");
       if (values.folder !== undefined && values.folder !== "BuffData" && values.folder !== "SkillData") throw new Error("--folder takes BuffData or SkillData");
       return formatHandlers(id, n, eventHandlers(id, n, { ...(values.file !== undefined ? { file: values.file } : {}), ...(values.folder !== undefined ? { folder: values.folder } : {}) }));
     }
-    if (args.length !== 2 || !id || (sub !== "tree" && sub !== "who" && sub !== "find" && sub !== "enemy")) throw new Error(`gamedata takes tree <id>, who <id>, find <type>, enemy <enemy id|fixture> or dilations [<skill regex>]\n\n${ctx.usage}`);
+    if (args.length !== 2 || !id || (sub !== "tree" && sub !== "who" && sub !== "find" && sub !== "enemy")) throw new Error(`gamedata takes tree <id>, who <id>, find <type>, enemy <enemy id|fixture>, curve <id> or dilations [<skill regex>]\n\n${ctx.usage}`);
     if (sub === "enemy") return enemyView(ctx.data(), id);
     if (sub === "find") {
       if (values.folder !== undefined && values.folder !== "BuffData" && values.folder !== "SkillData") throw new Error("--folder takes BuffData or SkillData");
