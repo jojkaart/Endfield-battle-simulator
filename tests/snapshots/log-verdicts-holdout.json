@@ -23,9 +23,9 @@
  "holdout/zmdlogs-0dfc9d76c84d.json": {
   "chr_0021_whiten": {"plain":57,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0024_deepfin": {"plain":38,"assumed":3,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0003_endminf": {"plain":82,"assumed":5,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0003_endminf": {"plain":84,"assumed":3,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0005_chen": {"plain":69,"assumed":2,"fallback":1,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-2.1,"operator chr_0021_whiten":0.1,"operator chr_0005_chen":-1.5,"operator chr_0003_endminf":-3.7,"operator chr_0024_deepfin":1.7,"kind basic":0.8,"kind battle":4.4,"kind combo":61.5,"kind none":-10,"kind status":-4.7,"kind ultimate":-14.5,"hits":0.8,"status hits":-5.3,"staggered hits":-4.3,"last hit":-0.7,"time to kill":null,"crit share (points)":-0.3,"share matched":-0.2,"share replay-only":0.2,"share log-only":-2.1,"share operator chr_0021_whiten":10.8,"share operator chr_0005_chen":32.3,"share operator chr_0003_endminf":48.7,"share operator chr_0024_deepfin":8.2,"other-hit operator chr_0024_deepfin":2,"other-hit operator chr_0003_endminf":1}
+  "totals": {"damage":-1.2,"operator chr_0021_whiten":0.1,"operator chr_0005_chen":-1.5,"operator chr_0003_endminf":-1.9,"operator chr_0024_deepfin":1.7,"kind basic":0.8,"kind battle":6.6,"kind combo":63.6,"kind none":-10,"kind status":-1.4,"kind ultimate":-14.5,"hits":0.8,"status hits":-5.3,"staggered hits":-4.3,"last hit":-0.7,"time to kill":null,"crit share (points)":-0.3,"share matched":0.7,"share replay-only":0.2,"share log-only":-2.1,"share operator chr_0021_whiten":10.8,"share operator chr_0005_chen":32.3,"share operator chr_0003_endminf":48.7,"share operator chr_0024_deepfin":8.2,"other-hit operator chr_0024_deepfin":2,"other-hit operator chr_0003_endminf":1}
  },
  "holdout/zmdlogs-13b9974a0450.json": {
   "chr_0021_whiten": {"plain":20,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -78,10 +78,10 @@
  },
  "holdout/zmdlogs-c421e6ed4a3b.json": {
   "chr_0016_laevat": {"plain":91,"assumed":3,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":103,"assumed":1,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":102,"assumed":1,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0},
   "chr_0025_ardelia": {"plain":114,"assumed":1,"fallback":0,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":49,"assumed":1,"fallback":0,"mismatch":2,"unvalued":0,"unquantified":5,"uncovered":0},
-  "totals": {"damage":0,"operator chr_0032_lizhiyan":-0.2,"operator chr_0036_jsspsi":0.2,"operator chr_0016_laevat":-0.1,"operator chr_0025_ardelia":0.9,"kind basic":0.1,"kind battle":0,"kind combo":0.2,"kind status":-1.1,"kind ultimate":0.1,"hits":1.9,"status hits":0,"staggered hits":-1.4,"last hit":0,"time to kill":0,"crit share (points)":0.1,"share matched":0.1,"share replay-only":0.5,"share log-only":-0.5,"share operator chr_0032_lizhiyan":5.1,"share operator chr_0036_jsspsi":24.8,"share operator chr_0016_laevat":67,"share operator chr_0025_ardelia":3.1,"other-hit operator chr_0032_lizhiyan":2}
+  "totals": {"damage":0,"operator chr_0032_lizhiyan":-0.2,"operator chr_0036_jsspsi":0.2,"operator chr_0016_laevat":-0.1,"operator chr_0025_ardelia":0.9,"kind basic":0.1,"kind battle":0,"kind combo":0.2,"kind status":-1.1,"kind ultimate":0.1,"hits":1.9,"status hits":0,"staggered hits":-1.4,"last hit":0,"time to kill":0,"crit share (points)":0.1,"share matched":0.1,"share replay-only":0.5,"share log-only":-0.5,"share operator chr_0032_lizhiyan":5.1,"share operator chr_0036_jsspsi":24.8,"share operator chr_0016_laevat":67,"share operator chr_0025_ardelia":3.1,"other-hit operator chr_0032_lizhiyan":3}
  },
  "holdout/zmdlogs-eb8f397da7ed.json": {
   "chr_0016_laevat": {"plain":29,"assumed":22,"fallback":101,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},

@@ -1018,7 +1018,8 @@ function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly Logg
  */
 function heldBreaks(fx: LogFixture, stops: readonly TimeStop[], others: readonly TimeStop[], assume: Readings | undefined): TimeStop[] {
   const combos = others.filter((s) => s.kind === "combo");
-  return breakStops(fx, stops, assume).filter((b) => !combos.some((s) => b.start >= s.start && b.start <= s.start + s.scales.findLastIndex((x) => x < 1)));
+  // The hold's length beside the slow-downs that hold the cast's operator (break-hold-combo `added`): not her own.
+  return breakStops(fx, stops, assume, others).filter((b) => !combos.some((s) => b.start >= s.start && b.start <= s.start + s.scales.findLastIndex((x) => x < 1)));
 }
 
 function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], assume: Readings | undefined): Placement {

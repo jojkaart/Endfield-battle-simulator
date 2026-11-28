@@ -42,8 +42,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   log's moments the default (`break-hold-place` `moments`, 4d60's
   INSIDE gone), a start held by the breaks it ran through a reading
   (`break-held-starts` `held`: fc63, 3aa6; one hold-out −6, not the
-  default), the recovery stays 2 s; next the hold-outs' INSIDE, breaks
-  inside a combo's slow-down, 458b 87.47 s.
+  default), the recovery stays 2 s; 2026-11-28 a break inside a combo's
+  slow-down holds on top of it (`break-hold-combo` `added`), Akekuri's
+  ultimate an ultimate (its file's specification 0), 458b 87.47 s her
+  ultimate's event at its stop's end (applied after the placement merge); next the
+  hold-outs' INSIDE, a press inside a hold.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast; Liino's
   Medicant layers on Arcane in 1d91 (beats from 44.9 s give none: the

@@ -156,6 +156,19 @@ export function diveOf(skillIds: readonly string[]): { readonly start?: string; 
   return isSkillFileListed(start) && existsSync(skillFilePath(start)) ? { start, end } : { end };
 }
 
+/**
+ * A skill file's skillSpecification, an ultimate's read as 5 where the file says 0: Akekuri's ultimate
+ * (chr_0019_karin_ultimate_skill) is the only one of the 34 operators' ultimates with 0, though its UltimateTimeAction
+ * stops time as every other's does (2026-11-28, the break-combo round). Under 0 the engine gave it the interrupt
+ * priority of a plain skill (timeline/rules.ts priorityOf) and no ultimate's stop (timeline/clock.ts slowDown):
+ * 458b03609665 160.36 s, her ultimate logged at its stop's end and so pressed at 158.53 s, came at her combo's frame
+ * 34, inside the combo's uncuttable frames (55), where an ultimate (priority 7) may start; a break inside her stop was
+ * held by the engine and not by the replay's stop list.
+ */
+function ultimateSpecification(skillId: string, specification: number, stopsTime: boolean): number {
+  return specification === 0 && stopsTime && skillId.endsWith("_ultimate_skill") ? 5 : specification;
+}
+
 /** Reads a skill file, or returns null when the game has none for this skill. */
 export function readSkillFile(skillId: string): RawSkillFile | null {
   if (!isSkillFileListed(skillId)) {
@@ -278,7 +291,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     exclusiveFrames: get(j, "exclusiveFrame", ctx, int),
     windows: windows.sort((a, b) => a.from - b.from),
     channels,
-    specification: get(j, "skillSpecification", ctx, int),
+    specification: ultimateSpecification(skillId, get(j, "skillSpecification", ctx, int), slowdowns.length > 0 && dilations.some((d) => d.type === "UltimateTimeAction")),
     keepsChain: j["dontInterruptCombo"] === true,
     ...(j["normalSkillSubType"] === 1 ? { subSkill: true as const } : {}),
     slowdowns,

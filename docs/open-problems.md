@@ -152,18 +152,51 @@ threshold).
   late / 17 early, the median +0.32 s past the bracket's middle (+0.20 s over the 27 within 2 s, a standard error of
   about 0.24 s); −0.3 s centres it (18 / 18) and moves the mean |error| 2.74 → 2.72 s. The logs don't choose:
   `stagger-recovery` stays `2s` (no fight moved, so no team-ab).
+- **Round 4, breaks inside a combo's slow-down and 458b 87.47 s (2026-11-28;
+  docs/journal/2026-11-28-08-breaks-inside-a-combo-s-slow-down-akekuri-s-ultimate-as-an.md;
+  scripts/probes/stagger/break-combo.ts).** **Found: 458b 87.47 s is a placement of Akekuri's ultimate**, not a hold:
+  its hitless cast event at 84.37 s was read as the press (castassembly.ts loggedCastStart: no other hit within 500 ms
+  after it), while the team's next hits (85.57, 85.70, 86.46 s) fall inside the 1.83 s a stop from it would hold. Read
+  at its stop's end (made at 82.53 s) her combo at 87.47 s is past the ultimate's cantCastSkill channel (frames 0–119,
+  the gate the INSIDE line called "uncuttable") and the log's own buff starts agree: her Thermite Cutter team ATK layers
+  since 84.47, 86.03, 87.14 s are the ultimate's SP grants at its frames 59, 86, 119 from 82.53 s, not from 84.37 s.
+  Held back while castassembly.ts was the placement agent's file, applied after its merge
+  ([tried](tried/2026-11-28-ult-event-stop-end-held-back.diff): loggedCastStart reads such an event at its stop's end;
+  against 3717a31 with the round's other changes 458b 1093 → 1089 plain, 04d4 597 → 599, 3aa6 mixed, the rest
+  unchanged). **Found and fixed: Akekuri's ultimate carries
+  skillSpecification 0** in its file, the only one of 34 operators' ultimates (all others 5), though its
+  UltimateTimeAction stops time: the engine gave it a plain skill's priority (2) and no ultimate's stop, so 458b
+  158.53 s, her ultimate at her combo's frame 34 (the combo's frame-31 hit landed, logged at her stop's end), was
+  INSIDE the combo's uncuttable frames, and the 85.57 s break inside her stop was held by the engine and not by the
+  replay's stop list. skillData.ts ultimateSpecification reads it as 5 (tests/timeline.test.ts). **Found: inside a
+  combo's slow-down the hold applies, on top** (engine assumption `break-hold-combo`, `added` the default: the
+  running slow-downs pause through the hold, their rest that many frames later; clock.ts addedHold, holds.ts
+  breakStops): `none` measured worse (hold-outs 82.5 → 82.4%, one −7), `added` against `lowest` development 00ae +2
+  (its Corrosion steps after the 55.14 s break inside Typhoeus's combo plateau), 9090 +1, hold-outs one +2 and one
+  −1. Of the 18 development breaks inside a combo's slow-down most come at its end (scale 0.56–1.0), where the two
+  readings differ by a frame or two; the clocks across a7a7 48.14, f879 57.12, 8056 176.76 and c83c 55.83 s show a full
+  hold (+0.37–0.48 s). **The stamped-inside cases** (4360 49.14, c4f3 82.65, d4fb 97.05, f574 35.68 s; the next
+  moment 0.13–0.27 s after) fit `moments`: the next moment is the clock the hold released (f574's Mi Fu attack 2 frame
+  16 at 35.95 s, +0.24 s across the whole combo and the hold, its due time inside the hold), as 458b 85.70 s's
+  Combustion tick is (due 85.2–85.7 s, logged at the hold's end). **A press in a hold** (press-in-hold.ts): two of the
+  30 starts inside a hold have the operator's cast event near; 9847 57.64 s (Perlica's combo, event at the break):
+  unheld its event lags its start −0.01 s, held from 57.19 s +0.45 s, both inside her combos' event-lag spread (−0.21 …
+  +0.72 s over 34 plain casts, `casts --event-lags`), and 489c 54.41 s's event is another skill's: still undecided.
+  Seen, not this lead's: Wulfgard's combos pressed inside his own ultimate (1a77 11.03, 79.97; 8056 6.87, 51.60,
+  112.90 s: INSIDE 26–41 frames; the ultimate's later hits land after the combo's start, so the combo runs beside it),
+  012a 39.37 s (Laevatain's combo placed inside her ultimate from a landing batched at its stop's end: the placement's).
 
 **Still possible:** the stamp's place inside the hold from something else than the moments (c4f3 33.58 s's +381 and
 5082's +210 before the ms, where the next moment allows the hold at the ms; the log's ~100 ms flush on the world's
 clock would put the stamp anywhere in it); what the 2 hold-outs' INSIDE is (not fc63's case alone: `held` costs one
 hold-out 6 plain and moves none of its decisions; a press in the hold waiting it out or running unheld, which the
-landings can't tell); whether a break inside a combo's slow-down holds at all (4360 49.14 s, c4f3 82.65 s, d4fb
-97.05 s: moments 0.13–0.25 s after; c4f3's Chen combo can't start before 81.93 s, so its breaking hit came at 82.50 s
-or later, and Pogranichnik's hit at 82.78 s); the length (above).
-**Next check:** the 458b 87.47 s INSIDE (Akekuri's combo 38 frames inside her ultimate with no hold: a placement of
-its own); a press in a hold, from a log with a cast event and a kit window there (the ambiguous starts in
-press-in-hold.ts); `held` once a second log decides the hold-out's kind; a `stagger-recovery` refit once more
-Staggers are bracketed (the median's error is as large as its offset).
+landings and the one cast event can't tell); `lowest` against `added` where a break falls deep in a combo's plateau
+(00ae 55.14, d4fb 97.05 s have no clock across); the length (above).
+**Next check:** 458b's team ATK layers, which now start where the log has them (88.20, 88.68 s), end 0.3 s before the
+log's at 111.04–111.61 s (four hits plain → assumed): the world's holds between, a buff-clock question; a press in a
+hold, from a log with a cast event and a kit window there; `held` once
+a second log decides the hold-out's kind; a `stagger-recovery` refit once more Staggers are bracketed (the median's
+error is as large as its offset).
 
 ## The placement cases the one-sided rounds left (2026-11-27)
 
