@@ -275,17 +275,19 @@ const BREAK_EDGE_MS = 1000 / FPS;
  * The engine's holds at the log's Stagger breaks (engine assumption break-hold, timeline/clock.ts breakHold) as time
  * stops: break-hold's frames at scale 0 from each break's hold start (breakHoldStarts, under break-hold-place), not
  * one inside an ultimate's stop of `stops` (as the engine). `assume`: the replay's readings (round 19: taking the
- * defaults here measured the engine and these stops under two readings of one variant).
+ * defaults here measured the engine and these stops under two readings of one variant). `holding`: the stops a hold
+ * inside one lasts longer beside (break-hold-combo `added`); default `stops`.
  */
-export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[], assume: Readings | undefined): TimeStop[] {
+export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeStop[], assume: Readings | undefined, holding: readonly TimeStop[] = stops): TimeStop[] {
   const frames = breakHoldFrames(assume);
   if (frames <= 0) return [];
   const combine = readingOf(assume, "break-hold-combo");
   const out: TimeStop[] = [];
   for (const { from: f } of breakHoldStarts(fx, frames, assume)) {
     if (stops.some((st) => st.kind === "ultimate" && f >= st.start && f < st.start + st.scales.length)) continue;
-    // Engine assumption break-hold-combo, as timeline/clock.ts breakHold: a break inside another running slow-down.
-    const others = [...stops, ...out];
+    // Engine assumption break-hold-combo, as timeline/clock.ts breakHold: a break inside another running slow-down of
+    // `holding` (a clock's own reader passes the stops that hold it: an operator's own combo doesn't hold her).
+    const others = [...holding, ...out];
     const scaleAt = (g: number) => others.reduce((m, st) => (g >= st.start && g < st.start + st.scales.length ? Math.min(m, st.scales[g - st.start] as number) : m), 1);
     const inside = scaleAt(f) < 1;
     if (inside && combine === "none") continue;
