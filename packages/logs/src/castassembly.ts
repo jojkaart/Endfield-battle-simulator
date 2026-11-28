@@ -419,14 +419,39 @@ function loggedCastMatcher(kits: readonly OperatorKit[], stops: readonly TimeSto
  * own, each forced a normal_skill whose explosion and Combustion ticks the log never shows, 3.6% of the fight, and took
  * the Link stack Camille's combo gave, which the logged during-ult hits carry: ×1.3 on all eleven).
  */
-function variantCastOf(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts">, kit: OperatorKit | undefined, skill: OperatorKit["skills"][number], lc: { t: number; operator: string }, near: ReturnType<typeof loggedCastMatcher>): ReplayedCast | undefined {
+function variantCastOf(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts">, kit: OperatorKit | undefined, skill: OperatorKit["skills"][number], lc: { t: number; operator: string }, near: ReturnType<typeof loggedCastMatcher>, data?: GameData): ReplayedCast | undefined {
   return casts.find((c) => {
     const variant = kit?.skills.find((k) => k.skillId === c.skillId);
-    return (
-      c.operator === lc.operator && variant !== undefined && c.skillId !== skill.skillId && kit !== undefined && buttonVariants(kit, skill, variant) && !c.slot && c.landings.length > 0 && near(c, lc, c.skillId) &&
-      !(fx.casts ?? []).some((o) => o.operator === lc.operator && o.skill === c.skillId && near(c, o, c.skillId))
-    );
+    if (c.operator !== lc.operator || variant === undefined || c.skillId === skill.skillId || kit === undefined || c.slot || c.landings.length === 0) return false;
+    if (!buttonVariants(kit, skill, variant) && !(followUpVariant(kit, skill, variant) && atItsEvent(data, skill.skillId, c, lc))) return false;
+    return near(c, lc, c.skillId) && !(fx.casts ?? []).some((o) => o.operator === lc.operator && o.skill === c.skillId && near(c, o, c.skillId));
   });
+}
+
+/**
+ * Whether `b` is the follow-up variant of `a`'s button: castable only with a buff `a`'s own cast gives, which `a` needs
+ * absent (Purrchena's battle skill and her counter: the battle skill readies the counter, ChangeSkillAction on the
+ * slot for 10 s). buttonVariants leaves such a pair out: a press of `a` with `b` pressed after it in `a`'s window is two
+ * presses, one event (the counter's isn't logged).
+ */
+function followUpVariant(kit: OperatorKit, a: OperatorKit["skills"][number], b: OperatorKit["skills"][number]): boolean {
+  const needed = neededBuffs(b.available);
+  return a.kind === b.kind && excludes(a.available, b.available) && needed.length > 0 && kit.triggers.some((t) => t.on.event === "cast" && (t.on.skills ?? []).includes(a.skillId) && allActions(t.do).some((d) => d.kind === "buff" && needed.includes(d.buff)));
+}
+
+/**
+ * Whether a placed cast `c` of a follow-up variant starts at the logged event `lc` of the button's first skill: nearer
+ * it than half the first frame the first skill's windows let the variant start (SkillTiming.windows), so the event
+ * can't be the first skill's press with the variant pressed in its window. 04d401ad257e: the counter's headbutt
+ * (frame 9) logged 0.27–0.29 s after a normal_skill event at 269.81, 329.46, 419.96, 505.25 s (the press is the
+ * counter's), against 0.70–2.75 s after the battle skill's own presses (the counter pressed in its window, from frame
+ * 12); the replay made both a counter and a battle skill there, 100 SP for one press.
+ */
+function atItsEvent(data: GameData | undefined, first: string, c: ReplayedCast, lc: { t: number }): boolean {
+  const windows = data?.skills[first]?.timing?.windows ?? [];
+  const opens = windows.filter((w) => w.skills.some((s) => s === c.skillId || c.skillId.endsWith(`_${s}`))).map((w) => w.from);
+  if (!opens.length) return false;
+  return (Math.abs(c.start - lc.t) * FPS) / 1000 < Math.min(...opens) / 2;
 }
 
 export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[], data?: GameData, stops: readonly TimeStop[] = []): ReplayedCast[] {
@@ -439,7 +464,7 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
     if (!skill || skill.followUpOnly) continue;
     if (casts.some((c) => near(c, lc, lc.skill))) continue;
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)));
-    if (!shownElsewhere && variantCastOf(casts, fx, kits.find((k) => k.operator === lc.operator), skill, lc, near)) continue;
+    if (!shownElsewhere && variantCastOf(casts, fx, kits.find((k) => k.operator === lc.operator), skill, lc, near, data)) continue;
     const own = new Set(skill.hits.flatMap((h) => h.events));
     const kit = kits.find((k) => k.operator === lc.operator);
     const shows = shownElsewhere
@@ -915,7 +940,7 @@ export function loggedCastFates(data: GameData, fx: LogFixture, placement: Place
     const tick = kit?.buffs.find((d) => d.ticksLoggedAs === lc.skill);
     if (tick) return { ...base, fate: "tick", buff: tick.id };
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => fx.hits.some((x) => x.operator === lc.operator && x.event === e)));
-    const variant = shownElsewhere ? undefined : variantCastOf(placed, fx, kit, skill, lc, near);
+    const variant = shownElsewhere ? undefined : variantCastOf(placed, fx, kit, skill, lc, near, data);
     if (variant) return { ...base, fate: "placed", cast: { start: variant.start, world: Math.max(0, worldMs(Math.min(variant.start, lc.t), Math.max(variant.start, lc.t), stops)) }, variant: variant.skillId };
     return { ...base, fate: shownElsewhere ? "press" : "cast" };
   });
