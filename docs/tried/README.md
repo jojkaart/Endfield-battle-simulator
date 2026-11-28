@@ -99,8 +99,9 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
 - [2026-11-28-barrage-array-channel-end.diff](2026-11-28-barrage-array-channel-end.diff): Typhoeus's Barrage Array
   with the data's channel end (frame 215): its 18 ticks run past it in the logs; 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%,
   hold-out plain −6. Superseded 2026-11-28: the end on the array's world clock.
-- [2026-11-28-ult-event-stop-end-held-back.diff](2026-11-28-ult-event-stop-end-held-back.diff): held back for the
-  lead (castassembly.ts was the placement agent's file): an ultimate's hitless cast event read at its stop's end
+- [2026-11-28-ult-event-stop-end-held-back.diff](2026-11-28-ult-event-stop-end-held-back.diff): held back (castassembly.ts
+  was the placement agent's file), applied after that agent's merge (the break-combo branch, 2026-11-28): an
+  ultimate's hitless cast event read at its stop's end
   when another's hit falls inside the stop a start at it would make (458b 84.37 s, Akekuri: her combo's INSIDE
   gone, her weapon's team ATK layers start at the ultimate's SP frames); earlier pending 84.7% either way (458b −3,
   04d4 +2, 3aa6 mixed), the rest unchanged.

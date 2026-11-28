@@ -153,7 +153,7 @@ threshold).
   about 0.24 s); −0.3 s centres it (18 / 18) and moves the mean |error| 2.74 → 2.72 s. The logs don't choose:
   `stagger-recovery` stays `2s` (no fight moved, so no team-ab).
 - **Round 4, breaks inside a combo's slow-down and 458b 87.47 s (2026-11-28;
-  docs/journal/2026-11-28-07-breaks-inside-a-combo-s-slow-down-akekuri-s-ultimate-as-an.md;
+  docs/journal/2026-11-28-08-breaks-inside-a-combo-s-slow-down-akekuri-s-ultimate-as-an.md;
   scripts/probes/stagger/break-combo.ts).** **Found: 458b 87.47 s is a placement of Akekuri's ultimate**, not a hold:
   its hitless cast event at 84.37 s was read as the press (castassembly.ts loggedCastStart: no other hit within 500 ms
   after it), while the team's next hits (85.57, 85.70, 86.46 s) fall inside the 1.83 s a stop from it would hold. Read

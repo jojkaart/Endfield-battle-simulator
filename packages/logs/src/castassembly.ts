@@ -365,7 +365,10 @@ function loggedCastStart(data: GameData | undefined, lc: { t: number; operator: 
   // resuming 83–356 ms after it in 012ae1c80ae6, c83c75d02a85, db8711232de9, e9896c8d02be, f8793bc8aea2, 2b013866dfa3.
   // Without one (e82d45c46040: Xaihi's at 3896 ms after 2315 ms, her Amp not yet on Arcane's hit at 7022 ms) the event is
   // the cast.
-  if (!hits.some((h) => h.operator !== lc.operator && h.t >= lc.t - FLUSH_MS && h.t <= lc.t + RESUME_MS)) return lc.t;
+  // Another's hit inside the stop a start at the event would make says the same (458b03609665: Akekuri's at 84.37 s, the
+  // team's next hits 1.20 s after it, inside the 1.83 s such a stop would hold; from the event her combo at 87.47 s, placed
+  // from its landings, would come 44 frames inside the ultimate's uncuttable frames).
+  if (!hits.some((h) => h.operator !== lc.operator && h.t >= lc.t - FLUSH_MS && h.t <= lc.t + Math.max(RESUME_MS, length - EDGE_MS))) return lc.t;
   const covering = stops.filter((x) => {
     if (x.operator === lc.operator) return false;
     const [a, b] = [(x.start * 1000) / FPS, ((x.start + x.scales.length) * 1000) / FPS];
