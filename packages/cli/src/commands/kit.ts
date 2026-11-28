@@ -2,7 +2,7 @@
 // runs it: what agents otherwise read through a scratch script over createContext (round-4 friction: Si's attack-5 and
 // battle-skill hit frames for a log's gaps took three attempts). Kit files have no frames; they come from SkillData.
 
-import { FPS, type GameData, type KitApplication, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type OperatorKit, type TriggerAction } from "@efsim/engine";
+import { FPS, priorityOf, type GameData, type KitApplication, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type OperatorKit, type TriggerAction } from "@efsim/engine";
 import { isSkillFileListed, readSkillFile } from "@efsim/data";
 import { landingFrames, operatorNamed } from "@efsim/logs";
 import { command } from "../command.ts";
@@ -106,7 +106,7 @@ function skillLines(data: GameData, operator: string, s: KitSkill, kit: Operator
   // The world frames each slow-down holds, and all of them together (a path's ends and jumps aside: pathSlowdowns).
   const held = heldFrames(t?.slowdowns ?? []);
   const timing = t
-    ? `duration ${t.durationFrames} frames (${sec(t.durationFrames)}), uncuttable to frame ${t.exclusiveFrames}${t.windows.length ? `, windows ${t.windows.map((w) => `${w.from}–${w.to} ${w.skills.map((x) => x.replace(/^chr_\d+_[a-z0-9]+_/, "")).join("/")}`).join("; ")}` : ""}${t.slowdowns.length ? `, slow-downs from frame ${t.slowdowns.map((d, i) => `${d.from} (${d.scales.length} frames, lowest ${Math.min(...d.scales).toFixed(2)}, holds ${(held.each[i] as number).toFixed(1)})`).join(", ")}${t.slowdowns.length > 1 ? ` (together ${held.together.toFixed(1)} frames held at the lowest scale)` : ""}` : ""}`
+    ? `skillSpecification ${t.specification} (interrupt priority ${priorityOf(t)}), duration ${t.durationFrames} frames (${sec(t.durationFrames)}), uncuttable to frame ${t.exclusiveFrames}${t.channels.length ? `, channels ${t.channels.map((c) => `${c.from}–${c.to} ${[c.cantCastSkill ? "cantCastSkill" : "", c.cantSwitch ? "cantSwitch" : "", c.finisher ? "finisher" : ""].filter(Boolean).join("+")}`).join("; ")}` : ""}${t.windows.length ? `, windows ${t.windows.map((w) => `${w.from}–${w.to} ${w.skills.map((x) => x.replace(/^chr_\d+_[a-z0-9]+_/, "")).join("/")}`).join("; ")}` : ""}${t.slowdowns.length ? `, slow-downs from frame ${t.slowdowns.map((d, i) => `${d.from} (${d.scales.length} frames, lowest ${Math.min(...d.scales).toFixed(2)}, holds ${(held.each[i] as number).toFixed(1)})`).join(", ")}${t.slowdowns.length > 1 ? ` (together ${held.together.toFixed(1)} frames held at the lowest scale)` : ""}` : ""}`
     : "no SkillData timing";
   // The skill's group in CharGrowthTable (its levels): a basic attack in the battle skill's or ultimate's group is an
   // enhanced one (the finisher-gate report: the Finisher's gate rests on it).

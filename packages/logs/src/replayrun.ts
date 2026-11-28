@@ -6,7 +6,7 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, kitHitEntries, parseReactionEvent,
+  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, startGateWords, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, kitHitEntries, parseReactionEvent,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -847,7 +847,8 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
   // The gates alone (`at`: an interrupt doesn't wait for the running cast's hits): its uncuttable frames.
   if (exclusiveUntil(ctx, st, c.operator) > f + 1) {
     const r = earliestStart(ctx, st, { operator: c.operator, skill: skillId, at: f });
-    if (!("error" in r) && r.frame > f + 1) return { cast: c, skillId, frame: f, kind: "inside", why: `${r.frame - f} frame(s) before ${cur.skill} lets it start (its uncuttable frames: the kit allows it from ${sec(r.frame)} s)` };
+    // The gate that binds, in words (timing.ts startGateWords; round 23, the break-combo report point 1).
+    if (!("error" in r) && r.frame > f + 1) return { cast: c, skillId, frame: f, kind: "inside", why: `${r.frame - f} frame(s) before ${cur.skill} lets it start (the kit allows it from ${sec(r.frame)} s; held by ${startGateWords(ctx, st, c.operator, skillId, f, r.frame).words})` };
   }
   // A legal interrupt that cancels hits of the running cast still due (round 8: the flag counted these as uncuttable).
   const landed = ownHitsLanded(st, c.operator);

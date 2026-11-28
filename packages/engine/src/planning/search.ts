@@ -722,6 +722,7 @@ const STATE_KEY: KeyRules<TimelineState> = {
   energyGained: "a statistic (energy gained by source, for the rules' diagnosis): nothing in the fight reads it",
   energySpent: "a statistic (energy taken from the bar): nothing in the fight reads it",
   spOverflow: "a statistic (SP granted past the cap): nothing in the fight reads it",
+  spGained: "a statistic (SP granted by operator and source, for the log replay's views): nothing in the fight reads it",
   // Read through windowOpen (`until < frame`: closed) or with `until >= frame`, but a follow-up combo's count (endedWindowsRead).
   comboWindow: (w, env) => entries(w, (x, k) => x.until >= env.frame || env.scenario.endedWindowsRead.has(k)),
   // Read by any later `element: "window"` application, however long ago it was set.

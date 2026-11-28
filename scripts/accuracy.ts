@@ -27,6 +27,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printHelp } from "./usage.ts";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const SCOREBOARD = "docs/accuracy.md";
@@ -47,11 +48,14 @@ const OTHER_HIT = "other-hit operator ";
 const STAGE = "stage";
 /** The totals key of a fight against several enemies under one id (snapshotentry.ts SEVERAL_TARGETS_KEY: the fixture's severalTargets). */
 const SEVERAL = "several targets";
+/** The totals keys of the SP the replay's own SP lacked at logged casts (snapshotentry.ts SP_SHORT_KEYS: round 23). */
+export const SP_SHORT = { sp: "sp short", casts: "sp short casts" } as const;
 /**
  * A totals key that describes, never a verdict: the shares (where the error lives, an operator's share), an operator's
- * hits matched as another kit hit, a stage fight, several targets. `direction` leaves them out; a round may add one (docs/friction/README.md step 3).
+ * hits matched as another kit hit, a stage fight, several targets, the SP the replay lacked. `direction` leaves them
+ * out; a round may add one (docs/friction/README.md step 3).
  */
-export const isDescribingKey = (k: string) => isShareKey(k) || k.startsWith(OTHER_HIT) || k === STAGE || k === SEVERAL;
+export const isDescribingKey = (k: string) => isShareKey(k) || k.startsWith(OTHER_HIT) || k === STAGE || k === SEVERAL || k === SP_SHORT.sp || k === SP_SHORT.casts;
 /** An entry without the describing keys: what `direction` compares. */
 const verdictPart = (e: Entry): Entry => (e[TOTALS] ? { ...e, [TOTALS]: Object.fromEntries(Object.entries(e[TOTALS]).filter(([k]) => !isDescribingKey(k))) } : e);
 
@@ -768,4 +772,7 @@ async function main(argv: readonly string[]): Promise<number> {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = await main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = await main(process.argv.slice(2));
+}

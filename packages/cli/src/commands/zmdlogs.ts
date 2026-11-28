@@ -16,6 +16,7 @@ import {
   burstsView,
   CLOCK_KINDS,
   clocksView,
+  breakPairsView,
   droppedView,
   type ClockKind,
   placementView,
@@ -187,6 +188,14 @@ export default command({
                 [--by operator] [--rows]  Also per combo operator (rows with one operator's combos only); each row
                 [--breaks]                The engine's holds at the log's Stagger breaks (break-hold) as stops too
                                           (kind break): a row across a break no longer reads the hold as lateness
+                [--json]                  Instead: a JSON line per row (kind, log, span, expected, residual, held
+                                          per kind and per operator, staggered, breaks, combos and episodes inside)
+                [--fit]                   Instead: per clock kind and what holds it, the residual fitted through 0
+                                          per combo, per episode (overlapping combo stops one) and as a share of
+                                          the held time, each with its rms: a constant or a share
+                [--around break]          Instead: per logged Stagger break, each clock's pair spanning it (a
+                                          cast's landings before and after, a tick series' pair; no Stagger cut),
+                                          its residual under the stops and with the engine's break holds too
   efsim zmdlogs placement <fixture…|--all> What the placement's passes leave: ultimates whose time stops still
                                           overlap after the in-turn rule, and the casts a third pass would move
                                           (the placement isn't a fixed point there: logcasts.ts placeHits)
@@ -277,6 +286,10 @@ export default command({
                 [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
                                           the log tools build for its casts: where they differ, the list isn't the
                                           engine's
+                [--sp]                    The team's SP (SP lines): each grant with its operator and source (a hit,
+                                          a kit trigger, a dodge: TimelineState.spGained) and each cast's spend,
+                                          the SP after; TOPUP lines (always) the logged casts the replay's own SP
+                                          couldn't pay, by how much
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
   efsim zmdlogs decisions <fixture…|--all> --assume <id>=<reading>  The replay's decisions (SKIP, TAILCUT, FAILED,
@@ -318,6 +331,9 @@ export default command({
                                           of the fight's logged total; logged, fightError, stage, severalTargets:
                                           the fight's), cached with the shares: a new ranking question is a jq
                                           line, not a replay of every log
+                [--side log|replay]       Instead: that side's largest one-sided landings across the fights by
+                                          share of the fight's logged total (--top n, default 20; several-target
+                                          fights left out): what is still log-only (or replay-only) today
                 [--skip <id|stage|several>,…]  Leave these fights out of the table, --kinds and --json: short ids,
                                           every stage fight, every fight against several targets under one id
   efsim zmdlogs stagger [fixture…]        Each logged Stagger run (first to last Staggered hit) against the replay's
@@ -534,6 +550,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     controls: { type: "boolean", default: false },
     fetch: { type: "boolean", default: false },
     breaks: { type: "boolean", default: false },
+    sp: { type: "boolean", default: false },
+    fit: { type: "boolean", default: false },
+    around: { type: "string" },
   },
   run: async (ctx) => {
     const { values, args } = ctx;
@@ -654,7 +673,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const bad = kinds.filter((k) => !(CLOCK_KINDS as readonly string[]).includes(k));
       if (bad.length || !kinds.length) throw new Error(`--clock takes ${CLOCK_KINDS.join(", ")} (comma-separated)`);
       if (values.by !== undefined && values.by !== "operator" && values.by !== "kind") throw new Error("zmdlogs clocks --by takes operator (or kind, the default)");
-      return clocksView(data(), devFixtures(named.length ? { ids: named } : {}), { kinds: kinds as ClockKind[], ...(values.by === "operator" ? { by: "operator" as const } : {}), rows: values.rows, assume, breaks: values.breaks, progress });
+      if (values.around !== undefined && values.around !== "break") throw new Error("zmdlogs clocks --around takes break");
+      if (values.around === "break") return breakPairsView(data(), devFixtures(named.length ? { ids: named } : {}), { assume, progress });
+      return clocksView(data(), devFixtures(named.length ? { ids: named } : {}), { kinds: kinds as ClockKind[], ...(values.by === "operator" ? { by: "operator" as const } : {}), rows: values.rows, json: values.json, fit: values.fit, assume, breaks: values.breaks, progress });
     }
     if (sub === "followups") {
       const named = args.slice(1);
@@ -786,11 +807,12 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const keyed = (xs: readonly string[]) => xs.map((x) => kitBuffKey(data(), x));
       if (sub === "casts" && values.json) return castsJson(data(), fx, { ...filter, rules: values.choices });
       if (values["against-starts"] !== undefined && (sub !== "replay" || !values["trace-trigger"].length)) throw new Error("zmdlogs replay --against-starts <regex> goes with --trace-trigger <owner:id> (the trigger whose firings make the game buff)");
-      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, ...(values["against-starts"] !== undefined ? { againstStarts: new RegExp(values["against-starts"]) } : {}), buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, ...(values["against-starts"] !== undefined ? { againstStarts: new RegExp(values["against-starts"]) } : {}), buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, sp: values.sp, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};
-      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume, kinds: values.kinds, json: values.json, skip: values.skip, progress });
+      if (values.side !== undefined && values.side !== "log" && values.side !== "replay") throw new Error("zmdlogs totals --side takes log or replay (with --all or several fixtures)");
+      if (values.all || args.length > 2 || values["fixtures-from"] !== undefined) return totalsAllReport(data, selection, { workers: values.workers, operators, ...top, cache: !values["no-cache"], assume, kinds: values.kinds, json: values.json, ...(values.side !== undefined ? { side: values.side as "log" | "replay" } : {}), skip: values.skip, progress });
       if (values.skip.length) throw new Error("zmdlogs totals --skip goes with several fixtures or --all");
       if (args.length !== 2 || !arg) throw new Error("zmdlogs totals takes one fixture file (--operator op, --top n, --by event|crit, --kinds, --assume id=reading), or several / --all for the table of every fight (--workers n, --kinds)");
       if (values.by !== undefined && values.by !== "event" && values.by !== "crit") throw new Error("zmdlogs totals --by takes event or crit");

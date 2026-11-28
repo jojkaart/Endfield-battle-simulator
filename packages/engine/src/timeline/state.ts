@@ -467,6 +467,13 @@ export interface TimelineState {
   /** Team SP granted past the cap so far (regeneration at the cap aside). A statistic, as energyGained. */
   readonly spOverflow: number;
   /**
+   * Team SP granted so far (before the cap, as energyGained), per operator and source (resources.ts SpSource: `hit
+   * <skillId> <hitId>`, `kit:<trigger>`, `dodge`); regeneration isn't in it. A statistic, as energyGained: the log
+   * replay's `zmdlogs replay --sp` reads where its SP came from (round 23, the team-SP report point 3: a frame scan and a
+   * wrong patch took its place).
+   */
+  readonly spGained: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  /**
    * Per operator with a combo trigger: the open combo window, if any; a
    * window of its own skills (an `openCombo` with `skills`) is under
    * `<operator>>skillId` (windowKey). `whileBuff`: open only while that

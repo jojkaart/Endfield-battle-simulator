@@ -16,6 +16,9 @@
 // through readingOf (the readings it was given); tests/assumption-readers.test.ts traces the reads and fails one that
 // took a default the run set (round 19: holds.ts tickBounds took break-hold's default under a measure's variant).
 // Each entry's ID must be unique across the engine's and the kits' assumptions (tests/engine-assumptions.test.ts checks it).
+// A reading's sentence here is at most 320 characters, and its evidence in docs/design/assumptions.md is one item per
+// reading (`- \`<reading>\`: …`, continuation lines indented two spaces; never two readings in one item): both held by
+// tests/engine-assumptions.test.ts, the form at the top of that doc (round 23, the combo-hold report point 4).
 
 import { EngineError } from "./errors.ts";
 import type { KitAssumption } from "./model.ts";

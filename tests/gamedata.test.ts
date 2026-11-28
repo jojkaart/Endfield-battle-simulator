@@ -1,7 +1,7 @@
 // `efsim gamedata tree / who` (packages/cli/src/gamedata.ts): the compact tree of a raw data file and the reverse
 // index of who names a buff.
 import { describe, expect, it } from "vitest";
-import { atJsonPath, buffCreators, dataTree, eventHandlers, findActions, formatFound, formatHandlers, gamedataTree, parseJsonPath, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
+import { atJsonPath, buffCreators, curveView, dataTree, eventHandlers, findActions, formatFound, formatHandlers, gamedataTree, parseJsonPath, renderTree, shortType, whoMentions } from "../packages/cli/src/gamedata.ts";
 import { deadKitBuffs } from "../packages/cli/src/commands/kit-census.ts";
 import { loadGameData } from "@efsim/data";
 import type { GameData } from "@efsim/engine";
@@ -138,5 +138,14 @@ describe("kit buffs the data only creates in disabled actions (kit-census; round
 
   it("no kit has one now", () => {
     expect(deadKitBuffs(loadGameData(), creators)).toEqual([]);
+  });
+});
+
+describe("gamedata curve (round 23, the placement-cases report point 5)", () => {
+  it("evaluates an entity's own slow-down: the Decisive Assault's 0.4 s curve and when its frame 25 comes", () => {
+    const text = curveView("chr_0029_pograni_ultimate_skill_abilityentity_finish4", { frames: [25] });
+    expect(text).toMatch(/layer 1, at the timeline's frame 0: its own curve \(3 keys, Hermite\), 12 frames \(0\.40 s\); mean scale 0\.\d{4}/);
+    expect(text).toMatch(/the owner's frame 25 comes at real frame 3\d\.\d\d \(\+\d\.\d\d frames\)/);
+    expect(curveView("chr_0029_pograni_ultimate_skill_abilityentity_finish4", { path: ".nothing" })).toMatch(/no TimeDilationAction at \.nothing \(they are at /);
   });
 });

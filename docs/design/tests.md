@@ -211,6 +211,13 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   (a variant) or the snapshots' writer's code, measured for those
   hold-outs alone. Kinds and counts, never a log, an operator or a skill:
   "What a hold-out output may say" below.
+- **More variants after a variant run** (round 23, the combo-hold report
+  point 2): a `--variant` run writes its plain tree to
+  `<out>/plain.json`; `--plain-from <that out>` reuses it where the code
+  (the git trees of packages/, scripts/, fixtures/), the readings and the
+  logs are the same, else measures it again and says why;
+  `--trust-plain` reuses it across a code change (a new reading's
+  branch), each variant's own-effect lines saying so.
 - **Two measures that change the same logs** (round 12, cooldown-clock
   report point 1: b7b3 better under each of two changes alone, mixed
   under both): each run writes `moved.json` (when it was queued, its code,
@@ -403,7 +410,15 @@ snapshots:update's summary) may print:
   hold-outs it moves the same way (round 18; counts);
 - how many hold-outs' replay records a move's identity check finds
   different (scripts/identity.ts, round 22: a count, never which log nor
-  which part of the record).
+  which part of the record);
+- the SP the replay lacked at logged casts, summed over the hold-outs
+  (measure's "Team SP" line from the snapshots' describing `sp short`
+  keys: logs short, casts, SP; round 23), never per log.
+
+measure's `--hits` landing moves (round 23) and `--plain-from`'s reuse
+verdict name development logs or folders only: the hold-outs' hit rows
+are never computed, and plain.json keeps their entries as the run's own
+snapshot files do (never diffed or opened by eye).
 
 A stable label per hold-out across runs ("hold-out #7") was proposed
 (round 18, the replay-only report point 1) and not built: with `--with

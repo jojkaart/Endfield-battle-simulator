@@ -60,3 +60,14 @@ branch on main at c81a34f.
 - The reports' episodes as ready tests again: fc63's array, 9847's 75.90 s tail, 7b54's three replays, 6339's
   freeze, 8f32 without its rank, 8056's Frontiers firings.
 - `node scripts/edit.ts` with `<<<<<<< end` blocks: six outcomes appended in one all-or-nothing call.
+
+## Outcome (round 23)
+
+- 1 (A code edit while snapshots:update waits kills the run): done (533d7d4): snapshots.ts watches codeKey every 20 s
+  while its suites run and stops the running step at the first change (an AbortSignal through done-line.ts's Runner),
+  the files put back; the worktree-of-a-snapshot form wasn't needed for that.
+- 2 (One CLI module for thirty subcommands): carried (2026-11-28-backlog-after-round-23.md point 2)
+- 3 (A brief's theme without a source): done (58fbd8f): docs/friction/README.md step 2, each theme a brief adds names
+  its episode or goes in as the lead's own report.
+- 4 (friction.ts has no --help): done (58fbd8f): every scripts/*.ts entry point answers --help from its header
+  (printHelp on the first argument only, so a wrapper's own `-h` passes through); tests/script-help.test.ts.

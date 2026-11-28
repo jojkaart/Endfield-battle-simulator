@@ -9,6 +9,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 
@@ -88,6 +89,7 @@ export function pruneUnused(files: readonly string[], opts: { readonly importsOn
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
   const files = process.argv.slice(2);
   if (!files.length) throw new Error("usage: node scripts/prune-unused.ts <file.ts> […]");
   process.stdout.write(`prune-unused: ${pruneUnused(files)} file(s) changed\n`);

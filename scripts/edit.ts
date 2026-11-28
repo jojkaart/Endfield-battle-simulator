@@ -11,10 +11,14 @@
 //
 //   @@@ docs/open-problems.md
 //   <<<<<<<
-//   the old text (one or more whole lines, exactly as in the file)
+//   the old text (exactly as in the file: one or more lines, or a part of one line)
 //   =======
-//   the new text (empty: the old lines are deleted)
+//   the new text (empty: the old text is deleted)
 //   >>>>>>>
+//
+// The old text is matched as an exact substring, so a part of a line works: a name inside a long one-line import, a
+// cell of a table row (round 23, the team-SP report point 4: a 600-character import line was edited with sed, as
+// the header said whole lines). It must still occur once; where it repeats, give more of the line around it.
 //
 // `<<<<<<< all` replaces every occurrence (at least one); `<<<<<<< end` takes no old text and appends the new lines at
 // the end of the file (a new describe block, a journal paragraph; its `=======` may be left out, and so may its
@@ -32,6 +36,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { damagedText } from "./check-links.ts";
+import { printHelp } from "./usage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -200,4 +205,7 @@ function main(argv: readonly string[]): number {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = main(process.argv.slice(2));
+}

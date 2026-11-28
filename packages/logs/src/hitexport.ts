@@ -18,6 +18,7 @@ import { verdictCount, type HitVerdict, type LogBuffReplay, type VerdictCount } 
 import type { Assumption } from "./assumptions.ts";
 import { unknownFacts } from "./buffreplay.ts";
 import { composeCheck } from "./snapshotentry.ts";
+import { landingMoveCounts, landingMoves } from "./landingmoves.ts";
 import type { CritSource } from "./replaycrits.ts";
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
@@ -83,6 +84,12 @@ export interface HitRecord {
   readonly unknownFacts?: readonly string[];
   /** Why the replay has no landing for the hit. */
   readonly unknown?: string;
+  /**
+   * With `unknown`: the step that dropped its pinned landing, or why it was never pinned (BuffReplay.droppedLanding, the
+   * replay view's NOLAND detail: `KitHit.if {…} didn't hold`), where the replay says (round 23, the combo-hold report
+   * point 1: `hits --against` said a hit lost its landing, not that its `if` failed).
+   */
+  readonly dropped?: string;
   /**
    * In a fight read per target (fixture severalTargets, several-targets `targets`: enginecheck.ts fightTargets), the
    * hit's target: its index (in order of first hit), how it was chosen (targets.ts HitTarget.how), the enemy-side units
@@ -236,7 +243,10 @@ export function hitRecords(raw: GameData, fx: LogFixture, fixture: string = fx.i
     const error = predicted ? hit.value / predicted - 1 : null;
     const totals = predicted !== null && e ? { totalsPredicted: roundDamage(e.expected ?? predicted), totalsCrit: e.totalsCrit ?? ("known" as const) } : {};
     const basis = k.basis(hit);
-    if ("unknown" in basis.landing) return { ...base, predicted, error, ...totals, unknown: basis.landing.unknown };
+    if ("unknown" in basis.landing) {
+      const dropped = replay.replay.droppedLanding(hit);
+      return { ...base, predicted, error, ...totals, unknown: basis.landing.unknown, ...(dropped ? { dropped } : {}) };
+    }
     const ok = basis as Exclude<typeof basis, { readonly landing: { readonly unknown: string } }>;
     const { landing, primary } = ok;
     let d;
@@ -447,6 +457,7 @@ export function recordChanges(before: readonly HitRecord[], after: readonly HitR
   };
   const [a, b] = [byFixture(before), byFixture(after)];
   const out: string[] = [];
+  const landingLines: string[] = [];
   const counts = new Map<string, number>();
   for (const [fixture, rs] of a) {
     const other = b.get(fixture) ?? [];
@@ -455,15 +466,23 @@ export function recordChanges(before: readonly HitRecord[], after: readonly HitR
       out.push(`${name}: not comparable (${rs.length} records against ${other.length})`);
       continue;
     }
+    // Each hit's landing on both sides (landingmoves.ts): lost and why, gained, a shift onto another logged hit's.
+    const moves = landingMoves(rs.map(landingMark), other.map(landingMark));
+    const moveOf = new Map(moves.map((m) => [m.index, m]));
+    if (moves.length) landingLines.push(`${name}: landings ${landingMoveCounts(moves)}`);
     for (const [i, x] of rs.entries()) {
       const y = other[i] as HitRecord;
       if (x.t !== y.t || x.event !== y.event) throw new Error(`${name}: records out of step at ${i} (${x.t} ${x.event} against ${y.t} ${y.event})`);
-      if (x.class === y.class && x.predicted === y.predicted) continue;
+      const move = moveOf.get(i);
+      if (x.class === y.class && x.predicted === y.predicted) {
+        if (move) out.push(`${name}  t=${x.t}  ${x.operator}  ${x.event}  logged ${x.value}: ${x.class} (the same) [${move.words}]`);
+        continue;
+      }
       const [mx, my] = [mods(x), mods(y)];
       const gone = [...mx].filter((m) => !my.has(m));
       const added = [...my].filter((m) => !mx.has(m));
       const diff = gone.length || added.length ? `; modifiers ${[...added.map((m) => `+${m}`), ...gone.map((m) => `-${m}`)].join(", ")}` : "";
-      const why = y.unknown && y.unknown !== x.unknown ? `; now: ${y.unknown}` : "";
+      const why = move ? ` [${move.words}]` : y.unknown && y.unknown !== x.unknown ? `; now: ${y.unknown}` : "";
       // In a fight read per target, its target on each side (round 21, the statuses-per-target report point 3).
       const [tx, ty] = [x.target ? `T${x.target.index}` : "", y.target ? `T${y.target.index}` : ""];
       const tg = tx || ty ? `  ${tx === ty ? tx : `${tx || "-"} → ${ty || "-"}`}` : "";
@@ -473,7 +492,15 @@ export function recordChanges(before: readonly HitRecord[], after: readonly HitR
     }
   }
   const summary = [...counts].sort((p, q) => q[1] - p[1]).map(([k, n]) => `${k} ${n}`).join(", ");
-  return [...out, `${out.length} hit(s) changed${summary ? `: ${summary}` : ""}`];
+  const n = [...counts.values()].reduce((s, x) => s + x, 0);
+  return [...out, `${n} hit(s) changed${summary ? `: ${summary}` : ""}`, ...landingLines];
+}
+
+/** A record's landing as landingmoves.ts compares it: the landing, or NOLAND with its reason and dropping step; undefined where a reading alone failed. */
+function landingMark(r: HitRecord): string | undefined {
+  if (r.landing) return `${r.landing.frame} ${r.landing.skillId} ${r.landing.hitId}`;
+  if (r.unknown === undefined || r.unknown === "no reading applies") return undefined;
+  return `NOLAND ${r.unknown}${r.dropped ? `: ${r.dropped}` : ""}`;
 }
 
 /** A record's zones, crit and modifiers in words (formatRecord `zones`): numbers to 4 significant digits. */

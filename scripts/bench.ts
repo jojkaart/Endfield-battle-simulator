@@ -13,6 +13,7 @@ import { readFileSync } from "node:fs";
 import { loadavg } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printHelp } from "./usage.ts";
 
 /** CPU seconds this process's waited-for children have used (/proc/self/stat cutime + cstime; Linux). */
 function childCpu(): number {
@@ -82,4 +83,7 @@ function main(argv: readonly string[]): number {
   return variants.some((v) => v.failed) ? 1 : 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
+  process.exitCode = main(process.argv.slice(2));
+}

@@ -86,3 +86,19 @@ s), fix what a mechanism explains; branch of worktree agent-a7166e8bdab3832d6 fr
   in one command; it showed the byTime rule's other effects (9c6e's array, 7b54's attack 2) at once.
 - `zmdlogs casts --choices` with the twin rule in words, and scripts/probes/sp/shortfall.ts for the SP effect.
 - `measure --several-targets` (10 s of work for a change gated on the mark).
+
+## Outcome (round 23)
+
+- 1 (A brief's lead that open-problems already marks fixed): done (58fbd8f): scripts/lead-status.ts (a lead's mentions
+  in docs/open-problems.md, fixed, open or both), named in docs/friction/README.md step 2; `zmdlogs totals --all
+  --side log|replay [--top n]` ranks what is still one-sided. No automatic check over the doc (a fixed case beside its
+  open part is common and fine).
+- 2 (A cast's slots run across a multi-path skill's other paths): done but the per-path filter (649e86a): each skill
+  slot carries its path (Slot.path), the placement's cast end reads the first slot's; keeping only the chosen path's
+  slots moves verdicts (2026-11-28-backlog-after-round-23.md, the accuracy list).
+- 3 (A value rule can't run where a multiplier is an expression): done but the rule (f2c0f86): logcasts.ts
+  multiplierBounds (consumed 0 and 4); the value rule that reads it moves verdicts (the backlog's accuracy list).
+- 4 (worldMs compared with `===` fails on thirds of a millisecond): done (f2c0f86): logcasts.ts heldMs (exactly 0
+  where no stop holds a frame; worldMs reads it) and an ESLint rule against an exact comparison with worldMs.
+- 5 (A TimeDilationAction's inline curve has no view): done (0039efa): `efsim gamedata curve <id> [--path] [--frame n]`
+  on packages/data dilationCurve (the compiler's own reading; weighted keys read unweighted, as it reads them).

@@ -46,6 +46,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     energyGained: {},
     energySpent: {},
     spOverflow: 0,
+    spGained: {},
     comboWindow: {},
     comboTrigger: {},
     spPausedUntil: 0,

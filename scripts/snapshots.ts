@@ -20,8 +20,9 @@
 //
 // It reads the working tree, so the tree must stay as queued (round 21, backlog after round 20 point 2): the code's key
 // (codeKey: HEAD, the tracked changes and the untracked files, its own outputs left out) is taken at queue time and
-// checked when the lock comes and at the end; a tree edited meanwhile fails the run, its files put back, with the
-// paths that changed. Edit docs only while it waits, or commit and run it from a worktree of its own.
+// checked when the lock comes, every 20 s while the suites run (a step is stopped at the first change: round 23) and
+// at the end; a tree edited meanwhile fails the run, its files put back, with the paths that changed. Edit docs only
+// while it waits, or commit and run it from a worktree of its own.
 //
 // Usage: node scripts/snapshots.ts [--costs] [ref]     (several minutes: the pending logs' checks run in full)
 //   --costs   also rewrite tests/slow/pending-costs.json (the pending logs' check times that balance the test:logs
@@ -89,6 +90,9 @@ export function codeMoved(a: ReturnType<typeof codeKey>, b: ReturnType<typeof co
   return [...new Set([...a.paths.keys(), ...b.paths.keys()])].filter((p) => a.paths.get(p) !== b.paths.get(p)).sort();
 }
 
+/** How often the run checks the code against the tree as queued while its suites run (ms). */
+const WATCH_MS = 20_000;
+
 /** The queued code's key, passed to the run under the lock (EFSIM_SNAPSHOTS_CODE). */
 const QUEUED_ENV = "EFSIM_SNAPSHOTS_CODE";
 
@@ -132,11 +136,26 @@ async function regenerate(costs: boolean, ref: string, run: Runner, onKill: (f: 
     { command: ["node", "scripts/accuracy.ts", "--write"] },
     ...(costs ? [{ command: ["node", "scripts/pending-costs.ts", report] }] : []),
   ];
-  for (const s of steps) {
-    if ((await run(s.command, s.env ? { env: s.env } : {})) !== 0) {
-      restore();
-      return 1;
+  // The code watched while the suites run (round 23, round 22's own report point 1: an edit during the run failed it
+  // only at its end, ten minutes on): every WATCH_MS, and a step stopped at the first change.
+  const abort = new AbortController();
+  let movedWhile: string[] | null = null;
+  const watch = setInterval(() => {
+    const now = codeKey();
+    if (now.key === queuedKey.key || movedWhile) return;
+    movedWhile = codeMoved(queuedKey, now);
+    process.stderr.write(`snapshots: the code changed while the suites ran (${movedWhile.join(", ")}): stopping now, the files put back. Commit or set the edits aside, then run it again (docs may change meanwhile)\n`);
+    abort.abort();
+  }, WATCH_MS);
+  try {
+    for (const s of steps) {
+      if (movedWhile || (await run(s.command, { ...(s.env ? { env: s.env } : {}), signal: abort.signal })) !== 0) {
+        restore();
+        return 1;
+      }
     }
+  } finally {
+    clearInterval(watch);
   }
   if (!unmoved("while the suites ran")) {
     restore();

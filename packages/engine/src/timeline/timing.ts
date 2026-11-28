@@ -240,6 +240,58 @@ export function counters(ctx: TimelineContext, operator: string, cur: Acting, fr
  * this kind. A finisher's disable-cast buff doesn't hold an ultimate (engine assumption finisher-ultimate, `cuts`): the
  * ultimate cuts the finisher, its hits still to come with it.
  */
+/**
+ * Which gate of the operator's running action holds a start of `skillId` from `frame`, in words, and the frame it
+ * gives (views only: the log replay's INSIDE line). The options actionGate weighs (the action's end, its uncuttable
+ * frames, the priority, each window that lists the skill), the one it takes, then a cantCastSkill channel
+ * (afterCantCast) on top: round 23, the break-combo report point 1 (458b's two INSIDE lines named "its uncuttable
+ * frames" where a channel to frame 119 and a skillSpecification of 0 held them; an hour in the raw data).
+ */
+export function startGateWords(ctx: TimelineContext, state: TimelineState, operator: string, skillId: string, frame: number, until?: number): { readonly frame: number; readonly words: string } {
+  const cur = state.acting[operator];
+  if (!cur || cur.auto) return { frame, words: "no running action of its own holds it" };
+  const [ct, nt] = [timingOf(ctx, cur.skill), timingOf(ctx, skillId)];
+  const at = (x: number) => actionFrame(cur, x);
+  const ex = exclusiveOf(ct, cur);
+  const [pn, pc] = [priorityOf(nt), priorityOf(ct)];
+  const rank = `priority ${pn} (skillSpecification ${nt.specification}) against its ${pc} (${ct.specification})`;
+  const options: { frame: number; words: string }[] = [
+    { frame: Math.max(frame, at(ct.durationFrames)), words: `${cur.skill}'s end (its frame ${ct.durationFrames})` },
+    { frame: Math.max(frame, at(ex)), words: `${cur.skill}'s uncuttable frames to its frame ${ex}${ex !== ct.exclusiveFrames ? ` (a MarkCanInterrupt; exclusiveFrame ${ct.exclusiveFrames})` : ""}, ${rank}` },
+  ];
+  if (pn > pc) options.push({ frame, words: `its ${rank}: it outranks the running action` });
+  ct.windows.forEach((w, i) => {
+    if (!w.skills.includes(skillId)) return;
+    if (w.conditional && !cur.windows?.includes(i)) {
+      options.push({ frame: Infinity, words: `window ${i} (frames ${w.from}–${w.to}), conditional and shut at this cast` });
+      return;
+    }
+    const from = windowReached(cur, w.from, w.to);
+    if (from !== null && Math.max(frame, at(from)) <= at(w.to)) options.push({ frame: Math.max(frame, at(from)), words: `window ${i} of ${cur.skill} (its frames ${w.from}–${w.to})` });
+  });
+  const best = options.reduce((a, b) => (b.frame < a.frame ? b : a));
+  const kind = kitSkill(ctx, operator, skillId).kind;
+  const through = kind === "ultimate" && engineReading(ctx.scenario, "finisher-ultimate") === "cuts";
+  const channel = [...ct.channels].sort((a, b) => a.from - b.from).filter((c) => c.cantCastSkill && !(through && c.finisher) && at(c.from) <= best.frame && best.frame < at(c.to));
+  const last = channel.at(-1);
+  const after = afterCantCast(ctx, state, operator, best.frame, kind);
+  const windows = ct.windows.some((w) => w.skills.includes(skillId)) ? "" : "; no window of it lists the skill";
+  const own = `${best.words}${windows}${last ? `; then a cantCastSkill channel of ${cur.skill} to its frame ${last.to}${last.finisher ? " (a finisher's disable-cast)" : ""}` : ""}`;
+  // A later start than the running action allows (`until`, earliestStart's): one of startFrom's other gates.
+  if (until === undefined || until <= after) return { frame: after, words: own };
+  const then = advance(ctx, state, Math.max(state.frame, until - 1));
+  const costs = skillCosts(ctx, operator, skillId, until - 1);
+  const skill = kitSkill(ctx, operator, skillId);
+  const later = Math.ceil(state.readyAt[skillId] ?? 0) >= until
+    ? `its cooldown, ready at frame ${Math.ceil(state.readyAt[skillId] ?? 0)}`
+    : needsWindow(ctx, operator, skill) && !windowOpen(then, operator, windowKey(ctx, operator, skillId), until - 1)
+      ? "its combo window, shut until then"
+      : spAt(then, until - 1) < spCostAt(ctx, then, operator, costs, until - 1) - 1e-6
+        ? "its SP cost, reached then"
+        : "a later gate (the running action's own hits, a jump or end on its way, the attack input's mapping)";
+  return { frame: until, words: `${later}; the running action alone would let it start at ${after === frame ? "once" : `frame ${after}`} (${own})` };
+}
+
 export function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number, kind?: SkillType): number {
   const cur = state.acting[operator];
   if (!cur || cur.auto) return frame;

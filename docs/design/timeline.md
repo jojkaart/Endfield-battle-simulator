@@ -219,8 +219,9 @@ returns `slowDown(…)` on the settled state), so a `world` hit the cast schedul
 a hit on her clock isn't. A combo's ignore list in the data (an entity she spawned: Typhoeus's Barrage Array) isn't
 read: the array starts after the slow-down anyway. The log tools' world time takes the same out
 (`zmdlogs worldtime <fixture> <a> <b> --holds --without <op>`; `--series <event>` per tick chain: packages/logs
-replayclock.ts, worldclockview.ts). Tests: tests/world-from-launch.test.ts, tests/world-clock-hits.test.ts,
-tests/world-clock.test.ts.
+replayclock.ts, worldclockview.ts). Tests: tests/clock-table.test.ts (the table's rows on one synthetic state, each
+hold made by its own function: a changed rule fails a named cell; round 23), tests/world-from-launch.test.ts,
+tests/world-clock-hits.test.ts, tests/world-clock.test.ts.
 
 ## Skill timing
 

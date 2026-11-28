@@ -66,6 +66,11 @@ const PRINTERS: Record<string, (c: { before: Snapshots; after: Snapshots }) => u
   },
   sharesLines: (c) => measure.sharesLines(shares(c.after), split, shares(c.before)),
   kindLines: (c) => measure.kindLines(shares(c.after), split, shares(c.before)),
+  // Round 23: the SP shortfall's keys, each log short by its plain count (the hold-out's moves with it).
+  spShortLines: (c) => {
+    const sp = (s: Snapshots) => snap(Object.fromEntries(Object.entries(s.pending).map(([k, x]) => [k, { ...x, totals: { ...x["totals"], "sp short": x["chr_0001_x"]?.["plain"] ?? 0, "sp short casts": 1 } }])));
+    return measure.spShortLines(sp(c.before), sp(c.after), [DK, OK, HK], split);
+  },
   overlay: (c) => accuracy.compare(c.before, measure.overlay(c.before, new Map(Object.entries(c.after.pending)))),
 };
 
@@ -83,7 +88,7 @@ const NOT_PRINTERS: Record<string, string> = {
   snapshotsAt: "reads a ref", isDescribingKey: "a boolean", pairKey: "a key", isHoldoutKey: "the test itself",
   logKeys: "keys for the caller, which filters them", interactLines: "development keys from moved.json (MovedRecord.moved: the hold-outs as a count)",
   isHoldoutOmittedKey: "a boolean", withoutHoldoutOmitted: "a totals record", holdoutEntry: "an entry",
-  selectLogs: "refuses a hold-out", measureOptions: "options", decisionLines: "kinds and counts, no key", isSetEntry: "a boolean", isPatchEntry: "a boolean",
+  selectLogs: "refuses a hold-out", measureOptions: "options", decisionLines: "kinds and counts, no key", isSetEntry: "a boolean", isPatchEntry: "a boolean", plainReuse: "a reuse verdict: folders, never a log",
   parseSet: "a constant", applySets: "a source", replacementDiff: "a diff", combinedPatch: "a diff", setsProblem: "a constant's problem",
   diffHunks: "a diff", hunkParts: "a diff", readingsProblem: "an assumption's problem", defaultReference: "a commit", referenceNote: "a commit",
   splitGroups: "files", exportedNames: "names", importedNames: "names", importLinks: "files", negativeControl: "the verified logs' counts",

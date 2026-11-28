@@ -39,7 +39,15 @@
 //                       (round 11), and each variant's summary also says what it moves against that plain tree, the
 //                       question an idea on top of the tree asks (--no-plain: skip that run). An entry
 //                       <file>:<CONST>=<value> is a --set of that variant alone (its own patched worktree): a
-//                       constant's values side by side, `--variant x.ts:WIDE=30 --variant x.ts:WIDE=60`
+//                       constant's values side by side, `--variant x.ts:WIDE=30 --variant x.ts:WIDE=60`. The plain
+//                       tree's verdicts go into <out>/plain.json
+//   --plain-from <dir>  with --variant: take the plain tree from an earlier --variant run's <dir>/plain.json instead of
+//                       measuring it again, where its code (the git trees of packages/, scripts/, fixtures/), --assume
+//                       readings, logs and --hits match; else it is measured again and the summary says why (round 23,
+//                       the combo-hold report point 2: two variant runs back to back measured the same plain tree twice)
+//   --trust-plain       with --plain-from: reuse it though the code differs (a new reading's branch that the default
+//                       readings never run): each variant's own-effect lines say so; `node scripts/identity.ts --base
+//                       <that run's commit>` checks the default readings replay the same
 //   --variant-patch <file>  a --variant whose code is the measured code with this diff applied (repeatable; round 22,
 //                       the needed-pairing report point 3: three patch measures on one base queued apart and ran the
 //                       base three times): each in a worktree of its own, all against the one base run and beside the
@@ -87,7 +95,10 @@
 //                       one in <out>/hits.txt. Hold-outs never. A log new since the reference (or --base) commit
 //                       is measured there on this tree's copy of the fixture. Also, per such log, the placed hidden
 //                       holds' units that moved (zmdlogs holds' unit lines: placed, earliest, latest), the commonest
-//                       cause of a small worse log ("the holds placed again"). With --variant, also each variant's own
+//                       cause of a small worse log ("the holds placed again"); and per log the hits whose replay
+//                       landing moved, counted by how (`landings:` lost it, with the replay view's NOLAND reason;
+//                       gained one; took another logged hit's landing, a slot shift; round 23, the combo-hold report
+//                       point 1: a reading that moves only what the replay doesn't pin). With --variant, also each variant's own
 //                       changed hits: against the plain tree (the same code without it), for the logs it moved there
 //   --help, -h          this text. The options are checked before the run queues for the lock (the readings against
 //                       the registered assumptions too): a typo fails in seconds
@@ -127,7 +138,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { allLogs, compare, direction, GROUPS, groupOf, holdoutEntry, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, holdoutEntry, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, SP_SHORT, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import { threwNote } from "./code-errors.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
@@ -136,9 +147,12 @@ import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { printHelp } from "./usage.ts";
 import { pairCasts } from "../packages/logs/src/castpairs.ts";
+import { landingMoveCounts, landingMoves } from "../packages/logs/src/landingmoves.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+/** An entry's totals record (packages/logs SNAPSHOT_TOTALS_KEY). */
+const TOTALS_KEY = "totals";
 const VERIFIED = "log-verdicts.json";
 const PENDING = "log-verdicts-pending.json";
 const HOLDOUT = "log-verdicts-holdout.json";
@@ -304,6 +318,8 @@ export function measureOptions(argv: readonly string[]) {
       queued: { type: "string" },
       patch: { type: "string" },
       plain: { type: "boolean", default: true },
+      "plain-from": { type: "string" },
+      "trust-plain": { type: "boolean", default: false },
       split: { type: "string" },
       group: { type: "string", multiple: true, default: [] },
       only: { type: "string" },
@@ -337,6 +353,12 @@ export function measureOptions(argv: readonly string[]) {
   for (const s of [...values.set, ...variantSets]) parseSet(s);
   parseReadings([...values.assume, ...values.variant.flatMap((x) => x.split(",")).filter((x) => !isSetEntry(x) && !isPatchEntry(x))]);
   if (values.patch !== undefined && !existsSync(resolve(values.patch))) throw new Error(`--patch ${values.patch}: no such file`);
+  if (values["plain-from"] !== undefined) {
+    if (!values.variant.length) throw new Error("--plain-from reuses a --variant run's plain tree: it goes with --variant");
+    if (!values.plain) throw new Error("--plain-from and --no-plain: one or the other");
+    if (!existsSync(join(resolve(values["plain-from"]), PLAIN_RECORD))) throw new Error(`--plain-from ${values["plain-from"]}: no ${PLAIN_RECORD} there (a --variant run from round 23 on writes it into its --out folder)`);
+  }
+  if (values["trust-plain"] && values["plain-from"] === undefined) throw new Error("--trust-plain goes with --plain-from");
   return { values, workers };
 }
 
@@ -540,13 +562,39 @@ async function main(argv: string[]): Promise<number> {
   // point 3: a first --variant run compared against the snapshots mixed the tree's own change into each variant's).
   let plain: Snapshots | undefined;
   let whole: Snapshots | undefined;
+  // The plain tree measured, or reused from an earlier --variant run's record (--plain-from; round 23, the combo-hold
+  // report point 2: two variant runs queued back to back each measured the same plain tree again, 35 min of wall time).
+  let plainNote: string | undefined;
+  const plainTree = async (): Promise<Map<string, Entry>> => {
+    const slot = `${tree}#plain`;
+    const code = at ? codeOf(at) : null;
+    if (values["plain-from"] !== undefined) {
+      const from = resolve(values["plain-from"]);
+      const rec = JSON.parse(readFileSync(join(from, PLAIN_RECORD), "utf8")) as PlainRecord;
+      const r = plainReuse(rec, { code, assume, keys: order, withHits: values.hits });
+      if (r.ok || (r.codeOnly && values["trust-plain"])) {
+        plainNote = r.ok ? `The plain tree is ${from}'s (the same code, readings and logs: not measured again).` : `The plain tree is ${from}'s, not measured again (--trust-plain) though ${r.why}: each variant's own effect assumes the default readings replay as they did there (scripts/identity.ts checks that).`;
+        say(`measure: ${plainNote}`);
+        hitRows.set(slot, new Map(Object.entries(rec.hits ?? {})));
+        decisionsBy.set(slot, new Map(Object.entries(rec.decisions ?? {})));
+        return new Map(Object.entries(rec.entries));
+      }
+      say(`measure: the plain tree measured again: ${r.why}${r.codeOnly ? " (--trust-plain would reuse it)" : ""}`);
+    }
+    const got = await measureTree(tree, "plain (no variant): ", order, assume, slot);
+    if (code) {
+      const record: PlainRecord = { code, assume, keys: [...order].sort(), withHits: values.hits, entries: Object.fromEntries(got), hits: Object.fromEntries(hitRows.get(slot) ?? new Map()), decisions: Object.fromEntries(decisionsBy.get(slot) ?? new Map()) };
+      writeFileSync(join(out, PLAIN_RECORD), JSON.stringify(record));
+    }
+    return got;
+  };
   for (const [vi, v] of variants.entries()) {
     const label = variants.length > 1 || values.variant.length ? `variant ${vi + 1} (${v.text}): ` : "";
     const dir = variants.length > 1 ? join(out, `variant-${vi + 1}`) : out;
     mkdirSync(dir, { recursive: true });
     const measured = await measureTree(variantTree(v.sets, vi, v.patch), label, order, v.readings, `${tree}#${vi}`);
     before ??= baseTree ? overlay(reference, await measureTree(baseTree, `base ${values.base}: `)) : reference;
-    if (values.variant.length && values.plain && !plain) plain = overlay(before, await measureTree(tree, "plain (no variant): ", order, assume, `${tree}#plain`), split);
+    if (values.variant.length && values.plain && !plain) plain = overlay(before, await plainTree(), split);
     const after = overlay(before, measured, split);
     whole ??= after;
     // The mixed logs' per-hit fit on both sides (the reference's code measured for them alone when it wasn't already).
@@ -618,16 +666,19 @@ async function main(argv: string[]): Promise<number> {
       // A code error caught per cast reads as lost landings (round 21): said before the numbers it makes.
       ...((n) => (n ? [`The replay threw a code error, caught per cast, so these numbers are no measurement: ${n}`] : []))(threwNote(threwBy.get(`${tree}#${vi}`) ?? new Map(), keys.length)),
       // The tree's own change first, when variants are measured beside it (round 20: it was measured, not printed).
-      ...(vi === 0 && plain ? [`The plain tree (${what}, no variant) against the reference:`, ...compare(before, plain).map((l) => `  ${l}`), ""] : []),
+      ...(vi === 0 && plain ? [`The plain tree (${what}, no variant) against the reference:`, ...(plainNote ? [`  ${plainNote}`] : []), ...compare(before, plain).map((l) => `  ${l}`), ""] : []),
       `Accuracy of ${what}${v.text ? `, variant ${vi + 1} under ${v.text}` : ""} (${keys.length} logs measured${keys.length < logKeys(tree).length ? "; the rest as the reference has them" : ""}):`,
       ...compare(before, after),
       ...(plain ? [`Variant ${vi + 1} against the plain tree (the same code${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}, no variant): the variant's own effect`, ...compare(plain, after).map((l) => `  ${l}`)] : []),
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
+      // Round 23 (the break-combo report point 3: the hits a change moved were looked for in four views): say where they are.
+      ...(!values.hits && keys.some((k) => !isHoldout(k) && JSON.stringify(entryOf(before as Snapshots, k)) !== JSON.stringify(entryOf(after, k))) ? ["(Which hits moved, and how their landings did: measure again with --hits, or `zmdlogs hits <fixture> --against <id>=<r>` for one log and a reading.)"] : []),
       ...(holdLines?.summary ?? []),
       ...(ownLines ? [`Variant ${vi + 1}'s own hits, against the plain tree:`, ...ownLines.summary.map((l) => `  ${l}`)] : []),
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
+      ...spShortLines((plain ?? before) as Snapshots, after, keys, after.split),
       ...holdDecisionLines,
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
@@ -690,6 +741,76 @@ export function sharesLines(after: ReadonlyMap<string, Shares>, split: Split, be
     const b = before ? agg(before, g) : undefined;
     const f = (k: "error" | "matched" | "replayOnly" | "logOnly") => `${b && b.n ? `${b[k].toFixed(1)} → ` : ""}${a[k].toFixed(1)}%`;
     out.push(`  ${g}: ${a.n} fight(s), |error| ${f("error")}, |matched| ${f("matched")}, replay-only ${f("replayOnly")}, log-only ${f("logOnly")}, one-sided ${b && b.n ? `${b.oneSided} → ` : ""}${a.oneSided}`);
+  }
+  return out;
+}
+
+/** The plain tree's record a --variant run writes into its --out folder, for a later run's --plain-from. */
+export const PLAIN_RECORD = "plain.json";
+
+/**
+ * A --variant run's plain tree (the measured code under --assume alone), for --plain-from: its code's identity (the git
+ * trees of packages/, scripts/ and fixtures/ at the measured commit), readings, logs and entries, the --hits rows and
+ * the decision counts (hold-outs' among them, as the run's own snapshot files have them: never printed from here).
+ */
+export interface PlainRecord {
+  readonly code: Readonly<Record<string, string>>;
+  readonly assume: Readonly<Record<string, string>>;
+  readonly keys: readonly string[];
+  readonly withHits: boolean;
+  readonly entries: Readonly<Record<string, Entry>>;
+  readonly hits?: Readonly<Record<string, readonly HitRow[]>>;
+  readonly decisions?: Readonly<Record<string, DecisionCounts>>;
+}
+
+/** The measured code's identity for --plain-from: the commit and the git trees of the folders the measurement reads. */
+function codeOf(commit: string): Record<string, string> {
+  const rev = git(["rev-parse", `${commit}^{commit}`]);
+  return { commit: rev, ...Object.fromEntries(["packages", "scripts", "fixtures"].map((d) => [d, git(["rev-parse", `${rev}:${d}`])])) };
+}
+
+/**
+ * Whether an earlier run's plain tree stands for this run's (--plain-from): the same code (packages/, scripts/,
+ * fixtures/ trees), readings, logs and, with --hits, rows of hits. `codeOnly`: only the code differs (--trust-plain may
+ * reuse it); `why` says what differs, folders only (a fixture's name never: hold-outs are among them).
+ */
+export function plainReuse(rec: PlainRecord, now: { readonly code: Readonly<Record<string, string>> | null; readonly assume: Readonly<Record<string, string>>; readonly keys: readonly string[]; readonly withHits: boolean }): { readonly ok: boolean; readonly codeOnly: boolean; readonly why: string } {
+  const same = (a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
+  const other: string[] = [];
+  if (!same(rec.assume, now.assume)) other.push("other --assume readings");
+  if (JSON.stringify([...rec.keys].sort()) !== JSON.stringify([...now.keys].sort())) other.push("other logs");
+  if (now.withHits && !rec.withHits) other.push("no --hits rows there");
+  if (now.code === null) other.push("the measured code isn't a commit (--live)");
+  const code = now.code ? ["packages", "scripts", "fixtures"].filter((d) => rec.code[d] !== now.code?.[d]) : [];
+  if (code.includes("fixtures")) other.push("the fixtures differ");
+  const codeWords = code.filter((d) => d !== "fixtures").map((d) => `${d}/`);
+  const why = [...other, ...(codeWords.length ? [`the code in ${codeWords.join(" and ")} differs from that run's (${(rec.code["commit"] ?? "").slice(0, 9)})`] : [])];
+  return { ok: why.length === 0, codeOnly: other.length === 0 && codeWords.length > 0, why: why.length ? why.join("; ") : "the same code, readings and logs" };
+}
+
+/**
+ * The SP the replay's own team SP lacked at the logged casts (the snapshots' describing `sp short` / `sp short casts`
+ * keys: BuffReplay.spTopUps), per scoreboard group over the logs measured: logs short, casts, SP, before → after, and
+ * the development logs whose shortfall moved (round 23, the team-SP report point 1: each count was a probe replaying
+ * every log). The hold-outs as their group's sums only. Nothing when neither side has the keys.
+ */
+export function spShortLines(before: Snapshots, after: Snapshots, keys: readonly string[], split: Split): string[] {
+  const of = (s: Snapshots, k: string) => (k.includes("/") ? s.pending[k] : s.verified[k])?.[TOTALS_KEY];
+  const has = (s: Snapshots) => keys.some((k) => of(s, k)?.[SP_SHORT.sp] !== undefined);
+  if (!has(before) && !has(after)) return [];
+  const sum = (s: Snapshots, ks: readonly string[]) => {
+    const xs = ks.map((k) => of(s, k)).filter((t) => t?.[SP_SHORT.sp] !== undefined && t?.[SP_SHORT.sp] !== null);
+    return { logs: xs.length, casts: xs.reduce((a, t) => a + Number(t?.[SP_SHORT.casts] ?? 0), 0), sp: xs.reduce((a, t) => a + Number(t?.[SP_SHORT.sp] ?? 0), 0) };
+  };
+  const words = (x: ReturnType<typeof sum>) => `${x.logs} log(s), ${x.casts} cast(s), ${x.sp} SP`;
+  const out = [`Team SP the replay lacked at logged casts (the snapshots' sp short keys; zmdlogs replay <fixture>'s TOPUP lines), before → after:`];
+  for (const g of GROUPS) {
+    const ks = keys.filter((k) => groupOf(k, split) === g);
+    if (!ks.length) continue;
+    const [b, a] = [sum(before, ks), sum(after, ks)];
+    const moved = g === "holdout" ? [] : ks.filter((k) => !isHoldoutKey(k, split) && of(before, k)?.[SP_SHORT.sp] !== of(after, k)?.[SP_SHORT.sp]);
+    const names = moved.slice(0, 8).map((k) => `${basename(k).replace(/^zmdlogs-|\.json$/g, "").slice(0, 4)} ${of(before, k)?.[SP_SHORT.sp] ?? 0} → ${of(after, k)?.[SP_SHORT.sp] ?? 0}`);
+    out.push(`  ${g}: ${words(b)} → ${words(a)}${names.length ? `; moved: ${names.join(", ")}${moved.length > names.length ? `, … ${moved.length - names.length} more` : ""}` : ""}`);
   }
   return out;
 }
@@ -1356,9 +1477,15 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
       summary.push(`  ${k}: per-hit verdicts not comparable (${!a || !b ? "not measured on both sides" : "the fixture's hits differ"})`);
       continue;
     }
-    const changed = b.flatMap((h, i) => (h[3] !== (a[i] as HitRow)[3] ? [{ was: a[i] as HitRow, now: h }] : []));
+    // Each hit's landing on both sides (HitRow's seventh part): lost (and why), gained, a shift onto another logged
+    // hit's landing (round 23, the combo-hold report point 1), over every hit, a changed verdict or not.
+    const moves = landingMoves(a.map((h) => h[6]), b.map((h) => h[6]));
+    const moveOf = new Map(moves.map((m) => [m.index, m]));
+    const movesLine = moves.length ? [`    landings: ${landingMoveCounts(moves)}`] : [];
+    const changed = b.flatMap((h, i) => (h[3] !== (a[i] as HitRow)[3] ? [{ was: a[i] as HitRow, now: h, move: moveOf.get(i) }] : []));
     if (!changed.length) {
-      summary.push(`  ${k}: no hit's verdict changed (only values within a verdict, e.g. the totals)`);
+      summary.push(`  ${k}: no hit's verdict changed (only values within a verdict, e.g. the totals)`, ...movesLine);
+      if (moves.length) full.push(`${k}:`, ...moves.map((m) => `  ${((b[m.index] as HitRow)[0] / 1000).toFixed(2)} s ${(b[m.index] as HitRow)[1]} ${(b[m.index] as HitRow)[2]}: ${m.words}`));
       continue;
     }
     const kinds = new Map<string, typeof changed>();
@@ -1366,10 +1493,11 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
       const kind = `${c.was[3]} → ${c.now[3]}`;
       kinds.set(kind, [...(kinds.get(kind) ?? []), c]);
     }
-    summary.push(`  ${k}: ${changed.length} hits: ${[...kinds].sort((x, y) => y[1].length - x[1].length).map(([kind, cs]) => `${kind} ${cs.length}`).join(", ")}`);
-    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}${modifierChange(c.was[5], c.now[5])}`;
+    summary.push(`  ${k}: ${changed.length} hits: ${[...kinds].sort((x, y) => y[1].length - x[1].length).map(([kind, cs]) => `${kind} ${cs.length}`).join(", ")}`, ...movesLine);
+    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}${modifierChange(c.was[5], c.now[5])}${c.move ? ` [${c.move.words}]` : ""}`;
     for (const [, cs] of kinds) for (const c of cs.slice(0, examples)) summary.push(`    ${line(c)}`);
-    full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`));
+    const unchanged = moves.filter((m) => (a[m.index] as HitRow)[3] === (b[m.index] as HitRow)[3]);
+    full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`), ...(unchanged.length ? [`  landings moved under the same verdict:`, ...unchanged.map((m) => `    ${((b[m.index] as HitRow)[0] / 1000).toFixed(2)} s ${(b[m.index] as HitRow)[1]} ${(b[m.index] as HitRow)[2]}: ${m.words}`)] : []));
   }
   return { summary, full };
 }

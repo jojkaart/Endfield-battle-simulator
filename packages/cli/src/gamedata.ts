@@ -6,7 +6,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseJsonExact, sourceDir } from "@efsim/data";
+import { dilationCurve, parseJsonExact, sourceDir } from "@efsim/data";
 
 export type DataFolder = "BuffData" | "SkillData";
 
@@ -247,6 +247,62 @@ export function renderTree(node: TreeNode, opts: { readonly grep?: RegExp; reado
     for (const c of n.children) walkAll(c, d + 1);
   };
   walk(node, 0);
+  return out.join("\n");
+}
+
+/**
+ * `efsim gamedata curve <id> [--path p] [--frame n…]`: each TimeDilationAction (any layer) of a BuffData or SkillData
+ * file, its curve as the compiler reads it (packages/data dilationCurve: its own keys, Hermite, or a named curve), its
+ * mean scale over its length and the owner's time it lets pass, and for each `frame` of the owner's timeline counted
+ * from the action's start, the real frame it comes at (the curve's local time reaching it, then 1 a frame after).
+ * Round 23 (the placement-cases report point 5: the Decisive Assault's curve took scripts/probes/entities/
+ * harass-slowdown.ts with the keys copied by hand). `path` (as `who` and `tree --path` print it) picks one.
+ */
+export function curveView(id: string, opts: { readonly path?: string; readonly frames?: readonly number[] } = {}): string {
+  const { folder: f, file } = dataFile(id);
+  const parsed = parseJsonExact(readFileSync(file, "utf8"));
+  const found: { path: string; o: Record<string, unknown>; from: number | null; interval: number }[] = [];
+  const visit = (v: unknown, path: string, from: number | null, interval: number) => {
+    if (Array.isArray(v)) return v.forEach((x, i) => visit(x, `${path}[${i}]`, from, interval));
+    if (!isObj(v)) return;
+    // A timeline action's frames (SkillData _startFrame / _endFrame): what finishByAction cuts a dilation to.
+    const start = typeof v["_startFrame"] === "number" ? v["_startFrame"] : null;
+    const [f0, iv] = start !== null ? [start, typeof v["_endFrame"] === "number" ? v["_endFrame"] - start : Infinity] : [from, interval];
+    if (typeof v["$type"] === "string" && v["$type"].includes("TimeDilationAction")) found.push({ path, o: v, from: f0, interval: iv });
+    for (const [k, x] of Object.entries(v)) visit(x, `${path}.${k}`, f0, iv);
+  };
+  visit(parsed, "", null, Infinity);
+  const picked = opts.path !== undefined ? found.filter((x) => x.path === opts.path || x.path.startsWith(`${opts.path}.`) || x.path.startsWith(`${opts.path}[`)) : found;
+  if (!picked.length) return `${id} (${f}): ${found.length ? `no TimeDilationAction at ${opts.path} (they are at ${found.map((x) => x.path).join(", ")})` : "no TimeDilationAction"}`;
+  const out = [`${id} (${f}): ${picked.length} TimeDilationAction(s); scale by the curve's normalised time, sampled mid-frame as the compiler samples a global one (skillData.ts slowdownOf)`];
+  for (const x of picked) {
+    const c = dilationCurve(x.o, x.interval);
+    const layer = typeof x.o["layer"] === "number" ? `layer ${x.o["layer"]}` : "no layer";
+    const head = `${x.path}: ${layer}${x.from !== null ? `, at the timeline's frame ${x.from}` : ""}${x.o["isEnable"] === false ? ", switched off (isEnable false)" : ""}`;
+    if (!c) {
+      out.push(`${head}: no length or an unknown curve (${x.o["useCurveKey"] === true ? `named ${String(x.o["curveKey"])}` : "no keys"})`);
+      continue;
+    }
+    const scales = Array.from({ length: c.frames }, (_, k) => Math.max(0, Math.min(1, c.at((k + 0.5) / c.frames))));
+    const local = scales.reduce((a, v) => a + v, 0);
+    out.push(`${head}: ${c.source}, ${c.frames} frames (${(c.frames / 30).toFixed(2)} s); mean scale ${(local / c.frames).toFixed(4)}: the owner's time runs ${local.toFixed(2)} frames of the ${c.frames} (holds ${(c.frames - local).toFixed(2)})`);
+    out.push(`  scale at t = ${[0, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1].map((t) => `${t}: ${Math.max(0, Math.min(1, c.at(t))).toFixed(3)}`).join(", ")}`);
+    for (const target of opts.frames ?? []) {
+      // The real frame at which the owner's local time reaches `target` frames: through the curve's frames, then 1 a frame.
+      let acc = 0;
+      let real: number | null = null;
+      for (let k = 0; k < scales.length; k++) {
+        const s = scales[k] as number;
+        if (acc + s >= target) {
+          real = k + (s > 0 ? (target - acc) / s : 0);
+          break;
+        }
+        acc += s;
+      }
+      real ??= scales.length + (target - acc);
+      out.push(`  the owner's frame ${target} comes at real frame ${real.toFixed(2)} (+${(real - target).toFixed(2)} frames)`);
+    }
+  }
   return out.join("\n");
 }
 

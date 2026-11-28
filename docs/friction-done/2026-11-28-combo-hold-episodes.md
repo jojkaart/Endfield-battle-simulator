@@ -69,3 +69,19 @@ worktree-agent-a43e5fa3f267d6415).
 - `measure --variant` with several readings in one run, each against the plain tree.
 - `zmdlogs replay <fx> --assume …` diffed against the plain replay named the failing `if` exactly.
 - `gamedata dilations combo` and `gamedata tree` decided the layer-1 question in minutes.
+
+## Outcome (round 23)
+
+- 1 (Nothing tells a measure that a reading only moves what the replay doesn't pin): done (8228f43): packages/logs
+  landingmoves.ts; measure --hits carries each hit's landing and prints per log `landings:` (lost its landing, with the
+  NOLAND reason and the step that dropped it; took another logged hit's landing, a shift); `hits --against` names
+  them (HitRecord.dropped). On 3aa6 under `4f-episode`: "lost its landing: … its kit hit's `if` didn't hold … 4".
+- 2 (Two measures queued back to back each ran the plain tree again): done (7d3ec64): a --variant run writes
+  <out>/plain.json; `--plain-from <dir>` reuses it for the same code, readings and logs, else says why;
+  `--trust-plain` across a code change, labelled (the identity check stays a separate `scripts/identity.ts` run:
+  it costs a plain run's time).
+- 3 (The clocks view's rows can't be refit without a scratch parser): done (a83ab0a): `zmdlogs clocks --json` (a line
+  per row, with its combos and episodes) and `--fit` (per combo, per episode, share, each with its rms).
+- 4 (The assumptions notes' format is enforced but not stated where a reading is added): done (58fbd8f): the short
+  form at the top of docs/design/assumptions.md and in assumptions.ts's header (one item per reading, the 320
+  characters), and the parser's error names the form.

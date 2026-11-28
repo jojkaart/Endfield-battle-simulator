@@ -4,9 +4,46 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 200 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 201 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Improvement round 23: why a change moves a log, the replay's SP as a record, measuring without re-measuring
+
+**Goal:** the five open friction reports and round 22's backlog (docs/friction-done/2026-11-28-round-23.md), tools
+only: no verdict moves.
+
+**Done** (round summary for the details):
+- Why a change moves a log: packages/logs landingmoves.ts in `measure --hits` (a `landings:` line per moved log:
+  lost its landing with the NOLAND reason, a shift onto another logged hit's) and `zmdlogs hits --against`
+  (HitRecord.dropped): 3aa6 under `combo-operator-hold=4f-episode` loses 4 of Zhuang Fangyi's landings to their `if`.
+  The INSIDE line names the gate that bound (timing.ts startGateWords): 0eef's Typhoeus combo at 6.77 s is her combo
+  window, not her attack's frames. `efsim kit` prints skillSpecification, priority, channels; every kit skill's
+  specification is held to its kind (tests/skill-specification.test.ts).
+- SP as a record: TimelineState.spGained (a statistic), `zmdlogs replay --sp` and TOPUP lines (spview.ts), the
+  describing snapshot keys `sp short` / `sp short casts` and measure's "Team SP the replay lacked" line.
+- Measuring: `measure --plain-from` / `--trust-plain` (a variant run's plain.json), snapshots:update stops at the
+  first code change, `zmdlogs clocks --json / --fit / --around break`, `efsim gamedata curve`.
+- One rule per question: the EVENT line's nearest cast, castassembly.ts ultimateEventRead, Slot.path.
+- Traps and rules: heldMs and an ESLint rule on exact worldMs, multiplierBounds, `zmdlogs totals --all --side`,
+  scripts/lead-status.ts, --help in every script, the assumptions notes' form written down, edit.ts's part-of-a-line
+  form documented, tests/clock-table.test.ts.
+- Paperwork: docs/friction/2026-11-28-backlog-after-round-23.md (points 1–2, three new accuracy entries), the reports
+  and round 22's backlog in docs/friction-done/ with their outcomes.
+
+**Checked:** `node scripts/identity.ts --base e865411`: the compiled data and every log's replay record the same (0 of
+65 development, 0 of 13 hold-outs) at 4fe2e66 and at the last code commit; snapshots:update and team-ab as the round
+summary says; premerge at the final commit.
+
+**Decisions:** SP shortfall as a describing key (not a worker field), so measure's reference side comes from the
+snapshots for free; the INSIDE gate in words from a mirror of actionGate's options (views only), not by instrumenting
+the hot gate path; `--plain-from` reuses only on equal git trees of packages/, scripts/ and fixtures/ unless
+`--trust-plain`, since an identity check costs as much as the plain run it would save; --help answered on the first
+argument only, so wrappers (with-lock, cli-ab) pass a command's own `-h` through. The zmdlogs CLI split (round 22's
+own point 2) needs a subcommand layer in command.ts and cli.ts: carried as a task of its own.
+
+**Problems:** none beyond the round's own: edit.ts always matched a part of a line (only its header said whole lines);
+the first `--plain-from` tries measured again, rightly, on code changed in between.
 
 ## 2026-11-28: Breaks inside a combo's slow-down; Akekuri's ultimate as an ultimate
 
@@ -362,31 +399,3 @@ later landing set off.
 
 Still open: what runs Typhoeus's array past its entity's 180 frames (its entity held by stops the placement's world
 time leaves in, or a longer life; its first tick also 0.5–0.7 s after the press against the kit's 1.17 s).
-
-## 2026-11-27: Friction round 21: one home for the pairing and keepPrevious, counterfactual replays, measure's split by what it measured
-
-Goal: improvement round 21 over five reports and round 20's backlog (summary:
-docs/friction-done/2026-11-27-round-21.md; what's left: docs/friction/2026-11-27-backlog-after-round-21.md).
-
-Done: landingpairs.ts pairKitLandings (the replay's kit-landing pairing, moved out of replayKitBuffs); one keepPrevious
-rule (castassembly.ts keptPrevious / isPreviousCast) with ReplayedCast.keepPreviousWhy and a CUTS line that says the
-hits are kept; ReplayOptions.cutCasts and counterfactual.ts: `zmdlogs decisions --why-kept <fixture>`; HitRecord
-.target.landing and `≠ landing`; measure's code errors as "not measured alone", refs pinned at queue time, a
-cross-hunk name warned at queue time; tests/enemy-readers.test.ts; `gamedata handlers`, `find`'s disabled parent;
-skillCompile.ts Ctx.channel; placementwords.ts; `statuses --inflictions`; `hits --layers <owner:id>`; `tried.ts
-refresh`; snapshots:update refusing a tree edited since queued; MISSED `rounds`; lint:changed's registry tests;
-friction.ts withoutNumbers; edit.ts's unclosed `end` block.
-
-Decisions: every change behaviour-preserving. cutTails' `needed` stays on loggedShown (pairKitLandings there moves abfd:
-the accuracy list). The compiler's channel token keeps the old `!detached` filter: without it 9 kit hits of channels in
-a buff's or entity's own file would gain an end (the accuracy list). The check's target ids: 6339 agree with the
-landings', 9c6e but one, 7b54 147 of 210 differ (SECOND_PASS_TARGETS `free` numbers afresh): a view and a test now,
-the fix on the accuracy list. `hits --against` already answered the statuses-per-target report's point 3 (the
-round added the target to its lines). The statuses view and the DEATH lines from the replay's record came with the
-statuses-per-target round; this round added the inflictions. Round 20's backlog point 1 (clocks around a non-cast
-hold) parked, carried twice without a new report.
-
-Checks: `npm run snapshots:update` at 95a4f66: every group "unchanged", "No log's verdicts moved", no key added;
-the compiled game data's sha1 the same at HEAD and after the compiler move (no engine number can move: team-ab not
-needed); every development log's keepPrevious flags the same under the one rule (10458 casts); cli-ab identical on
-the views touched.

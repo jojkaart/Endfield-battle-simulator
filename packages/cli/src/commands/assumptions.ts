@@ -38,7 +38,7 @@ export function assumptionNotes(text: string = readFileSync(ASSUMPTION_NOTES, "u
         readings.set(item, m[2] as string);
       } else if (item !== undefined && line.startsWith("  ") && line.trim()) readings.set(item, `${readings.get(item)} ${line.trim()}`);
       else if (line.trim()) {
-        if (item !== undefined) throw new Error(`${ASSUMPTION_NOTES.pathname}: ## ${id}: a line after its readings that isn't one: ${line}`);
+        if (item !== undefined) throw new Error(`${ASSUMPTION_NOTES.pathname}: ## ${id}: a line after its readings that isn't one: ${line} (one item per reading, "- \`<reading>\`: …", continuation lines indented two spaces: the form at the top of the file)`);
         question.push(line.trim());
       }
     }

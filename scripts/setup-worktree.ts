@@ -14,6 +14,7 @@ import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSy
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mainCheckoutOf } from "../packages/data/src/checkout.ts";
+import { printHelp } from "./usage.ts";
 
 /** The workspace packages under packages/ (directory names), those whose package.json names them @efsim/<dir>. */
 export function workspacePackages(root: string): string[] {
@@ -55,5 +56,6 @@ export function setupWorktree(root: string = resolve(dirname(fileURLToPath(impor
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (printHelp(process.argv.slice(2, 3), import.meta.url)) process.exit(0);
   process.stderr.write(setupWorktree() + "; the CLI here: npm run -s efsim -- <args> (efsim is not on the PATH)\n");
 }

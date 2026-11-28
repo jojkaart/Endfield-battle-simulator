@@ -294,7 +294,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         {
           const amount = evaluate(a.value, ec());
           const grant = spGrantOf(ctx, triggerSkillId(owner, t), a.value, a.spKind);
-          st = gainSp(st, amount, frame, grant.kind);
+          st = gainSp(st, amount, frame, grant.kind, { operator: owner, source: `kit:${t.id}` });
           if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: grant.kind === "natural", ...(grant.sourceType !== undefined ? { sourceType: grant.sourceType } : {}) });
         }
         break;

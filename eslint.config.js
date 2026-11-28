@@ -74,4 +74,18 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // World time in ms is a float of thirds of a ms (frames at 30 fps): an exact comparison with it fails on rounding
+    // (round 23, the placement-cases report point 4: a byTime rule `worldMs(a, b, stops) === due` never fired).
+    files: ["packages/logs/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "BinaryExpression[operator=/^[!=]==?$/] > CallExpression[callee.name=/^(worldMs|heldWorldMs)$/]",
+          message: "worldMs is a float of thirds of a ms: compare with a tolerance (|a − b| < 1e-6), or ask heldMs(from, to, stops) === 0 for \"no stop held this span\" (logcasts.ts).",
+        },
+      ],
+    },
+  },
 );

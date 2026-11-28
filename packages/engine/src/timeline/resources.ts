@@ -184,12 +184,24 @@ export function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: st
 }
 
 /** SP for the team: returned SP is spent first and gives no ultimate energy when spent; natural SP does, as regenerated SP. */
-export function gainSp(st: TimelineState, amount: number, frame: number, kind: SpKind): TimelineState {
+export function gainSp(st: TimelineState, amount: number, frame: number, kind: SpKind, by?: SpSource): TimelineState {
   if (amount <= 0) return st;
   const before = spAt(st, frame);
   const after = Math.min(SP.max, before + amount);
   const lost = before + amount - after;
-  return { ...st, ...(lost > 0 ? { spOverflow: st.spOverflow + lost } : {}), sp: after, spReturned: Math.min(after, st.spReturned + (kind === "returned" ? after - before : 0)), frame: Math.max(st.frame, frame) };
+  // The statistic of where it came from (TimelineState.spGained), before the cap as energyGained.
+  const gained = by ? { spGained: { ...st.spGained, [by.operator]: { ...st.spGained[by.operator], [by.source]: (st.spGained[by.operator]?.[by.source] ?? 0) + amount } } } : {};
+  return { ...st, ...(lost > 0 ? { spOverflow: st.spOverflow + lost } : {}), ...gained, sp: after, spReturned: Math.min(after, st.spReturned + (kind === "returned" ? after - before : 0)), frame: Math.max(st.frame, frame) };
+}
+
+/**
+ * Who and what an SP grant came from, for the statistic TimelineState.spGained: the operator and `hit <skillId> <hitId>`
+ * (a landing's own SP: the skill's `atb` on its first hit, a kit hit's `sp`), `kit:<trigger>` (a kit trigger's `sp`
+ * action) or `dodge` (a perfect dodge). Regeneration isn't a grant (spAt reads it from the clock).
+ */
+export interface SpSource {
+  readonly operator: string;
+  readonly source: string;
 }
 
 /**
