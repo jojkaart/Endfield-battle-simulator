@@ -107,9 +107,14 @@ Re-pinning the openers at the press was measured and dropped
 points). Next: 3f78 19.30 s, one of 12 combos the replay makes 0.07–2.4 s
 before its own cooldown across 11 operators
 (scripts/probes/placement/combo-cooldowns.ts: a shared cause, not
-Arcane's kit), a COOLDOWN decision line for them, fc63's battle skills
-INSIDE her combo's window 0 (her clock through overlapping combo
-slow-downs).
+Arcane's kit), a COOLDOWN decision line for them. Done 2026-11-28: fc63's
+battle skills INSIDE her combo's window 0 were her clock through
+overlapping combo slow-downs: a combo's slow-down doesn't hold an operator
+whose own combo slow-down runs as it starts (engine assumption
+`combo-overlap` `own`; the log's cast events, stamped on the world's clock,
+put 99 of 132 such combos' starts where the landing gives them unheld,
+scripts/probes/combo-hold/overlap-events.ts); left 11.37 s (6 frames:
+Gilberta's combo after her own slow-down ended) and 102.33 s (a break).
 
 ## Gear
 

@@ -59,9 +59,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   2026-11-28: her Signs at a Nature burst's application, her Sign conversion
   on her combo's first arrow (team +2.6% / +3.0%); done 2026-11-28: a
   combo's window opened inside its own slow-down taken at the press
-  (openerAhead, the 12 INSIDE lines gone, no verdict moved); next her
-  clock through overlapping combo slow-downs (fc63), the 12 combos made
-  0.07–2.4 s before their cooldown (3f78's Arcane among them).
+  (openerAhead, the 12 INSIDE lines gone, no verdict moved); done
+  2026-11-28: combos pressed together each on their caster's clock
+  (`combo-overlap` `own`: fc63's conversion on her arrow, team −0.03%);
+  next the 12 combos made 0.07–2.4 s before their cooldown (3f78's
+  Arcane among them).
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't
@@ -166,8 +168,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   slow-down and an earlier trigger ruled out, not built; placement paths 2026-11-28: a landing kept on its cast by
   value against a consumed-scaled multiplier's bounds (8f32's shatter, plain 395 → 409 with the next), a cast's slots
   cut to its first landing's path (8f32's Alesh), the second pass's stops with the ultimate merge (9c6e's array pair,
-  4bfc 870 → 876), a hitless ultimate's unplaced stop from ultimateEventRead: next 458b's 111 s layer ends (world
-  holds 88.7–111.5 s), the INSIDE flags that are a shut combo window.
+  4bfc 870 → 876), a hitless ultimate's unplaced stop from ultimateEventRead; 458b's 111 s layer ends fixed
+  2026-11-28 (layered buffs on their own timers, stackingType 11, as clocks of the hidden holds): next the INSIDE
+  flags that are a shut combo window, the world's per-episode excess (db87 22 s).
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim (2026-11-28:
