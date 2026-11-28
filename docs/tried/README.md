@@ -99,6 +99,10 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
 - [2026-11-28-barrage-array-channel-end.diff](2026-11-28-barrage-array-channel-end.diff): Typhoeus's Barrage Array
   with the data's channel end (frame 215): its 18 ticks run past it in the logs; 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%,
   hold-out plain −6. Superseded 2026-11-28: the end on the array's world clock.
+- [2026-11-28-opener-landed-at-press.diff](2026-11-28-opener-landed-at-press.diff): a combo's window opener logged
+  inside its own slow-down landed at the press (replayrun.ts openerFirst): hold-outs plain 82.6 → 80.9%, 9a80 −27
+  plain; the moved landings lose the logged facts keyed to their frame and the combo's cast-time effects. Kept
+  instead: the press takes the window the opener opens (openerAhead), the landings unmoved.
 - [2026-11-28-ult-event-stop-end-held-back.diff](2026-11-28-ult-event-stop-end-held-back.diff): held back (castassembly.ts
   was the placement agent's file), applied after that agent's merge (the break-combo branch, 2026-11-28): an
   ultimate's hitless cast event read at its stop's end

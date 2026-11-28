@@ -4,9 +4,53 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 203 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 204 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Combo windows: the opener logged inside a combo's own slow-down opens the press's window
+
+**Goal:** the combo-windows lead's 12 INSIDE lines whose window opener the log has inside the combo's own slow-down
+(docs/open-problems.md "Combo windows"), then 3f78 19.30 s (Arcane's combo 17.17 s after her last, 18 s cooldown).
+Base main at 400bb44; files: packages/logs/src/replayrun.ts and buffreplay.ts (shared with the clocks agent, one
+commit each), decisionsview.ts, views.ts, scripts/probes/placement/.
+
+**Found:**
+- The opener's ms inside the combo's stop is the log's flush, not its landing: 7 of the 12 share a ms with the combo's
+  own cast event or first hit; Estella's battle skill, its event its placed start ±0.07 s in 19 of 24 casts
+  (`casts --event-lags --operator Estella --verbose`), is 0.40–0.81 s off it in exactly the four whose projectile
+  opens a combo here (4e5e 27.99, c4f3 40.79 and 117.22, 8f32 82.24 s); 8f32: her event at 81.85 s puts the
+  projectile before Rossi's 82.90 s press, the log has it at 83.34 s with his combo's first hit. The combo's own hit
+  pins its press (13 frames before it), so the press-at-the-opener reading is out. 8056 112.70 s's opener is
+  Wulfgard's ultimate's Combustion at its frame 45 (113.27 s), not his later combo.
+- 3f78: no reduction in Arcane's kit, gear or stage (540 frames from the data's level 12; 8915's 12 s cooldown is
+  its stage's, c779's short gap Si's ultimate on slot 0, Arcane there); her cast events 16.93 s apart.
+  scripts/probes/placement/combo-cooldowns.ts: 22 replayed combos made before the replay's own cooldown, 10 double
+  placements (0.3–7 s apart) and 12 early by 0.07–2.4 s across 11 operators: a shared cause, open.
+
+**Done:** replayrun.ts openerAhead (makeCast's first step): a combo whose window is shut at its frame takes the
+window the state run on without it opens within its own stop (skillStops from frame 0), its count and source; the
+landings stay. OPENER decision lines (`zmdlogs decisions`, `replay`). tests/opener-ahead.test.ts (fails at 400bb44,
+verify-at); tests/burst-applied.test.ts's window-words test reads 3f78's line now.
+
+**Dead end:** re-pinning the openers at the press (docs/tried/2026-11-28-opener-landed-at-press.diff): hold-outs
+plain 82.6 → 80.9%, 9a80 −27 plain. A moved landing loses the logged facts the engine keys to its frame (a reaction's
+logged crit within a frame: 4e5e's Cryst reaction), and Arcane's own ultimate hits moved before her combo lost its
+cast-time effects the log shows them with.
+
+**Measured** (`measure --base 400bb44`): no log's verdicts moved, the negative control within its bound. `zmdlogs
+decisions --all`: the development logs' INSIDE lines held by a combo window 13 → 1 (3f78 19.30 s), OPENER 29 in 20
+logs (17 more combos whose window the replay had opened at the press with count 1 and no source). Scoreboard (`npm
+run snapshots:update`: no snapshot changed): development plain 84.3%, mismatch 4.6%, |damage error| 1.2%; hold-outs
+plain 82.6%, mismatch 5.1%, |damage error| 5.9%; earlier pending plain 85.0%, |damage error| 1.2%. Log-side only: no
+simulated fight moves, so no team-ab.
+
+**Decisions:** the window's facts, not the landings: the brief said only the flag and the window at the cast were at
+stake, and the measure agrees (nothing else moved). Not behind an assumption: it changes no verdict, and the press
+can't come before its window. The phantom window the opener opens again after the cast stays as before.
+
+**Left:** the 12 early combos (a COOLDOWN decision line would show them; the friction report suggests it); fc63's
+battle skills INSIDE her combo's window 0.
 
 ## 2026-11-28: Placement paths: a value rule on multiplier bounds, slots cut to a path, hitless ultimate stops
 
@@ -379,45 +423,3 @@ Valiant hits don't get the combo cast's Yinglung's Edge), 71 part 1 agreed by 8f
 
 **Dead ends:** an SP-cap rule for the "recovers SP" event wasn't built: the replay's SP decides too few firings
 either way.
-
-## 2026-11-28: Typhoeus's Barrage Array on the world's clock
-
-**Goal:** round 22's open part (docs/journal/2026-11-28-01-needed-on-the-check-s-pairing-a-channel-s-end-in-a-detached.md):
-why Typhoeus's Barrage Array runs past its entity's 180 frames (its kit had the data's end left out, dataOverride
-`latest`), and why its first tick comes 0.5–0.7 s after the combo's press against the kit's frame 35.
-
-**Found (data and every Typhoeus development log, scratch surveys):**
-- The data: chr_0034_typhoea_combo_persistentdamage lasts 180 frames (persistent_time 6 s at every skill level), a
-  ChannelingAction every 1/3 s capped at 18 per target: ticks at its frames 0–170. No longer life, no refresh: every
-  full array has exactly the cap's 18 ticks.
-- Its clock is the world's. Over the 32 arrays of 12 logs, the 18-tick ones span 5.74–9.75 s of log time; with every
-  stop the replay applied taken out, her own ultimate's included, and the hidden holds the replay placed, 5.56–6.17 s
-  against 5.67 s. Her own ultimate holds it: fc63 90.53→92.87 s, 2.35 s of log time between two ticks, 0.28 s with her
-  stop out (her clock isn't held by her own stop). Her own combo's slow-down doesn't (its ignore list spares her
-  spawned objects; the array starts after it anyway).
-- The first tick lands at the first arrow's ms in all 32 arrays: the entity spawns at the arrow's hit (frame 35), as
-  the kit has it. The 0.5–0.7 s from the press is her combo event's usual lag (median 0.52 s over 23 combos; every
-  combo's event lags its frame 0 by 0.3–0.7 s, docs/design/data.md "What the log records"), not an early spawn.
-
-**Done:**
-- Kit: both combos' `area` hits `world: true`, `launch: 35` (the data's LaunchProjectile at 35, kitMatch agrees); the
-  `latest` override gone, so they have the data's end, frame 215.
-- Engine: ScheduledHeader.worldFromLaunch (casting.ts for a `world` hit with a `launch`; schedule.ts shiftClock reads
-  it): on the caster's clock until the launch, the world's from then. A `world` hit without a launch as before. Zhuang
-  Fangyi's Thunder Strikes (world, launch 13) take it too: no verdict moved. drivers.ts' channel-turn rule skips a
-  world channel (its lateness already has the stops to come in it).
-- Placement (logcasts.ts placeWith `onWorld`): a world channel's elapsed takes out every stop but its operator's own
-  non-ultimate ones, and a tick past its end is a new cast's only with a logged press of the cast's kind between, no
-  slack bound: the placement has no hidden holds (00ae 24.63 s: 6.79 s with the stops out, 0.68 s of hidden holds
-  inside it later).
-- tests/world-from-launch.test.ts (engine), tests/channel-ends.test.ts (the six arrays one combo each).
-
-**Measured** (`npm run measure -- --at HEAD --base 0f3c894 --split files`): development, hold-out, earlier pending and
-several targets unchanged; verified |damage error| 1.4 → 1.5% (dbae −2.6 → −3.0%, the kit alone). dbae's six unlogged
-ticks were at kit frames on her clock, 14.10–15.77 s, beside the logged ticks of those slots' neighbours; held by her
-ultimate they come at 16.17–16.83 s, three of them inside the fight's last 0.5 s (TAILKEPT fight-end): an
-under-predicted fight loses wrong ticks that offset it. team-ab: the owner's team the same; Typhoeus's team full
-+0.00%, zero +0.03% (32 seeds). The scoreboard (snapshots:update): verified |damage error| 1.4 → 1.5%, every other row unchanged; Typhoeus's own one-sided 3.5 → 3.4%.
-
-**Left:** dbae's and 00ae 24.63 s's arrays run 0.4 s past 170 frames with every stop and hold out (00ae's in Perlica's
-and Gilberta's combo stops: the combos' known excess hold).

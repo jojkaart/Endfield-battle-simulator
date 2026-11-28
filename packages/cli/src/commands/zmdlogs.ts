@@ -293,7 +293,7 @@ export default command({
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
   efsim zmdlogs decisions <fixture…|--all> --assume <id>=<reading>  The replay's decisions (SKIP, TAILCUT, FAILED,
-                                          MISSED, INFER, MADE, PATH, JUMPDROP, BOTHPATHS, BATCH, FORCED, INSIDE, CUTS, as replay prints
+                                          MISSED, INFER, MADE, PATH, JUMPDROP, BOTHPATHS, BATCH, OPENER, FORCED, INSIDE, CUTS, as replay prints
                                           them) that differ between the default readings (-) and the given one (+), per log,
                                           then a count per kind: a replay rule's false positives before a measure
                                           (two replays per log, seconds each); without --assume every decision;
