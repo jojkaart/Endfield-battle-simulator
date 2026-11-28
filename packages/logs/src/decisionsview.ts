@@ -1,8 +1,8 @@
 // The replay's own decisions as lines (improvement round 14; combo-hold report point 1): what it skipped and why, the
 // casts it ended early (TAILCUT), couldn't make (FAILED), added (MISSED), made from the listing (INFER) or as another
 // skill than the placement's (MADE), the kit jumps its logged landings contradicted (JUMPDROP: drivers.ts replayCast
-// `dropped`), the openers a combo's press landed first (OPENER: replayrun.ts openerFirst), and those it made against
-// the kit (FORCED, INSIDE, CUTS), each from BuffReplay's records. `zmdlogs
+// `dropped`), the window a combo took from an opener inside its own slow-down (OPENER: replayrun.ts openerAhead), and
+// those it made against the kit (FORCED, INSIDE, CUTS), each from BuffReplay's records. `zmdlogs
 // replay` prints them among its landings; `zmdlogs decisions` prints those that differ between the
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
