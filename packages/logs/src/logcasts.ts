@@ -605,9 +605,12 @@ export interface PlacedTwin {
    * of its key all logged, its value not a next cast's first's (nextByValue); `batch` in a fight read per target
    * (several-targets), its place in its batch (the key's alike hits at its ms) is a twin's by the batch's targets
    * (targets.ts batchTargets: `targets` per landing, of `batch` hits, decided `by`); `later` in such a fight, a used-up
-   * combo's landing logged within TWIN_LATER_MS after its last, of its value, with no cast event of its skill between.
+   * combo's landing logged within TWIN_LATER_MS after its last, of its value, with no cast event of its skill between;
+   * `time` in such a fight, logged at its slot's landing's ms where the next slot is due `due` ms later and no stop
+   * between could have batched both at one ms (placeWith's byTime).
    */
-  readonly rule: "value" | "used" | "batch" | "later";
+  readonly rule: "value" | "used" | "batch" | "later" | "time";
+  readonly due?: number;
   readonly targets?: number;
   readonly batch?: number;
   readonly by?: string;
@@ -770,6 +773,24 @@ export function landingFrames(h: KitHit): number[] | null {
 /** The frames a hit's landings are logged at: its damage's, `enemyDelay` after a delayed hit's landing (KitHit.enemyDelay). */
 export function loggedFrames(h: KitHit): number[] | null {
   return landingFrames(h)?.map((f) => f + (h.enemyDelay ?? 0)) ?? null;
+}
+
+/**
+ * Where a cast whose landing is at kit frame `frame` ends on its path: the skill's first end (SkillTiming.ends: an
+ * InterruptCurSkillAction) after the frame, where no jump from between them can skip it; else Infinity. Pogranichnik's
+ * combo jumps at frame 0 to 200, 400 or 600 by its count, each path ended before the next (de6a94e9cf6b 132.20 s: a
+ * combo with no logged event, its three slashes joined to the 108.61 s combo, 23 s earlier, whose path-0 slots ran on
+ * into the other paths' frames 223, 237 and 261).
+ */
+export function pathEnd(timing: SkillTiming | null | undefined, frame: number): number {
+  const end = timing?.ends.filter((e) => e > frame).sort((a, b) => a - b)[0];
+  if (end === undefined || timing?.jumps.some((j) => j.at >= frame && j.at < end && j.to > end)) return Infinity;
+  return end;
+}
+
+/** The frame a cast's path starts at (the latest jump destination at or before its landing's frame; 0 on the main path). */
+function pathStart(timing: SkillTiming | null | undefined, frame: number): number {
+  return Math.max(0, ...(timing?.jumps ?? []).map((j) => j.to).filter((to) => to <= frame));
 }
 
 /**
@@ -1180,11 +1201,21 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // landing-long batches, plain 314 → 312, mismatch 33 → 44).
         // In such a fight a slot's multipliers over event counts (nominalScales' ranges: Si's combo final) tell it too.
         const byValue = cur !== undefined && h.t === cur.last.t && (sameByValue(cur, h) || (several && nextDiffers(cur) && alikeValue(h, cur.last, critFactor)));
-        const batch = several && cur && !used && !byValue && h.t === cur.last.t && !nextDiffers(cur) ? twinInBatch(cur, h) : null;
+        // Nor where the next slot is due later than the slot's landing by more than ON_TIME_MS (the log flushes its hits
+        // about every 100 ms and at a stop's end: castassembly.ts batchOrder) and no stop, the operator's own included,
+        // holds the world in the ON_TIME_MS before the ms (a stop ending there could have batched both landings at it):
+        // at the last landing's ms it is that landing on another target, alike in value (f57452bc1f02 16.98 s: Mi Fu's
+        // Trail and Mangle on two
+        // slugs, its flurries at frames 3 and 10 alike in value, 5181 twice at 16.98 s and twice at 17.27 s; the batch
+        // rule read the first two as one slug's two flurries, the 17.27 s pair as the mangle and its twin, and the 17.75 s
+        // mangles opened a second cast: 50 SP spent twice).
+        const timeDue = cur && next && cur.slots?.[cur.index] ? msOf(next.frame - (cur.slots[cur.index] as Slot).frame) : 0;
+        const byTime = several && cur !== undefined && !used && !byValue && h.t === cur.last.t && timeDue > ON_TIME_MS && ON_TIME_MS - worldMs(h.t - ON_TIME_MS, h.t, stops) < 1 && alikeValue(h, cur.last, critFactor);
+        const batch = several && cur && !used && !byValue && !byTime && h.t === cur.last.t && !nextDiffers(cur) ? twinInBatch(cur, h) : null;
         const later = several && cur && used && cur.cast.kind === "combo" && h.t > cur.last.t && h.t - cur.last.t <= TWIN_LATER_MS && !nextByValue(cur, h) && alikeValue(h, cur.last, critFactor) && !eventsOf(groups.find((x) => x.id === cur.cast.group) as Group).some((t) => t > cur.last.t && t <= h.t);
-        if (cur && (((used && !nextByValue(cur, h)) || byValue) && h.t === cur.last.t || batch?.twin || later)) {
+        if (cur && (((used && !nextByValue(cur, h)) || byValue) && h.t === cur.last.t || byTime || batch?.twin || later)) {
           const slot = cur.slots?.[cur.index];
-          const twin: PlacedTwin = byValue ? { rule: "value" } : batch?.twin ? { rule: "batch", targets: batch.targets, batch: batch.size, by: batch.by } : later ? { rule: "later" } : { rule: "used" };
+          const twin: PlacedTwin = byValue ? { rule: "value" } : byTime ? { rule: "time", due: timeDue } : batch?.twin ? { rule: "batch", targets: batch.targets, batch: batch.size, by: batch.by } : later ? { rule: "later" } : { rule: "used" };
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame, ...(slot.at ? { at: slot.at } : {}) } : {}), sameAs: cur.last, twin });
           continue;
         }
@@ -1257,9 +1288,13 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         const cast: LoggedCast = joined ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, ...(jumped ? { start: jumped.start } : startFor(g, h, first)), ...(g.anchor ? { anchor: g.anchor } : {}), ...(chosen ? { chosen } : {}), ...(paths.length ? { paths } : {}), ...(pastChannel && cur ? { pastChannel: { cast: cur.cast.start, elapsed: channelElapsed, end: channelEnd, by: pastSlack ? ("slack" as const) : ("press" as const) } } : {}) }; // split:channel-end
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
-        const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
-        const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
-        current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: s, exact: exactSlots(g, h.event), scales: g.scales, ranges: g.ranges });
+        // The cast's slots end where its action ends on the path its first landing is on (pathEnd: a skill of several
+        // paths from a jump, each ended by an InterruptCurSkillAction): the later paths' slots aren't its landings to come.
+        const end = first && g.kind !== null ? pathEnd(data.skills[g.skillId]?.timing, first.frame) : Infinity;
+        const onPath = s && end < Infinity ? s.filter((x) => x.frame < end) : s;
+        const span = onPath && first ? msOf((onPath.at(-1) as Slot).frame - first.frame) : 0;
+        const longest = Math.max(span, g.kind !== null ? msOf(Math.min(end, data.skills[g.skillId]?.timing?.durationFrames ?? 0) - (end < Infinity && first ? pathStart(data.skills[g.skillId]?.timing, first.frame) : 0)) : 0);
+        current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: onPath, exact: exactSlots(g, h.event), scales: g.scales, ranges: g.ranges });
         // A landing joined to a cast another key opened (joinDelayed, joinable): from the cast's start, against its frame.
         const via: PlacedJoin | undefined = joined === null ? undefined : { by: late ? "delayed" : "reach", elapsed: worldMs(cast.start, h.t, stops), ...(first ? { due: msOf(first.frame) } : {}) };
         placed.set(h, { cast, index: firstIndex, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame, ...(first.at ? { at: first.at } : {}) } : {}), ...(via ? { joined: via } : {}) });

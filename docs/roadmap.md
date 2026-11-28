@@ -113,7 +113,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   first Empyrean battle skill (3 strikes, no final, 103.28 s), 3f78's Corrosion ramp ×1.017, a9d7's Chen; log-only
   landings 2026-11-27: Typhoeus's burst Signs by source (`typhoeus-sign-cooldown`, 1d91), Zhuang Fangyi's 3 s
   Sunderblade floor (d774): next Arcane's INT lasers' start, the
-  placement's log-only casts (f879 95.10, 5082 45.06, 3aa6 125.65 s); replay-only landings 2026-11-27: a logged
+  placement's log-only casts (f879 95.10, 5082 45.06, 3aa6 125.65 s: all fixed 2026-11-27); replay-only landings 2026-11-27: a logged
   kill's gap (`kill-gaps`), basic tails cut (`unlogged-tails` `cut-all`, 207f), a tail kept only by its own landings'
   buffs (d774 103.28 s fixed), Si's final placed by value, Typhoeus's bursts across misplaced stops (fc63): hold-out
   |damage error| 7.1 → 6.3%; next the slug's unlogged hits (shield?); status pairing 2026-11-27: one assignment by
@@ -151,7 +151,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   a hitless event cast (fc63, c779): next the multi-target logs' cut landings, the held-back casts-view line; the
   combo hold 2026-11-28: a constant per episode (overlapping combo stops), not a share; the layer-1 dilations and a
   cut-in holding teammates ruled out; `combo-operator-hold` `4f-episode` registered off (the replay's pinned landings):
-  next which casts take it (Zhuang Fangyi's strikes on time in 3aa6), the reading for simulated fights.
+  next which casts take it (Zhuang Fangyi's strikes on time in 3aa6), the reading for simulated fights; placement
+  cases 2026-11-28: a twin by time on several targets (f574's Mi Fu cast one, its SP short 110 → 56), a cast's slots
+  end with its path (de6a's Pogranichnik combo, plain 298 → 317); the Decisive Assault's own curve, the rush's
+  slow-down and an earlier trigger ruled out, not built: next 8f32's Rossi combo 2 hit_2 taken for a combo 3 (a
+  bound for consumed-scaled multipliers, then a value rule).
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim (2026-11-28:
