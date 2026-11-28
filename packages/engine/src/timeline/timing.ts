@@ -8,11 +8,10 @@ import type { SkillType } from "../attributes.ts";
 import { allActions, triggerSkillId } from "../events.ts";
 import { test } from "../expr.ts";
 import { activeAt } from "../buffs.ts";
-import { FPS } from "../units.ts";
 import type { Acting, ChainStep, PendingJump, RotationAction, TimelineContext, TimelineState } from "./state.ts";
 import { CHAIN_CACHE_FRAMES, priorityOf, SP } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts, timingOf } from "./context.ts";
-import { afterRegen, isStaggered, spAt, spCostAt } from "./resources.ts";
+import { isStaggered, spAt, spCostAt, spReachedAt } from "./resources.ts";
 import { situationAt } from "./situation.ts";
 import { advance, nextEventAfter } from "./advance.ts";
 import { castBound, ofCast, ofKind } from "./schedule.ts";
@@ -429,11 +428,10 @@ function gatesFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   let spCost = costAt(frame);
   for (let i = 0; i < 4; i++) {
     if (spCost > SP.max) return { error: `${action.skill} costs ${spCost} SP, more than the maximum` };
-    // Wait for SP: regen is linear after the pause, outside the stops.
+    // Wait for SP: regen is linear after the pause, or comes in ticks (engine assumption sp-regen), on raw time.
     const spThen = spAt(state, frame);
     if (spThen >= spCost) break;
-    const from = Math.max(frame, state.spPausedUntil);
-    frame = afterRegen(state, from, Math.ceil(((spCost - spAt(state, from)) * FPS) / SP.perSecond));
+    frame = spReachedAt(state, frame, spCost);
     const again = costAt(frame);
     if (again === spCost) break;
     spCost = again;

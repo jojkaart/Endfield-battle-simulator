@@ -5,7 +5,7 @@ import { FPS } from "../units.ts";
 import type { TimelineContext, TimelineState } from "./state.ts";
 import { SP } from "./rules.ts";
 import { skillCosts, timingOf } from "./context.ts";
-import { spAt, spCostAt } from "./resources.ts";
+import { spAt, spCostAt, spReachedAt } from "./resources.ts";
 import { actionFrame } from "./timing.ts";
 import { nextEventAfter } from "./advance.ts";
 import { castBound } from "./schedule.ts";
@@ -81,7 +81,8 @@ export function nextChangeAfter(ctx: TimelineContext, st: TimelineState, frame: 
     for (const b of ctx.scenario.team) for (const k of SKILL_BUTTONS) for (const x of buttonSkills(ctx, b.operator, k)) levels.add(spCostAt(ctx, st, b.operator, skillCosts(ctx, b.operator, x.skillId, frame), frame));
     for (const level of levels) {
       if (sp >= level || level > SP.max) continue;
-      mark(Math.max(frame + 1, Math.max(frame, st.spPausedUntil) + Math.floor(((level - sp) * FPS) / SP.perSecond) - 1));
+      // Under engine assumption sp-regen `ticks` the tick that reaches the level.
+      mark(st.spTick ? Math.max(frame + 1, spReachedAt(st, frame, level)) : Math.max(frame + 1, Math.max(frame, st.spPausedUntil) + Math.floor(((level - sp) * FPS) / SP.perSecond) - 1));
     }
   }
   return w;

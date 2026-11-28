@@ -12,7 +12,7 @@ import {
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { awayWindows, enemyAwaySpans, KILL_EDGE_MS, killGaps, lastLifeKilled, stageScaledKill } from "./enginecheck.ts";
 import { gapsWithTargetsLeft, keepsKillGaps, targetDeaths } from "./targets.ts";
-import { buttonVariants, loggedFrames, type Placement } from "./logcasts.ts";
+import { buttonVariants, excludes, loggedFrames, type Placement } from "./logcasts.ts"; // split:event-variant
 import { deathEvent, replaySteps, runEventStep, stepWords, type LoggedStagger, type ReplayStep } from "./replaysteps.ts";
 import { replayRecorder, type ReplayRecord } from "./replayrecord.ts";
 import type { ReplayOptions } from "./buffreplay.ts";
@@ -270,7 +270,18 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
     if (skillAvailable(ctx, st, c.operator, c.skillId, f)) return made(c.skillId);
     const keys = new Set((kit?.skills.find((k) => k.skillId === c.skillId)?.hits ?? []).flatMap((h) => h.events));
     const variant = kit?.skills.find((k) => k.skillId !== c.skillId && k.kind === c.kind && !k.followUpOnly && k.hits.some((h) => h.events.some((e) => keys.has(e))) && skillAvailable(ctx, st, c.operator, k.skillId, f));
-    return made(variant?.skillId ?? c.skillId);
+    if (variant) return made(variant.skillId);
+    // A cast event alone (no landing of its own) logged under the button's skill while the kit's state holds the slot's
+    // other variant (complementary availability, logcasts.ts excludes), whose hits the log doesn't show then: a press
+    // that found nothing to cast on, not made. 04d401ad257e: Purrchena's presses in the 10 s her battle skill readies
+    // her counter (its ChangeSkillAction), logged as normal_skill with the enemy away (264.25, 325.64, 395.79, 400.31,
+    // 407.54, 500.37 s); each counter the log shows comes after (269.81, 329.46, 419.96, 505.25 s, its headbutt 0.29 s
+    // later as the enemy returns) inside the 10 s of the battle skill before, so these didn't use the counter up. Made
+    // as battle skills against her kit, each took 100 SP: 355 SP short in the 381.6–420.2 s away stretch alone.
+    // split:event-variant
+    const own = kit?.skills.find((k) => k.skillId === c.skillId);
+    const other = own && c.landings.length === 0 ? kit?.skills.find((k) => k.skillId !== c.skillId && k.kind === c.kind && !k.followUpOnly && (excludes(own.available, k.available) || excludes(k.available, own.available)) && skillAvailable(ctx, st, c.operator, k.skillId, f)) : undefined;
+    return other ? skip(`a press logged as ${c.skillId} while its kit holds the slot's other variant ${other.skillId}, of which the log shows no hit then: it found nothing to cast on`) : made(c.skillId);
   }
   if (startsBy(c.skillId)) return made(c.skillId);
   const hasKey = (skill: string) => (kit?.skills.find((k) => k.skillId === skill)?.hits ?? []).some((h) => h.events.includes(c.key));

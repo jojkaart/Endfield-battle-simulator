@@ -154,7 +154,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   next which casts take it (Zhuang Fangyi's strikes on time in 3aa6), the reading for simulated fights.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
-  testable by hand, the owner 2026-11-16) stays on its interim, B4 waits on
+  testable by hand, the owner 2026-11-16) stays on its interim (2026-11-28:
+  the regeneration and the start as engine assumptions `sp-regen`, `sp-start`;
+  Purrchena's counter presses no longer cost SP, the replay 706 SP short in 15
+  logs; next in-game test 113, the SP bar at a fight's start), B4 waits on
   test 71; tests 18, 19, 101, 104 done from the logs (2026-11-16: bosses
   freeze, Haste isn't attack speed, teammates' pause 6.5 s); tests 9, 17,
   22, 46 decided and 21, 43 partly from the logs (2026-11-18: buffs created

@@ -10,7 +10,7 @@
 // ranks it by a statistic of their damage, and reports the found rotation's
 // distribution over many more (docs/design/search.md#rotation-search).
 
-import { diveOf, nextBasics, EngineError, allActions, predicateRefs, advance, apply, createContext, earliestStart, exclusiveUntil, enemyActionsOf, init, memoised, simulate, startsNow, ofKind, maxPoise, skillCosts, maxEnergy, SP, FPS, windowKey, type ActiveBuff, type GameData, type CritMode, type BattleEvent, type RotationAction, type RunSpread, type TimelineContext, type TimelineResult, type TimelineScenario, type TimelineState, type CastRef, type ChainStep, type Scheduled } from "../core.ts";
+import { diveOf, nextBasics, EngineError, engineReading, allActions, predicateRefs, advance, apply, createContext, earliestStart, exclusiveUntil, enemyActionsOf, init, memoised, simulate, startsNow, ofKind, maxPoise, skillCosts, maxEnergy, SP, FPS, windowKey, type ActiveBuff, type GameData, type CritMode, type BattleEvent, type RotationAction, type RunSpread, type TimelineContext, type TimelineResult, type TimelineScenario, type TimelineState, type CastRef, type ChainStep, type Scheduled } from "../core.ts";
 import { remainingBound, type UpperBound } from "./bound.ts";
 import { playMacros, type MacroNode } from "./macros.ts";
 import { setupValue, type SetupTable } from "./setupvalue.ts";
@@ -613,6 +613,8 @@ interface ScenarioKeyFacts {
   readonly counted: ReadonlyMap<string, boolean>;
   /** The enemy's full stagger HP: a stagger that ended refilled the bar (dealPoise). */
   readonly maxPoise: number;
+  /** Engine assumption sp-regen `ticks`: the frames between SP ticks (TimelineState.spTick), whose phase a past spPausedUntil sets. */
+  readonly spTick?: number;
 }
 
 /** Rounded to 0.1: SP and energy reached by different paths differ in floating-point noise (a search policy: states this close are one). */
@@ -724,8 +726,10 @@ const STATE_KEY: KeyRules<TimelineState> = {
   comboWindow: (w, env) => entries(w, (x, k) => x.until >= env.frame || env.scenario.endedWindowsRead.has(k)),
   // Read by any later `element: "window"` application, however long ago it was set.
   comboTrigger: true,
-  // Read as max(frame, it) (resources.ts spAt, afterRegen; timing.ts) and raised with max (casting.ts).
-  spPausedUntil: deadline,
+  // Read as max(frame, it) (resources.ts spAt, spReachedAt; timing.ts) and raised with max (casting.ts); under sp-regen
+  // `ticks` a past one is the ticks' phase, which the next tick's frame shows.
+  spPausedUntil: (f, env) => (f > env.frame ? f : env.scenario.spTick ? (env.frame - f) % env.scenario.spTick : undefined),
+  spTick: "the same in every state of a search (the scenario's sp-regen reading)",
   controlled: (c, env) => (env.loose ? undefined : c),
   acting: (a, env) => Object.fromEntries(Object.entries(a).map(([op, x]) => [op, x.cast !== undefined ? { ...x, cast: env.rel(x.cast) } : x])),
   chainNext: (c, env) => {
@@ -839,7 +843,8 @@ export function stateKeyer(ctx: TimelineContext, loose = false, amounts = false)
       }
     }
   }
-  const scenario: ScenarioKeyFacts = { endedWindowsRead, counted, maxPoise: maxPoise(ctx) };
+  const spTick = engineReading(ctx.scenario, "sp-regen") === "ticks" ? SP.pauseAfterSpendFrames : undefined;
+  const scenario: ScenarioKeyFacts = { endedWindowsRead, counted, maxPoise: maxPoise(ctx), ...(spTick !== undefined ? { spTick } : {}) };
   return (s) => {
     const n = s.casts.length;
     return canonical(project(s, STATE_KEY, { frame: s.frame, rel: (i) => n - i, live: liveCasts(s), scenario, loose, amounts }));

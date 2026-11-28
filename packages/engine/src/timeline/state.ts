@@ -480,8 +480,14 @@ export interface TimelineState {
    * EntityBB_consumed_type: Arcane's touch, in-game test 33).
    */
   readonly comboTrigger: Readonly<Record<string, { readonly source: EventSource; readonly frame: number }>>;
-  /** Frame until which SP doesn't regenerate (after a spend: SP.pauseAfterSpendFrames). */
+  /**
+   * After a spend: SP.pauseAfterSpendFrames on. Under engine assumption `sp-regen` `pause` the frame until which SP
+   * doesn't regenerate; under `ticks` (spTick set) the frame of the first regeneration tick after the spend, the
+   * others every spTick frames from it.
+   */
   readonly spPausedUntil: number;
+  /** Engine assumption `sp-regen` `ticks`: the frames between regeneration ticks (SP.perSecond × spTick / FPS each); absent: continuous. */
+  readonly spTick?: number;
   readonly controlled: string;
   /** Per operator: its current (last) action, which gates its next one (actionGate); `skips`: the jumps it took (actionFrame). */
   readonly acting: Readonly<Record<string, Acting>>;
