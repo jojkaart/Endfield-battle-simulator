@@ -6,6 +6,7 @@
 import {
   kitBuffKey,
   castsJson,
+  eventLagsView,
   stackView,
   followUpsView,
   holdsSteps,
@@ -30,6 +31,9 @@ import {
   instancesView,
   lanesView,
   worldTimeView,
+  worldClockLines,
+  seriesClockView,
+  replayTimeStops,
   logBuffReplay,
   placeHits,
   holdsView,
@@ -215,6 +219,10 @@ export default command({
                 [--json]                  Instead: a JSON line per line (castsRecords: kind, t, operator, skill,
                                           key, rule, the hit's cast and slot, its join, the text)
                 [--from s] [--to s]       Only this window (seconds); --operator: only these operators' hits, casts
+  efsim zmdlogs casts --event-lags <fixture…|--all>  Each operator's logged cast events against their casts' placed
+                                          starts, per skill kind: n, median, 10–90%, min–max of the lag (log time;
+                                          the median in world time too): a press's log time against a kit frame is
+                                          off by this before anything is wrong (--operator op, --verbose each cast)
   efsim zmdlogs replay <fixture>          The replay in time order: its landings with the logged hit each stands for
                                           (or "replay only"), logged hits without a landing and why, casts it
                                           couldn't make or made without the log, its Stagger windows
@@ -365,6 +373,16 @@ The log itself (query.ts; no replay of buffs; every view takes ids such as 0c14 
                                           stops between (operator, skill, frames, lowest scale): the hold
                                           placement's own list, so an event the replay read as a buff's tick is a
                                           line without frames (--assume: under another reading)
+                [--holds] [--without <op>] Also the world with the hidden holds out on top (the engine adds them to
+                                          any stop) and with an operator's own stops left in (they don't hold her
+                                          clock), per stop source: the list and the timeline's applied slow-downs
+  efsim zmdlogs worldtime <fixture> --series <regex>  Each chain of a tick series (holds.ts tickChains) on the replay's
+                                          clock: log span, world with every applied stop out, with the series
+                                          operator's own left in, with the hidden holds out too, against (ticks − 1)
+                                          × period: which holds hold an entity's or a status's ticks
+                [--period ms] [--operator <op>]  A series outside HOLD_SERIES at this period; these operators only
+                [--gap ms]                A chain's next tick up to this past the period in log time (default 1500:
+                                          an ultimate's stop inside an array splits it; 3000 spans one)
   efsim zmdlogs clock --kit-buff owner:id [fixture…]  Each instance of a kit buff: the expiry the replay first
                                           gave it, its expiry on the replay's own clock (no hidden holds, no log
                                           ends) and how it ended there, how it ended in the check's replay, the
@@ -473,6 +491,12 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     side: { type: "string" },
     min: { type: "string" },
     bound: { type: "boolean", default: false },
+    holds: { type: "boolean", default: false },
+    without: { type: "string" },
+    series: { type: "string" },
+    period: { type: "string" },
+    gap: { type: "string" },
+    "event-lags": { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args } = ctx;
@@ -506,12 +530,28 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     const selection = { named: args.slice(1), all: values.all, ...(values["fixtures-from"] !== undefined ? { fixturesFrom: values["fixtures-from"] } : {}) };
     const event = values.event !== undefined ? { event: new RegExp(values.event) } : {};
     if (sub === "worldtime") {
+      const period = values.period !== undefined ? Number(values.period) : undefined;
+      if (period !== undefined && !(period > 0)) throw new Error("zmdlogs worldtime --period takes ms (a tick series' period)");
+      if (values.series !== undefined) {
+        // Round 22 (the barrage-array report point 1): a tick series' chains on the replay's clock.
+        if (args.length !== 2 || !arg) throw new Error("zmdlogs worldtime --series <regex> takes one fixture (--period ms for an event outside HOLD_SERIES, --operator op, --assume id=reading)");
+        const fx = readDevFixture(arg);
+        const replay = logBuffReplay(data(), fx, placeHits(data(), fx, assume), { assume }).replay;
+        const gap = values.gap !== undefined ? Number(values.gap) : undefined;
+        if (gap !== undefined && !(gap >= 0)) throw new Error("zmdlogs worldtime --gap takes ms (how far past its period a tick may come and still be the chain's next)");
+        return seriesClockView(data(), fx, replay, { event: new RegExp(values.series), ...(period !== undefined ? { period } : {}), ...(gap !== undefined ? { gap } : {}), operators });
+      }
       const [from, to] = [Number(args[2]), Number(args[3])];
-      if (args.length !== 4 || !arg || !Number.isFinite(from) || !Number.isFinite(to)) throw new Error("zmdlogs worldtime takes one fixture and two times in seconds: <fixture> <from s> <to s>");
+      if (args.length !== 4 || !arg || !Number.isFinite(from) || !Number.isFinite(to)) throw new Error("zmdlogs worldtime takes one fixture and two times in seconds: <fixture> <from s> <to s> (or --series <regex>)");
+      if (period !== undefined) throw new Error("zmdlogs worldtime --period goes with --series");
       // The replay's own stops (an event it read as a buff's tick holds nothing: round 15), under --assume.
       const fx = readDevFixture(arg);
       const placement = placeHits(data(), fx, assume);
-      return worldTimeView(data(), fx, from * 1000, to * 1000, logBuffReplay(data(), fx, placement, { assume }).replay, placement);
+      const replay = logBuffReplay(data(), fx, placement, { assume }).replay;
+      const text = worldTimeView(data(), fx, from * 1000, to * 1000, replay, placement);
+      if (!values.holds && values.without === undefined) return text;
+      const without = values.without !== undefined ? { without: operatorNamed(data(), values.without) } : {};
+      return [text, ...worldClockLines(data(), from * 1000, to * 1000, replayTimeStops(data(), fx, placement, replay), replay, { ...without, holds: values.holds })].join("\n");
     }
     if (sub === "ramp") {
       if (args.length !== 2 || !arg) throw new Error("zmdlogs ramp takes one fixture (a path or an id such as db87)");
@@ -654,6 +694,14 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     }
     if (sub === "timing") {
       return timingReport(data, args.slice(1), { assumed: values.assumed, singles: values.singles, verbose: values.verbose, ...(values.top !== undefined ? { top: Number(values.top) } : {}), assume, progress });
+    }
+    if (sub === "casts" && values["event-lags"]) {
+      // Round 22 (the barrage-array report point 3): the log's cast events against the placed starts, over logs.
+      const named = args.slice(1);
+      if (!named.length && !values.all) throw new Error("zmdlogs casts --event-lags takes fixtures (ids such as fc63) or --all (every verified and pending development log; --operator op, --verbose)");
+      if (named.length && values.all) throw new Error("zmdlogs casts --event-lags: fixtures or --all, not both");
+      const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
+      return eventLagsView(data(), logs, { operators, verbose: values.verbose });
     }
     if (sub === "casts" || sub === "replay") {
       if (args.length !== 2 || !arg) throw new Error(`zmdlogs ${sub} takes one fixture file (--from s, --to s, --operator op${sub === "replay" ? ", --kit-buff owner:id[@op], --assume id=reading" : ""})`);

@@ -28,7 +28,7 @@
 
 import { FPS, type ArtsElement, type GameData } from "@efsim/engine";
 import { burstRows } from "./burstsview.ts";
-import { HOLD_SERIES } from "./holds.ts";
+import { tickChains } from "./holds.ts";
 import { placeHits, worldMs, type LoggedCast } from "./logcasts.ts";
 import { loggedStaggerSpans, replayTimeStops, type ReplayTimeStop } from "./query.ts";
 import type { LogFixture } from "./zmdlogs.ts";
@@ -106,18 +106,7 @@ export function logClocks(data: GameData, log: { readonly short: string; readonl
   };
   if (kinds.has("tick")) {
     // The enemy's clock: every stop counts (holds.ts tickBounds' chains, cut at the log's Stagger's edges).
-    const series = new Map<string, number[]>();
-    for (const h of fx.hits) if (HOLD_SERIES[h.event]) series.set(`${h.event}|${h.operator}|${h.target ?? ""}`, [...(series.get(`${h.event}|${h.operator}|${h.target ?? ""}`) ?? []), h.t]);
-    for (const [k, ts0] of series) {
-      const [event, op] = k.split("|") as [string, string];
-      const { period } = HOLD_SERIES[event] as { period: number };
-      const chains: number[][] = [];
-      for (const t of [...new Set(ts0)].sort((x, y) => x - y)) {
-        const c = chains.at(-1);
-        const prev = c?.at(-1);
-        if (c && prev !== undefined && t - prev >= 0.5 * period && t - prev <= period + 1500 && spanOf(t) === spanOf(prev)) c.push(t);
-        else chains.push([t]);
-      }
+    for (const { event, operator: op, period, chains } of tickChains(fx, { split: (prev, t) => spanOf(t) !== spanOf(prev) })) {
       for (const c of chains) if (c.length >= 2) add({ kind: "tick", what: `${event.replace(/^buff_/, "")} by ${operatorLabel(data, op)}`, a: c[0] as number, b: c.at(-1) as number, expected: (c.length - 1) * period }, stops);
     }
   }

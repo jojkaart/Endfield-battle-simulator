@@ -163,7 +163,8 @@ Empyrean strikes, an ability entity's, aren't: in 4bfc at 73.2–73.7 s
 they keep their 0.2 s pace through her own combo's slow-down. An Arts Burst lands `burstDelayFrames` (1 s)
 after the infliction that made it, on its operator's clock: others' time
 stops and slow-downs hold it, also ones already running when it's made
-(`operatorClockDue`), its own operator's don't, nor a freeze (its buff
+(`operatorClockDue`), its own operator's combo slow-down doesn't (her own
+ultimate's stop does: engine assumption `burst-stops`, default `all`), nor a freeze (its buff
 doesn't run on time dilation: `useTimeDilationDt` false; dbae's burst
 after Xaihi's stop, 0eef's inside Arcane's own combo); a kit hit with `enemyDelay` (Typhoeus's
 Power Shot burst: the arrow's hit consumes the stack, gives the energy and
@@ -195,6 +196,31 @@ Si's freeze; 489c: Arcane's will_burst), on the two immune ones they aren't
 Susceptibility), while Si's Artful Intent ends fit only with hers held
 (abfd, c3c7, 0c14); Rhodagn's five logs with a freezer check the same
 either way; in-game tests 37 and 104.
+
+### Which clock each hold holds
+
+Round 22 (the barrage-array report point 2: whether a `world` hit is held by its caster's own combo slow-down took
+reading casting.ts, clock.ts and schedule.ts). Each scheduled item and timer runs on one clock (state.ts `Clock`:
+`"world"`, `"enemy"`, `{ operator }`); each hold shifts some clocks (clock.ts `slowDown`, `holdWorld`, `breakHold`;
+actions.ts's freeze). "held" means what is due after the hold's start comes that many frames later.
+
+| Clock (what runs on it) | Own combo slow-down | Own ultimate stop | A teammate's stop or slow-down | Hidden hold | Freeze | Stagger-break hold |
+| --- | --- | --- | --- | --- | --- | --- |
+| The world's (`world`: every buff, the caster's too; combo windows, energy blocks, Link; triggers' world cooldowns; hits marked `world`) | held | held | held | held | no | held |
+| The enemy's (`enemy`: its statuses, inflictions, Stagger, actions; a freeze's end) | held (the world's shift moves it) | held | held | held | held (not its Arts reaction statuses: `freeze-ramp`) | held |
+| Debuffs on the enemy (enemy-target buffs) | held (as buffs) | held | held | held | held (on a control-immune enemy only the freezer's own) | held |
+| An operator's (`{ operator }`: her hits on the way, delayed actions, current action, a cast's team energy and jumps) | no | no | held (inside her own ultimate's stop, only from its end) | no | no | held (the breaker's too) |
+| A `world` hit with a `launch` (ScheduledHeader.worldFromLaunch) | her clock's until the launch, then the world's | the same | held | from the launch | no | held |
+| An Arts Burst's delay (its operator's clock, `kind` burst) | no | held (`burst-stops` `all`, the default) | held | no | no | held |
+| Skill cooldowns, SP regen and its pause after a spend | no (raw time) | no | no | no | no | no |
+
+Two orders matter. A cast's own slow-down is applied after the cast schedules its hits (casting.ts `castSkill`
+returns `slowDown(…)` on the settled state), so a `world` hit the cast schedules is held by its own combo's slow-down;
+a hit on her clock isn't. A combo's ignore list in the data (an entity she spawned: Typhoeus's Barrage Array) isn't
+read: the array starts after the slow-down anyway. The log tools' world time takes the same out
+(`zmdlogs worldtime <fixture> <a> <b> --holds --without <op>`; `--series <event>` per tick chain: packages/logs
+replayclock.ts, worldclockview.ts). Tests: tests/world-from-launch.test.ts, tests/world-clock-hits.test.ts,
+tests/world-clock.test.ts.
 
 ## Skill timing
 

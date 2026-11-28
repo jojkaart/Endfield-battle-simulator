@@ -698,7 +698,9 @@ detail):
   - battle skills: the event is at the placed start (within a frame or
     two);
   - combos: the event lags the kit's frame 0 by 0.3–0.7 s, differing by
-    operator;
+    operator (its own slow-down: about none of it is world time; Typhoeus's
+    median 0.53 s, Arcane's 0.29 s, `efsim zmdlogs casts --event-lags --all`,
+    round 22);
   - ultimates: the event comes at the end of the ultimate's own time stop,
     about 1.9 s after the placed start (`loggedCastStart` in
     buffreplay.ts);
@@ -710,7 +712,8 @@ detail):
   measured over the development logs in the cast-placement round
   (docs/friction-done/2026-11-18-cast-placement.md, point 5); redo the
   measurement with `efsim zmdlogs casts <fixture>` (EVENT against CAST
-  lines) after a placement change.
+  lines) or per operator and kind with `efsim zmdlogs casts --event-lags
+  --all` after a placement change.
 - **The placement's passes** (round 12, remaining-leads report point 2;
   logcasts.ts `placeHits`' comment): pass 1 places each operator's casts
   with no other cast's stops; pass 2 again, from pass 1's stops (the rules

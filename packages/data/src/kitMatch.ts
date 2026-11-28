@@ -483,6 +483,15 @@ export interface HitFacts {
 }
 
 /**
+ * Every HitFacts key is a DataField (round 22, the needed-pairing report point 2: round 21's `latest` was filled from
+ * the data but not in DATA_FIELDS, so a kit couldn't mark it in `dataOverride`): a fact the loader fills in must be one
+ * a kit can say it differs in. A new HitFacts field without its DATA_FIELDS entry fails the typecheck here;
+ * tests/kits.test.ts holds schemas/kit.schema.json's `dataOverride` enum to DATA_FIELDS.
+ */
+type FactsNotDataFields = Exclude<keyof HitFacts, DataField>;
+export const HIT_FACTS_ARE_DATA_FIELDS: [FactsNotDataFields] extends [never] ? true : FactsNotDataFields = true;
+
+/**
  * The facts of a hit's landings (HitMatch.landings, from matchSkill on the
  * folded skill): each field only when every landing says the same. A hit
  * with frames needs them on one branch path (HitMatch.onPath).

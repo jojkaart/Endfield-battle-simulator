@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { KitBuff } from "@efsim/engine";
-import { loadGameData, loadKits, unloggedAttachedBuffs } from "@efsim/data";
+import { DATA_FIELDS, HIT_FACTS_ARE_DATA_FIELDS, loadGameData, loadKits, unloggedAttachedBuffs } from "@efsim/data";
 import { compiledCensus } from "../packages/cli/src/commands/kit-census.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -35,6 +35,27 @@ describe("the kit compiler's messages", () => {
     expect(loadWithHit({ events, frames, dataOverride: { events: "a test of the message", frames: "a test of the message" } })).toThrow(/frames: marked as differing from the data \(dataOverride\), but it agrees: drop the mark/);
     // Frames written and only events marked: it loads.
     expect(loadWithHit({ events, frames, dataOverride: { events: "a test of the message" } })().operators["chr_0016_laevat"]?.skills.find((s) => s.skillId === `${L}attack1`)?.hits[0]?.events).toEqual(events);
+  });
+});
+
+describe("the fields a kit hit can mark (kitMatch.ts DATA_FIELDS)", () => {
+  // Round 22 (the needed-pairing report point 2): `latest` was filled from the data before it could be marked, in four
+  // places. HitFacts ⊆ DataField is the typecheck's (kitMatch.ts HIT_FACTS_ARE_DATA_FIELDS); the schema's enum is this.
+  it("the kit schema's hit dataOverride enum is DATA_FIELDS", () => {
+    const schema = JSON.parse(readFileSync(join(ROOT, "schemas", "kit.schema.json"), "utf8")) as unknown;
+    const enums: string[][] = [];
+    const walk = (x: unknown): void => {
+      if (Array.isArray(x)) return x.forEach(walk);
+      if (!x || typeof x !== "object") return;
+      const o = x as Record<string, unknown>;
+      const names = (o["dataOverride"] as { propertyNames?: { enum?: string[] } } | undefined)?.propertyNames?.enum;
+      if (names?.includes("frames")) enums.push(names);
+      Object.values(o).forEach(walk);
+    };
+    walk(schema);
+    expect(enums.length).toBeGreaterThan(0);
+    for (const e of enums) expect([...e].sort()).toEqual([...DATA_FIELDS].sort());
+    expect(HIT_FACTS_ARE_DATA_FIELDS).toBe(true);
   });
 });
 

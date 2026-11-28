@@ -286,6 +286,44 @@ export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeSto
   });
 }
 
+/** One tick series of a fight (tickChains): its event, operator and target, and its chains of ticks (ms, in order). */
+export interface TickSeries {
+  readonly event: string;
+  readonly operator: string;
+  readonly target: string;
+  readonly period: number;
+  readonly chains: readonly (readonly number[])[];
+}
+
+/**
+ * A fight's tick series (one per event, operator and target, in the order of their first logged tick) cut into chains of
+ * consecutive ticks: the next tick half a period to a period and TICK_GAP_MS (`gap`) after the last, and `split(prev, t)` false
+ * (clocksview.ts: across an edge of the log's Stagger). The events: HOLD_SERIES' (with their periods), or `periods`
+ * (`zmdlogs worldtime --series --period`: another series of the log). One rule for the hold bounds (tickBounds), the
+ * clock views (clocksview.ts) and `worldtime --series` (round 22, the barrage-array report point 1: two copies).
+ */
+export function tickChains(fx: Pick<LogFixture, "hits">, opts: { readonly periods?: Readonly<Record<string, number>>; readonly gap?: number; readonly split?: (prev: number, t: number) => boolean } = {}): TickSeries[] {
+  const periodOf = (event: string) => opts.periods?.[event] ?? (opts.periods ? undefined : HOLD_SERIES[event]?.period);
+  const series = new Map<string, number[]>();
+  for (const h of fx.hits) {
+    if (periodOf(h.event) === undefined) continue;
+    const k = `${h.event}|${h.operator}|${h.target ?? ""}`;
+    series.set(k, [...(series.get(k) ?? []), h.t]);
+  }
+  return [...series].map(([k, ts0]) => {
+    const [event, operator, target] = k.split("|") as [string, string, string];
+    const period = periodOf(event) as number;
+    const chains: number[][] = [];
+    for (const t of [...new Set(ts0)].sort((a, b) => a - b)) {
+      const c = chains.at(-1);
+      const prev = c?.at(-1);
+      if (c && prev !== undefined && t - prev >= 0.5 * period && t - prev <= period + (opts.gap ?? TICK_GAP_MS) && !opts.split?.(prev, t)) c.push(t);
+      else chains.push([t]);
+    }
+    return { event, operator, target, period, chains };
+  });
+}
+
 /**
  * The bounds an enemy tick series gives (HOLD_SERIES): its chains of consecutive ticks (a gap of half a period to a
  * period and TICK_GAP_MS), each pair's hold and each tick's against its chain's first (a tick's jitter doesn't add up
@@ -294,23 +332,9 @@ export function breakStops(fx: Pick<LogFixture, "hits">, stops: readonly TimeSto
 export function tickBounds(fx: Pick<LogFixture, "hits">, placed: readonly TimeStop[], assume: Readings | undefined): HoldBound[] {
   // The breaks' holds are the engine's (break-hold), not hidden ones.
   const stops = [...placed, ...breakStops(fx, placed, assume)];
-  const series = new Map<string, number[]>();
-  for (const h of fx.hits) {
-    if (!HOLD_SERIES[h.event]) continue;
-    const k = `${h.event}|${h.operator}|${h.target ?? ""}`;
-    series.set(k, [...(series.get(k) ?? []), h.t]);
-  }
   const out: HoldBound[] = [];
-  for (const [k, ts0] of series) {
-    const event = k.split("|")[0] as string;
-    const { period, tol } = HOLD_SERIES[event] as { period: number; tol: number };
-    const chains: number[][] = [];
-    for (const t of [...new Set(ts0)].sort((a, b) => a - b)) {
-      const c = chains.at(-1);
-      const prev = c?.at(-1);
-      if (c && prev !== undefined && t - prev >= 0.5 * period && t - prev <= period + TICK_GAP_MS) c.push(t);
-      else chains.push([t]);
-    }
+  for (const { event, period, chains } of tickChains(fx)) {
+    const { tol } = HOLD_SERIES[event] as { tol: number };
     const label = event.replace(/^buff_/, "");
     for (const c of chains) {
       for (let i = 1; i < c.length; i++) {
