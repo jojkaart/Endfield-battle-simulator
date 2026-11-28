@@ -4,9 +4,44 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 191 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 192 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: needed on the check's pairing, a channel's end in a detached file
+
+Goal: two entries of the accuracy list in docs/friction/2026-11-27-backlog-after-round-21.md: cutTails' `needed` on
+the replay's own pairing, and a capped channel inside a detached file (both left by round 21 as moving verdicts).
+
+Done (9da9d4a, 592f7c7):
+- **`needed` on the check's pairing** (replayrun.ts loggedShown, cutTails): a kit hit's landing is now
+  landingpairs.ts pairKitLandings' (pinned, else a landing of its operator with its event within 16 frames, each once);
+  the statuses' half stays loggedShown's own. Alone that kept tails it shouldn't: a logged hit before the cut that the
+  pairing had given one of the tail's unlogged landings counted as lost (c83c 47.17 s: eight batched Arcane attack-4
+  hits, four the placement's twins, paired with the 47.23 s cast's landings at 47.50 / 47.60 s; 4a64 16.93 s, 9847
+  44.53 s): hold-out |damage error| 5.9 → 6.8%, 4a64 +2 plain. So only a logged hit after the cut counts: the tail's
+  landings and what they set off come after it. With both, and with the filter alone on the old rule, no log's
+  verdicts or totals move. abfd's 64.10 s case is gone since round 21's channel end.
+- **A channel in a detached file gets its end** (skillCompile.ts drops `!detached`): Tangtang's ultimate stare to
+  frame 196 (b7b3 and 7910 have no tick past it once the stops between are out: b7b3's 15.28 s tick sits after Last
+  Rite's 12.30–15.13 s ultimate stop), Rossi's wolves, Zhuang Fangyi's attack-5 and ultimate attack-3 ranges (single
+  landings: nothing reads their end). Typhoeus's Barrage Array (frame 215) is marked in her kit, `dataOverride`
+  `latest`, now a DataField (kitMatch.ts compares the kit hit's latestFrame with the data, schema enum too): the logs
+  have its 18 ticks up to 6.4–8.0 s of world time after the first with no combo press between, and the end split one
+  array into two combos six times (00ae, fc63; unmarked: 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%, hold-out plain −6,
+  docs/tried/2026-11-28-barrage-array-channel-end.diff). With the mark nothing moves.
+
+Checks: measure against 60fa436 for each change (no verdict or total moved anywhere: development plain 84.3%,
+|damage error| 1.3%; hold-out 82.5%, 5.9%; earlier pending and several targets unchanged); `npm run smoke` passed;
+team-ab identical for both teams (the owner's and Typhoeus's: every hit and a rules seed the same, the 32-seed
+numbers unchanged); snapshots:update for the kit digests (Tangtang, Rossi, Zhuang Fangyi).
+
+Decisions: the channel's end per kit hit, not per file kind: the data's end where the logs agree, a reasoned mark where
+they don't, as any other data field. The after-cut filter is not a fit: a hit logged before the cut can't be what a
+later landing set off.
+
+Still open: what runs Typhoeus's array past its entity's 180 frames (its entity held by stops the placement's world
+time leaves in, or a longer life; its first tick also 0.5–0.7 s after the press against the kit's 1.17 s).
 
 ## 2026-11-27: Friction round 21: one home for the pairing and keepPrevious, counterfactual replays, measure's split by what it measured
 
@@ -401,41 +436,3 @@ simulation reads it: no team-ab.
 
 **Dead ends:** a time-based twin count (slots due by the batch's ms): the first batch's slashes come before the kit
 frames allow from the event (the stop batches them), so time can't count slots there.
-
-## 2026-11-27: Ember, Alesh and Catcher's mismatches: two build fits and DEF's percentage
-
-**Goal:** the operators whose hits mostly mismatch (by operator, every log but the hold-outs): Ember 80.2%, Snowshine
-88.8%, then Alesh 20.1%, Avywenna 19.9%, Catcher 13.9%. Is each one factor on most hits (a build input), one skill
-(a kit error), or a buff the log lists that the replay lacks?
-
-**Found and fixed:**
-- **Ember (04d4) ×1.0226 on every kit hit**, under the offset screen's 3%: Exemplar's skill 1 at level 9 for the
-  exported 8 (Strength 112 → 132), the one single change of fit-build's 124 (`--pairs`); fixture buildOverrides.
-  04d4's Ember 310 → 9 mismatches. Her other three logs were already fitted (2fd9, 99fb) or plain (7e19).
-- **Alesh (4e36) ×0.9745**, also under 3%: attribute nodes 2 (node 5's favorability 300, as Si's in 0c14 and
-  Perlica's in fc63), 13 of 13 clean; his weapon's skill 3 at 2, the other single change, is ruled out by the log's
-  Thermite Cutter 0.08 a layer. Hard 15's "per-operator factors" (Akekuri, Alesh) are both node counts.
-- **Catcher's P1 strikes ×1.027 (04d4)**: a kit buff's DEF percentage (OBJ Heavy Burden, formulaItem 6) was of the
-  panel line alone, his talent's DEF points (formulaItem 5) added after; the game sums add-slot points first. Engine
-  buffs.ts buffAttr: a percentage is of the line with the buffs' points in it. Catcher 35 → 15 mismatches.
-
-**Scoreboard** (measure against the snapshots of de528c7; snapshots:update for the final commit): earlier pending
-plain 82.3 → 84.4%, mismatch 7.5 → 4.4%, |damage error| 1.3 → 1.2% (04d4 plain 375 → 590, mismatch 614 → 293,
-−3.2 → −1.4%; 4e36 plain 368 → 401, mismatch 37 → 4); verified, development, hold-outs and several-targets
-unchanged; no log worse. By operator: Ember mismatch 80.2 → 2.6%, Alesh 20.1 → 0.6%, Catcher 13.9 → 6.0%.
-`node scripts/team-ab.ts --base de528c7`: every team's own fight the same (no team has Catcher with OBJ Heavy
-Burden), so the team numbers are unchanged.
-
-**Decisions:** fits only where one input explains the hits (Ember, Alesh), as the earlier fits did. Snowshine's
-×0.9624 (04d4) stays out of scope: one factor in [0.96232, 0.96258] fits all 157 clean hits, but no build of nodes,
-weapon level and weapon skill 1 hits it with fewer than three changes, and no resistance does (her physical basic
-attacks read the same factor as her Cryo hits); docs/open-problems.md has it. Avywenna's 9847 mismatches are the
-fight-wide stretch, team-wide hits and Liino's Medicant layers (listed up to ×9, the kit keeps 4): not her kit, so
-left as a lead in docs/open-problems.md. The multi-target 146d has the same build but no fixture there takes
-buildOverrides, so it isn't touched.
-
-**Dead ends:** a gear piece swapped between Ember and Snowshine (both off by exactly 0.125 of attribute bonus, in
-opposite directions): no swap fits either; a food for Ember (116 of 284).
-
-**Left:** Snowshine's build; Catcher's ATK hits at ×1.0005 (Will one point above the export's); Ember's 7e19
-33.15 s finisher (an unlisted talent layer); Liino's Medicant layer count on teammates.

@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-28: needed on the check's pairing, a channel's end in a detached file](2026-11-28-01-needed-on-the-check-s-pairing-a-channel-s-end-in-a-detached.md)
 - [2026-11-27: Friction round 21: one home for the pairing and keepPrevious, counterfactual replays, measure's split by what it measured](2026-11-27-22-friction-round-21-one-home-for-the-pairing-and-keepprevious.md)
 - [2026-11-27: Casts their operator's next press interrupts: a channel's end](2026-11-27-21-casts-their-operator-s-next-press-interrupts-a-channel-s-end.md)
 - [2026-11-27: Statuses per target: a second replay with each landing on its target](2026-11-27-20-statuses-per-target-a-second-replay-with-each-landing-on-its.md)

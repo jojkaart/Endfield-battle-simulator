@@ -25,8 +25,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   tree); the backlog
   ([2026-11-27-backlog-after-round-21.md](friction/2026-11-27-backlog-after-round-21.md),
   no point carried; on its accuracy list the check's targets on 7b54,
-  cutTails' `needed` on the replay's pairing, a channel inside a detached
-  file, a freeze per target, among the older entries; declined for
+  a freeze per target, among the older entries (done 2026-11-28: `needed`
+  on the check's pairing, a channel inside a detached file; next Typhoeus's
+  Barrage Array past its entity's end); declined for
   blindness: a hold-out's change split by cast kind) joins the next round
   once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search

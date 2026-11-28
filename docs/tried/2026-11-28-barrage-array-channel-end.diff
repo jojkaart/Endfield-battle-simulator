@@ -1,0 +1,42 @@
+barrage array channel end (2026-11-28): Typhoeus's Barrage Array with the data's channel end (frame 215).
+
+What it does: drops the kit's dataOverride `latest` on both combos' `area` hits, so the array's ticks get
+KitHit.latestFrame 215 (the entity's 180 frames from its first tick at 35), as every other capped channel since round
+22 (skillCompile.ts, a channel in a detached file): the placement joins no tick past it (logcasts.ts `pastChannel`) and
+the replay lands none past it (drivers.ts replayCast).
+
+Measured (`npm run measure -- --at HEAD --base HEAD --patch`, on 9da9d4a with the compiler's filter dropped and no
+mark): verified |damage error| 1.4 → 1.5% (dbae −2.6 → −3.0%); development plain 84.3%, |damage error| 1.3 → 1.5% (00ae
+1.1 → 3.9%, fc63 plain 527 → 530 but 3.2 → 5.9%, 1cd1 −2.2 → −2.3%); hold-out plain 82.5 → 82.4%, 5.9 → 6.0% (2 worse:
+plain −6); 9c6e's totals moved.
+
+Why dropped: the logs have the array's 18 ticks up to 6.4–8.0 s of world time after the first with no combo press
+between (00ae 23.46, 54.96, 75.23, 94.24 s; fc63 35.98, 80.30 s): the end split each into two combos the log has no
+press for, and the replay dropped the late ticks. What would make it work: the array's own clock (its entity held by
+stops the placement's world time doesn't take out, or a life longer than 180 frames), read from these logs; its first
+tick is logged 0.5–0.7 s after the press against the kit's frame 35 (1.17 s), a second sign its timing is off.
+
+diff --git a/packages/data/kits/operators/chr_0034_typhoea.json b/packages/data/kits/operators/chr_0034_typhoea.json
+index d194660..12c1b10 100644
+--- a/packages/data/kits/operators/chr_0034_typhoea.json
++++ b/packages/data/kits/operators/chr_0034_typhoea.json
+@@ -1835,8 +1835,7 @@
+             "atk_scale_persistent"
+           ],
+           "factor": 0.05555555555555555,
+-          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171).",
+-          "dataOverride": { "latest": "The logs have the array's ticks past the data's channel end (the entity's 180 frames, frame 215): 18 ticks up to 6.4-8.0 s of world time after the first, with no combo press between (pending 00ae 23.46, 54.96, 75.23 and 94.24 s; fc63 35.98 and 80.30 s, round 22), so an end there split one array into two combos. Why the array runs longer (its entity's clock held, or a longer life) is open." }
++          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171)."
+         }
+       ]
+     },
+@@ -1894,8 +1893,7 @@
+             "atk_scale_persistent"
+           ],
+           "factor": 0.05555555555555555,
+-          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171).",
+-          "dataOverride": { "latest": "As the grounded combo's array (its note): the logs have the ticks past the data's channel end (frame 215), so the kit leaves the end out." }
++          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171)."
+         }
+       ]
+     },
