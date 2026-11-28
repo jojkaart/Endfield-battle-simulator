@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { advance, createContext, FPS, init, replayCast, type Build, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
+import { logBuffReplay, readLogFixture } from "@efsim/cli";
 
 const data = loadGameData();
 const target = { enemy: "eny_0051_rodin", level: 90 };
@@ -32,6 +33,18 @@ describe("a burst's application (burstApplied)", () => {
     const after = advance(ctx, st, arrow + 20);
     expect(after.hits.some((h) => h.hitId === "burst")).toBe(true);
     expect(signs(after)).toBe(signs(atArrow));
+  });
+
+  it("0eef's floating combo at 6.77 s, pressed between a shot's arrow and its burst, is no longer inside a shut window", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-0eef2474a26f.json", import.meta.url).pathname);
+    const flags = logBuffReplay(data, fx).replay.castFlags.filter((x) => x.kind === "inside" && x.cast.operator === T);
+    expect(flags).toEqual([]);
+  });
+
+  it("a combo window shut at the press in words: its trigger the cooldown kept shut, a start inside its own slow-down (8f32 82.90 s)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-8f3215963333.json", import.meta.url).pathname);
+    const why = logBuffReplay(data, fx).replay.castFlags.filter((x) => x.kind === "inside" && x.cast.operator === "chr_0028_wulfa").map((x) => x.why);
+    expect(why).toContainEqual(expect.stringMatching(/its combo window, shut until then: last cast at frame \d+; a trigger at frame \d+ \(cryst infliction\) the cooldown kept shut \(ready at frame \d+\); that is 13 frame\(s\) into its own slow-down \(19 frames\)/));
   });
 
   it("the burst's own record is unchanged: a `burst` reaction at its damage, no record of the application", () => {

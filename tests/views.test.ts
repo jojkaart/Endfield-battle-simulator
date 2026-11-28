@@ -84,11 +84,13 @@ describe("the placement and replay views", () => {
     expect(replayView(data, pending)).toMatch(/\d+ cast\(s\) FORCED .*\n[\s\S]*FORCED .* made against its kit: its kit makes it unavailable then/);
     expect(replayView(data, pending)).toMatch(/CUTS {3}\S+ \S+: cuts \d+ pending hit\(s\) of \S+ \(its own hits due until \d+\.\d\d s\): an interrupt the kit allows/);
     // 0eef: its INSIDE flags are casts inside uncuttable frames (the gates alone), each naming the gate that bound
-    // (round 23, the break-combo report point 1): Si's battle skill by her first's window, Typhoeus's combo by its window.
+    // (round 23, the break-combo report point 1): Si's battle skill by her first's window. Typhoeus's combo at 6.77 s,
+    // held by its window until 2026-11-28, is no longer inside: her Sign comes at the burst's application
+    // (tests/burst-applied.test.ts, which also holds the combo-window words).
     const inside = logBuffReplay(data, fx).replay.castFlags.filter((x) => x.kind === "inside");
     expect(inside.length).toBeGreaterThan(0);
     expect(inside.map((x) => x.why)).toContainEqual(expect.stringMatching(/held by window 0 of chr_0036_jsspsi_normal_skill_1 \(its frames 22–41\)/));
-    expect(inside.map((x) => x.why)).toContainEqual(expect.stringMatching(/held by its combo window, shut until then; the running action alone would let it start at once/));
+    expect(inside.some((x) => x.cast.operator === "chr_0034_typhoea")).toBe(false);
     const laev = readLogFixture(join(ROOT, "fixtures/zmdlogs-40d9a3c1da37.json"));
     const text = replayView(data, laev, { trace: ["chr_0016_laevat:twilight"], to: 20000 });
     expect(text).toMatch(/TRACE {2}chr_0016_laevat:twilight from 3\.03: expiry none → \d+\.\d\d s at cast chr_0016_laevat_ultimate_skill/);
