@@ -57,9 +57,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   away stretch 27.4–37.0 s a whole-game pause (`pause-holds` `paused`: her
   Sunderblades and Liino's stance to its last beat, 822 → 987 plain); done
   2026-11-28: her Signs at a Nature burst's application, her Sign conversion
-  on her combo's first arrow (team +2.6% / +3.0%); next the combo windows
-  opened inside a combo's own slow-down (12 INSIDE lines: a placement lead),
-  her clock through overlapping combo slow-downs (fc63).
+  on her combo's first arrow (team +2.6% / +3.0%); done 2026-11-28: a
+  combo's window opened inside its own slow-down taken at the press
+  (openerAhead, the 12 INSIDE lines gone, no verdict moved); next her
+  clock through overlapping combo slow-downs (fc63), the 12 combos made
+  0.07–2.4 s before their cooldown (3f78's Arcane among them).
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't
