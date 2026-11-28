@@ -390,7 +390,13 @@ where that comes sooner (`break-hold-place` `moments`, registered, not the defau
 unchanged, 9090's Liino volleys held past their landing); a break inside a combo's slow-down holds
 unscaled (a7a7, f879, c83c); `stagger-recovery` stays 2 s (a −0.3 s refit centres the median, within its error).
 Next: the 2 hold-outs' INSIDE under the hold (an action held past the next press: 3aa6's breaker, fc63's cast across
-a break; two placement diffs in docs/tried measured flat or worse).
+a break; two placement diffs in docs/tried measured flat or worse). Round 4 (2026-11-28,
+[journal](journal/2026-11-28-07-breaks-inside-a-combo-s-slow-down-akekuri-s-ultimate-as-an.md)): a break inside a
+combo's slow-down holds on top of it, the combo's rest after the hold (`break-hold-combo` `added`, the default; `none`
+worse); Akekuri's ultimate read as specification 5 (its file's 0: no ultimate's priority or stop in the engine, 458b
+158.53 s); 458b 87.47 s her ultimate's event at its stop's end, held back for the lead
+([tried](tried/2026-11-28-ult-event-stop-end-held-back.diff)). Next: a press inside a hold (9847 57.64 s's event lag
+fits both readings), the hold-outs' INSIDE, 458b's team ATK layer ends at 111 s once the held-back diff is in.
 
 **Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
 the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only

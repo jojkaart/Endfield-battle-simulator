@@ -111,11 +111,21 @@ which holds no clock the logs show (86 node crossings: casts and ticks across th
 
 ## break-hold-combo
 
-A break inside a combo's slow-down (2026-11-28; scripts/probes/stagger/break-combo.ts): MEASURED-PENDING
+A break inside a combo's slow-down (2026-11-28, the break-combo round; scripts/probes/stagger/break-combo.ts: 18
+development breaks inside a combo's slow-down). The breaker's own clocks are held by its break (04d4 298.00 s, c83c
+55.83 s: Si's combo +0.48 s), the combo's caster's too, and a combo's slow-down is an action on its caster's skill
+timeline: held, it resumes later. The clocks across the breaks the reading moves can't tell (most breaks come at the
+slow-down's end, scale 0.56–1.0: a7a7 48.14, f879 57.12, 8056 176.76 s, +0.37–0.48 s, as a full hold); the deep
+ones (00ae 55.14 s in Typhoeus's combo at 0.01, d4fb 97.05 s in Lifeng's) have no clock across, so the measure
+decides.
 
-- `lowest`: the default (as two slow-downs since 2026-11-27)
-- `added`: MEASURED-PENDING
-- `none`: MEASURED-PENDING
+- `added`: the default since 2026-11-28. Measured against `lowest` (on 2f4afbd's code): development plain 84.2%
+  (00ae0a364ad4 689 → 691: its Corrosion steps after the 55.14 s break, Typhoeus's hits, fit; 9090afbacec9 +1),
+  hold-outs 82.5% (one +2 plain, one −1: a plain hit to fallback), earlier pending 458b's damage 0.6 → 0.5%, verified
+  unchanged
+- `lowest`: the default until 2026-11-28 (as any two slow-downs, since 2026-11-27)
+- `none`: measured worse: hold-outs plain 82.5 → 82.4% (one −7, mismatch +5), development 00ae −2, 9090 −3, 805687
+  mixed, earlier 458b −2: inside a combo's slow-down the hold applies
 
 ## break-hold-place
 

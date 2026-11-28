@@ -17,7 +17,10 @@ layers' end, assumed: the hidden holds placed otherwise once the 85.57 s break i
 inside Laevatain's combo slow-down).
 
 Held back, not dropped: castassembly.ts was the placement agent's file this round; the lead applies it after the
-merge. With it the 85.57 s break sits inside a combo's slow-down (engine assumption break-hold-combo).
+merge. With it the 85.57 s break sits inside a combo's slow-down (engine assumption break-hold-combo). On the
+round's final code (break-hold-combo `added`, Akekuri's ultimate read as specification 5) it moves 458b 1087 → 1089
+plain (mismatch 9 → 8), 04d4 597 → 599, 3aa6 mixed (419 → 420, mismatch 19 → 17), the rest unchanged: without it the
+specification fix's grants come from the 84.37 s start (her third at 88.33 s displaces the combo's 88.20 s layer).
 
 diff --git a/packages/logs/src/castassembly.ts b/packages/logs/src/castassembly.ts
 index 906bd83..96ef6aa 100644
