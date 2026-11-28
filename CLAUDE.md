@@ -59,7 +59,9 @@ After that milestone, a `dev` branch takes over the role `main` has now.
   `docs/design/<topic>.md`. `node scripts/check-links.ts` (a test runs it)
   checks that relative doc links resolve.
 - A module split is a move: `node scripts/split-module.ts <file.ts> --to
-  <new.ts>=<name>,… [--dry-run]`, then `npm run measure -- --base HEAD`
+  <new.ts>=<name>,… [--dry-run]` (`--reexport` beside another agent's
+  files: no importer changes, the original re-exports the moved names
+  until the merge), then `npm run measure -- --base HEAD`
   (no log moves). A quicker first check of any behaviour-preserving move:
   `node scripts/identity.ts --base HEAD` (the compiled data and every
   log's replay record hashed at both, about 4 min, the hold-outs a count).
@@ -116,7 +118,9 @@ by `isHoldoutKey` (scripts/accuracy.ts), never by a key's prefix;
 tests/holdout-blindness.test.ts lists every export of accuracy.ts and
 measure.ts as a printer it runs or with why it prints no log.
 To try an idea, measure instead: `npm run measure [-- --with <op>]`
-(about a minute for every log, writes only `scratch/measure/`; `--at
+(about a minute for every log, writes only `scratch/measure/`; a
+measure of at most three logs named with `--logs` runs at once, outside
+the test lock; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
 an open reading, `--variant <id>=<r>` (repeatable; `--variant-patch
 <diff>`, repeatable, for several patches on one base, one base run;
@@ -154,6 +158,15 @@ groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
 (each clock's lateness by stop kind; `--fit`: per combo, per episode or
 a share; `--around break`; `--json`), `replay <fixture> --sp` (each SP
 grant's source, each spend; TOPUP: a cast the replay's SP couldn't pay),
+`replay <fixture> --windows <operator>` (a combo's windows: what opened
+or refreshed each and by what, an event its cooldown kept out, each
+press with the window it found), `decisions` (COOLDOWN: a cast before
+the replay's own cooldown had it ready; LOST: a logged crit or reaction
+level no landing took, a moved landing's lost facts), `casts <fixture>
+--passes` (each placement pass's casts and the stops pass 2 read), `casts
+--event-lags --against-holds` (a cast event's world lag from the start
+unheld and held by teammates' stops), `efsim kit <operator> [--levels]`
+(each skill's cooldown and cost),
 `totals --all --side log|replay` (what is still one-sided), `efsim
 gamedata curve <id> --frame n` (a dilation's curve), `holds --dropped --all`, `away
 <fixture…|--all>` (an away stretch's clocks: a pause or a phase), `hits
@@ -288,7 +301,8 @@ complex to verify"):
   (`.prettierignore` keeps `npx prettier` off): format by hand.
 - Every script answers `--help` from its header.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
-  and premerge; `@efsim/*` resolve there): start from
+  and premerge; `@efsim/*` resolve there; a `.md` there is refused:
+  draft a doc in its final path): start from
   `scripts/scratch-template.ts`, run `node scratch/x.ts` (`node
   scripts/typecheck-scratch.ts scratch/x.ts` typechecks it). Times go through
   `FPS` (30 frames a second): `withSeconds(scenario, s)` for a fight's
@@ -320,7 +334,9 @@ complex to verify"):
 - The container can restart and kill background jobs silently: commit work
   in progress before a long run, and after a restart `node
   scripts/runstate.ts` says which run was in flight, at which code, and
-  whether it finished.
+  whether it finished; `node scripts/runstate.ts --where` adds the
+  branch, the commits beyond main, the uncommitted paths and each run's
+  output tail and EFSIM-DONE line, in one call.
 - Timing claims: `npm run bench -- "<cmd A>" "<cmd B>"` (alternating runs,
   CPU seconds and load), never two runs at different times. Another
   commit's code beside this one: `node scripts/at-commit.ts <ref>
@@ -333,7 +349,8 @@ complex to verify"):
   subtree), `who <id>`, `find <type>`.
 
 Hold-out logs live in `fixtures/holdout/`: never open, list or grep it
-(`.ignore` keeps ripgrep out; `grep -r` needs `--exclude-dir=holdout
+(`.ignore`, fixtures/.ignore and tests/snapshots/.ignore keep ripgrep
+out from any root, several roots included; `grep -r` needs `--exclude-dir=holdout
 --exclude='*holdout*'`),
 nor diff or open `tests/snapshots/log-verdicts-holdout.json` (their verdicts;
 `scripts/accuracy.ts --compare` gives the aggregates). Git names files too:
@@ -355,7 +372,8 @@ a friction brief adds beyond the reports names its episode), and
 the files each parallel agent is expected to edit (`node scripts/runstate.ts
 --touching` lists what other worktrees' branches changed so far; `node
 scripts/lead-files.ts <fixture id|operator|word>…` the code files earlier
-commits naming a lead changed, so a split by files sees where the causes
+commits naming a lead changed (and by family: replay, placement, check,
+holds, views, timeline), so a split by files sees where the causes
 tend to live; a brief lists files, never a family of them ("the replay
 modules": `node scripts/lead-files.ts --family <name>` prints one; `--split
 <agent>=<files|family:x>,…` flags a lead whose earlier fixes touched two
