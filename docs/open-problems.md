@@ -2902,6 +2902,10 @@ replay's SP is 284 before the second grant and 300 before the third, and it is k
 replay is at 300 and the log shows the buff (458b's third ultimate, 227.5–229.5 s, all three), each only as good as
 the replay's SP (scripts/probes/sp/spcap.ts: replay firings against the log's starts of Thermite's, OBJ Edge's and Frontiers'
 buffs, with the replay's SP; 54 replay-only firings in all, 11 at the cap). In-game test 112 decides it.
+2026-11-28 ("Team SP"): the replay's SP is a lower bound of the game's where the replay makes no spend and no grant
+the game didn't (its own SP runs short, never over); with that, a firing at the replay's cap is at the game's too,
+and 458b's three (the buffs shown) say a grant at full SP counts, 8056's 17.06 s (one of three shown) that it
+doesn't. 458b's team (no Purrchena) had none of the spends the round removed, so the two still disagree: test 112.
 
 **Next check:** test 112; then, if a grant at full SP gives nothing, the replay's SP at each of the 11 capped
 replay-only firings (a9d7 Pogranichnik 92.6, 200.6, 211.1, 244.8 s; 458b 88.2, 88.9 s; a9d7 Alesh 209.4 s).
@@ -4251,60 +4255,57 @@ logs).
 
 ## Team SP: the replay's SP runs short (web review row 2)
 
-**Shows:** with the engine's own SP, the log check's replay can't afford
-casts the log made: at first in 28 of 40 logs at the 1.5 s regen pause
-(most 2–12 SP short), 22 at 0.5 s, 14 with no pause (1d91 at 4833 ms: 46
-SP before a 100 cast). replayCast raises SP silently, so verdicts don't
-show it. Since 2026-11-12 the engine pauses 0.5 s and regenerates through
-others' time stops and slow-downs: of the 17 development logs, 9 are still
-short at some cast, 1193 SP in all (before: 13 logs, 2921 SP). Since
-2026-11-13 Liino's beats cost nothing and a logged cast matches a placed
-one in the world's time: of the 15 development logs, 8 short at 21 casts,
-1038 SP (before: 10 logs, 39 casts, 1673 SP, 116 of it Liino's); in the
-Liino logs, Liino's top-ups are gone (a7a7 153 → 0 SP, 8318 111 → 0, 4bfe
-126 → 0: teammates' presses no longer starved by her recasts).
+**Shows:** with the engine's own SP, the log check's replay can't afford casts the log made (BuffReplay.spTopUps:
+replayCast raises SP to a logged cast's cost silently, so verdicts don't show it; `node
+scripts/probes/sp/shortfall.ts`, per log and cast). The logs record no SP, only casts, so they bound the game's SP
+from below: a model under which a logged cast is unaffordable lacks SP the game had; one that affords every cast
+isn't shown right by that. History: 28 of 40 logs at the old 1.5 s pause; 2026-11-12 (0.5 s, regeneration through
+stops) 9 of 17 development logs, 1193 SP; 2026-11-13 (Liino's beats free) 8 of 15, 1038 SP; 2026-11-23 1,766 SP at
+50 casts in 16 logs. 2026-11-28 at 10aa577: 16 of 65 development logs, 41 casts, 1,327 SP, every one a battle
+skill; 04d4 621 of it.
 
-**Ruled out:** a 1.5 s pause after every spend (old rule K1). Regen held
-during others' time stops and slow-downs (old rule K2: about 1400 SP of the
-shortfall, 7 logs). SP for basic-attack hits on which the log shows poise
-(the replay's controlled operator already matches the log's).
+**Fixed (2026-11-28):** Purrchena's counter presses made as battle skills (04d4 621 → 0 SP, 99fb) —
+docs/journal/2026-11-28-05-team-sp-purrchena-s-counter-presses-the-sp-readings-as.md. After it: 15 of 65 logs, 27
+casts, 706 SP (0eef 8, bdf2 2, 1d91 100, 3f78 20, 6339 9, 79cc 169, 7b54 18, 9c6e 138, ad7f 13, af7b 22, c3c7 75,
+d572 4, de6a 11, f574 110, f879 6).
 
-**Ruled out (2026-11-13, sonnet + check):** teammates' Final Strike SP as
-the main gap. In the data most operators' Final Strike SP has no
-controlled gate (atbOnlyMainChar false, no branch), and the engine already
-grants it to teammates; only Laevatain, Ardelia, Zhuang Fangyi, Antal and
-Tangtang gate it (Tangtang's attack5_projhit: the ObtainCostAction inside
-an IfElse on CheckMainCharacterCondition, so the kits' `if controlled`
-are right though the flag says false). Granting all of it anyway: 10 → 7
-of 15 development logs short, 1808 → 1287 SP (counted at each replayed
-cast).
+**Ruled out:** a 1.5 s pause after every spend (old rule K1). Regen held during others' time stops and slow-downs
+(old rule K2: about 1400 SP of the shortfall, 7 logs). SP for basic-attack hits on which the log shows poise (the
+replay's controlled operator already matches the log's). Teammates' Final Strike SP as the main gap (2026-11-13:
+in the data most operators' Final Strike SP has no controlled gate and the engine grants it; only Laevatain,
+Ardelia, Zhuang Fangyi, Antal and Tangtang gate it, Tangtang's attack5_projhit inside an IfElse on
+CheckMainCharacterCondition; granting all of it anyway: 10 → 7 of 15 logs short). Liino's stance "presses" (her
+beats, no SP, 2026-11-13). Perfect dodges where the clocks place holds (2026-11-23: 185 dodges cover 87 of 1,766 SP;
+scripts/probes/hidden-holds/sp.ts). Teammates' basic attacks the replay doesn't land (2026-11-28: the 232 placed basic
+casts with SP in the 15 short logs have every logged hit landed; scripts/probes/sp/unlanded.ts). A kit
+reading no SP key the data grants (2026-11-28, scripts/probes/sp/keys.ts: none in these fights; Pogranichnik's P1
+return needs two targets, Antal's P3 a kill, Purrchena's `atb_return_2` a block; Laevatain's P1 `atb` on her
+empowered hit is read, 20 at P1 on a key the table defaults to 0). The db87 10117 ms artefact (gone: db87 short of
+nothing at 10aa577).
 
-**Ruled out (2026-11-13):** Liino's "presses" in Vocalist Stance: her
-stance's beats (the owner), replayed as such, no SP.
+**The readings (engine assumptions, 2026-11-28; docs/design/assumptions.md):** `sp-regen` (`pause`, the default:
+0.5 s after a spend, then 8/s; `ticks`: 4 SP every 0.5 s, the timer starting over at each spend, both fitting 666bj's
+"0.5 s after a battle skill" and the native settings' atbRecoverInterval 0.5) and `sp-start` (`200`, the default;
+`full`). After the fix (scripts/probes/sp/readings.ts): `pause` 15 logs / 706 SP, `ticks` 11 / 577, `pause` +
+`full` 5 / 323, `ticks` + `full` 5 / 251; a 0.2 s pause 10 / 527, none (continuous, which 666bj's test rules
+out) 8 / 428 (scripts/probes/sp/pause.ts). Five logs are short in their first 12 s whatever the regeneration (0eef
+3.20 s, bdf2 7.63 s, 79cc 9.10
+and 10.73 s: 92 SP, four battle skills in 11 s, no pause reading pays more than 12 of it; ad7f 9.40 s, 7b54 11.03 s):
+a full start covers all five. In-game test 113 (the bar at a fight's start) decides `sp-start`; test 102 stays not
+testable by hand.
 
-**Ruled out as the gap (2026-11-23):** perfect dodges where the clocks place
-holds. The placed holds ("The buff clock", `placed`), read as dodges (one per
-0.512 s, 7 SP each at its time, credit for the casts after it, the cap
-ignored: an upper bound), are 185 dodges, 1,295 SP over the 60 logs but the
-hold-outs, and cover 87 of the replay's 1,766 SP short at 50 casts
-in 16 logs (BuffReplay.spTopUps; scripts/probes/hidden-holds/sp.ts): the shortfall sits where
-the clocks place almost nothing (04d4 650 SP with 0.7 s of holds, 6339 236
-with none, db87 272 with 1.9 s, 79cc 169 with 1.9 s), and the logs with the
-most holds are short of nothing (c4f3, de6a, fc63). Neither evidence for nor
-against the dodge reading: dodges no clock sees are possible anywhere.
+**Still possible:** the start above 200 (test 113); no SP lost to a spend (`ticks`); perfect dodges no clock sees (7
+SP each); Purrchena's block refund (+20 at a block: the log shows no block; 04d4 and 99fb short of nothing now);
+multi-target Final Strikes giving SP per target (the several-targets logs f574, 9c6e, 7b54, 6339 are short: unread
+in the data, which grants a Final Strike's `atb` by no ObtainCostAction one could count); other hitless presses free
+(Si, Laevatain in db87: dubious); replay artefacts: f574 16.88 and 17.65 s, one Mi Fu Trail and Mangle (flurry at
+frames 3 and 10, mangle at 24) logged on two slugs is placed as two casts (the 16.98 s pair as both flurries, the
+17.75 s mangles as a new cast), 50 SP spent twice (a several-targets placement case, logcasts.ts, not the SP model).
 
-**Still possible:** perfect dodges no clock sees (7 SP each); teammates' basic attacks the replay doesn't land
-(their Final Strikes' SP; the earlier probe granted SP at every logged
-Final Strike); Purrchena's block refund (+20 at her counter, about 240
-SP, more if repeated blocks count); teammates' Final Strikes give SP too
-(alone 1497 SP at 0.5 s; with the others only db87 and 04d4 stay short);
-other hitless presses free (Si, Laevatain in db87: dubious); SP at the
-start above 200 (0eef short at 3.2 s); a pause shorter than 0.5 s (bdf2 at
-3817 ms fails any pause above ~0.2 s with the old regen); a replay
-artefact (db87 at 10117 ms charges 200 SP for one press).
-
-**Next check:** teammates' basic attacks the replay doesn't land; then
-the pause (test 102).
+**Next check:** test 113; then what's left under `full` (1d91 52.27 s Typhoeus, 79cc 28.70 / 31.47 s, 9c6e 51.83 /
+76.50 s, f574 after its Mi Fu cast, af7b 36.60 s) cast by cast with the replay's SP changes
+(scripts/probes/sp/grants.ts: every grant and spend between two times; scripts/probes/sp/shortfall.ts lists the
+short casts).
 
 ## Solidification as a freeze (web review row 4)
 

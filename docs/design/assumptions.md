@@ -88,8 +88,8 @@ the 65 development logs after Purrchena's counter presses: `pause` 15 logs short
 - `200`: the native settings as Endaxis's notes read them (rules.ts SP); every development log's opening the replay
   can afford but five: 0eef (3.20 s, 8 SP), bdf2 (7.63 s, 2), 79cc (9.10 and 10.73 s, 92: four battle skills in
   11 s, no pause reading pays more than 12 of it), ad7f (9.40 s, 13), 7b54 (11.03 s, 18) (2026-11-28).
-- `full`: none of those openings short; with `pause` 5 logs short, 9 casts, 323 SP; with `ticks` (scripts/probes/sp/
-  readings.ts) see docs/open-problems.md "Team SP". In-game test 113 decides it.
+- `full`: none of those openings short; with `pause` 5 logs short, 9 casts, 323 SP; with `ticks` 5, 7, 251 (1d91,
+  79cc, 9c6e, af7b, f574 mid-fight; scripts/probes/sp/readings.ts). In-game test 113 decides it.
 
 ## break-hold
 
