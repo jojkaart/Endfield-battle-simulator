@@ -77,6 +77,7 @@ import {
 import { readFileSync } from "node:fs";
 import { withCurveReading } from "@efsim/engine";
 import { parseAssume } from "../assume.ts";
+import { whichView } from "../which.ts";
 import { command } from "../command.ts";
 import { formatLogList, logDirs } from "../logtools.ts";
 
@@ -87,11 +88,14 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
 export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "statuses", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away", "stack", "followups"]);
-export const NOT_REPLAYING = new Set(["list", "raw", "screen", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
+export const NOT_REPLAYING = new Set(["list", "which", "raw", "screen", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
 
 export default command({
   name: "zmdlogs",
-  usage: `  efsim zmdlogs list                      The development logs (never a hold-out): file, team with potentials,
+  usage: `  efsim zmdlogs which "<question>"        Which view answers a question: its words against docs/design/data.md's
+                                          question table and these usage entries, the closest few with their
+                                          commands (--top n): before suggesting a view, or writing a probe
+  efsim zmdlogs list                      The development logs (never a hold-out): file, team with potentials,
                                           enemy, hits, casts, length; the safe start of any scan over the logs
                 [--with <operator>]       Only logs whose team has it (id or part of the name; repeatable: all of them)
                 [--dir <dir>] [--json]    Only verified, pending or multi (repeatable); everything as JSON
@@ -547,6 +551,12 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const { detail, fetched } = await rawDetail(battleId);
       if (fetched) process.stderr.write(`fetched ${battleId} once from zmdlogs.com; cached in ${rawDir()}\n`);
       return formatRaw(detail, { ...(values.buffs !== undefined ? { buffs: values.buffs } : {}), ...(values.events !== undefined ? { events: values.events } : {}) });
+    }
+    if (sub === "which") {
+      // Round 22 (round 21's own report point 2): which view answers a question, before suggesting one.
+      const question = args.slice(1).join(" ").trim();
+      if (!question) throw new Error('zmdlogs which takes a question in words: zmdlogs which "a buff\'s applications per cast" (--top n)');
+      return whichView(question, ctx.usage, values.top !== undefined ? { top: Number(values.top) } : {});
     }
     if (sub === "screen") {
       // Round 22 (the Estella-Akekuri report point 1): docs/accuracy-plan.md "Choosing logs" as checks, before import.

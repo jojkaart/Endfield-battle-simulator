@@ -6,7 +6,10 @@
 //
 // A file a registry test checks (REGISTRY_CHECKS: the assumption registries' sentence length, their notes) also runs
 // that test, by name, in seconds (round 21, the tail-cut report point 5: a reading lengthened past 320 characters failed
-// only the full suite, at premerge, since no test importing the file names it to `vitest related`).
+// only the full suite, at premerge, since no test importing the file names it to `vitest related`). Round 22: the same
+// for the tests that fake a record through tests/helpers/replay.ts fakeReplay (its users are reached by `vitest related
+// buffreplay.ts` only among most of the suite, and a renamed BuffReplay member fails only the typecheck): a change to
+// BuffReplay's home, the decisions view or the helper runs them and the typecheck.
 //
 // Usage: npm run lint:changed [-- <base-ref>]      (exit code: ESLint's, else the registry tests'; 0 when nothing changed)
 
@@ -34,11 +37,17 @@ export function changedFiles(base: string): string[] {
  * Registry checks a change to one of these files must pass, run by lint:changed: the files (repository-relative
  * prefixes), the test file and the tests' names (vitest -t, a regular expression).
  */
-export const REGISTRY_CHECKS: readonly { readonly files: readonly string[]; readonly test: string; readonly names: string }[] = [
+export const REGISTRY_CHECKS: readonly { readonly files: readonly string[]; readonly test: string; readonly names: string; readonly typecheck?: true }[] = [
   {
     files: ["packages/engine/src/assumptions.ts", "packages/engine/src/replay-assumptions.ts", "docs/design/assumptions.md"],
     test: "tests/engine-assumptions.test.ts",
     names: "have IDs no kit assumption uses|have their evidence in docs/design/assumptions.md",
+  },
+  {
+    files: ["packages/logs/src/buffreplay.ts", "packages/logs/src/decisionsview.ts", "tests/helpers/replay.ts"],
+    test: "tests/decisions.test.ts",
+    names: "both paths land|BATCH decision",
+    typecheck: true,
   },
 ];
 
@@ -60,6 +69,12 @@ function main(argv: string[]): number {
   for (const c of checks) {
     process.stdout.write(`lint:changed: ${c.files.join(", ")} changed: ${c.test} -t "${c.names}"\n`);
     const r = spawnSync("npx", ["vitest", "run", c.test, "-t", c.names], { cwd: ROOT, stdio: "inherit" });
+    if (r.status !== 0 && status === 0) status = r.status ?? 1;
+  }
+  // The typecheck once, where a check asks for it (a faked record's fields are checked at compile time only).
+  if (checks.some((c) => c.typecheck)) {
+    process.stdout.write("lint:changed: a faked record's home changed: npx tsc --noEmit (about 15 s)\n");
+    const r = spawnSync("npx", ["tsc", "--noEmit"], { cwd: ROOT, stdio: "inherit" });
     if (r.status !== 0 && status === 0) status = r.status ?? 1;
   }
   return status;

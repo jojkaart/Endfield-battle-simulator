@@ -9,12 +9,21 @@ import type { LandedHit } from "@efsim/engine";
 import { decisionsDiff, laneEnds, lanePairs, linkGains, logBuffReplay, readLogFixture, recordChanges, replayDecisions, replayView, totalsView, withOperatorsOnly, type DecisionLine, type HitRecord, type LogHit } from "@efsim/logs";
 import { ROOT } from "./logverdicts.ts";
 import { fakeReplay } from "./helpers/replay.ts";
+import { registryChecks } from "../scripts/lint-changed.ts";
 import { logHitOf, syntheticFixture } from "./helpers/synthetic.ts";
 
 const data = loadGameData();
 
 describe("the replay's decisions", () => {
   const d = (t: number, kind: DecisionLine["kind"], text: string): DecisionLine => ({ t, kind, operator: "op", text });
+
+  // Round 22: lint:changed runs the fakeReplay tests below (and the typecheck) when BuffReplay's home or the helper
+  // changes; their names must stay what its check selects.
+  it("are the fakeReplay tests lint:changed runs for a change to BuffReplay or the helper", () => {
+    const [c] = registryChecks(["tests/helpers/replay.ts"]);
+    expect(c).toMatchObject({ test: "tests/decisions.test.ts", typecheck: true });
+    for (const name of ["says when a cast kept a jump with pinned landings in the part it skips: both paths land (BOTHPATHS; round 16)", "counts a batched ms landed out of the bars' order as a BATCH decision, given the fixture (backlog after round 16 point 3)"]) expect(new RegExp(c?.names ?? "^$").test(name)).toBe(true);
+  });
 
   it("decisionsDiff keeps only what one side decided, each repeat counted", () => {
     const a = [d(1000, "SKIP", "x"), d(2000, "TAILCUT", "y"), d(2000, "TAILCUT", "y")];

@@ -101,4 +101,6 @@ tests/friction.test.ts holds every open report here to it (round 14).
 > names the files its suggestion touches). Cover structural problems
 > in the code design, repository, docs or tools that slowed you down or caused
 > mistakes, and how to make future agents' work easier. Only real friction you
-> hit, most costly first; then a short "what worked well".
+> hit, most costly first; then a short "what worked well". Before suggesting
+> a view or a command, ask `npm run -s efsim -- zmdlogs which "<your
+> question>"`: it may exist already.

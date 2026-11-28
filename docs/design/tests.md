@@ -284,12 +284,25 @@ Round 3 (2026-11-18), after agents spent half their sessions waiting on
   commit on the branch), make variant B in the working tree, then `npm run
   measure -- --base HEAD`: B (the tree, fixed at queue time) against A's
   code on the same logs; with `--hits` for the hits that differ. For more
-  variants, a commit each and `--at <ref> --base <ref>`. Don't register a
+  variants, a commit each and `--at <ref> --base <ref>`, or (round 22, the
+  needed-pairing report point 3) one diff per variant on one base:
+  `--variant-patch a.diff --variant-patch b.diff` (repeatable, each a
+  worktree of its own, one queue slot and one base run, each also against
+  the plain tree; with `--set` on other files, not with `--patch`). Don't register a
   temporary reading in the assumptions registry to compare two variants
   (round 6: the hidden-holds round added and removed a `world` reading to
   measure "the operators' clocks too"): `--assume` is for the open
   questions the registry lists, and a reading added for one measurement
   leaks into `efsim assumptions` and `--assumptions` checks if forgotten.
+- **A move checked as a move** (round 22, round 21's own report point 1):
+  `node scripts/identity.ts --base <ref> [--data] [--replay] [--logs
+  <id,…>]` hashes the compiled data and kits and each log's default replay
+  record by part (placement, casts made, tail cuts, landings with frames,
+  refs and damage, statuses, applied slow-downs, hidden holds, failures)
+  at `<ref>` and in the tree as queued, about 4 min for every log under
+  the lock's short lane, and names the differing parts per development log (the
+  hold-outs: a count). The same everywhere: the move moved nothing a
+  verdict reads; a difference is where to look before snapshots:update.
 - **`npm run snapshots:update`** stays the final step before a commit
   that moves verdicts (it also rewrites the example and kit snapshots and
   checks every test's assertions). It reads the working tree, so since
@@ -387,7 +400,10 @@ snapshots:update's summary) may print:
   measure already prints it (counts, never which log);
 - the replay's decision kinds' net changes over the moved hold-outs, per
   direction, and per `--split` part how many of the whole change's moved
-  hold-outs it moves the same way (round 18; counts).
+  hold-outs it moves the same way (round 18; counts);
+- how many hold-outs' replay records a move's identity check finds
+  different (scripts/identity.ts, round 22: a count, never which log nor
+  which part of the record).
 
 A stable label per hold-out across runs ("hold-out #7") was proposed
 (round 18, the replay-only report point 1) and not built: with `--with
