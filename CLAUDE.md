@@ -119,8 +119,10 @@ To try an idea, measure instead: `npm run measure [-- --with <op>]`
 (about a minute for every log, writes only `scratch/measure/`; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
 an open reading, `--variant <id>=<r>` (repeatable; `--variant-patch
-<diff>`, repeatable, for several patches on one base, one base run) for
-several in one run
+<diff>`, repeatable, for several patches on one base, one base run;
+`--plain-from <dir>` reuses an earlier variant run's plain tree for the
+same code, readings and logs, `--trust-plain` across a new reading's
+branch) for several in one run
 instead of chained measures (each also against the same code without it;
 `--set <file>:<CONST>=<value>` for a constant's value, also as a variant),
 `--split files|commits|hunks` for which part of a batch moved which log
@@ -144,9 +146,16 @@ and run `snapshots:update` once for the final commit (`-- --costs` only
 to rebalance the pending shards); `npm run measure -- --help` lists its
 options, checked before it queues; with no reference named and stale
 snapshots it measures against the merge base with main (`--against-snapshots`
-keeps the snapshots). Diagnosis views: `efsim zmdlogs
+keeps the snapshots). Which hits a change moved and how their landings
+did (lost, with the NOLAND reason; a shift onto another logged hit's):
+`npm run measure -- --hits` or `zmdlogs hits <fixture> --against
+<id>=<r>`. Diagnosis views: `efsim zmdlogs
 groups|differences|casts|replay|stagger|bursts|holds --why`, `clocks`
-(each clock's lateness by stop kind), `holds --dropped --all`, `away
+(each clock's lateness by stop kind; `--fit`: per combo, per episode or
+a share; `--around break`; `--json`), `replay <fixture> --sp` (each SP
+grant's source, each spend; TOPUP: a cast the replay's SP couldn't pay),
+`totals --all --side log|replay` (what is still one-sided), `efsim
+gamedata curve <id> --frame n` (a dilation's curve), `holds --dropped --all`, `away
 <fixture…|--all>` (an away stretch's clocks: a pause or a phase), `hits
 <fixture> --against-hit <s>` (a hit's zones against a neighbour's), `ends
 <fixture> [--at <s>]` (which listed buffs end at a moment, which go on),
@@ -277,6 +286,7 @@ complex to verify"):
   it ran nothing, its other commands included: run them again (`node
   scripts/bash-guard.ts --check-file <file>` tries a form). No code formatter
   (`.prettierignore` keeps `npx prettier` off): format by hand.
+- Every script answers `--help` from its header.
 - Scripts as files in `scratch/` (git-ignored, ignored by lint, typecheck
   and premerge; `@efsim/*` resolve there): start from
   `scripts/scratch-template.ts`, run `node scratch/x.ts` (`node
@@ -338,7 +348,10 @@ not (round 20; the friction backlog's "Declined" section carries it).
 Before importing a log: `efsim zmdlogs screen <battle id…> [--fetch]`
 (the "Choosing logs" checks; a hold-out refused unread, no account named).
 
-The lead: name the base commit (or branch) in a sub-agent's brief, and
+The lead: name the base commit (or branch) in a sub-agent's brief (check
+each accuracy lead first: `node scripts/lead-status.ts <id@time|words>…`
+says whether docs/open-problems.md marks it fixed, open or both; a theme
+a friction brief adds beyond the reports names its episode), and
 the files each parallel agent is expected to edit (`node scripts/runstate.ts
 --touching` lists what other worktrees' branches changed so far; `node
 scripts/lead-files.ts <fixture id|operator|word>…` the code files earlier
