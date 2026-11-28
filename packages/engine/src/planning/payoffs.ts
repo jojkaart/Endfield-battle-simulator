@@ -367,6 +367,7 @@ function eventText(e: StatusEvent): string {
   if (rest.kind === "inflicted") return `inflicted ${rest.element} ×${rest.stacks}`;
   if (rest.kind === "consumed") return `consumed ${rest.element} ×${rest.stacks}`;
   if (rest.kind === "burst") return `burst ${rest.element}`;
+  if (rest.kind === "burstApplied") return `burst applied ${rest.element}`;
   if (rest.kind === "physical") return `${rest.status} ${rest.level}${rest.forced ? " (forced)" : ""}`;
   if (rest.kind === "vulnerable") return `vulnerable ${rest.before}→${rest.stacks}`;
   if (rest.kind === "control") return `control ${rest.status}`;

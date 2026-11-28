@@ -555,6 +555,10 @@
                     },
                     "minItems": 1
                   },
+                  "applied": {
+                    "const": true,
+                    "description": "When the burst's buff is added to the enemy (at its infliction, or a delayed burst hit's landing), one triggerInterval before its damage: a listener on the burst tag's buff being added (abilityEvent 9)."
+                  },
                   "fromKinds": {
                     "type": "array",
                     "items": {

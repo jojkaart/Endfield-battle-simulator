@@ -83,6 +83,7 @@ function eventReaction(e: StatusEvent): Parameters<typeof computeReaction>[4] | 
     case "combustionTick":
       return { kind: "combustionTick", element: "fire", stacks: e.level };
     case "inflicted":
+    case "burstApplied":
     case "consumed":
     case "statusConsumed":
     case "vulnerable":
@@ -212,7 +213,7 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
   // Several targets (TimelineScenario.landingTargets): the record names the target they happened on (the current one).
   const target = st.targets?.current;
   for (const e of events) {
-    if (e.kind === "inflicted") continue;
+    if (e.kind === "inflicted" || e.kind === "burstApplied") continue;
     records.push(target !== undefined ? { ...e, target } : e);
     // Every damaging event draws its crit roll (a tick that can't crit too: the stream doesn't depend on what crits).
     let roll: number | undefined;
@@ -266,8 +267,9 @@ export const asEvents = (events: readonly StatusEvent[], fromKind: SkillType | "
 /** An infliction's status events without its bursts, which are scheduled their element's delay later (BattleConstants.burstDelayFrames), on their operator's clock: others' time stops and slow-downs hold them, its own and freezes don't (clock.ts operatorClockDue). */
 export function delayBursts(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): { state: TimelineState; now: StatusEvent[] } {
   const delay = (e: StatusEvent) => (e.kind === "burst" ? ctx.burstDelayFrames[e.element] : 0);
-  const now = events.filter((e) => delay(e) === 0);
-  if (now.length === events.length) return { state: st, now };
+  // Each burst's buff is added now, whenever it deals its damage (StatusEvent burstApplied: before a burst due at once).
+  const now = events.flatMap((e): StatusEvent[] => [...(e.kind === "burst" ? [{ kind: "burstApplied", frame: e.frame, operator: e.operator, element: e.element } as const] : []), ...(delay(e) === 0 ? [e] : [])]);
+  if (!events.some((e) => delay(e) > 0)) return { state: st, now };
   // Which stops and slow-downs hold its delay (engine assumption burst-stops).
   const reading = engineReading(ctx.scenario, "burst-stops");
   const holds = (op: string) => (x: TimelineState["slowdowns"][number]) => (reading === "ultimates" ? x.ultimate === true : x.exempt !== op || (reading === "all" && x.ultimate === true));
@@ -405,8 +407,12 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     return out;
   };
   const statusEvents = applyPhase(false);
-  // A hit computed as a burst is one for triggers too (its damage is the hit's own).
-  const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" && withDamage && !away ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
+  // A hit computed as a burst is one for triggers too (its damage is the hit's own); its buff is added at its landing
+  // (burstApplied), a delayed one's before its damage (KitHit.enemyDelay: Typhoeus's Power Shot).
+  const reaction = kitHit.reaction;
+  const burst: StatusEvent[] = reaction?.kind === "burst" && !away
+    ? [...(late ? [] : [{ kind: "burstApplied", frame: hit.frame, operator: hit.operator, element: reaction.element } as const]), ...(withDamage ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: reaction.element } as const] : [])]
+    : [];
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
   // Those on the infliction itself (inflictionApplied: the game's abilityEvent 126, sent before it resolves the
   // infliction into a reaction) run first, so a reaction's own hit sees what they give; those on the reaction or status

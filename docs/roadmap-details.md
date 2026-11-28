@@ -93,7 +93,16 @@ replay's stops around some beats (Perlica's ultimate in 4d60 at 92.8 s),
 Cosmovoice ending before its logged finale (9090, 8915, 4bfc), a pinned
 beat ordered after another's hit at its frame (9847 60.77 s); gear
 chosen jointly with the rotation (a search per candidate set, not a
-replay).
+replay). Combo windows 2026-11-28 (docs/open-problems.md "Combo
+windows"): Typhoeus's Signs come at a Nature burst's application (engine
+`burstApplied`, the listener's abilityEvent 9), 5 INSIDE lines gone;
+her conversion rides on her combo's first arrow (fc63's 59.33 s delayed
+trigger against its 58.65 s arrow); team-ab against 967d460: sustained
++2.60% full, +3.03% zero (within one sd). Next: the 12 openers logged
+inside a combo's own slow-down (placement: a pinned landing at that
+combo's first logged ms placed at or before its start), 3f78 19.30 s
+(Arcane's combo inside her 18 s cooldown), fc63's battle skills INSIDE
+her combo's window 0 (her clock through overlapping combo slow-downs).
 
 ## Gear
 

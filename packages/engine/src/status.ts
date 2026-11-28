@@ -235,6 +235,13 @@ export type StatusEvent =
    * it off. Record only (the log check's `zmdlogs bursts` cause): nothing reads it to decide.
    */
   | { readonly kind: "burst"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly inflictionBy?: readonly string[]; readonly inflictedAt?: number }
+  /**
+   * An Arts Burst's buff added to the enemy (buff_common_<e>_<e>_triggered, or a forced burst's own, which carry the
+   * element's burst tag): at the infliction that sets it off, or a delayed burst hit's landing (KitHit.enemyDelay), one
+   * triggerInterval before its damage, the `burst` event (timeline landing.ts delayBursts). Only triggers read it
+   * (StatusOn burst `applied`: a listener on the tag's buff being added, Typhoeus's Signs); it isn't recorded.
+   */
+  | { readonly kind: "burstApplied"; readonly frame: number; readonly operator: string; readonly element: ArtsElement }
   | {
       readonly kind: "reaction";
       readonly frame: number;
