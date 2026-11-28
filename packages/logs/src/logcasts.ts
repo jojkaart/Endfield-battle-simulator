@@ -501,6 +501,8 @@ interface Group {
   readonly scales: ReadonlyMap<KitHit, number>;
   /** The multipliers a hit whose value expression reads its event's count takes (nominalScales), where it has no single one. */
   readonly ranges: ReadonlyMap<KitHit, readonly number[]>;
+  /** A skill group's SkillData timing (its paths' starts and ends tag its slots: Slot.path); absent for a trigger's. */
+  readonly timing?: SkillTiming | null;
 }
 
 /** One landing slot of a key: the kit hits it can be (alternatives at one frame), the likeliest first. */
@@ -511,6 +513,14 @@ interface Slot {
   readonly variant?: true;
   /** The other variants' hits at this slot (their landing of the same turn), each at its own frame in its cast. */
   readonly at?: ReadonlyMap<KitHit, number>;
+  /**
+   * The path of a skill of several paths the slot lies on (round 23, the placement-cases report point 2: a slot list
+   * over every path of a jump carried no path, so de6a's combo span ran across the other paths' frames): the frame the
+   * path starts at (pathStart: the latest jump destination at or before it) and where the cast ends on it (pathEnd;
+   * Infinity where no end is sure). On a skill group's slots only; the placement reads a cast's end from its first
+   * slot's.
+   */
+  readonly path?: { readonly from: number; readonly end: number };
 }
 
 export interface LoggedCast {
@@ -691,7 +701,7 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture
   return [
     ...kit.skills.map((s): Group => {
       const hits = s.hits.filter(available(s.skillId));
-      return { id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits, scales: scales(s.skillId, hits), ranges: ranges(s.skillId, hits) };
+      return { id: s.skillId, skillId: s.skillId, kind: s.kind, anchor: null, hits, scales: scales(s.skillId, hits), ranges: ranges(s.skillId, hits), timing: data.skills[s.skillId]?.timing ?? null };
     }),
     ...kit.triggers.flatMap((t): Group[] => {
       const skillId = triggerSkillId(kit.operator, t);
@@ -874,7 +884,10 @@ function slotsOf(g: Group, key: string): Slot[] | null {
       (at[j] as Map<KitHit, number>).set(x.hit, x.frame);
     });
   }
-  return order.others.length ? slots.map((x, j) => ({ ...x, variant: true as const, ...((at[j] as Map<KitHit, number>).size ? { at: at[j] as Map<KitHit, number> } : {}) })) : slots;
+  const tagged = order.others.length ? slots.map((x, j) => ({ ...x, variant: true as const, ...((at[j] as Map<KitHit, number>).size ? { at: at[j] as Map<KitHit, number> } : {}) })) : slots;
+  // Each slot's path (Slot.path), on a skill's slots.
+  const timing = g.timing;
+  return timing ? tagged.map((x) => ({ ...x, path: { from: pathStart(timing, x.frame), end: pathEnd(timing, x.frame) } })) : tagged;
 }
 
 /**
@@ -1335,10 +1348,10 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         // The cast's slots end where its action ends on the path its first landing is on (pathEnd: a skill of several
         // paths from a jump, each ended by an InterruptCurSkillAction): the later paths' slots aren't its landings to come.
-        const end = first && g.kind !== null ? pathEnd(data.skills[g.skillId]?.timing, first.frame) : Infinity;
+        const end = first && g.kind !== null ? (first.path?.end ?? Infinity) : Infinity;
         const onPath = s && end < Infinity ? s.filter((x) => x.frame < end) : s;
         const span = onPath && first ? msOf((onPath.at(-1) as Slot).frame - first.frame) : 0;
-        const longest = Math.max(span, g.kind !== null ? msOf(Math.min(end, data.skills[g.skillId]?.timing?.durationFrames ?? 0) - (end < Infinity && first ? pathStart(data.skills[g.skillId]?.timing, first.frame) : 0)) : 0);
+        const longest = Math.max(span, g.kind !== null ? msOf(Math.min(end, data.skills[g.skillId]?.timing?.durationFrames ?? 0) - (end < Infinity && first ? (first.path?.from ?? 0) : 0)) : 0);
         current.set(h.event, { cast, first: h.t, last: h, index: firstIndex, span, longest, slots: onPath, exact: exactSlots(g, h.event), scales: g.scales, ranges: g.ranges });
         // A landing joined to a cast another key opened (joinDelayed, joinable): from the cast's start, against its frame.
         const via: PlacedJoin | undefined = joined === null ? undefined : { by: late ? "delayed" : "reach", elapsed: worldMs(cast.start, h.t, stops), ...(first ? { due: msOf(first.frame) } : {}) };
