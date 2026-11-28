@@ -55,7 +55,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   69 s); done 2026-11-27: her attack 4 placement, Liino's linger (disabled in
   the data) and her unlogged End Stance from the beats (team −0.15%); 4d60's
   away stretch 27.4–37.0 s a whole-game pause (`pause-holds` `paused`: her
-  Sunderblades and Liino's stance to its last beat, 822 → 987 plain).
+  Sunderblades and Liino's stance to its last beat, 822 → 987 plain); done
+  2026-11-28: her Signs at a Nature burst's application, her Sign conversion
+  on her combo's first arrow (team +2.6% / +3.0%); next the combo windows
+  opened inside a combo's own slow-down (12 INSIDE lines: a placement lead),
+  her clock through overlapping combo slow-downs (fc63).
 - **Gear:** a search seeded with the current rotation, so a re-search with
   new gear means something; then Si on the LYNX Slab loadout.
 - **Planning after phase 3:** cheaper macros, a setup value that doesn't

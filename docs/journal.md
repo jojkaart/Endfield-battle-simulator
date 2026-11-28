@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 202 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 203 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -56,6 +56,52 @@ assembly's stop list) keep their list unmerged (not measured: their merge would 
 
 **Left:** 458b's 111 s layer ends 0.3 s early (world holds 88.7–111.5 s: not the ultimate's stop); the Decisive
 Assault's frame (open, a fit only).
+
+## 2026-11-28: Combo windows: Typhoeus's Signs at a burst's application; openers logged inside a combo's slow-down
+
+**Goal:** the backlog's accuracy entry "INSIDE flags that are a shut combo window" (docs/friction/2026-11-28-backlog-after-round-23.md):
+the development logs' 18 INSIDE lines held by the cast's combo window, by cause; fix what the data decides.
+
+**Found** (docs/open-problems.md "Combo windows"):
+- **Typhoeus, 5 lines** (0eef 6.77, bdf2 11.00, 1d91 8.63, d9e5 11.17, af7b 68.97 s): each floating combo pressed after a
+  Power Shot's arrow (or Arcane's Nature infliction, af7b) and before its burst's damage, where the replay's 8th Sign
+  came. Her talent's listener (passitive_enemy_listennaturalspellbrust) runs on abilityEvent 9, a buff added to the
+  enemy, with the Nature-burst tag that buff_common_natural_natural_triggered and her Power Shot's own burst buff
+  carry: the Sign comes at the burst's application, one triggerInterval (1 s, or 0.35 s for her shot) before its damage.
+- **12 lines: the opener logged inside the combo's own slow-down** (2–17 frames into 18–25 frames at 0.01: 0.05–1.6
+  frames of the world's time), mostly at a ms the combo's own first hit or cast event shares. The kit triggers are
+  right; it is the pinned landing's ms (a placement lead, handed back).
+- **3f78 19.30 s** (Arcane): her combo 17.17 s after the last against an 18 s cooldown; Gilberta's ultimate's
+  infliction came while it ran. Unexplained (a reduction the kit lacks, or either combo's placement).
+
+**Done:**
+- Engine: StatusEvent `burstApplied` (landing.ts delayBursts at each burst's infliction, landHit at a burst hit's
+  landing, a delayed one's before its damage; not recorded) and StatusOn burst `applied` (events.ts, the kit schema);
+  Typhoeus's three Sign triggers read it. tests/burst-applied.test.ts (fails at the base: verify-at).
+- Her Sign conversion moved from a delayed cast trigger (frame 35) onto her combo's first arrow (launched at frame 35):
+  with the Sign at the application, fc63's conversion (her clock through Gilberta's and Arcane's combo slow-downs put it
+  at 59.33 s, the logged arrow at 58.65 s) removed the Sign of Arcane's 58.77 s burst, and her 4th Power Shot at
+  89.23 s became a plain shot the log contradicts. A simulated fight's frame 35 is the same.
+- timing.ts startGateWords: a shut window's last opening, the skill's last cast, its latest recorded trigger and the
+  cooldown that kept it shut, and a start inside the combo's own slow-down (views only).
+
+**Measured** (`measure --at HEAD --base 1c11c35`, the views commit): no log's verdicts moved (the replay makes the
+casts as logged; only the flags and the windows' facts at the casts moved); the first version, without the conversion
+move, had fc63 "better" (3.2 → 0.9%) by losing that Power Shot, the reason for the move. `typhoeus-sign-cooldown`
+`shared` against the default still loses 1d91's Sign (plain 354 → 352), at the applications' times now (10.83 and
+10.93 s): `by-source` stays. Final measure against main at f031780 and `npm run snapshots:update`: see the
+scoreboard. `npm run smoke`: only the Typhoeus zero-energy example moved (its snapshot, regenerated).
+
+**Team numbers** (team-ab against 967d460, 32 seeds): the owner's team unchanged (its fight the same); Typhoeus's team
+sustained DPS +2.60% full energy (56,949 → 58,428, sd 1,942–2,096), +3.03% zero (55,172 → 56,844, sd 2,669–3,039),
+within about one sd: her combo windows open 10 frames earlier after her own shots, 30 after a teammate's infliction.
+
+**Decisions:** not behind an assumption: the data names the event (abilityEvent 9, the tag on both burst buffs) and
+five presses fit only it. The 12 slow-down cases left to the placement (their files); the INSIDE flag still counts
+them (the friction report suggests a kind of its own).
+
+**Left:** the 12 openers' placement; 3f78's cooldown; fc63's battle skills INSIDE her combo's window 0 (her clock
+through overlapping combo slow-downs runs late against her pinned landings, as the conversion did).
 
 ## 2026-11-28: Improvement round 23: why a change moves a log, the replay's SP as a record, measuring without re-measuring
 
@@ -375,41 +421,3 @@ under-predicted fight loses wrong ticks that offset it. team-ab: the owner's tea
 
 **Left:** dbae's and 00ae 24.63 s's arrays run 0.4 s past 170 frames with every stop and hold out (00ae's in Perlica's
 and Gilberta's combo stops: the combos' known excess hold).
-
-## 2026-11-28: The check's targets are the replay's, and a freeze's run-on on every target
-
-**Goal:** the backlog after round 21's accuracy list, its first and last items: the second assignment of a fight
-read per target numbered its targets afresh, so enginecheck.ts atItsTarget read a candidate `t` at the replay's
-target `t`, another slug (7b54: 147 of 210 hits with both off their landing's targets); and a freeze's ramp and
-statuses run-on (clock.ts rampRunsOn, statusesRunOn) read the current target only.
-
-**Done:**
-- targets.ts assignTargets takes AssignOptions (`fixed`, `ids`); with ids `landings` a new target takes the id of a
-  target its first hit's landing reached in the replay that no target has yet (each a candidate, the first that
-  fits), else an id no landing names. enginecheck.ts SECOND_PASS_TARGETS `mapped` (the default; `free` the old
-  numbering). 7b54: 147 → 55 hits off their landing; 6339 and 9c6e unchanged (0 and 1).
-- The 55 left are hits the two assignments put on other slugs: at 16.36 s the first assignment had both of
-  Laevatain's attack 2 hits (1462, 1701) on one slug, neither fitting in the one-enemy replay; in the second replay
-  1701 fits only with Vesperwings and Arcane's will_susc on, which that slug was read without, so it went to a slug
-  of its own, and the 19.59 s kill and Si's 20.21 s attacks followed. logcheck.ts TARGET_REPLAYS (at most three):
-  the replay is made again on the check's assignment while it puts a hit on another target than the replay was made
-  on. 7b54's third replay gives the same assignment back: 0 of 210 off. 6339 and 9c6e stop at two.
-- clock.ts rampRunsOn and statusesRunOn run on every target the freeze held (eachTarget), a target it didn't hold
-  unchanged; synthetic tests in tests/target-statuses.test.ts; clock.ts left tests/enemy-readers.test.ts's list.
-  The backlog's "no fight read per target has a freeze yet" was wrong: Si's Immobilization freezes the slugs (not
-  control-immune) at 6339 4.53 s and 7b54 3.40 and 29.50 s, each a single-target landing with no status on any
-  target then, so it reads nothing.
-
-**Measured:** the full measure against 60fa436 at each step: no log's verdicts moved, hold-outs unchanged. The
-scoreboard (docs/accuracy.md): the several-targets row's mean |damage error| 10.4 → 10.0%, replay-only 12.1 →
-11.7%, plain 75.6% and mismatch 11.2% unchanged; every other row unchanged. 7b54 4.0 → 2.8%: the third replay's
-landings on their slugs leave out a replay-only Heat burst at 46.70 s (Arcane's, 12,851), so Arcane's own 7b54
-total goes −4.1 → −22.3% (her five log-only hits, 14,502, no longer offset): her row's mean |damage error| 3.0 →
-3.4%, own one-sided 5.3 → 4.8%. Why no verdict moved: 7b54's only reaction
-status is Combustion (a dot), so no hit reads a Corrosion, Electrification or Breach level and the ids decided
-nothing in its values; the slugs' kit buffs are decided by the assignment itself, not by id. team-ab: every team's
-fight the same.
-
-**Left:** a freeze on a twin's other target holds the first target's clock (landing.ts runs the other target's
-control event after the first is current again); no such freeze in a log yet (docs/open-problems.md "statuses per
-target").

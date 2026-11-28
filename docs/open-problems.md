@@ -95,6 +95,10 @@ one shut, and a start inside the combo's own slow-down: timing.ts startGateWords
   allows, which a probe of the replay's reductions should explain first); the placement of either combo (the second's
   touch at a 5-hit batched ms inside Rossi's ultimate, its cast event 0.15 s *before* the placed start where combos
   lag 0.3–0.7 s).
+- **Beside it, not a window:** Typhoeus's clock through overlapping combo slow-downs runs late against her pinned
+  landings. fc63 57.48 s: her combo's frame 35 by a delayed cast trigger at 59.33 s, its first arrow (launched at
+  frame 35) logged at 58.65 s; her Sign conversion now rides on that arrow (the journal entry above). Her battle skills
+  INSIDE that combo's window 0 (fc63 11.37, 37.67, 59.03, 81.83, 102.33 s; 6–22 frames) are likely the same clock.
 
 ## The hold at a Stagger break (2026-11-27)
 

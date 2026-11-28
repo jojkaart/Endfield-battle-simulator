@@ -289,3 +289,6 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   one with a priority that outranks; the rest by a window of the running action (34) or its uncuttable frames (8).
   The combo-window and SP ones say the replay's trigger or SP is late, not that the kit forbids the press: leads for
   an accuracy task (which trigger, how late), and the flag's kind could tell them apart. Measure.
+  Closed in part by worktree-agent-aae9ee5eca9001663 (the combo-windows task, 2026-11-28): Typhoeus's 5 fixed (her
+  Signs at a burst's application); 12 are openers logged inside the combo's own slow-down (a placement lead, the
+  INSIDE line now says so); 3f78 19.30 s a cooldown question (docs/open-problems.md "Combo windows").
