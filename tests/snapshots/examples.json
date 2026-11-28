@@ -514,19 +514,19 @@
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5603600.231,
+  "total": 5603794.224,
   "hits": 443,
   "casts": 165,
   "perOperator": {
-   "chr_0034_typhoea": 4184006.818,
+   "chr_0034_typhoea": 4184200.811,
    "chr_0032_lizhiyan": 383678.605,
    "chr_0035_liino": 317633.373,
    "chr_0004_pelica": 718281.436
   },
-  "digest": "d600c7d7f1b2",
+  "digest": "b2098145ec8d",
   "windows": [
-   "8d6f9985b4a5",
-   "e7bf682434b9",
+   "501772211b6c",
+   "ae66c6c97a5f",
    "6f97eaed1425",
    "e49b39628c0f",
    "689a13af8b70",

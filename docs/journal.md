@@ -45,7 +45,7 @@ several targets unchanged; verified |damage error| 1.4 → 1.5% (dbae −2.6 →
 ticks were at kit frames on her clock, 14.10–15.77 s, beside the logged ticks of those slots' neighbours; held by her
 ultimate they come at 16.17–16.83 s, three of them inside the fight's last 0.5 s (TAILKEPT fight-end): an
 under-predicted fight loses wrong ticks that offset it. team-ab: the owner's team the same; Typhoeus's team full
-+0.00%, zero +0.03% (32 seeds). The scoreboard: snapshots:update at the final commit (kit digests).
++0.00%, zero +0.03% (32 seeds). The scoreboard (snapshots:update): verified |damage error| 1.4 → 1.5%, every other row unchanged; Typhoeus's own one-sided 3.5 → 3.4%.
 
 **Left:** dbae's and 00ae 24.63 s's arrays run 0.4 s past 170 frames with every stop and hold out (00ae's in Perlica's
 and Gilberta's combo stops: the combos' known excess hold).
