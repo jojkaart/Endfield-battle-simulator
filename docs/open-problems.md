@@ -160,8 +160,10 @@ threshold).
   at its stop's end (made at 82.53 s) her combo at 87.47 s is past the ultimate's cantCastSkill channel (frames 0–119,
   the gate the INSIDE line called "uncuttable") and the log's own buff starts agree: her Thermite Cutter team ATK layers
   since 84.47, 86.03, 87.14 s are the ultimate's SP grants at its frames 59, 86, 119 from 82.53 s, not from 84.37 s.
-  Held back for the lead (castassembly.ts was the placement agent's file):
-  [tried](tried/2026-11-28-ult-event-stop-end-held-back.diff). **Found and fixed: Akekuri's ultimate carries
+  Held back while castassembly.ts was the placement agent's file, applied after its merge
+  ([tried](tried/2026-11-28-ult-event-stop-end-held-back.diff): loggedCastStart reads such an event at its stop's end;
+  against 3717a31 with the round's other changes 458b 1093 → 1089 plain, 04d4 597 → 599, 3aa6 mixed, the rest
+  unchanged). **Found and fixed: Akekuri's ultimate carries
   skillSpecification 0** in its file, the only one of 34 operators' ultimates (all others 5), though its
   UltimateTimeAction stops time: the engine gave it a plain skill's priority (2) and no ultimate's stop, so 458b
   158.53 s, her ultimate at her combo's frame 34 (the combo's frame-31 hit landed, logged at her stop's end), was
@@ -190,9 +192,9 @@ clock would put the stamp anywhere in it); what the 2 hold-outs' INSIDE is (not 
 hold-out 6 plain and moves none of its decisions; a press in the hold waiting it out or running unheld, which the
 landings and the one cast event can't tell); `lowest` against `added` where a break falls deep in a combo's plateau
 (00ae 55.14, d4fb 97.05 s have no clock across); the length (above).
-**Next check:** the held-back ultimate-event diff on the lead's merge (458b's team ATK layers then start where the log
-has them; its four hits at 111.04–111.61 s, the 88.20/88.68 s layers' end, are then 0.3 s early: the world's holds
-between, a buff-clock question); a press in a hold, from a log with a cast event and a kit window there; `held` once
+**Next check:** 458b's team ATK layers, which now start where the log has them (88.20, 88.68 s), end 0.3 s before the
+log's at 111.04–111.61 s (four hits plain → assumed): the world's holds between, a buff-clock question; a press in a
+hold, from a log with a cast event and a kit window there; `held` once
 a second log decides the hold-out's kind; a `stagger-recovery` refit once more Staggers are bracketed (the median's
 error is as large as its offset).
 

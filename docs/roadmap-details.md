@@ -394,9 +394,9 @@ a break; two placement diffs in docs/tried measured flat or worse). Round 4 (202
 [journal](journal/2026-11-28-08-breaks-inside-a-combo-s-slow-down-akekuri-s-ultimate-as-an.md)): a break inside a
 combo's slow-down holds on top of it, the combo's rest after the hold (`break-hold-combo` `added`, the default; `none`
 worse); Akekuri's ultimate read as specification 5 (its file's 0: no ultimate's priority or stop in the engine, 458b
-158.53 s); 458b 87.47 s her ultimate's event at its stop's end, held back for the lead
+158.53 s); 458b 87.47 s her ultimate's event at its stop's end, held back and applied after the placement merge
 ([tried](tried/2026-11-28-ult-event-stop-end-held-back.diff)). Next: a press inside a hold (9847 57.64 s's event lag
-fits both readings), the hold-outs' INSIDE, 458b's team ATK layer ends at 111 s once the held-back diff is in.
+fits both readings), the hold-outs' INSIDE, 458b's team ATK layer ends at 111 s (0.3 s early).
 
 **Exposed totals (2026-11-27, [journal](journal/2026-11-27-03-exposed-totals-stage-electrification-kills-rossi-s-combo-3.md)):**
 the totals the attack-4 round exposed have no shared cause. Fixed: Hard 27's stage Electrification on Arts hits only

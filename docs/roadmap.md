@@ -45,7 +45,7 @@ below ([review-2026-10.md](review-2026-10.md)).
   default), the recovery stays 2 s; 2026-11-28 a break inside a combo's
   slow-down holds on top of it (`break-hold-combo` `added`), Akekuri's
   ultimate an ultimate (its file's specification 0), 458b 87.47 s her
-  ultimate's event at its stop's end (held back for the lead); next the
+  ultimate's event at its stop's end (applied after the placement merge); next the
   hold-outs' INSIDE, a press inside a hold.
 - **Typhoeus's team:** the least converged search (beam 96, or seeded with
   the found rotations); fc63's 4th shot anchored to her 5th's cast; Liino's

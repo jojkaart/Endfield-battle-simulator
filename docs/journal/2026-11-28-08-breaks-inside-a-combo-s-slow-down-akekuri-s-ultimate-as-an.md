@@ -8,9 +8,8 @@ whether and how a break inside a combo's slow-down holds, a press inside a hold.
   (castassembly.ts loggedCastStart wants another's hit within 500 ms after it), though the team's next hits fall
   inside the 1.83 s stop a press there would make. From its stop's end (82.53 s) the combo clears the ultimate's
   cantCastSkill channel (frames 0–119), and the log's team ATK layer starts (84.47, 86.03, 87.14 s) are the ultimate's
-  SP grants at its frames 59, 86, 119. castassembly.ts was the placement agent's file: held back,
-  docs/tried/2026-11-28-ult-event-stop-end-held-back.diff (earlier pending 84.7% either way: 04d4 +2, 3aa6 mixed,
-  458b −3).
+  SP grants at its frames 59, 86, 119. castassembly.ts was the placement agent's file: held back
+  (docs/tried/2026-11-28-ult-event-stop-end-held-back.diff), then applied on this branch after that agent's merge.
 - Akekuri's ultimate file says skillSpecification 0, the only ultimate of 34 not 5: the engine gave it a plain skill's
   interrupt priority and no ultimate's stop (458b 158.53 s INSIDE her combo; a break inside her stop held by the
   engine, not by the replay's stop list). skillData.ts ultimateSpecification reads it as 5.
@@ -32,12 +31,14 @@ action on its caster's timeline; measured better than `lowest`, `none` worse). T
 data's 33 other ultimates, the skill's own time stop, 458b 158.53 s); its 458b cost explained above, recovered in part
 by the held-back diff. A press in a hold stays undecided (9847 57.64 s's event lag fits both).
 
-**Scoreboard** (`npm run snapshots:update`; measure against main at 3717a31): verified 78.5% and development 84.2%
-plain (00ae 689 → 691, 9090 1030 → 1031), hold-outs 82.5% (one +2, one −1 plain; |matched| 1.78 → 1.82%), earlier
-pending 84.9% (458b 1093 → 1087, as above), several targets 69.4%: every row's percentage unchanged. **Team numbers**
+**Scoreboard** (`npm run snapshots:update`; measure against main at 3717a31, the ultimate-event diff applied):
+verified 78.5% and development 84.2% plain (00ae 689 → 691, 9090 1030 → 1031), hold-outs 82.5% (one +2, one −1
+plain), earlier pending 84.9% (04d4 597 → 599; 3aa6 mixed, 419 → 420, mismatch 19 → 17; 458b 1093 → 1089, as
+above), several targets 69.4%: every row's percentage unchanged. **Team numbers**
 (team-ab against 2f4afbd, 32 seeds): the owner's team sustained DPS +0.95% full energy (53,513 → 54,023, sd 1,319),
 −0.32% zero (53,059 → 52,889, sd 1,392), within one sd; Typhoeus's team unchanged (its fight the same). `npm run
-smoke` passed.
+smoke` passed. The ultimate-event diff is log-side (castassembly.ts, read only by the replay): no simulated fight
+moves, so team-ab wasn't rerun for it.
 
-**Left:** the held-back diff for the lead; 458b's layer ends at 111 s (world holds between 88.7 and 111.5 s);
+**Left:** 458b's layer ends at 111 s, 0.3 s early (world holds between 88.7 and 111.5 s);
 Wulfgard's combos pressed inside his own ultimate (1a77, 8056: INSIDE 26–41 frames, the ultimate's hits running on).
