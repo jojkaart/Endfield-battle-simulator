@@ -226,8 +226,12 @@ function build(): GameData {
 
   const enemyDisplay = obj(readTable(PRIMARY, "EnemyTemplateDisplayInfoTable"), { source: PRIMARY, path: "EnemyTemplateDisplayInfoTable" });
   const enemies: Record<string, EnemyData> = {};
+  const enemyAliases = loadEnemyAliases(PRIMARY);
   for (const e of Object.values(loadEnemies(PRIMARY))) {
-    const display = enemyDisplay[e.id];
+    // A variant with an attribute template of its own (eny_0082_hsbear_race007) shows its EnemyTable templateId's
+    // display entry: its name and rank (the enemyRank predicate) are the base enemy's.
+    const displayTemplate = enemyAliases[e.id]?.displayTemplate;
+    const display = enemyDisplay[e.id] ?? (displayTemplate === undefined ? undefined : enemyDisplay[displayTemplate]);
     const name =
       display === undefined
         ? e.id
@@ -247,7 +251,7 @@ function build(): GameData {
   for (const id of Object.keys(CONTROL_IMMUNE_ENEMIES)) if (!enemies[id]) throw new DataError(PRIMARY, `enemyFacts.ts CONTROL_IMMUNE_ENEMIES.${id}`, "no such enemy template");
 
   // Stage variants (EnemyTable: `eny_0120_klbear_tower015` → template `eny_0120_klbear`), with their stat modifiers.
-  for (const alias of Object.values(loadEnemyAliases(PRIMARY))) {
+  for (const alias of Object.values(enemyAliases)) {
     const template = enemies[alias.template];
     if (enemies[alias.id] || !template) continue;
     const apply = (attrs: Readonly<Record<number, number>>) => {

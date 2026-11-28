@@ -104,6 +104,11 @@ export interface EnemyAlias {
   readonly id: string;
   readonly template: string;
   /**
+   * The entry's `templateId`: the enemy it is a variant of, whose EnemyTemplateDisplayInfoTable entry (name, rank) it
+   * shows when it has none of its own (`eny_0082_hsbear_race007`: its own attribute template, the Skydrummer's display).
+   */
+  readonly displayTemplate: string;
+  /**
    * attrModifiers on every level's attribute: modifierType 0 adds `value`, 1 multiplies by 1 + `value` (ATK −0.3,
    * HP +0.5), 4 multiplies by `value` (a reading: only HP and stagger HP use it, e.g. stagger HP × 0.0 on enemies that
    * can't be staggered).
@@ -123,7 +128,7 @@ export function loadEnemyAliases(source: SourceName): Record<string, EnemyAlias>
       if (get(o, "modifyAttributeType", mc, int) !== 0) throw new DataError(source, mc.path, "modifyAttributeType isn't 0");
       return { attr: get(o, "attrType", mc, int), value: get(o, "attrValue", mc, num), kind: kind as 0 | 1 | 4 };
     });
-    out[id] = { id, template: get(r, "attrTemplateId", c, str), modifiers };
+    out[id] = { id, template: get(r, "attrTemplateId", c, str), displayTemplate: get(r, "templateId", c, str), modifiers };
   }
   return out;
 }
