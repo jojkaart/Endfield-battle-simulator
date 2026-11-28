@@ -32,6 +32,7 @@ import { stageNote, teamBuffNames, type KillKind, type TotalsComparison, type To
 import { kindsAggregate, type KindShare } from "./onesided.ts";
 import { batchDecision, batchDisagreements, deathDecisions, decisionText, landingsOf, replayDecisions } from "./decisionsview.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
+import { triggerStartLines } from "./triggerstarts.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -296,7 +297,7 @@ export function kitKeys(data: GameData, fx: Pick<LogFixture, "team">): Set<strin
  * the kit buffs named (`owner:id`, at the owner unless `@operator` follows); under other readings of open assumptions
  * with `assume` (as `zmdlogs check --assume`).
  */
-export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly againstLanes?: boolean } = {}): string {
+export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly againstLanes?: boolean; readonly againstStarts?: RegExp } = {}): string {
   const { replay, placement } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(f.trace?.length ? { trace: f.trace } : {}) });
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
@@ -474,7 +475,11 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
     }
   }
   // Each logged run of a kit buff beside the replay's nearest window start (round 16, slots-and-paths report point 2).
-  const pairs = f.againstLanes ? (f.buffs ?? []).flatMap((spec) => lanePairLines(data, fx, replay, spec, f)) : [];
+  const pairs = [
+    ...(f.againstLanes ? (f.buffs ?? []).flatMap((spec) => lanePairLines(data, fx, replay, spec, f)) : []),
+    // Round 22 (the Estella-Akekuri report point 3): a traced trigger's firings against the log's starts of a game buff.
+    ...(f.againstStarts ? triggerStartLines(data, fx, replay, (f.trace ?? []).filter((x) => x.startsWith("trigger:")).map((x) => x.slice("trigger:".length)), f.againstStarts, f) : []),
+  ];
   const forced = replay.castFlags.filter((x) => x.kind === "forced").length;
   const inside = replay.castFlags.filter((x) => x.kind === "inside").length;
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;

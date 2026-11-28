@@ -262,6 +262,10 @@ export default command({
                 [--trace-trigger owner:id] Each firing of a kit trigger (owner:id, or the id alone for any owner:
                                           suit_phy01.proc), its ready frame, and each shift of it with the step
                                           that made it (a stop, a hidden hold: a world clock's cooldown); repeatable
+                [--against-starts <regex>] With --trace-trigger: at the end, each firing beside the nearest of the
+                                          log's distinct starts (since) of the matching game buff from the trigger's
+                                          owner (±400 ms, each once), the unpaired on both sides, the replay's SP
+                                          before each firing: how many times did the log apply it?
                 [--trace-stack owner:stack] Each change of a kit stack's value (efsim kit <operator> lists its
                                           stacks: a bank, a counter) and the step that made it; repeatable
                 [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
@@ -519,6 +523,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     period: { type: "string" },
     gap: { type: "string" },
     "event-lags": { type: "boolean", default: false },
+    "against-starts": { type: "string" },
     targets: { type: "boolean", default: false },
     controls: { type: "boolean", default: false },
     fetch: { type: "boolean", default: false },
@@ -767,7 +772,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       // An owner given by its name ("Zhuang Fangyi:suit_expend_spell01.spell_dmg"): its id (clockview.ts kitBuffKey).
       const keyed = (xs: readonly string[]) => xs.map((x) => kitBuffKey(data(), x));
       if (sub === "casts" && values.json) return castsJson(data(), fx, { ...filter, rules: values.choices });
-      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
+      if (values["against-starts"] !== undefined && (sub !== "replay" || !values["trace-trigger"].length)) throw new Error("zmdlogs replay --against-starts <regex> goes with --trace-trigger <owner:id> (the trigger whose firings make the game buff)");
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, ...(values["against-starts"] !== undefined ? { againstStarts: new RegExp(values["against-starts"]) } : {}), buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};

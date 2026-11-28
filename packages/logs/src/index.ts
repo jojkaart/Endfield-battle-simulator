@@ -55,6 +55,7 @@ export * from "./worldclockview.ts";
 export * from "./eventlagsview.ts";
 export * from "./screen.ts";
 export * from "./enemyfacts.ts";
+export * from "./triggerstarts.ts";
 export * from "./castpairs.ts";
 export * from "./loggedas.ts";
 export * from "./snapshotentry.ts";
