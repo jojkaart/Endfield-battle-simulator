@@ -1,7 +1,8 @@
 // The replay's own decisions as lines (improvement round 14; combo-hold report point 1): what it skipped and why, the
 // casts it ended early (TAILCUT), couldn't make (FAILED), added (MISSED), made from the listing (INFER) or as another
 // skill than the placement's (MADE), the kit jumps its logged landings contradicted (JUMPDROP: drivers.ts replayCast
-// `dropped`), and those it made against the kit (FORCED, INSIDE, CUTS), each from BuffReplay's records. `zmdlogs
+// `dropped`), the openers a combo's press landed first (OPENER: replayrun.ts openerFirst), and those it made against
+// the kit (FORCED, INSIDE, CUTS), each from BuffReplay's records. `zmdlogs
 // replay` prints them among its landings; `zmdlogs decisions` prints those that differ between the
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
@@ -21,7 +22,7 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "FORCED" | "INSIDE" | "CUTS" | "DEATH";
+  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "OPENER" | "FORCED" | "INSIDE" | "CUTS" | "DEATH";
   readonly operator: string;
   readonly text: string;
   /** A sub-kind `zmdlogs decisions` counts the kind's lines by (TAILKEPT: the guard, replayrun.ts TAIL_GUARDS). */
@@ -44,7 +45,7 @@ export function deathDecisions(data: GameData, replay: Pick<BuffReplay, "deaths"
 }
 
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "FORCED", "INSIDE", "CUTS", "DEATH"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "OPENER", "FORCED", "INSIDE", "CUTS", "DEATH"];
 
 /** The replay's landing of each logged hit (the hit it stands for), as the log check finds it, and why the others have none. */
 export function landingsOf(replay: Pick<BuffReplay, "landing" | "statusLanding">, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
@@ -137,6 +138,8 @@ export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixt
       const at = j.landings.map((l) => `${l.hitId}@${s(msOf(l.frame))}`).join(", ");
       out.push({ t: msOf(j.frame), kind: "JUMPDROP", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): its jump ${j.from} → ${j.to} dropped, the logged landing(s) ${at} in the part it skips (a shared key's other path, or its condition read otherwise in the game)` });
     }
+    // A combo whose window an opener logged inside its own slow-down opened (replayrun.ts openerAhead).
+    for (const o of m.openers ?? []) out.push({ t: msOf(m.frame), kind: "OPENER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): its combo window shut at the press, opened at ${s(msOf(o.frame))} inside its own slow-down: the press took that window (count ${o.count}${o.source ? `, ${o.source}` : ", no source"}; openerAhead)` });
     // A kit jump kept with pinned landings in its skipped part (drivers.ts replayCast `keptSkipped`): they land all the
     // same, beside the path the jump goes to (round 16, slots-and-paths report point 1: six slashes for one combo).
     for (const j of m.keptSkipped ?? []) {

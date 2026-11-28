@@ -41,10 +41,12 @@ describe("a burst's application (burstApplied)", () => {
     expect(flags).toEqual([]);
   });
 
-  it("a combo window shut at the press in words: its trigger the cooldown kept shut, a start inside its own slow-down (8f32 82.90 s)", () => {
-    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-8f3215963333.json", import.meta.url).pathname);
-    const why = logBuffReplay(data, fx).replay.castFlags.filter((x) => x.kind === "inside" && x.cast.operator === "chr_0028_wulfa").map((x) => x.why);
-    expect(why).toContainEqual(expect.stringMatching(/its combo window, shut until then: last cast at frame \d+; a trigger at frame \d+ \(cryst infliction\) the cooldown kept shut \(ready at frame \d+\); that is 13 frame\(s\) into its own slow-down \(19 frames\)/));
+  it("a combo window shut at the press in words: its trigger the cooldown kept shut (3f78 19.30 s)", () => {
+    // 8f32 82.90 s said this and a start inside its own slow-down until its opener there opened the window
+    // (opener-ahead.test.ts); no development log's line has the slow-down's words since.
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-3f78ceb15bc3.json", import.meta.url).pathname);
+    const why = logBuffReplay(data, fx).replay.castFlags.filter((x) => x.kind === "inside" && x.cast.operator === "chr_0032_lizhiyan").map((x) => x.why);
+    expect(why).toContainEqual(expect.stringMatching(/its combo window, shut until then: last cast at frame \d+; a trigger at frame \d+ \(natural infliction\) the cooldown kept shut \(ready at frame \d+\)/));
   });
 
   it("the burst's own record is unchanged: a `burst` reaction at its damage, no record of the application", () => {
