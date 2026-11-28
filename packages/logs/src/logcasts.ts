@@ -1146,7 +1146,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[], a
         // A channel on the world's clock (KitHit.world: an ability entity's) ends on that clock: every stop holds it, its
         // operator's own ultimate's too, not her own combos' slow-downs (their ignore list spares what she spawned), and so
         // do the hidden holds, which the placement doesn't have yet (holds.ts places them from the replay). Typhoeus's
-        // Barrage Array (180 frames from its first tick): 18 ticks in 6.4–8.0 s of log time, 5.6–6.2 s of world time with
+        // Barrage Array (180 frames from its first tick): 18 ticks in 5.7–9.8 s of log time, 5.6–6.2 s of world time with
         // every stop and hidden hold out (00ae0a364ad4 24.63 s: 8.02 s, 6.79 s with the stops out, 0.68 s of hidden holds
         // placed inside it). So no slack bound there: a tick past its end is a new cast's only with a logged press of a
         // skill of the cast's kind between (a new array comes from a new combo, and the log has an event for each).

@@ -33,7 +33,7 @@ describe("a capped channel's end from the data (KitHit.latestFrame)", () => {
   });
 
   // Typhoeus's Barrage Array (frames 35–205, the entity's channel to 215) runs on the world's clock from the first
-  // arrow's hit (KitHit.world, launch 35): every stop and hidden hold holds it, so its 18 ticks run 6.0–8.0 s of log
+  // arrow's hit (KitHit.world, launch 35): every stop and hidden hold holds it, so its 18 ticks run 5.7–9.8 s of log
   // time, and the placement, which has no hidden holds, bounds it by a combo press, not a slack (logcasts.ts placeWith
   // `onWorld`). With the end measured as any other channel's, six arrays split into two combos (round 22:
   // docs/tried/2026-11-28-barrage-array-channel-end.diff); each is one combo's 18 ticks now.

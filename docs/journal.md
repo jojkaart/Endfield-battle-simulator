@@ -4,9 +4,51 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 193 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 194 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Typhoeus's Barrage Array on the world's clock
+
+**Goal:** round 22's open part (docs/journal/2026-11-28-01-needed-on-the-check-s-pairing-a-channel-s-end-in-a-detached.md):
+why Typhoeus's Barrage Array runs past its entity's 180 frames (its kit had the data's end left out, dataOverride
+`latest`), and why its first tick comes 0.5–0.7 s after the combo's press against the kit's frame 35.
+
+**Found (data and every Typhoeus development log, scratch surveys):**
+- The data: chr_0034_typhoea_combo_persistentdamage lasts 180 frames (persistent_time 6 s at every skill level), a
+  ChannelingAction every 1/3 s capped at 18 per target: ticks at its frames 0–170. No longer life, no refresh: every
+  full array has exactly the cap's 18 ticks.
+- Its clock is the world's. Over the 32 arrays of 12 logs, the 18-tick ones span 5.74–9.75 s of log time; with every
+  stop the replay applied taken out, her own ultimate's included, and the hidden holds the replay placed, 5.56–6.17 s
+  against 5.67 s. Her own ultimate holds it: fc63 90.53→92.87 s, 2.35 s of log time between two ticks, 0.28 s with her
+  stop out (her clock isn't held by her own stop). Her own combo's slow-down doesn't (its ignore list spares her
+  spawned objects; the array starts after it anyway).
+- The first tick lands at the first arrow's ms in all 32 arrays: the entity spawns at the arrow's hit (frame 35), as
+  the kit has it. The 0.5–0.7 s from the press is her combo event's usual lag (median 0.52 s over 23 combos; every
+  combo's event lags its frame 0 by 0.3–0.7 s, docs/design/data.md "What the log records"), not an early spawn.
+
+**Done:**
+- Kit: both combos' `area` hits `world: true`, `launch: 35` (the data's LaunchProjectile at 35, kitMatch agrees); the
+  `latest` override gone, so they have the data's end, frame 215.
+- Engine: ScheduledHeader.worldFromLaunch (casting.ts for a `world` hit with a `launch`; schedule.ts shiftClock reads
+  it): on the caster's clock until the launch, the world's from then. A `world` hit without a launch as before. Zhuang
+  Fangyi's Thunder Strikes (world, launch 13) take it too: no verdict moved. drivers.ts' channel-turn rule skips a
+  world channel (its lateness already has the stops to come in it).
+- Placement (logcasts.ts placeWith `onWorld`): a world channel's elapsed takes out every stop but its operator's own
+  non-ultimate ones, and a tick past its end is a new cast's only with a logged press of the cast's kind between, no
+  slack bound: the placement has no hidden holds (00ae 24.63 s: 6.79 s with the stops out, 0.68 s of hidden holds
+  inside it later).
+- tests/world-from-launch.test.ts (engine), tests/channel-ends.test.ts (the six arrays one combo each).
+
+**Measured** (`npm run measure -- --at HEAD --base 0f3c894 --split files`): development, hold-out, earlier pending and
+several targets unchanged; verified |damage error| 1.4 → 1.5% (dbae −2.6 → −3.0%, the kit alone). dbae's six unlogged
+ticks were at kit frames on her clock, 14.10–15.77 s, beside the logged ticks of those slots' neighbours; held by her
+ultimate they come at 16.17–16.83 s, three of them inside the fight's last 0.5 s (TAILKEPT fight-end): an
+under-predicted fight loses wrong ticks that offset it. team-ab: the owner's team the same; Typhoeus's team full
++0.00%, zero +0.03% (32 seeds). The scoreboard: snapshots:update at the final commit (kit digests).
+
+**Left:** dbae's and 00ae 24.63 s's arrays run 0.4 s past 170 frames with every stop and hold out (00ae's in Perlica's
+and Gilberta's combo stops: the combos' known excess hold).
 
 ## 2026-11-28: The check's targets are the replay's, and a freeze's run-on on every target
 
@@ -384,44 +426,3 @@ and for simulations an expected beat share (about 0.7) is the honest model, left
 marked decided on the premise that a stage fight starts at full HP.
 
 **Probes:** scripts/probes/kits/liino-medicant-layers.ts, liino-opening-layers.ts, liino-cosmovoice-beats.ts.
-
-## 2026-11-27: Camille's Vesperwings moving to the next target
-
-**Goal:** on main at e4a1e36, beside the Liino agent: Camille's `normal_skill_abilityrange` hits (6339 ×5, 7b54 ×1),
-never placed: her Vesperwings moving to the next slug when its own dies (docs/open-problems.md "Hard 33's Woodcraft
-Slugs"; docs/tried/2026-11-27-sub-skill-events.diff).
-
-**The data:** abilityrange_first (and abilityrange) put buff_chr_0033_camille_normal_skill_listen_target_dead on the
-target; at its death (abilityEvent 1) reset_target (0.1 s) finds the next target, launches projhit_sub
-(skillSpecification 3, castSkillOnHit), which casts abilityrange on it: frame 0 the debuff (with the bat_duration
-icon's time left: SaveBuffLifeTime), Heat infliction, the battle skill's atk_scale and poise; no team energy.
-
-**Done:**
-- **Engine:** trigger event `targetDeath` (events.ts), made only by `targetDies` (drivers.ts), which the replay calls;
-  its `landings` pin the triggers' hits at logged frames as replayCast's do. BuffApplication `keepEnd` (a new instance
-  ending where the active one does). Trigger action `castEvent` (a cast event of a skill an entity casts, no action).
-- **Kit:** trigger `vesperwings_move` (frame 3 on the world's clock, the travel not in the data), and
-  `vesperwings_move_cast` behind the new kit assumption `vesperwings-move-cast` (`battle`, default; `none`).
-- **Replay:** targets.ts `deathMoves` (each logged landing of a targetDeath trigger's hit; the death at the logged
-  kill within MOVE_AFTER_KILL_MS before it, else the lead before the landing) and `moveEvent` (a cast event at a
-  move's ms, key the skill's id with a suffix, is no press: castassembly.ts assembleCasts, loggedCastFates `move`);
-  replaysteps.ts / replayrun.ts death steps; `zmdlogs replay` / decisions DEATH lines. tests/vesperwings-move.test.ts.
-
-**Decisions:** the death at the logged kill, not at the landing less the lead: 6339's 29.26 s kill purges her
-Susceptibility from the listing (`logged-purges`) before the 29.67 s move, so a death at the landing found no debuff
-and made nothing. The cast event: the plain move made 6339 mixed (plain 115 → 109): Si's 28.39–29.57 s combo slashes
-need 3 Yinglung's Edge layers and the replay had 2 once the presses standing in for the moves were gone; the move as
-a battle-skill cast (projhit_sub is one; ZMDLogs logs a normal_skill event at four of six) gives the third. Registered
-as a reading: the data doesn't say whether ability event 30's CheckSkillType sees an entity's cast.
-
-**Numbers** (measure against e4a1e36; snapshots:update for the scoreboard): only the several-targets row moves: plain
-70.6 → 71.3%, mismatch 15.3%, mean |damage error| 8.3 → 6.3%; 6339 plain 115 → 120, −10.3 → −6.3%; 7b54 plain
-115 → 116, −3.3 → −1.2%. Development, earlier pending, verified unchanged; hold-outs' aggregates unchanged (one
-hold-out has a logged move: 2 hits uncovered → fallback, DEATH +2, SKIP −2). Team fights unchanged (team-ab identity:
-no simulated fight has a death; the one enemy never dies).
-
-**Checked:** every Camille log: only 6339 and 7b54 have the move's key (the multi-target fixtures none, the others no
-mid-fight kill). **Left open:** 6339's 19.68 s move follows no logged kill; 7b54's 19.90 s normal_skill event, 0.31 s
-after a kill with no hit, a likely move onto a shielded slug (not made); 6339's Laevatain 35.70 s empowered hit is not
-the move's Heat alone (nothing of hers absorbs it in time); the moves' Heat on the replay's one enemy gives replay-only
-bursts (statuses per target); other kits' listeners on a target's death (open-problems).

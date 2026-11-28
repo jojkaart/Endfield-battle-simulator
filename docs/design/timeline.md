@@ -151,7 +151,14 @@ owner's clock aren't (2026-11-18: a7a7a40c97ed's lasers after her
 Gloompurge Arcana's stop). A skill's detached hit can be marked `world`
 the same way (KitHit.world: a buff the cast puts on its operator deals
 it; Zhuang Fangyi's Thunder Strikes, which the logs resume at her
-ultimate's end, d774 102.17 s and 4d60 157.42 s, 2026-11-22). Her
+ultimate's end, d774 102.17 s and 4d60 157.42 s, 2026-11-22). One with a
+`launch` is on the world's clock only from its launch, before it on the
+caster's (ScheduledHeader.worldFromLaunch, 2026-11-28): Typhoeus's Barrage
+Array, the entity her combo's first arrow spawns at frame 35, ticks first
+with the arrow in all 32 logged arrays (past her combo's own slow-down,
+whose ignore list spares what she spawned), then waits out every stop, her
+own ultimate's too, and the hidden holds (its 18 ticks in 5.7–9.8 s of
+log time, 5.6–6.2 s of world time). Her
 Empyrean strikes, an ability entity's, aren't: in 4bfc at 73.2–73.7 s
 they keep their 0.2 s pace through her own combo's slow-down. An Arts Burst lands `burstDelayFrames` (1 s)
 after the infliction that made it, on its operator's clock: others' time

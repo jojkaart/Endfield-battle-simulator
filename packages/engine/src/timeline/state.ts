@@ -199,7 +199,7 @@ export interface ScheduledHeader {
    * KitHit.launch: what the launch spawns runs on the world's clock, every slow-down and hold holds it, the operator's
    * own ultimate stop too; before the launch it is the cast's own, which the caster's own slow-down doesn't hold).
    * Typhoeus's Barrage Array, spawned by her combo's first arrow at frame 35: its first tick lands with the arrow in
-   * every log, past her combo's own slow-down, and its 18 ticks run 6.4–8.0 s of log time, held by every stop and
+   * every log, past her combo's own slow-down, and its 18 ticks run 5.7–9.8 s of log time, held by every stop and
    * hidden hold between (schedule.ts shiftClock reads it).
    */
   readonly worldFromLaunch?: true;

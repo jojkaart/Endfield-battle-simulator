@@ -266,14 +266,13 @@ and 4bfc Arclight's attack 4 run 0.21–0.23 s past the data's end, no press bet
 - A channel inside a detached file (round 22, docs/journal/2026-11-28-01-needed-on-the-check-s-pairing-a-channel-s-end-in-a-detached.md):
   it has its end now (Tangtang's ultimate stare to frame 196: b7b3 10.15–15.28 s across Last Rite's 12.30–15.13 s
   ultimate stop and 7910 47.78–51.32 s have no tick past it; Rossi's wolves and Zhuang Fangyi's ranges are single
-  landings, nothing reads their end). Typhoeus's Barrage Array is marked in her kit (dataOverride `latest`): the logs
-  have its 18 ticks up to 6.4–8.0 s of world time after the first with no combo press between, against the entity's
-  180 frames (00ae 23.46, 54.96, 75.23, 94.24 s; fc63 35.98, 80.30 s), and the end split each into two combos.
-  Ruled out: the end as the data gives it (those six splits; 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%, hold-out plain −6:
-  docs/tried/2026-11-28-barrage-array-channel-end.diff). Still possible: the array's entity held by stops the
-  placement's world time doesn't take out (Typhoeus's own, or every stop), or a longer life than its timeline's 180
-  frames; its first tick is logged 0.5–0.7 s after the press, not the kit's frame 35 (1.17 s), so the press-to-tick
-  timing is off too.
+  landings, nothing reads their end). Fixed: Typhoeus's Barrage Array past its entity's 180 frames is its world clock
+  (the area hits `world`, launch 35, the data's end kept; the placement's `onWorld`) —
+  docs/journal/2026-11-28-02-typhoeus-s-barrage-array-on-the-world-s-clock.md. Ruled out there: a longer life
+  (persistent_time 6 s at every level), a refresh (18 ticks, the cap, in every full array), a press logged late
+  for the first tick beyond her usual combo-event lag (the first tick at the first arrow's ms in all 32 arrays).
+  Still possible: dbae 10.10–16.24 s and 00ae 24.63 s run 0.4 s past 170 frames with every stop and hidden hold out
+  (the latter in Perlica's and Gilberta's combo stops: the combos' known excess hold, "the enemy's clock").
 - The CUTS record (replayrun.ts castFlag) flags an interrupt whose hits keepPrevious keeps (c779 70.67 s): a record only.
 - The casts view's line for the rule is held back: docs/tried/2026-11-27-channel-decision-line.diff.
 
