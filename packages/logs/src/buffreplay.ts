@@ -34,7 +34,7 @@ import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tic
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
-import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type ReplayInput, type SkippedCast, type TailKept, cutTails, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt } from "./replayrun.ts";
+import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type WindowOpener, type ReplayInput, type SkippedCast, type TailKept, cutTails, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { type CheckSide, awayWindows, checkSide, killPurges, loggedNames, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
@@ -225,6 +225,8 @@ export interface MadeCast {
   readonly dropped?: readonly JumpDrop[];
   /** The kit jumps it kept with pinned landings in the part they skip, which land beside the jumped-to path (BOTHPATHS lines). */
   readonly keptSkipped?: readonly JumpDrop[];
+  /** The combo window an opener logged inside its own slow-down opened, which it took at its press (replayrun.ts openerAhead): OPENER lines. */
+  readonly openers?: readonly WindowOpener[];
   /** The Link stacks it used (Cast.link; absent: none): LINK lines. */
   readonly link?: number;
   /**
@@ -696,7 +698,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       // Gained at the cast and in the advance to the next one (the last one's: to its post state).
       const next = all[k + 1];
       const gained = [...linkGains(m.pre, m.post), ...(next ? linkGains(m.post, next.pre) : [])];
-      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.keptSkipped ? { keptSkipped: m.keptSkipped } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
+      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.keptSkipped ? { keptSkipped: m.keptSkipped } : {}), ...(m.openers ? { openers: m.openers } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
     }),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);

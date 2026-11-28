@@ -98,11 +98,18 @@ windows"): Typhoeus's Signs come at a Nature burst's application (engine
 `burstApplied`, the listener's abilityEvent 9), 5 INSIDE lines gone;
 her conversion rides on her combo's first arrow (fc63's 59.33 s delayed
 trigger against its 58.65 s arrow); team-ab against 967d460: sustained
-+2.60% full, +3.03% zero (within one sd). Next: the 12 openers logged
-inside a combo's own slow-down (placement: a pinned landing at that
-combo's first logged ms placed at or before its start), 3f78 19.30 s
-(Arcane's combo inside her 18 s cooldown), fc63's battle skills INSIDE
-her combo's window 0 (her clock through overlapping combo slow-downs).
++2.60% full, +3.03% zero (within one sd). The 12 openers logged inside a
+combo's own slow-down, 2026-11-28: the press takes the window its opener
+opens within the combo's own stop, its count and source (replayrun.ts
+openerAhead; OPENER lines), the landings unmoved; no log's verdicts moved.
+Re-pinning the openers at the press was measured and dropped
+(docs/tried/2026-11-28-opener-landed-at-press.diff: hold-outs plain −1.7
+points). Next: 3f78 19.30 s, one of 12 combos the replay makes 0.07–2.4 s
+before its own cooldown across 11 operators
+(scripts/probes/placement/combo-cooldowns.ts: a shared cause, not
+Arcane's kit), a COOLDOWN decision line for them, fc63's battle skills
+INSIDE her combo's window 0 (her clock through overlapping combo
+slow-downs).
 
 ## Gear
 
