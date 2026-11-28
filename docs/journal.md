@@ -4,9 +4,55 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 197 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 198 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-28: Team SP: Purrchena's counter presses, the SP readings as assumptions
+
+**Goal:** the replay's SP runs short of what the logs' casts need (open-problems "Team SP"): recount it, work
+through "Still possible" from the data and the logs, fix what they decide.
+
+**Done:**
+- Recount at 10aa577 (scripts/probes/sp/shortfall.ts): 16 of 65 development logs short, 41 casts, 1,327 SP, all
+  battle skills; 04d4 621 of it, Purrchena's presses in the away stretches.
+- Purrchena: the log records every press of her battle-skill button as a normal_skill event, the counter's too.
+  The replay made each hitless event a battle skill (100 SP, forced against her kit while the counter was readied)
+  and, where the counter's headbutt is logged 0.29 s after the event, both. castassembly.ts variantCastOf now takes
+  a follow-up variant placed at its event (nearer than half the first frame the battle skill's windows allow the
+  counter: 269.81, 329.46, 419.96, 505.25 s); replayrun.ts replayedSkill skips a hitless event while the kit holds
+  the slot's other variant (the enemy away: 264.25, 325.64, 395.79, 400.31, 407.54, 500.37 s; each later counter
+  comes inside the 10 s of the battle skill before, so these didn't use it up). 04d4 621 → 0 SP; measure: 04d4 plain
+  590 → 597, per-hit error 5.82 → 5.68%, 99fb plain 183 → 190; earlier pending plain 84.6 → 84.7%. After it: 15 of 65
+  logs, 27 casts, 706 SP.
+- Ruled out: teammates' unlanded Final Strikes (232 placed Final Strike casts in the 15 short logs, every logged hit
+  landed: scripts/probes/sp/unlanded.ts); a kit missing an SP key the data grants (scripts/probes/sp/keys.ts; Laevatain's
+  P1 return on her empowered hit was already read).
+- Engine assumptions `sp-regen` (`pause`, the default; `ticks`: 4 SP every 0.5 s, the timer restarting at each spend)
+  and `sp-start` (`200`, the default; `full`), resources.ts spAt / spReachedAt, the state's spTick, timing.ts and
+  wake.ts reading it, the search keying the ticks' phase. Under them (scripts/probes/sp/readings.ts): `ticks` 11 logs /
+  577 SP, `pause` + `full` 5 / 323, `ticks` + `full` 5 / 251. Five logs are short in their first 12 s whatever the
+  regeneration (79cc: four battle skills in 11 s, 92 SP); a full start covers them all. In-game test 113 (the bar at
+  a fight's start) is ready; 102 stays not testable.
+- Scoreboard (snapshots:update): verified, development, hold-out and several targets unchanged; earlier pending plain
+  84.6 → 84.7% (04d4 mixed: plain 590 → 597, mismatch 293 → 292, damage −1.4 → −1.5%, its skipped presses no longer
+  making Purrchena's on-cast gear buff; 99fb better, 183 → 190). team-ab against 10aa577 at the defaults: every
+  number +0.00% (only the rule text differs). With `ticks` and `full` as the defaults (a run to see what they'd move,
+  not committed), sustained DPS: the owner's team 53,513 → 54,517 (+1.9%) full energy, 53,059 → 53,482 (+0.8%) zero;
+  Typhoeus's team 56,949 → 57,845 (+1.6%), 55,172 → 58,090 (+5.3%); the scenarios' 60 s timelines +0.7% / 0 / 0 / 0.
+  main merged at 1771492 (the combo hold's readings, no fight moved); the final measure against it.
+
+**Decisions:** the defaults stay: the logs only bound SP from below, so a more generous reading can't be shown
+right by them; the start's 200 is the native settings' (as Endaxis reads them) and test 113 can decide it by eye;
+`ticks` fits 666bj's test and the data no better than `pause`, and keys a search state's tick phase (fewer merges).
+A hitless counter press is skipped, not made: making it used the counter up, and the counters the log shows after
+it were then forced against the kit.
+
+**Problems:** the lock queue (another agent's measures) cost about 15 min per measure; a first version made the
+hitless presses as counters, measured, then replaced by the skip (the forced counters after them).
+
+**Left:** test 113; 1d91 52.27 s, 79cc 28.70 / 31.47 s, 9c6e 51.83 / 76.50 s, af7b 36.60 s; f574's Mi Fu Trail and
+Mangle on two slugs placed as two casts (a several-targets placement case: 50 SP spent twice).
 
 ## 2026-11-28: A combo's excess hold: per episode, not a share; the still-possible list decided
 
@@ -361,47 +407,3 @@ landing the log doesn't show can have given. The second assignment holding each 
 **Left:** a target's statuses from landings the log doesn't show (6339's 29.26 s combo; 9c6e 74.47 s Liino's ultimate
 on T6 without the log's Electrification); 7b54's 36.08–36.84 s Laevatain battle skill (×1.2–1.3 high, Scorching Heart
 from 31.03 s); 9c6e's 52.80 s Typhoeus burst, whose two targets' values no status gives; the Stagger per target.
-
-## 2026-11-27: Target deaths: Laevatain absorbs the dead slug's Heat
-
-**Goal:** on main at 14fe159, beside the tail-cuts agent: the several-targets row's replay-only Heat bursts after
-Camille's Vesperwings moves (6339 21.60, 25.57, 33.17 s) and statuses per target; the kits' listeners on a target's
-death (docs/open-problems.md "Hard 33's Woodcraft Slugs").
-
-**Found:**
-- **Laevatain's passive_enemy** (BuffData abilityEvent 1, HP 0, on every enemy her talent-0 aura reaches): at the
-  enemy's death it counts its Heat Infliction layers, absorbs each and gives her as many Melting Flame (no room check,
-  no cooldown). Not in the brief's list, found by a census of every abilityEvent 1 handler (scratch/hpzero.ts). Each
-  of 6339's three bursts is a move's Heat on a slug the replay's one enemy still held the dead slug's Heat for: the
-  kill's absorption takes it, and the 31.62 s kill's gives the fourth Melting Flame the 35.70 s empowered hit needs.
-- **The other listeners:** Arcane's spell_vulnerable handler is all disabled (nothing to build), Typhoeus's
-  combo_trigger_combo empty; Si's inkhurteffect and normal_skill_check carry her Artful Intent's record onto an ink
-  phantom entity (not built); Zhuang Fangyi's, Seraph's, Tangtang's, Yvonne's are in no several-targets fight.
-
-**Done:** engine targetDies takes TargetDeathOptions (`except`: triggers that don't run; `endsStatuses`: the replay's
-enemy's statuses and due bursts end), replayEvent an `only` predicate; replay assumption **`target-deaths`** (default
-`kills`: a death at every logged kill of a fight read per target, an operator whose death trigger lands a hit, Camille,
-running its triggers only where its landing is logged; `moves`, the old; `statuses`); targets.ts targetDeaths,
-replaysteps.ts runEventStep, replayrun.ts's death steps (one function, committed alone, its message naming the
-tail-cuts agent); kit trigger `death_absorb`; tests/target-deaths.test.ts; the design of statuses per target in
-docs/design/data.md (a second replay pass with each landing's target, levels as values, the Stagger per hit).
-
-**Scoreboard** (`npm run snapshots:update`; measure against 14fe159): the several-targets row plain 71.3 → 71.6%,
-mismatch 15.3 → 15.2%, mean |damage error| 6.3 → 4.6%, within 5% 1 → 2, replay-only 17.8 → 16.4%, log-only 22.9 →
-19.7%; 6339 plain 120 → 121, −6.3 → +0.1%; 7b54 mixed (plain 116 → 117, mismatch 82 → 81, per hit closer, −1.2 →
-−2.3%: Si's replay-only 30.50 s burst gone, which had offset its log-only twins). Development, earlier pending and
-verified unchanged. **One hold-out worse** (|damage error| 5.8 → 5.9%, totals and battle-skill keys, the same under
-every reading): the one unmarked log whose replay makes a death (round 20: a logged Vesperwings move), where the
-death now runs the team's death_absorb too. By operator, Laevatain's mean 6.6 → 9.0% (6339's 21.60 s replay-only
-hit_2, TAILKEPT, no longer offset by the missing empowered hit), Camille's 9.1 → 5.0%. Team fights unchanged
-(team-ab identity at 14fe159: no simulated fight has a death).
-
-**Decisions:** `kills` over `moves` (row 4.2% under `moves`): every death runs the triggers the data puts on the dead
-target, not only those where Camille's move happens to be logged; its 7b54 total moves only because a replay-only
-burst it removes was offsetting. `statuses` rejected (6339 −5.0%): its 29.26 s Laevatain combo hit needs Combustion
-or Corrosion on its slug, which only the one enemy's kept 24.03 s Combustion gives; 9c6e −1 plain. Laevatain's trigger
-without an assumption: the data's handler is enabled and unconditional.
-
-**Left:** statuses per target as designed (9c6e's second Wanderer's Nature bursts); 6339's 25.03–28.47 s Combustion
-ticks against its 29.26 s combo hit; Si's ink phantom; the DEATH lines list only the moves (decisionsview.ts, the
-other agent's file: friction report point 2).

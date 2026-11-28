@@ -4304,7 +4304,7 @@ stops) 9 of 17 development logs, 1193 SP; 2026-11-13 (Liino's beats free) 8 of 1
 skill; 04d4 621 of it.
 
 **Fixed (2026-11-28):** Purrchena's counter presses made as battle skills (04d4 621 → 0 SP, 99fb) —
-docs/journal/2026-11-28-05-team-sp-purrchena-s-counter-presses-the-sp-readings-as.md. After it: 15 of 65 logs, 27
+docs/journal/2026-11-28-06-team-sp-purrchena-s-counter-presses-the-sp-readings-as.md. After it: 15 of 65 logs, 27
 casts, 706 SP (0eef 8, bdf2 2, 1d91 100, 3f78 20, 6339 9, 79cc 169, 7b54 18, 9c6e 138, ad7f 13, af7b 22, c3c7 75,
 d572 4, de6a 11, f574 110, f879 6).
 

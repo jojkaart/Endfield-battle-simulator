@@ -81,7 +81,9 @@ the 65 development logs after Purrchena's counter presses: `pause` 15 logs short
 - `pause`: the engine since 2026-11-12 (666bj's test, the native settings' interval as Endaxis reads it).
 - `ticks`: as much SP as no pause at each tick; between ticks up to 4 less (0eef's opening press at 3.20 s: 9 SP
   short against 8 with the pause). Keys a search state's ticks' phase (search.ts spPausedUntil), so fewer states
-  merge (tests/search-merge.test.ts's pairs: 9 against more than 10).
+  merge (tests/search-merge.test.ts's pairs: 9 against more than 10). As the default with sp-start `full`
+  (team-ab, 2026-11-28, not committed): sustained DPS +1.9% / +0.8% (the owner's team, full / zero energy), +1.6% /
+  +5.3% (Typhoeus's team).
 
 ## sp-start
 

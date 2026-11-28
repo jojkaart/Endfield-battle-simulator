@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-28: Team SP: Purrchena's counter presses, the SP readings as assumptions](2026-11-28-06-team-sp-purrchena-s-counter-presses-the-sp-readings-as.md)
 - [2026-11-28: A combo's excess hold: per episode, not a share; the still-possible list decided](2026-11-28-05-a-combo-s-excess-hold-per-episode-not-a-share-the-still.md)
 - [2026-11-28: Improvement round 22: clocks, screening, views that say why, a move's identity check](2026-11-28-04-improvement-round-22-clocks-screening-views-that-say-why-a.md)
 - [2026-11-28: Estella and Akekuri logs: four imports, a stage variant's rank, Akekuri's combo SP on its landings](2026-11-28-03-estella-and-akekuri-logs-four-imports-a-stage-variant-s-rank.md)
