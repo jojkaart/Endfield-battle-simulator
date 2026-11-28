@@ -2,7 +2,7 @@
 // start by its own slow-down (Typhoeus about 0.5 s of log time, about 0 of world time), a battle skill's is at it.
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { devFixtures, eventLags, eventLagsView } from "@efsim/logs";
+import { devFixtures, eventLags, eventLagsView, eventsAgainstHolds, eventsAgainstHoldsView } from "@efsim/logs";
 
 const data = loadGameData();
 const typhoeus = "chr_0034_typhoea";
@@ -22,5 +22,20 @@ describe("the log's cast events against the placed starts", () => {
   it("marks an event over 1 s before its cast's start (fc63 57.48 s: a press at 55.10 s), and counts it apart", () => {
     expect(lags.find((l) => l.log === "fc63" && Math.abs(l.start - 57480) < 50)?.odd).toBe("event before the start");
     expect(eventLagsView(data, logs, { operators: [typhoeus] })).toMatch(/Typhoeus combo +n= *\d+ \(plain +\d+\) {2}median \+0\.\d\d.*not counted: \d+ event before the start/);
+  });
+});
+
+describe("the log's cast events against the holds (--against-holds, round 24)", () => {
+  it("gives each cast across a teammate's stop its event's world lag from the start unheld and held by them", () => {
+    // The overlap-clock report point 3: the cast event is the one clock-free anchor for a press.
+    const logs = devFixtures({ ids: ["fc63"] });
+    const rows = eventsAgainstHolds(data, logs, { operators: [typhoeus] });
+    expect(rows.length).toBeGreaterThan(2);
+    for (const r of rows) {
+      expect(r.unheld.start - r.held.start).toBeGreaterThanOrEqual(1000 / 15 - 1e-6);
+      expect(r.between.length).toBeGreaterThan(0);
+      expect(r.between.every((b) => b.operator !== typhoeus)).toBe(true);
+    }
+    expect(eventsAgainstHoldsView(data, logs, { operators: [typhoeus], verbose: true })).toMatch(/^ {2}Typhoeus combo +n= *\d+ {2}world lag median: unheld [+−]\d\.\d\d, held [+−]\d\.\d\d/m);
   });
 });

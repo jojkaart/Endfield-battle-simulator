@@ -6,7 +6,7 @@
 // lag (median 0.52 s over 23 combos), found by a scratch script per operator.
 
 import { FPS, type GameData } from "@efsim/engine";
-import { placeHits, worldMs } from "./logcasts.ts";
+import { heldStart, placeHits, worldMs } from "./logcasts.ts";
 import type { DevFixture } from "./logs.ts";
 import { loggedSkillInstances, replayTimeStops } from "./query.ts";
 import { operatorLabel, secondsText as s } from "./labels.ts";
@@ -43,6 +43,84 @@ export function eventLags(data: GameData, logs: readonly DevFixture[], opts: { r
       return [{ log: d.short, operator: i.operator, skillId: i.skillId, kind: i.kind ?? "other", start: i.start, lag, worldLag: lag >= 0 ? worldMs(i.start, first, stops) : -worldMs(first, i.start, stops), odd }];
     });
   });
+}
+
+/**
+ * One cast's event against the start its first landing gives under two hold readings (eventsAgainstHolds): unheld by
+ * the teammates' stops before that landing (the placement's plain start: landing less its kit frame) and held by them
+ * (logcasts.ts heldStart, the lowest scale where they overlap); the event's world lag from each (ms), and the stops.
+ */
+export interface EventAgainstHolds {
+  readonly log: string;
+  readonly operator: string;
+  readonly skillId: string;
+  readonly kind: string;
+  readonly event: number;
+  readonly unheld: { readonly start: number; readonly lag: number };
+  readonly held: { readonly start: number; readonly lag: number };
+  /** The teammates' stops between the held start and the first landing: operator, kind, from and to (ms). */
+  readonly between: readonly { readonly operator: string; readonly kind: string; readonly from: number; readonly to: number }[];
+}
+
+/**
+ * `zmdlogs casts --event-lags --against-holds` (round 24, the overlap-clock report point 3: whether the first combo's
+ * caster is held by the second's slow-down took a probe, scripts/probes/combo-hold/overlap-events.ts): the cast event
+ * is stamped on the world's clock, whatever holds the operator, so its world lag from the right start is the
+ * operator's plain one; per cast with a logged event whose first landing has at least 2 frames of teammates' stops
+ * before it, the lag from the start unheld and held by them. A landing pair can't tell the two (both sides come after
+ * the stops); the event can.
+ */
+export function eventsAgainstHolds(data: GameData, logs: readonly DevFixture[], opts: { readonly operators?: readonly string[] } = {}): EventAgainstHolds[] {
+  const fr = (t: number) => Math.round((t * FPS) / 1000);
+  const msOf = (f: number) => (f * 1000) / FPS;
+  return logs.flatMap((d) => {
+    const placement = placeHits(data, d.fx);
+    const stops = replayTimeStops(data, d.fx, placement);
+    const firstLanding = new Map<object, { t: number; frame: number }>();
+    for (const [h, p] of placement.hits) {
+      if (p.frame === undefined) continue;
+      const cur = firstLanding.get(p.cast);
+      if (!cur || h.t < cur.t) firstLanding.set(p.cast, { t: h.t, frame: p.frame });
+    }
+    return loggedSkillInstances(data, d.fx, { placement }).flatMap((i) => {
+      if (i.from !== "hits" || i.events[0] === undefined || (opts.operators?.length && !opts.operators.includes(i.operator))) return [];
+      const cast = [...firstLanding.keys()].find((c) => (c as { operator: string }).operator === i.operator && Math.abs((c as { start: number }).start - i.start) < 40);
+      const first = cast ? firstLanding.get(cast) : undefined;
+      if (!first) return [];
+      const e = i.events[0];
+      const others = stops.filter((st) => st.operator !== i.operator);
+      const plain = first.t - msOf(first.frame);
+      const held = heldStart(first.t, first.frame, others);
+      if (plain - held < msOf(2)) return [];
+      const [a, b] = [fr(held), fr(first.t)];
+      const lag = (start: number) => (e >= start ? worldMs(start, e, stops) : -worldMs(e, start, stops));
+      const between = others.filter((st) => st.start < b && st.start + st.scales.length > a).map((st) => ({ operator: st.operator, kind: st.kind ?? "other", from: msOf(st.start), to: msOf(st.start + st.scales.length) }));
+      return [{ log: d.short, operator: i.operator, skillId: i.skillId, kind: i.kind ?? "other", event: e, unheld: { start: plain, lag: lag(plain) }, held: { start: held, lag: lag(held) }, between }];
+    });
+  });
+}
+
+/** The table of eventsAgainstHolds: per operator and skill kind, n, each reading's median world lag and how many within 0.1 / 0.25 s; per cast with `verbose`. */
+export function eventsAgainstHoldsView(data: GameData, logs: readonly DevFixture[], opts: { readonly operators?: readonly string[]; readonly verbose?: boolean } = {}): string {
+  const rows = eventsAgainstHolds(data, logs, opts);
+  const signed = (ms: number) => `${ms >= 0 ? "+" : "−"}${s(Math.abs(ms))}`;
+  const near = (xs: readonly number[], lim: number) => xs.filter((x) => Math.abs(x) < lim).length;
+  const line = (label: string, xs: readonly EventAgainstHolds[]) => {
+    const [u, h] = [xs.map((x) => x.unheld.lag), xs.map((x) => x.held.lag)];
+    return `  ${label.padEnd(28)} n=${String(xs.length).padStart(3)}  world lag median: unheld ${signed(quantile(u, 0.5))}, held ${signed(quantile(h, 0.5))}  within 0.1 s: ${near(u, 100)} / ${near(h, 100)}  within 0.25 s: ${near(u, 250)} / ${near(h, 250)}`;
+  };
+  const out = [
+    `Cast events against the start each cast's first landing gives, unheld and held by the teammates' stops before it (logcasts.ts heldStart; the event is on the world's clock, so the right start gives the operator's plain world lag: a combo about +0.05 s, \`--event-lags\`), over ${logs.length} log(s), the casts with at least 2 frames of such stops; times in s.`,
+    rows.length ? line("every cast", rows) : "  no cast with a logged event and a teammate's stop before its first landing",
+  ];
+  const groups = new Map<string, EventAgainstHolds[]>();
+  for (const r of rows) groups.set(`${r.operator}|${r.kind}`, [...(groups.get(`${r.operator}|${r.kind}`) ?? []), r]);
+  for (const [k, xs] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+    const [op, kind] = k.split("|") as [string, string];
+    out.push(line(`${operatorLabel(data, op)} ${kind}`, xs));
+    if (opts.verbose) for (const x of xs) out.push(`      ${x.log} event ${s(x.event)} ${x.skillId.replace(/^chr_\d+_[a-z0-9]+_/, "")}: start unheld ${s(x.unheld.start)} (${signed(x.unheld.lag)}), held ${s(x.held.start)} (${signed(x.held.lag)}); stops ${x.between.map((b) => `${operatorLabel(data, b.operator)} ${b.kind} ${s(b.from)}–${s(b.to)}`).join(", ")}`);
+  }
+  return out.join("\n");
 }
 
 /** An event this much before its placed start is an earlier press or a cast placed late, not its lag (a battle skill's event comes up to ~0.4 s before: Typhoeus's floating start). */

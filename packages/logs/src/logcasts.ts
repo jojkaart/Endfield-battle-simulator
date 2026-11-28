@@ -1049,8 +1049,14 @@ function ultimateMerge(data: GameData, casts: readonly LoggedCast[]): Map<string
  * split:pass-merge
  */
 export function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[] {
+  const parts = passStopParts(data, fx, before);
+  return [...parts.placed, ...parts.unplaced];
+}
+
+/** passStops in its two parts: the placed casts' stops and the unplaced cast events' (`zmdlogs casts --passes` marks them). */
+export function passStopParts(data: GameData, fx: LogFixture, before: Placement): { readonly placed: TimeStop[]; readonly unplaced: TimeStop[] } {
   const placed = castTimeStops(data, before.casts, castFrames(before), ultimateMerge(data, before.casts)); // split:pass-merge
-  return [...placed, ...unplacedCastStops(data, fx, before.casts, placed).flatMap((p) => p.stops)];
+  return { placed, unplaced: unplacedCastStops(data, fx, before.casts, placed).flatMap((p) => p.stops) };
 }
 
 /**

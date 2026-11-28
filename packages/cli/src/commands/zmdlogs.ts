@@ -67,6 +67,8 @@ import {
   readDevFixture,
   refreshFromDetail,
   replayReport,
+  passesView,
+  eventsAgainstHoldsView,
   statusesView,
   scalesReport,
   staggerReport,
@@ -253,6 +255,9 @@ export default command({
                                           on a HIT that is another target's landing of its slot, the twin rule
                                           (value, used; several targets: batch with its targets per landing,
                                           later); REALIGN lines: what the realignment by value did with a cast's key
+                [--passes]                Instead: each placement pass's casts (CAST, DISTINCT) and the stops the
+                                          second pass read (STOP: pass 1's casts' and the unplaced cast events'),
+                                          beside the final placement's own: what a rule reading stops read
                 [--json]                  Instead: a JSON line per line (castsRecords: kind, t, operator, skill,
                                           key, rule, the hit's cast and slot, its join, the text)
                 [--from s] [--to s]       Only this window (seconds); --operator: only these operators' hits, casts
@@ -260,7 +265,11 @@ export default command({
                                           starts, per skill kind: n, median, 10–90%, min–max of the lag (log time;
                                           the median in world time too): a press's log time against a kit frame is
                                           off by this before anything is wrong (--operator op, --verbose each cast)
-  efsim zmdlogs replay <fixture>          The replay in time order: its landings with the logged hit each stands for
+                [--against-holds]         Instead: per cast whose first landing has teammates' stops before it, the
+                                          event's world lag from the start unheld and held by them (the event is
+                                          on the world's clock: the right start gives the plain lag), per
+                                          operator and kind (--verbose each cast with its stops)
+  efsim zmdlogs replay <fixture>        The replay in time order: its landings with the logged hit each stands for
                                           (or "replay only"), logged hits without a landing and why, casts it
                                           couldn't make or made without the log, its Stagger windows
                 [--kit-buff owner:id[@op]] Also a kit buff's windows at an operator (default its owner; repeatable),
@@ -538,6 +547,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     clock: { type: "string" },
     rows: { type: "boolean", default: false },
     choices: { type: "boolean", default: false },
+    passes: { type: "boolean", default: false },
+    "against-holds": { type: "boolean", default: false },
     dropped: { type: "boolean", default: false },
     clusters: { type: "boolean", default: false },
     at: { type: "string" },
@@ -803,6 +814,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       if (!named.length && !values.all) throw new Error("zmdlogs casts --event-lags takes fixtures (ids such as fc63) or --all (every verified and pending development log; --operator op, --verbose)");
       if (named.length && values.all) throw new Error("zmdlogs casts --event-lags: fixtures or --all, not both");
       const logs = devFixtures(named.length ? { ids: named } : {}).filter((d) => !operators.length || d.fx.team.some((b) => operators.includes(b.operator)));
+      // Round 24 (the overlap-clock report point 3): the event against the start unheld and held by teammates' stops.
+      if (values["against-holds"]) return eventsAgainstHoldsView(data(), logs, { operators, verbose: values.verbose });
       return eventLagsView(data(), logs, { operators, verbose: values.verbose });
     }
     if (sub === "casts" || sub === "replay") {
@@ -812,6 +825,8 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       // An owner given by its name ("Zhuang Fangyi:suit_expend_spell01.spell_dmg"): its id (clockview.ts kitBuffKey).
       const keyed = (xs: readonly string[]) => xs.map((x) => kitBuffKey(data(), x));
       if (sub === "casts" && values.json) return castsJson(data(), fx, { ...filter, rules: values.choices });
+      // Round 24 (the placement-paths report point 1): the passes and the stops each read.
+      if (sub === "casts" && values.passes) return passesView(data(), fx, { ...filter, ...(Object.keys(assume).length ? { assume } : {}) });
       if (values["against-starts"] !== undefined && (sub !== "replay" || !values["trace-trigger"].length)) throw new Error("zmdlogs replay --against-starts <regex> goes with --trace-trigger <owner:id> (the trigger whose firings make the game buff)");
       return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, ...(values["against-starts"] !== undefined ? { againstStarts: new RegExp(values["against-starts"]) } : {}), buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, sp: values.sp, againstLanes: values["against-lanes"], windows: values.windows.map((o) => operatorNamed(data(), o)) });
     }
