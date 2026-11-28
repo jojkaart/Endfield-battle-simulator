@@ -27,7 +27,7 @@ import { COMBO_CURVE, curveScales } from "./curves.ts";
  */
 export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number, kind?: SkillType): TimelineState {
   // Engine assumption combo-operator-hold: a combo's slow-down holds each operator it holds this many frames more (their own clocks, not the world's).
-  const extra = kind === "combo" ? comboOperatorHold(ctx) : 0;
+  const hold = kind === "combo" ? comboOperatorHold(ctx) : { frames: 0, episode: false };
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
   const ultimate = timing.specification === 5;
   const burstStops = engineReading(ctx.scenario, "burst-stops");
@@ -80,6 +80,8 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
       return { n: Math.round(sum), from: from ?? start };
     };
     const world = lost(null).n;
+    // Per episode: a slow-down that starts inside another (pressed together) adds no extra hold of its own.
+    const extra = hold.episode && scaleAt(null, start) < 1 ? 0 : hold.frames;
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
     s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}), ...(d.priority !== undefined ? { priority: d.priority } : {}) }] };
     // The Arts Bursts on their way: held as their operators' clocks are, or by ultimates' stops only (engine
@@ -126,11 +128,15 @@ const BREAK_HOLDER = "stagger-break";
 /** How far (frames) a replay's break may be from a logged one and hold (TimelineScenario.loggedBreaks): a batch of the log's ms apart. */
 export const LOGGED_BREAK_FRAMES = 4;
 
-/** The frames a combo's slow-down holds each operator it holds beyond its own scales (engine assumption combo-operator-hold: "none" or "<n>f"). */
-function comboOperatorHold(ctx: TimelineContext): number {
+/**
+ * The frames a combo's slow-down holds each operator it holds beyond its own scales (engine assumption
+ * combo-operator-hold: "none", "<n>f" at every combo, or "<n>f-episode": only at a slow-down that starts while no
+ * other runs, once per run of overlapping slow-downs) and whether it is per episode.
+ */
+function comboOperatorHold(ctx: TimelineContext): { readonly frames: number; readonly episode: boolean } {
   const r = engineReading(ctx.scenario, "combo-operator-hold");
-  const m = /^(\d+)f$/.exec(r ?? "");
-  return m ? Number(m[1]) : 0;
+  const m = /^(\d+)f(-episode)?$/.exec(r ?? "");
+  return m ? { frames: Number(m[1]), episode: m[2] !== undefined } : { frames: 0, episode: false };
 }
 
 /**
