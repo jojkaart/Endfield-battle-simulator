@@ -30,9 +30,12 @@ export interface MeasureJob {
  * One hit's verdict for measure --hits: time (s), operator, event, verdict count (plain, mismatch, ...), logged ÷
  * primary, and the primary reading's modifiers at the landing ("<kit buff or source> <zone> <value>", sorted; absent
  * where the commit's code can't say), so a changed verdict names the buffs that moved at it (rossi-gilberta report
- * point 1: a scratch hitdiff.py did this).
+ * point 1: a scratch hitdiff.py did this). Then the replay's landing it is paired with (`<frame> <skill> <hit>`), or
+ * `NOLAND <reason>[: <the step that dropped it>]` (the replay view's NOLAND text) where it has none, absent where the
+ * commit's code can't say: a changed hit says whether its landing went missing and why, or moved to another logged hit
+ * (round 23, the combo-hold report point 1: a reading that only moves what the replay doesn't pin read as a wrong one).
  */
-export type HitRow = readonly [t: number, operator: string, event: string, verdict: string, ratio: number | null, modifiers?: readonly string[]];
+export type HitRow = readonly [t: number, operator: string, event: string, verdict: string, ratio: number | null, modifiers?: readonly string[] | undefined, landing?: string];
 /**
  * One 0.512 s unit of the fight's placed hidden holds (BuffReplay.hiddenHolds, `zmdlogs holds`' unit lines): where the
  * placement puts it and its earliest and latest time (ms). measure --hits compares them, so a worse log that moved
@@ -152,11 +155,14 @@ function entryOf(fx: any, withHits = false): { entry: Record<string, Record<stri
   if (!withHits) return { entry: { ...counts, totals }, perHit, ...extra };
   // The primary reading's modifiers at each landing, where the commit's code has the calls (round 3 on).
   const modsOf = modifiersAt(fx, replay);
+  const landingOf = landingsAt(fx, replay);
   // The verdicts are in fx.hits' order (checkLog maps over them).
   const hits = (verdicts as any[]).map((v): HitRow => {
     const p = byHit.get(v.hit)?.primary;
     const mods = modsOf(v.hit);
+    const landing = landingOf(v.hit);
     const [t, op, event, verdict, ratio] = [v.hit.t, v.hit.operator, v.hit.event, v.kind === "match" ? v.class : v.kind, typeof p === "number" && p > 0 ? v.hit.value / p : null];
+    if (landing !== null) return [t, op, event, verdict, ratio, mods ?? undefined, landing];
     return mods ? [t, op, event, verdict, ratio, mods] : [t, op, event, verdict, ratio];
   });
   const holds = holdUnits(replay.replay?.hiddenHolds);
@@ -227,6 +233,26 @@ function modifiersAt(fx: any, replay: any): (hit: any) => string[] | null {
     } catch {
       return null;
     }
+  };
+}
+
+/**
+ * Each logged hit's landing in the replay as HitRow's seventh part (`<frame> <skill> <hit>`, or `NOLAND <reason>[: <the
+ * dropping step>]`), or null where the commit's code lacks the calls (decisionsview.ts landingsOf, droppedLanding).
+ */
+function landingsAt(fx: any, replay: any): (hit: any) => string | null {
+  const r = replay?.replay;
+  if (typeof logs.landingsOf !== "function" || !r || typeof r.droppedLanding !== "function") return () => null;
+  const { byLanding, missing } = logs.landingsOf(r, fx) as { byLanding: Map<any, any>; missing: Map<any, string> };
+  const of = new Map<any, string>();
+  for (const [l, h] of byLanding) of.set(h, `${l.frame} ${l.skillId} ${l.hitId}`);
+  return (hit) => {
+    const at = of.get(hit);
+    if (at !== undefined) return at;
+    const why = missing.get(hit);
+    if (why === undefined) return null;
+    const drop = r.droppedLanding(hit) as string | null;
+    return `NOLAND ${why}${drop ? `: ${drop}` : ""}`;
   };
 }
 

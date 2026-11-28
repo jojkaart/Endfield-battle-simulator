@@ -87,7 +87,10 @@
 //                       one in <out>/hits.txt. Hold-outs never. A log new since the reference (or --base) commit
 //                       is measured there on this tree's copy of the fixture. Also, per such log, the placed hidden
 //                       holds' units that moved (zmdlogs holds' unit lines: placed, earliest, latest), the commonest
-//                       cause of a small worse log ("the holds placed again"). With --variant, also each variant's own
+//                       cause of a small worse log ("the holds placed again"); and per log the hits whose replay
+//                       landing moved, counted by how (`landings:` lost it, with the replay view's NOLAND reason;
+//                       gained one; took another logged hit's landing, a slot shift; round 23, the combo-hold report
+//                       point 1: a reading that moves only what the replay doesn't pin). With --variant, also each variant's own
 //                       changed hits: against the plain tree (the same code without it), for the logs it moved there
 //   --help, -h          this text. The options are checked before the run queues for the lock (the readings against
 //                       the registered assumptions too): a typo fails in seconds
@@ -136,6 +139,7 @@ import { endRun, startRun } from "./runstate.ts";
 import { runLockedAsync, testLockFile } from "./testlock.ts";
 import { printHelp } from "./usage.ts";
 import { pairCasts } from "../packages/logs/src/castpairs.ts";
+import { landingMoveCounts, landingMoves } from "../packages/logs/src/landingmoves.ts";
 import { formatSnapshot } from "../tests/snapshot.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -624,6 +628,8 @@ async function main(argv: string[]): Promise<number> {
       ...(plain ? [`Variant ${vi + 1} against the plain tree (the same code${values.assume.length ? ` under ${values.assume.join(", ")}` : ""}, no variant): the variant's own effect`, ...compare(plain, after).map((l) => `  ${l}`)] : []),
       ...mixedLines,
       ...(hitLines ? [...hitLines.summary, ...(hitLines.full.length ? [`  (every changed hit: ${join(dir, "hits.txt")})`] : [])] : []),
+      // Round 23 (the break-combo report point 3: the hits a change moved were looked for in four views): say where they are.
+      ...(!values.hits && keys.some((k) => !isHoldout(k) && JSON.stringify(entryOf(before as Snapshots, k)) !== JSON.stringify(entryOf(after, k))) ? ["(Which hits moved, and how their landings did: measure again with --hits, or `zmdlogs hits <fixture> --against <id>=<r>` for one log and a reading.)"] : []),
       ...(holdLines?.summary ?? []),
       ...(ownLines ? [`Variant ${vi + 1}'s own hits, against the plain tree:`, ...ownLines.summary.map((l) => `  ${l}`)] : []),
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
@@ -1356,9 +1362,15 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
       summary.push(`  ${k}: per-hit verdicts not comparable (${!a || !b ? "not measured on both sides" : "the fixture's hits differ"})`);
       continue;
     }
-    const changed = b.flatMap((h, i) => (h[3] !== (a[i] as HitRow)[3] ? [{ was: a[i] as HitRow, now: h }] : []));
+    // Each hit's landing on both sides (HitRow's seventh part): lost (and why), gained, a shift onto another logged
+    // hit's landing (round 23, the combo-hold report point 1), over every hit, a changed verdict or not.
+    const moves = landingMoves(a.map((h) => h[6]), b.map((h) => h[6]));
+    const moveOf = new Map(moves.map((m) => [m.index, m]));
+    const movesLine = moves.length ? [`    landings: ${landingMoveCounts(moves)}`] : [];
+    const changed = b.flatMap((h, i) => (h[3] !== (a[i] as HitRow)[3] ? [{ was: a[i] as HitRow, now: h, move: moveOf.get(i) }] : []));
     if (!changed.length) {
-      summary.push(`  ${k}: no hit's verdict changed (only values within a verdict, e.g. the totals)`);
+      summary.push(`  ${k}: no hit's verdict changed (only values within a verdict, e.g. the totals)`, ...movesLine);
+      if (moves.length) full.push(`${k}:`, ...moves.map((m) => `  ${((b[m.index] as HitRow)[0] / 1000).toFixed(2)} s ${(b[m.index] as HitRow)[1]} ${(b[m.index] as HitRow)[2]}: ${m.words}`));
       continue;
     }
     const kinds = new Map<string, typeof changed>();
@@ -1366,10 +1378,11 @@ export function hitChanges(logs: readonly string[], before: ReadonlyMap<string, 
       const kind = `${c.was[3]} → ${c.now[3]}`;
       kinds.set(kind, [...(kinds.get(kind) ?? []), c]);
     }
-    summary.push(`  ${k}: ${changed.length} hits: ${[...kinds].sort((x, y) => y[1].length - x[1].length).map(([kind, cs]) => `${kind} ${cs.length}`).join(", ")}`);
-    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}${modifierChange(c.was[5], c.now[5])}`;
+    summary.push(`  ${k}: ${changed.length} hits: ${[...kinds].sort((x, y) => y[1].length - x[1].length).map(([kind, cs]) => `${kind} ${cs.length}`).join(", ")}`, ...movesLine);
+    const line = (c: (typeof changed)[number]) => `${(c.now[0] / 1000).toFixed(2)} s ${c.now[1]} ${c.now[2]}: ${c.was[3]} ${ratio(c.was[4])} → ${c.now[3]} ${ratio(c.now[4])}${modifierChange(c.was[5], c.now[5])}${c.move ? ` [${c.move.words}]` : ""}`;
     for (const [, cs] of kinds) for (const c of cs.slice(0, examples)) summary.push(`    ${line(c)}`);
-    full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`));
+    const unchanged = moves.filter((m) => (a[m.index] as HitRow)[3] === (b[m.index] as HitRow)[3]);
+    full.push(`${k}:`, ...changed.map((c) => `  ${line(c)}`), ...(unchanged.length ? [`  landings moved under the same verdict:`, ...unchanged.map((m) => `    ${((b[m.index] as HitRow)[0] / 1000).toFixed(2)} s ${(b[m.index] as HitRow)[1]} ${(b[m.index] as HitRow)[2]}: ${m.words}`)] : []));
   }
   return { summary, full };
 }

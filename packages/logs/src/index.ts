@@ -61,3 +61,4 @@ export * from "./loggedas.ts";
 export * from "./snapshotentry.ts";
 export * from "./decisionsview.ts";
 export * from "./assumedview.ts";
+export * from "./landingmoves.ts";
