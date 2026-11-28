@@ -5,6 +5,7 @@ import type { SkillType } from "../attributes.ts";
 import type { ActiveBuff } from "../buffs.ts";
 import { rampElapsed, type EnemyStatus } from "../status.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
+import { targetEnemy } from "./targets.ts";
 import { rebaseCooldowns } from "./resources.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
 import { engineReading, readingOf } from "../assumptions.ts";
@@ -377,15 +378,30 @@ function shiftedStatuses(e: EnemyStatus, start: number, n: number): EnemyStatus 
  * freeze's whole length and read Ardelia's and Arcane's hits a step behind (scripts/probes/corrosion/freezeramp.ts).
  */
 export function rampRunsOn(before: TimelineState, after: TimelineState): TimelineState {
-  const was = before.enemy.statuses;
-  if (!was.some((x) => x.status === "corrosion")) return after;
-  const statuses = after.enemy.statuses.map((x, i) => {
-    const y = was[i];
-    if (x.status !== "corrosion" || !y || y.status !== "corrosion") return x;
-    const { rampHeld: _, ...rest } = x;
-    return { ...rest, appliedAt: y.appliedAt, ...(y.rampHeld ? { rampHeld: y.rampHeld } : {}) };
+  return eachTarget(before, after, (was, now) => {
+    if (!was.statuses.some((x) => x.status === "corrosion")) return now;
+    const statuses = now.statuses.map((x, i) => {
+      const y = was.statuses[i];
+      if (x.status !== "corrosion" || !y || y.status !== "corrosion") return x;
+      const { rampHeld: _, ...rest } = x;
+      return { ...rest, appliedAt: y.appliedAt, ...(y.rampHeld ? { rampHeld: y.rampHeld } : {}) };
+    });
+    return { ...now, statuses };
   });
-  return { ...after, enemy: { ...after.enemy, statuses } };
+}
+
+/**
+ * `after` with each target's statuses (the current one's and, with several targets' statuses, every other's:
+ * TimelineState.targets) given by `f` from that target's in `before` and in `after`: a freeze's run-on (rampRunsOn,
+ * statusesRunOn) on every target it held (shiftEnemy: the current one's, or every one's), a target it didn't hold
+ * unchanged by it (f of two equal statuses). With one enemy, the enemy's.
+ */
+function eachTarget(before: TimelineState, after: TimelineState, f: (before: EnemyStatus, after: EnemyStatus) => EnemyStatus): TimelineState {
+  const was = (id: number | undefined) => (id === undefined || !before.targets ? before.enemy : targetEnemy(before, id));
+  const enemy = f(was(after.targets?.current), after.enemy);
+  if (!after.targets) return enemy === after.enemy ? after : { ...after, enemy };
+  const others = Object.fromEntries(Object.entries(after.targets.others).map(([k, e]) => [k, f(was(Number(k)), e)]));
+  return { ...after, enemy, targets: { ...after.targets, others } };
 }
 
 /**
@@ -399,7 +415,7 @@ export function rampRunsOn(before: TimelineState, after: TimelineState): Timelin
  * land on their 1 s period. The operators' debuffs on the enemy stay held (shiftDebuffs).
  */
 export function statusesRunOn(before: TimelineState, after: TimelineState): TimelineState {
-  return { ...after, enemy: { ...after.enemy, statuses: before.enemy.statuses } };
+  return eachTarget(before, after, (was, now) => (now.statuses === was.statuses ? now : { ...now, statuses: was.statuses }));
 }
 
 /**

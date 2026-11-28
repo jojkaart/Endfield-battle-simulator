@@ -228,6 +228,9 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   target by the landings it shares with the first pass); `fixed` (each hit on its first-pass target) is ruled out
   (7b54 plain 151 → 142, docs/open-problems.md "statuses per target"). Moves verdicts: measure `--several-targets`,
   snapshots:update.
+  Closed by worktree-agent-a289fe4aa2df9082f, e1c7029 and d13faef: a new target of the second assignment takes an id
+  its landing has (SECOND_PASS_TARGETS `mapped`, 147 → 55), and the replay is made again on the check's assignment
+  while it differs (TARGET_REPLAYS: 7b54 0 of 210); no verdict moved, 7b54 |damage error| 4.0 → 2.8%.
 - **cutTails' `needed` on the replay's own pairing** (docs/friction-done/2026-11-27-tail-cut-test.md point 1):
   replayrun.ts loggedShown takes any landing of the operator's event within 16 frames, no one-landing-each, so abfd's
   two 64.10 s attack-4 hits count as shown after a cut through other pinned landings (−2 plain in the tail-cut entry).
@@ -249,6 +252,9 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   statusesRunOn (a freeze's ramp and statuses, freeze-ramp) read the current target's statuses only, as the hidden
   holds did before the statuses-per-target round; no fight read per target has a freeze yet. Under everyTarget when
   one does; moves verdicts there only.
+  Closed by worktree-agent-a289fe4aa2df9082f, a931eaf: both run on every target the freeze held (clock.ts
+  eachTarget), synthetic tests; no verdict moved. Three freezes are in these fights after all (Si's Immobilization:
+  6339 4.53 s, 7b54 3.40, 29.50 s), with no status on any target; a twin's other-target freeze is open-problems'.
 
 ## What worked well
 

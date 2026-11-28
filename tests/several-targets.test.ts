@@ -60,6 +60,23 @@ describe("targets.ts assignTargets", () => {
     expect([...(t.of.get(h3)?.drop ?? [])]).toEqual([]);
   });
 
+  it("with ids `landings` (the second replay's assignment), numbers a new target as a target its landing reached", () => {
+    // The second replay's landings carry the first assignment's ids (LandedHit.target, otherTargets): a new target
+    // takes one of its landing's no target has yet, the first that fits; none free, an id past every landing's.
+    const on = (frame: number, target: number, ...others: number[]) => ({ ...landing(frame), target, ...(others.length ? { otherTargets: others.map((t) => ({ target: t, enemy: {} })) } : {}) }) as unknown as LandedHit;
+    const twins = on(30, 4, 2);
+    const [a, b, c, d] = [hit(1000, 1), hit(1000, 1), hit(2000, 2), hit(3000, 3)];
+    // a and b one landing on targets 4 and 2, each with unit x; c, landed on target 2, fits only without x, so on a new
+    // target (2 is taken); d, landed on 4, with x.
+    const fx = { severalTargets: { why: "", atOnce: 8, fromStart: true as const } };
+    const inputs = [input(a, twins, ["x"], [[]]), input(b, twins, ["x"], [[]]), input(c, on(60, 2), ["x"], [["x"]]), input(d, on(90, 4), ["x"], [[]])];
+    const t = assignTargets(fx, inputs, { ids: "landings" });
+    expect([a, b, c, d].map((h) => t.of.get(h)?.target)).toEqual([4, 2, 5, 4]);
+    // In order of first hit (the default).
+    const o = assignTargets(fx, inputs);
+    expect([a, b, c, d].map((h) => o.of.get(h)?.target)).toEqual([0, 1, 2, 0]);
+  });
+
   it("puts a landing's third logged hit on a target its twins have when atOnce allows no third", () => {
     const l = landing(30);
     const hs = [hit(1000, 1), hit(1000, 1), hit(1000, 1)];

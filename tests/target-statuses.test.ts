@@ -5,7 +5,8 @@
 // target's statuses, and the views read the replay's record (DEATH lines, `zmdlogs statuses`).
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { advance, createContext, effectiveKit, init, replayCast, targetDies, targetEnemy, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { advance, createContext, effectiveKit, init, NO_STATUS, replayCast, targetDies, targetEnemy, type ActiveStatus, type EnemyStatus, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { rampRunsOn, shiftEnemy, statusesRunOn } from "../packages/engine/src/timeline/clock.ts";
 import { deathDecisions, devFixtures, hitRecords, logBuffReplay, statusesView, targetMismatches, type LogFixture } from "@efsim/logs";
 
 const data = loadGameData();
@@ -102,16 +103,64 @@ describe("DEATH lines: every death the replay made (6339), not only the moves", 
 });
 
 // Round 21 (the statuses-per-target report point 2): the check's target ids against the replay's landings' targets
-// (HitRecord.target `landing`, `≠ landing` in `zmdlogs hits`). 7b54 is on the backlog's accuracy list: its second
-// assignment (SECOND_PASS_TARGETS `free`) numbers 147 of 210 hits' targets otherwise than their landings.
+// (HitRecord.target `landing`, `≠ landing` in `zmdlogs hits`). Numbered in order of first hit (SECOND_PASS_TARGETS
+// `free`), 7b54's second assignment had 147 of 210 hits' targets otherwise than their landings, a candidate read at
+// another slug's statuses; `mapped` (a new target takes an id its landing has, targets.ts AssignOptions.ids) left
+// the hits the second assignment puts on another slug than the first did, 55 of 210 (from 16.36 s: Laevatain's
+// attack 2 at 1701 on a slug of its own, so the 19.59 s kill and Si's 20.21 s attacks follow), and a third replay on
+// the second assignment (logcheck.ts TARGET_REPLAYS) gives the same assignment again: none.
 describe("the check's targets are the replay's landings' targets (hits --json target.landing)", () => {
-  it("6339: every hit with both; 9c6e: all but one", () => {
+  it("6339 and 7b54: every hit with both; 9c6e: all but one", () => {
     const one = targetMismatches(hitRecords(data, fixture("6339")));
     expect(one.both).toBeGreaterThan(100);
     expect(one.differ).toHaveLength(0);
     const two = targetMismatches(hitRecords(data, fixture("9c6e")));
     expect(two.both).toBeGreaterThan(300);
     expect(two.differ.length).toBeLessThanOrEqual(1);
+    const records = hitRecords(data, fixture("7b54"));
+    const slugs = targetMismatches(records);
+    expect(slugs.both).toBeGreaterThan(200);
+    expect(slugs.differ).toHaveLength(0);
+    // Every hit whose target the assignment made new on it is on its landing (the id is the landing's).
+    const firsts = new Map<number, (typeof records)[number]>();
+    for (const r of [...records].sort((x, y) => x.t - y.t)) if (r.target && !firsts.has(r.target.index)) firsts.set(r.target.index, r);
+    const made = [...firsts.values()].filter((r) => r.target?.landing !== undefined);
+    expect(made.length).toBeGreaterThan(3);
+    expect(made.filter((r) => !(r.target?.landing ?? []).includes(r.target?.index ?? -1)).map((r) => r.t)).toEqual([]);
+  });
+});
+
+// A freeze in a fight read per target (clock.ts rampRunsOn, statusesRunOn; the backlog after round 21's accuracy
+// list): its ramp and statuses run on on every target it held, and a target it didn't hold is left as it was. No fight
+// read per target has a freeze yet, so the states are synthetic.
+describe("a freeze's run-on on every target (clock.ts rampRunsOn, statusesRunOn)", () => {
+  const fx = fixture("6339");
+  const team = fx.team.filter((b) => b.operator === CAMILLE);
+  const ctx = createContext(data, { team, target: { enemy: fx.enemy.id, level: fx.enemy.level }, durationFrames: 900, rotation: [], options: { crit: "never" }, landingTargets: [] });
+  const corrosion = (appliedAt: number): ActiveStatus => ({ status: "corrosion", level: 2, appliedAt, expiresAt: appliedAt + 450, operator: CAMILLE, artsIntensity: 0 });
+  const enemy = (appliedAt: number): EnemyStatus => ({ ...NO_STATUS, statuses: [corrosion(appliedAt)] });
+  // Target 0 current, target 1 waiting, each with a Corrosion; a 45-frame freeze at frame 100.
+  const st: TimelineState = { ...init(ctx), enemy: enemy(30), targets: { current: 0, others: { 1: enemy(60) } } };
+  const ramp = (s: TimelineState, t: number) => targetEnemy(s, t).statuses[0] as ActiveStatus;
+
+  it("held on every target (shiftEnemy with others): each target's ramp and statuses as they were", () => {
+    const frozen = shiftEnemy(st, 100, 45);
+    expect(ramp(frozen, 1).appliedAt).toBe(60 + 45);
+    const runs = rampRunsOn(st, frozen);
+    for (const t of [0, 1]) {
+      expect(ramp(runs, t).appliedAt).toBe(ramp(st, t).appliedAt);
+      expect(ramp(runs, t).expiresAt).toBe(ramp(st, t).expiresAt + 45);
+    }
+    const statuses = statusesRunOn(st, frozen);
+    for (const t of [0, 1]) expect(targetEnemy(statuses, t).statuses).toEqual(targetEnemy(st, t).statuses);
+  });
+
+  it("held on the current target only (a freeze's own hold): the other target unchanged by the run-on", () => {
+    const frozen = shiftEnemy(st, 100, 45, false);
+    expect(targetEnemy(rampRunsOn(st, frozen), 1)).toEqual(targetEnemy(st, 1));
+    expect(ramp(rampRunsOn(st, frozen), 0).appliedAt).toBe(30);
+    expect(targetEnemy(statusesRunOn(st, frozen), 1)).toEqual(targetEnemy(st, 1));
+    expect(targetEnemy(statusesRunOn(st, frozen), 0).statuses).toEqual(st.enemy.statuses);
   });
 });
 

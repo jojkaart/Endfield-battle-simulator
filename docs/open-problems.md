@@ -2426,10 +2426,23 @@ since, its `if` needs Combustion or Corrosion on its slug: a status from a landi
 shielded at 24.02 s, the empowered hit's explosion reaching it for 0); a twin's second target missing a status its
 applier's unlogged landing gave (9c6e 74.47 s: Liino's ultimate on T6 without the log's Electrification; 53.98 s
 Ardelia's attack 3 ×1.011 on a Corrosion ramp of another age); 7b54's 36.08–36.84 s Laevatain battle skill over
-×1.2–1.3 under per-target (Scorching Heart on from 31.03 s, Melting Flame 4 from her absorption then); 7b54's
-second assignment numbering its targets otherwise than the replay's landings (round 21's `zmdlogs hits` `≠ landing`:
-147 of 210 hits with both, 6339 none, 9c6e one), so a candidate read at the replay's target of its id may be another
-slug's statuses: the ids mapped onto the replay's (the backlog's accuracy list).
+×1.2–1.3 under per-target (Scorching Heart on from 31.03 s, Melting Flame 4 from her absorption then); a freeze
+on a twin's other target (landing.ts: the other target's control event reaches runTriggers after the first target is
+current again, so it holds the first one's clock; the three freezes in these fights, 6339 4.53 s, 7b54 3.40 and
+29.50 s, are single-target landings with no status on any target, so nothing reads it yet).
+
+**Fixed 2026-11-28 (docs/journal/2026-11-28-01-the-check-s-targets-are-the-replay-s-and-a-freeze-s-run-on.md): 7b54's check targets not
+its landings'.** The second assignment numbered its targets afresh, so a candidate `t` was read at the replay's target
+`t`, another slug (147 of 210 hits with both, round 21's `≠ landing`). Now a new target takes an id its landing has in
+the replay (SECOND_PASS_TARGETS `mapped`: 147 → 55, the rest hits the two assignments put on other slugs from 16.36 s,
+Laevatain's 1701 attack 2 read on a slug of its own in the second replay), and the replay is made again on the check's
+assignment while it differs (TARGET_REPLAYS: 7b54's third replay gives the same assignment back, 0 of 210). No
+verdict moved (the full measure, and the third replay's `--several-targets`): 7b54 reads no Corrosion,
+Electrification or Breach (its only reaction status Combustion, a dot), so atItsTarget's per-target levels were
+nothing there; the ids decide only which replay target a candidate is read at. 7b54 |damage error| 4.0 → 2.8% (the
+row 10.4 → 10.0%) from the third replay's landings on their slugs. **Ruled out:** a freeze per target as a lead
+here (rampRunsOn and statusesRunOn run on every target it held since, verdict-neutral: no target has a status at
+any of the three freezes).
 
 **Still possible / left:** the other
 listeners on a target's death (BuffData abilityEvent 1 on a buff on the target): Arcane's
