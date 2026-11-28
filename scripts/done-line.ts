@@ -25,7 +25,7 @@ import { endRun, startRun } from "./runstate.ts";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Runs a command (stdio inherited, cwd the repository by default) as a child the job stops on a signal; its exit status. */
-export type Runner = (command: readonly string[], options?: Pick<SpawnOptions, "cwd" | "env" | "stdio">) => Promise<number>;
+export type Runner = (command: readonly string[], options?: Pick<SpawnOptions, "cwd" | "env" | "stdio" | "signal">) => Promise<number>;
 
 const SIGNALS = { SIGHUP: 1, SIGINT: 2, SIGTERM: 15 } as const;
 /** How long a signal waits for the running children to stop before the cleanups and the line. */
