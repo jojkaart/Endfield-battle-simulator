@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { compare, type Snapshots } from "../scripts/accuracy.ts";
-import { defaultReference, exportedNames, hitChanges, holdChanges, importLinks, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
+import { defaultReference, exportedNames, hitChanges, holdChanges, importLinks, interactLines, kindLines, measureOptions, mixedPerHit, modifierChange, movedCasts, negativeControl, overlay, patchProblem, pinChange, plainReuse, readingsProblem, referenceNote, selectLogs, sharesLines, splitGroups, splitLines } from "../scripts/measure.ts";
 import { headerUsage, wantsHelp } from "../scripts/usage.ts";
 
 const keys = ["zmdlogs-aaaa11112222.json", "pending/zmdlogs-bbbb11112222.json", "pending/zmdlogs-bbbc11112222.json", "holdout/zmdlogs-cccc11112222.json"];
@@ -322,5 +322,20 @@ describe("measure's options before the queue (round 13, damage-factors report po
     expect(usage).toMatch(/^Usage: node scripts\/measure\.ts \[options\]/);
     expect(usage).toMatch(/--help, -h/);
     expect(headerUsage(join(import.meta.dirname, "../scripts/snapshots.ts"))).toMatch(/^Usage: node scripts\/snapshots\.ts/);
+  });
+});
+
+describe("measure --plain-from", () => {
+  const code = { commit: "c1", packages: "p1", scripts: "s1", fixtures: "f1" };
+  const rec = { code, assume: { a: "x" }, keys: ["pending/b.json", "pending/a.json"], withHits: false, entries: {} };
+  it("reuses an earlier run's plain tree only for the same code, readings and logs", () => {
+    expect(plainReuse(rec, { code: { ...code, commit: "c2" }, assume: { a: "x" }, keys: ["pending/a.json", "pending/b.json"], withHits: false })).toEqual({ ok: true, codeOnly: false, why: "the same code, readings and logs" });
+    const code2 = plainReuse(rec, { code: { ...code, packages: "p2" }, assume: { a: "x" }, keys: rec.keys, withHits: false });
+    expect(code2).toEqual({ ok: false, codeOnly: true, why: "the code in packages/ differs from that run's (c1)" });
+    const other = plainReuse(rec, { code: { ...code, fixtures: "f2" }, assume: {}, keys: rec.keys, withHits: true });
+    expect(other.ok || other.codeOnly).toBe(false);
+    expect(other.why).toBe("other --assume readings; no --hits rows there; the fixtures differ");
+    expect(() => measureOptions(["--plain-from", "scratch"])).toThrow(/goes with --variant/);
+    expect(() => measureOptions(["--trust-plain"])).toThrow(/goes with --plain-from/);
   });
 });
