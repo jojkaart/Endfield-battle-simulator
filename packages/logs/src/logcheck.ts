@@ -45,7 +45,7 @@ import {
 import type { LogEffect, LogFixture, LogHit } from "./zmdlogs.ts";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { engineCheck, engineReadings, fightTotals, logDifferences, replayTargets, stageModifiers, stageScaledKill, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
-import { statusesPerTarget } from "./targets.ts";
+import { statusesPerTarget, type TargetAssignment } from "./targets.ts";
 import { boundarySubsets, buffFile, collapseRepeats, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { rampBounds, rampSteps, type RampStep } from "./rampsteps.ts";
@@ -672,6 +672,26 @@ export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: 
   return out;
 }
 
+/**
+ * At most how many replays a fight with the statuses per target is made with (target-statuses `per-target`): the
+ * first with one enemy, the second on its assignment, and again on the assignment the check reads from the last one
+ * (its ids the replay's: enginecheck.ts SECOND_PASS_TARGETS `mapped`) while that puts a hit on another target than
+ * the replay was made on. 6339 and 9c6e: the second assignment is the first, two replays; 7b54: the second puts its
+ * hits from 16.36 s on other slugs (Laevatain's 1701 attack 2 on a slug of its own, as its value reads in the second
+ * replay, where the first had both of that ms's attack 2 hits on one, neither fitting), the third replay is made on it
+ * and its assignment is the same (every hit with a landing on one of its landing's targets, 55 of 210 not before;
+ * 7b54 |damage error| 4.0 → 2.8%, no verdict moved: the slugs' kit buffs alike, no status the check reads per target).
+ * Two: the second replay only (to 2026-11-27).
+ */
+export const TARGET_REPLAYS: number = 3;
+
+/** Whether two assignments put every hit on the same target. */
+function sameTargets(a: TargetAssignment, b: TargetAssignment): boolean {
+  if (a.of.size !== b.of.size) return false;
+  for (const [h, t] of a.of) if (b.of.get(h)?.target !== t.target) return false;
+  return true;
+}
+
 export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: Placement | LogReplayOptions, opts: Pick<ReplayOptions, "assume" | "trace" | "cutCasts"> = {}): LogBuffReplay {
   // Either form (away-and-presses report point 5: `logBuffReplay(data, fx, { assume })` passed the readings as the
   // placement, and the replay ran on the defaults without a word): an options object as the third argument is taken
@@ -709,10 +729,14 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placementOrOpts?: 
   let replay = passes({});
   // The statuses per target (target-statuses `per-target`, a fight read per target): the replay again, each logged
   // landing on the targets the first one's assignment put its hits on (enginecheck.ts replayTargets), each kill its
-  // target's death; the check reads the second one on that assignment (docs/design/data.md "Statuses per target").
+  // target's death; the check reads the second one on that assignment (docs/design/data.md "Statuses per target"),
+  // and again on the assignment the check reads from it while that differs (TARGET_REPLAYS).
   if (statusesPerTarget(fx, opts.assume)) {
-    const targets = replayTargets(engineCheck(data, fx, replay));
-    if (targets) replay = passes({ targets });
+    for (let pass = 1; pass < TARGET_REPLAYS; pass++) {
+      const targets = replayTargets(engineCheck(data, fx, replay));
+      if (!targets || (replay.targets && sameTargets(replay.targets.assignment, targets.assignment))) break;
+      replay = passes({ targets });
+    }
   }
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed), placement };

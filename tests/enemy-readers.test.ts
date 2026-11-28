@@ -17,7 +17,6 @@ const READERS: Readonly<Record<string, { readonly n: number; readonly why: strin
   "packages/engine/src/timeline/landing.ts": { n: 2, why: "the landing's own target (swapped in by onTarget)" },
   "packages/engine/src/status.ts": { n: 2, why: "functions of one EnemyStatus argument, called per target" },
   "packages/engine/src/timeline/advance.ts": { n: 1, why: "the current target's next tick; the others' through otherTargetTick" },
-  "packages/engine/src/timeline/clock.ts": { n: 3, why: "a freeze's ramp and statuses (rampRunsOn, statusesRunOn): the current target's only; no fight read per target has a freeze yet" },
   "packages/engine/src/planning/payoffs.ts": { n: 5, why: "the search's simulations: one enemy (no landingTargets outside the log check's replay)" },
   "packages/engine/src/planning/policy.ts": { n: 8, why: "the rule driver's cues: one enemy, as payoffs.ts" },
   "packages/engine/src/planning/setupvalue.ts": { n: 3, why: "the search's setup value: one enemy, as payoffs.ts" },

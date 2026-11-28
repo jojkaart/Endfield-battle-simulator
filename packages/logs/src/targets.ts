@@ -314,6 +314,26 @@ interface Target {
 const killed = (h: LogHit) => h.uncapped !== undefined && h.uncapped !== null && h.uncapped > h.value;
 
 /**
+ * How assignTargets numbers and pins targets. `fixed`: each hit's target given (the first assignment's). `ids`:
+ * `order` (the default), a new target numbered in order of first hit; `landings` (the second replay of the statuses
+ * per target, whose landings carry the first assignment's target ids: LandedHit.target and otherTargets), a new target
+ * one of the targets its first hit's landing reached that no target has yet (the first that fits, in the landing's
+ * order), else an id past every one a landing names: the second assignment's ids are then the replay's, which
+ * enginecheck.ts atItsTarget reads a candidate's statuses at (7b54: numbered in order, 147 of 210 hits with both had a
+ * target their landing wasn't on, read at another slug's statuses).
+ */
+export interface AssignOptions {
+  readonly fixed?: ReadonlyMap<LogHit, number>;
+  readonly ids?: "order" | "landings";
+}
+
+/** The targets a landing reached in a replay with the statuses per target (its own first), or none. */
+export function landingIds(l: Pick<LandedHit, "target" | "otherTargets"> | null): number[] {
+  if (!l || l.target === undefined) return [];
+  return [l.target, ...(l.otherTargets ?? []).map((x) => x.target).filter((t) => t !== l.target)];
+}
+
+/**
  * Each logged hit's target, in time order. Two logged hits one landing stands for at one ms are on two targets while
  * there are targets for both (one landing reaches each target once); a capped hit kills its target. Otherwise a hit
  * goes to the alive target whose state its value fits: a unit its target got is on to its expiry, one its target was
@@ -323,9 +343,12 @@ const killed = (h: LogHit) => h.uncapped !== undefined && h.uncapped !== null &&
  * and with fromStart no more than atOnce in all); among equals the one hit last. Where nothing fits, the one hit last
  * (a new one if none is alive), read with what it is known to lack, decided by nothing. With `fixed` (the second replay
  * of the statuses per target: the first assignment's target of each hit, whose ids the replay's targets have), each hit
- * goes to that target, its units decided there as above, `none fits` where no choice of them fits.
+ * goes to that target, its units decided there as above, `none fits` where no choice of them fits. With ids `landings`
+ * (the second replay's assignment, free), a new target takes the id of a target its landing reached in the replay
+ * (AssignOptions.ids), so a candidate's id is the replay's target its statuses are read at.
  */
-export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: readonly TargetHitInput[], fixed?: ReadonlyMap<LogHit, number>): TargetAssignment {
+export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: readonly TargetHitInput[], opts: AssignOptions = {}): TargetAssignment {
+  const { fixed, ids } = opts;
   const atOnce = fx.severalTargets?.atOnce ?? DEFAULT_AT_ONCE;
   const fromStart = fx.severalTargets?.fromStart === true;
   const targets: Target[] = [];
@@ -333,15 +356,23 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
   // The targets each landing's logged hits are on, per logged ms.
   const twins = new Map<LandedHit, Map<number, Set<number>>>();
   const order = inputs.map((x, i) => ({ x, i })).sort((a, b) => a.x.hit.t - b.x.hit.t || a.i - b.i);
+  // With ids `landings`: past every id a landing names (the replay's targets), for a new target none of its landing's ids is free for.
+  let unnamed = ids === "landings" ? Math.max(-1, ...inputs.flatMap((x) => landingIds(x.landing))) + 1 : 0;
   for (const { x } of order) {
     const { hit, landing, frame, units } = x;
     const used = landing ? (twins.get(landing)?.get(hit.t) ?? new Set<number>()) : new Set<number>();
     const alive = targets.filter((t) => t.alive).sort((a, b) => b.last - a.last);
     const canNew = alive.length < atOnce && (!fromStart || targets.length < atOnce);
     const pinned = fixed?.get(hit);
-    const fresh: Target = { id: pinned ?? targets.length, alive: true, last: -1, got: new Map(), missed: new Map() };
+    const newTarget = (id: number): Target => ({ id, alive: true, last: -1, got: new Map(), missed: new Map() });
+    // A new target: in order of first hit; with ids `landings`, one per id of its landing's targets no target has yet
+    // (each a candidate, read at that target's statuses), else an id no landing names (a target the replay never hit).
+    const held = new Set(targets.map((t) => t.id));
+    const named = ids === "landings" ? landingIds(landing).filter((id) => !held.has(id)) : [];
+    const freshOnes = pinned !== undefined ? [newTarget(pinned)] : ids === "landings" ? (named.length ? named : [unnamed]).map(newTarget) : [newTarget(targets.length)];
+    const fresh = freshOnes[0] as Target;
     const own = pinned !== undefined ? targets.find((t) => t.id === pinned) : undefined;
-    const candidates = pinned !== undefined ? [own ?? fresh] : [...alive.filter((t) => !used.has(t.id)), ...(canNew ? [fresh] : [])];
+    const candidates = pinned !== undefined ? [own ?? fresh] : [...alive.filter((t) => !used.has(t.id)), ...(canNew ? freshOnes : [])];
     const state = (t: Target) => {
       const off: string[] = [];
       const open: string[] = [];
@@ -367,7 +398,7 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
         if (n === 0) decided.set(k, true);
         else if (n === fitting.length) decided.set(k, false);
       }
-      const cost = (t === fresh ? 2 : 0) + (best.size > off.length ? 1 : 0);
+      const cost = (freshOnes.includes(t) ? 2 : 0) + (best.size > off.length ? 1 : 0);
       if (!chosen || cost < chosen.cost) chosen = { t, drop: best, decided, cost };
     }
     let how: HitTarget["how"] = "fits";
@@ -377,7 +408,10 @@ export function assignTargets(fx: Pick<LogFixture, "severalTargets">, inputs: re
       chosen = { t, drop: new Set(state(t).off), decided: new Map(), cost: Infinity };
     }
     const t = chosen.t;
-    if (t === fresh) targets.push(fresh);
+    if (freshOnes.includes(t)) {
+      targets.push(t);
+      if (t.id === unnamed) unnamed++;
+    }
     for (const u of units) {
       const d = chosen.decided.get(u.key);
       if (d === true) {
