@@ -34,6 +34,7 @@ import { batchDecision, batchDisagreements, deathDecisions, decisionText, landin
 import { secondsText as s, shortSkill } from "./labels.ts";
 import { triggerStartLines } from "./triggerstarts.ts";
 import { spLines, topUpLines } from "./spview.ts";
+import { windowLines } from "./windowsview.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -298,8 +299,13 @@ export function kitKeys(data: GameData, fx: Pick<LogFixture, "team">): Set<strin
  * the kit buffs named (`owner:id`, at the owner unless `@operator` follows); under other readings of open assumptions
  * with `assume` (as `zmdlogs check --assume`).
  */
-export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly sp?: boolean; readonly againstLanes?: boolean; readonly againstStarts?: RegExp } = {}): string {
-  const { replay, placement } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(f.trace?.length ? { trace: f.trace } : {}) });
+/** What `zmdlogs replay` shows beside its landings (replayView): kit buffs' windows, traces, readings, stops, SP, combo windows. */
+export type ReplayViewFilter = ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly sp?: boolean; readonly againstLanes?: boolean; readonly againstStarts?: RegExp; readonly windows?: readonly string[] };
+
+export function replayView(data: GameData, fx: LogFixture, f: ReplayViewFilter = {}): string {
+  // `--windows <operator>`: its combo windows, traced step by step (replayrecord.ts WindowTrace; windowsview.ts).
+  const trace = [...(f.trace ?? []), ...(f.windows ?? []).map((op) => `window:${op}`)];
+  const { replay, placement } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(trace.length ? { trace } : {}) });
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
   const batched = batchMark(fx);
@@ -472,6 +478,12 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
       for (const r of runs) if (r.lastListed >= (f.from ?? -Infinity) && r.since <= (f.to ?? Infinity)) lines.push({ t: r.since, order: 0, text: `LANE   status:${status} by ${label(data, applier)}: the log's run since ${s(r.since)}, listed to ${s(r.lastListed)}${r.refreshed ? " (refreshed in the log)" : ""}` });
     }
   }
+  // An operator's combo windows: openings and their sources, a trigger the cooldown kept out, ends, ready frames, each
+  // press with the window it found (round 24, the combo-windows report point 1).
+  for (const op of f.windows ?? []) {
+    const combos = (data.kits.operators[op]?.skills ?? []).filter((x) => x.kind === "combo").map((x) => x.skillId);
+    for (const l of windowLines(data, replay, op, combos, f)) lines.push({ t: l.t, order: 0, text: l.text });
+  }
   // The slow-downs the replay's timeline applied against the stop list the log tools build for its casts (replayTimeStops).
   if (f.stops) for (const l of stopLines(data, fx, replay, f)) lines.push({ t: l.t, order: 0, text: l.text });
   // The SP a logged cast lacked (TOPUP, always) and, with --sp, each grant's source and each cast's spend (spview.ts).
@@ -500,8 +512,10 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const inside = replay.castFlags.filter((x) => x.kind === "inside").length;
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
+  const early = replay.made.filter((m) => m.early).length;
+  const beforeCooldown = early ? `${early} cast(s) made before the replay's own cooldown had them ready (COOLDOWN). ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them; [twin: …]: its logged hit the placement took for another target's landing of its slot, and the rule), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame), OPENER a combo's window opened inside its own slow-down that its press took, DEATH each target's death the replay made (its record: a logged kill, a kit's move logged after one; the target that dies where the statuses are per target)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}${replay.spTopUps.length ? ", TOPUP a logged cast the replay's own SP couldn't pay (raised to its cost)" : ""}${f.sp ? ", SP each grant's operator and source (TimelineState.spGained) and each cast's spend, the team's SP after" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${beforeCooldown}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them; [twin: …]: its logged hit the placement took for another target's landing of its slot, and the rule), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame), OPENER a combo's window opened inside its own slow-down that its press took, COOLDOWN a cast made before the replay's own cooldown had it ready, DEATH each target's death the replay made (its record: a logged kill, a kit's move logged after one; the target that dies where the statuses are per target)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.windows?.length ? ", WINDOW an operator's combo windows (what opened or refreshed each and when, an event the cooldown kept out, each end, its combos' ready frames, each press with the window it found)" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}${replay.spTopUps.length ? ", TOPUP a logged cast the replay's own SP couldn't pay (raised to its cost)" : ""}${f.sp ? ", SP each grant's operator and source (TimelineState.spGained) and each cast's spend, the team's SP after" : ""}`;
   return [head, render(lines), ...pairs].join("\n");
 }
 

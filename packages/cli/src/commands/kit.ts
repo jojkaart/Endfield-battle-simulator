@@ -101,7 +101,40 @@ function triggerJumps(kit: OperatorKit, skillId: string): string[] {
   );
 }
 
-function skillLines(data: GameData, operator: string, s: KitSkill, kit: OperatorKit): string[] {
+/**
+ * A skill's costs from its levels (SkillData: coolDown, costType, costValue; round 24, the combo-windows report point
+ * 2: 3f78's early combo took a scratch script over `levels[].coolDown`): its cooldown and cost at level 12 (or its
+ * last), the other levels' where they differ (each with `levels`), and the kit triggers' `cooldown` actions that can
+ * change it (this kit's own for its kind, any kit's that reach a squad slot or the event's operator). A build's
+ * modifiers (a talent's or potential's skillParam, attribute 47's combo scalar, 93's recovery rate) apply on top in a
+ * run (skillCosts).
+ */
+export function costLines(data: GameData, operator: string, s: KitSkill, levels = false): string[] {
+  const ls = data.skills[s.skillId]?.levels ?? [];
+  if (!ls.length || ls.every((l) => l.coolDown === 0 && l.costValue === 0)) return [];
+  const words = (l: (typeof ls)[number]) => `cooldown ${l.coolDown} s, ${l.costValue === 0 ? "no cost" : l.costType === 1 ? `SP ${l.costValue}` : l.costType === 0 ? `energy ${l.costValue}` : `cost type ${l.costType} ${l.costValue}`}`;
+  const top = ls.find((l) => l.level === 12) ?? (ls.at(-1) as (typeof ls)[number]);
+  // Runs of levels alike (levels 1–8 one line), all of them with `levels`, else those that differ from the top's.
+  const runs: { from: number; to: number; text: string }[] = [];
+  for (const l of ls) {
+    if (l === top || (!levels && words(l) === words(top))) continue;
+    const last = runs.at(-1);
+    if (!levels && last && last.text === words(l) && last.to === l.level - 1) last.to = l.level;
+    else runs.push({ from: l.level, to: l.level, text: words(l) });
+  }
+  const others = runs.map((r) => ({ level: r.from === r.to ? `${r.from}` : `${r.from}–${r.to}`, text: r.text }));
+  const changes = Object.entries({ ...data.kits.operators, ...data.kits.equipment }).flatMap(([owner, k]) =>
+    k.triggers.flatMap((t) =>
+      t.do.flatMap((a) => (a.kind === "cooldown" && a.skills === s.kind && ((owner === operator && a.who === "self") || a.who !== "self") ? [`${owner === operator ? "" : `${data.operators[owner]?.name ?? owner}'s `}${t.id} (${a.who === "self" ? "self" : JSON.stringify(a.who)}: ${fields(a, ["who", "skills"])})`] : [])),
+    ),
+  );
+  return [
+    `      costs at level ${top.level}: ${words(top)}${others.length ? `; ${levels ? "per level" : "other levels"}: ${others.map((l) => `${l.level} ${l.text}`).join("; ")}` : ""} (a build's skillParam modifiers and the combo scalars apply on top: skillCosts)`,
+    ...(changes.length ? [`      cooldown changed by: ${changes.join("; ")}`] : []),
+  ];
+}
+
+function skillLines(data: GameData, operator: string, s: KitSkill, kit: OperatorKit, levels = false): string[] {
   const t = data.skills[s.skillId]?.timing;
   // The world frames each slow-down holds, and all of them together (a path's ends and jumps aside: pathSlowdowns).
   const held = heldFrames(t?.slowdowns ?? []);
@@ -128,6 +161,7 @@ function skillLines(data: GameData, operator: string, s: KitSkill, kit: Operator
   ];
   return [
     `  ${s.skillId} (${kind}) "${s.label}": ${timing}`,
+    ...costLines(data, operator, s, levels),
     ...(dilations.length ? [`      time dilations: ${dilations.join("; ")}`] : []),
     ...(paths.length ? [`      paths: ${paths.join("; ")}`] : []),
     ...(s.available !== undefined ? [`      available if ${pred(s.available)}`] : []),
@@ -138,7 +172,7 @@ function skillLines(data: GameData, operator: string, s: KitSkill, kit: Operator
 }
 
 /** `efsim kit <operator>`: the compiled kit's skills (timing, hits and frames), buffs and triggers; `skill`: only skills matching. */
-export function kitView(data: GameData, operator: string, skill?: RegExp): string {
+export function kitView(data: GameData, operator: string, skill?: RegExp, levels = false): string {
   // A weapon's or gear set's kit by its id (wpn_…, suit_…): its buffs and triggers (cooldown-clock report point 3:
   // Swordmancer's CD timer is a gear set's).
   const equipment = data.kits.equipment[operator];
@@ -147,7 +181,7 @@ export function kitView(data: GameData, operator: string, skill?: RegExp): strin
   const kit: OperatorKit | undefined = data.kits.operators[id];
   if (!kit) throw new Error(`${id}: no kit`);
   const skills = kit.skills.filter((s) => !skill || skill.test(s.skillId));
-  const out = [`${data.operators[id]?.name ?? id} (${id}): the compiled kit (frames at ${FPS} a second; a hit's frames are its landings' in its cast; timing from SkillData)`, "Skills:", ...skills.flatMap((s) => skillLines(data, id, s, kit))];
+  const out = [`${data.operators[id]?.name ?? id} (${id}): the compiled kit (frames at ${FPS} a second; a hit's frames are its landings' in its cast; timing from SkillData)`, "Skills:", ...skills.flatMap((s) => skillLines(data, id, s, kit, levels))];
   if (!skill) {
     out.push("Buffs:", ...kit.buffs.map(buffLine));
     out.push("Triggers:", ...kit.triggers.flatMap(triggerLines));
@@ -163,6 +197,7 @@ function buffLine(b: KitBuff): string {
 export default command({
   name: "kit",
   usage: `  efsim kit <operator>                    An operator's compiled kit (id, name or part of the id): skills with their
+                                          cooldown and cost (and the kit triggers that change the cooldown),
                                           duration, uncuttable frames, windows and slow-downs, paths (the data's
                                           jumps and ends, the kit's and the triggers' jumps), skill group when it
                                           isn't the kind (an enhanced basic attack), each hit's frames, keys,
@@ -173,13 +208,16 @@ export default command({
                                           buff, a timed marker: KitTrigger.cooldownFrom)
   efsim kit <weapon or gear-set id>       Its buffs and triggers (wpn_…, suit_…; ids: efsim find <name>)
                 [--skill <regex>]         Only skills matching (no buffs or triggers)
+                [--levels]                Each skill's cooldown and cost at every level (default: level 12, and the
+                                          levels that differ from it)
 `,
   options: {
     skill: { type: "string" },
+    levels: { type: "boolean", default: false },
   },
   run: (ctx) => {
     ctx.need(1);
     const skill = ctx.values.skill as string | undefined;
-    return kitView(ctx.data(), ctx.args[0] as string, skill !== undefined ? new RegExp(skill) : undefined);
+    return kitView(ctx.data(), ctx.args[0] as string, skill !== undefined ? new RegExp(skill) : undefined, ctx.values.levels === true);
   },
 });

@@ -1,17 +1,19 @@
 // The replay's own decisions as lines (improvement round 14; combo-hold report point 1): what it skipped and why, the
 // casts it ended early (TAILCUT), couldn't make (FAILED), added (MISSED), made from the listing (INFER) or as another
 // skill than the placement's (MADE), the kit jumps its logged landings contradicted (JUMPDROP: drivers.ts replayCast
-// `dropped`), the window a combo took from an opener inside its own slow-down (OPENER: replayrun.ts openerAhead), and
-// those it made against the kit (FORCED, INSIDE, CUTS), each from BuffReplay's records. `zmdlogs
+// `dropped`), the window a combo took from an opener inside its own slow-down (OPENER: replayrun.ts openerAhead), those
+// it made against the kit (FORCED, INSIDE, CUTS) or before its own cooldown had them ready (COOLDOWN: replayrun.ts
+// cooldownEarly, round 24), each from BuffReplay's records. `zmdlogs
 // replay` prints them among its landings; `zmdlogs decisions` prints those that differ between the
 // default readings and another (`--assume`), over one log or every one: a new replay rule's false positives in one
 // list before its first measure.
 
 import { FPS, parseReactionEvent, withCurveReading, type GameData, type LandedHit } from "@efsim/engine";
-import type { BuffReplay } from "./buffreplay.ts";
+import type { BuffReplay, MadeCast } from "./buffreplay.ts";
+
 import { batchOrder } from "./castassembly.ts";
 import { logBuffReplay } from "./logcheck.ts";
-import { MISSED_ROUNDS } from "./replayrun.ts";
+import { MISSED_ROUNDS, type EarlyCast } from "./replayrun.ts";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
 
@@ -22,7 +24,7 @@ const label = (data: GameData, op: string) => data.operators[op]?.name ?? op.rep
 /** One decision of the replay: its time (ms), its kind (the line's tag) and its text. */
 export interface DecisionLine {
   readonly t: number;
-  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "OPENER" | "FORCED" | "INSIDE" | "CUTS" | "DEATH";
+  readonly kind: "SKIP" | "TAILCUT" | "TAILKEPT" | "FAILED" | "MISSED" | "INFER" | "MADE" | "PATH" | "JUMPDROP" | "BOTHPATHS" | "BATCH" | "LINK" | "OPENER" | "FORCED" | "INSIDE" | "COOLDOWN" | "CUTS" | "DEATH";
   readonly operator: string;
   readonly text: string;
   /** A sub-kind `zmdlogs decisions` counts the kind's lines by (TAILKEPT: the guard, replayrun.ts TAIL_GUARDS). */
@@ -44,8 +46,18 @@ export function deathDecisions(data: GameData, replay: Pick<BuffReplay, "deaths"
   });
 }
 
+/** A cast made before the replay's cooldown had it ready (MadeCast.early) as a COOLDOWN line, its detail the cast's kind. */
+export function cooldownDecision(data: GameData, m: Pick<MadeCast, "cast" | "frame" | "skillId"> & { readonly early: EarlyCast }): DecisionLine {
+  const e = m.early;
+  const moved = e.last ? e.readyAt - (e.last.frame + e.last.cooldownFrames) : 0;
+  const last = e.last
+    ? `its last cast at ${s(msOf(e.last.frame))} set ${s(msOf(e.last.cooldownFrames))} s${moved !== 0 ? `, readyAt ${moved > 0 ? "+" : "−"}${s(msOf(Math.abs(moved)))} s from it since (the world's holds, a reduction, a cooldown group's cast)` : ""}`
+    : "no earlier cast of it in the replay: a cooldown group's cast set it";
+  return { t: msOf(m.frame), kind: "COOLDOWN", operator: m.cast.operator, text: `${label(data, m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): ${s(msOf(e.readyAt - m.frame))} s before the replay's cooldown had it ready at ${s(msOf(e.readyAt))} (${last}; made all the same: cooldownEarly)`, detail: String(m.cast.kind) };
+}
+
 /** The decision kinds, in the order `zmdlogs decisions` counts them. */
-export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "OPENER", "FORCED", "INSIDE", "CUTS", "DEATH"];
+export const DECISION_KINDS: readonly DecisionLine["kind"][] = ["SKIP", "TAILCUT", "TAILKEPT", "FAILED", "MISSED", "INFER", "MADE", "PATH", "JUMPDROP", "BOTHPATHS", "BATCH", "LINK", "OPENER", "FORCED", "INSIDE", "COOLDOWN", "CUTS", "DEATH"];
 
 /** The replay's landing of each logged hit (the hit it stands for), as the log check finds it, and why the others have none. */
 export function landingsOf(replay: Pick<BuffReplay, "landing" | "statusLanding">, fx: LogFixture): { byLanding: Map<LandedHit, LogHit>; missing: Map<LogHit, string> } {
@@ -140,6 +152,10 @@ export function replayDecisions(data: GameData, replay: BuffReplay, fx?: LogFixt
     }
     // A combo whose window an opener logged inside its own slow-down opened (replayrun.ts openerAhead).
     for (const o of m.openers ?? []) out.push({ t: msOf(m.frame), kind: "OPENER", operator: m.cast.operator, text: `${who(m.cast.operator)} ${shortSkill(m.skillId)} (made at ${s(msOf(m.frame))}): its combo window shut at the press, opened at ${s(msOf(o.frame))} inside its own slow-down: the press took that window (count ${o.count}${o.source ? `, ${o.source}` : ", no source"}; openerAhead)` });
+    // Made before the replay's own cooldown had it ready (replayrun.ts cooldownEarly; round 24, the combo-openers
+    // report point 2): how early, the last cast's cooldown, and how far readyAt moved from it since (the world's holds
+    // push it, a reduction pulls it in, a cooldown group's cast sets it). Counted by the cast's kind.
+    if (m.early) out.push(cooldownDecision(data, { ...m, early: m.early }));
     // A kit jump kept with pinned landings in its skipped part (drivers.ts replayCast `keptSkipped`): they land all the
     // same, beside the path the jump goes to (round 16, slots-and-paths report point 1: six slashes for one combo).
     for (const j of m.keptSkipped ?? []) {

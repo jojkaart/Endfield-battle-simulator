@@ -43,6 +43,18 @@ describe("the replay's decisions", () => {
     expect(text).toMatch(/111\.23 {2}INFER {2}Liino normal_skill/);
   });
 
+  it("says when a cast was made before the replay's own cooldown had it ready, and by how much (COOLDOWN; round 24)", () => {
+    // The wording on a synthetic record (the combo-windows report point 5: a view's words not pinned on a live lead).
+    const cast = { operator: "op_a", skillId: "op_a_combo_skill", start: 19300, kind: "combo" as const, landings: [] };
+    const replay = fakeReplay({ made: [{ cast, frame: 579, skillId: cast.skillId, index: 7, early: { readyAt: 604, last: { frame: 64, cooldownFrames: 540 } } }, { cast: { ...cast, start: 40000 }, frame: 1200, skillId: cast.skillId, index: 9, early: { readyAt: 1210, last: { frame: 600, cooldownFrames: 540 } } }] });
+    const lines = replayDecisions(data, replay).filter((x) => x.kind === "COOLDOWN");
+    expect(lines.map((x) => x.text)).toEqual([
+      expect.stringMatching(/combo_skill \(made at 19\.30\): 0\.83 s before the replay's cooldown had it ready at 20\.13 \(its last cast at 2\.13 set 18\.00 s; made all the same/),
+      expect.stringMatching(/\(made at 40\.00\): 0\.33 s before .* ready at 40\.33 \(its last cast at 20\.00 set 18\.00 s, readyAt \+2\.33 s from it since/),
+    ]);
+    expect(lines.map((x) => x.detail)).toEqual(["combo", "combo"]);
+  });
+
   it("489c's Rossi sequence 2 at 18.77 s: the late path's jump dropped for the perfect landing the log shows (JUMPDROP)", () => {
     const fx = readLogFixture(join(ROOT, "fixtures/pending/zmdlogs-489c0be3e162.json"));
     const drops = replayDecisions(data, logBuffReplay(data, fx).replay).filter((x) => x.kind === "JUMPDROP" && x.t < 20000);

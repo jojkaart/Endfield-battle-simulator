@@ -64,3 +64,4 @@ export * from "./decisionsview.ts";
 export * from "./assumedview.ts";
 export * from "./landingmoves.ts";
 export * from "./spview.ts";
+export * from "./windowsview.ts";

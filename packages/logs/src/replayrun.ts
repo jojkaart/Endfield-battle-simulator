@@ -6,7 +6,7 @@
 // (improvement round 14).
 
 import {
-  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, startGateWords, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, staggerFrames, FPS, init, replayCast, replayWindowCount, windowKey, kitHitEntries, parseReactionEvent,
+  activeAt, advance, allActions, damageOptions, breakHold, breakHoldFrames, readingOf, holdWorld, ownHitsLanded, earliestStart, exclusiveUntil, startGateWords, Attr, setPoise, holdStagger, isStaggered, buffModifiers, createContext, refillPoise, skillAvailable, skillCosts, staggerFrames, FPS, init, replayCast, replayWindowCount, windowKey, kitHitEntries, parseReactionEvent,
   type ActiveBuff, type GameData, type LandedHit, type Modifier, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";
@@ -36,6 +36,18 @@ export interface CastFlag {
    */
   readonly kind: "forced" | "inside" | "cuts";
   readonly why: string;
+}
+
+/**
+ * A logged cast the replay made before its own cooldown had the skill ready (replayrun.ts cooldownEarly: COOLDOWN
+ * lines; round 24, the combo-openers report point 2: 3f78's Arcane combo 0.83 s early took three scratch scripts, and
+ * 4d60 97.00 s was never flagged, its operator not acting). A record only: the replay forces the cast all the same.
+ */
+export interface EarlyCast {
+  /** The frame the replay's cooldown had it ready from (TimelineState.readyAt, rounded up). */
+  readonly readyAt: number;
+  /** The operator's last cast of the skill before it (its frame), and the cooldown that cast set (skillCosts at its frame). */
+  readonly last?: { readonly frame: number; readonly cooldownFrames: number };
 }
 
 /** A cast that hit nothing the replay added (BuffReplay.missed). */
@@ -834,6 +846,19 @@ export function missedCasts(r: MissedSearch, need: { c: ReplayedCast; f: number 
   return [];
 }
 
+/**
+ * Whether a logged cast made as `skillId` at `f` comes before the replay's own cooldown has it ready (the state
+ * advanced to `f`; a frame's slack as castFlag's): EarlyCast, else undefined. Basic attacks and casts that hit nothing
+ * have none. Read only: makeCast forces the cast either way.
+ */
+export function cooldownEarly(ctx: TimelineContext, st: TimelineState, c: Pick<ReplayedCast, "operator" | "kind" | "missed">, skillId: string, f: number): EarlyCast | undefined {
+  if (c.missed || c.kind === "basic") return undefined;
+  const readyAt = Math.ceil(st.readyAt[skillId] ?? 0);
+  if (readyAt <= f + 1) return undefined;
+  const last = st.casts.findLast((x) => x.operator === c.operator && x.skill === skillId && x.frame < f);
+  return { readyAt, ...(last ? { last: { frame: last.frame, cooldownFrames: skillCosts(ctx, c.operator, skillId, last.frame).cooldownFrames } } : {}) };
+}
+
 /** Whether a logged cast made as `skillId` at `f` goes against the kit (BuffReplay.castFlags), the state advanced to `f`. */
 function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skillId: string, f: number): CastFlag | undefined {
   if (c.missed || c.slot || c.kind === "basic") return undefined;
@@ -868,7 +893,7 @@ function castFlag(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, skil
  * REPLAY_EDGE_MS either side of it.
  */
 /** A logged cast as one replay made it (replayOnce): its frame, skill, the states either side, and what it found. */
-type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string; dropped?: readonly JumpDrop[]; keptSkipped?: readonly JumpDrop[]; openers?: readonly WindowOpener[] };
+type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs; inferred?: string; dropped?: readonly JumpDrop[]; keptSkipped?: readonly JumpDrop[]; openers?: readonly WindowOpener[]; early?: EarlyCast };
 
 /**
  * The window a combo's press took from the opener logged inside its own slow-down (openerAhead): the frame the replay
@@ -942,13 +967,14 @@ export function makeCast(ctx: TimelineContext, st0: TimelineState, c: ReplayedCa
   const skillId = chosen.skill;
   if (skillId === null) return { st, skillId, pre, windowCount, ...(chosen.why !== undefined ? { why: chosen.why } : {}) };
   const flag = castFlag(ctx, st, c, skillId, f);
+  const early = cooldownEarly(ctx, st, c, skillId, f);
   // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
   const dropped: JumpDrop[] = [];
   const keptSkipped: JumpDrop[] = [];
   st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}), ...(c.cutAt !== undefined ? { endsAt: c.cutAt } : {}), ...(c.chanceJumps ? { chanceJumps: c.chanceJumps } : {}), ...(c.kitJumps ? { kitJumps: c.kitJumps } : {}), dropped: (j, landings) => dropped.push({ ...j, landings }), keptSkipped: (j, landings) => keptSkipped.push({ ...j, landings }) });
   // A cast made from the listing alone (castsFromHitBuffs): recorded as an inferred one, its landings dealt nothing.
   const why = inferred?.why ?? (c.listed ? `a cast the log shows only by a buff its hit alone gives, made (listed-casts inferred): ${c.listed.buff} listed from ${(c.listed.since / 1000).toFixed(2)} s` : undefined);
-  return { st, skillId, pre, windowCount, ...openers, ...(flag ? { flag } : {}), ...(why !== undefined ? { inferred: why } : {}), ...(dropped.length ? { dropped } : {}), ...(keptSkipped.length ? { keptSkipped } : {}) };
+  return { st, skillId, pre, windowCount, ...openers, ...(flag ? { flag } : {}), ...(early ? { early } : {}), ...(why !== undefined ? { inferred: why } : {}), ...(dropped.length ? { dropped } : {}), ...(keptSkipped.length ? { keptSkipped } : {}) };
 }
 
 /** What every replay of a fight (replayOnce) reads that its passes share: the fight, the options, the log's Stagger steps and crits. */
@@ -1133,7 +1159,7 @@ export function replayOnce(input: ReplayInput, pass: ReplayPass): ReplayRun {
         const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
         const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
         const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
-        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}), ...("dropped" in r && r.dropped ? { dropped: r.dropped } : {}), ...("keptSkipped" in r && r.keptSkipped ? { keptSkipped: r.keptSkipped } : {}), ...("openers" in r && r.openers ? { openers: r.openers } : {}) });
+        made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed, ...("inferred" in r && r.inferred ? { inferred: r.inferred } : {}), ...("dropped" in r && r.dropped ? { dropped: r.dropped } : {}), ...("keptSkipped" in r && r.keptSkipped ? { keptSkipped: r.keptSkipped } : {}), ...("openers" in r && r.openers ? { openers: r.openers } : {}), ...("early" in r && r.early ? { early: r.early } : {}) });
       } catch (e) {
         castErrors.push({ cast: c, error: e instanceof Error ? e.message : String(e) });
       }

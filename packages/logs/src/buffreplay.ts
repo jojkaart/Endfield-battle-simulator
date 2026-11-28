@@ -29,12 +29,12 @@ import type { LogFixture, LogHit } from "./zmdlogs.ts";
 import type { LoggedCast, Placement } from "./logcasts.ts";
 import { loggedStagger } from "./replaysteps.ts";
 import type { ReplayTargets } from "./targets.ts";
-import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StackTrace, type StatusTrace, type TriggerTrace } from "./replayrecord.ts";
+import { REPLAY_EDGE_MS, type AppliedStop, type BuffTrace, type Change, type KitWindow, type StackTrace, type StatusTrace, type TriggerTrace, type WindowTrace } from "./replayrecord.ts";
 import { comboHoldSpans, placeHolds, withoutGaps, statusBounds, statusLanes, tickBounds, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import { type ReplayedCast, assembleCasts, batchedFrame, controlledFromLog, frameOf, listedWithValues, pullingPresses, replayedCasts, replayStops } from "./castassembly.ts";
 import { HIDDEN_HOLD_SHARE, type LoggedLaneEnds, type TickEvents, consumedStatuses, endFollowsTick, heldTicks, heldToLoggedEnds, loggedLaneEnds, loggedPurges, loggedTickFrames, loggedTickLandings, msOfFrame, purgedByLog, runBounds, statusInstances } from "./holdinputs.ts";
 import { type CritSource, buffDecidability, critTriggers, layerCrits, shownCrits, valueCrits } from "./replaycrits.ts";
-import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type WindowOpener, type ReplayInput, type SkippedCast, type TailKept, cutTails, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt } from "./replayrun.ts";
+import { type CastFlag, type ConsumedBuffs, type JumpDrop, MISSED_ROUNDS, type MissedCast, type WindowOpener, type EarlyCast, type ReplayInput, type SkippedCast, type TailKept, cutTails, loggedEnemyHp, makeCast, missedCasts, replayOnce, runOptionsAt, runStateAt } from "./replayrun.ts";
 import { NO_LANDING } from "./replaykeys.ts";
 import { type CheckSide, awayWindows, checkSide, killPurges, loggedNames, primaryParts } from "./enginecheck.ts";
 import { pairStatusLandings, statusValueFits } from "./statuspairs.ts";
@@ -171,6 +171,8 @@ export interface BuffReplay {
   readonly triggerTraces: readonly TriggerTrace[];
   /** With ReplayOptions.trace `stack:<owner:stack>`: each change of a kit stack's value, step by step (`zmdlogs replay --trace-stack`). */
   readonly stackTraces: readonly StackTrace[];
+  /** With ReplayOptions.trace `window:<operator>`: each change of its combo windows, their triggers and its skills' ready frames, step by step (`zmdlogs replay --windows`). */
+  readonly windowTraces: readonly WindowTrace[];
   /**
    * The slow-downs the replay's timeline applied (frames; a reset's cut and a path's ends and jumps in them), beside the
    * stop lists the log tools build for its casts (replayedCastStops): where they differ, the lists aren't the engine's.
@@ -227,6 +229,10 @@ export interface MadeCast {
   readonly keptSkipped?: readonly JumpDrop[];
   /** The combo window an opener logged inside its own slow-down opened, which it took at its press (replayrun.ts openerAhead): OPENER lines. */
   readonly openers?: readonly WindowOpener[];
+  /** Made before the replay's own cooldown had its skill ready (replayrun.ts cooldownEarly): COOLDOWN lines. */
+  readonly early?: EarlyCast;
+  /** A combo's window at its press, the state advanced to its frame (replayrun.ts makeCast's windowCount): its count, or null where it was shut (replayCast then opens one counting 1). Absent for other kinds. */
+  readonly window?: number | null;
   /** The Link stacks it used (Cast.link; absent: none): LINK lines. */
   readonly link?: number;
   /**
@@ -698,7 +704,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       // Gained at the cast and in the advance to the next one (the last one's: to its post state).
       const next = all[k + 1];
       const gained = [...linkGains(m.pre, m.post), ...(next ? linkGains(m.post, next.pre) : [])];
-      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.keptSkipped ? { keptSkipped: m.keptSkipped } : {}), ...(m.openers ? { openers: m.openers } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
+      return { cast: m.c, frame: m.f, skillId: m.skillId, index: m.index, ...(m.inferred !== undefined ? { inferred: m.inferred } : {}), ...(m.dropped ? { dropped: m.dropped } : {}), ...(m.keptSkipped ? { keptSkipped: m.keptSkipped } : {}), ...(m.openers ? { openers: m.openers } : {}), ...(m.early ? { early: m.early } : {}), ...(m.c.kind === "combo" ? { window: m.windowCount } : {}), ...(m.link > 0 ? { link: m.link } : {}), ...(gained.length ? { linkGained: gained } : {}) };
     }),
     droppedLanding(hit) {
       const i = hitIndex.get(hit);
@@ -713,6 +719,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     statusTraces: main?.statusTraces ?? [],
     triggerTraces: main?.triggerTraces ?? [],
     stackTraces: main?.stackTraces ?? [],
+    windowTraces: main?.windowTraces ?? [],
     appliedStops: main?.appliedStops ?? [],
     hiddenHolds: placedHolds,
     holdClocks,
