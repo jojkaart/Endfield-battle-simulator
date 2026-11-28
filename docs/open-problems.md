@@ -1379,6 +1379,45 @@ operators' clocks at every combo, constant or in proportion. Not pursued further
 possible:** a per-combo cause (the cut-in some combos have, the caster's layer-1 dilation), which a per-operator split
 of the `plateau-0.5` hits (that measure's variant-2/hits.txt: 9a80's moved hits are Si's, Arcane's and Rossi's, 3aa6's mostly Zhuang
 Fangyi's) would start from.
+**2026-11-28 (combo hold per episode): remeasured on today's code (development plain 84.2%), the excess is still there,
+and it is a constant per episode, not a share** (docs/journal/2026-11-28-05-a-combo-s-excess-hold-per-episode-not-a-share-the-still.md).
+`zmdlogs clocks --all --clock tick,cast,burst --breaks --by operator`: combos only, Σ residual ÷ Σ held 0.23 for the
+enemy's tick chains (0.22 in the log's Stagger, 0.24 outside), 0.40 for casts (109 rows, median 240 ms, held 395 ms),
+0.30 for bursts; an ultimate 0.00 (casts) and −0.03 (bursts); no stop 9 ms (casts). One constant per combo fits a
+little better than a share for every clock (scratch fit over the rows, |r| < 0.6 s: ticks 80 ms a combo rms 214 against
+0.161 × held rms 221; casts 164 ms rms 156 against 0.362 rms 164; bursts 122 ms rms 185 against 0.262 rms 194), and the
+casts say constant (scripts/probes/combo-hold/episodes.ts): across one combo the residual is 212, 212, 218, 285 ms at
+291, 395, 549, 615 ms held; across two pressed together (one episode, 10 casts) 363 ms median at 870 ms held, Zhuang
+Fangyi's battle skills across Liino's and Xaihi's 265, −187, 363, 79 ms. The still-possible list, decided:
+- **Ruled out: the caster's layer-1 TimeDilationAction on its targets** (`gamedata dilations combo`, `gamedata tree`):
+  6 of the 38 combo skills with a dilation have one, and 5 of them hold only the caster (Endministrator, targetSource 4) or her own spawned
+  objects (Liino, Yvonne, Tangtang, spawnedObjectType 512); only Arcane's names her target (targetSource 1, 0.25 s, about
+  4 frames held), and only "onlyExecuteWhenSourceIsGuard", a flag the data otherwise puts on camera actions (Si's combo's
+  AddDynamicCcsAction). The combos without one show the same excess; across Arcane's combos alone the enemy's statuses
+  run late as across others' (489c 55.72 s bleed +0.18 s in the Stagger, 4a64 27.30 s +0.01, c83c 44.67 s Combustion
+  +0.10 s; her high tick share, 0.68, is Typhoeus's Barrage Arrays, not her targets).
+- **Ruled out: the combo's camera or cut-in holding the teammates apart from the world's clock**: the controlled
+  operator's casts run late too (episodes.ts: 28 casts, 162 ms an episode, against 41 teammates' casts, 211 ms; the
+  controlled one from the log's controlled-only Stagger), and so do the enemy's ticks, which no camera holds.
+- **Ruled out (2026-11-26, edges.ts, rerun today): the time scale's change a few frames late at the edges**: landings
+  0–200 ms before a stop's start are on time (9–22 ms), those 0–100 ms after its end already 186 ms late.
+- **Measured again, not the default** (`measure --variant`, against the plain tree): `combo-curve` `middle` verified
+  78.5 → 76.1%, development 84.2 → 83.5%, hold-out 82.5 → 81.5%; `flat` 73.5%, 82.9%, 80.0%; `combo-operator-hold` `4f`
+  verified 77.6%, earlier pending 84.6 → 83.4% (4bfc −97, 3aa6 −40); `plateau-0.6` verified 78.2%, earlier 84.4%;
+  `stagger-holds` `combos` development 84.4%, verified 78.0% (0eef −4), hold-out unchanged. **Built, not the default:**
+  `combo-operator-hold` `4f-episode` / `5f-episode` / `6f-episode` (timeline/clock.ts slowDown: the extra frames only at a
+  slow-down that starts while none runs; tests/combo-operator-hold.test.ts): `4f-episode` verified, development and
+  hold-out unchanged, earlier pending 83.9% (4bfc −36, 3aa6 −40). The loss is the replay's landings pinned to the log
+  while the hold moves Zhuang Fangyi's strike_n stack on her clock past them (3aa6 21.26, 32.90 s: the strike's `if`
+  fails, each later strike takes the one before's value); her strike at 21.26 s, after Arclight's combo, lands where
+  `none` puts it (−10 ms), and her 3aa6 strikes across Perlica's combo are on time (+12 ms). So in the replay the
+  operators' excess changes almost nothing (landings pinned) and breaks what rides on their clocks.
+**Still possible:** a hold per episode that only some casts take (Zhuang Fangyi's empowered strikes on time in 3aa6,
+late in 4bfc and d774: 135–408 ms); a cause inside the combo's entry that the data doesn't hold (the teammate's
+spawn); a per-episode hold of the world's clock too (about 2.5 frames: the enemy's ticks across one combo 100–160 ms
+median), which the hidden holds take outside a Stagger. **Next check:** the casts' rows split by whether the cast was
+pressed before the combo's slow-down or inside it (3aa6 21.26 s), and for simulated fights `4f-episode` as their own
+reading (the replay can't judge it while its landings are pinned).
 
 ## Fight totals: what moves them (2026-11-23)
 

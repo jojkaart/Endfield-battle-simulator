@@ -148,7 +148,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   (0eef 2.3 → 1.3%, 6339's 21.60 s hit_2 cut): next several independent tails per replay (TAILKEPT `rounds`);
   interrupted casts 2026-11-27: a capped channel's end from the data (KitHit.latestFrame: Si's attack 4 to frame
   40), no tick joins a cast past it (abfd 412 → 414 plain, c3c7), its ticks in turn in the replay, keepPrevious past
-  a hitless event cast (fc63, c779): next the multi-target logs' cut landings, the held-back casts-view line.
+  a hitless event cast (fc63, c779): next the multi-target logs' cut landings, the held-back casts-view line; the
+  combo hold 2026-11-28: a constant per episode (overlapping combo stops), not a share; the layer-1 dilations and a
+  cut-in holding teammates ruled out; `combo-operator-hold` `4f-episode` registered off (the replay's pinned landings):
+  next which casts take it (Zhuang Fangyi's strikes on time in 3aa6), the reading for simulated fights.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim (2026-11-28:

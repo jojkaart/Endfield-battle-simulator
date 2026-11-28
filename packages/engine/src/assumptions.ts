@@ -175,8 +175,8 @@ export const SIMULATION_ASSUMPTIONS: readonly EngineAssumption[] = [
     default: "guess",
     readings: {
       guess: "0.01 for 40% of its duration, then a linear ramp to 1 at 93% (since batch 1; the logs' Corrosion ramps, buff ends and landings fit it)",
-      flat: "0.01 for its whole duration (measured 2026-11-26 as a patch, docs/tried/2026-11-26-combo-curve-flat.diff: verified plain 78.0 → 73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%)",
-      middle: "0.01 to 70% of its duration, then a linear ramp to 1 (the same diff: verified 75.6%, development 68.6%, hold-out 77.8%)",
+      flat: "0.01 for its whole duration (measured 2026-11-26 as a patch, docs/tried/2026-11-26-combo-curve-flat.diff: verified plain 78.0 → 73.0%, development 69.0 → 68.0%, hold-out 79.0 → 76.7%; 2026-11-28 code: verified 78.5 → 73.5%, development 84.2 → 82.9%, hold-out 82.5 → 80.0%)",
+      middle: "0.01 to 70% of its duration, then a linear ramp to 1 (the same diff: verified 75.6%, development 68.6%, hold-out 77.8%; 2026-11-28 code: verified 78.5 → 76.1%, development 84.2 → 83.5%, hold-out 82.5 → 81.5%)",
     },
   },
   {
@@ -186,8 +186,11 @@ export const SIMULATION_ASSUMPTIONS: readonly EngineAssumption[] = [
     readings: {
       none: "as its scales say (the engine until 2026-11-26)",
       "3f": "3 frames more on every operator it holds at all",
-      "4f": "4 frames more (verified 77.1%, development 69.0%, hold-out 80.5%, earlier 66.4%: 9a80 +4, 9c0b +3 and c6d8 +13 plain against 4bfc −92 and 3aa6 −33)",
+      "4f": "4 frames more (verified 77.1%, development 69.0%, hold-out 80.5%, earlier 66.4%: 9a80 +4, 9c0b +3 and c6d8 +13 plain against 4bfc −92 and 3aa6 −33; 2026-11-28 code: verified 78.5 → 77.6%, earlier pending 84.6 → 83.4%, 4bfc −97, 3aa6 −40)",
       "6f": "6 frames more (verified 76.4%, development 68.9%, hold-out 80.4%, earlier 66.3%)",
+      "4f-episode": "4 frames more once per episode, only at a slow-down that starts while none runs, so combos pressed together hold as one (2026-11-28: earlier pending 84.6 → 83.9%, the other rows unchanged)",
+      "5f-episode": "the same, 5 frames (earlier pending 83.4%)",
+      "6f-episode": "the same, 6 frames (earlier pending 83.4%)",
       "plateau-0.6": "the operators held by their own curve, 0.01 to 60% of the combo's slow-down, then a linear ramp to 1 at 93%",
       "plateau-0.7": "the same to 70% (about 4 frames more on a 24-frame combo)",
       "plateau-0.5": "the same to 50% (about 1.2 frames more on a 24-frame combo)",

@@ -381,6 +381,15 @@ first half, not after its end nor before its start (scripts/probes/combo-hold/ed
   earlier pending 67.3 → 66.4%
 - `plateau-0.6`: (the world keeps combo-curve's: 0.01 to 40%); about 2.4 frames more on a 24-frame combo, in
   proportion to its length
+- `4f-episode`: (2026-11-28) the frames once per episode, at a slow-down that starts while none runs
+  (scripts/probes/combo-hold/episodes.ts: a cast across one combo is 212–285 ms late whatever its hold, 291–615 ms;
+  across two pressed together about as late; `5f-episode`, `6f-episode` the same with 5 and 6 frames, earlier pending
+  83.4% each). Against `none`: verified, development and
+  hold-out plain unchanged, earlier pending 84.6 → 83.9% (4bfc −36 against `4f`'s −97; 3aa6 −40). The loss: the
+  replay's landings are pinned to the log, and the hold moves what of a cast isn't pinned, Zhuang Fangyi's strike_n
+  stack on her clock (3aa6 21.26 and 32.90 s: the strike's `if` fails, and every later strike takes the one before's
+  value), while her strike at 21.26 s after Arclight's combo lands where `none` puts it (−10 ms): not every
+  operator's cast is held more.
 
 ## unlogged-tails
 
