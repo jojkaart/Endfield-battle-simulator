@@ -78,3 +78,21 @@ describe("a slot press whose landings fall where the enemy is away (unseen)", ()
     expect(final).toBeDefined();
   });
 });
+
+describe("a cast's slots end with its path (pathEnd)", () => {
+  // de6a 132.20 s: Pogranichnik's combo (no logged events in de6a), its three slashes at 132.20, 132.77 and 133.66 s,
+  // were joined to the 108.61 s combo: its path-0 slots ran on into the jumped paths' frames 223, 237 and 261 (the
+  // combo jumps at frame 0 to 200, 400 or 600 by its count, each path ended by an InterruptCurSkillAction).
+  it("places those slashes as a combo of their own, on its first three slots, and the replay lands them", () => {
+    const fx = fixture("de6a");
+    const P = "chr_0029_pograni";
+    const p = placeHits(data, fx);
+    const slashes = [...p.hits].filter(([h]) => h.operator === P && h.event === `${P}_combo_skill` && h.t >= 132_000 && h.t < 134_000);
+    expect(slashes.length).toBe(3);
+    expect(new Set(slashes.map(([, x]) => x.cast)).size).toBe(1);
+    expect(Math.round((slashes[0] as [unknown, { cast: { start: number } }])[1].cast.start / 100)).toBe(1314);
+    expect(slashes.map(([, x]) => x.index)).toEqual([0, 1, 2]);
+    const { replay } = logBuffReplay(data, fx);
+    expect(replay.hits.filter((h) => h.operator === P && h.skillId === `${P}_combo_skill` && h.frame >= frameOf(132_000) && h.frame <= frameOf(134_000)).length).toBe(3);
+  });
+});

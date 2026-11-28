@@ -232,6 +232,25 @@ window gains 3 frames of the 15 the log shows (not measured).
   (buff_chr_0029_pograni_ultimate_skill_finall_rush) spawns the four entities at its frames 0–3 with a 1 s global
   ComboSkill slow-down that ignores them. Still possible: the four Shieldguards already standing (the harasses'
   entities) taking the strike sooner, or the log stamping the strike at the slow-down's clock. Not built.
+  **Round 2026-11-28 (the placement round, docs/journal/ entry of that day):** all nine logged Assaults, delay after
+  the event the replay fires it from: Pogranichnik's combo slash 0.21, 0.23, 0.25 s (c4f3 73.69, d4fb 89.82, a9d7
+  210.50) and 0.70 s (de6a 28.66); a teammate's Lift 0.25, 0.28, 0.35, 0.44 s (a9d7 26.11, de6a 117.63, d4fb 174.03,
+  7e19 28.19); his own Breach 1.04 s (c4f3 148.45). The harasses from the same kinds of event: 0.58–0.63 s after a
+  slash, about 0.6 s after a teammate's status, 1.1–1.4 s after his own Breach (d4fb, de6a): the Assault is
+  0.35–0.4 s sooner than a harass after a slash, where the data has it 16 frames later. **Ruled out:** (a) its own
+  slow-down's curve: finish4's inline curve (0.30 → 0.01 at 5% → 1) has a mean scale of 0.18 over its 0.4 s, so frame
+  25 comes at 34.9 frames, 1.16 s (`node scripts/probes/entities/harass-slowdown.ts finish4`; the
+  harass's curve gives 34.2): later, not sooner; (b) the final rush's 1 s ComboSkill slow-down as a world-wide one
+  (which would put everyone else late, not the entity early): d4fb 89.59–90.4 s, the Endministrator's attack 4 hits
+  at 89.82 and 89.94 s and Lifeng's attack 1 at 90.05 / 90.30 s are at their kit frames from casts placed before
+  89.59 s, and 7e19's Pogranichnik attack 4 steps at 28.19, 28.29, 28.40 s 0.10 s apart; the buff is on the enemy
+  (the in-aura buff's CreateBuff targetSource 4, as its spawns' bornAt), so its dilation reaches at most the enemy;
+  (c) an earlier trigger: in six of the nine no event of either kind lies 1.0–1.2 s before the Assault (the logs
+  around each: c4f3 148.45 and a9d7 210.50 have one, the Breach and Alesh's ultimate, 1.04 / 1.05 s before, close to
+  the data's 1.16 s, so those two may be the data's timing on another trigger). **Still possible:** as before; and a
+  per-event delay the data doesn't show (a slash's DMG event and a teammate's Lift fire the rush at once, his own
+  Breach later: its status event after its hit, as his harasses after a Breach come 0.5 s later than after a slash).
+  Not built: a frame from the logs alone would be a fit, not a mechanism.
 - Fixed: 99fb's bleed ticks: her ultimate's freeze of an Elite held her bleed in the replay (+93 frames at 51.03 s),
   and the log's ticks run on through it in every Elite log (99fb, 2fd9, 207f): Razor Clawmark `runsThroughFreeze` —
   docs/journal/2026-11-27-10-the-hold-at-a-stagger-break-rossi-s-bleed-through-her-freeze.md. Its diagnosis (the
@@ -389,14 +408,15 @@ cause:
   e989 86.65 / 88.70 s, Camille's Firefang Weakness kept through an away stretch: fixed (the next paragraph);
   7b54 46.70 / 47.39 s: the slugs (below). A 10% fit was mixed
   (docs/tried/2026-11-27-status-value-fit-10.diff).
-- **The placement and the cast assembly** (the replay-only agent's files, not changed here): fc63 87.87 s Typhoeus's
-  burst landed 0.48 s early, inside the 0.2 s Sign cooldown of the one before, so her 101.87 s combo has 7 Signs;
-  f879 95.10 s Laevatain's battle skill made before her 92.50 s Heat absorption (no empowered hit, −2.1%); 5082
-  45.06 s Yvonne's ultimate step made as ult_attack1_1 (five shots dropped, −1.8%); 9a80 34.94 s Si's combo final
-  paired with a slash at one batched ms (twin like −4.6% / +6.6%); 3aa6 125.65 s Zhuang Fangyi's battle-skill press
-  skipped (one Sunderblade short at 146 s, −2.7%); Pogranichnik's harasses 0.2–2 s off in five logs (fixed 2026-11-27,
-  his Assault left: above); Rossi's bleed ticks
-  in 99fb placed as a battle skill's hits ("a landing whose order the kit doesn't give").
+- **The placement and the cast assembly:** fc63 87.87 s Typhoeus's burst landed 0.48 s early, inside the 0.2 s Sign
+  cooldown of the one before, so her 101.87 s combo has 7 Signs. Fixed 2026-11-27 (above, "The placement cases the
+  one-sided rounds left"; none log-only at 2f4afbd, checked 2026-11-28): f879 95.10 s, 5082 45.06 s, 9a80 34.94 s,
+  3aa6 125.65 s, Pogranichnik's harasses (his Assault left: above), 99fb's bleed ticks. **What is log-only at
+  2f4afbd** (`zmdlogs totals --all --json`, outside the several-targets row, largest first): Arcane's INT lasers
+  (a7a7 50.01 s −2.3%, 00ae 68.82 s −1.6%; below), 8f32 38.50 s the Endministrator's crystal shatter (−1.28%: below,
+  "the placement cases of 2026-11-28"), Pogranichnik's Assaults (a9d7 210.50 −0.67%, c4f3 73.69 −0.61%, a9d7 26.11,
+  d4fb 89.82: above), de6a 132.20–133.66 s his combo's three slashes (−0.5%, fixed 2026-11-28: pathEnd), a9d7
+  275.51 s Chen's physical status, d4fb 106.13 s Chen's gear proc; the rest under 0.37% each.
 - **Arcane's INT lasers (seal_finisher_wisd; 8915, 00ae, a7a7, about −2.4% each):** started from the logged combo
   event (ticksLoggedAs); 00ae's at 66.32 s run 0.29 s longer to the second laser than frames 2 → 5 with no stop listed
   (a hold no clock places), so the replay's last two land before her ultimate's stop and the game's after it; a7a7's
@@ -4337,12 +4357,12 @@ testable by hand.
 SP each); Purrchena's block refund (+20 at a block: the log shows no block; 04d4 and 99fb short of nothing now);
 multi-target Final Strikes giving SP per target (the several-targets logs f574, 9c6e, 7b54, 6339 are short: unread
 in the data, which grants a Final Strike's `atb` by no ObtainCostAction one could count); other hitless presses free
-(Si, Laevatain in db87: dubious); replay artefacts: f574 16.88 and 17.65 s, one Mi Fu Trail and Mangle (flurry at
-frames 3 and 10, mangle at 24) logged on two slugs is placed as two casts (the 16.98 s pair as both flurries, the
-17.75 s mangles as a new cast), 50 SP spent twice (a several-targets placement case, logcasts.ts, not the SP model).
+(Si, Laevatain in db87: dubious). Fixed 2026-11-28: f574 16.88 s, one Mi Fu Trail and Mangle on two slugs placed as
+two casts, 50 SP spent twice: a twin by time (logcasts.ts placeWith `byTime`, PlacedTwin `time`; f574 short 110 → 56
+SP, its one short cast now Lifeng's 32.60 s battle skill) — docs/journal/ entry of the placement round, 2026-11-28.
 
 **Next check:** test 113; then what's left under `full` (1d91 52.27 s Typhoeus, 79cc 28.70 / 31.47 s, 9c6e 51.83 /
-76.50 s, f574 after its Mi Fu cast, af7b 36.60 s) cast by cast with the replay's SP changes
+76.50 s, f574 32.60 s, af7b 36.60 s) cast by cast with the replay's SP changes
 (scripts/probes/sp/grants.ts: every grant and spend between two times; scripts/probes/sp/shortfall.ts lists the
 short casts).
 

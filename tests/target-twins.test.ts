@@ -74,7 +74,7 @@ describe("logcasts.ts placeWith: a twin by time (byTime)", () => {
   it("places f574's one Mi Fu Trail and Mangle on two slugs as one cast, its flurries' twins at their slots", () => {
     const fx = fixture("f574");
     const placement = placeHits(data, fx);
-    const hits = [...placement.hits].filter(([h, p]) => h.operator === MIFU && h.event === "chr_0031_mifu_normalskill_2" && h.t >= 16_900 && h.t < 18_000);
+    const hits = [...placement.hits].filter(([h]) => h.operator === MIFU && h.event === "chr_0031_mifu_normalskill_2" && h.t >= 16_900 && h.t < 18_000);
     // 5181 twice at 16.98 and 17.27 s (flurries, frames 3 and 10), 7325 twice at 17.75 s (the mangle, frame 24).
     expect(new Set(hits.map(([, p]) => p.cast)).size).toBe(1);
     expect(hits.map(([h, p]) => [h.t, p.index, p.twin?.rule ?? null])).toEqual([
