@@ -31,6 +31,13 @@ export function battleIdOf(arg: string): string {
   return `btl_upload_${arg.replace(/^zmdlogs-/, "")}`;
 }
 
+/** A battle's cached detail, or null (no fetch). Refuses a hold-out. */
+export function cachedRawDetail(battleId: string): unknown {
+  refuseHoldout(battleId.replace(/^btl_upload_/, ""));
+  const file = rawPath(battleId);
+  return existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as unknown) : null;
+}
+
 /** A battle's detail from the cache, else fetched once (one request to zmdlogs.com) and cached. Refuses a hold-out. */
 export async function rawDetail(battleId: string, fetch: (id: string) => Promise<unknown> = fetchDetail): Promise<{ detail: unknown; fetched: boolean }> {
   refuseHoldout(battleId.replace(/^btl_upload_/, ""));

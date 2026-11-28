@@ -53,6 +53,7 @@ import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./rec
 import { checkReactions } from "./reactioncheck.ts";
 import { REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK } from "./replayrecord.ts";
 import { replayKitBuffs, unknownFacts, type BuffReplay, type Fact, type ReplayCastFacts, type ReplayOptions } from "./buffreplay.ts";
+import { missingEnemyFacts } from "./enemyfacts.ts";
 import { atLayers, disagreementRuns, replayedHits, type DisagreementRun, type ReplayedHits } from "./replayedhits.ts";
 import type { ConsumedBuffs } from "./replayrun.ts";
 
@@ -1299,8 +1300,13 @@ export function formatEngineReport(data: GameData, r: EngineReport): string[] {
 export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonly HitVerdict[], replay?: LogBuffReplay, report?: EngineReport): string {
   const problems = verificationProblems(data, fx, verdicts);
   const facts = replay ? unknownFacts(data, fx, replay.replay.assume) : new Map<string, readonly string[]>();
+  // Round 22 (the Estella-Akekuri report point 2): a replay that stopped reads as many unrelated fallbacks after it;
+  // said first, with what the data lacks of the enemy.
+  const stop = replay?.replay.failed.find((f) => f.error.startsWith("the replay stops"));
+  const missing = stop ? missingEnemyFacts(data, fx.enemy.id) : [];
   const out: string[] = [
     `${fx.id}: ${fx.provenance.url}`,
+    ...(stop ? [`The replay stopped: ${stop.error.replace(/^the replay stops at (\d+) ms/, (_, ms: string) => `at ${(Number(ms) / 1000).toFixed(2)} s`)}. Every hit after it is read without the replay (no kit buff, no landing): fix this first.${missing.length ? ` The enemy ${fx.enemy.id} lacks in the data: ${missing.join("; ")} (efsim gamedata enemy ${fx.enemy.id}).` : ""}`] : []),
     problems.length === 0
       ? "Verified: no mismatch or unvalued hit, and every operator with a kit has a plain or assumed match."
       : `Not verified (docs/design/data.md, "What a log check verifies"): ${problems.length} reason(s), e.g.\n${problems.slice(0, 5).map((p) => `  ${p}`).join("\n")}`,

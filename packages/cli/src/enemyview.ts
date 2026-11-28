@@ -8,7 +8,7 @@
 
 import { readTable } from "@efsim/data";
 import { Attr, type GameData } from "@efsim/engine";
-import { readDevFixture } from "@efsim/logs";
+import { missingEnemyFacts, readDevFixture } from "@efsim/logs";
 import { filesNamed, whoMentions } from "./gamedata.ts";
 
 /** EnemyTemplateDisplayInfoTable's displayType, as 555me's DisplayEnemyTypeTable names it (EnemyData.rank). */
@@ -46,6 +46,9 @@ export function enemyView(data: GameData, arg: string): string {
     }
     out.push(`  resistances ${Object.entries(e.resistance).map(([k, v]) => `${k} ${v}`).join(", ")}; rank ${e.rank !== undefined ? `${e.rank} (${RANKS[e.rank] ?? "?"})` : "unknown"}; Stagger nodes ${e.staggerNodes.length ? e.staggerNodes.join(", ") : "none"}${e.superArmor ? `; super armor ${e.superArmor.initial} (Staggered ${e.superArmor.staggered})` : ""}${e.controlImmune ? "; ignores freezes" : ""}`);
   }
+  // Round 22 (the Estella-Akekuri report point 2): what kits or the engine read that the data lacks, said at once.
+  const missing = missingEnemyFacts(data, id);
+  if (missing.length) out.push(`  missing in the data: ${missing.join("; ")}`);
   if (fx && e) {
     const max = e.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
     const total = fx.hits.reduce((s, h) => s + h.value, 0);

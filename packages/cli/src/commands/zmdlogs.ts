@@ -20,6 +20,13 @@ import {
   type ClockKind,
   placementView,
   cacheRawDetail,
+  cachedRawDetail,
+  developmentUploads,
+  existingFixture,
+  isHoldout,
+  missingEnemyFacts,
+  screenDetail,
+  screenLines,
   cadenceView,
   census,
   decisionsView,
@@ -80,7 +87,7 @@ import { formatLogList, logDirs } from "../logtools.ts";
  * subcommand goes in one of the two (tests/zmdlogs-cli.test.ts checks every subcommand of the usage is in one).
  */
 export const REPLAYING = new Set(["hits", "check", "timing", "bursts", "statuses", "fit-build", "offsets", "replay", "decisions", "stops", "totals", "stagger", "differences", "groups", "assumed", "boundaries", "clock", "holds", "ramp", "clocks", "worldtime", "away", "stack", "followups"]);
-export const NOT_REPLAYING = new Set(["list", "raw", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
+export const NOT_REPLAYING = new Set(["list", "raw", "screen", "import", "refresh", "reactions", "placement", "scales", "find-scales", "casts", "instances", "census", "buffs", "lanes", "ends", "control", "cadence"]);
 
 export default command({
   name: "zmdlogs",
@@ -136,6 +143,14 @@ export default command({
                                           git-ignored cache (filled by import and refresh), else fetched once; never
                                           a hold-out
                 [--buffs <regex>] [--events <regex>]  Only buff lanes / events whose key matches
+  efsim zmdlogs screen <battle id…>       A candidate log against docs/accuracy-plan.md "Choosing logs" before an
+                                          import: parser v59+, every operator level 90 with a kit, one target, the
+                                          stage in DungeonTable, the enemy in the data and the facts it lacks (rank,
+                                          Stagger nodes, super armor), length, clear, already a fixture, its
+                                          account's count of development logs (never its name); a hold-out is
+                                          refused unread. From the raw cache; nothing written to the repository
+                [--fetch]                 Download the details the cache lacks (4 s apart; into the cache)
+                [--detail file]           One battle's already downloaded /api/battles/<id> response (then cached)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
@@ -506,6 +521,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     "event-lags": { type: "boolean", default: false },
     targets: { type: "boolean", default: false },
     controls: { type: "boolean", default: false },
+    fetch: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args } = ctx;
@@ -526,6 +542,37 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const { detail, fetched } = await rawDetail(battleId);
       if (fetched) process.stderr.write(`fetched ${battleId} once from zmdlogs.com; cached in ${rawDir()}\n`);
       return formatRaw(detail, { ...(values.buffs !== undefined ? { buffs: values.buffs } : {}), ...(values.events !== undefined ? { events: values.events } : {}) });
+    }
+    if (sub === "screen") {
+      // Round 22 (the Estella-Akekuri report point 1): docs/accuracy-plan.md "Choosing logs" as checks, before import.
+      const ids = args.slice(1);
+      if (!ids.length) throw new Error("zmdlogs screen takes battle ids (btl_upload_… or the 12-character id; --detail file for one, --fetch to download what isn't cached)");
+      if (values.detail !== undefined && ids.length !== 1) throw new Error("zmdlogs screen --detail <file> goes with one battle id");
+      const uploads = developmentUploads(rawDir());
+      const out: string[] = [];
+      let fetched = 0;
+      for (const arg of ids) {
+        const battleId = battleIdOf(arg);
+        if (isHoldout(battleId)) {
+          out.push(`${battleId}: hold-out (refused, not read)`);
+          continue;
+        }
+        let detail: unknown = values.detail !== undefined ? (JSON.parse(readFileSync(values.detail, "utf8")) as unknown) : cachedRawDetail(battleId);
+        if (detail === null && values.fetch) {
+          // The documented gap between requests (docs/accuracy-plan.md "Choosing logs": 3 s or more).
+          if (fetched++) await new Promise((r) => setTimeout(r, 4000));
+          detail = (await rawDetail(battleId)).detail;
+          process.stderr.write(`fetched ${battleId} once from zmdlogs.com; cached in ${rawDir()}\n`);
+        }
+        if (detail === null) {
+          out.push(`${battleId}: no detail (not in ${rawDir()}: --fetch downloads it, 4 s apart; --detail <file> reads one)`);
+          continue;
+        }
+        if (values.detail !== undefined) cacheRawDetail(battleId, detail);
+        out.push(...screenLines(screenDetail(data(), battleId, detail, { uploads, fixture: existingFixture(battleId) })));
+      }
+      out.push("Nothing here is written to the repository; no account is named (a count of the cached development logs it uploaded). Import a usable one with efsim zmdlogs import <battle id>.");
+      return out.join("\n");
     }
     const progress = (l: string) => process.stderr.write(l + "\n");
     // `--trace-stack owner:stack`, the owner by id or name.
@@ -825,6 +872,9 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       return checkReport(data(), fx, { logBuffs: values["log-buffs"], simulate: values.simulate, assume });
     }
     const file = await importBattle(data(), arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail, (d) => cacheRawDetail(arg, d));
-    return `wrote ${file}`;
+    // Round 22 (the Estella-Akekuri report point 2): an enemy fact the data lacks stops a replay later, far from here.
+    const enemy = (JSON.parse(readFileSync(file, "utf8")) as { enemy: { id: string } }).enemy.id;
+    const missing = missingEnemyFacts(data(), enemy);
+    return `wrote ${file}${missing.length ? `\nthe enemy ${enemy} lacks in the data: ${missing.join("; ")} (efsim gamedata enemy ${enemy})` : ""}`;
   },
 });

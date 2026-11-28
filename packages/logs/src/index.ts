@@ -53,6 +53,8 @@ export * from "./clocksview.ts";
 export * from "./replayclock.ts";
 export * from "./worldclockview.ts";
 export * from "./eventlagsview.ts";
+export * from "./screen.ts";
+export * from "./enemyfacts.ts";
 export * from "./castpairs.ts";
 export * from "./loggedas.ts";
 export * from "./snapshotentry.ts";
