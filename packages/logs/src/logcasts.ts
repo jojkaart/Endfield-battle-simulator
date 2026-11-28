@@ -782,14 +782,14 @@ export function loggedFrames(h: KitHit): number[] | null {
  * combo with no logged event, its three slashes joined to the 108.61 s combo, 23 s earlier, whose path-0 slots ran on
  * into the other paths' frames 223, 237 and 261).
  */
-export function pathEnd(timing: SkillTiming | undefined, frame: number): number {
+export function pathEnd(timing: SkillTiming | null | undefined, frame: number): number {
   const end = timing?.ends.filter((e) => e > frame).sort((a, b) => a - b)[0];
   if (end === undefined || timing?.jumps.some((j) => j.at >= frame && j.at < end && j.to > end)) return Infinity;
   return end;
 }
 
 /** The frame a cast's path starts at (the latest jump destination at or before its landing's frame; 0 on the main path). */
-function pathStart(timing: SkillTiming | undefined, frame: number): number {
+function pathStart(timing: SkillTiming | null | undefined, frame: number): number {
   return Math.max(0, ...(timing?.jumps ?? []).map((j) => j.to).filter((to) => to <= frame));
 }
 
