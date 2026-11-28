@@ -16,20 +16,20 @@ below ([review-2026-10.md](review-2026-10.md)).
   the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): rounds 1–22
-  done (round 22, 2026-11-28: the replay's clock as time stops,
-  `worldtime --holds --without / --series`, `clocks --breaks`, `casts
-  --event-lags`, the clock table in timeline.md, `zmdlogs screen` and the
-  enemy facts the data lacks, a needed tail's lost pairing, `hits
-  --targets`, `statuses --controls`, `replay --against-starts`, `measure
-  --variant-patch`, scripts/identity.ts, `zmdlogs which`); the backlog
-  ([2026-11-28-backlog-after-round-22.md](friction/2026-11-28-backlog-after-round-22.md):
-  per-break clock rows and the views' one stop list, a test per row of
-  the clock table; its accuracy list from round 21's, the four closed
-  entries dropped; open from their rounds: a freeze on a twin's other
-  target, the arrays' 0.4 s left in dbae and 00ae; declined for
-  blindness: a hold-out's change split by cast kind) joins the next round
-  once about five new reports have collected.
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1–23
+  done (round 23, 2026-11-28: a moved hit's landing in `measure --hits`
+  and `hits --against`, the replay's SP as a record (`spGained`, `replay
+  --sp`, TOPUP, the `sp short` keys), INSIDE's gate, `measure
+  --plain-from`, `clocks --fit / --json / --around break`, `gamedata
+  curve`, `totals --side`, scripts/lead-status.ts, the clock table's
+  test); the backlog
+  ([2026-11-28-backlog-after-round-23.md](friction/2026-11-28-backlog-after-round-23.md):
+  the views' one stop list, the zmdlogs CLI per subcommand; its accuracy
+  list gains a cast's slots cut to its path, a value rule on a
+  consumed-scaled multiplier's bounds, the unplaced ultimate events at
+  the assembly's start; declined for blindness: a hold-out's change split
+  by cast kind) joins the next round once about five new reports have
+  collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search
   decides its own questions: the objective across starts, rule sets,
   setups, new cues): for the owner only gear to farm (the owner's team's

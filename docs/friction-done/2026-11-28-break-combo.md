@@ -54,3 +54,17 @@ agent-a49294ec4779c9633 from main at 2f4afbd.
 - The `break-place.ts` / `press-in-hold.ts` probes and `zmdlogs worldtime --holds`, `holds --steps`: the 458b tick
   question was answerable in a few commands.
 - `node scripts/tried.ts new` for the held-back diff: header skeleton and README line in one step.
+
+## Outcome (round 23)
+
+- 1 (A skill's raw SkillData fields behind a rule are invisible from the views): done (4fe2e66): timing.ts
+  startGateWords on the INSIDE line (the option that bound: a window, the uncuttable frames with both priorities, a
+  cantCastSkill channel, or a later gate: the combo window, the cooldown, SP); `efsim kit` prints skillSpecification,
+  the interrupt priority and the channels; tests/skill-specification.test.ts. 0eef's Typhoeus combo INSIDE at 6.77 s
+  is her combo window, not her attack's frames.
+- 2 (An ultimate's hitless cast event: press or stop's end, decided in two places with two rules): done but the
+  placement's stop list (f2c0f86): castassembly.ts ultimateEventRead, the one rule, read by loggedCastStart and the
+  replay view's EVENT line; logcasts.ts unplacedCastStops reading it moves verdicts (the backlog's accuracy list).
+- 3 (cli-ab's per-hit lines need the right view, found by trial): done (8228f43): `measure --hits` already wrote
+  hits.txt (the hits whose class changed); it now adds each hit's landing move, and a measure without --hits says
+  where the moved hits are.

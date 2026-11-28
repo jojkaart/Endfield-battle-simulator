@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-28: Improvement round 23: why a change moves a log, the replay's SP as a record, measuring without re-measuring](2026-11-28-09-improvement-round-23-why-a-change-moves-a-log-the-replay-s.md)
 - [2026-11-28: Breaks inside a combo's slow-down; Akekuri's ultimate as an ultimate](2026-11-28-08-breaks-inside-a-combo-s-slow-down-akekuri-s-ultimate-as-an.md)
 - [2026-11-28: Placement cases: a twin by time, a cast's path end, the Decisive Assault ruled out](2026-11-28-07-placement-cases-a-twin-by-time-a-cast-s-path-end-the.md)
 - [2026-11-28: Team SP: Purrchena's counter presses, the SP readings as assumptions](2026-11-28-06-team-sp-purrchena-s-counter-presses-the-sp-readings-as.md)

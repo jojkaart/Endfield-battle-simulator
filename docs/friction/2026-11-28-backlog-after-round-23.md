@@ -1,54 +1,55 @@
-# Backlog after improvement round 22 (2026-11-28)
+# Backlog after improvement round 23 (2026-11-28)
 
-Task: the points of the reports round 22 read (docs/friction-done/2026-11-28-round-22.md lists them) that round 22
-didn't do. Round 21's backlog carried no point; its parked point 1 (a hold that isn't a cast's stop has no clock view)
-came back with the barrage-array report point 1, and round 22 did its `clocks` part (`--breaks`) and the world-time
-views with the timeline's applied stops and the hidden holds (`worldtime --holds --without`, `--series`): its per-break
-rows and the views' one list are point 1 below. Point 2 is the rest of the barrage-array report point 2. The accuracy
-list's four entries round 21 added were closed by their branches (2026-11-28) and are dropped; this round added none.
-Round 22 had every file to itself.
+Task: the points of the reports round 23 read (docs/friction-done/2026-11-28-round-23.md lists them) that round 23
+didn't do. Round 22's backlog point 1 is half done (`zmdlogs clocks --around break`): the views' own stop list is
+point 1 below; its point 2 (a test per row of the clock table) is closed (tests/clock-table.test.ts). Point 2 is round
+22's own report point 2 (the zmdlogs CLI as one module), not built this round. The accuracy list gains three entries,
+the parts of this round's points that move verdicts: a cast's slots cut to its path, a value rule on a consumed-scaled
+hit's multiplier bounds, the placement's unplaced ultimate events on the cast assembly's reading. Round 23 had every
+file to itself.
 
 A branch that closes a point adds a line under it: "Closed by <branch>, <commit>: how".
 
-## 1. A hold that isn't a cast's stop: per-break rows and the views' one list
+## 1. A hold that isn't a cast's stop: the views' one list
 
 - **What happened:** the break-hold round's `zmdlogs clocks --rows` marked rows with a break inside, but their
   residuals mix the placement's mistakes (Si's combo +2.5 s) with the hold, and the tick chains are cut at the
   Stagger's edges, so no tick row spans a break; the agent wrote scripts/probes/stagger/break-hold.ts for per-break
-  rows (each cast's landings after the break against its last before, the landings at the break's own ms, the tick
-  pair spanning it). Round 22 gave `zmdlogs clocks --breaks` (holds.ts breakStops beside the list: 5082's Yvonne at
-  44.43 s +0.5 → +0.05 s) and `zmdlogs worldtime --holds --without` / `--series` on the timeline's applied slow-downs
-  (packages/logs replayclock.ts: the breaks' holds and the hidden holds out); the per-break rows and the views' own
-  stop list (replayTimeStops: `lanes --world`, `cadence`, `worldtime`'s first line) still lack the engine's non-cast
-  stops.
+  rows. Round 22 gave `zmdlogs clocks --breaks` and `zmdlogs worldtime --holds --without` / `--series` on the
+  timeline's applied slow-downs (packages/logs replayclock.ts); round 23 gave the per-break rows (`zmdlogs clocks
+  --around break`: clocksview.ts breakPairs, 5082's Yvonne at 44.43 s +323 → −111 ms with the engine's holds). The
+  views' own stop list (replayTimeStops: `lanes --world`, `cadence`, `worldtime`'s first line) still lacks the
+  engine's non-cast stops.
 - **Cause:** the views' world time is the replay's casts' stops only (castassembly.ts replayStops); engine holds that
   come from events (a break, a dodge, a freeze) have no place in that list, and the list also feeds the placement.
-- **Suggestion:** a `--around break` mode for `zmdlogs clocks` (the probe's rows: per event, each clock's pair
-  spanning it, no Stagger cut), and replayStops' callers in the views taking replayclock.ts's applied stops (or an
-  `events` list of non-cast stops, holds.ts breakStops) where they have a replay, the placement's list left as it is.
-- **Needs:** packages/logs/src/clocksview.ts, packages/logs/src/query.ts, packages/logs/src/replayclock.ts,
-  tests/clocksview.test.ts. A view, but replayStops also feeds the placement: check `node scripts/cli-ab.ts <base>
-  --placement` (the list's use there must stay as it is) and `node scripts/identity.ts --base <base>`.
+- **Suggestion:** replayStops' callers in the views taking replayclock.ts's applied stops (or an `events` list of
+  non-cast stops, holds.ts breakStops) where they have a replay, the placement's list left as it is.
+- **Needs:** packages/logs/src/query.ts, packages/logs/src/replayclock.ts, packages/logs/src/views.ts (the views
+  reading replayTimeStops), tests/query.test.ts. A view, but replayStops also feeds the placement: check `node
+  scripts/cli-ab.ts <base> --placement` (the list's use there must stay as it is) and `node scripts/identity.ts
+  --base <base>`.
 - **Why it helps:** the next event-borne hold (a Lift, a Knock Down, a perfect dodge) is a view away, and a fixed hold
   stops showing as lateness.
 - **From:** docs/friction-done/2026-11-27-break-hold.md point 2; backlog after round 19, point 1; backlog after round
-  20, point 1 (parked by round 21).
+  20, point 1 (parked by round 21); backlog after round 22, point 1.
 
-## 2. Which clock each hold holds: a test per row
+## 2. One CLI module for thirty subcommands
 
-- **What happened:** round 22 wrote the table (docs/design/timeline.md "Which clock each hold holds": the world's,
-  the enemy's, the debuffs on it, an operator's, a `world` hit with a launch, an Arts Burst's delay, cooldowns and SP,
-  against her own combo slow-down, her own ultimate stop, a teammate's stop, a hidden hold, a freeze, a Stagger-break
-  hold) from clock.ts, schedule.ts and casting.ts; tests/world-from-launch.test.ts and tests/world-clock-hits.test.ts
-  pin the `world` rows only.
-- **Cause:** each cell rests on one code path (slowDown's `lost(null)` and `lost(op)`, holdWorld, breakHold, the
-  freeze's shiftEnemy), tested where a kit needed it, not as a table.
-- **Suggestion:** tests/clock-table.test.ts: one synthetic scenario per row (a scheduled item on the clock, each hold
-  applied at a frame before it), asserting held or not as the table says; the table cites the file.
-- **Needs:** tests/clock-table.test.ts (new), tests/helpers/synthetic.ts, docs/design/timeline.md.
-- **Why it helps:** a change to a clock's rule fails a named cell, and the table can't drift from the engine.
-- **From:** 2026-11-28-barrage-array-clock.md point 2 (a test per row).
-
+- **What happened:** every view of round 22 (and round 23's `replay --sp`, `clocks --fit / --json / --around`,
+  `totals --side`) meant three edits in packages/cli/src/commands/zmdlogs.ts: the usage string, the shared options
+  object (one namespace: `--side` already meant enemy|team in `ends` and now means log|replay in `totals`) and a
+  branch in one `run` function of about 900 lines.
+- **Cause:** the CLI's one-module-per-command rule stops at `zmdlogs`, which holds every log view; command.ts parses
+  one options object per command, so subcommands share it.
+- **Suggestion:** a `subcommands` field on command.ts's Command (each with its usage lines, options and run), cli.ts
+  picking the subcommand by the second positional and parsing with the global, the command's and the subcommand's
+  options; packages/cli/src/commands/zmdlogs/ with one module per subcommand; REPLAYING / NOT_REPLAYING from a field
+  of each; `zmdlogs which` reading the per-module usage. A move: the usage text and every subcommand's output the
+  same (tests/zmdlogs-cli.test.ts, `cli-ab.ts HEAD -- zmdlogs …` on a few views).
+- **Needs:** packages/cli/src/command.ts, packages/cli/src/cli.ts, packages/cli/src/commands/zmdlogs.ts (split),
+  packages/cli/src/which.ts, tests/zmdlogs-cli.test.ts.
+- **Why it helps:** a new view is one new file; options can't collide across subcommands silently.
+- **From:** docs/friction-done/2026-11-28-round-22-friction.md point 2.
 
 ## Parked
 
@@ -255,3 +256,21 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   or nothing; a `shielded` span kind (landings at 0 damage, no infliction or status, on-hit kit buffs applied), read
   only by the replay. Measured as `targets-gaps-away`: one plain and 2.3 points of 6339's total either way; Hard 33
   only so far. Moves verdicts: measure, snapshots:update.
+- **A cast's slots cut to its path** (docs/friction-done/2026-11-28-placement-cases.md point 2, the part that moves
+  verdicts): round 23 tags each skill slot with its path (logcasts.ts Slot.path: pathStart, pathEnd) and the
+  placement's cast end reads the first slot's tag, the same numbers; a cast's slots kept only on its first landing's
+  path (and the twin and value rules reading `path` instead of a rule per case: Rossi's combo 3, Purrchena's shielded
+  combo, Laevatain's battle skill) moves every jump-pathed cast's later slots. Measure: `--split hunks` beside de6a's
+  Pogranichnik combo (fixed by pathEnd, the check that the tag path gives the same).
+- **A value rule on a consumed-scaled multiplier's bounds** (docs/friction-done/2026-11-28-placement-cases.md point 3,
+  the rule): logcasts.ts multiplierBounds (round 23) gives a hit whose value reads `consumed` its least and greatest
+  multiplier (consumed 0 and 4); a value rule that rules out a slot whose least multiplier is above the hit's value
+  (8f32 36.11 s: Rossi's combo 2 hit_2, 12,877, placed as a combo 3 perfect strike, its Lift 2.4 s early, the
+  Endministrator's 38.50 s shatter lost, −1.28% of the fight; the rule written and dropped then had no bound) moves
+  verdicts: measure, snapshots:update.
+- **The placement's unplaced ultimate events at the cast assembly's start** (docs/friction-done/2026-11-28-break-combo.md
+  point 2, the rest): castassembly.ts ultimateEventRead (round 23) is the one reading of a hitless ultimate's event
+  (press or stop's end) that loggedCastStart and the replay view's EVENT line read; logcasts.ts unplacedCastStops
+  still starts each such event's stop at the event (458b 84.37 s: Akekuri's ultimate made at 82.53 s, its stop in the
+  placement's list from 84.37 s). Reading ultimateEventRead there moves the placement's stop lists: measure,
+  `cli-ab.ts <base> --placement`.
