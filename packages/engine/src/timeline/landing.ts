@@ -346,7 +346,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   const spEvents: BattleEvent[] = [];
   if (hit.sp > 0 && !late) {
     const spKind = hit.spKind ?? "returned";
-    st = gainSp(st, hit.sp, hit.frame, spKind);
+    st = gainSp(st, hit.sp, hit.frame, spKind, { operator: hit.operator, source: `hit ${hit.skillId} ${hit.hitId}` });
     spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount: hit.sp, kind, natural: spKind === "natural", ...(hit.spSource !== undefined ? { sourceType: hit.spSource } : {}) });
   }
   const build = ctx.builds.get(hit.operator) as Build;
@@ -465,7 +465,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     if (kitHit.sp === undefined || late) return;
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
     const grant = spGrantOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
-    st = gainSp(st, amount, hit.frame, grant.kind);
+    st = gainSp(st, amount, hit.frame, grant.kind, { operator: hit.operator, source: `hit ${hit.skillId} ${hit.hitId}` });
     if (amount > 0) into.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: grant.kind === "natural", ...(grant.sourceType !== undefined ? { sourceType: grant.sourceType } : {}) });
   };
   // SP granted before the damage (KitHit.spBeforeDamage): its triggers act before it too (a buff they apply counts for the hit).

@@ -130,7 +130,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { Worker } from "node:worker_threads";
-import { allLogs, compare, direction, GROUPS, groupOf, holdoutEntry, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
+import { allLogs, compare, direction, GROUPS, groupOf, holdoutEntry, isHoldoutKey, operatorNames, pairKey, readSplit, render, snapshotsAt, SP_SHORT, splitPending, withSeveralTargets, type Entries, type Entry, type Snapshots, type Split } from "./accuracy.ts";
 import { atCommit, removeAtCommit, snapshotCommit } from "./at-commit.ts";
 import { threwNote } from "./code-errors.ts";
 import type { HitRow, HoldUnit, MeasureAnswer, MeasureJob, NegativeCount, PerHit, ShareKind, Shares } from "./measure-worker.ts";
@@ -143,6 +143,8 @@ import { landingMoveCounts, landingMoves } from "../packages/logs/src/landingmov
 import { formatSnapshot } from "../tests/snapshot.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+/** An entry's totals record (packages/logs SNAPSHOT_TOTALS_KEY). */
+const TOTALS_KEY = "totals";
 const VERIFIED = "log-verdicts.json";
 const PENDING = "log-verdicts-pending.json";
 const HOLDOUT = "log-verdicts-holdout.json";
@@ -634,6 +636,7 @@ async function main(argv: string[]): Promise<number> {
       ...(ownLines ? [`Variant ${vi + 1}'s own hits, against the plain tree:`, ...ownLines.summary.map((l) => `  ${l}`)] : []),
       ...sharesLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
       ...kindLines(sharesBy.get(`${tree}#${vi}`) ?? new Map(), after.split, baseTree ? sharesBy.get(baseTree) : undefined, baseTree ? `base ${values.base}` : undefined),
+      ...spShortLines((plain ?? before) as Snapshots, after, keys, after.split),
       ...holdDecisionLines,
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
@@ -696,6 +699,33 @@ export function sharesLines(after: ReadonlyMap<string, Shares>, split: Split, be
     const b = before ? agg(before, g) : undefined;
     const f = (k: "error" | "matched" | "replayOnly" | "logOnly") => `${b && b.n ? `${b[k].toFixed(1)} → ` : ""}${a[k].toFixed(1)}%`;
     out.push(`  ${g}: ${a.n} fight(s), |error| ${f("error")}, |matched| ${f("matched")}, replay-only ${f("replayOnly")}, log-only ${f("logOnly")}, one-sided ${b && b.n ? `${b.oneSided} → ` : ""}${a.oneSided}`);
+  }
+  return out;
+}
+
+/**
+ * The SP the replay's own team SP lacked at the logged casts (the snapshots' describing `sp short` / `sp short casts`
+ * keys: BuffReplay.spTopUps), per scoreboard group over the logs measured: logs short, casts, SP, before → after, and
+ * the development logs whose shortfall moved (round 23, the team-SP report point 1: each count was a probe replaying
+ * every log). The hold-outs as their group's sums only. Nothing when neither side has the keys.
+ */
+export function spShortLines(before: Snapshots, after: Snapshots, keys: readonly string[], split: Split): string[] {
+  const of = (s: Snapshots, k: string) => (k.includes("/") ? s.pending[k] : s.verified[k])?.[TOTALS_KEY];
+  const has = (s: Snapshots) => keys.some((k) => of(s, k)?.[SP_SHORT.sp] !== undefined);
+  if (!has(before) && !has(after)) return [];
+  const sum = (s: Snapshots, ks: readonly string[]) => {
+    const xs = ks.map((k) => of(s, k)).filter((t) => t?.[SP_SHORT.sp] !== undefined && t?.[SP_SHORT.sp] !== null);
+    return { logs: xs.length, casts: xs.reduce((a, t) => a + Number(t?.[SP_SHORT.casts] ?? 0), 0), sp: xs.reduce((a, t) => a + Number(t?.[SP_SHORT.sp] ?? 0), 0) };
+  };
+  const words = (x: ReturnType<typeof sum>) => `${x.logs} log(s), ${x.casts} cast(s), ${x.sp} SP`;
+  const out = [`Team SP the replay lacked at logged casts (the snapshots' sp short keys; zmdlogs replay <fixture>'s TOPUP lines), before → after:`];
+  for (const g of GROUPS) {
+    const ks = keys.filter((k) => groupOf(k, split) === g);
+    if (!ks.length) continue;
+    const [b, a] = [sum(before, ks), sum(after, ks)];
+    const moved = g === "holdout" ? [] : ks.filter((k) => !isHoldoutKey(k, split) && of(before, k)?.[SP_SHORT.sp] !== of(after, k)?.[SP_SHORT.sp]);
+    const names = moved.slice(0, 8).map((k) => `${basename(k).replace(/^zmdlogs-|\.json$/g, "").slice(0, 4)} ${of(before, k)?.[SP_SHORT.sp] ?? 0} → ${of(after, k)?.[SP_SHORT.sp] ?? 0}`);
+    out.push(`  ${g}: ${words(b)} → ${words(a)}${names.length ? `; moved: ${names.join(", ")}${moved.length > names.length ? `, … ${moved.length - names.length} more` : ""}` : ""}`);
   }
   return out;
 }

@@ -66,6 +66,11 @@ const PRINTERS: Record<string, (c: { before: Snapshots; after: Snapshots }) => u
   },
   sharesLines: (c) => measure.sharesLines(shares(c.after), split, shares(c.before)),
   kindLines: (c) => measure.kindLines(shares(c.after), split, shares(c.before)),
+  // Round 23: the SP shortfall's keys, each log short by its plain count (the hold-out's moves with it).
+  spShortLines: (c) => {
+    const sp = (s: Snapshots) => snap(Object.fromEntries(Object.entries(s.pending).map(([k, x]) => [k, { ...x, totals: { ...x["totals"], "sp short": x["chr_0001_x"]?.["plain"] ?? 0, "sp short casts": 1 } }])));
+    return measure.spShortLines(sp(c.before), sp(c.after), [DK, OK, HK], split);
+  },
   overlay: (c) => accuracy.compare(c.before, measure.overlay(c.before, new Map(Object.entries(c.after.pending)))),
 };
 

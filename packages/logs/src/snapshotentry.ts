@@ -100,6 +100,20 @@ export const STAGE_KEY = "stage";
  */
 export const SEVERAL_TARGETS_KEY = "several targets";
 
+/**
+ * The totals keys of the SP the replay's own team SP lacked at the logged casts (BuffReplay.spTopUps: drivers.ts
+ * replayCast raises SP to the cost silently), whole SP and casts, present only where any is short (round 23, the team-SP
+ * report point 1: the shortfall showed only through a probe replaying every log, 3–40 min a count). They describe, never
+ * a verdict (scripts/accuracy.ts isDescribingKey); measure's summary sums them per group, the hold-outs as one sum.
+ */
+export const SP_SHORT_KEYS = { sp: "sp short", casts: "sp short casts" } as const;
+
+/** A replay's SP shortfall as the totals' SP_SHORT_KEYS (none where no cast was short by more than half an SP). */
+export function spShortKeys(topUps: readonly { readonly sp: number }[]): Record<string, number> {
+  const sp = topUps.reduce((a, x) => a + x.sp, 0);
+  return sp > 0.5 ? { [SP_SHORT_KEYS.sp]: Math.round(sp), [SP_SHORT_KEYS.casts]: topUps.length } : {};
+}
+
 /** Per operator, its hits that matched only as their event's other kit hit (otherHitKey), the operators with none left out. */
 export function otherKitHitCounts(verdicts: readonly HitVerdict[]): Record<string, number> {
   const out: Record<string, number> = {};
@@ -146,6 +160,6 @@ export function snapshotEntry(raw: GameData, fx: LogFixture, opts: Pick<ReplayOp
       ];
     }),
   );
-  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares, ...own, ...otherHits, ...(stageFight(fx) !== null ? { [STAGE_KEY]: 1 } : {}), ...(fx.severalTargets ? { [SEVERAL_TARGETS_KEY]: 1 } : {}) };
+  const totals = { ...report.errors, [SHARE_KEYS.matched]: r1(shares.matched), [SHARE_KEYS.replayOnly]: r1(shares.replayOnly), [SHARE_KEYS.logOnly]: r1(shares.logOnly), ...operatorShares, ...own, ...otherHits, ...(stageFight(fx) !== null ? { [STAGE_KEY]: 1 } : {}), ...(fx.severalTargets ? { [SEVERAL_TARGETS_KEY]: 1 } : {}), ...spShortKeys(replay.replay.spTopUps) };
   return { entry: { ...counts, [SNAPSHOT_TOTALS_KEY]: totals }, counts, totals, shares, oneSided: report.totals.oneSided, replay, byHit, verdicts };
 }

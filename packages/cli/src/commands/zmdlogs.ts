@@ -277,6 +277,10 @@ export default command({
                 [--stops]                 The slow-downs the replay's timeline applied (STOP), against the stop list
                                           the log tools build for its casts: where they differ, the list isn't the
                                           engine's
+                [--sp]                    The team's SP (SP lines): each grant with its operator and source (a hit,
+                                          a kit trigger, a dodge: TimelineState.spGained) and each cast's spend,
+                                          the SP after; TOPUP lines (always) the logged casts the replay's own SP
+                                          couldn't pay, by how much
                 [--assume <id>=<reading>] Under another reading of an open assumption, as check's
                 [--from s] [--to s]       Only this window; --operator: only these operators
   efsim zmdlogs decisions <fixture…|--all> --assume <id>=<reading>  The replay's decisions (SKIP, TAILCUT, FAILED,
@@ -534,6 +538,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
     controls: { type: "boolean", default: false },
     fetch: { type: "boolean", default: false },
     breaks: { type: "boolean", default: false },
+    sp: { type: "boolean", default: false },
   },
   run: async (ctx) => {
     const { values, args } = ctx;
@@ -786,7 +791,7 @@ refuse it. Their --operator takes ids or names, --from / --to seconds.
       const keyed = (xs: readonly string[]) => xs.map((x) => kitBuffKey(data(), x));
       if (sub === "casts" && values.json) return castsJson(data(), fx, { ...filter, rules: values.choices });
       if (values["against-starts"] !== undefined && (sub !== "replay" || !values["trace-trigger"].length)) throw new Error("zmdlogs replay --against-starts <regex> goes with --trace-trigger <owner:id> (the trigger whose firings make the game buff)");
-      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, ...(values["against-starts"] !== undefined ? { againstStarts: new RegExp(values["against-starts"]) } : {}), buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, againstLanes: values["against-lanes"] });
+      return sub === "casts" ? castsReport(data(), fx, { ...filter, rules: values.choices }) : replayReport(data(), fx, { ...filter, ...(values["against-starts"] !== undefined ? { againstStarts: new RegExp(values["against-starts"]) } : {}), buffs: keyed(values["kit-buff"]), trace: [...keyed(values["trace-buff"]), ...values["trace-trigger"].map((x) => `trigger:${x}`), ...values["trace-stack"].map((x) => `stack:${stackSpec(x)}`)], assume, stops: values.stops, sp: values.sp, againstLanes: values["against-lanes"] });
     }
     if (sub === "totals") {
       const top = values.top !== undefined ? { top: Number(values.top) } : {};

@@ -80,7 +80,7 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: PendingEnemyAct
   const ended = endCurrentSkill(roll.state, op, a.frame);
   // It's in the cast list as the skill "dodge" (no cast event: nothing listens to the perfect-dodge skill's cast). Its SP is
   // natural (it gives ultimate energy when spent), through gainSp as every other grant.
-  const gained = gainSp(ended.state, pd.sp, a.frame, "natural");
+  const gained = gainSp(ended.state, pd.sp, a.frame, "natural", { operator: op, source: "dodge" });
   const cast: Cast = { frame: a.frame, operator: op, skill: DODGE, spAfter: spAt(gained, a.frame), energyAfter: ended.state.energy[op] ?? 0 };
   let st: TimelineState = rebaseCooldowns(ctx, roll.state, { ...gained, acting: { ...ended.state.acting, [op]: { skill: DODGE, frame: a.frame, cast: ended.state.casts.length } }, casts: [...ended.state.casts, cast] }, a.frame);
   st = slowDown(ctx, st, op, { ...timingOf(ctx, DODGE), slowdowns: [{ from: 0, scales: pd.slowdown }] }, a.frame);

@@ -33,6 +33,7 @@ import { kindsAggregate, type KindShare } from "./onesided.ts";
 import { batchDecision, batchDisagreements, deathDecisions, decisionText, landingsOf, replayDecisions } from "./decisionsview.ts";
 import { secondsText as s, shortSkill } from "./labels.ts";
 import { triggerStartLines } from "./triggerstarts.ts";
+import { spLines, topUpLines } from "./spview.ts";
 
 /** A time window and operator filter of a view (ms; operator ids). */
 export interface ViewFilter {
@@ -297,7 +298,7 @@ export function kitKeys(data: GameData, fx: Pick<LogFixture, "team">): Set<strin
  * the kit buffs named (`owner:id`, at the owner unless `@operator` follows); under other readings of open assumptions
  * with `assume` (as `zmdlogs check --assume`).
  */
-export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly againstLanes?: boolean; readonly againstStarts?: RegExp } = {}): string {
+export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { readonly buffs?: readonly string[]; readonly trace?: readonly string[]; readonly assume?: Readonly<Record<string, string>>; readonly stops?: boolean; readonly sp?: boolean; readonly againstLanes?: boolean; readonly againstStarts?: RegExp } = {}): string {
   const { replay, placement } = logBuffReplay(data, fx, undefined, { ...(f.assume && Object.keys(f.assume).length ? { assume: f.assume } : {}), ...(f.trace?.length ? { trace: f.trace } : {}) });
   const { byLanding, missing } = landingsOf(replay, fx);
   const lines: Line[] = [];
@@ -352,13 +353,16 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   // What the replay itself did with the event's cast (BuffReplay.made, skipped, failed: away-and-presses report point 2,
   // 8915 111.23 s read as a tick while the replay had made the press from the listing): its own record, not a match.
   // A placed cast made as itself says nothing new: only its other fates are added.
+  // The cast nearest the event within ofEvent's span, not the first (round 23, the team-SP report point 2: 04d4's
+  // Purrchena events each named the cast made for the event before, read as a 3–6 s shift that wasn't there).
+  const nearest = <T>(xs: readonly T[], start: (x: T) => number, t: number): T | undefined => xs.reduce<T | undefined>((best, x) => (best === undefined || Math.abs(start(x) - t) < Math.abs(start(best) - t) ? x : best), undefined);
   const replayFate = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly fate: string }) => {
     const mine = ofEvent(e);
-    const made = replay.made.find((m) => !m.cast.missed && mine(m.cast));
+    const made = nearest(replay.made.filter((m) => !m.cast.missed && mine(m.cast)), (m) => m.cast.start, e.t);
     if (made?.inferred !== undefined) return `the replay made it at ${s(msOf(made.frame))} as ${shortSkill(made.skillId)}, a hitless press from the listing (INFER)`;
     if (made && made.skillId !== made.cast.skillId) return `the replay made it at ${s(msOf(made.frame))} as ${shortSkill(made.skillId)} (MADE)`;
     if (made) return e.fate === "placed" ? null : `the replay made it at ${s(msOf(made.frame))}`;
-    const skip = replay.skipped.find((x) => mine(x.cast));
+    const skip = nearest(replay.skipped.filter((x) => mine(x.cast)), (x) => x.cast.start, e.t);
     if (skip) return `the replay skipped it (SKIP)`;
     if (replay.failed.some((x) => mine(x.cast))) return "the replay couldn't make it (FAILED)";
     return null;
@@ -366,12 +370,12 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const tickOrCast = (e: { readonly t: number; readonly operator: string; readonly skill: string; readonly buff?: string }) => {
     const mine = ofEvent(e);
     const ef = Math.round((e.t * FPS) / 1000);
-    const inferred = replay.made.find((m) => m.inferred !== undefined && mine(m.cast));
+    const inferred = nearest(replay.made.filter((m) => m.inferred !== undefined && mine(m.cast)), (m) => m.cast.start, e.t);
     if (inferred) return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the press from the listing (hitless-presses inferred: ${inferred.inferred})`;
     // The buff's last instance that ended by the event (one the cast itself creates starts after it).
     const last = replay.kitWindows(`${e.operator}:${e.buff}`, e.operator).filter((w) => Number.isFinite(w.end) && w.end <= e.t + 100).at(-1);
     const lastText = last ? `its last instance ${s(last.start)}–${s(last.end)} ended at frame ${Math.round((last.end * FPS) / 1000)}, the event's frame ${ef}` : "no instance ended before it";
-    const skip = replay.skipped.find((x) => mine(x.cast));
+    const skip = nearest(replay.skipped.filter((x) => mine(x.cast)), (x) => x.cast.start, e.t);
     if (skip) return `a tick of ${e.buff} (KitBuff.ticksLoggedAs): ${skip.why.replace(/^a tick of a kit buff \(KitBuff\.ticksLoggedAs\)(: | )?/, "") || "read as its tick"}${/this very frame/.test(skip.why) ? ` (${lastText})` : ""}`;
     if (replay.failed.some((x) => mine(x.cast))) return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs); the replay couldn't make the cast (FAILED)`;
     return `its key is a tick of ${e.buff} (KitBuff.ticksLoggedAs), but the replay made the cast: the buff wasn't on (${lastText})`;
@@ -461,6 +465,9 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   }
   // The slow-downs the replay's timeline applied against the stop list the log tools build for its casts (replayTimeStops).
   if (f.stops) for (const l of stopLines(data, fx, replay, f)) lines.push({ t: l.t, order: 0, text: l.text });
+  // The SP a logged cast lacked (TOPUP, always) and, with --sp, each grant's source and each cast's spend (spview.ts).
+  for (const l of topUpLines(data, replay, f)) lines.push({ t: l.t, order: 1, text: l.text });
+  if (f.sp) for (const l of spLines(data, replay, f)) lines.push({ t: l.t, order: 2, text: l.text });
   for (const w of replay.staggerSpans) {
     const [a, z] = [msOf(w.start), msOf(w.end)];
     if (z >= (f.from ?? -Infinity) && a <= (f.to ?? Infinity)) lines.push({ t: a, order: 0, text: `STAGGER the replay's window ${s(a)}–${s(z)} s` });
@@ -485,7 +492,7 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   const cuts = replay.castFlags.filter((x) => x.kind === "cuts").length;
   const flagged = forced + inside ? `${forced} cast(s) FORCED against the kit's availability and ${inside} INSIDE another action's uncuttable frames: the replay's state may be wrong from each on. ` : "";
   const cutting = cuts ? `${cuts} cast(s) CUTS the running cast's pending hits (a legal interrupt). ` : "";
-  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them; [twin: …]: its logged hit the placement took for another target's landing of its slot, and the rule), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame), DEATH each target's death the replay made (its record: a logged kill, a kit's move logged after one; the target that dies where the statuses are per target)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}`;
+  const head = `${fx.id}: the replay (buffreplay.ts); times in s. ${replay.brokenAt !== null ? `It stopped at ${s(msOf(replay.brokenAt))} s. ` : ""}${flagged}${cutting}LAND its landings ([pinned]: at the logged frame its cast pinned it to, which no stop or hold moves; the others where the kit's frames and the stops put them; [twin: …]: its logged hit the placement took for another target's landing of its slot, and the rule), NOLAND logged hits without one (and the step that dropped the pinned landing), EVENT the log's cast events and what the replay made of each, SKIP the logged casts it didn't make and why, FAILED / MISSED casts it couldn't make / made without the log, INFER hitless presses and casts it made from the listing, MADE casts made as another skill than placed, PATH chance jumps the listing decided, JUMPDROP / BOTHPATHS a kit jump its landings contradicted / kept with landings in its skipped part, BATCH a batched ms landed in another order than the log's Stagger bars, TAILCUT casts it ended early (TAILKEPT: a cast with an unlogged tail a guard of the cut kept whole, and which guard), LINK the team's Link stacks gained in a cast's step and those a cast took (MADE also: two casts of one operator at one frame), DEATH each target's death the replay made (its record: a logged kill, a kit's move logged after one; the target that dies where the statuses are per target)${f.trace?.length ? ", TRACE each change of a traced kit buff's expiry (or an enemy status's, a kit trigger's firings and ready frame, a kit stack's value) and the step that made it, LANE the log's runs of a traced status" : ""}${f.stops ? ", STOP the slow-downs the timeline applied against the log tools' stop list" : ""}${replay.spTopUps.length ? ", TOPUP a logged cast the replay's own SP couldn't pay (raised to its cost)" : ""}${f.sp ? ", SP each grant's operator and source (TimelineState.spGained) and each cast's spend, the team's SP after" : ""}`;
   return [head, render(lines), ...pairs].join("\n");
 }
 
