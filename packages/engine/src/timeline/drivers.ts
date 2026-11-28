@@ -3,6 +3,7 @@
 import type { Build } from "../build.ts";
 import { evalContext } from "../damage.ts";
 import { EngineError } from "../errors.ts";
+import { engineReading } from "../assumptions.ts";
 import type { GameData } from "../model.ts";
 import type { BattleEvent, KitTrigger } from "../events.ts";
 import { evaluate } from "../expr.ts";
@@ -33,7 +34,8 @@ function initialState(ctx: TimelineContext): TimelineState {
   return {
     frame: 0,
     rng: {},
-    sp: SP.start,
+    // Engine assumption sp-start: the native settings' 200, or a full bar.
+    sp: engineReading(ctx.scenario, "sp-start") === "full" ? SP.max : SP.start,
     spReturned: 0,
     energy: Object.fromEntries(ctx.scenario.team.map((b) => {
       const v = ctx.scenario.startEnergy?.[b.operator] ?? 0;
@@ -47,6 +49,8 @@ function initialState(ctx: TimelineContext): TimelineState {
     comboWindow: {},
     comboTrigger: {},
     spPausedUntil: 0,
+    // Engine assumption sp-regen: regeneration in ticks every SP.pauseAfterSpendFrames (the interval), or continuous.
+    ...(engineReading(ctx.scenario, "sp-regen") === "ticks" ? { spTick: SP.pauseAfterSpendFrames } : {}),
     controlled,
     acting: {},
     chainNext: {},
