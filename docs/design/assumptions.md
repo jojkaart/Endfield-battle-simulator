@@ -74,6 +74,14 @@ Wulfgard's at her frame 32–33), so that case stays as it was.
   plain 236 → 230 (its Corrosion steps after Si's, Camille's and Laevatain's combos at 22.0–22.3 s: the hidden holds
   placed 0.15 s less there, the world's per-episode excess the stop list lacks), earlier a7a7 −1, 99fb's mismatch
   110 → 109, 6339 +1; one hold-out +4 plain (assumed −4)
+- `own-stop`: (2026-11-28) the event probe's "held past her own slow-down's end" column: 5 fewer of the 132 within
+  0.1 s than `own` (Typhoeus's 0eef 6.77, bdf2 11.00, fc63 9.26 s 0.2–0.5 s off, the other's slow-down running 10–16
+  frames past hers); fc63 59.03 s INSIDE again (9 frames: Arcane's combo stop placed 58.27–58.57 s, past her 58.30 s,
+  where her battle skill's press at 59.04 s needs her unheld). For it: a7a7's Wulfgard Heat burst (inflicted at 36.43 s
+  in his combo, Arcane's combo slow-down 36.57–36.87 s running past his 36.63 s): held 0.23 s it falls into his
+  ultimate's stop and lands at 39.20 s, logged at 40.87 s at Arcane's stop's end; under `own` at 37.43 s, which the log
+  doesn't show. Both cases hang on an Arcane combo's placed stop (fc63's event at 58.08 s, 0.19 s before its placed
+  start). Measured against `own`: a7a7 405 → 406 plain, nothing else moved, hold-outs unchanged
 - `lowest`: the engine until 2026-11-28; the replay's casts are placed from the log, so it moved few verdicts
 
 ## freeze-ramp

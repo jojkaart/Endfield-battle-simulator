@@ -44,6 +44,12 @@ one sd.
 way; the verdicts barely move because the replay pins its casts to the log. stackingType 2 layers stay out of the
 clocks (measured).
 
-**Left:** a combo pressed after hers ended but before her landing (three rows); the world's per-episode excess (db87
+**Found late (premerge):** tests/status-pairing-check.test.ts's a7a7 case: Wulfgard's Heat burst (inflicted at
+36.43 s in his combo) needs him held 0.23 s by Arcane's combo slow-down running past his own, so under `own` it comes
+at 37.43 s, which the log doesn't show. Registered `own-stop` (held only past her own slow-down's end, as an ultimate's
+stop spares its caster): a7a7 +1 plain, nothing else moved; fc63 59.03 s INSIDE again under it, and the events favour
+`own` by 5 of 132, so `own` stays; the test pins `lowest`, the reading its case was found under.
+
+**Left:** `own` against `own-stop` (both cases hang on an Arcane combo's placed stop); a combo pressed after hers ended but before her landing (three rows); the world's per-episode excess (db87
 22 s, the hidden holds); fc63's Typhoeus combo events 0.6–2.4 s before her placed starts (a placement question);
 11.37 s's 6 frames.

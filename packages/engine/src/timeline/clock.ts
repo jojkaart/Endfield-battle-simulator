@@ -46,7 +46,10 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   // Engine assumption combo-overlap: a combo's slow-down doesn't hold an operator whose own combo's slow-down runs as it
   // starts (combos pressed together run on their casters' own clocks).
   const combo = kind === "combo";
-  const overlap = combo && engineReading(ctx.scenario, "combo-overlap") === "own";
+  const overlapReading = combo ? engineReading(ctx.scenario, "combo-overlap") : "lowest";
+  const overlap = overlapReading === "own";
+  // `own-stop`: only the frames her own combo slow-down still covers are hers (as an ultimate's stop: ownStop).
+  const overlapStop = overlapReading === "own-stop";
   const inOwnCombo = (who: string | null, f: number) => who !== null && s.slowdowns.some((x) => x.combo && x.exempt === who && f >= x.start && f < x.start + x.scales.length);
   const own = timing.slowdowns
     .map((d) => {
@@ -78,7 +81,7 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
       let from: number | null = null;
       const scales = who !== null && d.opScales ? d.opScales : d.scales;
       scales.forEach((v, k) => {
-        const held = ownStop(who, start + k) ? 0 : Math.max(0, scaleAt(who, start + k) - v);
+        const held = ownStop(who, start + k) || (overlapStop && inOwnCombo(who, start + k)) ? 0 : Math.max(0, scaleAt(who, start + k) - v);
         if (held > 0 && from === null) from = start + k;
         sum += held;
       });

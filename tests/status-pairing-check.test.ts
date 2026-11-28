@@ -10,10 +10,10 @@ const data = loadGameData();
 const fixture = (id: string) => (devFixtures({ ids: [id] })[0] as { fx: LogFixture }).fx;
 
 /** The logged hit's pair and verdict under a status-pairing reading. */
-function pairOf(id: string, t: number, reading: string) {
+function pairOf(id: string, t: number, reading: string, assume: Record<string, string> = {}) {
   const fx = fixture(id);
   const hit = fx.hits.find((h) => h.t === t) as LogHit;
-  const replay = logBuffReplay(data, fx, { assume: { "status-pairing": reading } });
+  const replay = logBuffReplay(data, fx, { assume: { ...assume, "status-pairing": reading } });
   const l = replay.replay.statusLanding(hit);
   const verdict = checkLog(data, fx, { replay, engineHits: engineHits(data, fx, replay) }).find((v) => v.hit === hit);
   return { frame: "frame" in l ? l.frame : null, read: replay.replay.statusInputs?.(hit) ?? null, verdict: verdict?.kind === "match" ? verdict.class : verdict?.kind };
@@ -32,10 +32,14 @@ describe("status-pairing check", () => {
   });
 
   // a7a7: Wulfgard's Heat burst at 39.27 s with Liino's Medicant ×4, a kit buff the replay can't judge, which the
-  // logged burst at 40.87 s doesn't list: ×0.838; the check's reading of the pair takes the log's (none).
+  // logged burst at 40.87 s doesn't list: ×0.838; the check's reading of the pair takes the log's (none). Under
+  // combo-overlap `lowest` (the reading the case was found under): with the default `own` Arcane's combo slow-down
+  // (36.57 s) no longer holds Wulfgard's clock past his own combo's, so the burst (inflicted at 36.43 s) comes at
+  // 37.43 s, before his ultimate's stop, and nothing pairs (docs/design/assumptions.md combo-overlap `own-stop`).
   it("pairs a7a7's 40.87 s burst with the replay's 39.27 s one by the check's reading of its unjudged buffs", () => {
-    expect(pairOf("a7a7", 40865, "assignment").frame).toBeNull();
-    const now = pairOf("a7a7", 40865, "check");
+    const lowest = { "combo-overlap": "lowest" };
+    expect(pairOf("a7a7", 40865, "assignment", lowest).frame).toBeNull();
+    const now = pairOf("a7a7", 40865, "check", lowest);
     expect(now.frame).toBe(1178);
     expect(now.read).toBeNull();
     expect(now.verdict).toBe("plain");

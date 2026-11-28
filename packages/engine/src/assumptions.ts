@@ -85,6 +85,7 @@ export const SIMULATION_ASSUMPTIONS: readonly EngineAssumption[] = [
     default: "own",
     readings: {
       own: "no: she runs on her own clock through it, its whole length (the log's cast events put the first combo's start where its landing does unheld: 2026-11-28, 130 pairs; the log tools' placement already reads it so)",
+      "own-stop": "not while her own slow-down runs; its frames after hers ends hold her, as an ultimate's stop spares its own caster only while it runs",
       lowest: "yes, as any operator: the lowest scale of the slow-downs holding her counts (the engine until 2026-11-28)",
     },
   },

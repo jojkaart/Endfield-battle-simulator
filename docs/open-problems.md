@@ -1563,7 +1563,10 @@ within 0.1 s, Typhoeus's 0eef 6.77, bdf2 11.00, fc63 9.26 s 0.22–0.48 s off: P
 frames past hers hold her not at all); the lowest scale for her (above). **Relation to the per-episode excess:** the
 casters inside an episode take neither the stop nor the excess; the operators outside it are held by the union at the
 lowest scale plus the ~180 ms an episode (episodes.ts, rerun: 115 casts, 0.40 of the held time); `4f-episode` adds its
-frames only where the stop holds, so under `own` never to an episode's own casters. **Still open:** a combo pressed
+frames only where the stop holds, so under `own` never to an episode's own casters. **Still open:** `own` against `own-stop`
+(held by the other's frames past her own slow-down's end): the events favour `own` by 5 of 132, fc63 59.03 s's press
+needs her unheld, a7a7's Wulfgard burst (36.43 s) needs him held 0.23 s by Arcane's combo past his own; both hang on an
+Arcane combo's placed stop; a7a7 +1 plain under `own-stop`, nothing else moves. A combo pressed
 after hers ended but before her landing (3 rows with an event: 1a77 12.51, 8056 175.27 s unheld, f879 55.62 s held;
 Laevatain's with Wulfgard's at her frame 32–33: held as before); db87's Corrosion steps after Si's, Camille's and
 Laevatain's combos at 22.0–22.3 s now ask 0.15 s more world hold than the hidden holds place (the world's per-episode

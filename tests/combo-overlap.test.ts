@@ -34,6 +34,13 @@ describe("combo-overlap", () => {
     expect(shifts({ "combo-overlap": "lowest" }, 6).si).toBeGreaterThan(10);
   });
 
+  it("own-stop: only the frames past si's own slow-down hold her", () => {
+    const own = shifts({ "combo-overlap": "own-stop" }, 20).si;
+    expect(own).toBeGreaterThan(0);
+    expect(own).toBeLessThan(shifts({ "combo-overlap": "lowest" }, 20).si);
+    expect(shifts({ "combo-overlap": "own-stop" }, 6).si).toBeLessThan(shifts({ "combo-overlap": "lowest" }, 6).si);
+  });
+
   it("a combo pressed after si's slow-down ended holds her either way", () => {
     expect(shifts({}, (SI.slowdowns[0]?.scales.length ?? 0) + 1).si).toBe(16);
   });
