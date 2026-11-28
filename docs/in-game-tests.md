@@ -70,6 +70,7 @@ suggestions.
 | 7 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-partly-decided-by-the-logs-2026-11-18-09-s-after-his-hp-falls-below-70-what-sets-it-off-ready-if-you-fight-rhodagn-lower-priority) what sets off Rhodagn's bar snapping back | anyone, vs Rhodagn | what he does isn't logged | `100: after 70%, when he jumps to the stacks` |
 | 8 | [98](#98-food-buffs-on-the-stat-panel-the-stew-decided-by-the-logs-2026-11-18-the-milk-ready-any-operator-lower-priority) Bottled Milk's DEF on the stat panel | anyone | DEF changes no logged damage | `98: DEF 140 → 167` |
 | 9 | [111](#111-do-perfect-dodges-hold-the-teams-buffs-ready-if-you-have-si-one-zmdlogs-upload) perfect dodges during Si's Amp | Si; a ZMDLogs upload | dodges aren't logged | `111: 4 perfect dodges, uploaded; 0, uploaded` |
+| 10 | [112](#112-akekuris-ultimate-at-full-sp-do-its-flares-still-give-thermite-cutters-and-positive-feedbacks-layers-ready-if-you-have-akekuri-at-p1-higher-priority-the-owners-team) Akekuri's ultimate at full SP | Akekuri with Thermite Cutter | the log records no SP | `112: full 1 PF / 1 Thermite, empty 3 / 2` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -1497,6 +1498,12 @@ still can't be timed by hand.
 
 ### 48. Valiant's hit and skill-type bonuses (ready, if you have Estella with Valiant)
 
+**Checked against a log (2026-11-28, 8f32, the first with Estella on Valiant): not decided.** Her five Valiant hits
+(logged under the key chr_0015_lifeng_ultimate_skill) match plain with no skill-type bonus, four after a combo, one
+after her ultimate; but her build has no combo- or ultimate-only DMG stat, so they can't tell. What they do show: the
+hit after a combo doesn't get the combo cast's Yinglung's Edge (+0.2 a stack, 2–3 stacks on the combo's own hit), so
+it isn't that cast's damage.
+
 **Why:** Valiant deals an extra Physical hit (2.4 × ATK) on each Lift. A
 data flag may give it the skill type of the hit that caused it; the engine
 gives it none, so combo DMG or ultimate DMG bonuses don't apply to it.
@@ -2084,7 +2091,10 @@ pattern); the engine keeps it.
 
 ### 71. Alesh's combo on consumed Originium Crystals, and his Solidification level (ready, if you have Alesh and the Endministrator; part 2 optional)
 
-**Part 1 as good as decided by a log (2026-11-26): consumed, not run out, as the engine has.** 0c14 (the only
+**Part 1 as good as decided by a log (2026-11-26): consumed, not run out, as the engine has.** 8f32 (2026-11-28)
+agrees: six consumptions (9.2, 19.7, 38.5, 55.9, 71.5, 86.3 s), an Alesh combo 0.8–1.2 s after four of them, the
+other two inside his combo's cooldown (combos at 52.9 and 81.3 s); every crystal of the Endministrator's six combos
+was consumed, so no run-out control there either. 0c14 (then the only
 development log with both): each of the seven consumptions (buff_common_originum_frozen hits at 11.2, 58.1, 80.5,
 118.1, 132.4, 165.5, 195.6 s) is followed by an Alesh combo 0.7–3.9 s later (the 11.2 s one shown only by its
 listed buffs, made by the replay since 2026-11-26: listed-casts); the Endministrator's combo at 32.1 s, whose
@@ -3112,6 +3122,21 @@ time (12 s from when it's listed, with Si's stop out); with 4 perfect dodges
 about 2 s more (0.512 s each): the holds are dodges. 12 s both times: they
 aren't, and the holds are something else the fights do.
 **Reply, e.g.:** `111: 4 perfect dodges, uploaded; 0 dodges, uploaded`.
+
+### 112. Akekuri's ultimate at full SP: do its flares still give Thermite Cutter's and Positive Feedback's layers? (ready, if you have Akekuri at P1+; higher priority: the owner's team)
+
+**Why:** her ultimate grants SP three times (three flares, about 2, 3 and 4 s in), and every grant is an "after her
+skill recovers SP" event for Positive Feedback (P1: +10% ATK a layer), Thermite Cutter's team ATK and Frontiers.
+One log (805687f00250, 17.06 s) shows only the first flare's buffs, where the replay's SP is at its 300 cap for the
+second and third; but in 458b all three flares of another ultimate show while the replay is at the cap too, and the
+replay's SP is known to run off (open-problems "Team SP"). The log records no SP, so only the game can say whether a
+grant at full SP counts. The engine counts it.
+**How:** Akekuri with Thermite Cutter (as your team). (a) Let the SP bar fill to the top (300, no battle skills for a
+while), then cast her ultimate and watch her buff icons: how many Positive Feedback layers (the number on its icon)
+and Thermite Cutter ATK layers (at most 2) when the ultimate ends? (b) Again with the SP bar near empty (right after
+two or three battle skills). The same counts both times (3 Positive Feedback, 2 Thermite): a grant at full SP counts
+(the engine). Fewer in (a), e.g. 1: a flare that recovers nothing gives nothing.
+**Reply, e.g.:** `112: full 1 PF / 1 Thermite, empty 3 / 2`.
 
 ## Results
 

@@ -202,5 +202,9 @@ below ([review-2026-10.md](review-2026-10.md)).
   Arcane, Si, Gilberta, Liino, Estella, Laevatain, Rossi): a search score
   closer to the final damage, then searches and a report; ask the owner for
   their roster.
+- **The owner's team's logs** (2026-11-28): Estella 6 fights, Akekuri 5 (four
+  imports; a stage variant's rank, Akekuri's combo SP on its landings); next
+  in-game test 112 (her flares at full SP), the towers 21–24 fights after a
+  data pin.
 - **Standing lists** (details): log check leads, kit values from the data,
   engine, food, process.
