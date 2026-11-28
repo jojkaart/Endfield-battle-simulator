@@ -60,7 +60,9 @@ After that milestone, a `dev` branch takes over the role `main` has now.
   checks that relative doc links resolve.
 - A module split is a move: `node scripts/split-module.ts <file.ts> --to
   <new.ts>=<name>,… [--dry-run]`, then `npm run measure -- --base HEAD`
-  (no log moves).
+  (no log moves). A quicker first check of any behaviour-preserving move:
+  `node scripts/identity.ts --base HEAD` (the compiled data and every
+  log's replay record hashed at both, about 4 min, the hold-outs a count).
 
 ## Correctness
 
@@ -78,7 +80,9 @@ view or report of packages/logs touches most of the suite that way, so
 there first the test files naming the changed function, `rg -l '<name>'
 tests`, and `related` once before premerge), and `npm run
 lint:changed` (ESLint on the files changed since `main`, seconds, and the
-assumption registries' tests when a registry changed). After a
+assumption registries' tests when a registry changed, the fakeReplay tests
+and the typecheck when BuffReplay or tests/helpers/replay.ts changed).
+After a
 change to the engine's timing rules (packages/engine/src/timeline/, kit
 timing): `npm run smoke` (under 2 min: kit tests, loop searches, the
 owner's rules check, the examples) before premerge; an example that stops
@@ -114,7 +118,9 @@ measure.ts as a printer it runs or with why it prints no log.
 To try an idea, measure instead: `npm run measure [-- --with <op>]`
 (about a minute for every log, writes only `scratch/measure/`; `--at
 <ref>` / `--base <ref>` for other commits' code, `--assume <id>=<r>` for
-an open reading, `--variant <id>=<r>` (repeatable) for several in one run
+an open reading, `--variant <id>=<r>` (repeatable; `--variant-patch
+<diff>`, repeatable, for several patches on one base, one base run) for
+several in one run
 instead of chained measures (each also against the same code without it;
 `--set <file>:<CONST>=<value>` for a constant's value, also as a variant),
 `--split files|commits|hunks` for which part of a batch moved which log
@@ -150,7 +156,16 @@ value at each cast), `casts --choices` (a late join's rule, REALIGN),
 --why-kept` (per kept tail, the replay with it cut: which logged hits
 lose their landing), `hits <fixture…> --layers <owner:id>` (a layered kit
 buff: the log's count, the replay's, the value's), `statuses <fixture>
---inflictions` (a stack's arrival per target), `efsim gamedata handlers
+--inflictions` (a stack's arrival per target), `statuses --controls
+<fixture…|--all>` (each control status, and whether it froze), `hits
+<fixture…> --targets` (the check's target against the replay's),
+`worldtime <fixture> <a> <b> --holds --without <op>` and `worldtime
+<fixture> --series <event>` (world time with the hidden holds and one
+operator's stops out), `clocks --breaks`, `casts --event-lags --all`
+(each operator's event lag by skill kind: check before calling a press
+late), `replay <fixture> --trace-trigger <spec> --against-starts <buff>`
+(a trigger's firings against the log's starts of its buff); which view
+answers a question: `zmdlogs which "<question>"`; `efsim gamedata handlers
 abilityEvent <n>` (every listener of one event, ALL DISABLED where
 nothing runs),
 `hits <fixture> --same-listing <s>` (the nearest hits with the same
@@ -320,6 +335,8 @@ count only. A tool's hold-out output is aggregates only: never a
 hold-out's change split by cast, skill, operator or rule kind, hashed or
 not (round 20; the friction backlog's "Declined" section carries it).
 `efsim zmdlogs list [--with <operator>]` lists the development logs.
+Before importing a log: `efsim zmdlogs screen <battle id…> [--fetch]`
+(the "Choosing logs" checks; a hold-out refused unread, no account named).
 
 The lead: name the base commit (or branch) in a sub-agent's brief, and
 the files each parallel agent is expected to edit (`node scripts/runstate.ts
