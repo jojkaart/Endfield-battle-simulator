@@ -233,7 +233,7 @@ export function overlay(base: Snapshots, measured: ReadonlyMap<string, Entry>, s
 }
 
 /** Runs jobs on worker threads loading `tree`'s code; each answer to `done` as it comes. */
-async function pool(tree: string, jobs: readonly MeasureJob[], workers: number, done: (a: MeasureAnswer) => void, assume: Readonly<Record<string, string>> = {}): Promise<void> {
+export async function pool(tree: string, jobs: readonly MeasureJob[], workers: number, done: (a: MeasureAnswer) => void, assume: Readonly<Record<string, string>> = {}): Promise<void> {
   const queue = [...jobs];
   const url = new URL("./measure-worker.ts", import.meta.url);
   await Promise.all(
@@ -632,7 +632,7 @@ async function main(argv: string[]): Promise<number> {
       ...(await negativeLines(v.readings, label)),
       ...(vi === 0 ? untimedLine() : []),
       ...(values.patch !== undefined && values.set.length && vi === 0 ? [`The --set patch (for docs/tried/): ${values.patch}`] : []),
-      ...(variantPatches.has(vi) ? [`Variant ${vi + 1}'s --set patch (for docs/tried/): ${variantPatches.get(vi) as string}`] : []),
+      ...(variantPatches.has(vi) ? [`Variant ${vi + 1}'s patch (${v.patch !== undefined ? "its --variant-patch" : "its --set"} diff, for docs/tried/): ${variantPatches.get(vi) as string}`] : []),
     ];
     if (keys.length === logKeys(tree).length && !baseTree) {
       const same = [VERIFIED, PENDING, HOLDOUT].every((f) => readFileSync(join(dir, f), "utf8") === readTracked(tree, `tests/snapshots/${f}`));

@@ -15,7 +15,7 @@ import { codeErrors } from "./code-errors.ts";
 export interface MeasureJob {
   readonly key: string;
   /** A snapshot entry, a placement signature, or the negative control (a verified log scaled ×0.97 and ×1.03: tests/slow/negative-control.test.ts). */
-  readonly what: "entry" | "placement" | "negative";
+  readonly what: "entry" | "placement" | "negative" | "identity" | "data";
   /** With the negative control: the factors to scale by. */
   readonly factors?: readonly number[];
   /** With an entry: each hit's verdict too (measure --hits); with a placement: its casts (--changed placement). Never asked for a hold-out. */
@@ -82,6 +82,8 @@ export type MeasureAnswer =
     }
   | { readonly key: string; readonly placement: string; readonly casts?: readonly string[]; readonly seconds: number }
   | { readonly key: string; readonly negative: readonly NegativeCount[]; readonly seconds: number }
+  /** scripts/identity.ts: a hash per part of the log's replay record and placement (or of the compiled data: key "data"). */
+  | { readonly key: string; readonly identity: Readonly<Record<string, string>>; readonly seconds: number }
   | { readonly key: string; readonly error: string };
 /** A fight's TotalsShares (packages/logs enginecheck.ts), as far as measure reads them. */
 export interface Shares {
@@ -259,14 +261,49 @@ function negativeOf(fx: any, factors: readonly number[]): NegativeCount[] {
     return { factor: k, matches: kept.filter((v) => v.kind === "match").length, judged };
   });
 }
+const sha = (x: unknown) => createHash("sha1").update(JSON.stringify(x)).digest("hex");
+
+/**
+ * scripts/identity.ts (round 22, round 21's own report point 1): a move's identity check without the snapshots. Per
+ * part of the default replay's record: the placement (placeHits' casts and each hit's cast, slot and frame), the casts
+ * made, the tail cuts, the landings (frame, operator, skill, hit, ref, exact damage, target), the status record, the
+ * applied slow-downs, the hidden holds and what failed. A part the commit's code lacks hashes as "absent".
+ */
+function identityOf(fx: any): Record<string, string> {
+  const p = logs.placeHits(data, fx);
+  const { replay } = logs.logBuffReplay(data, fx, p);
+  const part = (f: () => unknown) => {
+    try {
+      const v = f();
+      return v === undefined ? "absent" : sha(v);
+    } catch (e) {
+      return `threw ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`;
+    }
+  };
+  return {
+    placement: placementOf(fx).placement,
+    made: part(() => (replay.made as any[] | undefined)?.map((m) => [m.cast?.operator, m.cast?.skillId, m.cast?.start, m.skillId ?? m.made ?? null, m.frame ?? null])),
+    cuts: part(() => (replay.tailCuts as any[] | undefined)?.map((c) => [c.cast?.operator, c.cast?.skillId, c.cast?.start, c.frame])),
+    hits: part(() => (replay.hits as any[]).map((h) => [h.frame, h.operator, h.skillId, h.hitId, h.ref ?? null, h.exact, h.target ?? null])),
+    statuses: part(() => replay.reactions),
+    stops: part(() => replay.appliedStops),
+    holds: part(() => replay.hiddenHolds?.holds),
+    failed: part(() => (replay.failed as any[] | undefined)?.map((f) => String(f.error))),
+  };
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 parentPort?.on("message", (job: MeasureJob) => {
   const start = performance.now();
+  if (job.what === "data") {
+    parentPort?.postMessage({ key: job.key, identity: { data: sha(data) }, seconds: (performance.now() - start) / 1000 });
+    return;
+  }
   try {
     const fx = logs.readLogFixture(join(job.fixtures ?? join(tree, "fixtures"), job.key));
     const seconds = () => (performance.now() - start) / 1000;
     if (job.what === "negative") parentPort?.postMessage({ key: job.key, negative: negativeOf(fx, job.factors ?? [0.97, 1.03]), seconds: seconds() });
+    else if (job.what === "identity") parentPort?.postMessage({ key: job.key, identity: identityOf(fx), seconds: seconds() });
     else parentPort?.postMessage(job.what === "entry" ? { key: job.key, ...entryOf(fx, job.hits === true), ...(untimed(fx) ? { untimed: true } : {}), seconds: seconds() } : { key: job.key, ...placementOf(fx, job.hits === true), seconds: seconds() });
   } catch (e) {
     parentPort?.postMessage({ key: job.key, error: e instanceof Error ? `${e.message}\n${e.stack ?? ""}` : String(e) });
