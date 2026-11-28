@@ -75,32 +75,6 @@
       "note": "The Stagger Node half of the COMBO TRIGGER (EnemyData poiseKnotPctList; Rhodagn: 0.5)."
     },
     {
-      "id": "combo_sp_1",
-      "on": { "event": "cast", "skills": ["chr_0019_karin_combo_skill"] },
-      "by": "self",
-      "delay": 22,
-      "awaited": true,
-      "skill": "chr_0019_karin_combo_skill",
-      "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (atb, isDynamic, set by ModifyDynamicBlackboard from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction), which the compiler can't value; the kit writes the calculation." },
-      "do": [
-        { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
-      ],
-      "note": "Combo frame 22 (if a target), before its DamageAction: sub_ratio /= rate (ModifyDynamicBlackboard op 3), atb_up = 1 + INT × sub_ratio (StoreAttributeValue primaryAttributeType 2, useFloor false), max_ratio += 1, atb ×= min(atb_up, max_ratio) (CompareFloat), ObtainCostAction costType 1 atbGainMethod 0 atbSourceType 3. Talent 1 sets sub_ratio 0.01 / 0.015, max_ratio 0.5 / 0.75, rate 10; unlearned sub_ratio and max_ratio are 0, so the factor is 1."
-    },
-    {
-      "id": "combo_sp_2",
-      "on": { "event": "cast", "skills": ["chr_0019_karin_combo_skill"] },
-      "by": "self",
-      "delay": 31,
-      "awaited": true,
-      "skill": "chr_0019_karin_combo_skill",
-      "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (atb, isDynamic, set by ModifyDynamicBlackboard from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction), which the compiler can't value; the kit writes the calculation." },
-      "do": [
-        { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
-      ],
-      "note": "Combo frame 31: the second ObtainCostAction uses the same (already scaled) atb."
-    },
-    {
       "id": "ult_sp_1",
       "on": { "event": "cast", "skills": ["chr_0019_karin_ultimate_skill"] },
       "by": "self",
@@ -238,7 +212,16 @@
       "skillId": "chr_0019_karin_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": 0, "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (ModifyDynamicBlackboard sets atb from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction, before the damage); the cast triggers combo_sp_1 and combo_sp_2 give it, and sp 0 keeps the skill's atb off its first hit." } }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "sp": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] },
+          "spBeforeDamage": true,
+          "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (atb, isDynamic, set by ModifyDynamicBlackboard from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction), which the compiler can't value; the kit writes the calculation." },
+          "note": "Each landing (frames 22 and 31, if a target) gets its ObtainCostAction in the same tick, before its DamageAction: at frame 22 sub_ratio /= rate (ModifyDynamicBlackboard op 3), atb_up = 1 + INT × sub_ratio (StoreAttributeValue primaryAttributeType 2, useFloor false), max_ratio += 1, atb ×= min(atb_up, max_ratio) (CompareFloat), ObtainCostAction costType 1 atbGainMethod 0 atbSourceType 3; frame 31's uses the same (already scaled) atb. Talent 1 sets sub_ratio 0.01 / 0.015, max_ratio 0.5 / 0.75, rate 10; unlearned sub_ratio and max_ratio are 0, so the factor is 1. On the landings, not as cast triggers 22 and 31 frames after the cast (until 2026-11-28): where the replay pins a landing at its logged frame ahead of the cast's own frame, the triggers' SP came after both hits, and with it the Frontiers DMG, Positive Feedback, Thermite Cutter's and OBJ Edge's buffs the log has on them (805687f00250 76.98 s, 1a774d7df06b 80.35 s: ×1.262 = 1.16 × the layer's ATK)."
+        }
+      ]
     },
     {
       "skillId": "chr_0019_karin_ultimate_skill",
