@@ -15,7 +15,7 @@ function repo(name: string): { root: string; git: (...a: string[]) => string; en
   const root = join(tmp, name);
   mkdirSync(join(root, "scripts"), { recursive: true });
   mkdirSync(join(root, "docs", "journal"), { recursive: true });
-  for (const f of ["journal.ts", "merge.ts"]) copyFileSync(join(ROOT, "scripts", f), join(root, "scripts", f));
+  for (const f of ["journal.ts", "merge.ts", "usage.ts"]) copyFileSync(join(ROOT, "scripts", f), join(root, "scripts", f));
   writeFileSync(join(root, "package.json"), '{ "type": "module" }\n');
   const git = (...a: string[]) => execFileSync("git", a, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   const entry = (file: string, title: string) => {
