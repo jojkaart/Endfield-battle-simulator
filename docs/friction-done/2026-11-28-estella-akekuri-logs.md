@@ -63,3 +63,20 @@ checks and build fits, and fix what they decide for the two kits (branch worktre
 - `measure --split commits` told apart the rank fix and the kit change in one run; `team-ab`'s identity check settled
   the team numbers in a minute.
 - `zmdlogs hits --json` with `counterfactuals` showed the ×1.262 combo's missing buffs directly.
+
+## Outcome (round 22)
+
+- 1 (Screening a candidate costs a hand-written script per question): done (1c02b71): `efsim zmdlogs screen <battle
+  id…> [--fetch] [--detail file]` (packages/logs screen.ts: "Choosing logs" as checks on the detail: parser, levels,
+  kits, one enemy id, the stage in DungeonTable, the enemy and its missing facts, length, clear, already a fixture,
+  its account's other cached development logs as a count; a hold-out refused unread; nothing written but the raw
+  cache). Tested on synthetic details and the cache only (no download this round): `--fetch` reuses zmdraw.ts
+  rawDetail at a 4 s gap, unexercised against the site.
+- 2 (A replay that stops on an undecidable kit condition looks like a bad log): done (1c02b71): enemyfacts.ts
+  missingEnemyFacts (no rank, Stagger nodes, super armor, name; not in the data), said by `zmdlogs import`, `efsim
+  gamedata enemy` (the enemy view; not `efsim find`), the screen, and the check's head, which opens with "The replay
+  stopped: at t s: why … fix this first" and the facts (tests/screen.test.ts: 8f32 without its rank).
+- 3 (Counting a buff's applications per cast needs its `since` values, which no view prints): done (61f5c08): `zmdlogs
+  replay <fx> --trace-trigger <spec> --against-starts <game buff re>` (triggerstarts.ts: each firing beside the
+  nearest logged since within ±400 ms, the unpaired on both sides, the SP before each firing): 8056's first Akekuri
+  ultimate shows the two extra Frontiers firings at the SP cap. scripts/probes/sp/spcap.ts stays for the all-logs tally.

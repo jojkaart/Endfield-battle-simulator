@@ -261,3 +261,9 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
 Each report's episode was a ready test: 9847's 75.44 s Liino battle skill for `decisions --why-kept`,
 abilityEvent 1 for `gamedata handlers` (Arcane's spell_vulnerable all disabled), 6339 at 19.70 s for `statuses
 --inflictions`, 0eef's Medicant for `hits --layers`, round 20's unpark of round 6's point 14 for withoutNumbers.
+
+## Outcome (round 22)
+
+- (no numbered points) Parked point 1 of round 20's backlog came back with the barrage-array report point 1: its
+  `clocks` part done (a640e94, `zmdlogs clocks --breaks`), the rest carried
+  (2026-11-28-backlog-after-round-22.md point 1). The four accuracy entries closed by their branches are dropped.

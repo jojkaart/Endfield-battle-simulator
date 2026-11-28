@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-28: Improvement round 22: clocks, screening, views that say why, a move's identity check](2026-11-28-04-improvement-round-22-clocks-screening-views-that-say-why-a.md)
 - [2026-11-28: Estella and Akekuri logs: four imports, a stage variant's rank, Akekuri's combo SP on its landings](2026-11-28-03-estella-and-akekuri-logs-four-imports-a-stage-variant-s-rank.md)
 - [2026-11-28: Typhoeus's Barrage Array on the world's clock](2026-11-28-02-typhoeus-s-barrage-array-on-the-world-s-clock.md)
 - [2026-11-28: The check's targets are the replay's, and a freeze's run-on on every target](2026-11-28-01-the-check-s-targets-are-the-replay-s-and-a-freeze-s-run-on.md)

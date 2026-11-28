@@ -61,3 +61,20 @@ the press, and model it (her kit, the entity's clock, the placement); branch wor
   which unlogged ticks moved (dbae), so the worse log was explained in two commands.
 - holds.ts already used the array's ticks as a clock (HOLD_SERIES), which made the hidden holds the answer rather than
   a new mechanism.
+
+## Outcome (round 22)
+
+- 1 (No view of a tick series' clock with every stop and the hidden holds out): done (95366e3): packages/logs
+  replayclock.ts (replayClockStops from BuffReplay.appliedStops, an operator's own left out on request; replayHolds;
+  heldWorldMs adds a hold to any stop, as holdWorld does); `zmdlogs worldtime <fx> <a> <b> --holds --without <op>`
+  (per stop source: the list and the timeline's applied slow-downs); `zmdlogs worldtime <fx> --series <re> [--period
+  ms] [--gap ms]` per tick chain (holds.ts tickChains, now the one chain rule of tickBounds and clocksview.ts too:
+  `cli-ab clocks fc63 db87 4d60` identical). fc63's 87.91–94.26 s array: world 4.29 s with every stop out, 6.36 s with
+  her own left in, 4.09 s with the holds out, against 4.00 s.
+- 2 (A clock question that needed the engine's Clock semantics read from three files): done but a test per row
+  (carried: 2026-11-28-backlog-after-round-22.md point 2): docs/design/timeline.md "Which clock each hold holds" (95366e3),
+  the cast's own slow-down after its scheduled hits, the burst sentence's own-ultimate reading (`burst-stops` `all`).
+- 3 (The brief's framing of the first tick came from comparing a press with a kit frame): done (95366e3): `zmdlogs
+  casts --event-lags <fx…|--all> [--operator] [--verbose]` (eventlagsview.ts: per operator and skill kind over the
+  plain casts, the odd ones counted by why: a teammate's stop between, the event over 1 s before the start): Typhoeus's
+  combo median +0.53 s (world +0.05), Arcane's +0.29 s; data.md's cast-event lines name it.

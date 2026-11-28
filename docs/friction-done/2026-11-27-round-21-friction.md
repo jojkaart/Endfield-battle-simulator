@@ -42,3 +42,17 @@ branch on main at 27adacf.
 - `node scripts/edit.ts` with `<<<<<<< all` and appended blocks: every multi-file edit in one go, all or nothing.
 - The reports' episodes as tests: 9847's 75.44 s tail, abilityEvent 1, 6339 at 19.70 s, 0eef's Medicant.
 - snapshots:update's "No log's verdicts moved" line as the round's single proof of behaviour preserved.
+
+## Outcome (round 22)
+
+- 1 (A behaviour-preserving move has no quick identity check for the replay and the check): done (c3ba762):
+  `node scripts/identity.ts --base <ref> [--data] [--replay] [--logs ids]`, the compiled data and kits and each log's
+  default replay record by part (placement, made, cuts, hits, statuses, stops, holds, failed) at the base and in the
+  tree as queued (worktrees of their own, the lock's short lane, about 4 min for every log); the differing parts per
+  development log, the hold-outs a count only (tests/holdout-blindness.test.ts runs identityLines). Round 22's own
+  code against c81a34f: 0 of 65 development logs, 0 of 13 hold-outs, the data the same. The CLAUDE.md line is in the
+  round summary's "For the lead".
+- 2 (A report's suggestion that already exists costs a round's reading): done (da6a20b): `efsim zmdlogs which
+  "<question>"` (packages/cli/src/which.ts: data.md's question table and the usage, an option line its own entry,
+  ranked by shared words weighted by rarity); the friction request asks it first (docs/friction/README.md);
+  data.md's table gained `hits --against` and this round's views.

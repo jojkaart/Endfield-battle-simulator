@@ -54,3 +54,17 @@ detached file" (docs/friction/2026-11-27-backlog-after-round-21.md), on branch w
 `cli-ab.ts HEAD --placement --summary` named the six split Typhoeus combos in seconds, before any measure; `tried.ts
 new` from a temporary working-tree edit made the dropped variant's diff in one step; `measure --at HEAD --patch` let
 each half be measured while I went on editing.
+
+## Outcome (round 22)
+
+- 1 (A rule's first measure moved the hold-outs, and finding why took a debug print in the code): done (78c6a5f):
+  cutTails' `needed` keeps the lost hit's landing in the run before the cut and the nearest one with its event in the
+  cut run (replayrun.ts NeededLoss, LandingNote: skill, hit, frame, pinned, its cast and whether it is the tail's own,
+  what it stands for), in TailKept.cites.lost and on the TAILKEPT line (9847 75.90 s: "paired with normal_skill volley
+  @78.40 s, unpinned, a trigger's; with the cut: no landing …").
+- 2 (A kit field the loader fills from the data had no way to be left out): done (95366e3): kitMatch.ts
+  HIT_FACTS_ARE_DATA_FIELDS (a HitFacts key not in DATA_FIELDS fails the typecheck) and tests/kit-messages.test.ts
+  holding the schema's hit `dataOverride` enum to DATA_FIELDS.
+- 3 (The measure queue: four jobs of one agent wait behind each other): done (e255bc1): `measure --variant-patch
+  <diff>` (repeatable; each a worktree of its own, one queue slot, one base run, each also against the plain tree;
+  with --set, not with --patch; copied and checked at queue time); a run of two on 0eef passed.
