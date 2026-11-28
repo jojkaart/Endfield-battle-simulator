@@ -202,7 +202,12 @@ export type StatusOn =
    * reaction at once (forced reactions apply no infliction; a reaction leaves no stacks, so not with `minStacks` above 1).
    */
   | { readonly event: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number; readonly reactions?: true }
-  | { readonly event: "burst"; readonly elements?: readonly ArtsElement[] }
+  /**
+   * An Arts Burst deals its damage; `applied`: instead when its buff is added to the enemy, one triggerInterval before
+   * (at its infliction, or a delayed burst hit's landing: the StatusEvent `burstApplied`), for a listener on the
+   * burst tag's buff being added (abilityEvent 9: Typhoeus's passitive_enemy_listennaturalspellbrust).
+   */
+  | { readonly event: "burst"; readonly elements?: readonly ArtsElement[]; readonly applied?: true }
   /** A physical status lands (Lift, Knock Down, Crush, Breach); `forced` narrows it to forced ones. */
   | { readonly event: "physicalStatus"; readonly statuses?: readonly PhysicalStatus[]; readonly forced?: boolean }
   /**
@@ -529,7 +534,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       if (on.reactions && s.kind === "reaction" && s.consumed !== null) return has(on.elements, s.element) && (on.minStacks ?? 1) <= 1;
       return s.kind === "inflicted" && has(on.elements, s.element) && s.stacks >= (on.minStacks ?? 1);
     case "burst":
-      return s.kind === "burst" && has(on.elements, s.element);
+      return (s.kind === "burst" || s.kind === "burstApplied") && (s.kind === "burstApplied") === (on.applied === true) && has(on.elements, s.element);
     case "statusConsumed":
       return s.kind === "statusConsumed" && has(on.statuses, s.status);
     case "physicalStatus":

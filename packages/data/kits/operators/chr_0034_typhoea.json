@@ -121,7 +121,8 @@
         "event": "burst",
         "elements": [
           "natural"
-        ]
+        ],
+        "applied": true
       },
       "by": "anyone",
       "reading": { "assumption": "typhoeus-sign-cooldown", "reading": "shared" },
@@ -150,7 +151,7 @@
           }
         }
       ],
-      "note": "Talent 1: \"Whenever a Nature Burst is triggered on an enemy, Typhoeus gains 1 Sign\" (passitive_enemy_listennaturalspellbrust on every Nature-burst tag, hers and teammates'; arrow_energy_buffer_1/3 have a 0.2 s adding cooldown). CharGrowthTable: \"COMBO TRIGGER: When Typhoeus reaches max Signs.\": arrow_energy creates combo_trigger_combo whenever a Sign is added at 8."
+      "note": "Talent 1: \"Whenever a Nature Burst is triggered on an enemy, Typhoeus gains 1 Sign\" (passitive_enemy_listennaturalspellbrust on every Nature-burst tag, hers and teammates'; arrow_energy_buffer_1/3 have a 0.2 s adding cooldown). CharGrowthTable: \"COMBO TRIGGER: When Typhoeus reaches max Signs.\": arrow_energy creates combo_trigger_combo whenever a Sign is added at 8. The Sign comes when the burst's buff is added to the enemy (`applied`: the listener's abilityEvent 9 with CheckBuffIdInContextAdvanced on the Nature-burst tag -1322688515, which buff_common_natural_natural_triggered and her Power Shot's buff_common_natural_natural_triggered_typhoea carry), one triggerInterval before its damage: at a teammate's infliction 1 s before the burst's hit, at her Power Shot's arrow 0.35 s before. The logs (2026-11-28): four floating combos pressed after a Power Shot's arrow and before its burst (0eef 6.77, bdf2 11.00, 1d91 8.63, d9e5 11.17 s) and one after Arcane's infliction and before its burst (af7b 68.97 s); on the damage the replay's window opened 9–26 frames after each press."
     },
     {
       "id": "talent_sign_own",
@@ -158,7 +159,8 @@
         "event": "burst",
         "elements": [
           "natural"
-        ]
+        ],
+        "applied": true
       },
       "by": "self",
       "reading": { "assumption": "typhoeus-sign-cooldown", "reading": "by-source" },
@@ -195,7 +197,8 @@
         "event": "burst",
         "elements": [
           "natural"
-        ]
+        ],
+        "applied": true
       },
       "by": "teammate",
       "reading": { "assumption": "typhoeus-sign-cooldown", "reading": "by-source" },

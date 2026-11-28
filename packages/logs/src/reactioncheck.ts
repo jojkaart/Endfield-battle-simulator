@@ -181,6 +181,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
 
 function describe(e: StatusEvent): string {
   if (e.kind === "burst") return `${e.operator}: ${e.element} burst`;
+  if (e.kind === "burstApplied") return `${e.operator}: ${e.element} burst applied`;
   if (e.kind === "reaction") return `${e.operator}: ${e.status} level ${e.level}${e.consumed ? ` (consumed ${e.consumed})` : " (forced)"}`;
   if (e.kind === "inflicted") return `${e.operator}: ${e.element} infliction (${e.stacks})`;
   if (e.kind === "consumed") return `${e.operator}: consumed ${e.stacks} ${e.element}`;

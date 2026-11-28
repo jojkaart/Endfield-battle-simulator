@@ -186,7 +186,7 @@ export function triggerSituation(ctx: TimelineContext, owner: string, st: Timeli
 export function eventSourceOf(e: BattleEvent): EventSource | undefined {
   if (e.type !== "status") return undefined;
   const s = e.event;
-  if (s.kind === "inflicted" || s.kind === "consumed" || s.kind === "burst") return { kind: "infliction", element: s.element };
+  if (s.kind === "inflicted" || s.kind === "consumed" || s.kind === "burst" || s.kind === "burstApplied") return { kind: "infliction", element: s.element };
   if (s.kind === "reaction" && s.consumed) return { kind: "infliction", element: s.consumed };
   if (s.kind === "physical") return { kind: "physical", status: s.status };
   return undefined;

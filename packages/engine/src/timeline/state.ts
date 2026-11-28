@@ -437,7 +437,7 @@ export interface LandingFacts {
  * A status event with the frame it happened at; the record of what the enemy's arts state did. `target`: with
  * TimelineScenario.landingTargets, the target it happened on (record only).
  */
-export type ReactionRecord = StatusEvent & { readonly target?: number };
+export type ReactionRecord = Exclude<StatusEvent, { readonly kind: "burstApplied" }> & { readonly target?: number };
 
 /** The whole simulation state: plain data, cheap to copy for branching. */
 export interface TimelineState {
