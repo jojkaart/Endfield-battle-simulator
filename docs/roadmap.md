@@ -157,8 +157,11 @@ below ([review-2026-10.md](review-2026-10.md)).
   next which casts take it (Zhuang Fangyi's strikes on time in 3aa6), the reading for simulated fights; placement
   cases 2026-11-28: a twin by time on several targets (f574's Mi Fu cast one, its SP short 110 → 56), a cast's slots
   end with its path (de6a's Pogranichnik combo, plain 298 → 317); the Decisive Assault's own curve, the rush's
-  slow-down and an earlier trigger ruled out, not built: next 8f32's Rossi combo 2 hit_2 taken for a combo 3 (a
-  bound for consumed-scaled multipliers, then a value rule).
+  slow-down and an earlier trigger ruled out, not built; placement paths 2026-11-28: a landing kept on its cast by
+  value against a consumed-scaled multiplier's bounds (8f32's shatter, plain 395 → 409 with the next), a cast's slots
+  cut to its first landing's path (8f32's Alesh), the second pass's stops with the ultimate merge (9c6e's array pair,
+  4bfc 870 → 876), a hitless ultimate's unplaced stop from ultimateEventRead: next 458b's 111 s layer ends (world
+  holds 88.7–111.5 s), the INSIDE flags that are a shut combo window.
 - **Engine accuracy** ([accuracy-plan.md](accuracy-plan.md); the owner,
   2026-10-26: above the search's scoring): B2 (SP stop; test 102 isn't
   testable by hand, the owner 2026-11-16) stays on its interim (2026-11-28:
