@@ -18,12 +18,12 @@
 import { effectiveKit, everyTarget, expireStatus, FPS, kitHitEntries, parseReactionEvent, targetEnemy, type EnemyStatus, type GameData, type ReactionRecord } from "@efsim/engine";
 import { NO_LANDING } from "./replaykeys.ts";
 import type { BuffReplay } from "./buffreplay.ts";
-import { batchOrder, loggedCastFates } from "./castassembly.ts";
+import { batchOrder, loggedCastFates, ultimateEventRead } from "./castassembly.ts";
 import type { HitRecord } from "./hitexport.ts";
 import { FACTOR_STRETCH, factorStretches } from "./buildoffsets.ts";
 import { clockAt, clockReaches, holdPins, loggedBreaks, statusLanes, type ClockWhy, type HoldBound, type PlacedHolds } from "./holds.ts";
 import type { AppliedStop, KitWindow, TracedStatus, TriggerTrace } from "./replayrecord.ts";
-import { CAST_SLACK_MS, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type LoggedCast, type PlacedJoin, type PlacedTwin } from "./logcasts.ts";
+import { CAST_SLACK_MS, castFrames, castTimeStops, distinctCasts, placeHits, settleCheck, ultimateOverlaps, type LoggedCast, type PlacedJoin, type PlacedTwin, type TimeStop } from "./logcasts.ts";
 import { choiceWords, inTurnWords, joinWords, lateJoin, pastChannelWords, pathsWords, twinWords } from "./placementwords.ts";
 import { buffLanes, castEventPlace, eventPlaceText, loggedStaggerSpans, replayTimeStops, tickReadNote, type BuffLane } from "./query.ts";
 import { checkLog, corrosionRamp, engineHits, engineReport, logBuffReplay } from "./logcheck.ts";
@@ -382,6 +382,12 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
   };
   // Only the first of an ultimate's repeated events (each ~3.5 s while it lasts) has a stop around it.
   const lastEvent = new Map<string, number>();
+  // The placed casts' stops, as withLoggedCasts reads them (castassembly.ts buildReplayedCasts), made once if asked.
+  let stopsMade: readonly TimeStop[] | undefined;
+  const eventStops = () => {
+    const p = placement ?? placeHits(data, fx);
+    return (stopsMade ??= castTimeStops(data, p.casts, castFrames(p)));
+  };
   for (const e of loggedCastFates(data, fx)) {
     const key = `${e.operator}|${e.skill}`;
     const prev = lastEvent.get(key);
@@ -404,7 +410,10 @@ export function replayView(data: GameData, fx: LogFixture, f: ViewFilter & { rea
                   ? `the log's record of ${e.move ?? "a kit trigger"}'s landing at a target's death (targets.ts moveEvent: the entity's cast logged under the skill): no press; the replay lands the move itself (a death step, DEATH)`
                   : "no kit skill of that id: ignored";
     const fate = e.fate === "tick" || e.fate === "move" ? null : replayFate(e);
-    lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}${fate ? `; ${fate}` : ""}${place ? `; ${eventPlaceText(place)}` : ""}` });
+    // A hitless ultimate's event: the cast assembly's own reading of press or stop's end (castassembly.ts
+    // ultimateEventRead), beside the gaps castEventPlace measures (round 23, the break-combo report point 2).
+    const read = e.fate === "cast" && !repeat && data.skills[e.skill]?.timing?.specification === 5 ? ultimateEventRead(data, e, "ultimate", fx.hits, eventStops()) : null;
+    lines.push({ t: e.t, order: 1, text: `EVENT  ${label(data, e.operator)} ${shortSkill(e.skill)} (the log's cast event): ${what}${fate ? `; ${fate}` : ""}${place ? `; ${eventPlaceText(place)}` : ""}${read ? `; the cast assembly reads it ${read.rule}` : ""}` });
   }
   for (const x of replay.traces) {
     const t = msOf(x.frame);

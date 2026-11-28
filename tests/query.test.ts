@@ -22,11 +22,13 @@ import {
   placeHits,
   selectItems,
   worldMs,
+  heldMs,
   castTimeStops,
   replayTimeStops,
   replayTimeStopsWithTicks,
   worldTimeView,
   castEventPlace,
+  ultimateEventRead,
   logBuffReplay,
   replayView,
 } from "@efsim/logs";
@@ -141,6 +143,14 @@ describe("world time in a log (zmdlogs worldtime, lanes --world)", () => {
     expect(() => worldTimeView(data, a.fx, 8000, 2000)).toThrow(/to after from/);
   });
 
+  it("heldMs is exactly 0 where no stop holds a frame, and worldMs the span less it (round 23: a rule compared worldMs exactly)", () => {
+    const stop = { start: 10, scales: [0, 0, 0.5], cast: { operator: "op", skillId: "s", kind: "combo" } } as unknown as Parameters<typeof heldMs>[2][number];
+    expect(heldMs(0, 200, [stop])).toBe(0);
+    expect(heldMs(0, 1000, [stop])).toBeCloseTo(2.5 * (1000 / 30), 9);
+    expect(worldMs(0, 1000, [stop])).toBe(1000 - heldMs(0, 1000, [stop]));
+    expect(worldMs(100, 333.3, [])).toBe(333.3 - 100);
+  });
+
   it("counts the stops of casts the replay places from their cast event (round 6: db87's Laevatain ultimate)", () => {
     const [d] = devFixtures({ ids: ["db87"] });
     const fx = (d as (typeof logs)[number]).fx;
@@ -182,6 +192,17 @@ describe("a cast event's place in its stop (round 11, placement leads report poi
     expect(p?.before).toBe(100);
     expect(p?.after).toBeCloseTo(stopMs + 200, 6);
     expect(castEventPlace(data, [], { t, skill: "no_such_skill" })).toBeNull();
+  });
+
+  it("the cast assembly's one reading of a hitless ultimate's event (round 23): 458b 84.37 s at its stop's end", () => {
+    const [d] = devFixtures({ ids: ["458b"] });
+    const fx = (d as NonNullable<typeof d>).fx;
+    const lc = (fx.casts ?? []).find((c) => c.operator === "chr_0019_karin" && Math.abs(c.t - 84370) < 50);
+    expect(lc).toBeDefined();
+    const read = ultimateEventRead(data, lc as NonNullable<typeof lc>, "ultimate", fx.hits, []);
+    expect(read.rule).toMatch(/^at its stop's end/);
+    expect(read.start).toBeLessThan((lc as NonNullable<typeof lc>).t - 1700);
+    expect(ultimateEventRead(data, lc as NonNullable<typeof lc>, "combo", fx.hits, []).start).toBe((lc as NonNullable<typeof lc>).t);
   });
 
   it("is in `zmdlogs instances` for a skill that stops the world, with the event's log time from the placed start", () => {

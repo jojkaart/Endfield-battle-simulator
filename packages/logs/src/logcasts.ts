@@ -111,11 +111,25 @@ export function castTimeStops(data: GameData, casts: readonly LoggedCast[], fram
   return withResets(distinctCasts({ hits: new Map(), casts }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind }, frames?.get(c))));
 }
 
-/** The world's time from `from` to `to` ms under time stops, in ms: each frame counts at the lowest scale of the stops then (1 without one). */
+/**
+ * The world's time from `from` to `to` ms under time stops, in ms: each frame counts at the lowest scale of the stops then (1 without one).
+ * A float of thirds of a ms: never compare it exactly (eslint.config.js forbids `=== worldMs(`); "no stop held this
+ * span" is heldMs(...) === 0.
+ */
 export function worldMs(from: number, to: number, stops: readonly TimeStop[]): number {
+  const held = heldMs(from, to, stops);
+  return held === 0 ? to - from : to - from - held;
+}
+
+/**
+ * The ms the stops hold of the span from `from` to `to` (worldMs is the span less it): exactly 0 where no stop holds a
+ * frame of it (round 23, the placement-cases report point 4: `worldMs(...) === due` failed on 233.33333333333212
+ * against 233.33333333333334 and a rule never fired).
+ */
+export function heldMs(from: number, to: number, stops: readonly TimeStop[]): number {
   const [a, b] = [Math.round((from * FPS) / 1000), Math.round((to * FPS) / 1000)];
   const relevant = stops.filter((s) => s.start < b && s.start + s.scales.length > a);
-  if (relevant.length === 0) return to - from;
+  if (relevant.length === 0) return 0;
   // Only the frames a stop covers (a cast long before a landing spans many without one), in frame order.
   const rates = new Map<number, number>();
   for (const s of relevant) {
@@ -123,7 +137,7 @@ export function worldMs(from: number, to: number, stops: readonly TimeStop[]): n
   }
   let held = 0;
   for (const f of [...rates.keys()].sort((x, y) => x - y)) held += 1 - (rates.get(f) as number);
-  return to - from - msOf(held);
+  return msOf(held);
 }
 
 /**
@@ -728,6 +742,36 @@ function nominalScales(data: GameData, build: Build, panel: StatPanel, skillId: 
     out.add(v);
   }
   return [...out];
+}
+
+/** The infliction stacks a hit's `consumed` term is bounded by (an enemy holds at most four stacks of one element). */
+const CONSUMED_BOUNDS = [0, 4] as const;
+
+/**
+ * A kit hit's least and greatest multiplier where neither nominalScale nor nominalScales gives one because its value
+ * expression reads the consumed infliction stacks (KitHit.scaleValue's `consumed`: Rossi's perfect combo, atk_scale_s +
+ * damage_add × consumed): the expression at consumed 0 and 4 and every event count of NOMINAL_EVENT_COUNTS, times its
+ * `scale` keys and factor. Null for any other hit (one with a single multiplier or a range, a reaction's, a status's,
+ * fixed damage, an expression reading anything else). Round 23 (the placement-cases report point 3): 8f32 36.11 s,
+ * Rossi's combo 2 hit_2 placed as a combo 3 perfect strike, where no value rule could tell the two apart; a value rule
+ * reading these bounds (a value below the other hit's least rules it out) moves verdicts: the backlog's accuracy list.
+ */
+export function multiplierBounds(data: GameData, build: Build, panel: StatPanel, skillId: string, h: KitHit): readonly [number, number] | null {
+  if (h.scaleValue === undefined || h.reaction || h.status || h.fixedDamage !== undefined || h.extraScale?.length) return null;
+  if (nominalScales(data, build, panel, skillId, h) !== null) return null;
+  const keys = h.scale.reduce((a, key) => a * skillValue(data, panel, build, skillId, key), h.factor ?? 1);
+  const vs: number[] = [];
+  for (const consumed of CONSUMED_BOUNDS) {
+    for (const eventCount of NOMINAL_EVENT_COUNTS) {
+      try {
+        vs.push(keys * evaluate(h.scaleValue, evalContext(data, build, panel, skillId, { eventCount, consumed })));
+      } catch {
+        return null;
+      }
+    }
+  }
+  if (!vs.every((v) => Number.isFinite(v) && v >= 0)) return null;
+  return [Math.min(...vs), Math.max(...vs)];
 }
 
 /**
