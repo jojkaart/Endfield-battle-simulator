@@ -24,11 +24,12 @@ below ([review-2026-10.md](review-2026-10.md)).
   --inflictions`, `tried.ts refresh`, snapshots:update refusing an edited
   tree); the backlog
   ([2026-11-27-backlog-after-round-21.md](friction/2026-11-27-backlog-after-round-21.md),
-  no point carried; on its accuracy list cutTails' `needed` on the
-  replay's pairing, a channel inside a detached file, among the older
-  entries (the check's targets on 7b54 and a freeze per target done
-  2026-11-28: the ids mapped, a third replay, 7b54 |damage error| 4.0 →
-  2.8%; next a freeze on a twin's other target); declined for
+  no point carried; its accuracy list's older entries left (done
+  2026-11-28: the check's targets on 7b54 and a freeze per target, the
+  ids mapped, a third replay, 7b54 |damage error| 4.0 → 2.8%, next a freeze
+  on a twin's other target; `needed` on the check's pairing and a channel
+  inside a detached file, next Typhoeus's Barrage Array past its entity's
+  end); declined for
   blindness: a hold-out's change split by cast kind) joins the next round
   once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done; 2026-11-22 the search

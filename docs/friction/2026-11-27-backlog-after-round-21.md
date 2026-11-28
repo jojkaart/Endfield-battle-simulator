@@ -237,11 +237,17 @@ Suggestions declined for good, with why: a later round doesn't rebuild them.
   landingpairs.ts pairKitLandings (round 21) is the check's own pairing as a function of a run's landings; `needed`
   reading it (the statuses' half stays loggedShown's: statuspairs needs the check's value fits) moves verdicts:
   measure, snapshots:update; `zmdlogs decisions --why-kept` shows per kept tail what the real pairing loses.
+  Closed by worktree-agent-a8a05e803619ac159, 9da9d4a: `needed` reads pairKitLandings, and only a logged hit after the
+  cut counts (alone the pairing kept tails for hits before the cut it gave a tail landing: hold-out 5.9 → 6.8%); no
+  log moves (docs/journal/2026-11-28-01-needed-on-the-check-s-pairing-a-channel-s-end-in-a-detached.md).
 - **A capped channel inside a detached file gets no end** (docs/friction-done/2026-11-27-interrupted-casts.md point 4;
   round 21's skillCompile.ts Ctx.channel): the channel token would also give KitHit.latestFrame to 9 kit hits whose
   channel sits in a buff's or an entity's own file (latest frames 196, 231 ×4, 32, 36, 215 ×2), which the old
   "not detached" filter left out; the token keeps `!l.detached` so the compiled data stays the same. Dropping it
   changes engine timing (the channel-end join rule, the replay's ticks past their end): smoke, team-ab, measure.
+  Closed by worktree-agent-a8a05e803619ac159, 592f7c7: dropped; Typhoeus's Barrage Array (whose ticks the logs have
+  past it) marked in her kit (dataOverride `latest`, a DataField now); no log moves, team-ab identical
+  (docs/tried/2026-11-28-barrage-array-channel-end.diff: the array unmarked).
 - **A freeze on a fight read per target** (tests/enemy-readers.test.ts, round 21): clock.ts rampRunsOn and
   statusesRunOn (a freeze's ramp and statuses, freeze-ramp) read the current target's statuses only, as the hidden
   holds did before the statuses-per-target round; no fight read per target has a freeze yet. Under everyTarget when

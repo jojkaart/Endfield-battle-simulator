@@ -1835,7 +1835,8 @@
             "atk_scale_persistent"
           ],
           "factor": 0.05555555555555555,
-          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171)."
+          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171).",
+          "dataOverride": { "latest": "The logs have the array's ticks past the data's channel end (the entity's 180 frames, frame 215): 18 ticks up to 6.4-8.0 s of world time after the first, with no combo press between (pending 00ae 23.46, 54.96, 75.23 and 94.24 s; fc63 35.98 and 80.30 s, round 22), so an end there split one array into two combos. Why the array runs longer (its entity's clock held, or a longer life) is open." }
         }
       ]
     },
@@ -1893,7 +1894,8 @@
             "atk_scale_persistent"
           ],
           "factor": 0.05555555555555555,
-          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171)."
+          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171).",
+          "dataOverride": { "latest": "As the grounded combo's array (its note): the logs have the ticks past the data's channel end (frame 215), so the kit leaves the end out." }
         }
       ]
     },

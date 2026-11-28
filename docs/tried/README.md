@@ -96,3 +96,6 @@ life's damage ([open-problems.md](../open-problems.md), "The damage factors"). T
 - [2026-11-27-channel-decision-line.diff](2026-11-27-channel-decision-line.diff): held back for the lead, applied after the merge (e93f971):
   `zmdlogs casts --choices` prints the channel-end rule's new casts (LoggedCast.pastChannel) on their CAST line
   (views.ts was another agent's file in round 22).
+- [2026-11-28-barrage-array-channel-end.diff](2026-11-28-barrage-array-channel-end.diff): Typhoeus's Barrage Array
+  with the data's channel end (frame 215): its 18 ticks run past it in the logs; 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%,
+  hold-out plain −6.

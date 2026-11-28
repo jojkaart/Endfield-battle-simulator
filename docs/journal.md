@@ -4,7 +4,7 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 192 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 193 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
 
@@ -45,6 +45,41 @@ fight the same.
 **Left:** a freeze on a twin's other target holds the first target's clock (landing.ts runs the other target's
 control event after the first is current again); no such freeze in a log yet (docs/open-problems.md "statuses per
 target").
+
+## 2026-11-28: needed on the check's pairing, a channel's end in a detached file
+
+Goal: two entries of the accuracy list in docs/friction/2026-11-27-backlog-after-round-21.md: cutTails' `needed` on
+the replay's own pairing, and a capped channel inside a detached file (both left by round 21 as moving verdicts).
+
+Done (9da9d4a, 592f7c7):
+- **`needed` on the check's pairing** (replayrun.ts loggedShown, cutTails): a kit hit's landing is now
+  landingpairs.ts pairKitLandings' (pinned, else a landing of its operator with its event within 16 frames, each once);
+  the statuses' half stays loggedShown's own. Alone that kept tails it shouldn't: a logged hit before the cut that the
+  pairing had given one of the tail's unlogged landings counted as lost (c83c 47.17 s: eight batched Arcane attack-4
+  hits, four the placement's twins, paired with the 47.23 s cast's landings at 47.50 / 47.60 s; 4a64 16.93 s, 9847
+  44.53 s): hold-out |damage error| 5.9 → 6.8%, 4a64 +2 plain. So only a logged hit after the cut counts: the tail's
+  landings and what they set off come after it. With both, and with the filter alone on the old rule, no log's
+  verdicts or totals move. abfd's 64.10 s case is gone since round 21's channel end.
+- **A channel in a detached file gets its end** (skillCompile.ts drops `!detached`): Tangtang's ultimate stare to
+  frame 196 (b7b3 and 7910 have no tick past it once the stops between are out: b7b3's 15.28 s tick sits after Last
+  Rite's 12.30–15.13 s ultimate stop), Rossi's wolves, Zhuang Fangyi's attack-5 and ultimate attack-3 ranges (single
+  landings: nothing reads their end). Typhoeus's Barrage Array (frame 215) is marked in her kit, `dataOverride`
+  `latest`, now a DataField (kitMatch.ts compares the kit hit's latestFrame with the data, schema enum too): the logs
+  have its 18 ticks up to 6.4–8.0 s of world time after the first with no combo press between, and the end split one
+  array into two combos six times (00ae, fc63; unmarked: 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%, hold-out plain −6,
+  docs/tried/2026-11-28-barrage-array-channel-end.diff). With the mark nothing moves.
+
+Checks: measure against 60fa436 for each change (no verdict or total moved anywhere: development plain 84.3%,
+|damage error| 1.3%; hold-out 82.5%, 5.9%; earlier pending and several targets unchanged); `npm run smoke` passed;
+team-ab identical for both teams (the owner's and Typhoeus's: every hit and a rules seed the same, the 32-seed
+numbers unchanged); snapshots:update for the kit digests (Tangtang, Rossi, Zhuang Fangyi).
+
+Decisions: the channel's end per kit hit, not per file kind: the data's end where the logs agree, a reasoned mark where
+they don't, as any other data field. The after-cut filter is not a fit: a hit logged before the cut can't be what a
+later landing set off.
+
+Still open: what runs Typhoeus's array past its entity's 180 frames (its entity held by stops the placement's world
+time leaves in, or a longer life; its first tick also 0.5–0.7 s after the press against the kit's 1.17 s).
 
 ## 2026-11-27: Friction round 21: one home for the pairing and keepPrevious, counterfactual replays, measure's split by what it measured
 
@@ -390,52 +425,3 @@ mid-fight kill). **Left open:** 6339's 19.68 s move follows no logged kill; 7b54
 after a kill with no hit, a likely move onto a shielded slug (not made); 6339's Laevatain 35.70 s empowered hit is not
 the move's Heat alone (nothing of hers absorbs it in time); the moves' Heat on the replay's one enemy gives replay-only
 bursts (statuses per target); other kits' listeners on a target's death (open-problems).
-
-## 2026-11-27: Twins on several targets
-
-**Goal:** on main at de528c7 (merged with 22750d2), beside the build-fit agent: the placement's same-ms twins in the
-several-targets fights (7b54's Si combos: 2 slashes × 4 slugs at 15.60 s took eight of the ten slash slots, a second
-combo opened for the rest), then which of 6339's, 7b54's and 9c6e's one-sided landings are placement errors.
-
-**Done:**
-- **logcasts.ts placeWith** (fights read per target only): where value can't tell a twin from the next slot (the
-  slots' multipliers alike, `nextDiffers` false), a batch of the key's alike hits at one ms is `targets` hits per
-  landing (targets.ts `batchTargets`: the least k with hit i and i + k of one target by value for every i,
-  `oneTargetByValue`: one value, or a crit the panel's crit factor above; a batch two landings long, else the count an
-  earlier batch of the cast read); a slot's multipliers over event counts tell a twin by value too (Si's final); a
-  used-up combo's landing within 150 ms of its last, of its value, no cast event between, is its last landing on
-  another target (`later`: 7b54 16.48 s, a third slug's final). Combos only for `later`: on every kind it took
-  Typhoeus's shots, Ardelia's attack 3 and Liino's beats in 9c6e for twins; the batch rule on landing-long batches
-  made 9c6e's Ardelia 224 / 259 (a debuff between) twins: both lost plain hits (314 → 312, mismatch 33 → 44), now no
-  9c6e cast moves. targets.ts's assignment reads the twins as before (one landing reaches each target once).
-- **Decision lines:** PlacedHit.twin (`value`, `used`, `batch` with its targets and batch size, `later`);
-  `zmdlogs casts --choices` prints it on each twin's HIT line, `casts --json` carries it.
-- **`zmdlogs hits --json` `target`** (index, how, drop, kills; text lines `T<n>`): the several-targets friction
-  report's point 2.
-- several-targets reading **`targets-ungated`** (every twin copied in the totals, fitting or not): registered and
-  measured, not the default (docs/design/assumptions.md).
-- tests/target-twins.test.ts.
-
-**Scoreboard** (`npm run snapshots:update`; measure against 22750d2): only the several-targets row moves: plain
-68.5 → 70.6%, mismatch 15.4 → 15.3%, mean |damage error| 16.1 → 8.3%; 7b54 plain 99 → 115, +26.8 → −3.3%; 6339 and
-9c6e unchanged. Development, earlier pending, verified and hold-outs unchanged (no unmarked log reads it); no
-simulation reads it: no team-ab.
-
-**Found, not placement errors** (docs/open-problems.md "Hard 33's Woodcraft Slugs"):
-- Camille's `normal_skill_abilityrange` (6339 ×5, 7b54 ×1): her Vesperwings moving to the next target at its own
-  target's death (listen_target_dead → reset_target → projhit_sub), the battle skill's damage, Heat and
-  Susceptibility again; five of six 0.23–0.54 s after a logged kill. ZMDLogs logs a normal_skill event at four of them,
-  which the replay makes as presses, standing in for the move. Reading those events as no press: 6339 plain 115 →
-  103, −10.3 → −15.2% (docs/tried/2026-11-27-sub-skill-events.diff). Needs a kit hit (packages/data) and a pressless
-  replay landing.
-- 6339's 35.70 s Laevatain empowered hit: her Melting Flame a stack short at 32.24 s (likely the move's Heat).
-- 6339's 21.60 s hit_2: TAILKEPT's guard passes the cast's own killing hit by rounding (logged 0.3 ms after its
-  frame); the exact guard: development plain 84.3 → 83.7% (c4f3 −66), hold-out |damage error| 5.8 → 5.9%
-  (docs/tried/2026-11-27-tail-own-landing.diff).
-- 6339's 19.91 s Si ink burst: her presses before it are on shielded slugs (no hit, no listing), so the Final Stroke
-  is skipped; what a shielded-slug state would need is in open-problems.
-- 7b54's 47.2–48.1 s twins log-only: every slug's slash reads ×1.26 high (a kit-buff difference, mismatched before
-  too). 9c6e's: statuses per target.
-
-**Dead ends:** a time-based twin count (slots due by the batch's ms): the first batch's slashes come before the kit
-frames allow from the event (the stop batches them), so time can't count slots there.

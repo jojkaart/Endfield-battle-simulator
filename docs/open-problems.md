@@ -263,6 +263,17 @@ and 4bfc Arclight's attack 4 run 0.21–0.23 s past the data's end, no press bet
   several targets, not followed.
 - What runs a channel 0.2 s past its data end (9090, 4bfc, c3c7 60.64 s): a hold the replay doesn't know of, or a
   start later than its first landing says; kept by CHANNEL_SLACK_MS (400 ms).
+- A channel inside a detached file (round 22, docs/journal/2026-11-28-01-needed-on-the-check-s-pairing-a-channel-s-end-in-a-detached.md):
+  it has its end now (Tangtang's ultimate stare to frame 196: b7b3 10.15–15.28 s across Last Rite's 12.30–15.13 s
+  ultimate stop and 7910 47.78–51.32 s have no tick past it; Rossi's wolves and Zhuang Fangyi's ranges are single
+  landings, nothing reads their end). Typhoeus's Barrage Array is marked in her kit (dataOverride `latest`): the logs
+  have its 18 ticks up to 6.4–8.0 s of world time after the first with no combo press between, against the entity's
+  180 frames (00ae 23.46, 54.96, 75.23, 94.24 s; fc63 35.98, 80.30 s), and the end split each into two combos.
+  Ruled out: the end as the data gives it (those six splits; 00ae 1.1 → 3.9%, fc63 3.2 → 5.9%, hold-out plain −6:
+  docs/tried/2026-11-28-barrage-array-channel-end.diff). Still possible: the array's entity held by stops the
+  placement's world time doesn't take out (Typhoeus's own, or every stop), or a longer life than its timeline's 180
+  frames; its first tick is logged 0.5–0.7 s after the press, not the kit's frame 35 (1.17 s), so the press-to-tick
+  timing is off too.
 - The CUTS record (replayrun.ts castFlag) flags an interrupt whose hits keepPrevious keeps (c779 70.67 s): a record only.
 - The casts view's line for the rule is held back: docs/tried/2026-11-27-channel-decision-line.diff.
 
@@ -330,8 +341,11 @@ a gap's length alone).
   plain change, 135 s against 115 s for every log; kept at 8. Still possible: cutting several independent tails per
   replay.
 - What `needed` (cutTails) can't see: a tail whose effect only changes later hits' values (a kit stack, a buff the
-  log doesn't list), not whether a logged hit has a landing; and its landing test pairs no landing once only
-  (replayrun.ts loggedShown), looser than buffreplay.ts's free match.
+  log doesn't list), not whether a logged hit has a landing. Since round 22 its landing test is the check's own
+  pairing (landingpairs.ts pairKitLandings; the statuses' half its own) and only a logged hit after the cut counts:
+  on the pairing alone a logged hit before the cut, given one of the tail's unlogged landings, kept the tail (c83c
+  47.17 s, 4a64 16.93 s, 9847 44.53 s; hold-out |damage error| 5.9 → 6.8%); with both, nothing moved (abfd's 64.10 s
+  case was gone with the channel's end).
 - The log-only round's placement cases: worked in "The placement cases the one-sided rounds left" above (f879, 3aa6,
   9a80 fixed; 5082, the INT lasers, Pogranichnik, 99fb diagnosed).
 

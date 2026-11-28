@@ -71,6 +71,16 @@ describe("unlogged tails (0c14's Rossi)", () => {
     expect(liino.tailCuts.some((x) => x.cast.skillId === "chr_0035_liino_normal_skill" && Math.abs(x.cast.start - 75440) < 50)).toBe(false);
   });
 
+  // Round 22: `needed` reads the check's own pairing (landingpairs.ts pairKitLandings), and only a logged hit after the
+  // cut counts. c83c 47.17 s: eight batched Arcane attack-4 hits, four of them the placement's twins, which the pairing
+  // gave the 47.23 s attack 4's unlogged landings at 47.50 / 47.60 s; logged before the cut, they say nothing of the tail.
+  it("a logged hit before the cut keeps no tail (c83c's Arcane attack 4 at 47.23 s)", () => {
+    const r = logBuffReplay(data, (devFixtures({ ids: ["c83c"] })[0] as { fx: Parameters<typeof logBuffReplay>[1] }).fx).replay;
+    const at = (x: { cast: { operator: string; skillId: string; start: number } }) => x.cast.operator === "chr_0032_lizhiyan" && x.cast.skillId === "chr_0032_lizhiyan_attack4" && Math.abs(x.cast.start - 47227) < 50;
+    expect(r.tailsKept.some(at)).toBe(false);
+    expect(r.tailCuts.some(at)).toBe(true);
+  });
+
   it("lands none of its Lift, wolves or bleed; under `kept` they come back", () => {
     const tail = (hits: typeof replay.hits) => hits.filter((h) => h.operator === ROSSI && h.skillId === SKILL && h.frame >= 1095 && h.frame <= 1120);
     expect(tail(replay.hits).map((h) => h.hitId)).toEqual([]);

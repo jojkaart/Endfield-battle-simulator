@@ -22,6 +22,27 @@ describe("a capped channel's end from the data (KitHit.latestFrame)", () => {
   it("not on what a tick's buff deals later (Rossi's combo afterhits, frames 33–41)", () => {
     expect(kitHit("chr_0028_wulfa", "chr_0028_wulfa_combo_2_skill", "ticks")?.latestFrame).toBeUndefined();
   });
+
+  // Round 22: a channel inside a detached file (a buff's, an entity's own) gets its end too. Tangtang's ultimate stare:
+  // 8 ticks at frames 76–181 of a channel to 196, and the logs never have a tick past it (b7b3 10.15–15.28 s across
+  // Last Rite's 12.30–15.13 s ultimate stop, 7910 47.78–51.32 s).
+  it("a channel in a detached file: Tangtang's ultimate stare to frame 196", () => {
+    const h = kitHit("chr_0027_tangtang", "chr_0027_tangtang_ultimate_skill", "stare");
+    expect(h?.detached).toBe(true);
+    expect(h?.latestFrame).toBe(196);
+  });
+
+  // Typhoeus's Barrage Array (frames 35–205, the entity's channel to 215): the logs have its 18 ticks past that end with
+  // no combo press between, so the kit leaves the end out (dataOverride `latest`) and the placement keeps one array one
+  // combo (00ae 54.96 s: 18 ticks to 65.88 s, 6.9 s after the first).
+  it("left out where the kit marks it: Typhoeus's Barrage Array, one combo's 18 ticks (00ae 54.96 s)", () => {
+    for (const s of ["chr_0034_typhoea_combo_skill", "chr_0034_typhoea_combo_skillfloating"]) expect(kitHit("chr_0034_typhoea", s, "area")?.latestFrame).toBeUndefined();
+    const fx = fixture("00ae");
+    const p = placeHits(data, fx);
+    const ticks = fx.hits.filter((h) => h.event === "chr_0034_typhoea_combo_persistentdamage" && h.t >= 56000 && h.t <= 66000);
+    expect(ticks.length).toBe(18);
+    expect(new Set(ticks.map((h) => p.hits.get(h)?.cast)).size).toBe(1);
+  });
 });
 
 describe("no tick joins a cast past its channel's end (pastChannel)", () => {
