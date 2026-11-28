@@ -19,6 +19,7 @@ export * from "./replaysteps.ts";
 export * from "./replayrecord.ts";
 export * from "./replaycrits.ts";
 export * from "./castassembly.ts";
+export * from "./ultimateevent.ts";
 export * from "./holdinputs.ts";
 export * from "./replayrun.ts";
 export * from "./replaykeys.ts";

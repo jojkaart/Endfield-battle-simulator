@@ -332,22 +332,33 @@ tests/placement-cases.test.ts):
   before the ms, is that landing on another target. Also 9c6e's Barrage Array ticks on its two enemies (27.32 s and
   79.21–79.85 s pairs) and 7b54's Laevatain attack 2 at 16.36 s. The several-targets row: |damage error| 14.1 →
   14.3% (f574 −26.5 → −27.4%, 9c6e −11.0 → −11.1%: the replay's one cast lands less than the two did; f574's
-  slugs' values run ×0.83 of the log's anyway), plain and mismatch unchanged; f574's SP short 110 → 56. Still
-  possible: a pair whose ms a stop's end could have batched (9c6e 78.88 s, the array's first tick, beside the
-  replay's stop from Typhoeus's 78.33 s combo event) stays two slots.
+  slugs' values run ×0.83 of the log's anyway), plain and mismatch unchanged; f574's SP short 110 → 56. 9c6e
+  78.88 s (the array's first tick pair, two slots) was a phantom stop of the first pass: fixed, "The placement
+  paths of 2026-11-28" below.
 - **Fixed: a cast's slots end with its path** (logcasts.ts pathEnd): de6a 132.20 s, Pogranichnik's combo (de6a logs
   no cast events) joined to the 108.61 s combo, whose path-0 slots ran on into the jumped paths' 223, 237, 261
   (de6a plain 298 → 317, damage −0.5 → +0.1%); d572 Rossi's attack 4 hits 9.89 / 10.10 s and 93.64–93.99 s no longer
   taken as a controlled-path cast's not-controlled hits (hit_ai, past the jump to 189; a cast of their own: plain
   1039 → 1044, damage 1.3 → 1.4%).
-- **Diagnosed, not fixed: 8f32 38.50 s, the Endministrator's crystal shatter** (−1.28%): Rossi's combo 2 hit_2 at
-  36.11 s (12,877, the value of its hit at 35.51 s, 0.24 s past its kit frame) was placed as a combo 3 perfect strike
-  ("window: the chain step after combo_2_skill"), ×9 in the replay (117,730), its Lift at 36.10 s where the log has it
-  at 38.50 s, before the Endministrator's 38.39 s combo made the crystals: no shatter. The open combo 2 was
-  `superseded` by her attack 3 placed at 35.38 s (not on time: 600 ms against hit_2's 367). A rule keeping the hit on
-  the open cast by its value was written and dropped unmeasured: the perfect strike's multiplier (atk_scale_s +
-  damage_add × consumed) has no nominal scale or range (Group.scales / ranges), so no value rule can tell them apart.
-  Next: a lower bound for such a multiplier (consumed 0) in groupsOf, then the value rule.
+- Fixed: 8f32 38.50 s, the Endministrator's crystal shatter (Rossi's combo 2 hit_2 at 36.11 s kept on its combo 2 by
+  its value against the perfect strike's multiplier bounds: logcasts.ts keptByValue; 8f32 plain 395 → 405, damage
+  +2.1 → −0.2%) — docs/journal/2026-11-28-10-placement-paths-a-value-rule-on-multiplier-bounds-slots-cut.md.
+
+**The placement paths of 2026-11-28** (docs/journal/2026-11-28-10-placement-paths-a-value-rule-on-multiplier-bounds-slots-cut.md;
+tests/placement-paths.test.ts):
+- Fixed: a cast's slots cut to its first landing's path (logcasts.ts pathSlots, onPathFrom): 8f32 10.02 s, Alesh's
+  combo joined to her 1.29 s combo 7.4 s late as its Rare Fin slots (77, 93). The cast's world time runs from its
+  first landing's slot (a jumped path's too), and realignByValue assigns one path's slots only.
+- A hitless ultimate's unplaced event stop now starts where ultimateEventRead reads the event (458b: Akekuri's
+  ultimate stop from 82.53 s, not 84.37 s): no log's verdicts moved (4bfc's 144.37 s Liino volley pair moved to her
+  140.73 s volley, same verdicts). 458b's 111 s layer ends stay 0.3 s early: not this stop (still possible: the
+  world holds between 88.7 and 111.5 s, as before).
+- Fixed: 9c6e 78.88 s, the Barrage Array's first tick pair: the second pass read the first pass's stops without the
+  final placement's ultimate merge, so Liino's ultimate (cast at 67.85 s, its events repeating every ~3.3 s) placed
+  again from her song's 78.88 s beat at 76.31 s made a stop 76.30–78.87 s, a frame before the pair, and `byTime`
+  rightly saw a stop's end that could batch it. passStops now merges an ultimate's casts within its duration
+  (logcasts.ts ultimateMerge): the pair a twin by time, the array's ticks in turn; also 4bfc better (plain 870 → 876,
+  damage −0.6 → +0.1%: Liino's 59.37 / 76.07 s landings on her 52.67 s ultimate, and its 74.99 s beat landed).
 
 ## Casts their operator's next press interrupts (2026-11-27)
 
