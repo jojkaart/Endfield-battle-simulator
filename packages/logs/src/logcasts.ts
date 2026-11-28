@@ -108,8 +108,8 @@ export function withResets<T extends TimeStop>(parts: readonly { readonly stops:
  * Every list is built by skillStops and cut by withResets; nothing else in packages/logs reads SkillTiming.slowdowns or
  * resets for a list (tests/stops-source.test.ts).
  */
-export function castTimeStops(data: GameData, casts: readonly LoggedCast[], frames?: ReadonlyMap<LoggedCast, readonly number[]>): TimeStop[] {
-  return withResets(distinctCasts({ hits: new Map(), casts }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind }, frames?.get(c))));
+export function castTimeStops(data: GameData, casts: readonly LoggedCast[], frames?: ReadonlyMap<LoggedCast, readonly number[]>, merge?: Placement["merge"]): TimeStop[] {
+  return withResets(distinctCasts({ hits: new Map(), casts, ...(merge ? { merge } : {}) }).map((c) => skillStops(data, c.skillId, Math.round((c.start * FPS) / 1000), { operator: c.operator, skillId: c.skillId, kind: c.kind }, frames?.get(c))));
 }
 
 /**
@@ -520,8 +520,8 @@ interface Slot {
    * The path of a skill of several paths the slot lies on (round 23, the placement-cases report point 2: a slot list
    * over every path of a jump carried no path, so de6a's combo span ran across the other paths' frames): the frame the
    * path starts at (pathStart: the latest jump destination at or before it) and where the cast ends on it (pathEnd;
-   * Infinity where no end is sure). On a skill group's slots only; the placement reads a cast's end from its first
-   * slot's.
+   * Infinity where no end is sure). On a skill group's slots only; the placement keeps a cast's slots on its first
+   * slot's path (pathSlots, onPathFrom) and reads the cast's end from it, and realignByValue assigns only such slots.
    */
   readonly path?: { readonly from: number; readonly end: number };
 }
@@ -781,8 +781,8 @@ const CONSUMED_BOUNDS = [0, 4] as const;
  * damage_add × consumed): the expression at consumed 0 and 4 and every event count of NOMINAL_EVENT_COUNTS, times its
  * `scale` keys and factor. Null for any other hit (one with a single multiplier or a range, a reaction's, a status's,
  * fixed damage, an expression reading anything else). Round 23 (the placement-cases report point 3): 8f32 36.11 s,
- * Rossi's combo 2 hit_2 placed as a combo 3 perfect strike, where no value rule could tell the two apart; a value rule
- * reading these bounds (a value below the other hit's least rules it out) moves verdicts: the backlog's accuracy list.
+ * Rossi's combo 2 hit_2 placed as a combo 3 perfect strike, where no value rule could tell the two apart; placeWith's
+ * value rule (keptByValue, Group.bounds) reads these bounds.
  */
 export function multiplierBounds(data: GameData, build: Build, panel: StatPanel, skillId: string, h: KitHit): readonly [number, number] | null {
   if (h.scaleValue === undefined || h.reaction || h.status || h.fixedDamage !== undefined || h.extraScale?.length) return null;
@@ -1026,16 +1026,30 @@ export function placementPasses(data: GameData, fx: LogFixture, assume?: Reading
   // 35.70 s; cutting Typhoeus's combo at the event's frame 9 moved his basics there, plain 182 → 177: round 7's measure).
   const second = placeWith(data, fx, passStops(data, fx, firstPlacement), assume);
   const placed = inTurn(data, fx, second);
-  // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
-  // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
-  const merge = new Map<string, number>();
-  for (const c of placed.casts) if (c.kind === "ultimate") merge.set(c.skillId, Math.max(CAST_MERGE_MS, msOf(data.skills[c.skillId]?.timing?.durationFrames ?? 0)));
-  return { first: firstPlacement, second, placed: { ...placed, merge } };
+  return { first: firstPlacement, second, placed: { ...placed, merge: ultimateMerge(data, placed.casts) } };
 }
 
-/** The stops a placement pass reads from the one before: its placed casts' (cut at their resets) and the unplaced cast events'. */
-function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[] {
-  const placed = castTimeStops(data, before.casts, castFrames(before));
+/**
+ * Placement.merge: an ultimate isn't cast again within its own action, so its casts placed from different keys within
+ * its duration are one (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart:
+ * three casts, three bombs).
+ */
+function ultimateMerge(data: GameData, casts: readonly LoggedCast[]): Map<string, number> {
+  const merge = new Map<string, number>();
+  for (const c of casts) if (c.kind === "ultimate") merge.set(c.skillId, Math.max(CAST_MERGE_MS, msOf(data.skills[c.skillId]?.timing?.durationFrames ?? 0)));
+  return merge;
+}
+
+/**
+ * The stops a placement pass reads from the one before: its placed casts' (cut at their resets; an ultimate's casts
+ * within its duration one cast, as the final placement merges them: ultimateMerge) and the unplaced cast events'.
+ * 9c6e97486a9d 78.88 s: the first pass placed Liino's ultimate (cast at 67.85 s, its events repeating every ~3.3 s)
+ * again from her song's 78.88 s beat, at 76.31 s, and the second pass read that cast's stop, 76.30–78.87 s, ending
+ * a frame before the Barrage Array's first tick pair: a stop's end could have batched the pair, so it stayed two slots.
+ * split:pass-merge
+ */
+export function passStops(data: GameData, fx: LogFixture, before: Placement): TimeStop[] {
+  const placed = castTimeStops(data, before.casts, castFrames(before), ultimateMerge(data, before.casts)); // split:pass-merge
   return [...placed, ...unplacedCastStops(data, fx, before.casts, placed).flatMap((p) => p.stops)];
 }
 
